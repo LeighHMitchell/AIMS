@@ -10,15 +10,10 @@ import {
   Languages,
   MapPin,
   Edit,
-  Copy,
   ExternalLink,
   Trash2,
   AlertCircle,
 } from 'lucide-react';
-import {
-  Card,
-  CardContent,
-} from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -33,9 +28,6 @@ import {
   COMMON_LANGUAGES,
   getFormatLabel,
   isImageMime,
-  toIatiXml,
-  toIatiJson,
-  copyToClipboard,
   getFaviconUrl,
   validateIatiDocument,
 } from '@/lib/iatiDocumentLink';
@@ -56,7 +48,6 @@ export function DocumentCard({
   locale = 'en',
   readOnly = false
 }: DocumentCardProps) {
-  const [copyFeedback, setCopyFeedback] = React.useState<'xml' | 'json' | null>(null);
   const validation = React.useMemo(() => {
     try {
       return validateIatiDocument(document);
@@ -73,6 +64,16 @@ export function DocumentCard({
   
   // Get category label
   const category = DOCUMENT_CATEGORIES.find(c => c.code === document.categoryCode);
+  
+  // Get all categories - prefer categoryCodes array, fallback to categoryCode
+  const categoryCodes = document.categoryCodes && document.categoryCodes.length > 0
+    ? document.categoryCodes
+    : (document.categoryCode ? [document.categoryCode] : []);
+  
+  // Get category labels for all categories
+  const categories = categoryCodes.map(code => 
+    DOCUMENT_CATEGORIES.find(c => c.code === code)
+  ).filter(Boolean);
   
   // Get language names from codes
   const getLanguageNames = (languageCodes: string[]) => {
@@ -93,32 +94,14 @@ export function DocumentCard({
   
   const FileIcon = getFileIcon();
   
-  const handleCopyXml = async () => {
-    const xml = toIatiXml(document);
-    const success = await copyToClipboard(xml);
-    if (success) {
-      setCopyFeedback('xml');
-      setTimeout(() => setCopyFeedback(null), 2000);
-    }
-  };
-  
-  const handleCopyJson = async () => {
-    const json = JSON.stringify(toIatiJson(document), null, 2);
-    const success = await copyToClipboard(json);
-    if (success) {
-      setCopyFeedback('json');
-      setTimeout(() => setCopyFeedback(null), 2000);
-    }
-  };
   
   const handleOpen = () => {
     window.open(document.url, '_blank', 'noopener,noreferrer');
   };
   
   return (
-    <Card className="group relative overflow-hidden rounded-2xl shadow-sm hover:shadow-md transition-shadow">
-      <CardContent className="p-4">
-        <div className="flex gap-4">
+    <div className="group relative">
+      <div className="flex gap-4">
           {/* Preview/Icon */}
           <div className="flex-shrink-0">
             {(isImage || document.thumbnailUrl) ? (
@@ -147,12 +130,12 @@ export function DocumentCard({
           </div>
           
           {/* Content */}
-          <div className="flex-1 min-w-0">
-            <div className="flex items-start justify-between gap-2">
-              <div className="flex-1 min-w-0">
-                <h3 className="font-medium text-gray-900 truncate">
-                  {primaryTitle.text}
-                </h3>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-start justify-between gap-2">
+                <div className="flex-1 min-w-0">
+                  <h3 className="font-medium text-gray-900 break-words">
+                    {primaryTitle.text}
+                  </h3>
                 {primaryDescription && (
                   <p className="text-sm text-gray-600 mt-1 line-clamp-2">
                     {primaryDescription.text}
@@ -184,17 +167,24 @@ export function DocumentCard({
             </div>
             
             {/* Badges */}
-            <div className="flex flex-wrap gap-2 mt-3">
-              <Badge variant="secondary" className="text-xs">
+            <div className="flex flex-wrap gap-1.5 mt-3">
+              <Badge variant="secondary" className="text-xs rounded px-1.5 py-0.5 border-0">
                 {getFormatLabel(document.format)}
               </Badge>
               
-              {category && (
-                <TooltipProvider>
+              {document.languageCodes && document.languageCodes.length > 0 && (
+                <Badge variant="secondary" className="text-xs gap-1 rounded px-1.5 py-0.5 border-0">
+                  <Languages className="w-3 h-3" />
+                  {getLanguageNames(document.languageCodes).join(', ')}
+                </Badge>
+              )}
+              
+              {categories.map((category, idx) => category && (
+                <TooltipProvider key={category.code || idx}>
                   <Tooltip>
                     <TooltipTrigger>
-                      <Badge variant="outline" className="text-xs">
-                        {category.name}
+                      <Badge variant="secondary" className="text-xs rounded px-1.5 py-0.5 border-0">
+                        <span className="text-left">{category.name}</span>
                       </Badge>
                     </TooltipTrigger>
                     <TooltipContent>
@@ -205,24 +195,17 @@ export function DocumentCard({
                     </TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
-              )}
-              
-              {document.languageCodes && document.languageCodes.length > 0 && (
-                <Badge variant="outline" className="text-xs gap-1">
-                  <Languages className="w-3 h-3" />
-                  {getLanguageNames(document.languageCodes).join(', ')}
-                </Badge>
-              )}
+              ))}
               
               {document.documentDate && (
-                <Badge variant="outline" className="text-xs gap-1">
+                <Badge variant="secondary" className="text-xs gap-1 rounded px-1.5 py-0.5 border-0">
                   <Calendar className="w-3 h-3" />
                   {format(new Date(document.documentDate), 'MMM d, yyyy')}
                 </Badge>
               )}
               
               {(document.recipientCountries?.length || document.recipientRegion) && (
-                <Badge variant="outline" className="text-xs gap-1">
+                <Badge variant="secondary" className="text-xs gap-1 rounded px-1.5 py-0.5 border-0">
                   <MapPin className="w-3 h-3" />
                   {document.recipientCountries?.length
                     ? `${document.recipientCountries.length} countries`
@@ -250,27 +233,6 @@ export function DocumentCard({
           <Button
             size="sm"
             variant="ghost"
-            onClick={handleCopyXml}
-            disabled={!validation.ok}
-            className="text-xs gap-1"
-          >
-            <Copy className="w-3 h-3" />
-            {copyFeedback === 'xml' ? 'Copied!' : 'XML'}
-          </Button>
-          
-          <Button
-            size="sm"
-            variant="ghost"
-            onClick={handleCopyJson}
-            className="text-xs gap-1"
-          >
-            <Copy className="w-3 h-3" />
-            {copyFeedback === 'json' ? 'Copied!' : 'JSON'}
-          </Button>
-          
-          <Button
-            size="sm"
-            variant="ghost"
             onClick={handleOpen}
             className="text-xs gap-1"
           >
@@ -290,7 +252,6 @@ export function DocumentCard({
             </Button>
           )}
         </div>
-      </CardContent>
-    </Card>
+    </div>
   );
 }

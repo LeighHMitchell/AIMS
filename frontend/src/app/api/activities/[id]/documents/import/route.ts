@@ -73,6 +73,14 @@ export async function POST(
           continue;
         }
 
+        // Get category codes - support both new array format and legacy single category
+        const categoryCodes = doc.category_codes && Array.isArray(doc.category_codes) 
+          ? doc.category_codes 
+          : (doc.category_code ? [doc.category_code] : ['A01']); // Default if none provided
+        
+        // Use first category for backward compatibility in main table
+        const firstCategoryCode = categoryCodes.length > 0 ? categoryCodes[0] : 'A01';
+
         // Prepare document data for insertion
         const documentData = {
           activity_id: activityId,
@@ -86,7 +94,7 @@ export async function POST(
           description: doc.description 
             ? [{ text: doc.description, lang: doc.language_code || 'en' }]
             : [],
-          category_code: doc.category_code || 'A01', // Default to "Pre- and post-project impact appraisal"
+          category_code: firstCategoryCode, // For backward compatibility
           language_codes: [doc.language_code || 'en'],
           document_date: doc.document_date || null,
           recipient_countries: [],
@@ -101,26 +109,49 @@ export async function POST(
         console.log(`[Document Import API] Inserting document ${i + 1}:`, {
           url: documentData.url,
           format: documentData.format,
-          category: documentData.category_code
+          categories: categoryCodes
         });
 
-        // Insert document into database
-        const { error: insertError } = await supabase
+        // Insert document into database and get the ID
+        const { data: insertedDocument, error: insertError } = await supabase
           .from('activity_documents')
-          .insert(documentData);
+          .insert(documentData)
+          .select('id')
+          .single();
 
-        if (insertError) {
+        if (insertError || !insertedDocument) {
           console.error(`[Document Import API] Error inserting document ${i + 1}:`, insertError);
           results.failed++;
           results.errors.push({ 
             index: i + 1, 
             url: doc.url, 
-            error: insertError.message || 'Database insertion failed'
+            error: insertError?.message || 'Database insertion failed'
           });
-        } else {
-          results.success++;
-          console.log(`[Document Import API] Successfully inserted document ${i + 1}`);
+          continue;
         }
+
+        // Insert all categories into junction table
+        if (categoryCodes.length > 0) {
+          const categoryData = categoryCodes.map((code: string) => ({
+            document_id: insertedDocument.id,
+            category_code: code
+          }));
+
+          const { error: categoryError } = await supabase
+            .from('activity_document_categories')
+            .insert(categoryData);
+
+          if (categoryError) {
+            console.error(`[Document Import API] Error inserting categories for document ${i + 1}:`, categoryError);
+            // Don't fail the whole document, just log the error
+            // The document still has the first category in the main table for backward compatibility
+          } else {
+            console.log(`[Document Import API] Successfully inserted ${categoryCodes.length} categories for document ${i + 1}`);
+          }
+        }
+
+        results.success++;
+        console.log(`[Document Import API] Successfully inserted document ${i + 1} with ${categoryCodes.length} categories`);
       } catch (docError: any) {
         console.error(`[Document Import API] Exception processing document ${i + 1}:`, docError);
         results.failed++;

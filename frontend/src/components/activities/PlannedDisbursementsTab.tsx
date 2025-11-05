@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { format, parseISO, isValid, addMonths, startOfMonth, endOfMonth, startOfQuarter, endOfQuarter, differenceInMonths, getQuarter, getYear } from 'date-fns';
-import { Trash2, Copy, Loader2, Plus, CalendarIcon, Download, DollarSign, Users, Edit, Save, X, Check, MoreVertical, Calendar, ArrowUp, ArrowDown, ArrowUpDown, AlertCircle, CheckCircle, ChevronLeft, ChevronRight, ChevronUp, ChevronDown } from 'lucide-react';
+import { Trash2, Copy, Loader2, Plus, CalendarIcon, Download, DollarSign, Users, Edit, Save, X, Check, MoreVertical, Calendar, ArrowUp, ArrowDown, ArrowUpDown, CheckCircle, ChevronLeft, ChevronRight, ChevronUp, ChevronDown } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -110,29 +110,6 @@ interface Organization {
   iati_org_id?: string;
 }
 
-// Hero Card Component
-interface HeroCardProps {
-  title: string;
-  value: string;
-  subtitle: string;
-  icon?: React.ReactNode;
-}
-
-function HeroCard({ title, value, subtitle, icon }: HeroCardProps) {
-  return (
-    <div className="p-4 border rounded-xl bg-white shadow-sm">
-      <div className="flex items-start justify-between">
-        <div>
-          <div className="text-sm text-muted-foreground">{title}</div>
-          <div className="text-2xl font-bold mt-1">{value}</div>
-          <div className="text-xs text-muted-foreground mt-1">{subtitle}</div>
-        </div>
-        {icon && <div className="text-muted-foreground">{icon}</div>}
-      </div>
-    </div>
-  );
-}
-
 export default function PlannedDisbursementsTab({ 
   activityId, 
   startDate, 
@@ -171,6 +148,14 @@ export default function PlannedDisbursementsTab({
   const [selectedDisbursementIds, setSelectedDisbursementIds] = useState<Set<string>>(new Set());
   const [isBulkDeleting, setIsBulkDeleting] = useState(false);
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
+
+  // Filter state
+  const [statusFilter, setStatusFilter] = useState<string>('all');
+
+  // Reset to page 1 when filter changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [statusFilter]);
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
@@ -359,18 +344,6 @@ export default function PlannedDisbursementsTab({
       if (modalDisbursement.period_start >= modalDisbursement.period_end) {
         errors.period_end = 'End date must be after start date';
       }
-    }
-    
-    // Check for overlapping periods
-    const overlapping = disbursements.some((disbursement: PlannedDisbursement) => 
-      disbursement.id !== modalDisbursement?.id &&
-      modalDisbursement?.period_end && modalDisbursement?.period_start &&
-      disbursement.period_start < modalDisbursement.period_end &&
-      disbursement.period_end > modalDisbursement.period_start
-    );
-    
-    if (overlapping) {
-      errors.period = 'This period overlaps with an existing disbursement';
     }
     
     return errors;
@@ -689,7 +662,7 @@ export default function PlannedDisbursementsTab({
     async function convertAll() {
       const newUsdValues: Record<string, { usd: number|null, rate: number|null, date: string, loading: boolean, error?: string }> = {};
       for (const disbursement of disbursements) {
-        if (!disbursement.amount || !disbursement.currency || !disbursement.value_date) {
+        if (disbursement.amount === null || disbursement.amount === undefined || isNaN(disbursement.amount) || !disbursement.currency || !disbursement.value_date) {
           newUsdValues[disbursement.id || `${disbursement.period_start}-${disbursement.period_end}`] = { 
             usd: null, 
             rate: null, 
@@ -738,10 +711,13 @@ export default function PlannedDisbursementsTab({
     return () => { cancelled = true; };
   }, [disbursements]);
 
-  // No filtering - show all disbursements
+  // Filter disbursements by status
   const filteredDisbursements = useMemo(() => {
-    return disbursements;
-  }, [disbursements]);
+    if (statusFilter === 'all') {
+      return disbursements;
+    }
+    return disbursements.filter(d => (d.status || 'original') === statusFilter);
+  }, [disbursements, statusFilter]);
 
   // Sorted disbursements for table display
   const sortedFilteredDisbursements = useMemo(() => {
@@ -809,51 +785,6 @@ export default function PlannedDisbursementsTab({
     const endIndex = startIndex + itemsPerPage;
     return sortedFilteredDisbursements.slice(startIndex, endIndex);
   }, [sortedFilteredDisbursements, currentPage, itemsPerPage]);
-
-  // Calculate total planned disbursements
-  const totalPlanned = useMemo(() => {
-    return filteredDisbursements.reduce((sum, d) => sum + Number(d.amount), 0);
-  }, [filteredDisbursements]);
-
-  // Calculate total USD
-  const totalUSD = useMemo(() => {
-    return filteredDisbursements.reduce((sum, d) => sum + (d.usdAmount || 0), 0);
-  }, [filteredDisbursements]);
-
-  // Calculate hero card statistics
-  const heroStats = useMemo(() => {
-    const sortedDisbursements = [...filteredDisbursements].sort((a, b) => 
-      parseISO(a.period_start).getTime() - parseISO(b.period_start).getTime()
-    );
-
-    // Time coverage
-    const firstDisbursement = sortedDisbursements[0];
-    const lastDisbursement = sortedDisbursements[sortedDisbursements.length - 1];
-    const timeCoverage = firstDisbursement && lastDisbursement
-      ? `${format(parseISO(firstDisbursement.period_start), 'MMM yyyy')} – ${format(parseISO(lastDisbursement.period_end), 'MMM yyyy')}`
-      : 'No periods';
-
-    // Status breakdown
-    const originalCount = filteredDisbursements.filter(d => d.status === 'original').length;
-    const revisedCount = filteredDisbursements.filter(d => d.status === 'revised').length;
-    const statusText = [];
-    if (originalCount > 0) statusText.push(`${originalCount} Original`);
-    if (revisedCount > 0) statusText.push(`${revisedCount} Revised`);
-
-    // Organizations involved
-    const providerOrgs = Array.from(new Set(filteredDisbursements.map(d => d.provider_org_name).filter(Boolean)));
-    const receiverOrgs = Array.from(new Set(filteredDisbursements.map(d => d.receiver_org_name).filter(Boolean)));
-
-    return {
-      totalPlanned: totalPlanned.toLocaleString(),
-      totalUSD: totalUSD.toLocaleString(),
-      timeCoverage,
-      statusText: statusText.join(' • ') || 'No disbursements',
-      providerCount: providerOrgs.length,
-      receiverCount: receiverOrgs.length,
-      mainCurrency: filteredDisbursements[0]?.currency || defaultCurrency
-    };
-  }, [filteredDisbursements, totalPlanned, totalUSD, defaultCurrency]);
 
   // Calculate chart data with real-time USD conversion
   const chartData = useMemo(() => {
@@ -1166,25 +1097,6 @@ export default function PlannedDisbursementsTab({
     }
   };
 
-  // Check for overlapping periods
-  const checkDisbursementOverlap = useCallback((disbursement: PlannedDisbursement, allDisbursements: PlannedDisbursement[]) => {
-    const currentStart = parseISO(disbursement.period_start);
-    const currentEnd = parseISO(disbursement.period_end);
-    
-    return allDisbursements.filter((other) => {
-      if (other.id === disbursement.id) return false;
-      
-      const otherStart = parseISO(other.period_start);
-      const otherEnd = parseISO(other.period_end);
-      
-      return (
-        (currentStart >= otherStart && currentStart <= otherEnd) ||
-        (currentEnd >= otherStart && currentEnd <= otherEnd) ||
-        (currentStart <= otherStart && currentEnd >= otherEnd)
-      );
-    });
-  }, []);
-
   const handleSelectDisbursement = useCallback((id: string, checked: boolean) => {
     const newSelected = new Set(selectedDisbursementIds);
     if (checked) {
@@ -1277,13 +1189,11 @@ export default function PlannedDisbursementsTab({
       { label: 'Period Start', value: format(parseISO(disbursement.period_start), 'MMM d, yyyy') },
       { label: 'Period End', value: format(parseISO(disbursement.period_end), 'MMM d, yyyy') },
       { label: 'Original Amount', value: `${disbursement.amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${disbursement.currency}` },
+      { label: 'USD Value', value: disbursement.usdAmount != null ? `USD ${disbursement.usdAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '—' },
     );
 
     if (disbursement.value_date) {
       exportData.push({ label: 'Value Date', value: format(parseISO(disbursement.value_date), 'MMM d, yyyy') });
-    }
-    if (disbursement.usdAmount) {
-      exportData.push({ label: 'USD Value', value: `USD ${disbursement.usdAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` });
     }
 
     // Organizations
@@ -1563,13 +1473,17 @@ export default function PlannedDisbursementsTab({
 
   return (
     <div className="space-y-4">
-      {/* Financial Summary Cards - Unified component */}
-      {activityId && !hideSummaryCards && (
-        <FinancialSummaryCards activityId={activityId} className="mb-6" />
-      )}
-
-      {/* Planned Disbursements Table */}
-      <Card>
+          {/* Financial Summary Cards */}
+          {activityId && !hideSummaryCards && (
+            <FinancialSummaryCards 
+              activityId={activityId} 
+              className="mb-6" 
+              hideTotalBudgeted={true}
+            />
+          )}
+          
+          {/* Planned Disbursements Table */}
+          <Card data-planned-tab className="border-0">
         <CardHeader>
           <div className="flex items-center justify-between">
             {!hideSummaryCards && (
@@ -1579,7 +1493,7 @@ export default function PlannedDisbursementsTab({
               </div>
             )}
             {hideSummaryCards && <div />}
-            <div className="flex items-center gap-2">
+            <div className={`flex items-center gap-2 ${hideSummaryCards ? 'hidden' : ''}`}>
               {!readOnly && (
                 <>
                   <Button
@@ -1616,14 +1530,35 @@ export default function PlannedDisbursementsTab({
                   </Button>
                 </>
               )}
-              {disbursements.length > 0 && !loading && (
+              {!hideSummaryCards && disbursements.length > 0 && !loading && (
                 <>
+                  <Select value={statusFilter} onValueChange={setStatusFilter}>
+                    <SelectTrigger className="w-[160px] h-9">
+                      <SelectValue placeholder="Status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Status</SelectItem>
+                      <SelectItem value="original">
+                        <span className="flex items-center gap-2">
+                          <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">1</span>
+                          <span>Original</span>
+                        </span>
+                      </SelectItem>
+                      <SelectItem value="revised">
+                        <span className="flex items-center gap-2">
+                          <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">2</span>
+                          <span>Revised</span>
+                        </span>
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
                   {expandedRows.size > 0 ? (
                     <Button 
                       variant="outline" 
                       size="sm" 
                       onClick={collapseAllRows}
                       title="Collapse all expanded rows"
+                      data-collapse-all
                     >
                       <ChevronUp className="h-4 w-4 mr-1" />
                       Collapse All
@@ -1634,12 +1569,13 @@ export default function PlannedDisbursementsTab({
                       size="sm" 
                       onClick={expandAllRows}
                       title="Expand all rows"
+                      data-expand-all
                     >
                       <ChevronDown className="h-4 w-4 mr-1" />
                       Expand All
                     </Button>
                   )}
-                  <Button variant="outline" size="sm" onClick={handleExport}>
+                  <Button variant="outline" size="sm" onClick={handleExport} data-export>
                     <Download className="h-4 w-4 mr-1" />
                     Export
                   </Button>
@@ -1647,6 +1583,64 @@ export default function PlannedDisbursementsTab({
               )}
             </div>
           </div>
+          {/* Filters for when hideSummaryCards is true - shown between title and buttons */}
+          {hideSummaryCards && disbursements.length > 0 && !loading && (
+            <div className="px-6 pb-4 border-b">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Select value={statusFilter} onValueChange={setStatusFilter}>
+                    <SelectTrigger className="w-[160px] h-9">
+                      <SelectValue placeholder="Status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Status</SelectItem>
+                      <SelectItem value="original">
+                        <span className="flex items-center gap-2">
+                          <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">1</span>
+                          <span>Original</span>
+                        </span>
+                      </SelectItem>
+                      <SelectItem value="revised">
+                        <span className="flex items-center gap-2">
+                          <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">2</span>
+                          <span>Revised</span>
+                        </span>
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="flex items-center gap-2">
+                  {expandedRows.size > 0 ? (
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={collapseAllRows}
+                      title="Collapse all expanded rows"
+                      data-collapse-all
+                    >
+                      <ChevronUp className="h-4 w-4 mr-1" />
+                      Collapse All
+                    </Button>
+                  ) : (
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={expandAllRows}
+                      title="Expand all rows"
+                      data-expand-all
+                    >
+                      <ChevronDown className="h-4 w-4 mr-1" />
+                      Expand All
+                    </Button>
+                  )}
+                  <Button variant="outline" size="sm" onClick={handleExport} data-export>
+                    <Download className="h-4 w-4 mr-1" />
+                    Export
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
           {selectedDisbursementIds.size > 0 && (
             <div className="flex items-center justify-end mt-4">
               <Button
@@ -1737,7 +1731,7 @@ export default function PlannedDisbursementsTab({
                           )}
                         </div>
                       </TableHead>
-                      <TableHead className="text-sm font-medium text-foreground/90 py-3 px-4 text-right">
+                      <TableHead className="text-sm font-medium text-foreground/90 py-3 px-4 text-right" style={{ width: '160px' }}>
                         <div 
                           className="flex items-center gap-1 justify-end cursor-pointer hover:bg-muted/30 transition-colors"
                           onClick={() => handleSort('amount')}
@@ -1750,7 +1744,7 @@ export default function PlannedDisbursementsTab({
                           )}
                         </div>
                       </TableHead>
-                      <TableHead className="text-sm font-medium text-foreground/90 py-3 px-4">
+                      <TableHead className="text-sm font-medium text-foreground/90 py-3 px-4" style={{ width: '140px' }}>
                         <div 
                           className="flex items-center gap-1 cursor-pointer hover:bg-muted/30 transition-colors"
                           onClick={() => handleSort('value_date')}
@@ -1763,7 +1757,7 @@ export default function PlannedDisbursementsTab({
                           )}
                         </div>
                       </TableHead>
-                      <TableHead className="text-sm font-medium text-foreground/90 py-3 px-4 text-right">
+                      <TableHead className="text-sm font-medium text-foreground/90 py-3 px-4 text-right" style={{ width: '150px' }}>
                         <div 
                           className="flex items-center gap-1 justify-end cursor-pointer hover:bg-muted/30 transition-colors"
                           onClick={() => handleSort('usd_value')}
@@ -1780,8 +1774,6 @@ export default function PlannedDisbursementsTab({
                   </TableHeader>
                   <TableBody>
                     {paginatedDisbursements.map((disbursement: PlannedDisbursement) => {
-                      const overlappingDisbursements = checkDisbursementOverlap(disbursement, sortedFilteredDisbursements);
-                      const hasOverlapWarning = overlappingDisbursements && overlappingDisbursements.length > 0;
                       const disbursementId = disbursement.id || 'new';
                       const isExpanded = expandedRows.has(disbursementId);
                       
@@ -1790,7 +1782,7 @@ export default function PlannedDisbursementsTab({
                         <TableRow 
                           className={cn(
                             "border-b border-border/40 hover:bg-muted/30 transition-colors",
-                            disbursement.hasError ? 'bg-red-50' : hasOverlapWarning ? 'bg-orange-50/30' : '',
+                            disbursement.hasError ? 'bg-red-50' : '',
                             selectedDisbursementIds.has(disbursement.id!) && "bg-blue-50 border-blue-200"
                           )}
                         >
@@ -1826,31 +1818,9 @@ export default function PlannedDisbursementsTab({
                           )}
                           {/* Period */}
                           <TableCell className="py-3 px-4 whitespace-nowrap">
-                            <div className="flex items-center gap-1">
-                              <span className="font-medium">
-                                {format(parseISO(disbursement.period_start), 'MMM yyyy')} - {format(parseISO(disbursement.period_end), 'MMM yyyy')}
-                              </span>
-                              {hasOverlapWarning && (
-                                <TooltipProvider>
-                                  <UITooltip>
-                                    <TooltipTrigger asChild>
-                                      <AlertCircle className="h-3 w-3 text-orange-500 flex-shrink-0" />
-                                    </TooltipTrigger>
-                                    <TooltipContent className="max-w-xs">
-                                      <div className="text-xs">
-                                        <div className="font-semibold mb-1">⚠️ Period Overlap Warning</div>
-                                        <div className="mb-1">This disbursement period overlaps with:</div>
-                                        {overlappingDisbursements.map((od, i) => (
-                                          <div key={i} className="text-muted-foreground">
-                                            • {format(parseISO(od.period_start), 'MMM d, yyyy')} - {format(parseISO(od.period_end), 'MMM d, yyyy')}
-                                          </div>
-                                        ))}
-                                      </div>
-                                    </TooltipContent>
-                                  </UITooltip>
-                                </TooltipProvider>
-                              )}
-                            </div>
+                            <span className="font-medium">
+                              {format(parseISO(disbursement.period_start), 'MMM yyyy')} - {format(parseISO(disbursement.period_end), 'MMM yyyy')}
+                            </span>
                           </TableCell>
 
                           {/* Status */}
@@ -1924,12 +1894,12 @@ export default function PlannedDisbursementsTab({
                                 </TooltipProvider>
                               ) : (
                                 <div className="flex items-center gap-1">
-                                  {disbursement.amount === 0 ? (
-                                    <AlertCircle className="h-3 w-3 text-orange-500" />
-                                  ) : (
+                                  {usdValues[disbursement.id || `${disbursement.period_start}-${disbursement.period_end}`]?.error ? (
                                     <span className="text-sm text-red-500">
-                                      {usdValues[disbursement.id || `${disbursement.period_start}-${disbursement.period_end}`]?.error || '-'}
+                                      {usdValues[disbursement.id || `${disbursement.period_start}-${disbursement.period_end}`].error}
                                     </span>
+                                  ) : (
+                                    <span className="text-muted-foreground">—</span>
                                   )}
                                 </div>
                               )}
@@ -1988,21 +1958,23 @@ export default function PlannedDisbursementsTab({
                             <TableCell colSpan={readOnly ? 7 : 8} className="py-4 px-6 relative">
                               {/* CSV Export Button */}
                               <div className="absolute top-4 right-4 z-10">
-                                <UITooltip>
-                                  <UITooltipTrigger asChild>
-                                    <Button
-                                      variant="ghost"
-                                      size="sm"
-                                      className="h-8 w-8 p-0"
-                                      onClick={() => handleExportDisbursement(disbursement)}
-                                    >
-                                      <Download className="h-4 w-4" />
-                                    </Button>
-                                  </UITooltipTrigger>
-                                  <UITooltipContent>
-                                    <p>Export to CSV</p>
-                                  </UITooltipContent>
-                                </UITooltip>
+                                <TooltipProvider>
+                                  <UITooltip>
+                                    <TooltipTrigger asChild>
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        className="h-8 w-8 p-0"
+                                        onClick={() => handleExportDisbursement(disbursement)}
+                                      >
+                                        <Download className="h-4 w-4" />
+                                      </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                      <p>Export to CSV</p>
+                                    </TooltipContent>
+                                  </UITooltip>
+                                </TooltipProvider>
                               </div>
                               <div className="space-y-3 text-sm">
                                 {/* Disbursement Details */}
@@ -2331,9 +2303,6 @@ export default function PlannedDisbursementsTab({
                 )}
               </div>
             </div>
-            {fieldErrors.period && (
-              <p className="text-xs text-red-500">{fieldErrors.period}</p>
-            )}
 
             {/* Currency, Amount, Value Date */}
             <div className="grid grid-cols-3 gap-4">
@@ -2641,124 +2610,6 @@ export default function PlannedDisbursementsTab({
         </DialogContent>
       </Dialog>
 
-      {/* Chart Aggregation Filters */}
-      {disbursements.length > 0 && !readOnly && (
-        <>
-          <div className="flex flex-wrap gap-2 items-center mb-4 mt-8">
-            <Button
-              variant={aggregationMode === 'monthly' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setAggregationMode('monthly')}
-            >
-              Monthly
-            </Button>
-            <Button
-              variant={aggregationMode === 'quarterly' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setAggregationMode('quarterly')}
-            >
-              Quarterly
-            </Button>
-            <Button
-              variant={aggregationMode === 'semi-annual' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setAggregationMode('semi-annual')}
-            >
-              Semi-Annual
-            </Button>
-            <Button
-              variant={aggregationMode === 'annual' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setAggregationMode('annual')}
-            >
-              Annual
-            </Button>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Planned Disbursements by Period</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ResponsiveContainer width="100%" height={240}>
-                  <BarChart data={chartData} margin={{ top: 20, right: 30, left: 60, bottom: 5 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                    <XAxis dataKey="period" tick={{ fontSize: 12 }} stroke="#64748b" />
-                    <YAxis 
-                      stroke="#64748b" 
-                      fontSize={12}
-                      label={{
-                        value: 'USD',
-                        angle: -90,
-                        position: 'insideLeft',
-                        offset: -10,
-                        style: { textAnchor: 'middle', fill: '#64748b', fontSize: 13, fontWeight: 600 }
-                      }}
-                    />
-                    <Tooltip 
-                      content={({ active, payload }) => {
-                        if (active && payload && payload.length) {
-                          const data = payload[0].payload;
-                          return (
-                            <div className="bg-white p-3 border border-gray-200 rounded-lg shadow-lg">
-                              <p className="font-semibold text-gray-900 mb-1">{data.period}</p>
-                              <p className="text-sm text-gray-600">Total Planned Disbursement</p>
-                              <p className="text-lg font-bold text-gray-900">USD {Number(data.usdAmount || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
-                            </div>
-                          );
-                        }
-                        return null;
-                      }}
-                    />
-                    <Bar dataKey="usdAmount" fill="#64748b" barSize={32} />
-                  </BarChart>
-                </ResponsiveContainer>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader>
-                <CardTitle>Cumulative Planned Disbursements</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ResponsiveContainer width="100%" height={240}>
-                  <LineChart data={chartData} margin={{ top: 20, right: 30, left: 60, bottom: 5 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                    <XAxis dataKey="period" tick={{ fontSize: 12 }} stroke="#64748b" />
-                    <YAxis 
-                      stroke="#64748b" 
-                      fontSize={12}
-                      label={{
-                        value: 'USD',
-                        angle: -90,
-                        position: 'insideLeft',
-                        offset: -10,
-                        style: { textAnchor: 'middle', fill: '#64748b', fontSize: 13, fontWeight: 600 }
-                      }}
-                    />
-                    <Tooltip 
-                      content={({ active, payload }) => {
-                        if (active && payload && payload.length) {
-                          const data = payload[0].payload;
-                          return (
-                            <div className="bg-white p-3 border border-gray-200 rounded-lg shadow-lg">
-                              <p className="font-semibold text-gray-900 mb-1">{data.period}</p>
-                              <p className="text-sm text-gray-600">Cumulative Planned Disbursement</p>
-                              <p className="text-lg font-bold text-gray-900">USD {Number(data.cumulativeUSD || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
-                            </div>
-                          );
-                        }
-                        return null;
-                      }}
-                    />
-                    <Line type="monotone" dataKey="cumulativeUSD" stroke="#64748b" strokeWidth={3} dot={{ fill: "#64748b", r: 4 }} />
-                  </LineChart>
-                </ResponsiveContainer>
-              </CardContent>
-            </Card>
-          </div>
-        </>
-      )}
     </div>
   );
 }

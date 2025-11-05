@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import Link from 'next/link';
 import {
   Tooltip,
   TooltipContent,
@@ -22,6 +23,8 @@ interface SDGImageGridProps {
   maxDisplay?: number;
   /** Tooltip alignment */
   tooltipAlign?: 'top' | 'bottom' | 'left' | 'right';
+  /** Whether to make SDG icons clickable links to profile pages */
+  clickable?: boolean;
 }
 
 // SDG goal names mapping for quick lookup
@@ -96,7 +99,8 @@ export function SDGImageGrid({
   className = '',
   showTooltips = true,
   maxDisplay,
-  tooltipAlign = 'top'
+  tooltipAlign = 'top',
+  clickable = true
 }: SDGImageGridProps) {
   // Parse and validate SDG codes
   const validSDGs = sdgCodes
@@ -125,7 +129,7 @@ export function SDGImageGrid({
     const imageUrl = getSDGImageURL(goalNumber);
     
     const imageElement = (
-      <div className={`${containerClass} relative overflow-hidden rounded-md shadow-sm hover:shadow-md transition-shadow duration-200 border border-gray-200`}>
+      <div className={`${containerClass} relative overflow-hidden rounded-md shadow-sm hover:shadow-md transition-shadow duration-200 border border-gray-200 ${clickable ? 'cursor-pointer' : ''}`}>
         <img
           src={imageUrl}
           alt={altText}
@@ -136,15 +140,22 @@ export function SDGImageGrid({
       </div>
     );
 
+    // If clickable, wrap in Link
+    const content = clickable ? (
+      <Link href={`/sdgs/${goalNumber}`} className="block">
+        {imageElement}
+      </Link>
+    ) : imageElement;
+
     if (!showTooltips) {
-      return imageElement;
+      return content;
     }
 
     return (
       <TooltipProvider>
         <Tooltip>
           <TooltipTrigger asChild>
-            {imageElement}
+            {content}
           </TooltipTrigger>
           <TooltipContent 
             side="top" 
@@ -157,6 +168,11 @@ export function SDGImageGrid({
               {SDG_GOALS.find(g => g.id === goalNumber)?.description && (
                 <div className="text-xs text-gray-600 mt-1">
                   {SDG_GOALS.find(g => g.id === goalNumber)?.description}
+                </div>
+              )}
+              {clickable && (
+                <div className="text-xs text-blue-600 mt-1 font-medium">
+                  Click to view profile →
                 </div>
               )}
             </div>

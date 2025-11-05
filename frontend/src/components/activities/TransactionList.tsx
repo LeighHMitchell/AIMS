@@ -1,6 +1,7 @@
 "use client"
 
 import React, { useState, useMemo, useEffect } from 'react';
+import Link from 'next/link';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { 
@@ -12,6 +13,7 @@ import {
   TableRow 
 } from "@/components/ui/table";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { FinancialSummaryCards } from '@/components/FinancialSummaryCards';
 import { 
   DropdownMenu, 
@@ -216,6 +218,15 @@ export default function TransactionList({
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
   
+  // Filter state
+  const [transactionTypeFilter, setTransactionTypeFilter] = useState<string>('all');
+  const [financeTypeFilter, setFinanceTypeFilter] = useState<string>('all');
+
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [transactionTypeFilter, financeTypeFilter]);
+  
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(10);
@@ -290,11 +301,34 @@ export default function TransactionList({
     return stats;
   }, [transactions, currency]);
 
-  // Client-side sorting with comprehensive field support
+  // Get unique transaction types and finance types for filter dropdowns
+  const uniqueTransactionTypes = React.useMemo(() => {
+    const types = new Set(transactions.map(t => t.transaction_type).filter(Boolean));
+    return Array.from(types).sort();
+  }, [transactions]);
+
+  const uniqueFinanceTypes = React.useMemo(() => {
+    const types = new Set(transactions.map(t => t.finance_type).filter(Boolean));
+    return Array.from(types).sort();
+  }, [transactions]);
+
+  // Client-side filtering and sorting with comprehensive field support
   const sortedTransactions = React.useMemo(() => {
     if (!transactions.length) return transactions;
+
+    // Apply filters first
+    let filtered = [...transactions];
+
+    if (transactionTypeFilter !== 'all') {
+      filtered = filtered.filter(t => t.transaction_type === transactionTypeFilter);
+    }
+
+    if (financeTypeFilter !== 'all') {
+      filtered = filtered.filter(t => t.finance_type === financeTypeFilter);
+    }
     
-    return [...transactions].sort((a, b) => {
+    // Then apply sorting
+    return filtered.sort((a, b) => {
       let aValue: any;
       let bValue: any;
       
@@ -339,7 +373,7 @@ export default function TransactionList({
       if (aValue > bValue) return sortDirection === 'asc' ? 1 : -1;
       return 0;
     });
-  }, [transactions, sortField, sortDirection]);
+  }, [transactions, sortField, sortDirection, transactionTypeFilter, financeTypeFilter]); // usdValues removed to prevent infinite loop
 
   // Pagination logic
   const totalPages = React.useMemo(() => 
@@ -441,6 +475,19 @@ export default function TransactionList({
       const newUsdValues: Record<string, { usd: number|null, rate: number|null, date: string, loading: boolean, error?: string }> = {};
       for (const transaction of paginatedTransactions) {
         const transactionId = transaction.uuid || transaction.id;
+        
+        // Check if transaction already has USD value stored
+        const existingUsdValue = (transaction as any).value_usd || (transaction as any).usd_value;
+        if (existingUsdValue != null && !isNaN(existingUsdValue)) {
+          newUsdValues[transactionId] = {
+            usd: existingUsdValue,
+            rate: (transaction as any).exchange_rate_used || null,
+            date: (transaction as any).usd_conversion_date || transaction.transaction_date,
+            loading: false
+          };
+          continue;
+        }
+        
         if (!transaction.value || !transaction.currency || !transaction.transaction_date) {
           newUsdValues[transactionId] = { 
             usd: null, 
@@ -451,6 +498,18 @@ export default function TransactionList({
           };
           continue;
         }
+        
+        // If currency is already USD, just use the value
+        if (transaction.currency === 'USD') {
+          newUsdValues[transactionId] = {
+            usd: transaction.value,
+            rate: 1,
+            date: transaction.transaction_date,
+            loading: false
+          };
+          continue;
+        }
+        
         newUsdValues[transactionId] = { 
           usd: null, 
           rate: null, 
@@ -554,20 +613,25 @@ export default function TransactionList({
   };
 
   const handleExport = () => {
-    const dataToExport = transactions.map(t => ({
-      transaction_date: t.transaction_date,
-      transaction_type: TRANSACTION_TYPE_LABELS[t.transaction_type] || t.transaction_type,
-      value: t.value,
-      currency: t.currency,
-      provider_org: t.provider_org_name || '',
-      receiver_org: t.receiver_org_name || '',
-      description: t.description || '',
-      status: t.status || 'planned',
-      finance_type: t.finance_type ? (FINANCE_TYPE_LABELS[t.finance_type] || t.finance_type) : '',
-      aid_type: t.aid_type || '',
-      tied_status: t.tied_status || '',
-      flow_type: t.flow_type || ''
-    }));
+    const dataToExport = transactions.map(t => {
+      const transactionId = t.uuid || t.id;
+      const usdValue = usdValues[transactionId]?.usd;
+      return {
+        transaction_date: t.transaction_date,
+        transaction_type: TRANSACTION_TYPE_LABELS[t.transaction_type] || t.transaction_type,
+        value: t.value,
+        currency: t.currency,
+        usd_value: usdValue != null ? usdValue : '',
+        provider_org: t.provider_org_name || '',
+        receiver_org: t.receiver_org_name || '',
+        description: t.description || '',
+        status: t.status || 'planned',
+        finance_type: t.finance_type ? (FINANCE_TYPE_LABELS[t.finance_type] || t.finance_type) : '',
+        aid_type: t.aid_type || '',
+        tied_status: t.tied_status || '',
+        flow_type: t.flow_type || ''
+      };
+    });
 
     const csv = [
       Object.keys(dataToExport[0] || {}).join(","),
@@ -865,6 +929,36 @@ export default function TransactionList({
     
     return null;
   };
+  
+  // Helper to get org ID by ID or ref (for linking purposes)
+  const getOrgId = (orgId: string | undefined, orgRef?: string): string | null => {
+    // First try to find by UUID
+    if (orgId) {
+      const org = organizations.find((o: any) => o.id === orgId);
+      if (org) {
+        return org.id || null;
+      }
+    }
+    
+    // Then try to resolve by ref (including aliases)
+    if (orgRef) {
+      // Direct match by iati_org_id
+      const directMatch = organizations.find((o: any) => o.iati_org_id === orgRef);
+      if (directMatch) {
+        return directMatch.id || null;
+      }
+      
+      // Match by alias_refs
+      const aliasMatch = organizations.find((o: any) => 
+        o.alias_refs && Array.isArray(o.alias_refs) && o.alias_refs.includes(orgRef)
+      );
+      if (aliasMatch) {
+        return aliasMatch.id || null;
+      }
+    }
+    
+    return null;
+  };
 
   // Filter out transactions without a valid identifier
   const validTransactions = transactions.filter(t => {
@@ -877,7 +971,7 @@ export default function TransactionList({
 
   return (
     <>
-      <Card>
+      <Card className="border-0">
         <CardHeader>
           <div className="flex items-center justify-between">
             {!hideSummaryCards && (
@@ -889,15 +983,49 @@ export default function TransactionList({
               </div>
             )}
             {hideSummaryCards && <div />}
-            <div className="flex items-center gap-2">
+            <div className={`flex items-center gap-2 ${hideSummaryCards ? 'hidden' : ''}`}>
               {!readOnly && (
                 <Button onClick={() => setShowForm(true)} size="sm">
                   <Plus className="h-4 w-4 mr-2" />
                   Add Transaction
                 </Button>
               )}
-              {transactions.length > 0 && (
+              {!hideSummaryCards && transactions.length > 0 && (
                 <>
+                  <div className="flex items-center gap-2">
+                    <Select value={transactionTypeFilter} onValueChange={setTransactionTypeFilter}>
+                      <SelectTrigger className="w-[180px] h-9">
+                        <SelectValue placeholder="Transaction Type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Transaction Types</SelectItem>
+                        {uniqueTransactionTypes.map(type => (
+                          <SelectItem key={type} value={type}>
+                            <span className="flex items-center gap-2">
+                              <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{type}</span>
+                              <span>{TRANSACTION_TYPE_LABELS[type as keyof typeof TRANSACTION_TYPE_LABELS] || type}</span>
+                            </span>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Select value={financeTypeFilter} onValueChange={setFinanceTypeFilter}>
+                      <SelectTrigger className="w-[180px] h-9">
+                        <SelectValue placeholder="Finance Type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Finance Types</SelectItem>
+                        {uniqueFinanceTypes.map(type => (
+                          <SelectItem key={type} value={type}>
+                            <span className="flex items-center gap-2">
+                              <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{type}</span>
+                              <span>{FINANCE_TYPE_LABELS[type] || type}</span>
+                            </span>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
                   {expandedRows.size > 0 ? (
                     <Button 
                       variant="outline" 
@@ -928,6 +1056,76 @@ export default function TransactionList({
             </div>
           </div>
         </CardHeader>
+        {/* Filters for when hideSummaryCards is true - shown between title and buttons */}
+        {hideSummaryCards && transactions.length > 0 && (
+          <div className="px-6 pb-4 border-b" data-transactions-tab>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Select value={transactionTypeFilter} onValueChange={setTransactionTypeFilter}>
+                  <SelectTrigger className="w-[180px] h-9">
+                    <SelectValue placeholder="Transaction Type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Transaction Types</SelectItem>
+                    {uniqueTransactionTypes.map(type => (
+                      <SelectItem key={type} value={type}>
+                        <span className="flex items-center gap-2">
+                          <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{type}</span>
+                          <span>{TRANSACTION_TYPE_LABELS[type as keyof typeof TRANSACTION_TYPE_LABELS] || type}</span>
+                        </span>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Select value={financeTypeFilter} onValueChange={setFinanceTypeFilter}>
+                  <SelectTrigger className="w-[180px] h-9">
+                    <SelectValue placeholder="Finance Type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Finance Types</SelectItem>
+                    {uniqueFinanceTypes.map(type => (
+                      <SelectItem key={type} value={type}>
+                        <span className="flex items-center gap-2">
+                          <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{type}</span>
+                          <span>{FINANCE_TYPE_LABELS[type] || type}</span>
+                        </span>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex items-center gap-2">
+                {expandedRows.size > 0 ? (
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={collapseAllRows}
+                    title="Collapse all expanded rows"
+                    data-expand-all
+                  >
+                    <ChevronUp className="h-4 w-4 mr-1" />
+                    Collapse All
+                  </Button>
+                ) : (
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={expandAllRows}
+                    title="Expand all rows"
+                    data-expand-all
+                  >
+                    <ChevronDown className="h-4 w-4 mr-1" />
+                    Expand All
+                  </Button>
+                )}
+                <Button variant="outline" size="sm" onClick={handleExport} data-export>
+                  <Download className="h-4 w-4 mr-1" />
+                  Export
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
         <CardContent>
           {/* Financial Summary Cards - Unified component */}
           {activityId && !hideSummaryCards && (
@@ -972,13 +1170,13 @@ export default function TransactionList({
                         {getSortIcon('transaction_type')}
                       </div>
                     </TableHead>
-                    <TableHead className="text-sm font-medium text-foreground/90 py-3 px-4 cursor-pointer hover:bg-muted/30 transition-colors whitespace-nowrap" style={{ width: '180px' }} onClick={() => handleSort('finance_type')}>
+                    <TableHead className="text-sm font-medium text-foreground/90 py-3 px-4 cursor-pointer hover:bg-muted/30 transition-colors whitespace-nowrap" style={{ width: '340px' }} onClick={() => handleSort('finance_type')}>
                       <div className="flex items-center gap-1">
                         <span>Finance Type</span>
                         {getSortIcon('finance_type')}
                       </div>
                     </TableHead>
-                    <TableHead className="text-sm font-medium text-foreground/90 py-3 px-4 cursor-pointer hover:bg-muted/30 transition-colors whitespace-nowrap" style={{ minWidth: '250px' }} onClick={() => handleSort('provider_org_name')}>
+                    <TableHead className="text-sm font-medium text-foreground/90 py-3 px-4 cursor-pointer hover:bg-muted/30 transition-colors whitespace-nowrap" style={{ minWidth: '320px' }} onClick={() => handleSort('provider_org_name')}>
                       <div className="flex items-center gap-1">
                         <span>Provider → Receiver</span>
                         {getSortIcon('provider_org_name')}
@@ -1110,6 +1308,26 @@ export default function TransactionList({
                               </span>
                             </div>
                           )
+                        ) : defaultFinanceType ? (
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <div className="flex items-center gap-2 text-gray-400 opacity-70 cursor-help">
+                                  <span className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
+                                    {defaultFinanceType}
+                                  </span>
+                                  <span className="text-sm">
+                                    {FINANCE_TYPE_LABELS[defaultFinanceType] || defaultFinanceType}
+                                  </span>
+                                </div>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p className="text-xs">
+                                  This finance type has been inferred from the activity's default finance type (code {defaultFinanceType} – {FINANCE_TYPE_LABELS[defaultFinanceType] || defaultFinanceType})
+                                </p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
                         ) : (
                           <span className="text-gray-400">—</span>
                         )}
@@ -1124,9 +1342,19 @@ export default function TransactionList({
                               name={getOrgAcronymOrName(transaction.provider_org_id, transaction.provider_org_name, transaction.provider_org_ref) || "Unknown"}
                               size="sm"
                             />
-                            <span className="truncate max-w-[120px]">
-                              {getOrgAcronymOrName(transaction.provider_org_id, transaction.provider_org_name, transaction.provider_org_ref) || "Unknown"}
-                            </span>
+                            {getOrgId(transaction.provider_org_id, transaction.provider_org_ref) ? (
+                              <Link 
+                                href={`/organizations/${getOrgId(transaction.provider_org_id, transaction.provider_org_ref)}`}
+                                className="truncate max-w-[120px] hover:text-gray-700 transition-colors"
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                {getOrgAcronymOrName(transaction.provider_org_id, transaction.provider_org_name, transaction.provider_org_ref) || "Unknown"}
+                              </Link>
+                            ) : (
+                              <span className="truncate max-w-[120px]">
+                                {getOrgAcronymOrName(transaction.provider_org_id, transaction.provider_org_name, transaction.provider_org_ref) || "Unknown"}
+                              </span>
+                            )}
                           </div>
                           <span className="text-muted-foreground">→</span>
                           <div className="flex items-center gap-1.5">
@@ -1135,18 +1363,28 @@ export default function TransactionList({
                               name={getOrgAcronymOrName(transaction.receiver_org_id, transaction.receiver_org_name, transaction.receiver_org_ref) || "Unknown"}
                               size="sm"
                             />
-                            <span className="truncate max-w-[120px]">
-                              {getOrgAcronymOrName(transaction.receiver_org_id, transaction.receiver_org_name, transaction.receiver_org_ref) || "Unknown"}
-                            </span>
+                            {getOrgId(transaction.receiver_org_id, transaction.receiver_org_ref) ? (
+                              <Link 
+                                href={`/organizations/${getOrgId(transaction.receiver_org_id, transaction.receiver_org_ref)}`}
+                                className="truncate max-w-[120px] hover:text-gray-700 transition-colors"
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                {getOrgAcronymOrName(transaction.receiver_org_id, transaction.receiver_org_name, transaction.receiver_org_ref) || "Unknown"}
+                              </Link>
+                            ) : (
+                              <span className="truncate max-w-[120px]">
+                                {getOrgAcronymOrName(transaction.receiver_org_id, transaction.receiver_org_name, transaction.receiver_org_ref) || "Unknown"}
+                              </span>
+                            )}
                           </div>
                         </div>
                       </TableCell>
                       
                       {/* Amount */}
                       <TableCell className="py-3 px-4 text-right whitespace-nowrap">
-                        {transaction.value > 0 ? (
+                        {transaction.value !== null && transaction.value !== undefined && !isNaN(transaction.value) ? (
                           <span className="font-medium">
-                            <span className="text-muted-foreground">{transaction.currency}</span> {transaction.value.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                            <span className="text-muted-foreground">{transaction.currency || 'USD'}</span> {transaction.value.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                           </span>
                         ) : (
                           <span className="text-red-600">Invalid</span>
@@ -1293,7 +1531,17 @@ export default function TransactionList({
                                   <div className="flex items-start gap-2">
                                     <span className="text-muted-foreground min-w-[160px]">Provider Organisation:</span>
                                     <div className="flex items-center gap-2 flex-wrap">
-                                      <span className="font-medium">{getOrgFullDisplay(transaction.provider_org_id, transaction.provider_org_name, transaction.provider_org_ref)}</span>
+                                      {getOrgId(transaction.provider_org_id, transaction.provider_org_ref) ? (
+                                        <Link 
+                                          href={`/organizations/${getOrgId(transaction.provider_org_id, transaction.provider_org_ref)}`}
+                                          className="font-medium hover:text-gray-700 transition-colors"
+                                          onClick={(e) => e.stopPropagation()}
+                                        >
+                                          {getOrgFullDisplay(transaction.provider_org_id, transaction.provider_org_name, transaction.provider_org_ref)}
+                                        </Link>
+                                      ) : (
+                                        <span className="font-medium">{getOrgFullDisplay(transaction.provider_org_id, transaction.provider_org_name, transaction.provider_org_ref)}</span>
+                                      )}
                                       {transaction.provider_org_type && (
                                         <Badge variant="secondary" className="text-xs">
                                           {ORG_TYPE_LABELS[transaction.provider_org_type] || transaction.provider_org_type}
@@ -1324,7 +1572,17 @@ export default function TransactionList({
                                   <div className="flex items-start gap-2">
                                     <span className="text-muted-foreground min-w-[160px]">Receiver Organisation:</span>
                                     <div className="flex items-center gap-2 flex-wrap">
-                                      <span className="font-medium">{getOrgFullDisplay(transaction.receiver_org_id, transaction.receiver_org_name, transaction.receiver_org_ref)}</span>
+                                      {getOrgId(transaction.receiver_org_id, transaction.receiver_org_ref) ? (
+                                        <Link 
+                                          href={`/organizations/${getOrgId(transaction.receiver_org_id, transaction.receiver_org_ref)}`}
+                                          className="font-medium hover:text-gray-700 transition-colors"
+                                          onClick={(e) => e.stopPropagation()}
+                                        >
+                                          {getOrgFullDisplay(transaction.receiver_org_id, transaction.receiver_org_name, transaction.receiver_org_ref)}
+                                        </Link>
+                                      ) : (
+                                        <span className="font-medium">{getOrgFullDisplay(transaction.receiver_org_id, transaction.receiver_org_name, transaction.receiver_org_ref)}</span>
+                                      )}
                                       {transaction.receiver_org_type && (
                                         <Badge variant="secondary" className="text-xs">
                                           {ORG_TYPE_LABELS[transaction.receiver_org_type] || transaction.receiver_org_type}
@@ -1446,13 +1704,30 @@ export default function TransactionList({
                                     </div>
                                   </div>
                                 )}
-                                {transaction.finance_type && (
+                                {(transaction.finance_type || defaultFinanceType) && (
                                   <div className="flex items-start gap-2">
                                     <span className="text-muted-foreground min-w-[160px]">Finance Type:</span>
-                                    <div className="flex items-center gap-2">
-                                      <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded">{transaction.finance_type}</span>
-                                      <span className="text-xs">{FINANCE_TYPE_LABELS[transaction.finance_type] || transaction.finance_type}</span>
-                                    </div>
+                                    <TooltipProvider>
+                                      <Tooltip>
+                                        <TooltipTrigger asChild>
+                                          <div className={`flex items-center gap-2 ${!transaction.finance_type && defaultFinanceType ? 'text-gray-400 opacity-70 cursor-help' : ''}`}>
+                                            <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded">
+                                              {transaction.finance_type || defaultFinanceType}
+                                            </span>
+                                            <span className="text-xs">
+                                              {FINANCE_TYPE_LABELS[transaction.finance_type || defaultFinanceType || ''] || (transaction.finance_type || defaultFinanceType)}
+                                            </span>
+                                          </div>
+                                        </TooltipTrigger>
+                                        {!transaction.finance_type && defaultFinanceType && (
+                                          <TooltipContent>
+                                            <p className="text-xs">
+                                              This finance type has been inferred from the activity's default finance type (code {defaultFinanceType} – {FINANCE_TYPE_LABELS[defaultFinanceType] || defaultFinanceType})
+                                            </p>
+                                          </TooltipContent>
+                                        )}
+                                      </Tooltip>
+                                    </TooltipProvider>
                                   </div>
                                 )}
                                 {transaction.tied_status && (
@@ -1514,7 +1789,7 @@ export default function TransactionList({
                                 {!transaction.created_by && (
                                   <div className="flex items-start gap-2">
                                     <span className="text-muted-foreground min-w-[160px]">Source:</span>
-                                    <Badge variant="outline" className="w-fit text-xs bg-gray-100 border-gray-300 text-gray-700">
+                                    <Badge className="w-fit text-xs bg-[#124e5f] text-white">
                                       Imported from IATI
                                     </Badge>
                                   </div>

@@ -11,7 +11,8 @@ export type IatiDocumentLink = {
   format: string; // IANA MIME type
   title: Narrative[]; // At least one required
   description?: Narrative[];
-  categoryCode?: string; // IATI Document Category
+  categoryCode?: string; // IATI Document Category (kept for backward compatibility)
+  categoryCodes?: string[]; // IATI Document Categories (new - supports multiple categories)
   languageCodes?: string[]; // ISO 639-1
   documentDate?: string; // YYYY-MM-DD
   recipientCountries?: string[]; // ISO 3166-1 alpha-2
@@ -205,6 +206,10 @@ export const documentLinkSchema = z.object({
     (code) => DOCUMENT_CATEGORIES.some(cat => cat.code === code),
     { message: 'Invalid document category code' }
   ).optional(),
+  categoryCodes: z.array(z.string().refine(
+    (code) => DOCUMENT_CATEGORIES.some(cat => cat.code === code),
+    { message: 'Invalid document category code' }
+  )).optional(),
   languageCodes: z.array(z.string().length(2)).optional(),
   documentDate: z.string().regex(
     /^\d{4}-\d{2}-\d{2}$/,
@@ -260,8 +265,31 @@ export function validateIatiDocument(doc: IatiDocumentLink): {
     };
   }
   
+  // Normalize null values to undefined for optional fields
+  // This prevents "Expected string, received null" errors from Zod
+  // Also normalize categoryCode/categoryCodes: prefer categoryCodes array, fallback to categoryCode
+  let normalizedCategoryCodes: string[] | undefined;
+  if (doc.categoryCodes && Array.isArray(doc.categoryCodes) && doc.categoryCodes.length > 0) {
+    normalizedCategoryCodes = doc.categoryCodes;
+  } else if (doc.categoryCode) {
+    normalizedCategoryCodes = [doc.categoryCode];
+  }
+
+  const normalizedDoc: IatiDocumentLink = {
+    ...doc,
+    description: doc.description ?? undefined,
+    categoryCode: doc.categoryCode ?? undefined, // Keep for backward compatibility
+    categoryCodes: normalizedCategoryCodes, // Use normalized array
+    languageCodes: doc.languageCodes ?? undefined,
+    documentDate: doc.documentDate ?? undefined,
+    recipientCountries: doc.recipientCountries ?? undefined,
+    recipientRegion: doc.recipientRegion ?? undefined,
+    isImage: doc.isImage ?? undefined,
+    thumbnailUrl: doc.thumbnailUrl ?? undefined,
+  };
+  
   try {
-    documentLinkSchema.parse(doc);
+    documentLinkSchema.parse(normalizedDoc);
     return { ok: true, issues: [] };
   } catch (error) {
     if (error instanceof z.ZodError) {
@@ -314,10 +342,14 @@ export function toIatiXml(doc: IatiDocumentLink): string {
     lines.push('  </description>');
   }
   
-  // Category (optional)
-  if (doc.categoryCode) {
-    lines.push(`  <category code="${doc.categoryCode}"/>`);
-  }
+  // Categories (optional) - support multiple categories
+  const categories = doc.categoryCodes && doc.categoryCodes.length > 0 
+    ? doc.categoryCodes 
+    : (doc.categoryCode ? [doc.categoryCode] : []);
+  
+  categories.forEach(code => {
+    lines.push(`  <category code="${code}"/>`);
+  });
   
   // Languages (optional)
   if (doc.languageCodes) {
@@ -377,7 +409,10 @@ export function toIatiJson(doc: IatiDocumentLink): object {
     }));
   }
   
-  if (doc.categoryCode) {
+  // Include categories - prefer array, fallback to single
+  if (doc.categoryCodes && doc.categoryCodes.length > 0) {
+    json.category = doc.categoryCodes.map(code => ({ code }));
+  } else if (doc.categoryCode) {
     json.category = { code: doc.categoryCode };
   }
   

@@ -56,12 +56,13 @@ export function DonorsChart({ dateRange, filters, refreshKey }: DonorsChartProps
       
       // Query activities to properly apply country and sector filters
       // Use !inner on sectors only when filtering by sector
+      // Specify the relationship name to avoid ambiguity
       const selectFields = filters.sector && filters.sector !== 'all'
         ? `
           id,
           locations,
           activity_sectors!inner(sector_code),
-          transactions!inner(
+          transactions!transactions_activity_id_fkey1!inner(
             provider_org_id,
             value,
             transaction_type,
@@ -73,7 +74,7 @@ export function DonorsChart({ dateRange, filters, refreshKey }: DonorsChartProps
           id,
           locations,
           activity_sectors(sector_code),
-          transactions!inner(
+          transactions!transactions_activity_id_fkey1!inner(
             provider_org_id,
             value,
             transaction_type,

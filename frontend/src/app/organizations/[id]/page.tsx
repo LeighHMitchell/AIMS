@@ -614,6 +614,16 @@ export default function OrganizationProfilePage() {
     }).format(amount)
   }
 
+  // Format currency in short form with one decimal: 10308 -> $10.3k, 10308000 -> $10.3M
+  const formatCurrencyShort = (value: number): string => {
+    if (value === null || value === undefined || isNaN(value)) return '$0.0';
+    const abs = Math.abs(value);
+    const sign = value < 0 ? '-' : '';
+    if (abs >= 1_000_000) return `${sign}$${(value / 1_000_000).toFixed(1)}M`;
+    if (abs >= 1_000) return `${sign}$${(value / 1_000).toFixed(1)}k`;
+    return `${sign}$${value.toFixed(1)}`;
+  }
+
   const calculateTotals = () => {
     // Defensive check to ensure transactions is defined
     const safeTransactions = transactions || [];
@@ -865,19 +875,15 @@ export default function OrganizationProfilePage() {
                 <div className="lg:col-span-3">
                   <div className="flex items-start gap-4">
                 {/* Logo */}
-                <div className="flex-shrink-0">
-                  {organization.logo ? (
+                {organization.logo && (
+                  <div className="flex-shrink-0">
                     <img 
                       src={organization.logo} 
                       alt={`${organization.name} logo`}
                       className="w-20 h-20 rounded-lg object-cover border border-slate-200"
                     />
-                  ) : (
-                    <div className="w-20 h-20 rounded-lg bg-slate-100 flex items-center justify-center border border-slate-200">
-                      <Building2 className="h-10 w-10 text-slate-400" />
-                    </div>
-                  )}
-                </div>
+                  </div>
+                )}
 
                 {/* Organization Info */}
                 <div className="flex-1">
@@ -896,6 +902,11 @@ export default function OrganizationProfilePage() {
                           <Badge className={getTypeColor(organization.organisation_type)}>
                             {organization.organisation_type}
                           </Badge>
+                          {organization.default_currency && (
+                            <Badge variant="outline" className="border-blue-300 bg-blue-50 text-blue-700">
+                              {organization.default_currency}
+                            </Badge>
+                          )}
                         {organization.country && (
                             <Badge variant="outline" className="border-slate-300 text-slate-700 flex flex-col items-center gap-0.5">
                             {getCountryCode(organization.country) && (
@@ -1386,9 +1397,15 @@ export default function OrganizationProfilePage() {
                           {budgetsByYear.map((item) => (
                             <tr key={item.year} className="border-b border-slate-100">
                               <td className="py-1 text-slate-900">{item.year}</td>
-                              <td className="text-right py-1 text-slate-900 font-medium">{formatCurrency(item.amount, 'USD')}</td>
+                              <td className="text-right py-1 text-slate-900 font-medium">{formatCurrencyShort(item.amount)}</td>
                             </tr>
                           ))}
+                          <tr className="border-t-2 border-slate-300 bg-slate-50">
+                            <td className="py-1 text-slate-900 font-semibold">Total</td>
+                            <td className="text-right py-1 text-slate-900 font-semibold">
+                              {formatCurrencyShort(budgetsByYear.reduce((sum, item) => sum + item.amount, 0))}
+                            </td>
+                          </tr>
                         </tbody>
                       </table>
                     </div>
@@ -1414,7 +1431,7 @@ export default function OrganizationProfilePage() {
                               return (
                                 <div className="bg-white p-2 border border-gray-200 rounded shadow-lg">
                                   <p className="text-sm font-semibold">{payload[0].payload.year}</p>
-                                  <p className="text-sm text-gray-600">{formatCurrency(payload[0].value as number, 'USD')}</p>
+                                  <p className="text-sm text-gray-600">{formatCurrencyShort(payload[0].value as number)}</p>
                                 </div>
                               );
                             }
@@ -1515,11 +1532,23 @@ export default function OrganizationProfilePage() {
                             {chartData.map((item) => (
                               <tr key={item.year} className="border-b border-slate-100">
                                 <td className="py-1 text-slate-900">{item.year}</td>
-                                <td className="text-right py-1 text-slate-700">{formatCurrency(item.plannedDisbursements, 'USD')}</td>
-                                <td className="text-right py-1 text-slate-900 font-medium">{formatCurrency(item.disbursements, 'USD')}</td>
-                                <td className="text-right py-1 text-slate-900 font-medium">{formatCurrency(item.expenditures, 'USD')}</td>
+                                <td className="text-right py-1 text-slate-700">{formatCurrencyShort(item.plannedDisbursements)}</td>
+                                <td className="text-right py-1 text-slate-900 font-medium">{formatCurrencyShort(item.disbursements)}</td>
+                                <td className="text-right py-1 text-slate-900 font-medium">{formatCurrencyShort(item.expenditures)}</td>
                               </tr>
                             ))}
+                            <tr className="border-t-2 border-slate-300 bg-slate-50">
+                              <td className="py-1 text-slate-900 font-semibold">Total</td>
+                              <td className="text-right py-1 font-semibold text-slate-700">
+                                {formatCurrencyShort(chartData.reduce((sum, item) => sum + item.plannedDisbursements, 0))}
+                              </td>
+                              <td className="text-right py-1 text-slate-900 font-semibold">
+                                {formatCurrencyShort(chartData.reduce((sum, item) => sum + item.disbursements, 0))}
+                              </td>
+                              <td className="text-right py-1 text-slate-900 font-semibold">
+                                {formatCurrencyShort(chartData.reduce((sum, item) => sum + item.expenditures, 0))}
+                              </td>
+                            </tr>
                           </tbody>
                         </table>
                       </div>
@@ -1546,9 +1575,9 @@ export default function OrganizationProfilePage() {
                                   <div className="bg-white p-2 border border-gray-200 rounded shadow-lg">
                                     <p className="text-sm font-semibold mb-1">{payload[0].payload.year}</p>
                                     <div className="space-y-1 text-xs">
-                                      <p className="text-slate-700">Planned Disbursements: {formatCurrency(payload[0].payload.plannedDisbursements, 'USD')}</p>
-                                      <p className="text-slate-700">Disbursements: {formatCurrency(payload[0].payload.disbursements, 'USD')}</p>
-                                      <p className="text-slate-700">Expenditures: {formatCurrency(payload[0].payload.expenditures, 'USD')}</p>
+                                      <p className="text-slate-700">Planned Disbursements: {formatCurrencyShort(payload[0].payload.plannedDisbursements)}</p>
+                                      <p className="text-slate-700">Disbursements: {formatCurrencyShort(payload[0].payload.disbursements)}</p>
+                                      <p className="text-slate-700">Expenditures: {formatCurrencyShort(payload[0].payload.expenditures)}</p>
                                     </div>
                                   </div>
                                 );

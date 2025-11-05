@@ -10,7 +10,6 @@ import {
   Languages,
   MapPin,
   Edit,
-  Copy,
   ExternalLink,
   Trash2,
   AlertCircle,
@@ -59,9 +58,6 @@ import {
   FILE_FORMATS,
   getFormatLabel,
   isImageMime,
-  toIatiXml,
-  toIatiJson,
-  copyToClipboard,
   validateIatiDocument,
   inferMimeFromUrl,
 } from '@/lib/iatiDocumentLink';
@@ -88,7 +84,6 @@ export function DocumentCardInline({
   const [isEditing, setIsEditing] = React.useState(isNew);
   const [isExpanded, setIsExpanded] = React.useState(isNew);
   const [formData, setFormData] = React.useState<IatiDocumentLink>(document);
-  const [copyFeedback, setCopyFeedback] = React.useState<'xml' | 'json' | null>(null);
   const [urlMetadata, setUrlMetadata] = React.useState<{
     format?: string;
     size?: number;
@@ -258,23 +253,6 @@ export function DocumentCardInline({
     setIsExpanded(true);
   };
 
-  const handleCopyXml = async () => {
-    const xml = toIatiXml(formData);
-    const success = await copyToClipboard(xml);
-    if (success) {
-      setCopyFeedback('xml');
-      setTimeout(() => setCopyFeedback(null), 2000);
-    }
-  };
-
-  const handleCopyJson = async () => {
-    const json = JSON.stringify(toIatiJson(formData), null, 2);
-    const success = await copyToClipboard(json);
-    if (success) {
-      setCopyFeedback('json');
-      setTimeout(() => setCopyFeedback(null), 2000);
-    }
-  };
 
   const handleOpen = () => {
     window.open(formData.url, '_blank', 'noopener,noreferrer');
@@ -773,27 +751,6 @@ export function DocumentCardInline({
             >
               <Edit className="w-3 h-3" />
               Edit
-            </Button>
-            
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={handleCopyXml}
-              disabled={!validation.ok}
-              className="text-xs gap-1"
-            >
-              <Copy className="w-3 h-3" />
-              {copyFeedback === 'xml' ? 'Copied!' : 'XML'}
-            </Button>
-            
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={handleCopyJson}
-              className="text-xs gap-1"
-            >
-              <Copy className="w-3 h-3" />
-              {copyFeedback === 'json' ? 'Copied!' : 'JSON'}
             </Button>
             
             <Button

@@ -112,22 +112,27 @@ class EnhancedCurrencyConverter {
     transactionDate: Date
   ): Promise<ConversionResult> {
     try {
-      if (amount <= 0) {
+      // Reject only zero values - negative values are valid (refunds, reimbursements, corrections)
+      if (amount === 0) {
         return { 
           usd_amount: null, 
           exchange_rate: null, 
           success: false, 
-          error: 'Invalid amount: must be greater than 0' 
+          error: 'Invalid amount: cannot be zero' 
         };
       }
+
+      // Preserve sign for negative amounts (refunds, loan repayments, corrections)
+      const isNegative = amount < 0;
+      const absoluteAmount = Math.abs(amount);
 
       const currencyCode = currency.toUpperCase();
       const dateStr = transactionDate.toISOString().split('T')[0];
 
-      // Already USD
+      // Already USD - preserve the sign for negative values
       if (currencyCode === 'USD') {
         return { 
-          usd_amount: amount, 
+          usd_amount: amount, // Preserves sign
           exchange_rate: 1.0, 
           success: true,
           source: 'direct',
@@ -145,7 +150,7 @@ class EnhancedCurrencyConverter {
         };
       }
 
-      // Get exchange rate
+      // Get exchange rate (using absolute value)
       const rateResult = await this.getHistoricalRate(currencyCode, 'USD', transactionDate);
       
       if (!rateResult) {
@@ -157,11 +162,14 @@ class EnhancedCurrencyConverter {
         };
       }
 
-      // Calculate USD amount with proper rounding
-      const usdAmount = Math.round(amount * rateResult.rate * 100) / 100;
+      // Calculate USD amount with proper rounding using absolute value
+      const usdAmount = Math.round(absoluteAmount * rateResult.rate * 100) / 100;
+      
+      // Apply the original sign to the converted amount
+      const finalAmount = isNegative ? -usdAmount : usdAmount;
 
       return {
-        usd_amount: usdAmount,
+        usd_amount: finalAmount,
         exchange_rate: rateResult.rate,
         success: true,
         source: rateResult.source,

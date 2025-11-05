@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import {
   ArrowDownLeft,
   Banknote,
@@ -387,7 +388,20 @@ export function TransactionTable({
       const newUsdValues: Record<string, { usd: number|null, rate: number|null, date: string, loading: boolean, error?: string }> = {};
       for (const transaction of transactions) {
         const transactionId = transaction.uuid || transaction.id;
-        if (!transaction.value || !transaction.currency || !transaction.transaction_date) {
+        
+        // Check if transaction already has USD value stored
+        const existingUsdValue = (transaction as any).value_usd || (transaction as any).usd_value;
+        if (existingUsdValue != null && !isNaN(existingUsdValue)) {
+          newUsdValues[transactionId] = {
+            usd: existingUsdValue,
+            rate: (transaction as any).exchange_rate_used || null,
+            date: (transaction as any).usd_conversion_date || transaction.transaction_date,
+            loading: false
+          };
+          continue;
+        }
+        
+        if (transaction.value === null || transaction.value === undefined || isNaN(transaction.value) || !transaction.currency || !transaction.transaction_date) {
           newUsdValues[transactionId] = { 
             usd: null, 
             rate: null, 
@@ -397,6 +411,18 @@ export function TransactionTable({
           };
           continue;
         }
+        
+        // If currency is already USD, just use the value
+        if (transaction.currency === 'USD') {
+          newUsdValues[transactionId] = {
+            usd: transaction.value,
+            rate: 1,
+            date: transaction.transaction_date,
+            loading: false
+          };
+          continue;
+        }
+        
         newUsdValues[transactionId] = { 
           usd: null, 
           rate: null, 
@@ -459,15 +485,15 @@ export function TransactionTable({
         maximumFractionDigits: 0,
       }).format(value);
       
-      // Return format: "EUR 3,000"
-      return `${safeCurrency} ${formattedValue}`;
+      // Return as JSX with gray currency code
+      return <><span className="text-muted-foreground">{safeCurrency}</span> {formattedValue}</>;
     } catch (error) {
       console.warn(`[TransactionTable] Invalid currency "${currency}", using USD:`, error);
       const formattedValue = new Intl.NumberFormat("en-US", {
         minimumFractionDigits: 0,
         maximumFractionDigits: 0,
       }).format(value);
-      return `USD ${formattedValue}`;
+      return <><span className="text-muted-foreground">USD</span> {formattedValue}</>;
     }
   };
 
@@ -666,14 +692,16 @@ export function TransactionTable({
                 return {
                   name: resolvedOrg.name,
                   acronym: resolvedOrg.acronym || resolvedOrg.name,
-                  logo: resolvedOrg.logo
+                  logo: resolvedOrg.logo,
+                  id: resolvedOrg.id
                 };
               }
               
               return {
                 name: orgName || "Unknown",
                 acronym: orgAcronym || orgName || "Unknown",
-                logo: null
+                logo: null,
+                id: null
               };
             };
             
@@ -834,81 +862,17 @@ export function TransactionTable({
                 </td>
                 <td className="py-3 px-4 whitespace-nowrap">
                   <div className="flex flex-col gap-2">
-                    <div className="flex items-center gap-1 flex-nowrap min-w-0">
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                            <span className="text-sm font-medium text-foreground truncate flex-1">
-                              {TRANSACTION_TYPE_LABELS[transaction.transaction_type] || transaction.transaction_type}
-                            </span>
-                        </TooltipTrigger>
-                        <TooltipContent side="right">
-                          <p className="text-sm">{TRANSACTION_TYPE_LABELS[transaction.transaction_type] || 'Unknown Type'}</p>
-                            <p className="text-xs text-muted-foreground mt-1">Code: {transaction.transaction_type}</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      
-                      {/* IATI Import Pill for imported transactions */}
-                      {!transaction.created_by && (
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <span className="inline-flex items-center justify-center shrink-0">
-                                <FileCode className="h-3 w-3" style={{ color: '#004F59' }} />
-                              </span>
-                            </TooltipTrigger>
-                            <TooltipContent side="top">
-                              <p className="text-sm">This transaction was imported from IATI XML data</p>
-                            </TooltipContent>
-                          </Tooltip>
-                      )}
-                      
-                      {/* Link icon removed to keep Type column compact */}
-                    
-                      {transaction.is_humanitarian && (
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Heart className="h-3 w-3 text-red-500 fill-red-500 shrink-0" />
-                            </TooltipTrigger>
-                            <TooltipContent side="right" className="max-w-sm">
-                              <p className="text-xs leading-relaxed">
-                                A humanitarian transaction is money that supports urgent relief work — such as saving lives, reducing suffering, or protecting people's dignity during or after a crisis (like a natural disaster or conflict).
-                              </p>
-                              <p className="text-xs leading-relaxed mt-2">
-                                If the whole project is humanitarian, it is marked as humanitarian at the activity level.
-                              </p>
-                              <p className="text-xs leading-relaxed mt-1">
-                                If only part of the project is humanitarian, those specific payments or transfers are marked as humanitarian at the transaction level.
-                              </p>
-                            </TooltipContent>
-                          </Tooltip>
-                      )}
-                      
-                      {transaction.status === 'actual' && (
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <CheckCircle className="h-3 w-3 text-green-600 shrink-0" />
-                            </TooltipTrigger>
-                            <TooltipContent side="right" className="bg-white text-foreground border border-gray-200 shadow-xl p-3 max-w-[200px] rounded-lg">
-                              <div className="space-y-1">
-                                <p className="font-semibold text-gray-800 text-sm">Validated Transaction</p>
-                                <p className="text-xs text-gray-600">
-                                  This transaction has been verified and approved by your organisation.
-                                </p>
-                              </div>
-                            </TooltipContent>
-                          </Tooltip>
-                      )}
-                      
-                      {transaction.transaction_source === 'own' && (
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <User className="h-3 w-3 text-gray-500 shrink-0" />
-                            </TooltipTrigger>
-                            <TooltipContent side="right">
-                              <p className="text-sm">Own Transaction</p>
-                            </TooltipContent>
-                          </Tooltip>
-                      )}
-                    </div>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <span className="text-sm font-medium text-foreground">
+                          {TRANSACTION_TYPE_LABELS[transaction.transaction_type] || transaction.transaction_type}
+                        </span>
+                      </TooltipTrigger>
+                      <TooltipContent side="right">
+                        <p className="text-sm">{TRANSACTION_TYPE_LABELS[transaction.transaction_type] || 'Unknown Type'}</p>
+                        <p className="text-xs text-muted-foreground mt-1">Code: {transaction.transaction_type}</p>
+                      </TooltipContent>
+                    </Tooltip>
                     
                     {/* IATI Indicator Badges */}
                     <div className="flex flex-wrap gap-1">
@@ -996,9 +960,19 @@ export function TransactionTable({
                         />
                           <Tooltip>
                             <TooltipTrigger asChild>
-                              <span className="text-sm">
-                                {providerDisplay}
-                              </span>
+                              {provider.id ? (
+                                <Link 
+                                  href={`/organizations/${provider.id}`}
+                                  className="text-sm hover:text-gray-700 transition-colors"
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  {providerDisplay}
+                                </Link>
+                              ) : (
+                                <span className="text-sm">
+                                  {providerDisplay}
+                                </span>
+                              )}
                             </TooltipTrigger>
                             {transaction.provider_org_ref && (
                               <TooltipContent side="top">
@@ -1016,9 +990,19 @@ export function TransactionTable({
                         />
                           <Tooltip>
                             <TooltipTrigger asChild>
-                              <span className="text-sm">
-                                {receiverDisplay}
-                              </span>
+                              {receiver.id ? (
+                                <Link 
+                                  href={`/organizations/${receiver.id}`}
+                                  className="text-sm hover:text-gray-700 transition-colors"
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  {receiverDisplay}
+                                </Link>
+                              ) : (
+                                <span className="text-sm">
+                                  {receiverDisplay}
+                                </span>
+                              )}
                             </TooltipTrigger>
                             {transaction.receiver_org_ref && (
                               <TooltipContent side="top">

@@ -184,9 +184,9 @@ export function AidTypeSelect({
           />
         )}
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 whitespace-nowrap">
             <span className={cn(
-              "text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded",
+              "text-xs font-mono text-foreground bg-gray-200 px-1.5 py-0.5 rounded",
               item.level === 0 ? "text-gray-700" : "text-gray-800"
             )}>
               {item.code}
@@ -244,7 +244,7 @@ export function AidTypeSelect({
         <span className="truncate">
           {selectedItem ? (
             <span className="flex items-center gap-2">
-              <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{selectedItem.code}</span>
+              <span className="text-xs font-mono text-foreground bg-gray-200 px-1.5 py-0.5 rounded">{selectedItem.code}</span>
               <span className="font-medium">{selectedItem.name}</span>
             </span>
           ) : (

@@ -96,14 +96,6 @@ export function useOptimizedActivities(
   const [activities, setActivities] = useState<Activity[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  
-  console.log('[Hook Debug] Current state:', { 
-    activitiesCount: activities.length, 
-    loading, 
-    error,
-    enableOptimization,
-    forceEnableOptimization 
-  });
   const [totalCount, setTotalCount] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(0);
@@ -145,8 +137,6 @@ export function useOptimizedActivities(
 
   // Fetch activities
   const fetchActivities = useCallback(async (showLoading = true) => {
-    console.log('[Activities Hook] Starting fetchActivities...');
-    
     // Cancel any in-flight request
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
@@ -171,7 +161,6 @@ export function useOptimizedActivities(
     // Check cache first
     const cached = cacheRef.current.get(cacheKey);
     if (cached && Date.now() - cached.timestamp < 60000) {
-      console.log('[Activities Hook] Using cached data');
       setActivities(cached.data);
       setTotalCount(cached.totalCount);
       setTotalPages(cached.totalPages);
@@ -208,7 +197,6 @@ export function useOptimizedActivities(
 
       // Try optimized endpoint first, fallback to lightweight simple endpoint
       let endpoint = `/api/activities-optimized?${params}`;
-      console.log('[Activities Hook] Trying optimized endpoint:', endpoint);
       
       let response = await fetch(endpoint, {
         signal: abortControllerRef.current.signal,
@@ -219,7 +207,6 @@ export function useOptimizedActivities(
 
       // If optimized endpoint fails, try lightweight endpoint with server-side pagination
       if (!response.ok) {
-        console.log('[Activities Hook] Optimized endpoint failed, trying simple endpoint');
         endpoint = `/api/activities-simple?${params}`;
         response = await fetch(endpoint, {
           signal: abortControllerRef.current.signal,
@@ -234,11 +221,6 @@ export function useOptimizedActivities(
       }
 
       const data = await response.json();
-      console.log('[Activities Hook] Received data:', { 
-        activitiesCount: data.activities?.length,
-        totalCount: data.pagination?.totalCount || data.totalCount,
-        endpoint
-      });
 
       // Performance tracking
       const queryTime = Date.now() - startTime;
@@ -271,15 +253,8 @@ export function useOptimizedActivities(
       // Add a small delay to prevent any flash of empty state
       setTimeout(() => setLoading(false), 50);
 
-      console.log('[Activities Hook] Successfully set activities:', {
-        count: activities.length,
-        totalCount,
-        totalPages
-      });
-
     } catch (error: any) {
       if (error.name === 'AbortError') {
-        console.log('[Activities Hook] Request was aborted');
         return;
       }
 

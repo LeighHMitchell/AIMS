@@ -1,5 +1,5 @@
 "use client"
-import React, { useEffect, useLayoutEffect, useRef, useState } from "react"
+import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react"
 import { useParams, useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
 import Image from "next/image"
@@ -23,6 +23,7 @@ import {
   Eye,
   Trash2,
   Upload,
+  ImageIcon,
   PieChart,
   Banknote,
   Globe,
@@ -36,6 +37,9 @@ import {
   Building2,
   MessageSquare,
   Plus,
+  CheckCircle,
+  Clock,
+  Building,
   Table as TableIcon,
   Leaf,
   Wrench,
@@ -51,14 +55,18 @@ import {
   Baby,
   HeartHandshake,
   Copy,
-  Check
+  Check,
+  HelpCircle,
+  FileCode,
+  FileCheck,
+  Target
 } from "lucide-react"
 import { toast } from "sonner"
 import { Transaction } from "@/types/transaction"
 import { DisbursementGauge, CumulativeFinanceChart } from "@/components/ActivityCharts"
-import { ActivityAnalyticsCharts } from "@/components/ActivityAnalyticsCharts"
 import financeTypes from "@/data/finance-types.json"
 import { BannerUpload } from "@/components/BannerUpload"
+import { IconUpload } from "@/components/IconUpload"
 import {
   Table,
   TableBody,
@@ -68,15 +76,13 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { useUser } from "@/hooks/useUser"
-import { ActivityComments } from "@/components/ActivityComments"
 import { fetchActivityWithCache, invalidateActivityCache, forceActivityCacheRefresh } from '@/lib/activity-cache'
 import { CommentsDrawer } from "@/components/activities/CommentsDrawer"
 import { TRANSACTION_TYPE_LABELS } from "@/types/transaction"
 import TransactionTab from "@/components/activities/TransactionTab"
 import { getActivityPermissions, ActivityContributor } from "@/lib/activity-permissions"
-import { SDG_GOALS, SDG_TARGETS } from "@/data/sdg-targets"
+import { SDG_GOALS } from "@/data/sdg-targets"
 import { SDGImageGrid } from "@/components/ui/SDGImageGrid"
-import SDGAlignmentSection from "@/components/SDGAlignmentSection"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { ActivityProfileSkeleton } from "@/components/skeletons/ActivityProfileSkeleton"
 import ActivityBudgetsTab from "@/components/activities/ActivityBudgetsTab"
@@ -85,6 +91,7 @@ import { CapitalSpendTab } from "@/components/activities/CapitalSpendTab"
 import { FinancingTermsTab } from "@/components/activities/FinancingTermsTab"
 import PlannedDisbursementsTab from "@/components/activities/PlannedDisbursementsTab"
 import FinancialAnalyticsTab from "@/components/activities/FinancialAnalyticsTab"
+import RelatedActivitiesTab from "@/components/activities/RelatedActivitiesTab"
 import {
   Tooltip,
   TooltipContent,
@@ -96,6 +103,7 @@ import { v4 as uuidv4 } from 'uuid'
 import { BarChart as RechartsBarChart, Bar, XAxis, YAxis, Tooltip as RechartsTooltip2, ResponsiveContainer, Cell, PieChart as RechartsPieChart, Pie, Legend } from 'recharts'
 import { ChevronDown, ChevronUp, ChevronRight, BarChart3, GitBranch, Printer } from 'lucide-react'
 import SectorSankeyVisualization from '@/components/charts/SectorSankeyVisualization'
+import FinanceTypeDonut from '@/components/charts/FinanceTypeDonut'
 import PolicyMarkersSectionIATIWithCustom from '@/components/PolicyMarkersSectionIATIWithCustom'
 import { DocumentsAndImagesTabV2 } from '@/components/activities/DocumentsAndImagesTabV2'
 import {
@@ -105,8 +113,105 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu"
-import TagsSection from "@/components/TagsSection"
 import { getOrganizationTypeName } from "@/data/iati-organization-types"
+import { getOrganizationRoleName, getRoleCodeFromType } from "@/data/iati-organization-roles"
+import ActivityLocationsMapView from "@/components/maps/ActivityLocationsMapView"
+import MyanmarRegionsMap from "@/components/MyanmarRegionsMap"
+import { NormalizedOrgRef } from "@/components/ui/normalized-org-ref"
+import LocationCard from "@/components/locations/LocationCard"
+import type { LocationSchema } from "@/lib/schemas/location"
+import { formatNumberWithAbbreviation } from "@/utils/format-helpers"
+import { IATI_ACTIVITY_SCOPE } from "@/data/iati-activity-scope"
+import { IATI_COLLABORATION_TYPES, getCollaborationTypeByCode } from "@/data/iati-collaboration-types"
+import { TIED_STATUS_LABELS } from "@/types/transaction"
+import { VALIDATION_STATUS_OPTIONS } from "@/types/government-endorsement"
+
+// Hierarchy levels mapping
+type HierarchyOption = {
+  level: number;
+  name: string;
+  description: string;
+};
+
+const HIERARCHY_LEVELS: HierarchyOption[] = [
+  {
+    level: 1,
+    name: "Top-level Program/Strategy",
+    description: "Strategic or program-level activity (typically has child activities)"
+  },
+  {
+    level: 2,
+    name: "Sub-program/Country Project",
+    description: "Regional or country-level implementation of a broader program"
+  },
+  {
+    level: 3,
+    name: "Specific Implementation/Project",
+    description: "Specific project or implementation component"
+  },
+  {
+    level: 4,
+    name: "Sub-component/Activity",
+    description: "Sub-project or detailed activity component"
+  },
+  {
+    level: 5,
+    name: "Task/Output Level",
+    description: "Task or output-level work (most detailed level)"
+  }
+];
+
+// Aid Type mappings
+const AID_TYPE_LABELS: Record<string, string> = {
+  'A01': 'General budget support',
+  'A02': 'Sector budget support',
+  'B01': 'Core support to NGOs',
+  'B02': 'Core contributions to multilateral institutions',
+  'B03': 'Contributions to pooled programmes and funds',
+  'B04': 'Basket funds/pooled funding',
+  'C01': 'Project-type interventions',
+  'D01': 'Donor country personnel',
+  'D02': 'Other technical assistance',
+  'E01': 'Scholarships/training in donor country',
+  'E02': 'Imputed student costs',
+  'F01': 'Debt relief',
+  'G01': 'Administrative costs not included elsewhere',
+  'H01': 'Development awareness',
+  'H02': 'Refugees in donor countries'
+};
+
+// Flow Type mappings
+const FLOW_TYPE_LABELS: Record<string, string> = {
+  '10': 'Official Development Assistance',
+  '20': 'Other Official Flows',
+  '21': 'Non-export credit OOF',
+  '22': 'Officially supported export credits',
+  '30': 'Private grants',
+  '35': 'Private market',
+  '36': 'Private Foreign Direct Investment',
+  '37': 'Other private flows at market terms',
+  '40': 'Non flow',
+  '50': 'Other flows'
+};
+
+// Finance Type mappings
+const FINANCE_TYPE_LABELS: Record<string, string> = {
+  '110': 'Standard grant',
+  '111': 'Subsidies to national private investors',
+  '210': 'Interest subsidy',
+  '211': 'Interest subsidy to national private exporters',
+  '310': 'Capital subscription on deposit basis',
+  '311': 'Capital subscription on encashment basis',
+  '410': 'Aid loan excluding debt reorganisation',
+  '411': 'Investment-related loan to developing countries',
+  '412': 'Loan in a joint venture with the recipient',
+  '413': 'Loan to national private investor',
+  '421': 'Standard loan',
+  '422': 'Reimbursable grant',
+  '510': 'Bonds',
+  '520': 'Asset-backed securities',
+  '530': 'Other debt securities'
+};
 
 
 interface Activity {
@@ -157,12 +262,17 @@ interface Activity {
   defaultTiedStatus?: string
   defaultFlowType?: string
   defaultDisbursementChannel?: string
+  // Activity classification fields
+  activityScope?: string
+  hierarchy?: number
   // IATI Sync fields
   iatiIdentifier?: string
   autoSync?: boolean
   lastSyncTime?: string
   syncStatus?: 'live' | 'pending' | 'outdated'
   autoSyncFields?: string[]
+  // Humanitarian field
+  humanitarian?: boolean
 }
 
 // Format large numbers into compact form: 500000000 -> 500m, 200000 -> 200k
@@ -173,6 +283,40 @@ function formatCompactNumber(value: number): string {
   if (abs >= 1_000_000) return `${(value / 1_000_000).toFixed(1)}m`;
   if (abs >= 1_000) return `${(value / 1_000).toFixed(1)}k`;
   return `${value.toFixed(1)}`;
+}
+
+// Format currency in short form with one decimal: 10308 -> $10.3k, 10308000 -> $10.3M
+function formatCurrencyShort(value: number): string {
+  if (value === null || value === undefined || isNaN(value)) return '$0.0';
+  const abs = Math.abs(value);
+  const sign = value < 0 ? '-' : '';
+  if (abs >= 1_000_000) return `${sign}$${(value / 1_000_000).toFixed(1)}M`;
+  if (abs >= 1_000) return `${sign}$${(value / 1_000).toFixed(1)}k`;
+  return `${sign}$${value.toFixed(1)}`;
+}
+
+// Helper function to get activity scope label from code
+function getActivityScopeLabel(code: string | undefined): string | null {
+  if (!code) return null;
+  for (const group of IATI_ACTIVITY_SCOPE) {
+    const scope = group.types.find((s) => s.code === code);
+    if (scope) return scope.name;
+  }
+  return null;
+}
+
+// Helper function to get collaboration type label from code
+function getCollaborationTypeLabel(code: string | undefined): string | null {
+  if (!code) return null;
+  const collabType = getCollaborationTypeByCode(code);
+  return collabType ? collabType.name : null;
+}
+
+// Helper function to get hierarchy label from level
+function getHierarchyLabel(level: number | undefined): string | null {
+  if (!level) return null;
+  const hierarchyOption = HIERARCHY_LEVELS.find((h) => h.level === level);
+  return hierarchyOption ? hierarchyOption.name : null;
 }
 
 interface Partner {
@@ -187,43 +331,6 @@ interface Partner {
   logo?: string;
 }
 
-// Function to process finance type data from transactions
-const processFinanceTypeData = (transactions: any[]) => {
-  const financeTypeMap = new Map()
-  let totalAmount = 0
-
-  transactions.forEach(transaction => {
-    const financeType = transaction.finance_type
-    const value = parseFloat(transaction.value) || 0
-    
-    if (financeType && value > 0) {
-      totalAmount += value
-      
-      if (financeTypeMap.has(financeType)) {
-        financeTypeMap.get(financeType).amount += value
-      } else {
-        // Find finance type name from the imported data
-        const financeTypeInfo = financeTypes.find(ft => ft.code === financeType)
-        financeTypeMap.set(financeType, {
-          code: financeType,
-          name: financeTypeInfo?.name || `Finance Type ${financeType}`,
-          amount: value
-        })
-      }
-    }
-  })
-
-  // Convert to array and calculate percentages
-  const result = Array.from(financeTypeMap.values())
-    .map(item => ({
-      ...item,
-      percentage: totalAmount > 0 ? Math.round((item.amount / totalAmount) * 100 * 10) / 10 : 0
-    }))
-    .sort((a, b) => b.amount - a.amount) // Sort by amount descending
-
-  return result
-}
-
 export default function ActivityDetailPage() {
   const params = useParams()
   const id = params?.id as string
@@ -232,9 +339,9 @@ export default function ActivityDetailPage() {
   const [budgets, setBudgets] = useState<any[]>([])
   const [activeTab, setActiveTab] = useState("finances")
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
-  const [isBudgetsOpen, setIsBudgetsOpen] = useState(false)
-  const [isPlannedOpen, setIsPlannedOpen] = useState(false)
-  const [isTransactionsOpen, setIsTransactionsOpen] = useState(false)
+  const [isBudgetsOpen, setIsBudgetsOpen] = useState(true)
+  const [isPlannedOpen, setIsPlannedOpen] = useState(true)
+  const [isTransactionsOpen, setIsTransactionsOpen] = useState(true)
   const router = useRouter()
   const { user } = useUser()
   const searchParams = useSearchParams()
@@ -269,15 +376,14 @@ export default function ActivityDetailPage() {
     router.replace(`?${params.toString()}`, { scroll: false });
   };
   
-  // Debug logging for user role
-  console.log('[AIMS DEBUG Activity Detail] Current user:', user);
-  console.log('[AIMS DEBUG Activity Detail] User role:', user?.role);
-  
   // Get permissions
   const permissions = getActivityPermissions(user, activity);
   
   const [showEditBanner, setShowEditBanner] = useState(false)
   const [banner, setBanner] = useState<string | null>(null)
+  const [showEditIcon, setShowEditIcon] = useState(false)
+  const [localIcon, setLocalIcon] = useState<string | null>(null) // Local icon state to avoid updating activity object
+  const activityRef = useRef<Activity | null>(null)
   const [showActivityDetails, setShowActivityDetails] = useState(false)
   const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false)
   const descriptionRef = useRef<HTMLDivElement>(null)
@@ -337,7 +443,6 @@ export default function ActivityDetailPage() {
   const [disbursementProgressView, setDisbursementProgressView] = useState<'chart' | 'table'>('chart')
   const [sectorBreakdownView, setSectorBreakdownView] = useState<'chart' | 'table'>('chart')
   const [sectorFlowView, setSectorFlowView] = useState<'flow' | 'distribution'>('flow')
-  const [financeTypeBreakdownView, setFinanceTypeBreakdownView] = useState<'chart' | 'table'>('chart')
   
   const [partners, setPartners] = useState<Partner[]>([])
   const [allPartners, setAllPartners] = useState<Partner[]>([])
@@ -345,6 +450,21 @@ export default function ActivityDetailPage() {
   const [documents, setDocuments] = useState<any[]>([])
   const [participatingOrgs, setParticipatingOrgs] = useState<any[]>([])
   const [plannedDisbursements, setPlannedDisbursements] = useState<any[]>([])
+  const [activityLocations, setActivityLocations] = useState<any[]>([])
+  const [allActivityLocations, setAllActivityLocations] = useState<any[]>([])
+  const [subnationalBreakdowns, setSubnationalBreakdowns] = useState<Record<string, number>>({})
+  const [governmentEndorsement, setGovernmentEndorsement] = useState<any>(null)
+  const [loadingEndorsement, setLoadingEndorsement] = useState(false)
+  const [countryAllocations, setCountryAllocations] = useState<any[]>([])
+  const [regionAllocations, setRegionAllocations] = useState<any[]>([])
+  const [reportingOrg, setReportingOrg] = useState<any>(null)
+  
+  // State for show more/less in partner sections
+  const [showAllFundingPartners, setShowAllFundingPartners] = useState(false)
+  const [showAllImplementingPartners, setShowAllImplementingPartners] = useState(false)
+  const [showAllExtendingPartners, setShowAllExtendingPartners] = useState(false)
+  const [showAllAccountablePartners, setShowAllAccountablePartners] = useState(false)
+  const [showAllSidebarPartners, setShowAllSidebarPartners] = useState(false)
 
   useEffect(() => {
     if (params?.id) {
@@ -355,6 +475,11 @@ export default function ActivityDetailPage() {
       fetchBudgets();
       fetchParticipatingOrgs();
       fetchPlannedDisbursements();
+      fetchDocuments();
+      fetchActivityLocations();
+      fetchSubnationalBreakdowns();
+      fetchCountriesRegions();
+      fetchGovernmentEndorsement();
     }
   }, [params?.id])
 
@@ -385,6 +510,130 @@ export default function ActivityDetailPage() {
     }
   }
 
+  const fetchDocuments = async () => {
+    if (!params?.id) return;
+    try {
+      const response = await fetch(`/api/activities/${params.id}/documents`);
+      if (response.ok) {
+        const data = await response.json();
+        setDocuments(data.documents || []);
+      }
+    } catch (error) {
+      console.error('Error fetching documents:', error);
+      setDocuments([]);
+    }
+  }
+
+  const fetchGovernmentEndorsement = async () => {
+    if (!params?.id) return;
+    try {
+      setLoadingEndorsement(true);
+      const response = await fetch(`/api/activities/${params.id}/government-endorsement`);
+      if (response.ok) {
+        const data = await response.json();
+        setGovernmentEndorsement(data.endorsement || null);
+      }
+    } catch (error) {
+      console.error('Error fetching government endorsement:', error);
+      setGovernmentEndorsement(null);
+    } finally {
+      setLoadingEndorsement(false);
+    }
+  }
+
+  const fetchActivityLocations = async () => {
+    if (!params?.id) return;
+    try {
+      const response = await fetch(`/api/activities/${params.id}/locations`);
+      if (response.ok) {
+        const data = await response.json();
+        // API returns { success: true, locations: [...] }
+        if (data.success && data.locations) {
+          // Store all locations for the cards list (matches Activity Editor)
+          setAllActivityLocations(data.locations || []);
+          // Filter for locations with coordinates (for map display)
+          const locationsWithCoords = data.locations.filter((loc: any) => 
+            loc.latitude && loc.longitude
+          );
+          setActivityLocations(locationsWithCoords);
+        } else {
+          setAllActivityLocations([]);
+          setActivityLocations([]);
+        }
+      } else {
+        setAllActivityLocations([]);
+        setActivityLocations([]);
+      }
+    } catch (error) {
+      console.error('Error fetching activity locations:', error);
+      setAllActivityLocations([]);
+      setActivityLocations([]);
+    }
+  }
+
+  const fetchSubnationalBreakdowns = async () => {
+    if (!params?.id) return;
+    try {
+      const response = await fetch(`/api/activities/${params.id}/subnational-breakdown`);
+      if (response.ok) {
+        const data = await response.json();
+        // Convert array to object with region_name as key and percentage as value
+        const breakdownsObj: Record<string, number> = {};
+        (data || []).forEach((item: any) => {
+          breakdownsObj[item.region_name] = parseFloat(item.percentage) || 0;
+        });
+        setSubnationalBreakdowns(breakdownsObj);
+      }
+    } catch (error) {
+      console.error('Error fetching subnational breakdowns:', error);
+      setSubnationalBreakdowns({});
+    }
+  }
+
+  const fetchCountriesRegions = async () => {
+    if (!params?.id) return;
+    try {
+      const response = await fetch(`/api/activities/${params.id}/countries-regions`);
+      if (response.ok) {
+        const data = await response.json();
+        setCountryAllocations(data.countries || []);
+        setRegionAllocations(data.regions || []);
+      }
+    } catch (error) {
+      console.error('Error fetching countries/regions:', error);
+      setCountryAllocations([]);
+      setRegionAllocations([]);
+    }
+  }
+
+  const fetchReportingOrg = async () => {
+    if (!activity?.reporting_org_id) {
+      setReportingOrg(null);
+      return;
+    }
+    try {
+      const response = await fetch(`/api/organizations/${activity.reporting_org_id}`);
+      if (response.ok) {
+        const data = await response.json();
+        setReportingOrg(data);
+      } else {
+        setReportingOrg(null);
+      }
+    } catch (error) {
+      console.error('Error fetching reporting organization:', error);
+      setReportingOrg(null);
+    }
+  }
+
+  // Fetch reporting org when activity is loaded
+  useEffect(() => {
+    if (activity?.reporting_org_id) {
+      fetchReportingOrg();
+    } else {
+      setReportingOrg(null);
+    }
+  }, [activity?.reporting_org_id])
+
   // Refresh activity data when comments tab is selected to ensure we have latest comments count
   useEffect(() => {
     if (activeTab === "comments" && activity) {
@@ -392,25 +641,26 @@ export default function ActivityDetailPage() {
     }
   }, [activeTab])
 
-  // Set initial state of collapsible sections based on data availability
+  // Set collapsible sections state based on data availability
+  // Open by default, close only if empty
   useEffect(() => {
     if (activity) {
-      setIsBudgetsOpen(!!(activity.budgets && activity.budgets.length > 0))
-      setIsPlannedOpen(!!((activity as any).plannedDisbursements && (activity as any).plannedDisbursements.length > 0))
       setIsTransactionsOpen(!!(activity.transactions && activity.transactions.length > 0))
     }
   }, [activity])
 
-  // Update section states when data changes
+  // Update section states when data changes - close if empty
   useEffect(() => {
-    if (budgets && budgets.length > 0) {
-      setIsBudgetsOpen(true)
+    // Only update state once budgets have been fetched (including empty array)
+    if (budgets !== undefined) {
+      setIsBudgetsOpen(budgets.length > 0)
     }
   }, [budgets])
 
   useEffect(() => {
-    if (plannedDisbursements && plannedDisbursements.length > 0) {
-      setIsPlannedOpen(true)
+    // Only update state once planned disbursements have been fetched (including empty array)
+    if (plannedDisbursements !== undefined) {
+      setIsPlannedOpen(plannedDisbursements.length > 0)
     }
   }, [plannedDisbursements])
 
@@ -523,11 +773,50 @@ export default function ActivityDetailPage() {
       })
       if (!res.ok) throw new Error("Failed to save banner")
       toast.success("Banner updated successfully")
+      setShowEditBanner(false)
     } catch (error) {
       console.error("Error saving banner:", error)
       toast.error("Failed to save banner")
     }
   }
+
+  // Update ref whenever activity changes
+  useEffect(() => {
+    activityRef.current = activity
+  }, [activity])
+
+  const handleIconChange = useCallback(async (newIcon: string | null) => {
+    const currentActivity = activityRef.current
+    if (!currentActivity?.id) return
+    // Save icon to backend
+    try {
+      const res = await fetch("/api/activities", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...currentActivity, icon: newIcon }),
+      })
+      if (!res.ok) throw new Error("Failed to save icon")
+      
+      toast.success("Icon updated successfully")
+      
+      // Update local icon state so button disappears and icon shows immediately
+      // without touching the activity object (which could trigger TransactionTab re-renders)
+      setLocalIcon(newIcon)
+      
+      // Close dialog
+      setShowEditIcon(false)
+      
+      // Invalidate cache but DON'T update activity state immediately to avoid triggering
+      // re-renders in TransactionTab/TransactionList that could cause infinite loops
+      invalidateActivityCache(currentActivity.id)
+      
+      // Note: Activity state will be updated on next page refresh or cache refresh
+      // This prevents triggering infinite loops in child components
+    } catch (error) {
+      console.error("Error saving icon:", error)
+      toast.error("Failed to save icon")
+    }
+  }, [])
 
   const handlePrint = () => {
     window.print()
@@ -730,8 +1019,15 @@ export default function ActivityDetailPage() {
     const commitment = allTransactions
       .filter(t => t.transaction_type === "2")
       .reduce((sum, t) => {
-        const value = parseFloat(t.value) || 0
-        return sum + (isNaN(value) ? 0 : value)
+        // Use USD value from transaction with fallbacks
+        let usdValue = parseFloat(t.value_usd) || parseFloat(t.value_USD) || parseFloat(t.usd_value) || 0;
+        
+        // If transaction is in USD but value_usd is missing, use the original value
+        if (!usdValue && t.currency === 'USD' && t.value && Number(t.value) > 0) {
+          usdValue = parseFloat(String(t.value)) || 0;
+        }
+        
+        return sum + (usdValue > 0 ? usdValue : 0);
       }, 0)
     
     const disbursement = allTransactions
@@ -773,6 +1069,23 @@ export default function ActivityDetailPage() {
 
   const financials = calculateFinancials()
 
+  // Calculate total planned disbursements
+  const totalPlannedDisbursements = plannedDisbursements.reduce((sum: number, pd: any) => 
+    sum + (pd.usdAmount || (pd.currency === 'USD' ? pd.amount : 0) || 0), 0);
+
+  // Calculate total budgeted (return 0 if no budgets)
+  const totalBudgeted = budgets?.length > 0 ? budgets.reduce((sum: number, b: any) => 
+    sum + (b.usd_value || (b.currency === 'USD' ? b.value : 0) || 0), 0) : 0;
+
+  // Calculate progress percentages
+  const financialDeliveryPercent = financials.totalCommitment > 0 
+    ? Math.round(((financials.totalDisbursement + financials.totalExpenditure) / financials.totalCommitment) * 100)
+    : 0;
+  
+  const implementationVsPlanPercent = totalBudgeted > 0
+    ? Math.round(((financials.totalDisbursement + financials.totalExpenditure) / totalBudgeted) * 100)
+    : 0;
+
   const formatDate = (dateString: string) => {
     if (!dateString) return 'Not set'
     try {
@@ -783,6 +1096,23 @@ export default function ActivityDetailPage() {
       return 'Not set'
     }
   }
+
+  // Helper function to render label with help tooltip
+  const LabelWithHelp = ({ label, helpText }: { label: string; helpText: string }) => (
+    <div className="flex items-center gap-1">
+      <p className="text-xs font-medium text-slate-600">{label}</p>
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger>
+            <HelpCircle className="h-3 w-3 text-slate-400 hover:text-slate-600 cursor-help" />
+          </TooltipTrigger>
+          <TooltipContent className="max-w-xs">
+            <div className="text-sm whitespace-pre-line">{helpText}</div>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+    </div>
+  );
 
   // Helper function for status-aware date display
   const getDisplayDates = (activity: Activity) => {
@@ -889,6 +1219,16 @@ export default function ActivityDetailPage() {
                   Add Banner
                 </Button>
               )}
+              {!activity?.icon && !localIcon && !showEditIcon && (
+                <Button 
+                  variant="outline" 
+                  onClick={() => setShowEditIcon(true)}
+                  className="border-slate-300 text-slate-700 hover:bg-slate-100"
+                >
+                  <ImageIcon className="h-4 w-4 mr-2" />
+                  Add Icon/Logo
+                </Button>
+              )}
               <CommentsDrawer activityId={activity.id}>
                 <Button 
                   variant="outline"
@@ -917,26 +1257,21 @@ export default function ActivityDetailPage() {
                     <Download className="h-4 w-4 mr-2" />
                     Export as CSV
                   </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => {
+                    toast.info("Export to IATI XML feature coming soon");
+                  }}>
+                    <FileCode className="h-4 w-4 mr-2" />
+                    Export to IATI XML
+                  </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
-              <Button 
-                variant="outline"
-                onClick={() => {
-                  fetchActivity(false);
-                  loadAllPartners();
-                }}
-                className="border-slate-300 text-slate-700 hover:bg-slate-100"
-              >
-                <RefreshCw className="h-4 w-4 mr-2" />
-                Refresh
-              </Button>
-              <Button 
-                onClick={handleEdit}
-                className="bg-slate-600 hover:bg-slate-700"
+              <Link 
+                href={`/activities/new?id=${activity?.id}`}
+                className="inline-flex items-center justify-center rounded-md bg-slate-600 px-4 py-2 text-sm font-medium text-white hover:bg-slate-700 transition-colors"
               >
                 <Edit className="h-4 w-4 mr-2" />
                 Edit Activity
-              </Button>
+              </Link>
             </div>
           </div>
 
@@ -965,6 +1300,22 @@ export default function ActivityDetailPage() {
                 />
               </div>
             ) : null}
+
+            {/* Icon Upload Section */}
+            {showEditIcon && (
+              <div className="p-4 border-b">
+                <IconUpload
+                  currentIcon={activity?.icon || localIcon || undefined}
+                  onIconChange={handleIconChange}
+                  activityId={activity?.id || ""}
+                />
+                <div className="flex justify-end gap-2 mt-4">
+                  <Button variant="outline" onClick={() => setShowEditIcon(false)}>
+                    Cancel
+                  </Button>
+                </div>
+              </div>
+            )}
             
             <CardContent className="p-8">
               <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
@@ -972,28 +1323,183 @@ export default function ActivityDetailPage() {
                 <div className="lg:col-span-3">
                   <div className="flex items-start gap-4">
                     {/* Icon/Logo */}
-                    <div className="flex-shrink-0">
-                      {activity.icon ? (
+                    {(activity.icon || localIcon) && (
+                      <div className="flex-shrink-0">
                         <img 
-                          src={activity.icon} 
+                          src={activity.icon || localIcon || ""} 
                           alt={`${activity.title} icon`}
                           className="w-20 h-20 rounded-lg object-cover border border-slate-200"
                         />
-                      ) : (
-                        <div className="w-20 h-20 rounded-lg bg-slate-100 flex items-center justify-center border border-slate-200">
-                          <Activity className="h-10 w-10 text-slate-400" />
-                        </div>
-                      )}
-                      {activity.tags && activity.tags.length > 0 && (
-                        <div className="mt-3 flex flex-wrap gap-1 max-w-[7rem]">
+                        {/* Country/Region Pills */}
+                        {(countryAllocations.length > 0 || regionAllocations.length > 0) && (
+                          <div className="mt-3 w-full max-w-[12rem]">
+                            <div className="text-slate-500 mb-2 text-xs font-medium">Locations</div>
+                            <div className="flex flex-wrap gap-1.5">
+                              {countryAllocations.map((countryAlloc: any) => (
+                                <Badge 
+                                  key={countryAlloc.id || countryAlloc.country?.code} 
+                                  variant="secondary" 
+                                  className="text-[10px] px-2 py-0.5"
+                                >
+                                  {countryAlloc.country?.name || countryAlloc.country?.code || 'Unknown Country'}
+                                </Badge>
+                              ))}
+                              {regionAllocations.map((regionAlloc: any) => (
+                                <Badge 
+                                  key={regionAlloc.id || regionAlloc.region?.code} 
+                                  variant="secondary" 
+                                  className="text-[10px] px-2 py-0.5"
+                                >
+                                  {regionAlloc.region?.name || regionAlloc.region?.code || 'Unknown Region'}
+                                </Badge>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                        {/* Divider between Locations and Classification Fields */}
+                        {(countryAllocations.length > 0 || regionAllocations.length > 0) && (activity.activityScope || activity.collaborationType || activity.defaultAidType || activity.defaultFinanceType || activity.defaultFlowType || activity.defaultTiedStatus || activity.hierarchy) && (
+                          <div className="mt-3 mb-3 border-b border-slate-200"></div>
+                        )}
+                        {/* Activity Classification Fields */}
+                        {(activity.activityScope || activity.collaborationType || activity.defaultAidType || activity.defaultFinanceType || activity.defaultFlowType || activity.defaultTiedStatus || activity.hierarchy) && (
+                          <div className="mt-3 w-full max-w-[12rem] pb-3 border-b border-slate-200">
+                            <div className="flex flex-col gap-y-2 text-xs">
+                              {activity.hierarchy && (
+                                <div className="text-slate-600">
+                                  <div className="text-slate-500 mb-1">Hierarchy:</div>
+                                  <div className="flex items-start gap-1.5">
+                                    <code className="text-xs px-1.5 py-0.5 bg-slate-100 text-slate-700 rounded font-mono whitespace-nowrap flex-shrink-0 mt-0.5">
+                                      {activity.hierarchy}
+                                    </code>
+                                    <span className="font-medium text-slate-900 break-words min-w-0 leading-tight">
+                                      {getHierarchyLabel(activity.hierarchy) || `Level ${activity.hierarchy}`}
+                                    </span>
+                                  </div>
+                                </div>
+                              )}
+                              {activity.collaborationType && (
+                                <div className="text-slate-600">
+                                  <div className="text-slate-500 mb-1">Collaboration Type:</div>
+                                  <div className="flex items-start gap-1.5">
+                                    <code className="text-xs px-1.5 py-0.5 bg-slate-100 text-slate-700 rounded font-mono whitespace-nowrap flex-shrink-0 mt-0.5">
+                                      {activity.collaborationType}
+                                    </code>
+                                    <span className="font-medium text-slate-900 break-words min-w-0 leading-tight">
+                                      {getCollaborationTypeLabel(activity.collaborationType) || activity.collaborationType}
+                                    </span>
+                                  </div>
+                                </div>
+                              )}
+                              {activity.defaultFlowType && (
+                                <div className="text-slate-600">
+                                  <div className="text-slate-500 mb-1">Default Flow Type:</div>
+                                  <div className="flex items-start gap-1.5">
+                                    {activity.defaultFlowType === '0' || activity.defaultFlowType === 0 ? (
+                                      <span className="text-slate-400 italic text-sm">Blank</span>
+                                    ) : (
+                                      <>
+                                        <code className="text-xs px-1.5 py-0.5 bg-slate-100 text-slate-700 rounded font-mono whitespace-nowrap flex-shrink-0 mt-0.5">
+                                          {activity.defaultFlowType}
+                                        </code>
+                                        <span className="font-medium text-slate-900 break-words min-w-0 leading-tight">
+                                          {FLOW_TYPE_LABELS[activity.defaultFlowType] || activity.defaultFlowType}
+                                        </span>
+                                      </>
+                                    )}
+                                  </div>
+                                </div>
+                              )}
+                              {activity.defaultFinanceType && (
+                                <div className="text-slate-600">
+                                  <div className="text-slate-500 mb-1">Default Finance Type:</div>
+                                  <div className="flex items-start gap-1.5">
+                                    {activity.defaultFinanceType === '0' || activity.defaultFinanceType === 0 ? (
+                                      <span className="text-slate-400 italic text-sm">Blank</span>
+                                    ) : (
+                                      <>
+                                        <code className="text-xs px-1.5 py-0.5 bg-slate-100 text-slate-700 rounded font-mono whitespace-nowrap flex-shrink-0 mt-0.5">
+                                          {activity.defaultFinanceType}
+                                        </code>
+                                        <span className="font-medium text-slate-900 break-words min-w-0 leading-tight">
+                                          {FINANCE_TYPE_LABELS[activity.defaultFinanceType] || activity.defaultFinanceType}
+                                        </span>
+                                      </>
+                                    )}
+                                  </div>
+                                </div>
+                              )}
+                              {activity.defaultAidType && (
+                                <div className="text-slate-600">
+                                  <div className="text-slate-500 mb-1">Default Aid Type:</div>
+                                  <div className="flex items-start gap-1.5">
+                                    {activity.defaultAidType === '0' || activity.defaultAidType === 0 ? (
+                                      <span className="text-slate-400 italic text-sm">Blank</span>
+                                    ) : (
+                                      <>
+                                        <code className="text-xs px-1.5 py-0.5 bg-slate-100 text-slate-700 rounded font-mono whitespace-nowrap flex-shrink-0 mt-0.5">
+                                          {activity.defaultAidType}
+                                        </code>
+                                        <span className="font-medium text-slate-900 break-words min-w-0 leading-tight">
+                                          {AID_TYPE_LABELS[activity.defaultAidType] || activity.defaultAidType}
+                                        </span>
+                                      </>
+                                    )}
+                                  </div>
+                                </div>
+                              )}
+                              {activity.defaultTiedStatus && (
+                                <div className="text-slate-600">
+                                  <div className="text-slate-500 mb-1">Default Tied Status:</div>
+                                  <div className="flex items-start gap-1.5">
+                                    {activity.defaultTiedStatus === '0' || activity.defaultTiedStatus === 0 ? (
+                                      <span className="text-slate-400 italic text-sm">Blank</span>
+                                    ) : (
+                                      <>
+                                        <code className="text-xs px-1.5 py-0.5 bg-slate-100 text-slate-700 rounded font-mono whitespace-nowrap flex-shrink-0 mt-0.5">
+                                          {activity.defaultTiedStatus}
+                                        </code>
+                                        <span className="font-medium text-slate-900 break-words min-w-0 leading-tight">
+                                          {TIED_STATUS_LABELS[activity.defaultTiedStatus as keyof typeof TIED_STATUS_LABELS] || activity.defaultTiedStatus}
+                                        </span>
+                                      </>
+                                    )}
+                                  </div>
+                                </div>
+                              )}
+                              {activity.activityScope && (
+                                <div className="text-slate-600">
+                                  <div className="text-slate-500 mb-1">Scope:</div>
+                                  <div className="flex items-start gap-1.5">
+                                    {activity.activityScope === '0' || activity.activityScope === 0 ? (
+                                      <span className="text-slate-400 italic text-sm">Blank</span>
+                                    ) : (
+                                      <>
+                                        <code className="text-xs px-1.5 py-0.5 bg-slate-100 text-slate-700 rounded font-mono whitespace-nowrap flex-shrink-0 mt-0.5">
+                                          {activity.activityScope}
+                                        </code>
+                                        <span className="font-medium text-slate-900 break-words min-w-0 leading-tight">
+                                          {getActivityScopeLabel(activity.activityScope) || activity.activityScope}
+                                        </span>
+                                      </>
+                                    )}
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                        {/* Tags */}
+                        {activity.tags && activity.tags.length > 0 && (
+                          <div className="mt-3 flex flex-wrap gap-1 max-w-[12rem]">
                           {activity.tags.slice(0, 12).map((t: any) => (
                             <Badge key={t.id || t.name} variant="secondary" className="text-[10px] px-1 py-0.5">
                               {t.name}
                             </Badge>
                           ))}
                         </div>
-                      )}
-                </div>
+                        )}
+                      </div>
+                    )}
 
                     {/* Activity Info */}
                     <div className="flex-1">
@@ -1004,13 +1510,13 @@ export default function ActivityDetailPage() {
                       <div className="space-y-3">
                         {/* First Row: Activity ID, IATI ID and Status Badges */}
                         <div className="flex flex-wrap items-center gap-3 pb-3 border-b border-slate-200">
-                          {(activity.partnerId || activity.iatiId) && (
+                          {activity.partnerId && (
                             <div className="flex items-center gap-1 group">
                               <code className="text-xs px-2 py-1 bg-slate-100 text-slate-700 rounded font-mono">
-                                {activity.partnerId || activity.iatiId}
+                                {activity.partnerId}
                               </code>
                               <button
-                                onClick={() => copyToClipboard(activity.partnerId || activity.iatiId || '', 'activityId')}
+                                onClick={() => copyToClipboard(activity.partnerId || '', 'activityId')}
                                 className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:text-slate-700 flex-shrink-0 p-1"
                                 title="Copy Activity ID"
                               >
@@ -1060,45 +1566,58 @@ export default function ActivityDetailPage() {
                           
                           {/* IATI Sync Status */}
                           {activity.iatiIdentifier && (
-                            <TooltipProvider>
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <Badge variant="outline" className="border-slate-300 text-slate-700">
-                                    {activity.syncStatus === 'live' ? (
-                                      <>
-                                        <RefreshCw className="h-3 w-3 mr-1 text-green-600" />
-                                        IATI Synced
-                                      </>
-                                    ) : activity.syncStatus === 'outdated' ? (
-                                      <>
-                                        <AlertCircle className="h-3 w-3 mr-1 text-yellow-600" />
-                                        IATI Outdated
-                                      </>
-                                    ) : (
-                                      <>
-                                        <Globe className="h-3 w-3 mr-1 text-slate-600" />
-                                        IATI Linked
-                                      </>
-                                    )}
-                                  </Badge>
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                  <div className="text-xs space-y-1">
-                                    <p className="font-medium">IATI Sync Status</p>
-                                    {activity.lastSyncTime && (
-                                      <p>Last synced: {format(new Date(activity.lastSyncTime), 'dd MMM yyyy HH:mm')}</p>
-                                    )}
-                                    {activity.autoSync && (
-                                      <p className="text-green-600">Auto-sync enabled</p>
-                                    )}
-                                  </div>
-                                </TooltipContent>
-                              </Tooltip>
-                            </TooltipProvider>
+                            <div className="flex items-center gap-2">
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Badge 
+                                      variant={activity.syncStatus === 'live' || activity.syncStatus === 'outdated' ? "outline" : undefined}
+                                      className={activity.syncStatus === 'live' || activity.syncStatus === 'outdated' 
+                                        ? "border-slate-300 text-slate-700" 
+                                        : "bg-[#124e5f] text-white"}
+                                    >
+                                      {activity.syncStatus === 'live' ? (
+                                        <>
+                                          <RefreshCw className="h-3 w-3 mr-1 text-green-600" />
+                                          IATI Synced
+                                        </>
+                                      ) : activity.syncStatus === 'outdated' ? (
+                                        <>
+                                          <AlertCircle className="h-3 w-3 mr-1 text-yellow-600" />
+                                          IATI Outdated
+                                        </>
+                                      ) : (
+                                        <>
+                                          <Globe className="h-3 w-3 mr-1 text-white" />
+                                          Imported from IATI
+                                        </>
+                                      )}
+                                    </Badge>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <div className="text-xs space-y-1">
+                                      <p className="font-medium">IATI Sync Status</p>
+                                      {activity.lastSyncTime && (
+                                        <p>Last synced: {format(new Date(activity.lastSyncTime), 'dd MMM yyyy HH:mm')}</p>
+                                      )}
+                                      {activity.autoSync && (
+                                        <p className="text-green-600">Auto-sync enabled</p>
+                                      )}
+                                    </div>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                              {/* Humanitarian Badge */}
+                              {activity.humanitarian && (
+                                <Badge className="bg-red-600 text-white">
+                                  Humanitarian
+                                </Badge>
+                              )}
+                            </div>
                           )}
                         </div>
 
-                        {/* Second Row: Timeline Dates */}
+                        {/* Third Row: Timeline Dates */}
                         <div className="flex flex-wrap items-center gap-3 pb-3 border-b border-slate-200">
                           {activity.plannedStartDate && (
                             <div className="flex items-center gap-1.5 text-xs text-slate-600">
@@ -1125,132 +1644,153 @@ export default function ActivityDetailPage() {
                               </span>
                             </div>
                           )}
-                        </div>
-
-                        {/* Third Row: Created and Updated Dates */}
-                        <div className="flex flex-wrap items-center gap-3 text-xs text-slate-500">
-                          <div className="flex items-center gap-1">
+                          <div className="flex items-center gap-1 text-xs text-slate-500">
                             <span>Created:</span>
                             <span className="text-slate-900">{formatDate(activity.createdAt)}</span>
                           </div>
-                          <div className="flex items-center gap-1">
+                          <div className="flex items-center gap-1 text-xs text-slate-500">
                             <span>Updated:</span>
                             <span className="text-slate-900">{formatDate(activity.updatedAt)}</span>
                           </div>
                         </div>
                       </div>
                     
-                    {/* General Description - Always Shown */}
-                    {activity.description && (
-                        <div ref={descriptionRef} className="mt-3">
-                          <p className="text-slate-600 leading-relaxed whitespace-pre-wrap">
-                            {isDescriptionExpanded 
-                              ? activity.description 
-                              : activity.description.length > 700
-                                ? activity.description.slice(0, 700) + '...'
-                                : activity.description
-                            }
-                          </p>
-                        </div>
-                    )}
+                    {/* Combined Description Sections with 1000 character limit */}
+                    {(() => {
+                      // Get all field values
+                      const description = activity.description || '';
+                      const objectives = activity.descriptionObjectives || '';
+                      const targetGroups = activity.descriptionTargetGroups || '';
+                      const other = activity.descriptionOther || '';
+                      
+                      // Calculate combined length
+                      const combinedLength = description.length + objectives.length + targetGroups.length + other.length;
+                      
+                      // Calculate what to show when collapsed (1000 chars total)
+                      let remainingChars = 1000;
+                      
+                      // Description
+                      const descLength = description.length;
+                      const descShow = isDescriptionExpanded || remainingChars > 0;
+                      const descDisplay = descShow 
+                        ? (isDescriptionExpanded ? description : description.slice(0, Math.min(descLength, remainingChars)))
+                        : '';
+                      const descNeedsTruncation = !isDescriptionExpanded && descLength > remainingChars;
+                      remainingChars = Math.max(0, remainingChars - descLength);
+                      
+                      // Objectives
+                      const objLength = objectives.length;
+                      const objShow = isDescriptionExpanded || remainingChars > 0;
+                      const objDisplay = objShow 
+                        ? (isDescriptionExpanded ? objectives : objectives.slice(0, Math.min(objLength, remainingChars)))
+                        : '';
+                      const objNeedsTruncation = !isDescriptionExpanded && objLength > remainingChars;
+                      remainingChars = Math.max(0, remainingChars - objLength);
+                      
+                      // Target Groups
+                      const tgLength = targetGroups.length;
+                      const tgShow = isDescriptionExpanded || remainingChars > 0;
+                      const tgDisplay = tgShow 
+                        ? (isDescriptionExpanded ? targetGroups : targetGroups.slice(0, Math.min(tgLength, remainingChars)))
+                        : '';
+                      const tgNeedsTruncation = !isDescriptionExpanded && tgLength > remainingChars;
+                      remainingChars = Math.max(0, remainingChars - tgLength);
+                      
+                      // Other
+                      const otherLength = other.length;
+                      const otherShow = isDescriptionExpanded || remainingChars > 0;
+                      const otherDisplay = otherShow 
+                        ? (isDescriptionExpanded ? other : other.slice(0, Math.min(otherLength, remainingChars)))
+                        : '';
+                      const otherNeedsTruncation = !isDescriptionExpanded && otherLength > remainingChars;
+                      
+                      const needsShowMore = combinedLength > 1000;
+                      
+                      return (
+                        <>
+                          {/* General Description */}
+                          {description && (
+                            <div ref={descriptionRef} className="mt-3">
+                              <p className="text-slate-600 leading-relaxed whitespace-pre-wrap">
+                                {descDisplay}
+                                {descNeedsTruncation && '...'}
+                              </p>
+                            </div>
+                          )}
 
-                    {/* Additional sections shown when expanded */}
-                    {isDescriptionExpanded && (
-                      <>
-                        {/* Objectives Section */}
-                        {activity.descriptionObjectives && (
-                          <div className="mt-4 border-t border-slate-200 pt-3">
-                            <h4 className="text-sm font-medium text-slate-700 mb-2">
-                              Objectives
-                            </h4>
-                            <p className="text-slate-600 leading-relaxed whitespace-pre-wrap">
-                              {activity.descriptionObjectives}
-                            </p>
-                          </div>
-                        )}
+                          {/* Objectives Section */}
+                          {objectives && objShow && (
+                            <div className="mt-4 border-t border-slate-200 pt-3">
+                              <h4 className="text-sm font-medium text-slate-700 mb-2">
+                                Objectives
+                              </h4>
+                              <p className="text-slate-600 leading-relaxed whitespace-pre-wrap">
+                                {objDisplay}
+                                {objNeedsTruncation && '...'}
+                              </p>
+                            </div>
+                          )}
 
-                        {/* Target Groups Section */}
-                        {activity.descriptionTargetGroups && (
-                          <div className="mt-4 border-t border-slate-200 pt-3">
-                            <h4 className="text-sm font-medium text-slate-700 mb-2">
-                              Target Groups
-                            </h4>
-                            <p className="text-slate-600 leading-relaxed whitespace-pre-wrap">
-                              {activity.descriptionTargetGroups}
-                            </p>
-                          </div>
-                        )}
+                          {/* Target Groups Section */}
+                          {targetGroups && tgShow && (
+                            <div className="mt-4 border-t border-slate-200 pt-3">
+                              <h4 className="text-sm font-medium text-slate-700 mb-2">
+                                Target Groups
+                              </h4>
+                              <p className="text-slate-600 leading-relaxed whitespace-pre-wrap">
+                                {tgDisplay}
+                                {tgNeedsTruncation && '...'}
+                              </p>
+                            </div>
+                          )}
 
-                        {/* Other Section */}
-                        {activity.descriptionOther && (
-                          <div className="mt-4 border-t border-slate-200 pt-3">
-                            <h4 className="text-sm font-medium text-slate-700 mb-2">
-                              Other
-                            </h4>
-                            <p className="text-slate-600 leading-relaxed whitespace-pre-wrap">
-                              {activity.descriptionOther}
-                            </p>
-                          </div>
-                        )}
-                      </>
-                    )}
+                          {/* Other Section */}
+                          {other && otherShow && (
+                            <div className="mt-4 border-t border-slate-200 pt-3">
+                              <h4 className="text-sm font-medium text-slate-700 mb-2">
+                                Other
+                              </h4>
+                              <p className="text-slate-600 leading-relaxed whitespace-pre-wrap">
+                                {otherDisplay}
+                                {otherNeedsTruncation && '...'}
+                              </p>
+                            </div>
+                          )}
 
-                    {/* Show More/Less button */}
-                    {((activity.description && activity.description.length > 700) || 
-                      activity.descriptionObjectives || 
-                      activity.descriptionTargetGroups || 
-                      activity.descriptionOther) && (
-                      <button
-                        onClick={(event) => {
-                          if (!isDescriptionExpanded) {
-                            setIsDescriptionExpanded(true)
-                          } else {
-                            // Prevent any default behavior and stop propagation
-                            event.preventDefault()
-                            event.stopPropagation()
-                            
-                            // Scroll to top IMMEDIATELY before state change
-                            // This happens synchronously before React's re-render
-                            scrollLockRef.current = true
-                            const topElement = document.getElementById('page-top')
-                            if (topElement) {
-                              topElement.scrollIntoView({ behavior: 'auto', block: 'start' })
-                            } else {
-                              window.scrollTo({ top: 0, behavior: 'auto' })
-                            }
-                            document.documentElement.scrollTop = 0
-                            document.body.scrollTop = 0
-                            
-                            // Set flag for useLayoutEffect fallback
-                            shouldScrollToTop.current = true
-                            
-                            // Collapse the description - useLayoutEffect will also ensure we stay at top
-                            setIsDescriptionExpanded(false)
-                            
-                            // Release scroll lock after 500ms
-                            if (scrollLockTimeout.current) {
-                              clearTimeout(scrollLockTimeout.current)
-                            }
-                            scrollLockTimeout.current = setTimeout(() => {
-                              scrollLockRef.current = false
-                            }, 500)
-                          }
-                        }}
-                        className="flex items-center gap-1 text-slate-600 hover:text-slate-900 mt-2 text-sm font-medium transition-colors"
-                      >
-                        {isDescriptionExpanded ? (
-                          <>
-                            Show less
-                            <ChevronUp className="h-4 w-4" />
-                          </>
-                        ) : (
-                          <>
-                            Show more
-                            <ChevronDown className="h-4 w-4" />
-                          </>
-                        )}
-                      </button>
-                    )}
+                          {/* Single Show More/Less button */}
+                          {needsShowMore && (
+                            <button
+                              onClick={(event) => {
+                                if (!isDescriptionExpanded) {
+                                  setIsDescriptionExpanded(true)
+                                } else {
+                                  setIsDescriptionExpanded(false)
+                                  const pageTop = document.getElementById('page-top')
+                                  if (pageTop) {
+                                    pageTop.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                                  } else {
+                                    window.scrollTo({ top: 0, behavior: 'smooth' })
+                                  }
+                                }
+                              }}
+                              className="flex items-center gap-1 text-slate-600 hover:text-slate-900 mt-2 text-sm font-medium transition-colors"
+                            >
+                              {isDescriptionExpanded ? (
+                                <>
+                                  Show less
+                                  <ChevronUp className="h-4 w-4" />
+                                </>
+                              ) : (
+                                <>
+                                  Show more
+                                  <ChevronDown className="h-4 w-4" />
+                                </>
+                              )}
+                            </button>
+                          )}
+                        </>
+                      );
+                    })()}
                         </div>
                       </div>
                 </div>
@@ -1259,56 +1799,151 @@ export default function ActivityDetailPage() {
                 <div className="lg:col-span-1">
                   <div className="bg-white">
                     <div className="space-y-3">
-                      {/* All Participating Organizations */}
-                      {participatingOrgs.length > 0 ? (
-                        <div className="space-y-3">
-                          {participatingOrgs.map((org, idx) => (
-                            <div key={idx} className="pb-3 border-b border-slate-100 last:border-0 last:pb-0">
-                              {/* Role Badge - Positioned Above */}
-                              <div className="mb-2">
-                                <Badge 
-                                  variant="outline" 
-                                  className="border-slate-300 text-slate-700 text-xs pl-0"
-                                >
-                                  {org.role_type === 'government' ? 'Accountable' :
-                                   org.role_type === 'extending' ? 'Extending' :
-                                   org.role_type === 'funding' ? 'Funding' :
-                                   org.role_type === 'implementing' ? 'Implementing' :
-                                   org.role_type}
-                                </Badge>
+                      {/* Reporting Organisation */}
+                      {reportingOrg && (
+                        <div className="pb-3 border-b border-slate-200">
+                          <div className="text-slate-500 mb-2 text-xs font-medium">Reporting Organisation</div>
+                          <div className="flex items-start gap-3">
+                            {/* Logo/Icon */}
+                            {reportingOrg.logo && (
+                              <div className="flex-shrink-0">
+                                <img 
+                                  src={reportingOrg.logo} 
+                                  alt={`${reportingOrg.name} logo`}
+                                  className="w-10 h-10 rounded object-cover border border-slate-200"
+                                />
                               </div>
-                              
-                              <div className="flex items-start gap-3">
-                                {/* Logo/Icon */}
-                                  <div className="flex-shrink-0">
-                                  {org.organization?.logo ? (
-                                    <img 
-                                      src={org.organization.logo} 
-                                      alt={`${org.organization.name} logo`}
-                                      className="w-10 h-10 rounded object-cover border border-slate-200"
-                                    />
-                                  ) : (
-                                    <div className="w-10 h-10 rounded bg-slate-100 flex items-center justify-center border border-slate-200">
-                                      <Building2 className="h-5 w-5 text-slate-400" />
-                                  </div>
-                                )}
-                        </div>
-                                  
-                                  {/* Organization Name with Acronym */}
-                                <div className="flex-1 min-w-0">
-                                  <div className="text-sm font-medium text-slate-900 break-words">
-                                    {org.organization?.name || org.narrative || 'Unknown'}
-                                    {org.organization?.acronym && org.organization.acronym !== org.organization.name && (
-                                      <span> ({org.organization.acronym})</span>
+                            )}
+                            
+                            {/* Organization Name, IATI ID */}
+                            <div className="flex-1 min-w-0">
+                              <div className="text-sm text-slate-900 break-words flex flex-wrap items-center gap-2">
+                                {reportingOrg.id ? (
+                                  <Link 
+                                    href={`/organizations/${reportingOrg.id}`}
+                                    className="font-medium hover:text-slate-700 transition-colors"
+                                  >
+                                    {reportingOrg.name || 'Unknown'}
+                                    {reportingOrg.acronym && reportingOrg.acronym !== reportingOrg.name && (
+                                      <span> ({reportingOrg.acronym})</span>
                                     )}
-                      </div>
+                                  </Link>
+                                ) : (
+                                  <span className="font-medium">
+                                    {reportingOrg.name || 'Unknown'}
+                                    {reportingOrg.acronym && reportingOrg.acronym !== reportingOrg.name && (
+                                      <span> ({reportingOrg.acronym})</span>
+                                    )}
+                                  </span>
+                                )}
+                                {/* IATI ID with gray background */}
+                                {reportingOrg.iati_org_id && (
+                                  <span className="text-xs text-slate-600 font-mono bg-slate-100 px-1.5 py-0.5 rounded">
+                                    {reportingOrg.iati_org_id}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          </div>
                         </div>
-                        </div>
-                      </div>
-                          ))}
-                      </div>
-                      ) : (
-                        <div className="text-xs text-slate-500">No participating organizations</div>
+                      )}
+                      {/* All Participating Organizations */}
+                      {participatingOrgs.length > 0 && (
+                        <>
+                          <div className="space-y-3">
+                            {(showAllSidebarPartners ? participatingOrgs : participatingOrgs.slice(0, 4)).map((org, idx) => (
+                              <div key={idx} className="pb-3 last:pb-0">
+                                <div className="flex items-start gap-3">
+                                  {/* Logo/Icon */}
+                                  {org.organization?.logo && (
+                                    <div className="flex-shrink-0">
+                                      <img 
+                                        src={org.organization.logo} 
+                                        alt={`${org.organization.name} logo`}
+                                        className="w-10 h-10 rounded object-cover border border-slate-200"
+                                      />
+                                    </div>
+                                  )}
+                                  
+                                  {/* Organization Name, IATI ID, and Role Badge - Same Line Wrapped */}
+                                  <div className="flex-1 min-w-0">
+                                    <div className="text-sm text-slate-900 break-words flex flex-wrap items-center gap-2">
+                                      {org.organization?.id ? (
+                                        <Link 
+                                          href={`/organizations/${org.organization.id}`}
+                                          className="font-medium hover:text-slate-700 transition-colors"
+                                        >
+                                          {org.organization.name || org.narrative || 'Unknown'}
+                                          {org.organization.acronym && org.organization.acronym !== org.organization.name && (
+                                            <span> ({org.organization.acronym})</span>
+                                          )}
+                                        </Link>
+                                      ) : (
+                                        <span className="font-medium">
+                                          {org.organization?.name || org.narrative || 'Unknown'}
+                                          {org.organization?.acronym && org.organization.acronym !== org.organization.name && (
+                                            <span> ({org.organization.acronym})</span>
+                                          )}
+                                        </span>
+                                      )}
+                                      {/* IATI ID with gray background */}
+                                      {org.organization?.iati_org_id && (
+                                        <span className="text-xs text-slate-600 font-mono bg-slate-100 px-1.5 py-0.5 rounded">
+                                          {org.organization.iati_org_id}
+                                        </span>
+                                      )}
+                                      {/* Role Badge with colors from Activity Editor */}
+                                      <Badge 
+                                        className={`text-xs px-2 py-0.5 rounded ${
+                                          org.role_type === 'extending' ? 'bg-blue-100 text-blue-800' :
+                                          org.role_type === 'implementing' ? 'bg-green-100 text-green-800' :
+                                          org.role_type === 'government' ? 'bg-purple-100 text-purple-800' :
+                                          org.role_type === 'funding' ? 'bg-yellow-100 text-yellow-800' :
+                                          'bg-slate-100 text-slate-700'
+                                        }`}
+                                      >
+                                        {org.role_type === 'government' ? 'Accountable' :
+                                         org.role_type === 'extending' ? 'Extending' :
+                                         org.role_type === 'funding' ? 'Funding' :
+                                         org.role_type === 'implementing' ? 'Implementing' :
+                                         org.role_type}
+                                      </Badge>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                          {participatingOrgs.length > 4 && (
+                            <button
+                              onClick={() => {
+                                setShowAllSidebarPartners(!showAllSidebarPartners);
+                                if (showAllSidebarPartners) {
+                                  // Scroll to top when clicking "Show less"
+                                  const pageTop = document.getElementById('page-top');
+                                  if (pageTop) {
+                                    pageTop.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                                  } else {
+                                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                                  }
+                                }
+                              }}
+                              className="w-full mt-2 py-2 text-sm text-slate-600 hover:text-slate-900 hover:bg-slate-50 rounded-lg transition-colors flex items-center justify-start gap-2"
+                            >
+                              {showAllSidebarPartners ? (
+                                <>
+                                  Show less
+                                  <ChevronUp className="h-4 w-4" />
+                                </>
+                              ) : (
+                                <>
+                                  +{participatingOrgs.length - 4} more
+                                  <ChevronDown className="h-4 w-4" />
+                                </>
+                              )}
+                            </button>
+                          )}
+                        </>
                       )}
                     </div>
                     {/* SDG Icons Below Partners */}
@@ -1351,13 +1986,19 @@ export default function ActivityDetailPage() {
                             
                             const IconComponent = getIconForMarker(marker.policy_marker_details?.iati_code || '');
                             
+                            const markerUuid = marker.policy_marker_id || marker.policy_marker_details?.uuid || '';
+                            
                             return (
                               <TooltipProvider key={marker.policy_marker_id || index}>
                                 <Tooltip>
                                   <TooltipTrigger asChild>
-                                    <div className="flex items-center justify-center w-8 h-8 rounded-full bg-slate-100 border border-slate-200 hover:bg-slate-200 transition-colors cursor-help">
+                                    <Link
+                                      href={`/policy-markers/${markerUuid}`}
+                                      className="flex items-center justify-center w-8 h-8 rounded-full bg-slate-100 border border-slate-200 hover:bg-slate-200 transition-colors cursor-pointer"
+                                      onClick={(e) => e.stopPropagation()}
+                                    >
                                       <IconComponent className="w-4 h-4 text-slate-600" />
-                                    </div>
+                                    </Link>
                                   </TooltipTrigger>
                                   <TooltipContent>
                                     <p className="text-xs font-medium">{marker.policy_marker_details?.name || 'Policy Marker'}</p>
@@ -1369,6 +2010,7 @@ export default function ActivityDetailPage() {
                                        marker.significance === 4 ? 'Primary objective' : 
                                        'Unknown'}
                                     </p>
+                                    <p className="text-xs text-muted-foreground mt-1">Click to view profile</p>
                                   </TooltipContent>
                                 </Tooltip>
                               </TooltipProvider>
@@ -1390,17 +2032,33 @@ export default function ActivityDetailPage() {
                 <div className="flex items-start justify-between">
                   <div className="space-y-2 w-full">
                   <div>
-                      <p className="text-xs font-medium text-slate-600">Total Budgeted</p>
-                      <p className="text-lg font-bold text-slate-900">
-                        USD {formatCompactNumber(budgets.reduce((sum: number, b: any) => 
-                          sum + (b.usd_value || (b.currency === 'USD' ? b.value : 0) || 0), 0))}
-                      </p>
+                      <LabelWithHelp 
+                        label="Total Budgeted" 
+                        helpText="The total amount of funds allocated for this activity across all budget periods. This represents the planned spending for the entire activity lifecycle."
+                      />
+                                               <p className="text-lg font-bold text-slate-900">
+                          ${formatCompactNumber(budgets?.length > 0 ? budgets.reduce((sum: number, b: any) => {
+                            // Use usd_value if available (primary source)
+                            if (b.usd_value != null && b.usd_value > 0) {
+                              return sum + parseFloat(b.usd_value);
+                            }
+                            // If currency is USD, use the value directly
+                            if (b.currency === 'USD' && b.value && b.value > 0) {
+                              return sum + parseFloat(b.value);
+                            }
+                            // For non-USD budgets without usd_value, they should have been converted
+                            // when saved, but if missing, return sum as-is (0 contribution)
+                            return sum;
+                          }, 0) : 0)}
+                         </p>
                   </div>
                     <div className="border-t border-slate-200 pt-2">
-                    <p className="text-xs font-medium text-slate-600">Total Planned Disb.</p>
+                    <LabelWithHelp 
+                      label="Total Committed" 
+                      helpText="The total amount of funds promised or obligated for this activity from commitments (IATI transaction type 2). This represents what has been pledged but may not yet be disbursed."
+                    />
                     <p className="text-lg font-bold text-slate-900">
-                      USD {formatCompactNumber(plannedDisbursements.reduce((sum: number, pd: any) => 
-                        sum + (pd.usdAmount || (pd.currency === 'USD' ? pd.amount : 0) || 0), 0))}
+                      ${formatCompactNumber(financials.totalCommitment)}
                     </p>
                   </div>
                   </div>
@@ -1414,13 +2072,19 @@ export default function ActivityDetailPage() {
                 <div className="flex items-start justify-between">
                   <div className="space-y-2 w-full">
                     <div>
-                      <p className="text-xs font-medium text-slate-600">Disbursed</p>
+                      <LabelWithHelp 
+                        label="Total Disbursed" 
+                        helpText="The total amount of funds actually transferred to implementers (IATI transaction type 3 - Disbursement). This represents money that has been paid out."
+                      />
                       <p className="text-lg font-bold text-slate-900">
                       ${formatCompactNumber(financials.totalDisbursement)}
                     </p>
                   </div>
                     <div className="border-t border-slate-200 pt-2">
-                      <p className="text-xs font-medium text-slate-600">Expended</p>
+                      <LabelWithHelp 
+                        label="Total Expended" 
+                        helpText="The total amount of funds spent by implementers (IATI transaction type 4 - Expenditure). This represents money that has been used for project activities."
+                      />
                       <p className="text-lg font-bold text-slate-900">
                       ${formatCompactNumber(financials.totalExpenditure)}
                     </p>
@@ -1436,8 +2100,11 @@ export default function ActivityDetailPage() {
                 <div className="flex items-start justify-between">
                   <div className="space-y-2 w-full">
                   <div>
-                      <p className="text-xs font-medium text-slate-600">Progress</p>
-                      <p className="text-lg font-bold text-slate-900">{financials.percentDisbursed}%</p>
+                      <LabelWithHelp 
+                        label="Financial Delivery" 
+                        helpText="Percentage of committed funds that have been spent (Disbursed + Expended) ÷ Committed × 100. Shows how much of the committed funding has been utilized."
+                      />
+                      <p className="text-lg font-bold text-slate-900">{financialDeliveryPercent}%</p>
                     </div>
                     
                     {/* Progress Bar */}
@@ -1445,17 +2112,30 @@ export default function ActivityDetailPage() {
                       <div className="w-full bg-slate-200 rounded-full h-2">
                         <div 
                           className="bg-blue-600 h-2 rounded-full transition-all duration-300" 
-                          style={{ width: `${Math.min(financials.percentDisbursed, 100)}%` }}
+                          style={{ width: `${Math.min(financialDeliveryPercent, 100)}%` }}
                         />
                       </div>
                     </div>
                     
                     <div className="border-t border-slate-200 pt-2">
-                    <p className="text-xs font-medium text-slate-600">Remaining</p>
+                    <LabelWithHelp 
+                      label="Implementation vs Plan" 
+                      helpText="Percentage of budgeted funds that have been spent (Disbursed + Expended) ÷ Budgeted × 100. Compares actual spending against the planned budget."
+                    />
                     <p className="text-lg font-bold text-slate-900">
-                      ${formatCompactNumber(financials.totalCommitment - financials.totalDisbursement)}
+                      {implementationVsPlanPercent}%
                     </p>
                   </div>
+                  
+                    {/* Progress Bar */}
+                    <div className="w-full">
+                      <div className="w-full bg-slate-200 rounded-full h-2">
+                        <div 
+                          className="bg-green-600 h-2 rounded-full transition-all duration-300" 
+                          style={{ width: `${Math.min(implementationVsPlanPercent, 100)}%` }}
+                        />
+                      </div>
+                    </div>
                   </div>
                   <TrendingUp className="h-6 w-6 text-slate-400 flex-shrink-0" />
                 </div>
@@ -1548,10 +2228,16 @@ export default function ActivityDetailPage() {
                               <tr key={item.year} className="border-b border-slate-100">
                                 <td className="py-1 text-slate-900">{item.year}</td>
                                 <td className="text-right py-1 text-slate-900 font-medium">
-                                  ${(item.amount / 1000).toFixed(0)}k
+                                  {formatCurrencyShort(item.amount)}
                                 </td>
                               </tr>
                             ))}
+                            <tr className="border-t-2 border-slate-300 bg-slate-50">
+                              <td className="py-1 text-slate-900 font-semibold">Total</td>
+                              <td className="text-right py-1 text-slate-900 font-semibold">
+                                {formatCurrencyShort(budgetData.reduce((sum, item) => sum + item.amount, 0))}
+                              </td>
+                            </tr>
                           </tbody>
                         </table>
                       </div>
@@ -1573,8 +2259,8 @@ export default function ActivityDetailPage() {
                             axisLine={{ stroke: '#e5e7eb' }}
                             tickLine={false}
                             tickFormatter={(value) => {
-                              const rounded = Math.round((value / 1000000) * 10) / 10;
-                              return `$${rounded.toFixed(1)}M`;
+                              const rounded = Math.round(value / 1000000);
+                              return `$${rounded}M`;
                             }}
                           />
                           <RechartsTooltip2 
@@ -1585,7 +2271,7 @@ export default function ActivityDetailPage() {
                                   <div className="bg-white p-2 border border-gray-200 rounded shadow-lg">
                                     <p className="text-sm font-semibold">{payload[0].payload.year}</p>
                                     <p className="text-sm text-gray-600">
-                                      ${(payload[0].value as number).toLocaleString()}
+                                      {formatCurrencyShort(payload[0].value as number)}
                                     </p>
                                   </div>
                                 )
@@ -1750,11 +2436,23 @@ export default function ActivityDetailPage() {
                             {chartData.map((item) => (
                               <tr key={item.year} className="border-b border-slate-100">
                                 <td className="py-1 text-slate-900">{item.year}</td>
-                                <td className="text-right py-1 font-medium" style={{ color: '#64748b' }}>${(item.plannedDisbursements / 1000).toFixed(0)}k</td>
-                                <td className="text-right py-1 font-medium" style={{ color: '#1e40af' }}>${(item.disbursements / 1000).toFixed(0)}k</td>
-                                <td className="text-right py-1 font-medium" style={{ color: '#0f172a' }}>${(item.expenditures / 1000).toFixed(0)}k</td>
+                                <td className="text-right py-1 font-medium" style={{ color: '#64748b' }}>{formatCurrencyShort(item.plannedDisbursements)}</td>
+                                <td className="text-right py-1 font-medium" style={{ color: '#1e40af' }}>{formatCurrencyShort(item.disbursements)}</td>
+                                <td className="text-right py-1 font-medium" style={{ color: '#0f172a' }}>{formatCurrencyShort(item.expenditures)}</td>
                               </tr>
                             ))}
+                            <tr className="border-t-2 border-slate-300 bg-slate-50">
+                              <td className="py-1 text-slate-900 font-semibold">Total</td>
+                              <td className="text-right py-1 font-semibold" style={{ color: '#64748b' }}>
+                                {formatCurrencyShort(chartData.reduce((sum, item) => sum + item.plannedDisbursements, 0))}
+                              </td>
+                              <td className="text-right py-1 font-semibold" style={{ color: '#1e40af' }}>
+                                {formatCurrencyShort(chartData.reduce((sum, item) => sum + item.disbursements, 0))}
+                              </td>
+                              <td className="text-right py-1 font-semibold" style={{ color: '#0f172a' }}>
+                                {formatCurrencyShort(chartData.reduce((sum, item) => sum + item.expenditures, 0))}
+                              </td>
+                            </tr>
                           </tbody>
                         </table>
                       </div>
@@ -1776,8 +2474,8 @@ export default function ActivityDetailPage() {
                             axisLine={{ stroke: '#e5e7eb' }}
                             tickLine={false}
                             tickFormatter={(value) => {
-                              const rounded = Math.round((value / 1000000) * 10) / 10;
-                              return `$${rounded.toFixed(1)}M`;
+                              const rounded = Math.round(value / 1000000);
+                              return `$${rounded}M`;
                             }}
                           />
                           <RechartsTooltip2 
@@ -1792,15 +2490,15 @@ export default function ActivityDetailPage() {
                                     <div className="space-y-1 text-xs">
                                       <div className="flex items-center gap-2">
                                         <div className="w-3 h-3 rounded" style={{ backgroundColor: '#94a3b8' }}></div>
-                                        <p className="font-medium" style={{ color: '#64748b' }}>Planned: ${payload[0].payload.plannedDisbursements.toLocaleString()}</p>
+                                        <p className="font-medium" style={{ color: '#64748b' }}>Planned: {formatCurrencyShort(payload[0].payload.plannedDisbursements)}</p>
                                       </div>
                                       <div className="flex items-center gap-2">
                                         <div className="w-3 h-3 rounded" style={{ backgroundColor: '#1e40af' }}></div>
-                                        <p className="font-medium" style={{ color: '#1e40af' }}>Disbursements: ${payload[0].payload.disbursements.toLocaleString()}</p>
+                                        <p className="font-medium" style={{ color: '#1e40af' }}>Disbursements: {formatCurrencyShort(payload[0].payload.disbursements)}</p>
                                       </div>
                                       <div className="flex items-center gap-2">
                                         <div className="w-3 h-3 rounded" style={{ backgroundColor: '#0f172a' }}></div>
-                                        <p className="font-medium" style={{ color: '#0f172a' }}>Expenditures: ${payload[0].payload.expenditures.toLocaleString()}</p>
+                                        <p className="font-medium" style={{ color: '#0f172a' }}>Expenditures: {formatCurrencyShort(payload[0].payload.expenditures)}</p>
                                       </div>
                                     </div>
                                   </div>
@@ -1809,9 +2507,9 @@ export default function ActivityDetailPage() {
                               return null
                             }}
                           />
-                          <Bar dataKey="plannedDisbursements" fill="#94a3b8" name="Planned" radius={[4, 4, 0, 0]} />
-                          <Bar dataKey="disbursements" stackId="actuals" fill="#1e40af" name="Disbursements" radius={[0, 0, 0, 0]} />
-                          <Bar dataKey="expenditures" stackId="actuals" fill="#0f172a" name="Expenditures" radius={[4, 4, 0, 0]} />
+                          <Bar dataKey="plannedDisbursements" fill="#94a3b8" name="Planned" radius={[4, 4, 4, 4]} />
+                          <Bar dataKey="disbursements" fill="#1e40af" name="Disbursements" radius={[4, 4, 4, 4]} />
+                          <Bar dataKey="expenditures" fill="#0f172a" name="Expenditures" radius={[4, 4, 4, 4]} />
                         </RechartsBarChart>
                       </ResponsiveContainer>
                     </div>
@@ -1822,170 +2520,23 @@ export default function ActivityDetailPage() {
 
             {/* Finance Type Breakdown */}
             <Card className="border-slate-200 bg-white">
-              <CardHeader className="pb-2 pt-3 px-3 flex flex-row items-center justify-between">
+              <CardHeader className="pb-2 pt-3 px-3">
                 <CardTitle className="text-xs font-semibold text-slate-900">Finance Types</CardTitle>
-                <div className="flex gap-1">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setFinanceTypeBreakdownView(financeTypeBreakdownView === 'chart' ? 'table' : 'chart')}
-                    className="h-6 w-6 p-0"
-                  >
-                    {financeTypeBreakdownView === 'chart' ? <TableIcon className="h-3 w-3" /> : <PieChart className="h-3 w-3" />}
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => {
-                      const transactions = activity.transactions || []
-                      const financeTypeData = processFinanceTypeData(transactions)
-                      const csvContent = [
-                        ['Finance Type Code', 'Finance Type Name', 'Amount (USD)', 'Percentage'],
-                        ...financeTypeData.map((item: any) => [
-                          item.code,
-                          item.name,
-                          item.amount,
-                          item.percentage
-                        ])
-                      ].map(row => row.join(',')).join('\n')
-                      
-                      const blob = new Blob([csvContent], { type: 'text/csv' })
-                      const url = window.URL.createObjectURL(blob)
-                      const a = document.createElement('a')
-                      a.href = url
-                      a.download = `finance-type-breakdown-${activity.id}.csv`
-                      a.click()
-                      window.URL.revokeObjectURL(url)
-                    }}
-                    className="h-6 w-6 p-0"
-                  >
-                    <Download className="h-3 w-3" />
-                  </Button>
-                </div>
               </CardHeader>
               <CardContent className="p-3 pt-0">
-                {(() => {
-                  const transactions = activity.transactions || []
-                  if (transactions.length === 0) {
-                    return (
-                      <div className="h-24 flex items-center justify-center text-slate-400 text-xs">
-                        <p>No transaction data</p>
-                      </div>
-                    )
-                  }
-
-                  // Process finance type data
-                  const financeTypeData = processFinanceTypeData(transactions)
-                  
-                  if (financeTypeData.length === 0) {
-                    return (
-                      <div className="h-24 flex items-center justify-center text-slate-400 text-xs">
-                        <p>No finance type data</p>
-                      </div>
-                    )
-                  }
-
-                  // Define colors for finance types
-                  const financeTypeColors = [
-                    '#1e40af', // blue-800
-                    '#3b82f6', // blue-500
-                    '#0f172a', // slate-900
-                    '#475569', // slate-600
-                    '#64748b', // slate-500
-                    '#334155', // slate-700
-                    '#94a3b8', // slate-400
-                    '#0ea5e9', // sky-500
-                    '#10b981', // emerald-500
-                    '#f59e0b', // amber-500
-                  ]
-
-                  const chartData = financeTypeData.slice(0, 6).map((item: any, idx: number) => ({
-                    code: item.code,
-                    name: item.name,
-                    value: item.percentage,
-                    amount: item.amount,
-                    color: financeTypeColors[idx % financeTypeColors.length]
-                  }))
-
-                  if (financeTypeBreakdownView === 'table') {
-                    return (
-                      <div className="h-24 overflow-auto">
-                        <table className="w-full text-xs">
-                          <thead>
-                            <tr className="border-b border-slate-200">
-                              <th className="text-left py-1 text-slate-600 font-medium">Finance Type</th>
-                              <th className="text-right py-1 text-slate-600 font-medium">Amount</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {financeTypeData.slice(0, 5).map((item: any, idx: number) => (
-                              <tr key={idx} className="border-b border-slate-100">
-                                <td className="py-1 text-slate-900">
-                                  <div className="flex items-center gap-2">
-                                    <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: financeTypeColors[idx % financeTypeColors.length] }} />
-                                    <span className="break-words">{item.name}</span>
-                                  </div>
-                                </td>
-                                <td className="text-right py-1 text-slate-900 font-medium">
-                                  ${(Math.round(((parseFloat(item.amount) || 0) / 1000000) * 10) / 10).toFixed(1)}M
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    )
-                  }
-
-                  return (
-                    <div className="h-24 flex items-center justify-center">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <RechartsPieChart>
-                          <Pie
-                            data={chartData}
-                            cx="50%"
-                            cy="50%"
-                            innerRadius={20}
-                            outerRadius={40}
-                            paddingAngle={2}
-                            dataKey="value"
-                          >
-                            {chartData.map((entry, index) => (
-                              <Cell key={`cell-${index}`} fill={entry.color} />
-                            ))}
-                          </Pie>
-                          <RechartsTooltip2 
-                            content={({ active, payload }) => {
-                              if (active && payload && payload.length) {
-                                const data = payload[0].payload
-                                return (
-                                  <div className="bg-white p-2 border border-gray-200 rounded shadow-lg">
-                                    <p className="text-sm font-semibold text-slate-900 mb-1">{data.name}</p>
-                                    <code className="text-xs px-1.5 py-0.5 bg-slate-100 text-slate-700 rounded font-mono">
-                                      {data.code}
-                                    </code>
-                                    <p className="text-xs text-slate-600 font-medium mt-1">
-                                      ${data.amount.toLocaleString()} ({data.value}%)
-                                    </p>
-                                  </div>
-                                )
-                              }
-                              return null
-                            }}
-                          />
-                        </RechartsPieChart>
-                      </ResponsiveContainer>
-                    </div>
-                  )
-                })()}
+                <FinanceTypeDonut 
+                  transactions={activity.transactions || []}
+                  activityId={activity.id}
+                  defaultCurrency="USD"
+                />
               </CardContent>
             </Card>
           </div>
 
           {/* Main Content Tabs */}
-          <Card className="border-slate-200">
+          <Card className="border-0">
             <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
-              <TabsList className={`grid w-full ${(user?.role?.includes('gov_partner') || user?.role === 'super_user') ? 'grid-cols-12' : 'grid-cols-11'} bg-slate-50 border-b border-slate-200`}>
+              <TabsList className={`grid w-full ${(user?.role?.includes('gov_partner') || user?.role === 'super_user') ? 'grid-cols-10' : 'grid-cols-9'} bg-slate-50 border-b border-slate-200`}>
                 <TabsTrigger value="finances" className="data-[state=active]:bg-white data-[state=active]:text-slate-900">
                   Finances
                 </TabsTrigger>
@@ -1999,16 +2550,10 @@ export default function ActivityDetailPage() {
                   Partnerships
                 </TabsTrigger>
                 <TabsTrigger value="geography" className="data-[state=active]:bg-white data-[state=active]:text-slate-900">
-                  Geography
-                </TabsTrigger>
-                <TabsTrigger value="analytics" className="data-[state=active]:bg-white data-[state=active]:text-slate-900">
-                  Analytics
+                  Locations
                 </TabsTrigger>
                 <TabsTrigger value="sdg" className="data-[state=active]:bg-white data-[state=active]:text-slate-900">
                   SDG Alignment
-                </TabsTrigger>
-                <TabsTrigger value="tags" className="data-[state=active]:bg-white data-[state=active]:text-slate-900">
-                  Tags
                 </TabsTrigger>
                 <TabsTrigger value="policy-markers" className="data-[state=active]:bg-white data-[state=active]:text-slate-900">
                   Policy Markers
@@ -2016,13 +2561,8 @@ export default function ActivityDetailPage() {
                 <TabsTrigger value="library" className="data-[state=active]:bg-white data-[state=active]:text-slate-900">
                   Library
                 </TabsTrigger>
-                <TabsTrigger value="comments" className="data-[state=active]:bg-white data-[state=active]:text-slate-900">
-                  Comments
-                  {activity.comments && activity.comments.length > 0 && (
-                    <Badge variant="outline" className="ml-1 text-xs border-slate-300">
-                      {activity.comments.length}
-                    </Badge>
-                  )}
+                <TabsTrigger value="related-activities" className="data-[state=active]:bg-white data-[state=active]:text-slate-900">
+                  Related Activities
                 </TabsTrigger>
                 {(user?.role?.includes('gov_partner') || user?.role === 'super_user') && (
                   <TabsTrigger value="government-inputs" className="data-[state=active]:bg-white data-[state=active]:text-slate-900">
@@ -2032,24 +2572,27 @@ export default function ActivityDetailPage() {
               </TabsList>
 
               {/* Finances Tab - Consolidated */}
-              <TabsContent value="finances" className="p-6" forceMount hidden={activeTab !== "finances"}>
-                <div className="space-y-6">
+              <TabsContent value="finances" className="p-6 border-0">
+                {activeTab === "finances" && (
+                  <div className="space-y-6">
                   {/* Budgets */}
                   <div className="border rounded-lg">
                     <div className="px-4 py-3 border-b border-slate-200">
-                      <button
-                        onClick={() => setIsBudgetsOpen(!isBudgetsOpen)}
-                        className="flex items-center gap-2 text-left hover:text-slate-900 transition-colors"
-                        aria-label={isBudgetsOpen ? 'Collapse Budgets' : 'Expand Budgets'}
-                      >
-                        {isBudgetsOpen ? <ChevronUp className="h-4 w-4 text-slate-600 flex-shrink-0" /> : <ChevronDown className="h-4 w-4 text-slate-600 flex-shrink-0" />}
-                        <div className="flex-1">
-                          <p className="text-lg font-bold text-slate-900">Budgets</p>
-                          {isBudgetsOpen && (
-                            <p className="text-xs text-slate-500 mt-1">Activity budget allocations by period</p>
-                          )}
-                        </div>
-                      </button>
+                      <div className="flex items-center justify-between gap-4">
+                        <button
+                          onClick={() => setIsBudgetsOpen(!isBudgetsOpen)}
+                          className="flex items-center gap-2 text-left hover:text-slate-900 transition-colors flex-1"
+                          aria-label={isBudgetsOpen ? 'Collapse Budgets' : 'Expand Budgets'}
+                        >
+                          {isBudgetsOpen ? <ChevronUp className="h-4 w-4 text-slate-600 flex-shrink-0" /> : <ChevronDown className="h-4 w-4 text-slate-600 flex-shrink-0" />}
+                          <div className="flex-1">
+                            <p className="text-lg font-bold text-slate-900">Budgets</p>
+                            {isBudgetsOpen && (
+                              <p className="text-xs text-slate-500 mt-1">Activity budget allocations by period</p>
+                            )}
+                          </div>
+                        </button>
+                      </div>
                     </div>
                     {isBudgetsOpen && (
                       <div className="p-4">
@@ -2068,19 +2611,21 @@ export default function ActivityDetailPage() {
                   {/* Planned Disbursements */}
                   <div className="border rounded-lg">
                     <div className="px-4 py-3 border-b border-slate-200">
-                      <button
-                        onClick={() => setIsPlannedOpen(!isPlannedOpen)}
-                        className="flex items-center gap-2 text-left hover:text-slate-900 transition-colors"
-                        aria-label={isPlannedOpen ? 'Collapse Planned Disbursements' : 'Expand Planned Disbursements'}
-                      >
-                        {isPlannedOpen ? <ChevronUp className="h-4 w-4 text-slate-600 flex-shrink-0" /> : <ChevronDown className="h-4 w-4 text-slate-600 flex-shrink-0" />}
-                        <div className="flex-1">
-                          <p className="text-lg font-bold text-slate-900">Planned Disbursements</p>
-                          {isPlannedOpen && (
-                            <p className="text-xs text-slate-500 mt-1">Scheduled future disbursements</p>
-                          )}
-                        </div>
-                      </button>
+                      <div className="flex items-center justify-between gap-4">
+                        <button
+                          onClick={() => setIsPlannedOpen(!isPlannedOpen)}
+                          className="flex items-center gap-2 text-left hover:text-slate-900 transition-colors flex-1"
+                          aria-label={isPlannedOpen ? 'Collapse Planned Disbursements' : 'Expand Planned Disbursements'}
+                        >
+                          {isPlannedOpen ? <ChevronUp className="h-4 w-4 text-slate-600 flex-shrink-0" /> : <ChevronDown className="h-4 w-4 text-slate-600 flex-shrink-0" />}
+                          <div className="flex-1">
+                            <p className="text-lg font-bold text-slate-900">Planned Disbursements</p>
+                            {isPlannedOpen && (
+                              <p className="text-xs text-slate-500 mt-1">Scheduled future disbursements</p>
+                            )}
+                          </div>
+                        </button>
+                      </div>
                     </div>
                     {isPlannedOpen && (
                       <div className="p-4">
@@ -2100,19 +2645,21 @@ export default function ActivityDetailPage() {
                   {/* Transactions */}
                   <div className="border rounded-lg">
                     <div className="px-4 py-3 border-b border-slate-200">
-                      <button
-                        onClick={() => setIsTransactionsOpen(!isTransactionsOpen)}
-                        className="flex items-center gap-2 text-left hover:text-slate-900 transition-colors"
-                        aria-label={isTransactionsOpen ? 'Collapse Transactions' : 'Expand Transactions'}
-                      >
-                        {isTransactionsOpen ? <ChevronUp className="h-4 w-4 text-slate-600 flex-shrink-0" /> : <ChevronDown className="h-4 w-4 text-slate-600 flex-shrink-0" />}
-                        <div className="flex-1">
-                          <p className="text-lg font-bold text-slate-900">Transactions</p>
-                          {isTransactionsOpen && (
-                            <p className="text-xs text-slate-500 mt-1">Commitments, disbursements, and expenditures</p>
-                          )}
-                        </div>
-                      </button>
+                      <div className="flex items-center justify-between gap-4">
+                        <button
+                          onClick={() => setIsTransactionsOpen(!isTransactionsOpen)}
+                          className="flex items-center gap-2 text-left hover:text-slate-900 transition-colors flex-1"
+                          aria-label={isTransactionsOpen ? 'Collapse Transactions' : 'Expand Transactions'}
+                        >
+                          {isTransactionsOpen ? <ChevronUp className="h-4 w-4 text-slate-600 flex-shrink-0" /> : <ChevronDown className="h-4 w-4 text-slate-600 flex-shrink-0" />}
+                          <div className="flex-1">
+                            <p className="text-lg font-bold text-slate-900">Transactions</p>
+                            {isTransactionsOpen && (
+                              <p className="text-xs text-slate-500 mt-1">Commitments, disbursements, and expenditures</p>
+                            )}
+                          </div>
+                        </button>
+                      </div>
                     </div>
                     {isTransactionsOpen && (
                       <div className="p-4">
@@ -2130,20 +2677,29 @@ export default function ActivityDetailPage() {
                     )}
                   </div>
                 </div>
+                )}
               </TabsContent>
 
               {/* Financial Analytics Tab */}
-              <TabsContent value="financial-analytics" className="p-6" forceMount hidden={activeTab !== "financial-analytics"}>
-                <FinancialAnalyticsTab activityId={activity.id} />
+              <TabsContent value="financial-analytics" className="p-6 border-0">
+                {activeTab === "financial-analytics" && (
+                  <FinancialAnalyticsTab 
+                    activityId={activity.id} 
+                    transactions={activity.transactions || []}
+                    budgets={budgets}
+                    plannedDisbursements={plannedDisbursements}
+                  />
+                )}
               </TabsContent>
 
               {/* Sectors Tab */}
-              <TabsContent value="sectors" className="p-6">
-                <div className="space-y-6">
+              <TabsContent value="sectors" className="p-6 border-0">
+                {activeTab === "sectors" && (
+                  <div className="space-y-6">
                   {/* Sector Allocation Visualization */}
                   {activity.sectors && activity.sectors.length > 0 ? (
-                    <>
-                      {/* Sector Flow Visualization with Toggle */}
+                    <div className="grid grid-cols-2 gap-6">
+                      {/* Sector Flow Visualization - First Column */}
                       <Card className="border-slate-200">
                         <CardHeader>
                           <div className="flex items-center justify-between">
@@ -2152,29 +2708,27 @@ export default function ActivityDetailPage() {
                                 <GitBranch className="h-5 w-5" />
                                 Sector Flow Visualization
                               </CardTitle>
-                          <CardDescription>
+                              <CardDescription>
                                 {sectorFlowView === 'flow' ? 'Hierarchical view of sector allocations from categories to subsectors' : 'Visual breakdown of sector allocations'}
-                          </CardDescription>
-                                  </div>
+                              </CardDescription>
+                            </div>
                             <div className="flex gap-2">
                               <Button
                                 variant={sectorFlowView === 'flow' ? 'default' : 'outline'}
                                 size="sm"
                                 onClick={() => setSectorFlowView('flow')}
                               >
-                                <GitBranch className="h-4 w-4 mr-2" />
-                                Flow
+                                <GitBranch className="h-4 w-4" />
                               </Button>
                               <Button
                                 variant={sectorFlowView === 'distribution' ? 'default' : 'outline'}
                                 size="sm"
                                 onClick={() => setSectorFlowView('distribution')}
                               >
-                                <PieChart className="h-4 w-4 mr-2" />
-                                Distribution
+                                <PieChart className="h-4 w-4" />
                               </Button>
-                                  </div>
-                                  </div>
+                            </div>
+                          </div>
                         </CardHeader>
                         <CardContent>
                           {sectorFlowView === 'flow' ? (
@@ -2189,7 +2743,7 @@ export default function ActivityDetailPage() {
                                   console.log('Sector clicked:', code);
                                 }}
                               />
-                                </div>
+                            </div>
                           ) : (
                             <div className="w-full h-[500px] flex items-center justify-center">
                               <ResponsiveContainer width="100%" height="100%">
@@ -2224,10 +2778,10 @@ export default function ActivityDetailPage() {
                                               <code className="text-xs px-1.5 py-0.5 bg-slate-100 text-slate-700 rounded font-mono">
                                                 {data.code}
                                               </code>
-                            </div>
+                                            </div>
                                             <p className="text-sm font-semibold text-slate-900">{data.name}</p>
                                             <p className="text-lg font-bold text-slate-900 mt-1">{data.value}%</p>
-                          </div>
+                                          </div>
                                         )
                                       }
                                       return null
@@ -2251,20 +2805,105 @@ export default function ActivityDetailPage() {
                         </CardContent>
                       </Card>
 
-                      {/* Sector Allocations Table - Full Width */}
+                      {/* Sector Allocations Table - Second Column */}
                       <Card className="border-slate-200">
                         <CardHeader>
-                          <CardTitle className="text-slate-900">Sector Allocations</CardTitle>
-                          <CardDescription>
-                            Detailed breakdown with budget, commitment, planned, and actual spending by sector
-                          </CardDescription>
+                          <div className="flex items-start justify-between">
+                            <div>
+                              <CardTitle className="text-slate-900">Sector Allocations</CardTitle>
+                              <CardDescription>
+                                Detailed breakdown with budget, commitment, planned, and actual spending by sector
+                              </CardDescription>
+                            </div>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                // Calculate totals (return 0 if no budgets)
+                                const totalBudget = budgets?.length > 0 ? budgets.reduce((sum: number, b: any) => 
+                                  sum + (b.usd_value || (b.currency === 'USD' ? b.value : 0) || 0), 0) : 0;
+                                
+                                const totalCommitment = financials.totalCommitment;
+                                
+                                const totalPlannedDisbursements = plannedDisbursements.reduce((sum: number, pd: any) => 
+                                  sum + (pd.usdAmount || (pd.currency === 'USD' ? pd.amount : 0) || 0), 0);
+                                
+                                const totalActualSpending = (activity.transactions || []).reduce((sum: number, t: any) => {
+                                  if (t.transaction_type === '3' || t.transaction_type === '4') {
+                                    return sum + (parseFloat(t.value) || 0);
+                                  }
+                                  return sum;
+                                }, 0);
+
+                                // Prepare CSV data
+                                const csvRows = [
+                                  ['Sector Code', 'Sector Name', 'Percentage (%)', 'Budget (USD)', 'Commitment (USD)', 'Planned Disbursement (USD)', 'Actual Spending (USD)'],
+                                  ...activity.sectors.map((sector: any) => {
+                                    const sectorBudget = totalBudget * (sector.percentage / 100);
+                                    const sectorCommitment = totalCommitment * (sector.percentage / 100);
+                                    const sectorPlannedDisb = totalPlannedDisbursements * (sector.percentage / 100);
+                                    const sectorActual = totalActualSpending * (sector.percentage / 100);
+                                    
+                                    return [
+                                      sector.sector_code || sector.code || '',
+                                      sector.sector_name || sector.name || '',
+                                      sector.percentage || 0,
+                                      sectorBudget.toFixed(2),
+                                      sectorCommitment.toFixed(2),
+                                      sectorPlannedDisb.toFixed(2),
+                                      sectorActual.toFixed(2)
+                                    ];
+                                  }),
+                                  [
+                                    'Total',
+                                    '',
+                                    activity.sectors.reduce((sum: number, s: any) => sum + (s.percentage || 0), 0),
+                                    totalBudget.toFixed(2),
+                                    totalCommitment.toFixed(2),
+                                    totalPlannedDisbursements.toFixed(2),
+                                    totalActualSpending.toFixed(2)
+                                  ]
+                                ];
+
+                                // Escape CSV values
+                                const escapeCSV = (value: any): string => {
+                                  if (value === null || value === undefined) return '';
+                                  const stringValue = String(value);
+                                  if (stringValue.includes(',') || stringValue.includes('"') || stringValue.includes('\n')) {
+                                    return `"${stringValue.replace(/"/g, '""')}"`;
+                                  }
+                                  return stringValue;
+                                };
+
+                                const csvContent = csvRows.map(row => 
+                                  row.map(escapeCSV).join(',')
+                                ).join('\n');
+
+                                // Download CSV
+                                const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                                const url = URL.createObjectURL(blob);
+                                const link = document.createElement('a');
+                                link.setAttribute('href', url);
+                                link.setAttribute('download', `sector-allocations-${activity.id || 'export'}-${new Date().toISOString().split('T')[0]}.csv`);
+                                link.style.visibility = 'hidden';
+                                document.body.appendChild(link);
+                                link.click();
+                                document.body.removeChild(link);
+                                URL.revokeObjectURL(url);
+                                
+                                toast.success('Sector allocations exported to CSV');
+                              }}
+                            >
+                              <Download className="h-4 w-4" />
+                            </Button>
+                          </div>
                         </CardHeader>
                         <CardContent>
-                          <div className="h-[400px] overflow-y-auto">
+                          <div className="h-[500px] overflow-y-auto">
                             {(() => {
-                              // Calculate totals
-                              const totalBudget = budgets.reduce((sum: number, b: any) => 
-                                sum + (b.usd_value || (b.currency === 'USD' ? b.value : 0) || 0), 0);
+                              // Calculate totals (return 0 if no budgets)
+                              const totalBudget = budgets?.length > 0 ? budgets.reduce((sum: number, b: any) => 
+                                sum + (b.usd_value || (b.currency === 'USD' ? b.value : 0) || 0), 0) : 0;
                               
                               const totalCommitment = financials.totalCommitment;
                               
@@ -2279,18 +2918,18 @@ export default function ActivityDetailPage() {
                               }, 0);
                               
                               return (
-                                <Table>
-                                  <TableHeader className="bg-slate-50 sticky top-0">
-                                    <TableRow>
-                                      <TableHead className="text-slate-900">Sector</TableHead>
-                                      <TableHead className="text-right text-slate-900">%</TableHead>
-                                      <TableHead className="text-right text-slate-900">Budget (USD)</TableHead>
-                                      <TableHead className="text-right text-slate-900">Commitment (USD)</TableHead>
-                                      <TableHead className="text-right text-slate-900">Planned Disb. (USD)</TableHead>
-                                      <TableHead className="text-right text-slate-900">Actual Spending (USD)</TableHead>
-                                    </TableRow>
-                                  </TableHeader>
-                                  <TableBody>
+                                <table className="w-full text-xs">
+                                  <thead>
+                                    <tr className="border-b border-slate-200">
+                                      <th className="text-left py-1 text-slate-600 font-medium">Sector</th>
+                                      <th className="text-right py-1 text-slate-600 font-medium">%</th>
+                                      <th className="text-right py-1 text-slate-600 font-medium">Budget</th>
+                                      <th className="text-right py-1 text-slate-600 font-medium">Commitment</th>
+                                      <th className="text-right py-1 text-slate-600 font-medium">Planned Disb.</th>
+                                      <th className="text-right py-1 text-slate-600 font-medium">Actual Spending</th>
+                                    </tr>
+                                  </thead>
+                                  <tbody>
                                     {activity.sectors.map((sector: any, idx: number) => {
                                       const sectorBudget = totalBudget * (sector.percentage / 100);
                                       const sectorCommitment = totalCommitment * (sector.percentage / 100);
@@ -2298,8 +2937,8 @@ export default function ActivityDetailPage() {
                                       const sectorActual = totalActualSpending * (sector.percentage / 100);
                                       
                                       return (
-                                        <TableRow key={idx} className="border-b border-slate-100">
-                                          <TableCell>
+                                        <tr key={idx} className="border-b border-slate-100">
+                                          <td className="py-1 text-slate-900">
                                             <div className="flex items-center gap-2">
                                               <div 
                                                 className="w-3 h-3 rounded flex-shrink-0" 
@@ -2310,65 +2949,55 @@ export default function ActivityDetailPage() {
                                               <code className="text-xs font-mono bg-slate-100 px-1.5 py-0.5 rounded">
                                                 {sector.sector_code || sector.code}
                                               </code>
-                                              <span className="text-sm text-slate-900">
+                                              <span className="text-xs text-slate-900">
                                                 {sector.sector_name || sector.name}
                                               </span>
-                                      </div>
-                                          </TableCell>
-                                          <TableCell className="text-right">
-                                            <span className="font-semibold text-slate-900">
-                                        {sector.percentage}%
-                                            </span>
-                                          </TableCell>
-                                          <TableCell className="text-right">
-                                            <span className="text-sm text-slate-700">
-                                              ${sectorBudget.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
-                                            </span>
-                                          </TableCell>
-                                          <TableCell className="text-right">
-                                            <span className="text-sm text-slate-700">
-                                              ${sectorCommitment.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
-                                            </span>
-                                          </TableCell>
-                                          <TableCell className="text-right">
-                                            <span className="text-sm text-slate-700">
-                                              ${sectorPlannedDisb.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
-                                            </span>
-                                          </TableCell>
-                                          <TableCell className="text-right">
-                                            <span className="text-sm text-slate-700">
-                                              ${sectorActual.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
-                                            </span>
-                                          </TableCell>
-                                        </TableRow>
-                              );
-                            })}
-                                    <TableRow className="bg-slate-50 font-bold sticky bottom-0">
-                                      <TableCell className="text-slate-900">Total</TableCell>
-                                      <TableCell className="text-right text-slate-900">
-                                {activity.sectors.reduce((sum: number, s: any) => sum + (s.percentage || 0), 0)}%
-                                      </TableCell>
-                                      <TableCell className="text-right text-slate-900">
-                                        ${totalBudget.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
-                                      </TableCell>
-                                      <TableCell className="text-right text-slate-900">
-                                        ${totalCommitment.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
-                                      </TableCell>
-                                      <TableCell className="text-right text-slate-900">
-                                        ${totalPlannedDisbursements.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
-                                      </TableCell>
-                                      <TableCell className="text-right text-slate-900">
-                                        ${totalActualSpending.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
-                                      </TableCell>
-                                    </TableRow>
-                                  </TableBody>
-                                </Table>
+                                            </div>
+                                          </td>
+                                          <td className="text-right py-1 text-slate-900 font-medium">
+                                            {sector.percentage}%
+                                          </td>
+                                          <td className="text-right py-1 text-slate-900 font-medium">
+                                            {formatNumberWithAbbreviation(sectorBudget, { currency: '$', decimals: 1 })}
+                                          </td>
+                                          <td className="text-right py-1 text-slate-900 font-medium">
+                                            {formatNumberWithAbbreviation(sectorCommitment, { currency: '$', decimals: 1 })}
+                                          </td>
+                                          <td className="text-right py-1 text-slate-900 font-medium">
+                                            {formatNumberWithAbbreviation(sectorPlannedDisb, { currency: '$', decimals: 1 })}
+                                          </td>
+                                          <td className="text-right py-1 text-slate-900 font-medium">
+                                            {formatNumberWithAbbreviation(sectorActual, { currency: '$', decimals: 1 })}
+                                          </td>
+                                        </tr>
+                                      );
+                                    })}
+                                    <tr className="border-b border-slate-200 bg-slate-50">
+                                      <td className="py-1 text-slate-900 font-medium">Total</td>
+                                      <td className="text-right py-1 text-slate-900 font-medium">
+                                        {activity.sectors.reduce((sum: number, s: any) => sum + (s.percentage || 0), 0)}%
+                                      </td>
+                                      <td className="text-right py-1 text-slate-900 font-medium">
+                                        {formatNumberWithAbbreviation(totalBudget, { currency: '$', decimals: 1 })}
+                                      </td>
+                                      <td className="text-right py-1 text-slate-900 font-medium">
+                                        {formatNumberWithAbbreviation(totalCommitment, { currency: '$', decimals: 1 })}
+                                      </td>
+                                      <td className="text-right py-1 text-slate-900 font-medium">
+                                        {formatNumberWithAbbreviation(totalPlannedDisbursements, { currency: '$', decimals: 1 })}
+                                      </td>
+                                      <td className="text-right py-1 text-slate-900 font-medium">
+                                        {formatNumberWithAbbreviation(totalActualSpending, { currency: '$', decimals: 1 })}
+                                      </td>
+                                    </tr>
+                                  </tbody>
+                                </table>
                               );
                             })()}
                           </div>
                         </CardContent>
                       </Card>
-                    </>
+                    </div>
                   ) : (
                     <Card className="border-slate-200">
                       <CardContent className="text-center py-12">
@@ -2378,11 +3007,13 @@ export default function ActivityDetailPage() {
                     </Card>
                   )}
                 </div>
+                )}
               </TabsContent>
 
               {/* Partnerships Tab */}
-              <TabsContent value="partnerships" className="p-6">
-                {(() => {
+              <TabsContent value="partnerships" className="p-6 border-0">
+                {activeTab === "partnerships" && (
+                  (() => {
                   // Calculate financial metrics for each organization
                   const calculateOrgFinancials = (orgId: string | undefined, orgName: string | undefined) => {
                     let totalPlanned = 0;
@@ -2492,577 +3123,466 @@ export default function ActivityDetailPage() {
 
                   const otherPartners = getOtherPartners();
 
+                  // Helper function for role badge colors
+                  const getRoleBadgeColor = (roleCode: number | undefined) => {
+                    if (!roleCode) return 'bg-gray-100 text-gray-800 border-gray-300';
+                    const colors: Record<number, string> = {
+                      1: 'bg-yellow-100 text-yellow-800 border-yellow-300',     // Funding
+                      2: 'bg-purple-100 text-purple-800 border-purple-300',     // Accountable/Government
+                      3: 'bg-blue-100 text-blue-800 border-blue-300',           // Extending
+                      4: 'bg-green-100 text-green-800 border-green-300'         // Implementing
+                    };
+                    return colors[roleCode] || 'bg-gray-100 text-gray-800 border-gray-300';
+                  };
+
                   return (
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                  {/* SDG Icons Below Partners List Header */}
-                  {sdgMappings && sdgMappings.length > 0 && (
-                    <div className="lg:col-span-2 mb-2 -mt-2">
-                      <div className="pt-2 pb-3 border-b border-slate-200">
-                        <div className="text-xs font-medium text-slate-600 mb-2">SDG Alignment</div>
-                        <SDGImageGrid 
-                          sdgCodes={sdgMappings.map((m: any) => m.sdgGoal || m.sdg_goal)} 
-                          size="sm" 
-                          showTooltips={true}
-                        />
-                      </div>
-                    </div>
-                  )}
-                  {/* Funding Partners */}
+                <div className="space-y-6">
+                  {/* Reporting Organisation */}
+                  {reportingOrg && (
                   <Card className="border-slate-200">
                     <CardHeader>
                       <CardTitle className="text-slate-900 flex items-center gap-2">
-                        <DollarSign className="h-5 w-5" />
-                        Funding Partners
+                          <Building2 className="h-5 w-5" />
+                          Reporting Organisation
                       </CardTitle>
+                        <CardDescription>
+                          The organization that reports this activity
+                        </CardDescription>
                     </CardHeader>
                     <CardContent>
-                      {participatingOrgs.filter(p => p.role_type === 'funding').length > 0 ? (
-                        <div className="space-y-3">
-                          {participatingOrgs.filter(p => p.role_type === 'funding').map((org, idx) => {
-                            const financials = calculateOrgFinancials(org.organization?.id, org.organization?.name || org.narrative);
-                            return (
-                            <div key={idx} className="p-4 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors">
-                              <div className="flex items-start gap-3 mb-3">
-                                {/* Logo/Icon */}
-                                <div className="flex-shrink-0">
-                                  {org.organization?.logo ? (
-                                    <img 
-                                      src={org.organization.logo} 
-                                      alt={`${org.organization.name} logo`}
-                                      className="w-12 h-12 rounded object-cover border border-slate-200"
-                                    />
-                                  ) : (
-                                    <div className="w-12 h-12 rounded bg-slate-100 flex items-center justify-center border border-slate-200">
-                                      <Building2 className="h-6 w-6 text-slate-400" />
-                                    </div>
-                                  )}
-                                </div>
-                                {/* Organization Info */}
-                                <div className="flex-1 min-w-0 flex items-start justify-between gap-3">
+                        <div className="flex items-center gap-4">
+                                  <div className="flex-shrink-0">
+                            {reportingOrg.logo ? (
+                              <img 
+                                src={reportingOrg.logo} 
+                                alt={reportingOrg.name || 'Organization logo'}
+                                className="w-16 h-16 rounded object-cover border border-slate-200"
+                                onError={(e) => {
+                                  (e.target as HTMLImageElement).style.display = 'none';
+                                }}
+                              />
+                            ) : (
+                              <div className="w-16 h-16 bg-slate-100 rounded flex items-center justify-center">
+                                <Building2 className="h-8 w-8 text-slate-400" />
+                                  </div>
+                                )}
+                          </div>
                                   <div className="flex-1 min-w-0">
-                                    <div className="font-medium text-slate-900 mb-1">
-                                      {org.organization?.name || org.narrative || 'Unknown'}
+                            <div className="font-semibold text-slate-900 text-lg">
+                              {reportingOrg.id ? (
+                                <Link 
+                                  href={`/organizations/${reportingOrg.id}`}
+                                  className="hover:text-blue-600 transition-colors"
+                                >
+                                  {reportingOrg.name || 'Unknown Organization'}
+                                </Link>
+                              ) : (
+                                <span>{reportingOrg.name || 'Unknown Organization'}</span>
+                              )}
                                     </div>
-                                    {org.organization?.acronym && org.organization.acronym !== org.organization.name && (
-                                      <div className="text-sm text-slate-600">
-                                        {org.organization.acronym}
+                            {reportingOrg.acronym && reportingOrg.acronym !== reportingOrg.name && (
+                              <div className="text-sm text-slate-600 mt-1">
+                                {reportingOrg.acronym}
                                       </div>
                                     )}
+                            <div className="flex flex-wrap gap-3 mt-2 text-sm text-slate-600">
+                              {reportingOrg.iati_org_id && (
+                                <div>
+                                  <span className="font-medium">IATI ID:</span>{' '}
+                                  <span className="font-mono">{reportingOrg.iati_org_id}</span>
                                   </div>
-                                  {/* Organization Type and IATI ID Badges - Right side */}
-                                  {(org.organization?.Organisation_Type_Code || org.organization?.iati_org_id) && (
-                                    <div className="flex flex-col gap-1 items-end flex-shrink-0">
-                                      {org.organization.Organisation_Type_Code && (
-                                        <Badge variant="outline" className="border-slate-300 text-slate-700 text-xs">
-                                          {getOrganizationTypeName(org.organization.Organisation_Type_Code)}
-                                        </Badge>
-                                      )}
-                                      {org.organization.iati_org_id && (
-                                        <Badge variant="outline" className="border-slate-300 text-slate-700 text-xs font-mono">
-                                          IATI: {org.organization.iati_org_id}
-                                        </Badge>
-                                      )}
+                              )}
+                              {reportingOrg.organisation_type && (
+                                <div>
+                                  <span className="font-medium">Type:</span>{' '}
+                                  {getOrganizationTypeName(reportingOrg.organisation_type)}
+                                    </div>
+                                  )}
+                              {reportingOrg.country && (
+                                <div>
+                                  <span className="font-medium">Country:</span>{' '}
+                                  {reportingOrg.country}
                                     </div>
                                   )}
                                 </div>
                               </div>
-                              {/* Financial Metrics */}
-                              {(financials.totalPlanned > 0 || financials.totalDisbursed > 0 || financials.totalExpended > 0) && (
-                                <div className="border-t border-slate-200 pt-3 space-y-2">
-                                  <div className="flex justify-between text-sm">
-                                    <span className="text-slate-600">Planned:</span>
-                                    <span className="font-medium text-slate-900">${financials.totalPlanned.toLocaleString()}</span>
-                                  </div>
-                                  <div className="flex justify-between text-sm">
-                                    <span className="text-slate-600">Disbursed:</span>
-                                    <span className="font-medium text-blue-600">${financials.totalDisbursed.toLocaleString()}</span>
-                                  </div>
-                                  <div className="flex justify-between text-sm">
-                                    <span className="text-slate-600">Expended:</span>
-                                    <span className="font-medium text-slate-900">${financials.totalExpended.toLocaleString()}</span>
-                                  </div>
-                                  {financials.totalPlanned > 0 && (
-                                    <div className="mt-2">
-                                      <div className="flex justify-between text-xs text-slate-600 mb-1">
-                                        <span>Progress</span>
-                                        <span>{financials.disbursementProgress.toFixed(0)}%</span>
-                                      </div>
-                                      <div className="w-full bg-slate-200 rounded-full h-2">
-                                        <div 
-                                          className="bg-blue-600 h-2 rounded-full transition-all"
-                                          style={{ width: `${Math.min(financials.disbursementProgress, 100)}%` }}
-                                        />
-                                      </div>
-                                    </div>
-                                  )}
-                                </div>
-                              )}
-                            </div>
-                          )})}
-                        </div>
-                      ) : (
-                        <p className="text-slate-500 text-center py-4">No funding partners</p>
-                      )}
+                          </div>
                     </CardContent>
                   </Card>
-
-                  {/* Implementing Partners */}
+                  )}
+                  {/* Participating Organizations Table */}
+                  {participatingOrgs.length > 0 && (
                   <Card className="border-slate-200">
                     <CardHeader>
                       <CardTitle className="text-slate-900 flex items-center gap-2">
                         <Users className="h-5 w-5" />
-                        Implementing Partners
+                          Participating Organizations
                       </CardTitle>
+                        <CardDescription>
+                          All organizations participating in this activity with their roles, types, and IATI identifiers
+                        </CardDescription>
                     </CardHeader>
-                    <CardContent>
-                      {participatingOrgs.filter(p => p.role_type === 'implementing').length > 0 ? (
-                        <div className="space-y-3">
-                          {participatingOrgs.filter(p => p.role_type === 'implementing').map((org, idx) => {
-                            const financials = calculateOrgFinancials(org.organization?.id, org.organization?.name || org.narrative);
-                            return (
-                            <div key={idx} className="p-4 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors">
-                              <div className="flex items-start gap-3 mb-3">
-                                {/* Logo/Icon */}
-                                <div className="flex-shrink-0">
-                                  {org.organization?.logo ? (
+                    <CardContent className="p-6 pt-0">
+                        <div className="rounded-md border overflow-x-auto">
+                          <Table className="table-fixed">
+                            <TableHeader className="bg-muted/50 border-b border-border/70">
+                              <TableRow>
+                                <TableHead className="text-sm font-medium text-foreground/90 py-3 px-4 whitespace-nowrap">Organization</TableHead>
+                                <TableHead className="text-sm font-medium text-foreground/90 py-3 px-4 whitespace-nowrap">Role</TableHead>
+                                <TableHead className="text-sm font-medium text-foreground/90 py-3 px-4 whitespace-nowrap">Org Type</TableHead>
+                                <TableHead className="text-sm font-medium text-foreground/90 py-3 px-4 whitespace-nowrap">IATI ID</TableHead>
+                                <TableHead className="text-sm font-medium text-foreground/90 py-3 px-4 whitespace-nowrap">Country</TableHead>
+                              </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                              {participatingOrgs.map((org: any) => (
+                                <TableRow key={org.id} className="border-b border-border/40 hover:bg-muted/30 transition-colors">
+                                  <TableCell className="py-3 px-4">
+                                    <div className="flex items-center gap-3">
+                                  <div className="flex-shrink-0">
+                                        {org.organization?.logo ? (
                                     <img 
                                       src={org.organization.logo} 
-                                      alt={`${org.organization.name} logo`}
-                                      className="w-12 h-12 rounded object-cover border border-slate-200"
-                                    />
-                                  ) : (
-                                    <div className="w-12 h-12 rounded bg-slate-100 flex items-center justify-center border border-slate-200">
-                                      <Building2 className="h-6 w-6 text-slate-400" />
-                                    </div>
-                                  )}
-                                </div>
-                                {/* Organization Info */}
-                                <div className="flex-1 min-w-0 flex items-start justify-between gap-3">
-                                  <div className="flex-1 min-w-0">
+                                            alt={org.organization.name || 'Organization logo'}
+                                            className="w-10 h-10 rounded object-cover border border-slate-200"
+                                            onError={(e) => {
+                                              (e.target as HTMLImageElement).style.display = 'none';
+                                            }}
+                                          />
+                                        ) : (
+                                          <div className="w-10 h-10 bg-slate-100 rounded flex items-center justify-center">
+                                            <Building2 className="h-5 w-5 text-slate-400" />
+                                  </div>
+                                )}
+                                      </div>
+                                      <div className="min-w-0 flex-1">
+                                        <div className="font-medium text-slate-900">
                                     {org.organization?.id ? (
-                                      <>
-                                        <Link 
-                                          href={`/organizations/${org.organization.id}`}
-                                          className="font-medium text-slate-900 mb-1 hover:text-blue-600 transition-colors block"
-                                        >
-                                          {org.organization.name || org.narrative || 'Unknown'}
-                                        </Link>
-                                        {org.organization.acronym && org.organization.acronym !== org.organization.name && (
-                                          <div className="text-sm text-slate-600">
                                             <Link 
                                               href={`/organizations/${org.organization.id}`}
                                               className="hover:text-blue-600 transition-colors"
                                             >
-                                              {org.organization.acronym}
+                                              {org.narrative || org.organization?.name || 'Unknown Organization'}
                                             </Link>
-                                          </div>
-                                        )}
-                                      </>
                                     ) : (
-                                      <>
-                                        <div className="font-medium text-slate-900 mb-1">
-                                          {org.organization?.name || org.narrative || 'Unknown'}
+                                            <span>{org.narrative || org.organization?.name || 'Unknown Organization'}</span>
+                                          )}
                                         </div>
                                         {org.organization?.acronym && org.organization.acronym !== org.organization.name && (
                                           <div className="text-sm text-slate-600">
                                             {org.organization.acronym}
                                           </div>
-                                        )}
-                                      </>
                                     )}
                                   </div>
-                                  {/* Organization Type and IATI ID Badges - Right side */}
-                                  {(org.organization?.Organisation_Type_Code || org.organization?.iati_org_id) && (
-                                    <div className="flex flex-col gap-1 items-end flex-shrink-0">
-                                      {org.organization.Organisation_Type_Code && (
-                                        <Badge variant="outline" className="border-slate-300 text-slate-700 text-xs">
-                                          {getOrganizationTypeName(org.organization.Organisation_Type_Code)}
+                                    </div>
+                                  </TableCell>
+                                  <TableCell className="py-3 px-4 whitespace-nowrap">
+                                    <Badge
+                                      variant="outline"
+                                      className={`${getRoleBadgeColor(org.iati_role_code || getRoleCodeFromType(org.role_type))} border`}
+                                    >
+                                      {getOrganizationRoleName(org.iati_role_code || getRoleCodeFromType(org.role_type))}
                                         </Badge>
-                                      )}
-                                      {org.organization.iati_org_id && (
-                                        <Badge variant="outline" className="border-slate-300 text-slate-700 text-xs font-mono">
-                                          IATI: {org.organization.iati_org_id}
-                                        </Badge>
-                                      )}
+                                  </TableCell>
+                                  <TableCell className="py-3 px-4 whitespace-nowrap">
+                                    {org.org_type || org.organization?.Organisation_Type_Code ? (
+                                      <div className="flex items-center gap-2">
+                                        <span className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
+                                          {org.org_type || org.organization?.Organisation_Type_Code}
+                                        </span>
+                                        <span className="font-medium">
+                                          {getOrganizationTypeName(org.org_type || org.organization?.Organisation_Type_Code || '')}
+                                        </span>
                                     </div>
-                                  )}
-                                </div>
-                              </div>
-                              {/* Financial Metrics */}
-                              {(financials.totalPlanned > 0 || financials.totalDisbursed > 0 || financials.totalExpended > 0) && (
-                                <div className="border-t border-slate-200 pt-3 space-y-2">
-                                  <div className="flex justify-between text-sm">
-                                    <span className="text-slate-600">Planned:</span>
-                                    <span className="font-medium text-slate-900">${financials.totalPlanned.toLocaleString()}</span>
-                                  </div>
-                                  <div className="flex justify-between text-sm">
-                                    <span className="text-slate-600">Disbursed:</span>
-                                    <span className="font-medium text-blue-600">${financials.totalDisbursed.toLocaleString()}</span>
-                                  </div>
-                                  <div className="flex justify-between text-sm">
-                                    <span className="text-slate-600">Expended:</span>
-                                    <span className="font-medium text-slate-900">${financials.totalExpended.toLocaleString()}</span>
-                                  </div>
-                                  {financials.totalPlanned > 0 && (
-                                    <div className="mt-2">
-                                      <div className="flex justify-between text-xs text-slate-600 mb-1">
-                                        <span>Progress</span>
-                                        <span>{financials.disbursementProgress.toFixed(0)}%</span>
-                                      </div>
-                                      <div className="w-full bg-slate-200 rounded-full h-2">
-                                        <div 
-                                          className="bg-blue-600 h-2 rounded-full transition-all"
-                                          style={{ width: `${Math.min(financials.disbursementProgress, 100)}%` }}
-                                        />
-                                      </div>
-                                    </div>
-                                  )}
-                                </div>
-                              )}
-                            </div>
-                          )})}
-                        </div>
-                      ) : (
-                        <p className="text-slate-500 text-center py-4">No implementing partners</p>
-                      )}
-                    </CardContent>
-                  </Card>
-
-                  {/* Extending Partners */}
-                  <Card className="border-slate-200">
-                    <CardHeader>
-                      <CardTitle className="text-slate-900 flex items-center gap-2">
-                        <Building2 className="h-5 w-5" />
-                        Extending Partners
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      {participatingOrgs.filter(p => p.role_type === 'extending').length > 0 ? (
-                        <div className="space-y-3">
-                          {participatingOrgs.filter(p => p.role_type === 'extending').map((org, idx) => {
-                            const financials = calculateOrgFinancials(org.organization?.id, org.organization?.name || org.narrative);
-                            return (
-                            <div key={idx} className="p-4 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors">
-                              <div className="flex items-start gap-3 mb-3">
-                                {/* Logo/Icon */}
-                                <div className="flex-shrink-0">
-                                  {org.organization?.logo ? (
-                                    <img 
-                                      src={org.organization.logo} 
-                                      alt={`${org.organization.name} logo`}
-                                      className="w-12 h-12 rounded object-cover border border-slate-200"
-                                    />
-                                  ) : (
-                                    <div className="w-12 h-12 rounded bg-slate-100 flex items-center justify-center border border-slate-200">
-                                      <Building2 className="h-6 w-6 text-slate-400" />
-                                    </div>
-                                  )}
-                                </div>
-                                {/* Organization Info */}
-                                <div className="flex-1 min-w-0 flex items-start justify-between gap-3">
-                                  <div className="flex-1 min-w-0">
-                                    <div className="font-medium text-slate-900 mb-1">
-                                      {org.organization?.name || org.narrative || 'Unknown'}
-                                    </div>
-                                    {org.organization?.acronym && org.organization.acronym !== org.organization.name && (
-                                      <div className="text-sm text-slate-600">
-                                        {org.organization.acronym}
-                                      </div>
-                                    )}
-                                  </div>
-                                  {/* Organization Type and IATI ID Badges - Right side */}
-                                  {(org.organization?.Organisation_Type_Code || org.organization?.iati_org_id) && (
-                                    <div className="flex flex-col gap-1 items-end flex-shrink-0">
-                                      {org.organization.Organisation_Type_Code && (
-                                        <Badge variant="outline" className="border-slate-300 text-slate-700 text-xs">
-                                          {getOrganizationTypeName(org.organization.Organisation_Type_Code)}
-                                        </Badge>
-                                      )}
-                                      {org.organization.iati_org_id && (
-                                        <Badge variant="outline" className="border-slate-300 text-slate-700 text-xs font-mono">
-                                          IATI: {org.organization.iati_org_id}
-                                        </Badge>
-                                      )}
-                                    </div>
-                                  )}
-                                </div>
-                              </div>
-                              {/* Financial Metrics */}
-                              {(financials.totalPlanned > 0 || financials.totalDisbursed > 0 || financials.totalExpended > 0) && (
-                                <div className="border-t border-slate-200 pt-3 space-y-2">
-                                  <div className="flex justify-between text-sm">
-                                    <span className="text-slate-600">Planned:</span>
-                                    <span className="font-medium text-slate-900">${financials.totalPlanned.toLocaleString()}</span>
-                                  </div>
-                                  <div className="flex justify-between text-sm">
-                                    <span className="text-slate-600">Disbursed:</span>
-                                    <span className="font-medium text-blue-600">${financials.totalDisbursed.toLocaleString()}</span>
-                                  </div>
-                                  <div className="flex justify-between text-sm">
-                                    <span className="text-slate-600">Expended:</span>
-                                    <span className="font-medium text-slate-900">${financials.totalExpended.toLocaleString()}</span>
-                                  </div>
-                                  {financials.totalPlanned > 0 && (
-                                    <div className="mt-2">
-                                      <div className="flex justify-between text-xs text-slate-600 mb-1">
-                                        <span>Progress</span>
-                                        <span>{financials.disbursementProgress.toFixed(0)}%</span>
-                                      </div>
-                                      <div className="w-full bg-slate-200 rounded-full h-2">
-                                        <div 
-                                          className="bg-blue-600 h-2 rounded-full transition-all"
-                                          style={{ width: `${Math.min(financials.disbursementProgress, 100)}%` }}
-                                        />
-                                      </div>
-                                    </div>
-                                  )}
-                                </div>
-                              )}
-                            </div>
-                          )})}
-                        </div>
-                      ) : (
-                        <p className="text-slate-500 text-center py-4">No extending partners</p>
-                      )}
-                    </CardContent>
-                  </Card>
-
-                  {/* Accountable Partners (Government) */}
-                  <Card className="border-slate-200">
-                    <CardHeader>
-                      <CardTitle className="text-slate-900 flex items-center gap-2">
-                        <Building2 className="h-5 w-5" />
-                        Accountable Partners
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      {participatingOrgs.filter(p => p.role_type === 'government').length > 0 ? (
-                        <div className="space-y-3">
-                          {participatingOrgs.filter(p => p.role_type === 'government').map((org, idx) => {
-                            const financials = calculateOrgFinancials(org.organization?.id, org.organization?.name || org.narrative);
-                            return (
-                            <div key={idx} className="p-4 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors">
-                              <div className="flex items-start gap-3 mb-3">
-                                {/* Logo/Icon */}
-                                <div className="flex-shrink-0">
-                                  {org.organization?.logo ? (
-                                    <img 
-                                      src={org.organization.logo} 
-                                      alt={`${org.organization.name} logo`}
-                                      className="w-12 h-12 rounded object-cover border border-slate-200"
-                                    />
-                                  ) : (
-                                    <div className="w-12 h-12 rounded bg-slate-100 flex items-center justify-center border border-slate-200">
-                                      <Building2 className="h-6 w-6 text-slate-400" />
-                                    </div>
-                                  )}
-                                </div>
-                                {/* Organization Info */}
-                                <div className="flex-1 min-w-0 flex items-start justify-between gap-3">
-                                  <div className="flex-1 min-w-0">
-                                    <div className="font-medium text-slate-900 mb-1">
-                                      {org.organization?.name || org.narrative || 'Unknown'}
-                                    </div>
-                                    {org.organization?.acronym && org.organization.acronym !== org.organization.name && (
-                                      <div className="text-sm text-slate-600">
-                                        {org.organization.acronym}
-                                      </div>
-                                    )}
-                                  </div>
-                                  {/* Organization Type and IATI ID Badges - Right side */}
-                                  {(org.organization?.Organisation_Type_Code || org.organization?.iati_org_id) && (
-                                    <div className="flex flex-col gap-1 items-end flex-shrink-0">
-                                      {org.organization.Organisation_Type_Code && (
-                                        <Badge variant="outline" className="border-slate-300 text-slate-700 text-xs">
-                                          {getOrganizationTypeName(org.organization.Organisation_Type_Code)}
-                                        </Badge>
-                                      )}
-                                      {org.organization.iati_org_id && (
-                                        <Badge variant="outline" className="border-slate-300 text-slate-700 text-xs font-mono">
-                                          IATI: {org.organization.iati_org_id}
-                                        </Badge>
-                                      )}
-                                    </div>
-                                  )}
-                                </div>
-                              </div>
-                              {/* Financial Metrics */}
-                              {(financials.totalPlanned > 0 || financials.totalDisbursed > 0 || financials.totalExpended > 0) && (
-                                <div className="border-t border-slate-200 pt-3 space-y-2">
-                                  <div className="flex justify-between text-sm">
-                                    <span className="text-slate-600">Planned:</span>
-                                    <span className="font-medium text-slate-900">${financials.totalPlanned.toLocaleString()}</span>
-                                  </div>
-                                  <div className="flex justify-between text-sm">
-                                    <span className="text-slate-600">Disbursed:</span>
-                                    <span className="font-medium text-blue-600">${financials.totalDisbursed.toLocaleString()}</span>
-                                  </div>
-                                  <div className="flex justify-between text-sm">
-                                    <span className="text-slate-600">Expended:</span>
-                                    <span className="font-medium text-slate-900">${financials.totalExpended.toLocaleString()}</span>
-                                  </div>
-                                  {financials.totalPlanned > 0 && (
-                                    <div className="mt-2">
-                                      <div className="flex justify-between text-xs text-slate-600 mb-1">
-                                        <span>Progress</span>
-                                        <span>{financials.disbursementProgress.toFixed(0)}%</span>
-                                      </div>
-                                      <div className="w-full bg-slate-200 rounded-full h-2">
-                                        <div 
-                                          className="bg-blue-600 h-2 rounded-full transition-all"
-                                          style={{ width: `${Math.min(financials.disbursementProgress, 100)}%` }}
-                                        />
-                                      </div>
-                                    </div>
-                                  )}
-                                </div>
-                              )}
-                            </div>
-                          )})}
-                        </div>
-                      ) : (
-                        <p className="text-slate-500 text-center py-4">No accountable partners</p>
-                      )}
-                    </CardContent>
-                  </Card>
-
-                  {/* Other Partners */}
-                  {otherPartners.length > 0 && (
-                    <Card className="border-slate-200 lg:col-span-2">
-                      <CardHeader>
-                        <CardTitle className="text-slate-900 flex items-center gap-2">
-                          <Users className="h-5 w-5" />
-                          Other Partners
-                          <Badge variant="outline" className="ml-2 text-xs">
-                            From Transactions & Planned Disbursements
-                          </Badge>
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                          {otherPartners.map((partner, idx) => {
-                            const financials = calculateOrgFinancials(partner.id, partner.name);
-                            return (
-                              <div key={idx} className="p-4 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors">
-                                <div className="flex items-start gap-3 mb-3">
-                                  {/* Logo/Icon */}
-                                  <div className="flex-shrink-0">
-                                    {partner.logo ? (
-                                      <img 
-                                        src={partner.logo} 
-                                        alt={`${partner.name} logo`}
-                                        className="w-12 h-12 rounded object-cover border border-slate-200"
-                                      />
                                     ) : (
-                                      <div className="w-12 h-12 rounded bg-slate-100 flex items-center justify-center border border-slate-200">
-                                        <Building2 className="h-6 w-6 text-slate-400" />
-                                      </div>
+                                      <span className="text-muted-foreground text-sm">Not set</span>
                                     )}
-                                  </div>
-                                  {/* Organization Info */}
-                                  <div className="flex-1 min-w-0">
-                                    <div className="font-medium text-slate-900 mb-1">
-                                      {partner.name}
-                                    </div>
-                                    <div className="text-xs text-slate-500">
-                                      Financial relationship only
-                                    </div>
-                                  </div>
-                                </div>
-                                {/* Financial Metrics */}
-                                {(financials.totalPlanned > 0 || financials.totalDisbursed > 0 || financials.totalExpended > 0) && (
-                                  <div className="border-t border-slate-200 pt-3 space-y-2">
-                                    <div className="flex justify-between text-sm">
-                                      <span className="text-slate-600">Planned:</span>
-                                      <span className="font-medium text-slate-900">${financials.totalPlanned.toLocaleString()}</span>
-                                    </div>
-                                    <div className="flex justify-between text-sm">
-                                      <span className="text-slate-600">Disbursed:</span>
-                                      <span className="font-medium text-blue-600">${financials.totalDisbursed.toLocaleString()}</span>
-                                    </div>
-                                    <div className="flex justify-between text-sm">
-                                      <span className="text-slate-600">Expended:</span>
-                                      <span className="font-medium text-slate-900">${financials.totalExpended.toLocaleString()}</span>
-                                    </div>
-                                    {financials.totalPlanned > 0 && (
-                                      <div className="mt-2">
-                                        <div className="flex justify-between text-xs text-slate-600 mb-1">
-                                          <span>Progress</span>
-                                          <span>{financials.disbursementProgress.toFixed(0)}%</span>
-                                        </div>
-                                        <div className="w-full bg-slate-200 rounded-full h-2">
-                                          <div 
-                                            className="bg-blue-600 h-2 rounded-full transition-all"
-                                            style={{ width: `${Math.min(financials.disbursementProgress, 100)}%` }}
-                                          />
-                                        </div>
-                                      </div>
+                                  </TableCell>
+                                  <TableCell className="py-3 px-4 whitespace-nowrap">
+                                    <NormalizedOrgRef 
+                                      ref={org.iati_org_ref || org.organization?.iati_org_id} 
+                                      className="bg-muted"
+                                    />
+                                  </TableCell>
+                                  <TableCell className="py-3 px-4 whitespace-nowrap">
+                                    {org.organization?.country ? (
+                                      <span className="text-sm text-slate-600">{org.organization.country}</span>
+                                    ) : (
+                                      <span className="text-slate-400 text-sm">—</span>
                                     )}
-                                  </div>
-                                )}
-                              </div>
-                            );
-                          })}
+                                  </TableCell>
+                                </TableRow>
+                              ))}
+                            </TableBody>
+                          </Table>
                         </div>
                       </CardContent>
                     </Card>
                   )}
                 </div>
-                  );
-                })()}
+                );
+              })()
+                  )}
               </TabsContent>
 
-              {/* Geography Tab */}
-              <TabsContent value="geography" className="p-6">
-                <Card className="border-slate-200">
-                  <CardHeader>
-                    <CardTitle className="text-slate-900 flex items-center gap-2">
-                      <MapPin className="h-5 w-5" />
-                      Activity Locations
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-center py-12">
-                      <MapPin className="h-12 w-12 text-slate-300 mx-auto mb-4" />
-                      <p className="text-slate-500">Location information and maps will be displayed here once implemented.</p>
-                    </div>
-                  </CardContent>
-                </Card>
-              </TabsContent>
+              {/* Locations Tab */}
+              <TabsContent value="geography" className="p-6 border-0 space-y-6">
+                {activeTab === "geography" && (
+                  <>
+                {/* Country/Region Allocation Chart - Hero Card */}
+                {(countryAllocations.length > 0 || regionAllocations.length > 0) && (
+                  <Card className="border-slate-200">
+                    <CardHeader>
+                      <CardTitle className="text-slate-900 flex items-center gap-2">
+                        <Globe className="h-5 w-5" />
+                        Country & Region Allocation
+                      </CardTitle>
+                      <CardDescription>
+                        Percentage breakdown of activity allocation by country and region
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="p-6">
+                      <div className="space-y-4">
+                        {/* Countries */}
+                        {countryAllocations.map((alloc: any, index: number) => {
+                          const percentage = alloc.percentage || 0;
+                          const countryName = alloc.country?.name || alloc.country?.code || 'Unknown Country';
+                          const countryCode = alloc.country?.code || '';
+                          return (
+                            <div key={`country-${index}`} className="space-y-1.5">
+                              <div className="flex items-center justify-between text-sm">
+                                <div className="flex items-center gap-2 min-w-0 flex-1">
+                                  <span className="font-medium text-slate-900 truncate">{countryName}</span>
+                                  {countryCode && (
+                                    <span className="text-xs font-mono bg-slate-100 px-1.5 py-0.5 rounded text-slate-600 flex-shrink-0">
+                                      {countryCode}
+                                    </span>
+                                  )}
+                                </div>
+                                <span className="font-semibold text-slate-900 ml-2 flex-shrink-0">{percentage.toFixed(1)}%</span>
+                              </div>
+                              <div className="w-full bg-slate-200 rounded-full h-6 overflow-hidden">
+                                <div
+                                  className="h-full bg-blue-600 transition-all duration-500 rounded-full flex items-center justify-end pr-2"
+                                  style={{ width: `${Math.min(percentage, 100)}%` }}
+                                >
+                                  {percentage > 5 && (
+                                    <span className="text-xs font-medium text-white">{percentage.toFixed(1)}%</span>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
+                        {/* Regions */}
+                        {regionAllocations.map((alloc: any, index: number) => {
+                          const percentage = alloc.percentage || 0;
+                          const regionName = alloc.region?.name || alloc.region?.code || 'Unknown Region';
+                          const regionCode = alloc.region?.code || '';
+                          return (
+                            <div key={`region-${index}`} className="space-y-1.5">
+                              <div className="flex items-center justify-between text-sm">
+                                <div className="flex items-center gap-2 min-w-0 flex-1">
+                                  <span className="font-medium text-slate-900 truncate">{regionName}</span>
+                                  {regionCode && (
+                                    <span className="text-xs font-mono bg-slate-100 px-1.5 py-0.5 rounded text-slate-600 flex-shrink-0">
+                                      {regionCode}
+                                    </span>
+                                  )}
+                                </div>
+                                <span className="font-semibold text-slate-900 ml-2 flex-shrink-0">{percentage.toFixed(1)}%</span>
+                              </div>
+                              <div className="w-full bg-slate-200 rounded-full h-6 overflow-hidden">
+                                <div
+                                  className="h-full bg-green-600 transition-all duration-500 rounded-full flex items-center justify-end pr-2"
+                                  style={{ width: `${Math.min(percentage, 100)}%` }}
+                                >
+                                  {percentage > 5 && (
+                                    <span className="text-xs font-medium text-white">{percentage.toFixed(1)}%</span>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+                {/* Top Section: 4-column layout - Map (2 cols) + Location Cards (2 cols) */}
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                  {/* Map Section - Takes first 2 columns */}
+                  <div className="md:col-span-2">
+                    <Card className="border-slate-200 h-full">
+                      <CardHeader>
+                        <CardTitle className="text-slate-900 flex items-center gap-2">
+                          <MapPin className="h-5 w-5" />
+                          Activity Locations Map
+                        </CardTitle>
+                        <CardDescription>
+                          Map showing all activity locations in Myanmar
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        {activityLocations.length > 0 ? (
+                          <div className="h-96 rounded-md overflow-hidden border border-slate-200">
+                            <ActivityLocationsMapView
+                              locations={activityLocations.map(loc => ({
+                                id: loc.id,
+                                location_name: loc.location_name,
+                                latitude: loc.latitude,
+                                longitude: loc.longitude,
+                                site_type: loc.site_type,
+                                state_region_name: loc.state_region_name,
+                              }))}
+                              mapCenter={[19.0, 96.5]}
+                              mapZoom={6}
+                              currentLayer="default"
+                              layerUrl="https://maps.wikimedia.org/osm-intl/{z}/{x}/{y}.png"
+                              layerAttribution='&copy; OpenStreetMap contributors'
+                            />
+                          </div>
+                        ) : (
+                          <div className="h-96 flex items-center justify-center bg-slate-50 rounded-md border border-slate-200">
+                            <div className="text-center">
+                              <MapPin className="h-12 w-12 text-slate-300 mx-auto mb-4" />
+                              <p className="text-slate-500">No location data available</p>
+                            </div>
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+                  </div>
 
-              {/* Analytics Tab */}
-              <TabsContent value="analytics" className="p-6">
-                <ActivityAnalyticsCharts
-                  transactions={activity.transactions || []}
-                  budgets={budgets}
-                  startDate={activity.plannedStartDate || activity.actualStartDate}
-                  endDate={activity.plannedEndDate || activity.actualEndDate}
-                />
+                  {/* Location Cards Section - Takes last 2 columns */}
+                  <div className="md:col-span-2">
+                    <Card className="border-slate-200 h-full">
+                      <CardHeader>
+                        <CardTitle className="text-slate-900 flex items-center gap-2">
+                          <MapPin className="h-5 w-5" />
+                          Activity Locations
+                        </CardTitle>
+                        <CardDescription>
+                          {allActivityLocations.length} location{allActivityLocations.length !== 1 ? 's' : ''} found
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        {allActivityLocations.length > 0 ? (
+                          <div className="space-y-4 max-h-[28rem] overflow-y-auto pr-2">
+                            {allActivityLocations.map((location) => {
+                              // Convert location to LocationSchema format
+                              const locationSchema: LocationSchema = {
+                                id: location.id,
+                                location_name: location.location_name || 'Unnamed Location',
+                                latitude: location.latitude,
+                                longitude: location.longitude,
+                                description: location.description || location.location_description,
+                                location_description: location.location_description,
+                                activity_location_description: location.activity_location_description,
+                                address: location.address,
+                                address_line1: location.address_line1,
+                                address_line2: location.address_line2,
+                                city: location.city,
+                                postal_code: location.postal_code,
+                                site_type: location.site_type,
+                                state_region_code: location.state_region_code,
+                                state_region_name: location.state_region_name,
+                                township_code: location.township_code,
+                                township_name: location.township_name,
+                                district_code: location.district_code,
+                                district_name: location.district_name,
+                                village_name: location.village_name,
+                                country_code: location.country_code || 'MM',
+                                location_type: location.location_type || 'site',
+                              };
+
+                              return (
+                                <LocationCard
+                                  key={location.id}
+                                  location={locationSchema}
+                                  onEdit={() => {}}
+                                  onDelete={() => {}}
+                                  onDuplicate={() => {}}
+                                  canEdit={false}
+                                />
+                              );
+                            })}
+                          </div>
+                        ) : (
+                          <div className="text-center py-12">
+                            <MapPin className="h-12 w-12 text-slate-300 mx-auto mb-4" />
+                            <p className="text-slate-500">No locations have been added to this activity yet.</p>
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+                  </div>
+                </div>
+
+                {/* Bottom Section: Myanmar Regions Map */}
+                {Object.keys(subnationalBreakdowns).length > 0 ? (
+                  <div className="h-96">
+                    <MyanmarRegionsMap
+                      breakdowns={subnationalBreakdowns}
+                      onRegionClick={undefined}
+                    />
+                  </div>
+                ) : (
+                  <Card className="border-slate-200">
+                    <CardHeader>
+                      <CardTitle className="text-slate-900 flex items-center gap-2">
+                        <MapPin className="h-5 w-5" />
+                        States/Regions Coverage
+                      </CardTitle>
+                      <CardDescription>
+                        Map showing which states/regions this activity operates in
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="h-96 flex items-center justify-center bg-slate-50 rounded-md border border-slate-200">
+                        <div className="text-center">
+                          <MapPin className="h-12 w-12 text-slate-300 mx-auto mb-4" />
+                          <p className="text-slate-500">No regional breakdown data available</p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+                  </>
+                )}
               </TabsContent>
 
               {/* SDG Alignment Tab */}
-              <TabsContent value="sdg" className="p-6">
-                <SDGAlignmentSection 
-                  sdgMappings={sdgMappings} 
-                  onUpdate={setSdgMappings} 
-                  activityId={activity.id}
-                  canEdit={permissions.canEditActivity}
-                />
-              </TabsContent>
-
-              {/* Tags Tab */}
-              <TabsContent value="tags" className="p-6">
-                <TagsSection 
-                  activityId={activity.id}
-                  tags={activity.tags || []}
-                  onChange={(tags) => {
-                    setActivity(prev => prev ? { ...prev, tags } : null);
-                  }}
-                />
+              <TabsContent value="sdg" className="p-6 border-0">
+                {activeTab === "sdg" && (
+                  <Card className="border-slate-200">
+                  <CardHeader>
+                    <CardTitle className="text-slate-900">SDG Alignment</CardTitle>
+                    <CardDescription>
+                      Sustainable Development Goals that this activity contributes to
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    {sdgMappings && sdgMappings.length > 0 ? (
+                      <SDGImageGrid 
+                        sdgCodes={sdgMappings.map(m => m.sdgGoal)} 
+                        size="lg"
+                        showTooltips={true}
+                      />
+                    ) : (
+                      <div className="text-center py-12">
+                        <Globe className="h-12 w-12 text-slate-300 mx-auto mb-4" />
+                        <p className="text-slate-500">No SDG alignments have been configured for this activity.</p>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+                )}
               </TabsContent>
 
               {/* Policy Markers Tab */}
-              <TabsContent value="policy-markers" className="p-6">
+              <TabsContent value="policy-markers" className="p-6 border-0">
+                {activeTab === "policy-markers" && (
                 <PolicyMarkersSectionIATIWithCustom
                   activityId={activity.id}
                   policyMarkers={activity.policyMarkers || []}
@@ -3072,10 +3592,12 @@ export default function ActivityDetailPage() {
                   setHasUnsavedChanges={() => {}}
                   readOnly={true}
                 />
+                )}
               </TabsContent>
 
               {/* Library Tab */}
-              <TabsContent value="library" className="p-6">
+              <TabsContent value="library" className="p-6 border-0">
+                {activeTab === "library" && (
                 <DocumentsAndImagesTabV2
                   activityId={activity.id}
                   documents={documents}
@@ -3083,92 +3605,802 @@ export default function ActivityDetailPage() {
                   locale="en"
                   readOnly={true}
                 />
+                )}
               </TabsContent>
 
-              {/* Comments Tab */}
-              <TabsContent value="comments" className="p-6">
-                <ActivityComments activityId={activity.id} />
+              {/* Related Activities Tab */}
+              <TabsContent value="related-activities" className="p-6 border-0">
+                {activeTab === "related-activities" && (
+                  <RelatedActivitiesTab activityId={activity.id} />
+                )}
               </TabsContent>
 
               {/* Government Inputs Tab */}
               {(user?.role?.includes('gov_partner') || user?.role === 'super_user') && (
-                <TabsContent value="government-inputs" className="p-6">
-                  {activity.governmentInputs ? (
-                    <Card className="border-slate-200">
-                      <CardHeader>
-                        <CardTitle className="text-slate-900">On-Budget Classification (per CABRI/SPA model)</CardTitle>
-                        <CardDescription>
-                          Based on the CABRI/SPA 2008 "Putting Aid on Budget" Good Practice Note
-                        </CardDescription>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="space-y-4">
-                          {/* Status Summary */}
+                <TabsContent value="government-inputs" className="p-6 border-0">
+                  {activeTab === "government-inputs" && (
+                    <div className="space-y-6">
+                      {activity.governmentInputs ? (
+                        <>
+                          {/* On-Budget Classification */}
                           {activity.governmentInputs.onBudgetClassification && (
-                            <div className="mb-6">
-                              {(() => {
-                                const classification = activity.governmentInputs.onBudgetClassification;
-                                const dimensions = ['onPlan', 'onBudget', 'onTreasury', 'onParliament', 'onProcurement', 'onAudit'];
-                                const met = dimensions.filter(dim => classification[dim] === 'Yes').length;
-                                const partial = dimensions.filter(dim => classification[dim] === 'Partial').length;
-                                return (
+                            <Card className="border-slate-200">
+                              <CardHeader>
+                                <CardTitle className="text-slate-900">On-Budget Classification (per CABRI/SPA model)</CardTitle>
+                                <CardDescription>
+                                  Based on the CABRI/SPA 2008 "Putting Aid on Budget" Good Practice Note
+                                </CardDescription>
+                              </CardHeader>
+                              <CardContent>
+                                <div className="space-y-4">
+                                  {/* Status Summary */}
+                                  <div className="mb-6">
+                                    {(() => {
+                                      const classification = activity.governmentInputs.onBudgetClassification;
+                                      const dimensions = ['onPlan', 'onBudget', 'onTreasury', 'onParliament', 'onProcurement', 'onAudit'];
+                                      const met = dimensions.filter(dim => classification[dim] === 'Yes').length;
+                                      const partial = dimensions.filter(dim => classification[dim] === 'Partial').length;
+                                      return (
+                                        <div className="flex items-center gap-2">
+                                          <Badge className={met >= 4 ? "bg-green-100 text-green-800" : met >= 2 ? "bg-blue-100 text-blue-800" : "bg-slate-100 text-slate-800"}>
+                                            {met} of 6 dimensions met
+                                          </Badge>
+                                          {partial > 0 && (
+                                            <Badge variant="outline" className="border-slate-300">{partial} partial</Badge>
+                                          )}
+                                        </div>
+                                      );
+                                    })()}
+                                  </div>
+                                  
+                                  {/* Six Dimensions Display */}
+                                  <div className="grid gap-3">
+                                    {[
+                                      { key: 'onPlan', label: 'On Plan', desc: 'Reflected in gov\'t planning documents' },
+                                      { key: 'onBudget', label: 'On Budget', desc: 'Included in national budget book' },
+                                      { key: 'onTreasury', label: 'On Treasury', desc: 'Disbursed via national treasury' },
+                                      { key: 'onParliament', label: 'On Parliament', desc: 'Subject to parliamentary scrutiny' },
+                                      { key: 'onProcurement', label: 'On Procurement', desc: 'Uses national procurement systems' },
+                                      { key: 'onAudit', label: 'On Accounting/Audit', desc: 'Uses national audit systems' },
+                                    ].map(({ key, label, desc }) => (
+                                      <div key={key} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
+                                        <div className="flex items-center gap-3">
+                                          <div className="w-2 h-2 bg-green-500 rounded-full" />
+                                          <span className="text-sm font-medium text-slate-900">{label}</span>
+                                          <span className="text-xs text-slate-500">({desc})</span>
+                                        </div>
+                                        <Badge className={
+                                          activity.governmentInputs.onBudgetClassification?.[key] === 'Yes' ? "bg-green-100 text-green-800" :
+                                          activity.governmentInputs.onBudgetClassification?.[key] === 'Partial' ? "bg-blue-100 text-blue-800" : 
+                                          "bg-slate-100 text-slate-800"
+                                        }>
+                                          {activity.governmentInputs.onBudgetClassification?.[key] || 'Not specified'}
+                                        </Badge>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              </CardContent>
+                            </Card>
+                          )}
+
+                          {/* RGC Contribution */}
+                          {activity.governmentInputs.rgcContribution && (
+                            <Card className="border-slate-200">
+                              <CardHeader>
+                                <CardTitle className="flex items-center gap-2 text-slate-900">
+                                  <Wallet className="h-5 w-5" />
+                                  Government Financial Contribution (RGC)
+                                </CardTitle>
+                              </CardHeader>
+                              <CardContent className="space-y-4">
+                                <div className="grid gap-4">
                                   <div className="flex items-center gap-2">
-                                    <Badge className={met >= 4 ? "bg-green-100 text-green-800" : met >= 2 ? "bg-blue-100 text-blue-800" : "bg-slate-100 text-slate-800"}>
-                                      {met} of 6 dimensions met
+                                    <span className="text-sm font-medium text-slate-700">Government Contribution:</span>
+                                    <Badge variant={activity.governmentInputs.rgcContribution?.isProvided ? "default" : "secondary"}>
+                                      {activity.governmentInputs.rgcContribution?.isProvided ? "Yes" : "No"}
                                     </Badge>
-                                    {partial > 0 && (
-                                      <Badge variant="outline" className="border-slate-300">{partial} partial</Badge>
+                                  </div>
+                                  
+                                  {activity.governmentInputs.rgcContribution?.isProvided && (
+                                    <>
+                                      {(activity.governmentInputs.rgcContribution?.totalAmountLocal || activity.governmentInputs.rgcContribution?.totalAmountUSD) && (
+                                        <div className="p-4 bg-slate-50 rounded-lg space-y-2">
+                                          {activity.governmentInputs.rgcContribution?.totalAmountLocal && (
+                                            <div className="flex justify-between">
+                                              <span className="text-sm text-slate-600">Total (Local Currency):</span>
+                                              <span className="text-sm font-medium text-slate-900">{formatNumberWithAbbreviation(activity.governmentInputs.rgcContribution.totalAmountLocal)}</span>
+                                            </div>
+                                          )}
+                                          {activity.governmentInputs.rgcContribution?.totalAmountUSD && (
+                                            <div className="flex justify-between">
+                                              <span className="text-sm text-slate-600">Total (USD):</span>
+                                              <span className="text-sm font-medium text-slate-900">${formatNumberWithAbbreviation(activity.governmentInputs.rgcContribution.totalAmountUSD)}</span>
+                                            </div>
+                                          )}
+                                          {activity.governmentInputs.rgcContribution?.valueDate && (
+                                            <div className="flex justify-between">
+                                              <span className="text-sm text-slate-600">Value Date:</span>
+                                              <span className="text-sm font-medium text-slate-900">{format(new Date(activity.governmentInputs.rgcContribution.valueDate), 'MMM dd, yyyy')}</span>
+                                            </div>
+                                          )}
+                                        </div>
+                                      )}
+                                      
+                                      {activity.governmentInputs.rgcContribution?.annual && activity.governmentInputs.rgcContribution.annual.length > 0 && (
+                                        <div>
+                                          <h4 className="text-sm font-medium text-slate-900 mb-3">Annual Breakdown</h4>
+                                          <div className="space-y-2">
+                                            {activity.governmentInputs.rgcContribution.annual.map((item: any, idx: number) => (
+                                              <div key={idx} className="p-3 bg-slate-50 rounded-lg flex justify-between items-center">
+                                                <span className="text-sm font-medium text-slate-900">{item.year}</span>
+                                                <div className="flex gap-4 text-sm">
+                                                  {item.amountLocal && <span className="text-slate-600">{formatNumberWithAbbreviation(item.amountLocal)} local</span>}
+                                                  {item.amountUSD && <span className="text-slate-900 font-medium">${formatNumberWithAbbreviation(item.amountUSD)}</span>}
+                                                </div>
+                                              </div>
+                                            ))}
+                                          </div>
+                                        </div>
+                                      )}
+                                      
+                                      {activity.governmentInputs.rgcContribution?.inKindContributions && (
+                                        <div>
+                                          <span className="text-sm font-medium text-slate-700">In-Kind Contributions:</span>
+                                          <p className="text-sm text-slate-600 mt-1">{activity.governmentInputs.rgcContribution.inKindContributions}</p>
+                                        </div>
+                                      )}
+                                      
+                                      {activity.governmentInputs.rgcContribution?.sourceOfFunding && (
+                                        <div>
+                                          <span className="text-sm font-medium text-slate-700">Source of Funding:</span>
+                                          <p className="text-sm text-slate-600 mt-1">{activity.governmentInputs.rgcContribution.sourceOfFunding}</p>
+                                        </div>
+                                      )}
+                                    </>
+                                  )}
+                                </div>
+                              </CardContent>
+                            </Card>
+                          )}
+
+                          {/* National Plan Alignment */}
+                          {activity.governmentInputs.nationalPlanAlignment && (
+                            <Card className="border-slate-200">
+                              <CardHeader>
+                                <CardTitle className="flex items-center gap-2 text-slate-900">
+                                  <Target className="h-5 w-5" />
+                                  National Plan Alignment
+                                </CardTitle>
+                              </CardHeader>
+                              <CardContent className="space-y-4">
+                                <div className="flex items-center gap-2">
+                                  <span className="text-sm font-medium text-slate-700">Aligned with National Plan:</span>
+                                  <Badge variant={activity.governmentInputs.nationalPlanAlignment?.isAligned ? "default" : "secondary"}>
+                                    {activity.governmentInputs.nationalPlanAlignment?.isAligned ? "Yes" : "No"}
+                                  </Badge>
+                                </div>
+                                
+                                {activity.governmentInputs.nationalPlanAlignment?.isAligned && (
+                                  <div className="space-y-3">
+                                    {activity.governmentInputs.nationalPlanAlignment?.planName && (
+                                      <div>
+                                        <span className="text-sm font-medium text-slate-700">Plan Name:</span>
+                                        <p className="text-sm text-slate-900 mt-1">{activity.governmentInputs.nationalPlanAlignment.planName}</p>
+                                      </div>
+                                    )}
+                                    {activity.governmentInputs.nationalPlanAlignment?.subGoal && (
+                                      <div>
+                                        <span className="text-sm font-medium text-slate-700">Sub-Goal:</span>
+                                        <p className="text-sm text-slate-900 mt-1">{activity.governmentInputs.nationalPlanAlignment.subGoal}</p>
+                                      </div>
+                                    )}
+                                    {activity.governmentInputs.nationalPlanAlignment?.nationalIndicatorCode && (
+                                      <div>
+                                        <span className="text-sm font-medium text-slate-700">National Indicator Code:</span>
+                                        <p className="text-sm text-slate-900 mt-1 font-mono">{activity.governmentInputs.nationalPlanAlignment.nationalIndicatorCode}</p>
+                                      </div>
                                     )}
                                   </div>
-                                );
-                              })()}
-                            </div>
+                                )}
+                              </CardContent>
+                            </Card>
                           )}
-                          
-                          {/* Six Dimensions Display */}
-                          <div className="grid gap-3">
-                            {[
-                              { key: 'onPlan', label: 'On Plan', desc: 'Reflected in gov\'t planning documents' },
-                              { key: 'onBudget', label: 'On Budget', desc: 'Included in national budget book' },
-                              { key: 'onTreasury', label: 'On Treasury', desc: 'Disbursed via national treasury' },
-                              { key: 'onParliament', label: 'On Parliament', desc: 'Subject to parliamentary scrutiny' },
-                              { key: 'onProcurement', label: 'On Procurement', desc: 'Uses national procurement systems' },
-                              { key: 'onAudit', label: 'On Accounting/Audit', desc: 'Uses national audit systems' },
-                            ].map(({ key, label, desc }) => (
-                              <div key={key} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
-                                <div className="flex items-center gap-3">
-                                  <div className="w-2 h-2 bg-green-500 rounded-full" />
-                                  <span className="text-sm font-medium text-slate-900">{label}</span>
-                                  <span className="text-xs text-slate-500">({desc})</span>
+
+                          {/* Technical Coordination */}
+                          {activity.governmentInputs.technicalCoordination && (
+                            <Card className="border-slate-200">
+                              <CardHeader>
+                                <CardTitle className="flex items-center gap-2 text-slate-900">
+                                  <Users className="h-5 w-5" />
+                                  Technical Coordination
+                                </CardTitle>
+                              </CardHeader>
+                              <CardContent className="space-y-4">
+                                {activity.governmentInputs.technicalCoordination?.accountableMinistry && (
+                                  <div>
+                                    <span className="text-sm font-medium text-slate-700">Accountable Ministry:</span>
+                                    <p className="text-sm text-slate-900 mt-1">{activity.governmentInputs.technicalCoordination.accountableMinistry}</p>
+                                  </div>
+                                )}
+                                
+                                {activity.governmentInputs.technicalCoordination?.workingGroups && activity.governmentInputs.technicalCoordination.workingGroups.length > 0 && (
+                                  <div>
+                                    <span className="text-sm font-medium text-slate-700">Working Groups:</span>
+                                    <div className="flex flex-wrap gap-2 mt-2">
+                                      {activity.governmentInputs.technicalCoordination.workingGroups.map((wg: string, idx: number) => (
+                                        <Badge key={idx} variant="outline">{wg}</Badge>
+                                      ))}
+                                    </div>
+                                  </div>
+                                )}
+                                
+                                {activity.governmentInputs.technicalCoordination?.regions && activity.governmentInputs.technicalCoordination.regions.length > 0 && (
+                                  <div>
+                                    <span className="text-sm font-medium text-slate-700">Regions:</span>
+                                    <div className="flex flex-wrap gap-2 mt-2">
+                                      {activity.governmentInputs.technicalCoordination.regions.map((region: string, idx: number) => (
+                                        <Badge key={idx} variant="outline">{region}</Badge>
+                                      ))}
+                                    </div>
+                                  </div>
+                                )}
+                                
+                                {activity.governmentInputs.technicalCoordination?.focalPoint && (
+                                  <div className="p-4 bg-slate-50 rounded-lg space-y-2">
+                                    <h4 className="text-sm font-medium text-slate-900">Focal Point</h4>
+                                    {activity.governmentInputs.technicalCoordination.focalPoint?.name && (
+                                      <div className="flex justify-between">
+                                        <span className="text-sm text-slate-600">Name:</span>
+                                        <span className="text-sm font-medium text-slate-900">{activity.governmentInputs.technicalCoordination.focalPoint.name}</span>
+                                      </div>
+                                    )}
+                                    {activity.governmentInputs.technicalCoordination.focalPoint?.title && (
+                                      <div className="flex justify-between">
+                                        <span className="text-sm text-slate-600">Title:</span>
+                                        <span className="text-sm font-medium text-slate-900">{activity.governmentInputs.technicalCoordination.focalPoint.title}</span>
+                                      </div>
+                                    )}
+                                    {activity.governmentInputs.technicalCoordination.focalPoint?.email && (
+                                      <div className="flex justify-between">
+                                        <span className="text-sm text-slate-600">Email:</span>
+                                        <span className="text-sm font-medium text-slate-900">{activity.governmentInputs.technicalCoordination.focalPoint.email}</span>
+                                      </div>
+                                    )}
+                                    {activity.governmentInputs.technicalCoordination.focalPoint?.phone && (
+                                      <div className="flex justify-between">
+                                        <span className="text-sm text-slate-600">Phone:</span>
+                                        <span className="text-sm font-medium text-slate-900">{activity.governmentInputs.technicalCoordination.focalPoint.phone}</span>
+                                      </div>
+                                    )}
+                                  </div>
+                                )}
+                              </CardContent>
+                            </Card>
+                          )}
+
+                          {/* Oversight Agreement */}
+                          {activity.governmentInputs.oversightAgreement && (
+                            <Card className="border-slate-200">
+                              <CardHeader>
+                                <CardTitle className="flex items-center gap-2 text-slate-900">
+                                  <Shield className="h-5 w-5" />
+                                  Oversight Agreement
+                                </CardTitle>
+                              </CardHeader>
+                              <CardContent className="space-y-4">
+                                {activity.governmentInputs.oversightAgreement?.mouStatus && (
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-sm font-medium text-slate-700">MOU Status:</span>
+                                    <Badge>{activity.governmentInputs.oversightAgreement.mouStatus}</Badge>
+                                  </div>
+                                )}
+                                
+                                {activity.governmentInputs.oversightAgreement?.signingAgency && (
+                                  <div>
+                                    <span className="text-sm font-medium text-slate-700">Signing Agency:</span>
+                                    <p className="text-sm text-slate-900 mt-1">{activity.governmentInputs.oversightAgreement.signingAgency}</p>
+                                  </div>
+                                )}
+                                
+                                {activity.governmentInputs.oversightAgreement?.oversightMinistry && (
+                                  <div>
+                                    <span className="text-sm font-medium text-slate-700">Oversight Ministry:</span>
+                                    <p className="text-sm text-slate-900 mt-1">{activity.governmentInputs.oversightAgreement.oversightMinistry}</p>
+                                  </div>
+                                )}
+                                
+                                {activity.governmentInputs.oversightAgreement?.agreementFile && (
+                                  <div>
+                                    <span className="text-sm font-medium text-slate-700">Agreement File:</span>
+                                    <div className="mt-1">
+                                      <a href={activity.governmentInputs.oversightAgreement.agreementFile} target="_blank" rel="noopener noreferrer" className="text-sm text-blue-600 hover:underline flex items-center gap-1">
+                                        <FileText className="h-4 w-4" />
+                                        View Agreement
+                                      </a>
+                                    </div>
+                                  </div>
+                                )}
+                              </CardContent>
+                            </Card>
+                          )}
+
+                          {/* Geographic Context */}
+                          {activity.governmentInputs.geographicContext && (
+                            <Card className="border-slate-200">
+                              <CardHeader>
+                                <CardTitle className="flex items-center gap-2 text-slate-900">
+                                  <MapPin className="h-5 w-5" />
+                                  Geographic Context
+                                </CardTitle>
+                              </CardHeader>
+                              <CardContent className="space-y-4">
+                                {activity.governmentInputs.geographicContext?.locations && activity.governmentInputs.geographicContext.locations.length > 0 && (
+                                  <div>
+                                    <span className="text-sm font-medium text-slate-700">Locations:</span>
+                                    <div className="flex flex-wrap gap-2 mt-2">
+                                      {activity.governmentInputs.geographicContext.locations.map((loc: string, idx: number) => (
+                                        <Badge key={idx} variant="outline">{loc}</Badge>
+                                      ))}
+                                    </div>
+                                  </div>
+                                )}
+                                
+                                {activity.governmentInputs.geographicContext?.riskClassifications && activity.governmentInputs.geographicContext.riskClassifications.length > 0 && (
+                                  <div>
+                                    <span className="text-sm font-medium text-slate-700">Risk Classifications:</span>
+                                    <div className="flex flex-wrap gap-2 mt-2">
+                                      {activity.governmentInputs.geographicContext.riskClassifications.map((risk: string, idx: number) => (
+                                        <Badge key={idx} variant="outline" className="border-orange-300">{risk}</Badge>
+                                      ))}
+                                    </div>
+                                  </div>
+                                )}
+                                
+                                {activity.governmentInputs.geographicContext?.otherRiskSpecification && (
+                                  <div>
+                                    <span className="text-sm font-medium text-slate-700">Other Risk Specification:</span>
+                                    <p className="text-sm text-slate-600 mt-1">{activity.governmentInputs.geographicContext.otherRiskSpecification}</p>
+                                  </div>
+                                )}
+                              </CardContent>
+                            </Card>
+                          )}
+
+                          {/* Strategic Considerations */}
+                          {activity.governmentInputs.strategicConsiderations && (
+                            <Card className="border-slate-200">
+                              <CardHeader>
+                                <CardTitle className="flex items-center gap-2 text-slate-900">
+                                  <Sparkles className="h-5 w-5" />
+                                  Strategic Considerations
+                                </CardTitle>
+                              </CardHeader>
+                              <CardContent className="space-y-4">
+                                <div className="grid grid-cols-2 gap-4">
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-sm font-medium text-slate-700">Politically Sensitive:</span>
+                                    <Badge variant={activity.governmentInputs.strategicConsiderations?.isPoliticallySensitive ? "default" : "secondary"}>
+                                      {activity.governmentInputs.strategicConsiderations?.isPoliticallySensitive ? "Yes" : "No"}
+                                    </Badge>
+                                  </div>
+                                  
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-sm font-medium text-slate-700">Pooled Funding Eligible:</span>
+                                    <Badge variant={activity.governmentInputs.strategicConsiderations?.pooledFundingEligible ? "default" : "secondary"}>
+                                      {activity.governmentInputs.strategicConsiderations?.pooledFundingEligible ? "Yes" : "No"}
+                                    </Badge>
+                                  </div>
                                 </div>
-                                <Badge className={
-                                  activity.governmentInputs.onBudgetClassification?.[key] === 'Yes' ? "bg-green-100 text-green-800" :
-                                  activity.governmentInputs.onBudgetClassification?.[key] === 'Partial' ? "bg-blue-100 text-blue-800" : 
-                                  "bg-slate-100 text-slate-800"
-                                }>
-                                  {activity.governmentInputs.onBudgetClassification?.[key] || 'Not specified'}
-                                </Badge>
-                              </div>
-                            ))}
-                          </div>
-                          
+                                
+                                {activity.governmentInputs.strategicConsiderations?.pooledFundingEligible && (
+                                  <div className="space-y-3">
+                                    {activity.governmentInputs.strategicConsiderations?.pooledFundName && (
+                                      <div>
+                                        <span className="text-sm font-medium text-slate-700">Pooled Fund Name:</span>
+                                        <p className="text-sm text-slate-900 mt-1">{activity.governmentInputs.strategicConsiderations.pooledFundName}</p>
+                                      </div>
+                                    )}
+                                    {activity.governmentInputs.strategicConsiderations?.fundManager && (
+                                      <div>
+                                        <span className="text-sm font-medium text-slate-700">Fund Manager:</span>
+                                        <p className="text-sm text-slate-900 mt-1">{activity.governmentInputs.strategicConsiderations.fundManager}</p>
+                                      </div>
+                                    )}
+                                  </div>
+                                )}
+                              </CardContent>
+                            </Card>
+                          )}
+
+                          {/* Evaluation Results */}
+                          {activity.governmentInputs.evaluationResults && (
+                            <Card className="border-slate-200">
+                              <CardHeader>
+                                <CardTitle className="flex items-center gap-2 text-slate-900">
+                                  <BarChart3 className="h-5 w-5" />
+                                  Evaluation Results
+                                </CardTitle>
+                              </CardHeader>
+                              <CardContent className="space-y-4">
+                                <div className="flex items-center gap-2">
+                                  <span className="text-sm font-medium text-slate-700">Has Evaluation:</span>
+                                  <Badge variant={activity.governmentInputs.evaluationResults?.hasEvaluation ? "default" : "secondary"}>
+                                    {activity.governmentInputs.evaluationResults?.hasEvaluation ? "Yes" : "No"}
+                                  </Badge>
+                                </div>
+                                
+                                {activity.governmentInputs.evaluationResults?.hasEvaluation && (
+                                  <div className="space-y-3">
+                                    {activity.governmentInputs.evaluationResults?.evaluationDocument && (
+                                      <div>
+                                        <span className="text-sm font-medium text-slate-700">Evaluation Document:</span>
+                                        <div className="mt-1">
+                                          <a href={activity.governmentInputs.evaluationResults.evaluationDocument} target="_blank" rel="noopener noreferrer" className="text-sm text-blue-600 hover:underline flex items-center gap-1">
+                                            <FileText className="h-4 w-4" />
+                                            View Document
+                                          </a>
+                                        </div>
+                                      </div>
+                                    )}
+                                    
+                                    <div className="flex items-center gap-2">
+                                      <span className="text-sm font-medium text-slate-700">In National Framework:</span>
+                                      <Badge variant={activity.governmentInputs.evaluationResults?.inNationalFramework ? "default" : "secondary"}>
+                                        {activity.governmentInputs.evaluationResults?.inNationalFramework ? "Yes" : "No"}
+                                      </Badge>
+                                    </div>
+                                    
+                                    {activity.governmentInputs.evaluationResults?.nationalIndicatorRef && (
+                                      <div>
+                                        <span className="text-sm font-medium text-slate-700">National Indicator Reference:</span>
+                                        <p className="text-sm text-slate-900 mt-1 font-mono">{activity.governmentInputs.evaluationResults.nationalIndicatorRef}</p>
+                                      </div>
+                                    )}
+                                  </div>
+                                )}
+                              </CardContent>
+                            </Card>
+                          )}
+
+                          {/* Government Endorsement */}
+                          {governmentEndorsement && (
+                            <Card className="border-slate-200">
+                              <CardHeader>
+                                <CardTitle className="flex items-center gap-2 text-slate-900">
+                                  <FileCheck className="h-5 w-5" />
+                                  Government Endorsement
+                                </CardTitle>
+                              </CardHeader>
+                              <CardContent className="space-y-4">
+                                {governmentEndorsement.validation_status && (
+                                  <div className="p-4 bg-slate-50 rounded-lg border-l-4 border-l-blue-500">
+                                    <div className="flex items-center gap-3 mb-3">
+                                      {governmentEndorsement.validation_status === 'validated' && (
+                                        <CheckCircle className="h-5 w-5 text-green-600" />
+                                      )}
+                                      {governmentEndorsement.validation_status === 'rejected' && (
+                                        <AlertCircle className="h-5 w-5 text-red-600" />
+                                      )}
+                                      {governmentEndorsement.validation_status === 'more_info_requested' && (
+                                        <Clock className="h-5 w-5 text-amber-600" />
+                                      )}
+                                      <Badge 
+                                        variant={
+                                          governmentEndorsement.validation_status === 'validated' ? 'default' :
+                                          governmentEndorsement.validation_status === 'rejected' ? 'destructive' : 'secondary'
+                                        }
+                                      >
+                                        {VALIDATION_STATUS_OPTIONS.find(opt => opt.value === governmentEndorsement.validation_status)?.label}
+                                      </Badge>
+                                    </div>
+                                    
+                                    {governmentEndorsement.validating_authority && (
+                                      <div className="flex items-center gap-2 text-sm text-slate-600 mb-2">
+                                        <Building className="h-4 w-4" />
+                                        <span>{governmentEndorsement.validating_authority}</span>
+                                      </div>
+                                    )}
+                                    
+                                    {governmentEndorsement.validation_date && (
+                                      <div className="flex items-center gap-2 text-sm text-slate-600">
+                                        <Calendar className="h-4 w-4" />
+                                        <span>Validated on {format(new Date(governmentEndorsement.validation_date), 'MMM dd, yyyy')}</span>
+                                      </div>
+                                    )}
+                                  </div>
+                                )}
+                                
+                                <div className="grid grid-cols-2 gap-4">
+                                  {governmentEndorsement.effective_date && (
+                                    <div>
+                                      <span className="text-sm font-medium text-slate-700">Effective Date:</span>
+                                      <p className="text-sm text-slate-900 mt-1">{format(new Date(governmentEndorsement.effective_date), 'MMM dd, yyyy')}</p>
+                                    </div>
+                                  )}
+                                  
+                                  {governmentEndorsement.validation_date && (
+                                    <div>
+                                      <span className="text-sm font-medium text-slate-700">Validation Date:</span>
+                                      <p className="text-sm text-slate-900 mt-1">{format(new Date(governmentEndorsement.validation_date), 'MMM dd, yyyy')}</p>
+                                    </div>
+                                  )}
+                                </div>
+                                
+                                {governmentEndorsement.validation_notes && (
+                                  <div>
+                                    <span className="text-sm font-medium text-slate-700">Validation Notes:</span>
+                                    <p className="text-sm text-slate-600 mt-1 whitespace-pre-wrap">{governmentEndorsement.validation_notes}</p>
+                                  </div>
+                                )}
+                                
+                                {governmentEndorsement.document_title && (
+                                  <div className="p-4 bg-slate-50 rounded-lg space-y-2">
+                                    <h4 className="text-sm font-medium text-slate-900">Endorsement Document</h4>
+                                    <div>
+                                      <span className="text-sm font-medium text-slate-700">Title:</span>
+                                      <p className="text-sm text-slate-900 mt-1">{governmentEndorsement.document_title}</p>
+                                    </div>
+                                    {governmentEndorsement.document_description && (
+                                      <div>
+                                        <span className="text-sm font-medium text-slate-700">Description:</span>
+                                        <p className="text-sm text-slate-600 mt-1">{governmentEndorsement.document_description}</p>
+                                      </div>
+                                    )}
+                                    {governmentEndorsement.document_url && (
+                                      <div>
+                                        <a href={governmentEndorsement.document_url} target="_blank" rel="noopener noreferrer" className="text-sm text-blue-600 hover:underline flex items-center gap-1">
+                                          <ExternalLink className="h-4 w-4" />
+                                          View Document
+                                        </a>
+                                      </div>
+                                    )}
+                                    {governmentEndorsement.document_date && (
+                                      <div>
+                                        <span className="text-sm text-slate-600">Date: {format(new Date(governmentEndorsement.document_date), 'MMM dd, yyyy')}</span>
+                                      </div>
+                                    )}
+                                  </div>
+                                )}
+                              </CardContent>
+                            </Card>
+                          )}
+
+                          {/* Government Endorsement (shown separately if no other inputs) */}
+                          {governmentEndorsement && (
+                            <Card className="border-slate-200">
+                              <CardHeader>
+                                <CardTitle className="flex items-center gap-2 text-slate-900">
+                                  <FileCheck className="h-5 w-5" />
+                                  Government Endorsement
+                                </CardTitle>
+                              </CardHeader>
+                              <CardContent className="space-y-4">
+                                {governmentEndorsement.validation_status && (
+                                  <div className="p-4 bg-slate-50 rounded-lg border-l-4 border-l-blue-500">
+                                    <div className="flex items-center gap-3 mb-3">
+                                      {governmentEndorsement.validation_status === 'validated' && (
+                                        <CheckCircle className="h-5 w-5 text-green-600" />
+                                      )}
+                                      {governmentEndorsement.validation_status === 'rejected' && (
+                                        <AlertCircle className="h-5 w-5 text-red-600" />
+                                      )}
+                                      {governmentEndorsement.validation_status === 'more_info_requested' && (
+                                        <Clock className="h-5 w-5 text-amber-600" />
+                                      )}
+                                      <Badge 
+                                        variant={
+                                          governmentEndorsement.validation_status === 'validated' ? 'default' :
+                                          governmentEndorsement.validation_status === 'rejected' ? 'destructive' : 'secondary'
+                                        }
+                                      >
+                                        {VALIDATION_STATUS_OPTIONS.find(opt => opt.value === governmentEndorsement.validation_status)?.label}
+                                      </Badge>
+                                    </div>
+                                    
+                                    {governmentEndorsement.validating_authority && (
+                                      <div className="flex items-center gap-2 text-sm text-slate-600 mb-2">
+                                        <Building className="h-4 w-4" />
+                                        <span>{governmentEndorsement.validating_authority}</span>
+                                      </div>
+                                    )}
+                                    
+                                    {governmentEndorsement.validation_date && (
+                                      <div className="flex items-center gap-2 text-sm text-slate-600">
+                                        <Calendar className="h-4 w-4" />
+                                        <span>Validated on {format(new Date(governmentEndorsement.validation_date), 'MMM dd, yyyy')}</span>
+                                      </div>
+                                    )}
+                                  </div>
+                                )}
+                                
+                                <div className="grid grid-cols-2 gap-4">
+                                  {governmentEndorsement.effective_date && (
+                                    <div>
+                                      <span className="text-sm font-medium text-slate-700">Effective Date:</span>
+                                      <p className="text-sm text-slate-900 mt-1">{format(new Date(governmentEndorsement.effective_date), 'MMM dd, yyyy')}</p>
+                                    </div>
+                                  )}
+                                  
+                                  {governmentEndorsement.validation_date && (
+                                    <div>
+                                      <span className="text-sm font-medium text-slate-700">Validation Date:</span>
+                                      <p className="text-sm text-slate-900 mt-1">{format(new Date(governmentEndorsement.validation_date), 'MMM dd, yyyy')}</p>
+                                    </div>
+                                  )}
+                                </div>
+                                
+                                {governmentEndorsement.validation_notes && (
+                                  <div>
+                                    <span className="text-sm font-medium text-slate-700">Validation Notes:</span>
+                                    <p className="text-sm text-slate-600 mt-1 whitespace-pre-wrap">{governmentEndorsement.validation_notes}</p>
+                                  </div>
+                                )}
+                                
+                                {governmentEndorsement.document_title && (
+                                  <div className="p-4 bg-slate-50 rounded-lg space-y-2">
+                                    <h4 className="text-sm font-medium text-slate-900">Endorsement Document</h4>
+                                    <div>
+                                      <span className="text-sm font-medium text-slate-700">Title:</span>
+                                      <p className="text-sm text-slate-900 mt-1">{governmentEndorsement.document_title}</p>
+                                    </div>
+                                    {governmentEndorsement.document_description && (
+                                      <div>
+                                        <span className="text-sm font-medium text-slate-700">Description:</span>
+                                        <p className="text-sm text-slate-600 mt-1">{governmentEndorsement.document_description}</p>
+                                      </div>
+                                    )}
+                                    {governmentEndorsement.document_url && (
+                                      <div>
+                                        <a href={governmentEndorsement.document_url} target="_blank" rel="noopener noreferrer" className="text-sm text-blue-600 hover:underline flex items-center gap-1">
+                                          <ExternalLink className="h-4 w-4" />
+                                          View Document
+                                        </a>
+                                      </div>
+                                    )}
+                                    {governmentEndorsement.document_date && (
+                                      <div>
+                                        <span className="text-sm text-slate-600">Date: {format(new Date(governmentEndorsement.document_date), 'MMM dd, yyyy')}</span>
+                                      </div>
+                                    )}
+                                  </div>
+                                )}
+                              </CardContent>
+                            </Card>
+                          )}
+
                           <div className="text-center py-4">
                             <Button variant="outline" onClick={handleEdit} className="border-slate-300 text-slate-700 hover:bg-slate-100">
+                              <Edit className="h-4 w-4 mr-2" />
                               Edit Government Inputs
                             </Button>
                           </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ) : (
-                    <Card className="border-slate-200">
-                      <CardContent className="text-center py-12">
-                        <p className="text-slate-500">No government inputs have been added to this activity yet.</p>
-                        <Button variant="outline" className="mt-4 border-slate-300 text-slate-700 hover:bg-slate-100" onClick={handleEdit}>
-                          Add Government Inputs
-                        </Button>
-                      </CardContent>
-                    </Card>
+                        </>
+                      ) : (
+                        <>
+                          {governmentEndorsement ? (
+                            <>
+                              {/* Show Government Endorsement even when no other inputs */}
+                              <Card className="border-slate-200">
+                                <CardHeader>
+                                  <CardTitle className="flex items-center gap-2 text-slate-900">
+                                    <FileCheck className="h-5 w-5" />
+                                    Government Endorsement
+                                  </CardTitle>
+                                </CardHeader>
+                                <CardContent className="space-y-4">
+                                  {governmentEndorsement.validation_status && (
+                                    <div className="p-4 bg-slate-50 rounded-lg border-l-4 border-l-blue-500">
+                                      <div className="flex items-center gap-3 mb-3">
+                                        {governmentEndorsement.validation_status === 'validated' && (
+                                          <CheckCircle className="h-5 w-5 text-green-600" />
+                                        )}
+                                        {governmentEndorsement.validation_status === 'rejected' && (
+                                          <AlertCircle className="h-5 w-5 text-red-600" />
+                                        )}
+                                        {governmentEndorsement.validation_status === 'more_info_requested' && (
+                                          <Clock className="h-5 w-5 text-amber-600" />
+                                        )}
+                                        <Badge 
+                                          variant={
+                                            governmentEndorsement.validation_status === 'validated' ? 'default' :
+                                            governmentEndorsement.validation_status === 'rejected' ? 'destructive' : 'secondary'
+                                          }
+                                        >
+                                          {VALIDATION_STATUS_OPTIONS.find(opt => opt.value === governmentEndorsement.validation_status)?.label}
+                                        </Badge>
+                                      </div>
+                                      
+                                      {governmentEndorsement.validating_authority && (
+                                        <div className="flex items-center gap-2 text-sm text-slate-600 mb-2">
+                                          <Building className="h-4 w-4" />
+                                          <span>{governmentEndorsement.validating_authority}</span>
+                                        </div>
+                                      )}
+                                      
+                                      {governmentEndorsement.validation_date && (
+                                        <div className="flex items-center gap-2 text-sm text-slate-600">
+                                          <Calendar className="h-4 w-4" />
+                                          <span>Validated on {format(new Date(governmentEndorsement.validation_date), 'MMM dd, yyyy')}</span>
+                                        </div>
+                                      )}
+                                    </div>
+                                  )}
+                                  
+                                  <div className="grid grid-cols-2 gap-4">
+                                    {governmentEndorsement.effective_date && (
+                                      <div>
+                                        <span className="text-sm font-medium text-slate-700">Effective Date:</span>
+                                        <p className="text-sm text-slate-900 mt-1">{format(new Date(governmentEndorsement.effective_date), 'MMM dd, yyyy')}</p>
+                                      </div>
+                                    )}
+                                    
+                                    {governmentEndorsement.validation_date && (
+                                      <div>
+                                        <span className="text-sm font-medium text-slate-700">Validation Date:</span>
+                                        <p className="text-sm text-slate-900 mt-1">{format(new Date(governmentEndorsement.validation_date), 'MMM dd, yyyy')}</p>
+                                      </div>
+                                    )}
+                                  </div>
+                                  
+                                  {governmentEndorsement.validation_notes && (
+                                    <div>
+                                      <span className="text-sm font-medium text-slate-700">Validation Notes:</span>
+                                      <p className="text-sm text-slate-600 mt-1 whitespace-pre-wrap">{governmentEndorsement.validation_notes}</p>
+                                    </div>
+                                  )}
+                                  
+                                  {governmentEndorsement.document_title && (
+                                    <div className="p-4 bg-slate-50 rounded-lg space-y-2">
+                                      <h4 className="text-sm font-medium text-slate-900">Endorsement Document</h4>
+                                      <div>
+                                        <span className="text-sm font-medium text-slate-700">Title:</span>
+                                        <p className="text-sm text-slate-900 mt-1">{governmentEndorsement.document_title}</p>
+                                      </div>
+                                      {governmentEndorsement.document_description && (
+                                        <div>
+                                          <span className="text-sm font-medium text-slate-700">Description:</span>
+                                          <p className="text-sm text-slate-600 mt-1">{governmentEndorsement.document_description}</p>
+                                        </div>
+                                      )}
+                                      {governmentEndorsement.document_url && (
+                                        <div>
+                                          <a href={governmentEndorsement.document_url} target="_blank" rel="noopener noreferrer" className="text-sm text-blue-600 hover:underline flex items-center gap-1">
+                                            <ExternalLink className="h-4 w-4" />
+                                            View Document
+                                          </a>
+                                        </div>
+                                      )}
+                                      {governmentEndorsement.document_date && (
+                                        <div>
+                                          <span className="text-sm text-slate-600">Date: {format(new Date(governmentEndorsement.document_date), 'MMM dd, yyyy')}</span>
+                                        </div>
+                                      )}
+                                    </div>
+                                  )}
+                                </CardContent>
+                              </Card>
+                              
+                              <div className="text-center py-4">
+                                <Button variant="outline" onClick={handleEdit} className="border-slate-300 text-slate-700 hover:bg-slate-100">
+                                  <Edit className="h-4 w-4 mr-2" />
+                                  Edit Government Inputs
+                                </Button>
+                              </div>
+                            </>
+                          ) : (
+                            <Card className="border-slate-200">
+                              <CardContent className="text-center py-12">
+                                <p className="text-slate-500">No government inputs have been added to this activity yet.</p>
+                                <Button variant="outline" className="mt-4 border-slate-300 text-slate-700 hover:bg-slate-100" onClick={handleEdit}>
+                                  Add Government Inputs
+                                </Button>
+                              </CardContent>
+                            </Card>
+                          )}
+                        </>
+                      )}
+                    </div>
                   )}
                 </TabsContent>
               )}

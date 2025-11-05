@@ -179,22 +179,28 @@ class FixedCurrencyConverter {
     transactionDate: Date
   ): Promise<ConversionResult> {
     try {
-      if (amount <= 0) {
-        return { 
-          usd_amount: null, 
-          exchange_rate: null, 
-          success: false, 
-          error: 'Invalid amount: must be greater than 0' 
-        };
-      }
-
       const currencyCode = currency.toUpperCase();
       const dateStr = transactionDate.toISOString().split('T')[0];
 
-      // Already USD - but still return the amount to populate USD Value field
+      // Handle zero amounts - they're valid transactions (e.g., zero-dollar commitments)
+      if (amount === 0) {
+        return { 
+          usd_amount: 0, 
+          exchange_rate: currencyCode === 'USD' ? 1.0 : null, 
+          success: true,
+          source: currencyCode === 'USD' ? 'direct' : 'zero-value',
+          conversion_date: dateStr
+        };
+      }
+
+      // Preserve sign for negative amounts (refunds, loan repayments, corrections)
+      const isNegative = amount < 0;
+      const absoluteAmount = Math.abs(amount);
+
+      // Already USD - preserve the sign for negative values
       if (currencyCode === 'USD') {
         return { 
-          usd_amount: amount, 
+          usd_amount: amount, // Preserves sign
           exchange_rate: 1.0, 
           success: true,
           source: 'direct',
@@ -212,7 +218,7 @@ class FixedCurrencyConverter {
         };
       }
 
-      // Get exchange rate with enhanced fallback
+      // Get exchange rate with enhanced fallback (always using absolute value)
       const rateResult = await this.getHistoricalRate(currencyCode, 'USD', transactionDate);
       
       if (!rateResult) {
@@ -224,13 +230,16 @@ class FixedCurrencyConverter {
         };
       }
 
-      // Calculate USD amount with proper rounding
-      const usdAmount = Math.round(amount * rateResult.rate * 100) / 100;
+      // Calculate USD amount with proper rounding using absolute value
+      const usdAmount = Math.round(absoluteAmount * rateResult.rate * 100) / 100;
+      
+      // Apply the original sign to the converted amount
+      const finalAmount = isNegative ? -usdAmount : usdAmount;
 
-      console.log(`[FixedConverter] Converted ${amount} ${currencyCode} → $${usdAmount} USD (rate: ${rateResult.rate}, source: ${rateResult.source})`);
+      console.log(`[FixedConverter] Converted ${amount} ${currencyCode} → $${finalAmount} USD (rate: ${rateResult.rate}, source: ${rateResult.source})`);
 
       return {
-        usd_amount: usdAmount,
+        usd_amount: finalAmount,
         exchange_rate: rateResult.rate,
         success: true,
         source: rateResult.source,

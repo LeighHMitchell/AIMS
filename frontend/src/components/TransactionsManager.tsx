@@ -600,9 +600,9 @@ export default function TransactionsManager({
 
   // Calculate summary statistics BEFORE filtering
   const summaryStats = {
-    // Commitments (type 1 = Incoming Commitment, type 2 = Outgoing Commitment)
-    commitments: transactions.filter(t => t.transaction_type === '1' || t.transaction_type === '2').reduce((sum, t) => sum + (t.value || 0), 0),
-    commitmentsCount: transactions.filter(t => t.transaction_type === '1' || t.transaction_type === '2').length,
+    // Commitments (type 2 = Outgoing Commitment only, for activity-level reporting)
+    commitments: transactions.filter(t => t.transaction_type === '2').reduce((sum, t) => sum + (t.value || 0), 0),
+    commitmentsCount: transactions.filter(t => t.transaction_type === '2').length,
     
     // Disbursements (type 3 = Disbursement)
     disbursements: transactions.filter(t => t.transaction_type === '3').reduce((sum, t) => sum + (t.value || 0), 0),
@@ -620,7 +620,7 @@ export default function TransactionsManager({
   // Filter transactions
   const filteredTransactions = transactions.filter(t => {
     // Quick filter
-    if (quickFilter === 'commitments' && t.transaction_type !== '1' && t.transaction_type !== '2') return false;
+    if (quickFilter === 'commitments' && t.transaction_type !== '2') return false;
     if (quickFilter === 'disbursements' && t.transaction_type !== '3') return false;
     if (quickFilter === 'expenditures' && t.transaction_type !== '4') return false;
     

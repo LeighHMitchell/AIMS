@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase';
+import { resolveCurrency, resolveValueDate } from '@/lib/currency-helpers';
 
 export async function GET(
   request: NextRequest,
@@ -63,9 +64,9 @@ export async function POST(
       return NextResponse.json({ error: 'Activity ID is required' }, { status: 400 });
     }
 
-    // Validate required fields
-    if (!body.period_start || !body.period_end || body.amount === undefined || !body.currency) {
-      return NextResponse.json({ error: 'Missing required fields: period_start, period_end, amount, currency' }, { status: 400 });
+    // Validate required fields - currency is NOT required (has defaults)
+    if (!body.period_start || !body.period_end || body.amount === undefined) {
+      return NextResponse.json({ error: 'Missing required fields: period_start, period_end, amount' }, { status: 400 });
     }
 
     // Validate period dates
@@ -73,10 +74,22 @@ export async function POST(
       return NextResponse.json({ error: 'Period start must be before period end' }, { status: 400 });
     }
 
+    // Resolve currency using helper (checks activity → USD)
+    const resolvedCurrency = await resolveCurrency(
+      body.currency,
+      activityId
+    );
+
+    // Resolve value_date (use provided or fallback to period_start)
+    const resolvedValueDate = resolveValueDate(
+      body.value_date,
+      body.period_start
+    );
+
     const disbursementData = {
       activity_id: activityId,
       amount: Number(body.amount),
-      currency: body.currency,
+      currency: resolvedCurrency,
       period_start: body.period_start,
       period_end: body.period_end,
       provider_org_id: body.provider_org_id || null,
@@ -84,9 +97,11 @@ export async function POST(
       receiver_org_id: body.receiver_org_id || null,
       receiver_org_name: body.receiver_org_name || null,
       status: body.status || 'original',
-      value_date: body.value_date || body.period_start,
+      value_date: resolvedValueDate,
       notes: body.notes || null
     };
+
+    console.log(`[PlannedDisbursementsAPI] Resolved currency: ${resolvedCurrency} (from ${body.currency || 'missing'}), value_date: ${resolvedValueDate}`);
 
     const { data: disbursement, error } = await supabase
       .from('planned_disbursements')

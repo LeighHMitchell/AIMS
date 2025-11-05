@@ -79,7 +79,7 @@ export function HumanitarianChart({ dateRange, filters, refreshKey }: Humanitari
           locations,
           collaboration_type,
           activity_sectors!inner(sector_code),
-          transactions!inner(
+          transactions!transactions_activity_id_fkey1!inner(
             value,
             aid_type,
             transaction_date,

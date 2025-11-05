@@ -90,7 +90,7 @@ import { getTabCompletionStatus } from "@/utils/tab-completion";
 
 import { IATISyncPanel } from "@/components/activities/IATISyncPanel";
 import IatiLinkTab from "@/components/activities/IatiLinkTab";
-import XmlImportTab from "@/components/activities/XmlImportTab";
+import IatiImportTab from "@/components/activities/IatiImportTab";
 import ActivityBudgetsTab from "@/components/activities/ActivityBudgetsTab";
 import PlannedDisbursementsTab from "@/components/activities/PlannedDisbursementsTab";
 import ForwardSpendingSurveyTab from "@/components/activities/ForwardSpendingSurveyTab";
@@ -1675,10 +1675,10 @@ function SectionContent({ section, general, setGeneral, sectors, setSectors, tra
         </div>
       );
     case "xml-import":
-      console.log('🔥 ACTIVITY EDITOR: Rendering XML Import section for activityId:', general.id);
+      console.log('🔥 ACTIVITY EDITOR: Rendering IATI Import section for activityId:', general.id);
       return (
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
-          <XmlImportTab 
+          <IatiImportTab 
             activityId={general.id || ''}
           />
         </div>
@@ -2124,6 +2124,9 @@ function NewActivityPageContent() {
   const [financingTermsCount, setFinancingTermsCount] = useState<number>(0);
   const [countryBudgetItemsCount, setCountryBudgetItemsCount] = useState<number>(0);
 
+  // Track sidebar collapse state to avoid covering the collapse button
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+
   // Memoized callbacks to prevent infinite re-render loop
   const handlePlannedDisbursementsChange = useCallback((disb: any[]) => {
     console.log('[ActivityEditor] setPlannedDisbursements called with:', disb?.length || 0, 'disbursements');
@@ -2228,6 +2231,23 @@ function NewActivityPageContent() {
 
     fetchCountryBudgetItemsCount();
   }, [general.id]);
+
+  // Sync sidebar collapse state with localStorage
+  React.useEffect(() => {
+    // Read initial state
+    const collapsed = localStorage.getItem('sidebarCollapsed') === 'true';
+    setSidebarCollapsed(collapsed);
+
+    // Listen for changes from sidebar toggle
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'sidebarCollapsed' && e.newValue !== null) {
+        setSidebarCollapsed(e.newValue === 'true');
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, []);
 
   // Save form data to localStorage whenever form state changes
   React.useEffect(() => {
@@ -3062,7 +3082,7 @@ function NewActivityPageContent() {
       "forward-spending-survey": "Forward Spending Survey",
       "financing-terms": "Financing Terms",
       "conditions": "Conditions",
-      "xml-import": "XML Import"
+      "xml-import": "IATI Import"
     };
     return sectionLabels[sectionId] || sectionId;
   };
@@ -3622,7 +3642,7 @@ function NewActivityPageContent() {
       title: "TOOLS",
       sections: [
         { id: "iati", label: "IATI Link" },
-        { id: "xml-import", label: "XML Import" }
+        { id: "xml-import", label: "IATI Import" }
       ]
     },
     {
@@ -4031,7 +4051,7 @@ function NewActivityPageContent() {
           </div>
           
           {/* Combined Footer with Navigation and Validation Actions */}
-          <footer className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 py-4 px-8 z-[60] shadow-lg">
+          <footer className={`fixed bottom-0 right-0 bg-white border-t border-gray-200 py-4 px-8 z-[60] shadow-lg transition-all duration-400 ${sidebarCollapsed ? 'left-20' : 'left-72'}`}>
             <div className="max-w-full flex items-center justify-between gap-4">
               {/* Left side: Validation Actions */}
               <div className="flex items-center gap-4">

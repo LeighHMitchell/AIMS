@@ -92,24 +92,31 @@ export const FinanceTypeChart: React.FC<FinanceTypeChartProps> = ({
     return value.toString();
   };
 
-  const formatTooltipValue = (value: number) => {
-    return `${currency} ${value.toLocaleString()}`;
+  // Format currency in short form with one decimal: 10308 -> $10.3k, 10308000 -> $10.3M
+  const formatCurrencyShort = (value: number): string => {
+    if (value === null || value === undefined || isNaN(value)) return '$0.0';
+    const abs = Math.abs(value);
+    const sign = value < 0 ? '-' : '';
+    if (abs >= 1_000_000) return `${sign}$${(value / 1_000_000).toFixed(1)}M`;
+    if (abs >= 1_000) return `${sign}$${(value / 1_000).toFixed(1)}k`;
+    return `${sign}$${value.toFixed(1)}`;
   };
 
-  const CustomTooltip = ({ active, payload, label }: any) => {
+  const CustomTooltip = ({ active, payload }: any) => {
     if (active && payload && payload.length) {
       const data = payload[0]?.payload;
       return (
         <div className="bg-white p-4 border border-gray-200 rounded-lg shadow-lg">
-          <p className="font-semibold text-gray-900 mb-1">{data?.financeTypeName || label}</p>
-          <p className="text-xs text-gray-600 mb-2">Code: {data?.financeType}</p>
+          {data?.financeTypeName && (
+            <p className="font-semibold text-gray-900 mb-1">{data.financeTypeName}</p>
+          )}
           {payload.map((entry: any, index: number) => (
             <p
               key={index}
               className="text-sm"
               style={{ color: entry.color }}
             >
-              {`${entry.name}: ${formatTooltipValue(entry.value)}`}
+              {`${entry.name}: ${formatCurrencyShort(entry.value)}`}
             </p>
           ))}
           {payload.length >= 3 && (

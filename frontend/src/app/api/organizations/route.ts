@@ -42,7 +42,7 @@ export async function GET(request: NextRequest) {
     // Build query with filters
     let query = supabaseAdmin
       .from('organizations')
-      .select('id, name, acronym, type, Organisation_Type_Code, Organisation_Type_Name, country, logo, banner, description, website, email, phone, address, country_represented, cooperation_modality, iati_org_id, alias_refs, name_aliases, created_at, updated_at');
+      .select('id, name, acronym, type, Organisation_Type_Code, Organisation_Type_Name, country, logo, banner, description, website, email, phone, address, country_represented, cooperation_modality, iati_org_id, alias_refs, name_aliases, reporting_org_ref, reporting_org_type, reporting_org_name, reporting_org_secondary_reporter, last_updated_datetime, default_currency, default_language, social_twitter, social_facebook, social_linkedin, social_instagram, social_youtube, created_at, updated_at');
     
     // Filter by IATI org ID (exact match)
     if (iatiOrgId) {
@@ -267,6 +267,24 @@ export async function PUT(request: NextRequest) {
       }
     }
     
+    // Handle new IATI fields - ensure proper data types and defaults
+    if ('reporting_org_secondary_reporter' in updates) {
+      updates.reporting_org_secondary_reporter = updates.reporting_org_secondary_reporter || false;
+    }
+    
+    if ('last_updated_datetime' in updates) {
+      // Auto-update to current timestamp if not provided
+      updates.last_updated_datetime = updates.last_updated_datetime || new Date().toISOString();
+    }
+    
+    if ('default_currency' in updates) {
+      updates.default_currency = updates.default_currency || 'USD';
+    }
+    
+    if ('default_language' in updates) {
+      updates.default_language = updates.default_language || 'en';
+    }
+    
     // Map frontend field names to database column names
     if ('country_represented' in updates) {
       updates.country = updates.country_represented;
@@ -308,6 +326,7 @@ export async function PUT(request: NextRequest) {
     }
     
     console.log('[AIMS] Updating organization with mapped data:', updates);
+    console.log('[AIMS] default_currency being saved:', updates.default_currency);
     
     const { data, error } = await getSupabaseAdmin()
       .from('organizations')
@@ -322,6 +341,7 @@ export async function PUT(request: NextRequest) {
     }
     
     console.log('[AIMS] Updated organization:', data);
+    console.log('[AIMS] Saved default_currency:', data.default_currency);
     return NextResponse.json(data);
   } catch (error) {
     console.error('[AIMS] Unexpected error:', error);

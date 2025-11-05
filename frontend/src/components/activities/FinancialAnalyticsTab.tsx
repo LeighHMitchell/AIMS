@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useEffect, useState, useMemo } from 'react'
+import React, { useEffect, useState, useMemo, useCallback, useTransition } from 'react'
 import {
   ResponsiveContainer,
   BarChart,
@@ -23,27 +23,37 @@ import { Loader2, AlertCircle, TrendingUp, DollarSign, BarChart3, TrendingUpIcon
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { TransactionCalendarHeatmap } from './TransactionCalendarHeatmap'
 
 type TimePeriod = '1m' | '3m' | '6m' | '1y' | '5y' | 'all'
 type GroupBy = 'year' | 'month'
 
 interface FinancialAnalyticsTabProps {
   activityId: string
+  transactions?: any[]
+  budgets?: any[]
+  plannedDisbursements?: any[]
 }
 
-export default function FinancialAnalyticsTab({ activityId }: FinancialAnalyticsTabProps) {
+export default function FinancialAnalyticsTab({ 
+  activityId, 
+  transactions = [], 
+  budgets = [], 
+  plannedDisbursements = [] 
+}: FinancialAnalyticsTabProps) {
   const [loading, setLoading] = useState(true)
   const [rawBudgetVsActualData, setRawBudgetVsActualData] = useState<any[]>([])
   const [rawDisbursementData, setRawDisbursementData] = useState<any[]>([])
   const [cumulativeData, setCumulativeData] = useState<any[]>([])
   const [budgetCompositionData, setBudgetCompositionData] = useState<any[]>([])
   const [fundingSourceData, setFundingSourceData] = useState<any[]>([])
-  const [financialFlowData, setFinancialFlowData] = useState<any>({})
   const [commitmentRatio, setCommitmentRatio] = useState<number>(0)
   const [totalCommitment, setTotalCommitment] = useState<number>(0)
   const [totalDisbursement, setTotalDisbursement] = useState<number>(0)
   
   // Time period filters for different charts
+  const [overviewTimePeriod, setOverviewTimePeriod] = useState<TimePeriod>('all')
   const [budgetTimePeriod, setBudgetTimePeriod] = useState<TimePeriod>('all')
   const [cumulativeTimePeriod, setCumulativeTimePeriod] = useState<TimePeriod>('all')
   const [disbursementTimePeriod, setDisbursementTimePeriod] = useState<TimePeriod>('all')
@@ -54,10 +64,47 @@ export default function FinancialAnalyticsTab({ activityId }: FinancialAnalytics
   
   // Chart type toggles
   const [disbursementChartType, setDisbursementChartType] = useState<'line' | 'bar'>('line')
+  const [isPending, startTransition] = useTransition()
+
+  const fetchFinancialAnalytics = useCallback(async () => {
+    try {
+      setLoading(true)
+      const response = await fetch(`/api/activities/${activityId}/financial-analytics`)
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch financial analytics')
+      }
+
+      const data = await response.json()
+      
+      // Store raw data for client-side grouping
+      // Use startTransition to mark state updates as non-urgent to prevent UI blocking
+      startTransition(() => {
+        setRawBudgetVsActualData(data.rawBudgetData || [])
+        setRawDisbursementData(data.rawDisbursementData || [])
+        setCumulativeData(data.cumulative || [])
+        setBudgetCompositionData(data.budgetComposition || [])
+        setFundingSourceData(data.fundingSources || [])
+        setCommitmentRatio(data.commitmentRatio || 0)
+        setTotalCommitment(data.totalCommitment || 0)
+        setTotalDisbursement(data.totalDisbursement || 0)
+      })
+    } catch (error) {
+      console.error('Error fetching financial analytics:', error)
+      toast.error('Failed to load financial analytics')
+      setLoading(false)
+    } finally {
+      // Set loading to false outside transition so UI responds immediately
+      setTimeout(() => setLoading(false), 0)
+    }
+  }, [activityId])
 
   useEffect(() => {
+    if (!activityId) {
+      return
+    }
     fetchFinancialAnalytics()
-  }, [activityId])
+  }, [activityId, fetchFinancialAnalytics])
 
   // Calculate cutoff date based on time period
   const getCutoffDate = (period: TimePeriod): Date | null => {
@@ -287,40 +334,11 @@ export default function FinancialAnalyticsTab({ activityId }: FinancialAnalytics
     )
   }
 
-  const fetchFinancialAnalytics = async () => {
-    try {
-      setLoading(true)
-      const response = await fetch(`/api/activities/${activityId}/financial-analytics`)
-      
-      if (!response.ok) {
-        throw new Error('Failed to fetch financial analytics')
-      }
-
-      const data = await response.json()
-      
-      // Store raw data for client-side grouping
-      setRawBudgetVsActualData(data.rawBudgetData || [])
-      setRawDisbursementData(data.rawDisbursementData || [])
-      setCumulativeData(data.cumulative || [])
-      setBudgetCompositionData(data.budgetComposition || [])
-      setFundingSourceData(data.fundingSources || [])
-      setFinancialFlowData(data.financialFlow || {})
-      setCommitmentRatio(data.commitmentRatio || 0)
-      setTotalCommitment(data.totalCommitment || 0)
-      setTotalDisbursement(data.totalDisbursement || 0)
-    } catch (error) {
-      console.error('Error fetching financial analytics:', error)
-      toast.error('Failed to load financial analytics')
-    } finally {
-      setLoading(false)
-    }
-  }
-
   const formatCurrency = (value: number) => {
     if (value >= 1000000) {
-      return `$${(value / 1000000).toFixed(1)}M`
+      return `$${(value / 1000000).toFixed(1)}m`
     } else if (value >= 1000) {
-      return `$${(value / 1000).toFixed(0)}K`
+      return `$${(value / 1000).toFixed(1)}k`
     }
     return `$${value.toFixed(0)}`
   }
@@ -351,7 +369,180 @@ export default function FinancialAnalyticsTab({ activityId }: FinancialAnalytics
 
   const COLORS = ['#3B82F6', '#64748B', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899', '#14B8A6']
 
-  if (loading) {
+  // Process cumulative overview data - all transaction types, planned disbursements, and budgets
+  const cumulativeOverviewData = useMemo(() => {
+    // Early return if no data to process
+    if ((!transactions || transactions.length === 0) && 
+        (!plannedDisbursements || plannedDisbursements.length === 0) && 
+        (!budgets || budgets.length === 0)) {
+      return []
+    }
+
+    // Collect all date points from transactions, planned disbursements, and budgets
+    interface DatePoint {
+      date: Date
+      timestamp: number
+      incomingFunds: number
+      commitments: number
+      disbursements: number
+      expenditures: number
+      plannedDisbursements: number
+      plannedBudgets: number
+    }
+
+    const dateMap = new Map<string, DatePoint>()
+
+    // Process transactions by type
+    transactions?.forEach((transaction: any) => {
+      if (!transaction.transaction_date) return
+      
+      const date = new Date(transaction.transaction_date)
+      if (isNaN(date.getTime())) return
+      
+      const dateKey = date.toISOString().split('T')[0] // Use date as key
+      // Try usd_value first, then value_usd, then value as fallback
+      const value = parseFloat(String(transaction.usd_value || transaction.value_usd || transaction.value)) || 0
+      
+      if (!dateMap.has(dateKey)) {
+        dateMap.set(dateKey, {
+          date,
+          timestamp: date.getTime(),
+          incomingFunds: 0,
+          commitments: 0,
+          disbursements: 0,
+          expenditures: 0,
+          plannedDisbursements: 0,
+          plannedBudgets: 0
+        })
+      }
+      
+      const point = dateMap.get(dateKey)!
+      const type = transaction.transaction_type
+      
+      if (type === '1' || type === '12') {
+        point.incomingFunds += value
+      } else if (type === '2' || type === '11') {
+        point.commitments += value
+      } else if (type === '3') {
+        point.disbursements += value
+      } else if (type === '4') {
+        point.expenditures += value
+      }
+    })
+
+    // Process planned disbursements
+    plannedDisbursements?.forEach((pd: any) => {
+      if (!pd.period_start) return
+      
+      const date = new Date(pd.period_start)
+      if (isNaN(date.getTime())) return
+      
+      const dateKey = date.toISOString().split('T')[0]
+      // Try usd_amount first, then amount as fallback
+      const value = parseFloat(String(pd.usd_amount || pd.amount)) || 0
+      
+      if (!dateMap.has(dateKey)) {
+        dateMap.set(dateKey, {
+          date,
+          timestamp: date.getTime(),
+          incomingFunds: 0,
+          commitments: 0,
+          disbursements: 0,
+          expenditures: 0,
+          plannedDisbursements: 0,
+          plannedBudgets: 0
+        })
+      }
+      
+      dateMap.get(dateKey)!.plannedDisbursements += value
+    })
+
+    // Process budgets
+    budgets?.forEach((budget: any) => {
+      if (!budget.period_start) return
+      
+      const date = new Date(budget.period_start)
+      if (isNaN(date.getTime())) return
+      
+      const dateKey = date.toISOString().split('T')[0]
+      // Try usd_value first, then value as fallback
+      const value = parseFloat(String(budget.usd_value || budget.value)) || 0
+      
+      if (!dateMap.has(dateKey)) {
+        dateMap.set(dateKey, {
+          date,
+          timestamp: date.getTime(),
+          incomingFunds: 0,
+          commitments: 0,
+          disbursements: 0,
+          expenditures: 0,
+          plannedDisbursements: 0,
+          plannedBudgets: 0
+        })
+      }
+      
+      dateMap.get(dateKey)!.plannedBudgets += value
+    })
+
+    // Convert to array and sort by date
+    const sortedPoints = Array.from(dateMap.values()).sort((a, b) => a.timestamp - b.timestamp)
+
+    // Calculate cumulative values
+    let cumulativeIncomingFunds = 0
+    let cumulativeCommitments = 0
+    let cumulativeDisbursements = 0
+    let cumulativeExpenditures = 0
+    let cumulativePlannedDisbursements = 0
+    let cumulativePlannedBudgets = 0
+
+    // Aggregate into monthly buckets for cleaner, more consistent visualization
+    const monthlyMap = new Map<string, any>()
+    
+    sortedPoints.forEach((point) => {
+      cumulativeIncomingFunds += point.incomingFunds
+      cumulativeCommitments += point.commitments
+      cumulativeDisbursements += point.disbursements
+      cumulativeExpenditures += point.expenditures
+      cumulativePlannedDisbursements += point.plannedDisbursements
+      cumulativePlannedBudgets += point.plannedBudgets
+
+      // Use year-month as key for monthly aggregation
+      const monthKey = `${point.date.getFullYear()}-${String(point.date.getMonth() + 1).padStart(2, '0')}`
+      
+      // Keep the latest cumulative values for each month (end of month snapshot)
+      monthlyMap.set(monthKey, {
+        date: point.date.toISOString(),
+        timestamp: point.timestamp,
+        monthKey,
+        displayDate: point.date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
+        'Incoming Funds': cumulativeIncomingFunds,
+        'Commitments': cumulativeCommitments,
+        'Disbursements': cumulativeDisbursements,
+        'Expenditures': cumulativeExpenditures,
+        'Planned Disbursements': cumulativePlannedDisbursements,
+        'Planned Budgets': cumulativePlannedBudgets
+      })
+    })
+
+    return Array.from(monthlyMap.values()).sort((a, b) => a.timestamp - b.timestamp)
+  }, [transactions, plannedDisbursements, budgets])
+
+  // Filter cumulative overview data by time period
+  const filteredCumulativeOverviewData = useMemo(
+    () => filterDataByDate(cumulativeOverviewData, overviewTimePeriod, 'date'),
+    [cumulativeOverviewData, overviewTimePeriod]
+  )
+
+  // Calculate intelligent tick interval for x-axis based on data points
+  const getXAxisInterval = (dataLength: number) => {
+    if (dataLength <= 12) return 0 // Show all ticks for 12 or fewer months
+    if (dataLength <= 24) return 1 // Show every other tick for up to 2 years
+    if (dataLength <= 36) return 2 // Show every 3rd tick for up to 3 years
+    if (dataLength <= 60) return 4 // Show every 5th tick (every ~5 months) for up to 5 years
+    return Math.floor(dataLength / 12) // Show ~12 ticks for longer periods
+  }
+
+  if (loading || isPending) {
     return (
       <div className="flex items-center justify-center h-96">
         <div className="flex items-center gap-2 text-slate-500">
@@ -364,98 +555,127 @@ export default function FinancialAnalyticsTab({ activityId }: FinancialAnalytics
 
   return (
     <div className="space-y-6">
-      {/* KPI Cards Row */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {/* Commitment vs Disbursement Ratio Card */}
-        <Card className="border-slate-200">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-slate-600">Commitment vs Disbursement Ratio</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div className="flex items-end justify-between">
-                <div>
-                  <p className="text-3xl font-bold text-slate-900">{commitmentRatio.toFixed(1)}%</p>
-                  <p className="text-xs text-slate-500 mt-1">disbursement rate</p>
-                </div>
-                <TrendingUp className="h-8 w-8 text-slate-400" />
-              </div>
-              {/* Progress Bar */}
-              <div className="w-full">
-                <div className="w-full bg-slate-200 rounded-full h-3">
-                  <div 
-                    className="bg-blue-600 h-3 rounded-full transition-all duration-300" 
-                    style={{ width: `${Math.min(commitmentRatio, 100)}%` }}
-                  />
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-2 text-xs pt-2 border-t border-slate-200">
-                <div>
-                  <p className="text-slate-500">Committed</p>
-                  <p className="font-semibold text-slate-900">{formatCurrency(totalCommitment)}</p>
-                </div>
-                <div>
-                  <p className="text-slate-500">Disbursed</p>
-                  <p className="font-semibold text-slate-900">{formatCurrency(totalDisbursement)}</p>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Total Budget Card */}
-        <Card className="border-slate-200">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-slate-600">Total Budget</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-start justify-between">
-              <div className="space-y-2">
-                <p className="text-3xl font-bold text-slate-900">
-                  {formatCurrency(budgetCompositionData.reduce((sum, item) => sum + item.value, 0))}
-                </p>
-                <p className="text-xs text-slate-500">
-                  {budgetCompositionData.length > 0 ? 'across all categories' : 'no budgets added'}
-                </p>
-                <div className="text-xs text-slate-600 pt-2 border-t border-slate-200">
-                  <p>{budgetCompositionData.length} budget {budgetCompositionData.length === 1 ? 'category' : 'categories'}</p>
-                </div>
-              </div>
-              <DollarSign className="h-8 w-8 text-slate-400" />
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Funding Sources Card */}
-        <Card className="border-slate-200">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-slate-600">Funding Sources</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              <p className="text-3xl font-bold text-slate-900">{fundingSourceData.length}</p>
-              <p className="text-xs text-slate-500">
-                {fundingSourceData.length > 0 ? 'active donors/providers' : 'no funding sources'}
-              </p>
-              <div className="pt-2 border-t border-slate-200 space-y-1">
-                {fundingSourceData.length > 0 ? (
-                  fundingSourceData.slice(0, 3).map((source, idx) => (
-                    <div key={idx} className="flex justify-between text-xs">
-                      <span className="text-slate-600 truncate">{source.name}</span>
-                      <span className="font-semibold text-slate-900">{formatCurrency(source.value)}</span>
-                    </div>
-                  ))
-                ) : (
-                  <p className="text-xs text-slate-400 py-2">Add organizations to track funding sources</p>
-                )}
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Budget vs Actual Spending */}
+      {/* Cumulative Overview Chart - All Transaction Types, Planned Disbursements, and Budgets */}
       <Card className="border-slate-200">
+        <CardHeader>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div>
+              <CardTitle className="text-lg font-semibold text-slate-900">
+                Cumulative Financial Overview
+              </CardTitle>
+              <CardDescription>
+                Cumulative view of all transaction types, planned disbursements, and planned budgets over time
+              </CardDescription>
+            </div>
+            <TimePeriodFilter 
+              value={overviewTimePeriod} 
+              onChange={setOverviewTimePeriod}
+            />
+          </div>
+        </CardHeader>
+        <CardContent>
+          {filteredCumulativeOverviewData.length > 0 ? (
+            <ResponsiveContainer width="100%" height={500}>
+              <LineChart data={filteredCumulativeOverviewData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
+                <XAxis 
+                  dataKey="displayDate" 
+                  stroke="#64748B" 
+                  fontSize={12}
+                  angle={-45}
+                  textAnchor="end"
+                  height={80}
+                  interval={getXAxisInterval(filteredCumulativeOverviewData.length)}
+                />
+                <YAxis tickFormatter={formatCurrency} stroke="#64748B" fontSize={12} />
+                <Tooltip content={<CustomTooltip />} />
+                <Legend />
+                <Line 
+                  type="monotone" 
+                  dataKey="Incoming Funds" 
+                  stroke="#3B82F6" 
+                  strokeWidth={2}
+                  dot={{ fill: '#3B82F6', r: 3 }}
+                  animationDuration={300}
+                />
+                <Line 
+                  type="monotone" 
+                  dataKey="Commitments" 
+                  stroke="#10B981" 
+                  strokeWidth={2}
+                  dot={{ fill: '#10B981', r: 3 }}
+                  animationDuration={300}
+                />
+                <Line 
+                  type="monotone" 
+                  dataKey="Disbursements" 
+                  stroke="#F59E0B" 
+                  strokeWidth={2}
+                  dot={{ fill: '#F59E0B', r: 3 }}
+                  animationDuration={300}
+                />
+                <Line 
+                  type="monotone" 
+                  dataKey="Expenditures" 
+                  stroke="#EF4444" 
+                  strokeWidth={2}
+                  dot={{ fill: '#EF4444', r: 3 }}
+                  animationDuration={300}
+                />
+                <Line 
+                  type="monotone" 
+                  dataKey="Planned Disbursements" 
+                  stroke="#8B5CF6" 
+                  strokeWidth={2}
+                  strokeDasharray="5 5"
+                  dot={{ fill: '#8B5CF6', r: 3 }}
+                  animationDuration={300}
+                />
+                <Line 
+                  type="monotone" 
+                  dataKey="Planned Budgets" 
+                  stroke="#EC4899" 
+                  strokeWidth={2}
+                  strokeDasharray="5 5"
+                  dot={{ fill: '#EC4899', r: 3 }}
+                  animationDuration={300}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          ) : (
+            <div className="flex items-center justify-center h-96 text-slate-400">
+              <div className="text-center">
+                <AlertCircle className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                <p className="font-medium">No cumulative overview data available</p>
+                <p className="text-xs mt-2">Add transactions, planned disbursements, or budgets to see this chart</p>
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Transaction Calendar Heat Map */}
+      <Card className="border-slate-200">
+        <CardHeader>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div>
+              <CardTitle className="text-lg font-semibold text-slate-900">
+                Transaction Activity Calendar
+              </CardTitle>
+              <CardDescription>
+                Daily transaction activity colored by transaction type. Gradient colors indicate mixed transaction types on the same day.
+              </CardDescription>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <TransactionCalendarHeatmap transactions={transactions} />
+        </CardContent>
+      </Card>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Budget vs Actual Spending */}
+        <Card className="border-slate-200">
         <CardHeader>
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div>
@@ -490,7 +710,7 @@ export default function FinancialAnalyticsTab({ activityId }: FinancialAnalytics
                   height={budgetGroupBy === 'month' ? 80 : 30}
                 />
                 <YAxis tickFormatter={formatCurrency} stroke="#64748B" fontSize={12} />
-                <Tooltip content={<CustomTooltip />} cursor={false} />
+                <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(0, 0, 0, 0.05)' }} />
                 <Legend />
                 <Bar dataKey="budget" name="Budget" fill="#3B82F6" radius={[4, 4, 0, 0]} animationDuration={300} />
                 <Bar dataKey="actual" name="Actual Spending" fill="#64748B" radius={[4, 4, 0, 0]} animationDuration={300} />
@@ -557,6 +777,8 @@ export default function FinancialAnalyticsTab({ activityId }: FinancialAnalytics
           )}
         </CardContent>
       </Card>
+
+      </div>
 
       {/* Planned vs Actual Disbursements */}
       <Card className="border-slate-200">
@@ -654,7 +876,7 @@ export default function FinancialAnalyticsTab({ activityId }: FinancialAnalytics
                     height={disbursementGroupBy === 'month' ? 80 : 30}
                   />
                   <YAxis tickFormatter={formatCurrency} stroke="#64748B" fontSize={12} />
-                  <Tooltip content={<CustomTooltip />} cursor={false} />
+                  <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(0, 0, 0, 0.05)' }} />
                   <Legend />
                   <Bar dataKey="planned" name="Planned" fill="#3B82F6" radius={[4, 4, 0, 0]} animationDuration={300} />
                   <Bar dataKey="actual" name="Actual" fill="#64748B" radius={[4, 4, 0, 0]} animationDuration={300} />
@@ -734,23 +956,6 @@ export default function FinancialAnalyticsTab({ activityId }: FinancialAnalytics
               </div>
             </div>
           )}
-        </CardContent>
-      </Card>
-
-      {/* Financial Flow by Organization Role - Placeholder for Sankey */}
-      <Card className="border-slate-200">
-        <CardHeader>
-          <CardTitle className="text-lg font-semibold text-slate-900">Financial Flow by Organisation Role</CardTitle>
-          <CardDescription>Flow of funds between different organization roles</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center justify-center h-96 text-slate-400">
-            <div className="text-center">
-              <AlertCircle className="h-12 w-12 mx-auto mb-2 opacity-50" />
-              <p className="text-sm">Sankey diagram visualization</p>
-              <p className="text-xs mt-1">Advanced flow visualization requires additional library</p>
-            </div>
-          </div>
         </CardContent>
       </Card>
     </div>

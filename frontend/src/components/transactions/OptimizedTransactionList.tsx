@@ -162,12 +162,16 @@ export function OptimizedTransactionList({
 
   // Format currency
   const formatCurrency = useCallback((value: number, currency: string) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: currency || 'USD',
+    const safeCurrency = currency && currency.length === 3 && /^[A-Z]{3}$/.test(currency.toUpperCase()) 
+      ? currency.toUpperCase() 
+      : "USD";
+    
+    const formattedValue = new Intl.NumberFormat('en-US', {
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
     }).format(value);
+    
+    return <><span className="text-muted-foreground">{safeCurrency}</span> {formattedValue}</>;
   }, []);
 
   // Format date

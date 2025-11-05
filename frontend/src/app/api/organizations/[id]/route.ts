@@ -97,6 +97,8 @@ export async function GET(
     };
     
     console.log('[AIMS] Found organization:', organization.name);
+    console.log('[AIMS] DB default_currency:', organization.default_currency);
+    console.log('[AIMS] Returning default_currency:', enhancedOrganization.default_currency);
     
     const response = NextResponse.json(enhancedOrganization);
     

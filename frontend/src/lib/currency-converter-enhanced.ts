@@ -53,27 +53,35 @@ class EnhancedCurrencyConverterV2 {
     };
 
     try {
-      // Step 1: Input validation
-      if (amount <= 0) {
-        diagnostic.steps.push('❌ Invalid amount: must be greater than 0');
+      // Step 1: Input validation - reject only zero values, negative values are valid
+      if (amount === 0) {
+        diagnostic.steps.push('❌ Invalid amount: cannot be zero');
         return {
           usd_amount: null,
           exchange_rate: null,
           success: false,
-          error: 'Invalid amount: must be greater than 0',
+          error: 'Invalid amount: cannot be zero',
           diagnostic_info: diagnostic
         };
+      }
+
+      // Preserve sign for negative amounts (refunds, loan repayments, corrections)
+      const isNegative = amount < 0;
+      const absoluteAmount = Math.abs(amount);
+      
+      if (isNegative) {
+        diagnostic.steps.push(`ℹ️ Negative amount detected: preserving sign for ${amount}`);
       }
 
       const currencyCode = currency.toUpperCase();
       const dateStr = transactionDate.toISOString().split('T')[0];
       diagnostic.steps.push(`✅ Input validated: ${amount} ${currencyCode} on ${dateStr}`);
 
-      // Step 2: Handle USD directly
+      // Step 2: Handle USD directly - preserve sign for negative values
       if (currencyCode === 'USD') {
         diagnostic.steps.push('✅ Already USD - no conversion needed');
         return {
-          usd_amount: amount,
+          usd_amount: amount, // Preserves sign
           exchange_rate: 1.0,
           success: true,
           source: 'direct',
@@ -95,7 +103,7 @@ class EnhancedCurrencyConverterV2 {
       }
       diagnostic.steps.push(`✅ Currency ${currencyCode} is supported`);
 
-      // Step 4: Try multiple rate sources
+      // Step 4: Try multiple rate sources (using absolute value)
       const rateResult = await this.getExchangeRateWithFallbacks(currencyCode, 'USD', transactionDate, diagnostic);
 
       if (!rateResult) {
@@ -109,12 +117,16 @@ class EnhancedCurrencyConverterV2 {
         };
       }
 
-      // Step 5: Calculate USD amount
-      const usdAmount = Math.round(amount * rateResult.rate * 100) / 100;
-      diagnostic.steps.push(`✅ Conversion successful: ${amount} × ${rateResult.rate} = ${usdAmount}`);
+      // Step 5: Calculate USD amount using absolute value
+      const usdAmount = Math.round(absoluteAmount * rateResult.rate * 100) / 100;
+      
+      // Apply the original sign to the converted amount
+      const finalAmount = isNegative ? -usdAmount : usdAmount;
+      
+      diagnostic.steps.push(`✅ Conversion successful: ${amount} × ${rateResult.rate} = ${finalAmount}`);
 
       return {
-        usd_amount: usdAmount,
+        usd_amount: finalAmount,
         exchange_rate: rateResult.rate,
         success: true,
         source: rateResult.source,

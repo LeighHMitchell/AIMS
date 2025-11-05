@@ -194,7 +194,7 @@ export function BudgetVsActualChart({ dateRange, filters, refreshKey }: BudgetVs
         style: 'currency',
         currency: 'USD',
         notation: 'compact',
-        maximumFractionDigits: 1
+        maximumFractionDigits: 0
       }).format(safeValue)
     } catch (error) {
       console.error('[BudgetVsActualChart] Error formatting currency:', error, value)

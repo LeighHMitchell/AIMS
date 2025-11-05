@@ -25,9 +25,12 @@ interface IatiActivity {
   startDateActual?: string
   endDateActual?: string
   totalBudget?: number
+  totalPlannedDisbursement?: number
+  totalOutgoingCommitment?: number
+  totalDisbursement?: number
   currency?: string
+  sectors?: Array<{ code?: string; name?: string; percentage?: number } | string>
   participatingOrgs?: Array<{ name: string; role?: string; ref?: string }>
-  sectors?: string[]
   recipientCountries?: string[]
   activityScope?: string
   collaborationType?: string
@@ -73,20 +76,49 @@ export async function POST(request: NextRequest) {
     const trimmedTitle = activityTitle.trim()
 
     // Check if the search term looks like an IATI identifier
-    // IATI identifiers start with a 2-letter country/org code followed by hyphens and alphanumeric/underscore characters
-    // Examples: AU-5-INM438, XI-IATI-EC_INTPA-2022-PC-23131, GB-GOV-1-123456
-    const isIatiId = /^[A-Z]{2}-[A-Z0-9_-]+$/i.test(trimmedTitle)
+    // IATI identifiers can start with:
+    // - 2+ letter country/org code (GB-GOV-1-123456, AU-5-INM438)
+    // - Numeric org code (44000-P156634 for World Bank)
+    // Followed by hyphens and alphanumeric/underscore characters
+    // Examples: AU-5-INM438, XI-IATI-EC_INTPA-2022-PC-23131, GB-GOV-1-123456, DAC-1601-INV-083532, 44000-P156634
+    const isIatiId = /^[A-Z0-9]{2,}-[A-Z0-9_-]+$/i.test(trimmedTitle)
+
+    // Helper function to escape special Solr characters for wildcard searches
+    const escapeSolrWildcard = (str: string) => {
+      // For wildcard searches, escape special chars but keep * and ? for wildcards
+      // Escape: + - && || ! ( ) { } [ ] ^ " ~ : \ /
+      return str.replace(/[+\-&|!(){}[\]^"~:\\\/]/g, '\\$&')
+    }
 
     let searchQuery
     if (isIatiId) {
       // Exact match for IATI identifier
-      searchQuery = `iati_identifier:"${encodeURIComponent(trimmedTitle)}"`
+      searchQuery = `iati_identifier:"${trimmedTitle}"`
     } else {
-      // Fuzzy search for title
-      searchQuery = `title_narrative:*${encodeURIComponent(trimmedTitle)}*`
+      // Try multiple search strategies for better results
+      // 1. Remove words shorter than 3 chars (except acronyms in parentheses)
+      const words = trimmedTitle.split(/\s+/).filter(w => {
+        // Keep words 3+ chars, or words in parentheses (like GPP)
+        return w.length >= 3 || /^\(.+\)$/.test(w)
+      })
+      
+      if (words.length === 0) {
+        // Fallback to simple wildcard search
+        searchQuery = `title_narrative:*${escapeSolrWildcard(trimmedTitle)}*`
+      } else if (words.length === 1) {
+        // Single word search
+        searchQuery = `title_narrative:*${escapeSolrWildcard(words[0])}*`
+      } else {
+        // Multi-word search: try each word individually (more lenient than AND)
+        // This finds activities that contain ANY of the significant words
+        searchQuery = words.map(word => {
+          const cleaned = escapeSolrWildcard(word)
+          return `title_narrative:*${cleaned}*`
+        }).join(' OR ')
+      }
     }
 
-    let searchUrl = `https://api.iatistandard.org/datastore/activity/select?q=${searchQuery}&rows=${limit}&wt=json`
+    let searchUrl = `https://api.iatistandard.org/datastore/activity/select?q=${encodeURIComponent(searchQuery)}&rows=${limit}&wt=json`
 
     // Add debug info
     console.log("[IATI Search API] Search term:", trimmedTitle)
@@ -177,7 +209,17 @@ export async function POST(request: NextRequest) {
               if (activity.participating_org_narrative) {
                 let orgNarratives: string[]
                 let orgRoles: string[]
-                let orgRefs: string[]
+                let orgRefs: (string | null)[]
+                
+                // Debug logging for this specific activity
+                if (iatiId === 'XI-IATI-EC_INTPA-2022-PC-15203') {
+                  console.log('[IATI Search API] DEBUG - Activity:', iatiId);
+                  console.log('[IATI Search API] DEBUG - participating_org_narrative:', activity.participating_org_narrative);
+                  console.log('[IATI Search API] DEBUG - participating_org_ref:', activity.participating_org_ref);
+                  console.log('[IATI Search API] DEBUG - participating_org_role:', activity.participating_org_role);
+                  console.log('[IATI Search API] DEBUG - All participating org fields:', 
+                    Object.keys(activity).filter(k => k.includes('participating')));
+                }
 
                 // Handle arrays
                 if (Array.isArray(activity.participating_org_narrative)) {
@@ -210,29 +252,87 @@ export async function POST(request: NextRequest) {
                 }
 
                 // Get refs if available (try multiple field name variations)
-                if (activity.participating_org_ref) {
-                  if (Array.isArray(activity.participating_org_ref)) {
-                    orgRefs = activity.participating_org_ref
-                  } else {
-                    orgRefs = [activity.participating_org_ref]
+                // Important: The IATI Datastore API returns arrays that should align by index
+                // However, if an org doesn't have a ref, that index might be missing, null, or empty
+                // We need to preserve refs with spaces (like "FR-RCS-523 369 619") and ensure proper alignment
+                // Try ALL possible field name variations - the API might use different names
+                const possibleRefFields = [
+                  'participating_org_ref',
+                  'participating_org_identifier', 
+                  'participating_org_id',
+                  'participating_org_ref_raw',
+                  'participating_org_ref_norm'
+                ];
+                
+                let foundRefField = null;
+                for (const fieldName of possibleRefFields) {
+                  if (activity[fieldName]) {
+                    foundRefField = fieldName;
+                    if (iatiId === 'XI-IATI-EC_INTPA-2022-PC-15203') {
+                      console.log('[IATI Search API] DEBUG - Found ref field:', fieldName, 'value:', activity[fieldName]);
+                    }
+                    break;
                   }
-                } else if (activity.participating_org_identifier) {
-                  if (Array.isArray(activity.participating_org_identifier)) {
-                    orgRefs = activity.participating_org_identifier
+                }
+                
+                if (foundRefField) {
+                  const refData = activity[foundRefField];
+                  if (Array.isArray(refData)) {
+                    // Preserve refs with spaces - only trim leading/trailing whitespace
+                    orgRefs = refData.map((ref: any) => {
+                      if (ref && typeof ref === 'string') {
+                        const trimmed = ref.trim()
+                        return trimmed.length > 0 ? trimmed : null
+                      }
+                      return null
+                    })
                   } else {
-                    orgRefs = [activity.participating_org_identifier]
-                  }
-                } else if (activity.participating_org_id) {
-                  if (Array.isArray(activity.participating_org_id)) {
-                    orgRefs = activity.participating_org_id
-                  } else {
-                    orgRefs = [activity.participating_org_id]
+                    const refStr = refData
+                    orgRefs = (refStr && typeof refStr === 'string' && refStr.trim().length > 0)
+                      ? [refStr.trim()]
+                      : []
                   }
                 } else {
                   orgRefs = []
+                  if (iatiId === 'XI-IATI-EC_INTPA-2022-PC-15203') {
+                    console.log('[IATI Search API] DEBUG - No ref field found. Available fields:', 
+                      Object.keys(activity).filter(k => k.toLowerCase().includes('participating') || k.toLowerCase().includes('org')));
+                  }
                 }
 
-                // Combine the data
+                // Ensure orgRefs array has the same length as orgNarratives
+                // Fill with null for missing refs to maintain alignment
+                // This preserves the index-based alignment from the API
+                while (orgRefs.length < orgNarratives.length) {
+                  orgRefs.push(null)
+                }
+                // Truncate if somehow longer (shouldn't happen, but be safe)
+                orgRefs = orgRefs.slice(0, orgNarratives.length)
+
+                // Ensure orgRoles array has the same length as orgNarratives
+                while (orgRoles.length < orgNarratives.length) {
+                  orgRoles.push(undefined)
+                }
+                orgRoles = orgRoles.slice(0, orgNarratives.length)
+
+                // Combine the data - arrays are now guaranteed to be aligned by index
+                // NOTE: The IATI Datastore API should maintain index alignment between narratives, roles, and refs
+                // However, if refs are missing or in a different order, there may be misalignment
+                // For 100% accuracy, fetch the full XML and parse it with the XML parser
+                
+                // Debug logging for alignment issues
+                if (iatiId === 'XI-IATI-EC_INTPA-2022-PC-15203') {
+                  console.log('[IATI Search API] DEBUG - Array lengths:', {
+                    narratives: orgNarratives.length,
+                    roles: orgRoles.length,
+                    refs: orgRefs.length
+                  });
+                  console.log('[IATI Search API] DEBUG - First 15 narratives:', orgNarratives.slice(0, 15));
+                  console.log('[IATI Search API] DEBUG - First 15 refs:', orgRefs.slice(0, 15));
+                  console.log('[IATI Search API] DEBUG - Looking for "EXPERTISE ADVISORS" at index:', 
+                    orgNarratives.findIndex(n => n && n.includes('EXPERTISE ADVISORS')));
+                }
+                
                 for (let i = 0; i < orgNarratives.length; i++) {
                   let role = orgRoles[i] || undefined
 
@@ -245,22 +345,109 @@ export async function POST(request: NextRequest) {
                     role = String(role)
                   }
 
+                  // Only include ref if it's not null/undefined/empty
+                  // Check for null explicitly since we're using null as placeholder
+                  // Preserve spaces within refs (e.g., "FR-RCS-523 369 619")
+                  const refValue = orgRefs[i]
+                  let ref: string | undefined = undefined
+                  
+                  if (refValue && typeof refValue === 'string') {
+                    const trimmed = refValue.trim()
+                    // Include ref if it's not empty and not just "0"
+                    if (trimmed.length > 0 && trimmed !== '0') {
+                      ref = trimmed // Preserve spaces within the ref
+                    }
+                  }
+
+                  // Debug logging for specific org
+                  if (iatiId === 'XI-IATI-EC_INTPA-2022-PC-15203' && orgNarratives[i] && orgNarratives[i].includes('EXPERTISE ADVISORS')) {
+                    console.log('[IATI Search API] DEBUG - Found EXPERTISE ADVISORS:', {
+                      index: i,
+                      name: orgNarratives[i],
+                      role: role,
+                      refValue: orgRefs[i],
+                      ref: ref,
+                      allRefsAtThisIndex: orgRefs.slice(Math.max(0, i-2), i+3)
+                    });
+                  }
+                  
                   participatingOrgs.push({
                     name: orgNarratives[i],
                     role: role,
-                    ref: orgRefs[i] || undefined
+                    ref: ref
                   })
                 }
               }
               
-              // Parse sectors
-              const sectors: string[] = []
+              // Parse sectors with codes and percentages
+              const sectors: Array<{ code?: string; name?: string; percentage?: number } | string> = []
+              
+              // Try to get sector codes
+              let sectorCodes: string[] = []
+              if (activity.sector_code) {
+                if (Array.isArray(activity.sector_code)) {
+                  sectorCodes = activity.sector_code.filter((c: string) => c && c.trim())
+                } else {
+                  sectorCodes = [activity.sector_code]
+                }
+              }
+              
+              // Get sector narratives (names)
+              let sectorNarratives: string[] = []
               if (activity.sector_narrative) {
                 if (Array.isArray(activity.sector_narrative)) {
-                  sectors.push(...activity.sector_narrative.filter((s: string) => s && s.trim()))
+                  sectorNarratives = activity.sector_narrative.filter((s: string) => s && s.trim())
                 } else if (activity.sector_narrative) {
-                  sectors.push(activity.sector_narrative)
+                  sectorNarratives = [activity.sector_narrative]
                 }
+              }
+              
+              // Get sector percentages if available
+              let sectorPercentages: number[] = []
+              if (activity.sector_percentage) {
+                if (Array.isArray(activity.sector_percentage)) {
+                  sectorPercentages = activity.sector_percentage.map((p: any) => {
+                    const num = typeof p === 'number' ? p : parseFloat(p)
+                    return isNaN(num) ? undefined : num
+                  }).filter((p: number | undefined): p is number => p !== undefined)
+                } else {
+                  const num = typeof activity.sector_percentage === 'number' 
+                    ? activity.sector_percentage 
+                    : parseFloat(activity.sector_percentage)
+                  if (!isNaN(num)) {
+                    sectorPercentages = [num]
+                  }
+                }
+              }
+              
+              // Combine sector data
+              const maxLength = Math.max(sectorCodes.length, sectorNarratives.length, sectorPercentages.length)
+              for (let i = 0; i < maxLength; i++) {
+                const code = sectorCodes[i]
+                const name = sectorNarratives[i]
+                const percentage = sectorPercentages[i]
+                
+                if (code || name) {
+                  if (code && (percentage !== undefined || name)) {
+                    // Structured object with code and optionally percentage
+                    sectors.push({
+                      code: code,
+                      name: name,
+                      percentage: percentage
+                    })
+                  } else if (code) {
+                    // Just code
+                    sectors.push(code)
+                  } else if (name) {
+                    // Just name (fallback)
+                    sectors.push(name)
+                  }
+                }
+              }
+              
+              // Fallback: if no structured data, use narratives
+              if (sectors.length === 0 && sectorNarratives.length > 0) {
+                sectors.push(...sectorNarratives)
               }
               
               // Parse recipient countries
@@ -290,7 +477,20 @@ export async function POST(request: NextRequest) {
                 startDateActual: activity.activity_date_start_actual || undefined,
                 endDateActual: activity.activity_date_end_actual || undefined,
                 totalBudget: activity.budget_value ? parseFloat(activity.budget_value) : undefined,
-                currency: activity.budget_value_currency || activity.default_currency || undefined,
+                totalPlannedDisbursement: activity.planned_disbursement_value ? parseFloat(activity.planned_disbursement_value) : undefined,
+                totalOutgoingCommitment: activity.transaction_value ? (() => {
+                  // Try to get commitment transactions (type 2)
+                  // Note: IATI Datastore may not provide this granularity in search results
+                  // This is a fallback - full calculation would require fetching full XML
+                  return undefined
+                })() : undefined,
+                totalDisbursement: activity.transaction_value ? (() => {
+                  // Try to get disbursement transactions (type 3)
+                  // Note: IATI Datastore may not provide this granularity in search results
+                  // This is a fallback - full calculation would require fetching full XML
+                  return undefined
+                })() : undefined,
+                currency: activity.budget_value_currency || activity.planned_disbursement_value_currency || activity.default_currency || undefined,
                 participatingOrgs: participatingOrgs.length > 0 ? participatingOrgs : undefined,
                 sectors: sectors.length > 0 ? sectors : undefined,
                 recipientCountries: recipientCountries.length > 0 ? recipientCountries : undefined,

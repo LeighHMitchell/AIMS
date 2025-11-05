@@ -415,7 +415,7 @@ export function EnhancedFinancesSection({
         </TabsContent>
 
         {/* Transactions Tab */}
-        <TabsContent value="transactions">
+        <TabsContent value="transactions" className="border-0">
           <TransactionsManager
             activityId={activityId || "new"}
             activityPartnerId={general.otherIdentifier || undefined}

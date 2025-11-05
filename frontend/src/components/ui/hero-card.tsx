@@ -41,6 +41,11 @@ interface HeroCardProps<T = any> {
   // New: Budget breakdown by year for bar chart
   budgetsByYear?: BudgetByYear[];
   showChart?: boolean;
+  // New: Secondary value to display below main value
+  secondaryValue?: number;
+  secondaryLabel?: string;
+  // New: Multiple secondary values to display
+  secondaryValues?: Array<{ value: number; label: string }>;
 }
 
 function useCountUp(targetValue: number, duration: number = 400, animate: boolean = true) {
@@ -110,6 +115,9 @@ export function HeroCard<T = any>({
   value,
   budgetsByYear,
   showChart = false,
+  secondaryValue,
+  secondaryLabel,
+  secondaryValues,
 }: HeroCardProps<T>) {
   // Calculate value from data or use static value or legacy value
   const calculatedValue = useMemo(() => {
@@ -156,27 +164,16 @@ export function HeroCard<T = any>({
     let formatted: string;
     
     if (currency === "USD") {
-      // Use abbreviated formatting for USD currency
+      // Format full number with 2 decimal places for USD currency
       const currencyPrefix = prefix || "US$";
-      formatted = formatNumberWithAbbreviation(amount, {
-        currency: currencyPrefix,
-        decimals: 1,
-        showDecimalsForSmall: false
-      });
+      formatted = `${currencyPrefix}${amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
     } else if (currency === "" || currency === null || currency === undefined) {
-      // No currency - format as whole number for counts with abbreviations
-      formatted = formatNumberWithAbbreviation(amount, {
-        decimals: 0,
-        showDecimalsForSmall: false
-      });
+      // No currency - format as whole number for counts
+      formatted = amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     } else {
-      // Other currency - use abbreviated formatting
+      // Other currency - format full number with 2 decimal places
       const currencyPrefix = prefix || currency;
-      formatted = formatNumberWithAbbreviation(amount, {
-        currency: currencyPrefix,
-        decimals: 1,
-        showDecimalsForSmall: false
-      });
+      formatted = `${currencyPrefix}${amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
     }
 
     if (suffix) {
@@ -191,22 +188,22 @@ export function HeroCard<T = any>({
     switch (variant) {
       case 'error':
         return {
-          cardClass: 'border-red-200 bg-red-50',
+          cardClass: 'bg-red-50',
           valueClass: 'text-red-600'
         };
       case 'warning':
         return {
-          cardClass: 'border-yellow-200 bg-yellow-50',
+          cardClass: 'bg-yellow-50',
           valueClass: 'text-yellow-600'
         };
       case 'success':
         return {
-          cardClass: 'border-green-200 bg-green-50',
+          cardClass: 'bg-green-50',
           valueClass: 'text-green-600'
         };
       default:
         return {
-          cardClass: 'border-gray-200 bg-white',
+          cardClass: 'bg-white',
           valueClass: 'text-gray-900'
         };
     }
@@ -216,12 +213,12 @@ export function HeroCard<T = any>({
 
   // Format currency for chart tooltip
   const formatChartCurrency = (value: number) => {
-    return `$${value.toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
+    return formatNumberWithAbbreviation(value, { decimals: 1 });
   };
 
   return (
     <TooltipProvider>
-      <Card className={cn(cardClass, className, showChart && "overflow-hidden")}>
+      <Card className={cn("border", cardClass, className, showChart && "overflow-hidden")}>
         <CardContent className="p-6">
           <div className="flex flex-col h-full">
             <div className="flex items-center justify-between mb-2">
@@ -283,6 +280,30 @@ export function HeroCard<T = any>({
               <p className="text-xs text-gray-500">{subtitle}</p>
             )}
             
+            {/* Render secondary values */}
+            {(secondaryValues && secondaryValues.length > 0) && (
+              <div className="mt-2 pt-2 space-y-2 border-t border-gray-200">
+                {secondaryValues.map((item, index) => (
+                  <div key={index}>
+                    <p className="text-xs text-gray-500">{item.label}</p>
+                    <p className={cn("text-lg font-semibold transition-all duration-500", valueClass)}>
+                      {formatValue(item.value)}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            )}
+            
+            {/* Legacy: Single secondary value support */}
+            {!secondaryValues && secondaryValue !== undefined && secondaryLabel && (
+              <div className="mt-2 pt-2 border-t border-gray-200">
+                <p className="text-xs text-gray-500">{secondaryLabel}</p>
+                <p className={cn("text-lg font-semibold transition-all duration-500", valueClass)}>
+                  {formatValue(secondaryValue)}
+                </p>
+              </div>
+            )}
+            
             {/* Bar Chart for Budget by Year */}
             {showChart && budgetsByYear && budgetsByYear.length > 0 && (
               <div className="w-full -mx-6 px-2 mt-auto pt-4">
@@ -299,11 +320,11 @@ export function HeroCard<T = any>({
                       axisLine={{ stroke: '#e5e7eb' }}
                       tickLine={false}
                       tickFormatter={(value) => {
-                        const rounded = Math.round((value / 1000000) * 10) / 10;
-                        return `$${rounded.toFixed(1)}M`;
+                        return formatNumberWithAbbreviation(value, { decimals: 0 });
                       }}
                     />
                     <RechartsTooltip 
+                      cursor={{ fill: 'rgba(0, 0, 0, 0.05)' }}
                       content={({ active, payload }) => {
                         if (active && payload && payload.length) {
                           return (

@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { useDropzone } from "react-dropzone";
 import { Upload, X, Image as ImageIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -17,6 +17,15 @@ export const IconUpload: React.FC<IconUploadProps> = ({
 }) => {
   const [uploading, setUploading] = useState(false);
   const [preview, setPreview] = useState<string | null>(currentIcon || null);
+
+  // Sync preview with currentIcon prop changes (but only if it actually changed)
+  useEffect(() => {
+    setPreview(prev => {
+      const newPreview = currentIcon || null;
+      // Only update if it's actually different to prevent unnecessary re-renders
+      return prev !== newPreview ? newPreview : prev;
+    });
+  }, [currentIcon]);
 
   const onDrop = useCallback(
     async (acceptedFiles: File[]) => {

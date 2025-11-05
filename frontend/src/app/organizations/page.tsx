@@ -346,6 +346,8 @@ interface Organization {
   country_represented?: string
   cooperation_modality?: string
   iati_org_id?: string
+  alias_refs?: string[]
+  name_aliases?: string[]
   created_at: string
   updated_at: string
   // Computed fields
@@ -985,7 +987,7 @@ const OrganizationCard: React.FC<{
               </div>
 
               {/* Location Represented and Partner Classification Pills */}
-              <div className="flex items-center gap-2 mt-1">
+              <div className="flex items-center gap-2 mt-1 flex-wrap">
                 {/* Location Represented Pill */}
                 {(organization.country_represented || organization.country) && (
                   <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
@@ -997,6 +999,13 @@ const OrganizationCard: React.FC<{
                 {organization.Organisation_Type_Code && (
                   <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
                     {getPartnerClassification(organization.Organisation_Type_Code, organization.country_represented || organization.country || '')}
+                  </span>
+                )}
+                
+                {/* Default Currency Pill */}
+                {organization.default_currency && (
+                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                    {organization.default_currency}
                   </span>
                 )}
               </div>
@@ -1516,7 +1525,11 @@ function OrganizationsPageContent() {
       filtered = filtered.filter(org =>
         org.name.toLowerCase().includes(searchLower) ||
         org.acronym?.toLowerCase().includes(searchLower) ||
-        org.description?.toLowerCase().includes(searchLower)
+        org.description?.toLowerCase().includes(searchLower) ||
+        // Search in alias_refs (Legacy/Internal Codes)
+        org.alias_refs?.some(alias => alias?.toLowerCase().includes(searchLower)) ||
+        // Search in name_aliases (Alternate Names)
+        org.name_aliases?.some(alias => alias?.toLowerCase().includes(searchLower))
       )
     }
 

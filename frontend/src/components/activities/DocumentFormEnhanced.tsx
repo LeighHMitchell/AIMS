@@ -47,6 +47,7 @@ interface DocumentFormEnhancedProps {
   fetchHead?: (url: string) => Promise<{ format?: string; size?: number } | null>;
   locale?: string;
   isUploaded?: boolean;
+  activityId?: string;
 }
 
 // Extended language list with full names
@@ -63,6 +64,7 @@ export function DocumentFormEnhanced({
   fetchHead,
   locale = 'en',
   isUploaded = false,
+  activityId,
 }: DocumentFormEnhancedProps) {
   const [formatSearch, setFormatSearch] = React.useState('');
   const [titleLangSearch, setTitleLangSearch] = React.useState('');
@@ -70,22 +72,38 @@ export function DocumentFormEnhanced({
   const [categorySearch, setCategorySearch] = React.useState('');
   const [docLangSearch, setDocLangSearch] = React.useState('');
   
-  const [formData, setFormData] = React.useState<IatiDocumentLink>(() => 
-    document || {
+  const [formData, setFormData] = React.useState<IatiDocumentLink>(() => {
+    const initial = document || {
       url: '',
       format: '',
       title: [{ text: '', lang: locale }],
       description: [{ text: '', lang: locale }], // Always include description
       languageCodes: ['en'], // Default to English
       recipientCountries: ['MM'], // Default to Myanmar
+    };
+    
+    // Ensure categoryCodes array exists - prefer from document, fallback to categoryCode
+    if (document) {
+      if (document.categoryCodes && document.categoryCodes.length > 0) {
+        initial.categoryCodes = document.categoryCodes;
+        initial.categoryCode = document.categoryCodes[0]; // For backward compatibility
+      } else if (document.categoryCode) {
+        initial.categoryCodes = [document.categoryCode];
+        initial.categoryCode = document.categoryCode;
+      }
     }
-  );
+    
+    return initial;
+  });
   
   const [urlMetadata, setUrlMetadata] = React.useState<{
     format?: string;
     size?: number;
     error?: string;
   }>({});
+  
+  const [thumbnailLoading, setThumbnailLoading] = React.useState(false);
+  const [thumbnailError, setThumbnailError] = React.useState<string | null>(null);
   
   const [selectedCountries, setSelectedCountries] = React.useState<string[]>(
     formData.recipientCountries || []
@@ -94,10 +112,27 @@ export function DocumentFormEnhanced({
   const [countryInput, setCountryInput] = React.useState('');
   const [showValidation, setShowValidation] = React.useState(false);
   
+  // Selected categories state
+  const [selectedCategories, setSelectedCategories] = React.useState<string[]>(() => {
+    if (formData.categoryCodes && formData.categoryCodes.length > 0) {
+      return formData.categoryCodes;
+    }
+    return formData.categoryCode ? [formData.categoryCode] : [];
+  });
+  
   // Popover states
   const [formatOpen, setFormatOpen] = React.useState(false);
   const [categoryOpen, setCategoryOpen] = React.useState(false);
   const [languagesOpen, setLanguagesOpen] = React.useState(false);
+  
+  // Update formData when selectedCategories changes
+  React.useEffect(() => {
+    setFormData(prev => ({
+      ...prev,
+      categoryCodes: selectedCategories.length > 0 ? selectedCategories : undefined,
+      categoryCode: selectedCategories.length > 0 ? selectedCategories[0] : undefined, // For backward compatibility
+    }));
+  }, [selectedCategories]);
   const [titleLangOpen, setTitleLangOpen] = React.useState(false);
   const [descLangOpen, setDescLangOpen] = React.useState(false);
   
@@ -179,6 +214,47 @@ export function DocumentFormEnhanced({
     const inferredMime = inferMimeFromUrl(formData.url);
     if (inferredMime && !formData.format) {
       setFormData(prev => ({ ...prev, format: inferredMime }));
+    }
+    
+    // Check if it's a PDF and we don't already have a thumbnail
+    const isPdf = formData.url.toLowerCase().endsWith('.pdf') || 
+                  inferredMime === 'application/pdf' ||
+                  formData.format === 'application/pdf';
+    
+    // Generate thumbnail for PDF URLs if we don't have one yet
+    if (isPdf && !formData.thumbnailUrl && !thumbnailLoading) {
+      setThumbnailLoading(true);
+      setThumbnailError(null);
+      
+      try {
+        const response = await fetch('/api/documents/generate-thumbnail', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            url: formData.url,
+            activityId: activityId,
+          }),
+        });
+        
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({ error: 'Failed to generate thumbnail' }));
+          throw new Error(errorData.error || 'Failed to generate thumbnail');
+        }
+        
+        const data = await response.json();
+        
+        if (data.thumbnailUrl) {
+          setFormData(prev => ({ ...prev, thumbnailUrl: data.thumbnailUrl }));
+        }
+      } catch (error) {
+        console.error('Thumbnail generation error:', error);
+        setThumbnailError(error instanceof Error ? error.message : 'Failed to generate thumbnail');
+        // Don't block form submission if thumbnail generation fails
+      } finally {
+        setThumbnailLoading(false);
+      }
     }
     
     if (fetchHead) {
@@ -288,6 +364,21 @@ export function DocumentFormEnhanced({
                     {urlMetadata.size && (
                       <p className="text-xs text-gray-500 mt-1">
                         File size: {(urlMetadata.size / 1024 / 1024).toFixed(2)} MB
+                      </p>
+                    )}
+                    {thumbnailLoading && (
+                      <p className="text-xs text-blue-600 mt-1">
+                        Generating thumbnail from PDF...
+                      </p>
+                    )}
+                    {thumbnailError && (
+                      <p className="text-xs text-amber-600 mt-1">
+                        Thumbnail: {thumbnailError}
+                      </p>
+                    )}
+                    {formData.thumbnailUrl && !thumbnailLoading && (
+                      <p className="text-xs text-green-600 mt-1">
+                        ✓ Thumbnail generated successfully
                       </p>
                     )}
                   </div>
@@ -475,61 +566,91 @@ export function DocumentFormEnhanced({
                   <Label>Document Category</Label>
                   <Popover open={categoryOpen} onOpenChange={setCategoryOpen}>
                     <PopoverTrigger>
+                      <div className="flex flex-wrap gap-2 items-center min-h-[40px] p-2 border rounded-md">
+                        {selectedCategories.length > 0 ? (
+                          selectedCategories.map(categoryCode => {
+                            const category = DOCUMENT_CATEGORIES.find(c => c.code === categoryCode);
+                            return (
+                              <Badge
+                                key={categoryCode}
+                                variant="secondary"
+                                className="text-xs"
+                              >
+                                {category?.name || categoryCode}
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setSelectedCategories(prev => prev.filter(c => c !== categoryCode));
+                                  }}
+                                  className="ml-2 hover:text-destructive"
+                                >
+                                  <X className="h-3 w-3" />
+                                </button>
+                              </Badge>
+                            );
+                          })
+                        ) : (
+                          <span className="text-muted-foreground text-sm">Select categories...</span>
+                        )}
+                      </div>
                       <Button
                         variant="outline"
                         role="combobox"
                         aria-expanded={categoryOpen}
                         className="w-full justify-between mt-1 text-left font-normal"
+                        onClick={() => setCategoryOpen(!categoryOpen)}
                       >
-                        <span className="truncate">
-                          {formData.categoryCode
-                            ? DOCUMENT_CATEGORIES.find(c => c.code === formData.categoryCode)?.name
-                            : "Select category..."}
-                        </span>
+                        <span>{selectedCategories.length > 0 ? `${selectedCategories.length} selected` : "Select categories..."}</span>
                         <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                       </Button>
                     </PopoverTrigger>
                     <PopoverContent className="w-[600px] p-0" align="start">
                       <Command>
-                        <CommandInput placeholder="Search categories..." className="h-9" autoFocus />
+                        <CommandInput 
+                          placeholder="Search categories..." 
+                          className="h-9" 
+                          value={categorySearch}
+                          onValueChange={setCategorySearch}
+                        />
                         <CommandEmpty>No category found.</CommandEmpty>
                         <CommandList>
                           <CommandGroup>
-                            <CommandItem
-                              onSelect={() => {
-                                setFormData(prev => ({ ...prev, categoryCode: undefined }));
-                                setCategoryOpen(false);
-                              }}
-                            >
-                              <Check
-                                className={cn(
-                                  "mr-2 h-4 w-4",
-                                  !formData.categoryCode ? "opacity-100" : "opacity-0"
-                                )}
-                              />
-                              <span className="ml-8">None</span>
-                            </CommandItem>
-                            {DOCUMENT_CATEGORIES.map(cat => (
-                              <CommandItem
-                                key={cat.code}
-                                onSelect={() => {
-                                  setFormData(prev => ({ ...prev, categoryCode: cat.code }));
-                                  setCategoryOpen(false);
-                                }}
-                              >
-                                <Check
-                                  className={cn(
-                                    "mr-2 h-4 w-4",
-                                    formData.categoryCode === cat.code ? "opacity-100" : "opacity-0"
-                                  )}
-                                />
-                                <span className="ml-2 text-muted-foreground w-8">{cat.code}</span>
-                                <div className="ml-4 flex-1">
-                                  <div className="font-medium">{cat.name}</div>
-                                  <div className="text-sm text-muted-foreground">{cat.description}</div>
-                                </div>
-                              </CommandItem>
-                            ))}
+                            {DOCUMENT_CATEGORIES
+                              .filter(cat => {
+                                if (!categorySearch) return true;
+                                const query = categorySearch.toLowerCase();
+                                return cat.code.toLowerCase().includes(query) ||
+                                       cat.name.toLowerCase().includes(query) ||
+                                       cat.description.toLowerCase().includes(query);
+                              })
+                              .map(cat => {
+                                const isSelected = selectedCategories.includes(cat.code);
+                                return (
+                                  <CommandItem
+                                    key={cat.code}
+                                    onSelect={() => {
+                                      if (isSelected) {
+                                        setSelectedCategories(prev => prev.filter(c => c !== cat.code));
+                                      } else {
+                                        setSelectedCategories(prev => [...prev, cat.code]);
+                                      }
+                                      // Keep popover open for multi-select
+                                    }}
+                                  >
+                                    <Check
+                                      className={cn(
+                                        "mr-2 h-4 w-4",
+                                        isSelected ? "opacity-100" : "opacity-0"
+                                      )}
+                                    />
+                                    <span className="ml-2 text-muted-foreground w-8">{cat.code}</span>
+                                    <div className="ml-4 flex-1">
+                                      <div className="font-medium">{cat.name}</div>
+                                      <div className="text-sm text-muted-foreground">{cat.description}</div>
+                                    </div>
+                                  </CommandItem>
+                                );
+                              })}
                           </CommandGroup>
                         </CommandList>
                       </Command>

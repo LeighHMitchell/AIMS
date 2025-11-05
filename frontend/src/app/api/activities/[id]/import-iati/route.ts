@@ -55,6 +55,33 @@ interface DBOrganization {
   iati_org_id?: string;
 }
 
+/**
+ * Resolve currency following IATI Standard §4.2 priority order:
+ * 1. Item-level currency (transaction/budget/planned disbursement)
+ * 2. Activity default currency
+ * 3. Organization default currency
+ * 4. null (record will be skipped)
+ */
+function resolveCurrency(
+  itemCurrency: string | undefined | null,
+  activityDefaultCurrency: string | undefined | null,
+  orgDefaultCurrency: string | undefined | null
+): string | null {
+  if (itemCurrency && itemCurrency.trim() !== '') {
+    return itemCurrency.toUpperCase();
+  }
+  
+  if (activityDefaultCurrency && activityDefaultCurrency.trim() !== '') {
+    return activityDefaultCurrency.toUpperCase();
+  }
+  
+  if (orgDefaultCurrency && orgDefaultCurrency.trim() !== '') {
+    return orgDefaultCurrency.toUpperCase();
+  }
+  
+  return null; // No currency at any level - record will be skipped
+}
+
 export async function POST(
   request: NextRequest,
   { params }: { params: { id: string } }
@@ -89,6 +116,22 @@ export async function POST(
         { error: 'Activity not found' },
         { status: 404 }
       );
+    }
+    
+    // Fetch organization default currency for IATI-compliant currency resolution
+    let organizationDefaultCurrency: string | null = null;
+    if (currentActivity.organization_id) {
+      try {
+        const { data: orgData } = await supabase
+          .from('organizations')
+          .select('default_currency')
+          .eq('id', currentActivity.organization_id)
+          .single();
+        organizationDefaultCurrency = orgData?.default_currency || null;
+        console.log('[IATI Import] Organization default currency:', organizationDefaultCurrency);
+      } catch (err) {
+        console.warn('[IATI Import] Could not fetch organization default_currency:', err);
+      }
     }
     
     // Store previous values for audit log
@@ -676,18 +719,47 @@ export async function POST(
         orgStats = await createMissingOrganizations(newTransactions);
         console.log('[IATI Import] Organization stats:', orgStats);
         
-        // Prepare transaction data with activity linking
-        const transactionData = await Promise.all(newTransactions.map(async (t: IATITransaction) => {
+        // Prepare transaction data with IATI-compliant currency resolution
+        const validTransactions: any[] = [];
+        const skippedTransactions: any[] = [];
+        
+        for (const t of newTransactions) {
           // Find activities by IATI identifier
           const providerActivityUuid = await findActivityByIatiId(t.providerOrg?.providerActivityId);
           const receiverActivityUuid = await findActivityByIatiId(t.receiverOrg?.receiverActivityId);
           
-          return {
+          // Resolve currency following IATI Standard §4.2
+          const resolvedCurrency = resolveCurrency(
+            t.currency,
+            currentActivity?.default_currency,
+            organizationDefaultCurrency
+          );
+          
+          if (!resolvedCurrency) {
+            // Skip this transaction and log validation error
+            skippedTransactions.push({
+              type: 'transaction',
+              transaction_type: t.type,
+              date: t.date,
+              value: t.value,
+              provider: t.providerOrg?.name || t.providerOrg?.ref || 'N/A',
+              receiver: t.receiverOrg?.name || t.receiverOrg?.ref || 'N/A',
+              reason: 'Currency missing: No currency defined at transaction, activity, or organisation level'
+            });
+            console.warn('[IATI Import] Skipping transaction - no currency:', {
+              type: t.type,
+              date: t.date,
+              value: t.value
+            });
+            continue;
+          }
+          
+          validTransactions.push({
             activity_id: activityId,
             transaction_type: t.type,
             transaction_date: t.date,
             value: t.value,
-            currency: t.currency || 'USD',
+            currency: resolvedCurrency,
             status: 'actual', // IATI transactions are actual
             description: t.description,
             
@@ -697,7 +769,7 @@ export async function POST(
             provider_org_ref: t.providerOrg?.ref,
             provider_org_name: t.providerOrg?.name,
             provider_org_activity_id: t.providerOrg?.providerActivityId || null,
-            provider_activity_uuid: providerActivityUuid,  // NEW - Activity link
+            provider_activity_uuid: providerActivityUuid,
             
             // Receiver organization
             receiver_org_id: t.receiverOrg?.ref ? 
@@ -705,7 +777,7 @@ export async function POST(
             receiver_org_ref: t.receiverOrg?.ref,
             receiver_org_name: t.receiverOrg?.name,
             receiver_org_activity_id: t.receiverOrg?.receiverActivityId || null,
-            receiver_activity_uuid: receiverActivityUuid,  // NEW - Activity link
+            receiver_activity_uuid: receiverActivityUuid,
             
             // IATI fields
             aid_type: t.aidType,
@@ -716,18 +788,32 @@ export async function POST(
             
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString()
-          };
-        }));
+          });
+        }
         
-        const { error: transactionError } = await supabase
-          .from('transactions')
-          .insert(transactionData);
+        // Insert only valid transactions
+        if (validTransactions.length > 0) {
+          const { error: transactionError } = await supabase
+            .from('transactions')
+            .insert(validTransactions);
+          
+          if (transactionError) {
+            console.error('[IATI Import] Error inserting transactions:', transactionError);
+            // Don't throw - continue with other updates
+          } else {
+            updatedFields.push('transactions');
+            console.log(`[IATI Import] ✓ Imported ${validTransactions.length} transactions`);
+          }
+        }
         
-        if (transactionError) {
-          console.error('[IATI Import] Error inserting transactions:', transactionError);
-          // Don't throw - continue with other updates
-        } else {
-          updatedFields.push('transactions');
+        // Add skipped transactions to warnings
+        if (skippedTransactions.length > 0) {
+          importWarnings.push({
+            type: 'currency_validation',
+            message: `Skipped ${skippedTransactions.length} transaction(s) due to missing currency`,
+            details: skippedTransactions
+          });
+          console.warn(`[IATI Import] Skipped ${skippedTransactions.length} transactions due to missing currency`);
         }
       }
     }
@@ -819,28 +905,69 @@ export async function POST(
         .delete()
         .eq('activity_id', activityId);
       
-      // Insert new budgets
+      // Insert new budgets with IATI-compliant currency resolution
       if (Array.isArray(iati_data.budgets) && iati_data.budgets.length > 0) {
-        const budgetData = iati_data.budgets.map((budget: any) => ({
-          activity_id: activityId,
-          budget_type: budget.type || '1',
-          budget_status: budget.status || '1',
-          period_start: budget.period?.start,
-          period_end: budget.period?.end,
-          amount: budget.value,
-          currency: budget.currency,
-          value_date: budget.valueDate
-        }));
+        const validBudgets: any[] = [];
+        const skippedBudgets: any[] = [];
         
-        const { error: budgetsError } = await supabase
-          .from('activity_budgets')
-          .insert(budgetData);
+        for (const budget of iati_data.budgets) {
+          // Resolve currency following IATI Standard §4.2
+          const resolvedCurrency = resolveCurrency(
+            budget.currency,
+            currentActivity?.default_currency,
+            organizationDefaultCurrency
+          );
+          
+          if (!resolvedCurrency) {
+            // Skip this budget and log validation error
+            skippedBudgets.push({
+              type: 'budget',
+              budget_type: budget.type || '1',
+              period: `${budget.period?.start || 'N/A'} to ${budget.period?.end || 'N/A'}`,
+              value: budget.value,
+              reason: 'Currency missing: No currency defined at budget, activity, or organisation level'
+            });
+            console.warn('[IATI Import] Skipping budget - no currency:', {
+              period: `${budget.period?.start} to ${budget.period?.end}`,
+              value: budget.value
+            });
+            continue;
+          }
+          
+          validBudgets.push({
+            activity_id: activityId,
+            budget_type: budget.type || '1',
+            budget_status: budget.status || '1',
+            period_start: budget.period?.start,
+            period_end: budget.period?.end,
+            amount: budget.value,
+            currency: resolvedCurrency,
+            value_date: budget.valueDate
+          });
+        }
         
-        if (!budgetsError) {
-          updatedFields.push('budgets');
-          console.log(`[IATI Import] ✓ Imported ${budgetData.length} budgets`);
-        } else {
-          console.error('[IATI Import] Error inserting budgets:', budgetsError);
+        // Insert only valid budgets
+        if (validBudgets.length > 0) {
+          const { error: budgetsError } = await supabase
+            .from('activity_budgets')
+            .insert(validBudgets);
+          
+          if (!budgetsError) {
+            updatedFields.push('budgets');
+            console.log(`[IATI Import] ✓ Imported ${validBudgets.length} budgets`);
+          } else {
+            console.error('[IATI Import] Error inserting budgets:', budgetsError);
+          }
+        }
+        
+        // Add skipped budgets to warnings
+        if (skippedBudgets.length > 0) {
+          importWarnings.push({
+            type: 'currency_validation',
+            message: `Skipped ${skippedBudgets.length} budget(s) due to missing currency`,
+            details: skippedBudgets
+          });
+          console.warn(`[IATI Import] Skipped ${skippedBudgets.length} budgets due to missing currency`);
         }
       }
     }
@@ -855,33 +982,74 @@ export async function POST(
         .delete()
         .eq('activity_id', activityId);
       
-      // Insert new planned disbursements
+      // Insert new planned disbursements with IATI-compliant currency resolution
       if (Array.isArray(iati_data.plannedDisbursements) && iati_data.plannedDisbursements.length > 0) {
-        const pdData = iati_data.plannedDisbursements.map((pd: any) => ({
-          activity_id: activityId,
-          disbursement_type: pd.type || '1',
-          period_start: pd.period?.start,
-          period_end: pd.period?.end,
-          amount: pd.value,
-          currency: pd.currency,
-          value_date: pd.valueDate,
-          provider_org_ref: pd.providerOrg?.ref,
-          provider_org_name: pd.providerOrg?.name,
-          provider_org_activity_id: pd.providerOrg?.providerActivityId,
-          receiver_org_ref: pd.receiverOrg?.ref,
-          receiver_org_name: pd.receiverOrg?.name,
-          receiver_org_activity_id: pd.receiverOrg?.receiverActivityId
-        }));
+        const validPDs: any[] = [];
+        const skippedPDs: any[] = [];
         
-        const { error: pdError } = await supabase
-          .from('planned_disbursements')
-          .insert(pdData);
+        for (const pd of iati_data.plannedDisbursements) {
+          // Resolve currency following IATI Standard §4.2
+          const resolvedCurrency = resolveCurrency(
+            pd.currency,
+            currentActivity?.default_currency,
+            organizationDefaultCurrency
+          );
+          
+          if (!resolvedCurrency) {
+            // Skip this planned disbursement and log validation error
+            skippedPDs.push({
+              type: 'planned_disbursement',
+              disbursement_type: pd.type || '1',
+              period: `${pd.period?.start || 'N/A'} to ${pd.period?.end || 'N/A'}`,
+              value: pd.value,
+              reason: 'Currency missing: No currency defined at planned disbursement, activity, or organisation level'
+            });
+            console.warn('[IATI Import] Skipping planned disbursement - no currency:', {
+              period: `${pd.period?.start} to ${pd.period?.end}`,
+              value: pd.value
+            });
+            continue;
+          }
+          
+          validPDs.push({
+            activity_id: activityId,
+            disbursement_type: pd.type || '1',
+            period_start: pd.period?.start,
+            period_end: pd.period?.end,
+            amount: pd.value,
+            currency: resolvedCurrency,
+            value_date: pd.valueDate,
+            provider_org_ref: pd.providerOrg?.ref,
+            provider_org_name: pd.providerOrg?.name,
+            provider_org_activity_id: pd.providerOrg?.providerActivityId,
+            receiver_org_ref: pd.receiverOrg?.ref,
+            receiver_org_name: pd.receiverOrg?.name,
+            receiver_org_activity_id: pd.receiverOrg?.receiverActivityId
+          });
+        }
         
-        if (!pdError) {
-          updatedFields.push('planned_disbursements');
-          console.log(`[IATI Import] ✓ Imported ${pdData.length} planned disbursements`);
-        } else {
-          console.error('[IATI Import] Error inserting planned disbursements:', pdError);
+        // Insert only valid planned disbursements
+        if (validPDs.length > 0) {
+          const { error: pdError } = await supabase
+            .from('planned_disbursements')
+            .insert(validPDs);
+          
+          if (!pdError) {
+            updatedFields.push('planned_disbursements');
+            console.log(`[IATI Import] ✓ Imported ${validPDs.length} planned disbursements`);
+          } else {
+            console.error('[IATI Import] Error inserting planned disbursements:', pdError);
+          }
+        }
+        
+        // Add skipped planned disbursements to warnings
+        if (skippedPDs.length > 0) {
+          importWarnings.push({
+            type: 'currency_validation',
+            message: `Skipped ${skippedPDs.length} planned disbursement(s) due to missing currency`,
+            details: skippedPDs
+          });
+          console.warn(`[IATI Import] Skipped ${skippedPDs.length} planned disbursements due to missing currency`);
         }
       }
     }
@@ -930,6 +1098,21 @@ export async function POST(
     if (fields.document_links && iati_data.document_links) {
       console.log('[IATI Import] Updating document links');
       
+      // Clear existing document links (cascade will delete categories)
+      const { data: existingDocs } = await supabase
+        .from('activity_documents')
+        .select('id')
+        .eq('activity_id', activityId);
+      
+      // Delete categories first (to avoid foreign key issues)
+      if (existingDocs && existingDocs.length > 0) {
+        const docIds = existingDocs.map(d => d.id);
+        await supabase
+          .from('activity_document_categories')
+          .delete()
+          .in('document_id', docIds);
+      }
+      
       // Clear existing document links
       await supabase
         .from('activity_documents')
@@ -938,27 +1121,66 @@ export async function POST(
       
       // Insert new document links
       if (Array.isArray(iati_data.document_links) && iati_data.document_links.length > 0) {
-        const docData = iati_data.document_links.map((doc: any) => ({
-          activity_id: activityId,
-          document_format: doc.format,
-          url: doc.url,
-          title: doc.title,
-          description: doc.description,
-          category_code: doc.category_code,
-          language_code: doc.language_code || 'en',
-          document_date: doc.document_date
-        }));
-        
-        const { error: docsError } = await supabase
-          .from('activity_documents')
-          .insert(docData);
-        
-        if (!docsError) {
-          updatedFields.push('document_links');
-          console.log(`[IATI Import] ✓ Imported ${docData.length} document links`);
-        } else {
-          console.error('[IATI Import] Error inserting document links:', docsError);
+        for (const doc of iati_data.document_links) {
+          // Get category codes - support both new array format and legacy single category
+          const categoryCodes = doc.category_codes && Array.isArray(doc.category_codes)
+            ? doc.category_codes
+            : (doc.category_code ? [doc.category_code] : ['A01']);
+          
+          const firstCategoryCode = categoryCodes.length > 0 ? categoryCodes[0] : 'A01';
+          
+          // Ensure title is in the correct format (array of narratives)
+          const titleArray = Array.isArray(doc.title) ? doc.title : (doc.title ? [{ text: doc.title, lang: 'en' }] : [{ text: 'Document', lang: 'en' }]);
+          const descriptionArray = Array.isArray(doc.description) ? doc.description : (doc.description ? [{ text: doc.description, lang: 'en' }] : []);
+          
+          const docData = {
+            activity_id: activityId,
+            format: doc.format || 'application/octet-stream',
+            url: doc.url,
+            title: titleArray,
+            description: descriptionArray,
+            category_code: firstCategoryCode, // For backward compatibility
+            language_codes: Array.isArray(doc.language_code) ? doc.language_code : [doc.language_code || 'en'],
+            document_date: doc.document_date || null,
+            is_external: true,
+            uploaded_by: null,
+            file_name: null,
+            file_size: 0,
+            file_path: null,
+            thumbnail_url: null
+          };
+          
+          // Insert document and get ID
+          const { data: insertedDoc, error: docsError } = await supabase
+            .from('activity_documents')
+            .insert(docData)
+            .select('id')
+            .single();
+          
+          if (docsError || !insertedDoc) {
+            console.error('[IATI Import] Error inserting document link:', docsError);
+            continue;
+          }
+          
+          // Insert all categories into junction table
+          if (categoryCodes.length > 0) {
+            const categoryData = categoryCodes.map((code: string) => ({
+              document_id: insertedDoc.id,
+              category_code: code
+            }));
+            
+            const { error: categoryError } = await supabase
+              .from('activity_document_categories')
+              .insert(categoryData);
+            
+            if (categoryError) {
+              console.error('[IATI Import] Error inserting document categories:', categoryError);
+            }
+          }
         }
+        
+        updatedFields.push('document_links');
+        console.log(`[IATI Import] ✓ Imported ${iati_data.document_links.length} document links`);
       }
     }
     

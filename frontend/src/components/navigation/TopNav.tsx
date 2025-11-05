@@ -1,7 +1,6 @@
 "use client"
 
 import React, { useState } from "react"
-import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { 
@@ -78,7 +77,7 @@ export function TopNav({ user, canCreateActivities, isInActivityEditor = false, 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button 
-                  variant="default" 
+                  variant="outline" 
                   size="sm"
                   disabled={isInActivityEditor}
                   className={isInActivityEditor ? "opacity-50 cursor-not-allowed" : ""}
@@ -92,15 +91,13 @@ export function TopNav({ user, canCreateActivities, isInActivityEditor = false, 
               <DropdownMenuContent align="end" className="w-56">
                 <DropdownMenuLabel>Create Activity</DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                <Link href="/activities/new">
-                  <DropdownMenuItem>
-                    <FolderPlus className="mr-2 h-4 w-4" />
-                    <div className="flex flex-col">
-                      <span className="font-medium">Full Activity Editor</span>
-                      <span className="text-xs text-muted-foreground">Complete data entry</span>
-                    </div>
-                  </DropdownMenuItem>
-                </Link>
+                <DropdownMenuItem onClick={() => router.push("/activities/new")}>
+                  <FolderPlus className="mr-2 h-4 w-4" />
+                  <div className="flex flex-col">
+                    <span className="font-medium">Full Activity Editor</span>
+                    <span className="text-xs text-muted-foreground">Complete data entry</span>
+                  </div>
+                </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setShowQuickAddModal(true)}>
                   <Zap className="mr-2 h-4 w-4" />
                   <div className="flex flex-col">
@@ -168,18 +165,14 @@ export function TopNav({ user, canCreateActivities, isInActivityEditor = false, 
                   </div>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                <Link href="/profile">
-                  <DropdownMenuItem>
-                    <Settings className="mr-2 h-4 w-4" />
-                    <span>My Profile</span>
-                  </DropdownMenuItem>
-                </Link>
-                <Link href="/my-portfolio">
-                  <DropdownMenuItem>
-                    <Briefcase className="mr-2 h-4 w-4" />
-                    <span>My Portfolio</span>
-                  </DropdownMenuItem>
-                </Link>
+                <DropdownMenuItem onClick={() => router.push("/profile")}>
+                  <Settings className="mr-2 h-4 w-4" />
+                  <span>My Profile</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => router.push("/my-portfolio")}>
+                  <Briefcase className="mr-2 h-4 w-4" />
+                  <span>My Portfolio</span>
+                </DropdownMenuItem>
                 <DropdownMenuSub>
                   <DropdownMenuSubTrigger>
                     <MessageSquare className="mr-2 h-4 w-4" />
@@ -199,12 +192,10 @@ export function TopNav({ user, canCreateActivities, isInActivityEditor = false, 
                   </DropdownMenuSubContent>
                 </DropdownMenuSub>
                 {user.role === USER_ROLES.SUPER_USER && (
-                  <Link href="/admin">
-                    <DropdownMenuItem>
-                      <Shield className="mr-2 h-4 w-4" />
-                      <span>Admin</span>
-                    </DropdownMenuItem>
-                  </Link>
+                  <DropdownMenuItem onClick={() => router.push("/admin")}>
+                    <Shield className="mr-2 h-4 w-4" />
+                    <span>Admin</span>
+                  </DropdownMenuItem>
                 )}
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={onLogout}>

@@ -13,19 +13,24 @@ import {
   X,
   Cloud,
   ExternalLink,
+  LayoutGrid,
+  Table as TableIcon,
+  Edit,
+  Trash2,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 import { toast } from 'sonner';
 import { DocumentCard } from './DocumentCard';
 import { DocumentFormEnhanced } from './DocumentFormEnhanced';
@@ -36,9 +41,12 @@ import {
   inferMimeFromUrl,
   validateIatiDocument,
   isImageMime,
+  getFormatLabel,
 } from '@/lib/iatiDocumentLink';
+import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { Progress } from '@/components/ui/progress';
+import { EnhancedSearchableSelect, EnhancedSelectGroup } from '@/components/ui/enhanced-searchable-select';
 
 interface DocumentsAndImagesTabV2Props {
   documents: IatiDocumentLink[];
@@ -73,7 +81,7 @@ export function DocumentsAndImagesTabV2({
 }: DocumentsAndImagesTabV2Props) {
   const [searchQuery, setSearchQuery] = React.useState('');
   const [filterCategory, setFilterCategory] = React.useState<string>('all');
-  const [filterLanguage, setFilterLanguage] = React.useState<string>('all');
+  const [viewMode, setViewMode] = React.useState<'cards' | 'table'>('cards');
   const [isFormOpen, setIsFormOpen] = React.useState(false);
   const [editingDocument, setEditingDocument] = React.useState<IatiDocumentLink | null>(null);
   const [draggedIndex, setDraggedIndex] = React.useState<number | null>(null);
@@ -84,6 +92,36 @@ export function DocumentsAndImagesTabV2({
   
   const categories = customCategories || DOCUMENT_CATEGORIES;
   const languages = customLanguages || COMMON_LANGUAGES;
+
+  // Group document categories by Activity Level (A) and Organisation Level (B)
+  const categoryGroups: EnhancedSelectGroup[] = React.useMemo(() => {
+    const activityLevel = categories.filter(cat => cat.code.startsWith('A'));
+    const organisationLevel = categories.filter(cat => cat.code.startsWith('B'));
+    
+    return [
+      {
+        label: 'Activity Level',
+        options: activityLevel.map(cat => ({
+          code: cat.code,
+          name: cat.name,
+          description: cat.description,
+        })),
+      },
+      {
+        label: 'Organisation Level',
+        options: organisationLevel.map(cat => ({
+          code: cat.code,
+          name: cat.name,
+          description: cat.description,
+        })),
+      },
+    ];
+  }, [categories]);
+
+  // Handle category filter change - allow clearing to show "All"
+  const handleCategoryChange = (value: string) => {
+    setFilterCategory(value || 'all');
+  };
   
   // Filter documents
   const filteredDocuments = React.useMemo(() => {
@@ -104,19 +142,20 @@ export function DocumentsAndImagesTabV2({
         }
       }
       
-      // Category filter
-      if (filterCategory !== 'all' && doc.categoryCode !== filterCategory) {
-        return false;
-      }
-      
-      // Language filter
-      if (filterLanguage !== 'all' && !doc.languageCodes?.includes(filterLanguage)) {
-        return false;
+      // Category filter - check if any category matches
+      if (filterCategory !== 'all') {
+        const docCategories = doc.categoryCodes && doc.categoryCodes.length > 0
+          ? doc.categoryCodes
+          : (doc.categoryCode ? [doc.categoryCode] : []);
+        
+        if (!docCategories.includes(filterCategory)) {
+          return false;
+        }
       }
       
       return true;
     });
-  }, [documents, searchQuery, filterCategory, filterLanguage]);
+  }, [documents, searchQuery, filterCategory]);
   
   // Validation status
   const validationStatus = React.useMemo(() => {
@@ -331,6 +370,41 @@ export function DocumentsAndImagesTabV2({
       return false;
     }
   };
+
+  // Helper function to get primary title
+  const getPrimaryTitle = (doc: IatiDocumentLink) => {
+    return doc.title.find(n => n.lang === locale) || doc.title[0];
+  };
+
+  // Helper function to get primary description
+  const getPrimaryDescription = (doc: IatiDocumentLink) => {
+    return doc.description?.find(n => n.lang === locale) || doc.description?.[0];
+  };
+
+  // Helper function to get category names
+  const getCategoryNames = (doc: IatiDocumentLink) => {
+    const categoryCodes = doc.categoryCodes && doc.categoryCodes.length > 0
+      ? doc.categoryCodes
+      : (doc.categoryCode ? [doc.categoryCode] : []);
+    return categoryCodes.map(code => {
+      const category = categories.find(c => c.code === code);
+      return category ? category.name : code;
+    }).join(', ');
+  };
+
+  // Helper function to get language names
+  const getLanguageNames = (doc: IatiDocumentLink) => {
+    if (!doc.languageCodes || doc.languageCodes.length === 0) return '';
+    return doc.languageCodes.map(code => {
+      const lang = languages.find(l => l.code === code);
+      return lang ? lang.name : code.toUpperCase();
+    }).join(', ');
+  };
+
+  // Helper function to handle document open
+  const handleOpenDocument = (url: string) => {
+    window.open(url, '_blank', 'noopener,noreferrer');
+  };
   
   return (
     <div className="space-y-6">
@@ -414,7 +488,7 @@ export function DocumentsAndImagesTabV2({
       {documents.length > 0 && (
         <div className="bg-white border rounded-lg p-4">
           <div className="flex flex-col sm:flex-row gap-4">
-            <div className="flex-1">
+            <div className="flex-1 min-w-0">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
                 <Input
@@ -426,34 +500,38 @@ export function DocumentsAndImagesTabV2({
               </div>
             </div>
             
-            <div className="flex gap-3">
-              <Select value={filterCategory} onValueChange={setFilterCategory}>
-                <SelectTrigger className="w-32">
-                  <SelectValue placeholder="Category" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All</SelectItem>
-                {categories.map(cat => (
-                  <SelectItem key={cat.code} value={cat.code}>
-                    {cat.code}
-                  </SelectItem>
-                ))}
-                </SelectContent>
-              </Select>
+            <div className="flex gap-3 items-center">
+              <div className="w-[512px]">
+                <EnhancedSearchableSelect
+                  groups={categoryGroups}
+                  value={filterCategory === 'all' ? '' : filterCategory}
+                  onValueChange={handleCategoryChange}
+                  placeholder="All Categories"
+                  searchPlaceholder="Search categories..."
+                  dropdownId="document-category-filter"
+                  className="pb-0"
+                />
+              </div>
               
-              <Select value={filterLanguage} onValueChange={setFilterLanguage}>
-                <SelectTrigger className="w-24">
-                  <SelectValue placeholder="Lang" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All</SelectItem>
-                  {languages.map(lang => (
-                    <SelectItem key={lang.code} value={lang.code}>
-                      {lang.code}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              {/* View Toggle */}
+              <div className="flex border rounded-md">
+                <Button
+                  variant={viewMode === 'cards' ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => setViewMode('cards')}
+                  className="rounded-r-none"
+                >
+                  <LayoutGrid className="w-4 h-4" />
+                </Button>
+                <Button
+                  variant={viewMode === 'table' ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => setViewMode('table')}
+                  className="rounded-l-none"
+                >
+                  <TableIcon className="w-4 h-4" />
+                </Button>
+              </div>
             </div>
           </div>
         </div>
@@ -520,9 +598,9 @@ export function DocumentsAndImagesTabV2({
             </>
           )}
         </div>
-      ) : (
+      ) : viewMode === 'cards' ? (
         <>
-          {/* Separate uploaded files and linked documents */}
+          {/* Card View */}
           {(() => {
             const uploadedDocs = filteredDocuments.filter(doc => isDocumentUploaded(doc));
             const linkedDocs = filteredDocuments.filter(doc => !isDocumentUploaded(doc));
@@ -535,7 +613,7 @@ export function DocumentsAndImagesTabV2({
                       <Cloud className="w-5 h-5 text-gray-600" />
                       <h4 className="font-medium text-gray-900">Uploaded Files ({uploadedDocs.length})</h4>
                     </div>
-                    <div className="grid gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
                       {uploadedDocs.map((doc, index) => (
                         <div
                           key={doc.url}
@@ -560,12 +638,12 @@ export function DocumentsAndImagesTabV2({
                       <ExternalLink className="w-5 h-5 text-gray-600" />
                       <h4 className="font-medium text-gray-900">Linked Documents ({linkedDocs.length})</h4>
                     </div>
-                    <div className="grid gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
                       {linkedDocs.map((doc, index) => (
-                                              <div
-                        key={doc.url}
-                        className="bg-white border border-gray-200 rounded-lg p-2"
-                      >
+                        <div
+                          key={doc.url}
+                          className="bg-white border border-gray-200 rounded-lg p-2"
+                        >
                           <DocumentCard
                             document={doc}
                             onEdit={() => handleEditDocument(doc)}
@@ -582,6 +660,135 @@ export function DocumentsAndImagesTabV2({
             );
           })()}
         </>
+      ) : (
+        <>
+          {/* Table View */}
+          <div className="border rounded-lg overflow-hidden">
+            <Table>
+              <TableHeader className="bg-muted/50 border-b border-border">
+                <TableRow>
+                  <TableHead className={cn("h-12 px-4 py-3 text-left align-middle text-sm font-medium text-muted-foreground w-[300px]")}>Title</TableHead>
+                  <TableHead className={cn("h-12 px-4 py-3 text-left align-middle text-sm font-medium text-muted-foreground")}>Description</TableHead>
+                  <TableHead className={cn("h-12 px-4 py-3 text-left align-middle text-sm font-medium text-muted-foreground w-[200px]")}>Category</TableHead>
+                  <TableHead className={cn("h-12 px-4 py-3 text-left align-middle text-sm font-medium text-muted-foreground w-[100px]")}>Format</TableHead>
+                  <TableHead className={cn("h-12 px-4 py-3 text-left align-middle text-sm font-medium text-muted-foreground w-[120px]")}>Language</TableHead>
+                  <TableHead className={cn("h-12 px-4 py-3 text-left align-middle text-sm font-medium text-muted-foreground w-[120px]")}>Date</TableHead>
+                  <TableHead className={cn("h-12 px-4 py-3 text-left align-middle text-sm font-medium text-muted-foreground w-[100px]")}>Type</TableHead>
+                  <TableHead className={cn("h-12 px-4 py-3 text-right align-middle text-sm font-medium text-muted-foreground w-[120px]")}>Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredDocuments.map((doc, index) => {
+                  const primaryTitle = getPrimaryTitle(doc);
+                  const primaryDescription = getPrimaryDescription(doc);
+                  const categoryNames = getCategoryNames(doc);
+                  const languageNames = getLanguageNames(doc);
+                  const isUploaded = isDocumentUploaded(doc);
+                  
+                  return (
+                    <TableRow 
+                      key={doc.url}
+                      className={cn(
+                        "hover:bg-muted/10 transition-colors",
+                        index % 2 === 1 && "bg-muted/5"
+                      )}
+                    >
+                      <TableCell className={cn("px-4 py-3 text-sm font-normal text-foreground font-medium")}>
+                        <div className="flex items-start gap-3">
+                          {(isImageMime(doc.format) || doc.thumbnailUrl) ? (
+                            <div className="w-10 h-10 rounded overflow-hidden bg-gray-100 flex-shrink-0">
+                              <img
+                                src={doc.thumbnailUrl || doc.url}
+                                alt={primaryTitle.text}
+                                className="w-full h-full object-cover"
+                                onError={(e) => {
+                                  e.currentTarget.style.display = 'none';
+                                }}
+                              />
+                            </div>
+                          ) : (
+                            <div className="w-10 h-10 rounded bg-gray-100 flex items-center justify-center flex-shrink-0">
+                              <FileText className="w-5 h-5 text-gray-500" />
+                            </div>
+                          )}
+                          <span className="text-left">{primaryTitle.text}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell className={cn("px-4 py-3 text-sm font-normal text-foreground")}>
+                        <span className="text-sm text-gray-600 text-left">
+                          {primaryDescription?.text || '-'}
+                        </span>
+                      </TableCell>
+                      <TableCell className={cn("px-4 py-3 text-sm font-normal text-foreground")}>
+                        <span className="text-sm text-left">{categoryNames || '-'}</span>
+                      </TableCell>
+                      <TableCell className={cn("px-4 py-3 text-sm font-normal text-foreground")}>
+                        <Badge variant="secondary" className="text-xs">
+                          {getFormatLabel(doc.format)}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className={cn("px-4 py-3 text-sm font-normal text-foreground")}>
+                        <span className="text-sm text-left">{languageNames || '-'}</span>
+                      </TableCell>
+                      <TableCell className={cn("px-4 py-3 text-sm font-normal text-foreground")}>
+                        <span className="text-sm text-left">
+                          {doc.documentDate ? format(new Date(doc.documentDate), 'MMM d, yyyy') : '-'}
+                        </span>
+                      </TableCell>
+                      <TableCell className={cn("px-4 py-3 text-sm font-normal text-foreground")}>
+                        <Badge variant={isUploaded ? 'default' : 'outline'} className="text-xs">
+                          {isUploaded ? (
+                            <>
+                              <Cloud className="w-3 h-3 mr-1 inline" />
+                              Uploaded
+                            </>
+                          ) : (
+                            <>
+                              <ExternalLink className="w-3 h-3 mr-1 inline" />
+                              Linked
+                            </>
+                          )}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className={cn("px-4 py-3 text-sm font-normal text-foreground text-right")}>
+                        <div className="flex justify-end gap-1">
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => handleOpenDocument(doc.url)}
+                            className="h-8 w-8 p-0"
+                          >
+                            <ExternalLink className="w-4 h-4" />
+                          </Button>
+                          {!readOnly && (
+                            <>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => handleEditDocument(doc)}
+                                className="h-8 w-8 p-0"
+                              >
+                                <Edit className="w-4 h-4" />
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => handleDeleteDocument(doc.url)}
+                                className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </>
+                          )}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </div>
+        </>
       )}
       
       {/* Document Form Modal */}
@@ -593,6 +800,7 @@ export function DocumentsAndImagesTabV2({
         fetchHead={fetchHead}
         locale={locale}
         isUploaded={editingDocument ? isDocumentUploaded(editingDocument) : false}
+        activityId={activityId}
       />
     </div>
   );

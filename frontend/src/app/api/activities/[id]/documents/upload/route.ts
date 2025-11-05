@@ -226,6 +226,19 @@ export async function POST(
       }, { status: 500 });
     }
 
+    // Insert default category into junction table
+    const { error: categoryError } = await supabase
+      .from('activity_document_categories')
+      .insert({
+        document_id: document.id,
+        category_code: 'A01'
+      });
+
+    if (categoryError) {
+      console.error('[Upload API] Error inserting default category:', categoryError);
+      // Don't fail the whole request, category is still in main table
+    }
+
     // Return the created document in a format compatible with the frontend
     return NextResponse.json({
       id: document.id,

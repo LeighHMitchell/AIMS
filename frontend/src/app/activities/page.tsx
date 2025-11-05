@@ -48,7 +48,7 @@ import { HelpTextTooltip } from "@/components/ui/help-text-tooltip";
 import { 
   Plus, Download, Edit2, Trash2, AlertCircle, ArrowUp, ArrowDown, ArrowUpDown, ChevronLeft, ChevronRight, Users, Grid3X3, TableIcon, Search, MoreVertical, Edit,
   PencilLine, BookOpenCheck, BookLock, CheckCircle2, AlertTriangle, Circle, Info, ReceiptText, Handshake, Shuffle, Link2,
-  FileCheck, ShieldCheck, Globe, DatabaseZap, RefreshCw, Copy, Check, Blocks, DollarSign, Settings, ExternalLink
+  FileCheck, ShieldCheck, Globe, DatabaseZap, RefreshCw, Copy, Check, Blocks, DollarSign, Settings, ExternalLink, FileCode
 } from "lucide-react";
 import { useUser } from "@/hooks/useUser";
 import { Transaction, TIED_STATUS_LABELS } from "@/types/transaction";
@@ -253,12 +253,21 @@ const getActivityStatusLabel = (status: string): string => {
 
 // Helper function to format currency
 const formatCurrency = (amount: number): string => {
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(amount);
+  if (amount >= 1000000) {
+    // Format millions with 1 decimal place
+    const millions = amount / 1000000;
+    return `${millions.toFixed(1)}m`;
+  } else if (amount >= 1000) {
+    // Format thousands with 1 decimal place
+    const thousands = amount / 1000;
+    return `${thousands.toFixed(1)}k`;
+  } else {
+    // Format regular numbers with no decimals
+    return new Intl.NumberFormat('en-US', {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(amount);
+  }
 };
 
 // Helper function to check if user can edit an activity
@@ -281,10 +290,6 @@ const canUserEditActivity = (user: any, activity: Activity): boolean => {
 function ActivitiesPageContent() {
   // Enable optimization to get conditional image loading
   const enableOptimization = true;
-  
-  console.log('[Activities Page] Environment variable NEXT_PUBLIC_ENABLE_ACTIVITY_OPTIMIZATION:', process.env.NEXT_PUBLIC_ENABLE_ACTIVITY_OPTIMIZATION);
-  console.log('[Activities Page] enableOptimization:', enableOptimization);
-  console.log('[Activities Page] typeof env var:', typeof process.env.NEXT_PUBLIC_ENABLE_ACTIVITY_OPTIMIZATION);
   
   // Common state regardless of optimization (moved before hook call)
   const [deleteActivityId, setDeleteActivityId] = useState<string | null>(null);
@@ -376,14 +381,6 @@ function ActivitiesPageContent() {
   const sortField = usingOptimization ? safeOptimizedData.sorting.sortField : legacySortField;
   const sortOrder = usingOptimization ? safeOptimizedData.sorting.sortOrder : legacySortOrder;
   
-  console.log('[Activities Page] usingOptimization:', usingOptimization);
-  console.log('[Activities Page] optimizedData.activities length:', safeOptimizedData.activities.length);
-  console.log('[Activities Page] optimizedData.loading:', safeOptimizedData.loading);
-  console.log('[Activities Page] optimizedData.error:', safeOptimizedData.error);
-  console.log('[Activities Page] activities length:', activities?.length || 0);
-  if (activities?.length > 0) {
-    console.log('[Activities Page] First activity data:', activities[0]);
-  }
   const loading = usingOptimization ? safeOptimizedData.loading : legacyLoading;
   const error = usingOptimization ? safeOptimizedData.error : legacyError;
   const searchQuery = usingOptimization ? safeOptimizedData.searchQuery : '';
@@ -596,11 +593,7 @@ function ActivitiesPageContent() {
   // Fetch organizations and legacy activities if needed
   useEffect(() => {
     const fetchData = async () => {
-      console.log('[AIMS] fetchData called - usingOptimization:', usingOptimization);
-      console.log('[AIMS] enableOptimization:', enableOptimization);
-      
       if (!usingOptimization) {
-        console.log('[AIMS] Setting legacy loading to true');
         setLegacyLoading(true);
       }
       
@@ -609,21 +602,18 @@ function ActivitiesPageContent() {
         
         // Only fetch activities if not using optimization
         if (!usingOptimization) {
-          console.log('[AIMS] Adding legacy activities fetch to promises');
           promises.push(fetchActivities(1, false));
         }
         
         await Promise.all(promises);
       } finally {
         if (!usingOptimization) {
-          console.log('[AIMS] Setting legacy loading to false');
           setLegacyLoading(false);
         }
       }
     };
     
     if (!userLoading) {
-      console.log(`[AIMS] User loading complete, using ${usingOptimization ? 'optimized' : 'legacy'} implementation`);
       fetchData();
     }
   }, [userLoading, usingOptimization]);
@@ -1612,7 +1602,7 @@ function ActivitiesPageContent() {
                         <TooltipProvider>
                           <Tooltip>
                             <TooltipTrigger>
-                              {formatCurrency((activity as any).totalBudget || 0)}
+                              <span className="text-muted-foreground">USD</span> {formatCurrency((activity as any).totalBudget || 0)}
                             </TooltipTrigger>
                             <TooltipContent className="max-w-xs border border-gray-200 bg-white shadow-lg text-left">
                               <p className="text-sm text-gray-600 font-normal">
@@ -1626,7 +1616,7 @@ function ActivitiesPageContent() {
                         <TooltipProvider>
                           <Tooltip>
                             <TooltipTrigger>
-                              {formatCurrency((activity as any).totalDisbursed || 0)}
+                              <span className="text-muted-foreground">USD</span> {formatCurrency((activity as any).totalDisbursed || 0)}
                             </TooltipTrigger>
                             <TooltipContent className="max-w-xs border border-gray-200 bg-white shadow-lg text-left">
                               <p className="text-sm text-gray-600 font-normal">
@@ -1685,7 +1675,7 @@ function ActivitiesPageContent() {
                                 <MoreVertical className="h-4 w-4" />
                               </Button>
                             </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="w-32">
+                            <DropdownMenuContent align="end" className="w-40">
                               {canUserEditActivity(user, activity) && (
                                 <DropdownMenuItem 
                                   onClick={() => router.push(`/activities/new?id=${activity.id}`)}
@@ -1695,6 +1685,15 @@ function ActivitiesPageContent() {
                                   Edit
                                 </DropdownMenuItem>
                               )}
+                              <DropdownMenuItem 
+                                onClick={() => {
+                                  toast.info("Export to IATI XML feature coming soon");
+                                }}
+                                className="cursor-pointer"
+                              >
+                                <FileCode className="mr-2 h-4 w-4" />
+                                Export to XML
+                              </DropdownMenuItem>
                               <DropdownMenuItem 
                                 onClick={() => setDeleteActivityId(activity.id)}
                                 className="cursor-pointer text-red-600 hover:text-red-700 hover:bg-red-50"

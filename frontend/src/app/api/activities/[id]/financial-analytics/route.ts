@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import { currencyConverter } from '@/lib/currency-converter'
+import { fixedCurrencyConverter } from '@/lib/currency-converter-fixed'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
@@ -41,7 +41,7 @@ export async function GET(
         if (!budget.usd_value && budget.value && budget.currency) {
           try {
             const valueDate = budget.value_date ? new Date(budget.value_date) : new Date()
-            const result = await currencyConverter.convertToUSD(
+            const result = await fixedCurrencyConverter.convertToUSD(
               budget.value,
               budget.currency,
               valueDate
@@ -49,6 +49,12 @@ export async function GET(
             if (result.success && result.usd_amount) {
               budget.usd_value = result.usd_amount
               console.log(`[Financial Analytics] Converted budget ${budget.value} ${budget.currency} → $${result.usd_amount} USD`)
+            } else {
+              console.warn(`[Financial Analytics] Budget conversion failed: ${result.error}`)
+              // If conversion fails, use the original value if it's already in USD
+              if (budget.currency === 'USD') {
+                budget.usd_value = budget.value
+              }
             }
           } catch (error) {
             console.error('[Financial Analytics] Error converting budget to USD:', error)
@@ -69,13 +75,65 @@ export async function GET(
       .from('transactions')
       .select(`
         *,
-        provider_organization:organizations!provider_org_id(name),
-        receiver_organization:organizations!receiver_org_id(name)
+        provider_organization:organizations!provider_org_id(name, default_currency),
+        receiver_organization:organizations!receiver_org_id(name, default_currency)
       `)
       .eq('activity_id', activityId)
 
     console.log(`[Financial Analytics] Fetched ${transactions?.length || 0} transactions for activity ${activityId}`)
+    
+    // Convert transactions to USD if needed (real-time conversion for missing USD values)
     if (transactions && transactions.length > 0) {
+      for (const transaction of transactions) {
+        // 1. Fallback to provider org default currency if transaction currency is missing
+        if (!transaction.currency && transaction.provider_organization?.default_currency) {
+          transaction.currency = transaction.provider_organization.default_currency
+          console.log(`[Financial Analytics] Using provider org default currency: ${transaction.currency}`)
+        }
+        
+        // 2. Convert if missing both USD value fields
+        if ((!transaction.usd_value && !transaction.value_usd) && transaction.value && transaction.currency) {
+          try {
+            const valueDate = transaction.value_date 
+              ? new Date(transaction.value_date) 
+              : transaction.transaction_date 
+              ? new Date(transaction.transaction_date) 
+              : new Date()
+            
+            const result = await fixedCurrencyConverter.convertToUSD(
+              transaction.value,
+              transaction.currency,
+              valueDate
+            )
+            
+            if (result.success && result.usd_amount) {
+              // Store in both fields for compatibility
+              transaction.usd_value = result.usd_amount
+              transaction.value_usd = result.usd_amount
+              console.log(`[Financial Analytics] Converted transaction ${transaction.value} ${transaction.currency} → $${result.usd_amount} USD`)
+            } else {
+              console.warn(`[Financial Analytics] Transaction conversion failed: ${result.error}`)
+              // If conversion fails but currency is USD, use original value
+              if (transaction.currency === 'USD') {
+                transaction.usd_value = transaction.value
+                transaction.value_usd = transaction.value
+              }
+            }
+          } catch (error) {
+            console.error('[Financial Analytics] Error converting transaction to USD:', error)
+            // If conversion fails but currency is USD, use original value
+            if (transaction.currency === 'USD') {
+              transaction.usd_value = transaction.value
+              transaction.value_usd = transaction.value
+            }
+          }
+        } else if (transaction.currency === 'USD' && (!transaction.usd_value && !transaction.value_usd)) {
+          // For USD transactions without USD value fields, use the original value
+          transaction.usd_value = transaction.value
+          transaction.value_usd = transaction.value
+        }
+      }
+      
       const transactionTypes = transactions.reduce((acc: any, t: any) => {
         acc[t.transaction_type] = (acc[t.transaction_type] || 0) + 1
         return acc
@@ -91,7 +149,7 @@ export async function GET(
 
     // Fetch participating organizations
     const { data: participatingOrgs } = await supabase
-      .from('participating_organizations')
+      .from('activity_participating_organizations')
       .select(`
         *,
         organization:organizations(name, iati_identifier)
@@ -123,7 +181,7 @@ export async function GET(
           date: transaction.transaction_date,
           year: dateObj.getFullYear(),
           budget: 0,
-          actual: transaction.usd_value || transaction.value || 0,
+          actual: transaction.usd_value || transaction.value_usd || transaction.value || 0,
           type: 'transaction'
         })
       }
@@ -152,7 +210,7 @@ export async function GET(
       .map((t: any) => ({
         date: t.transaction_date,
         dateObj: new Date(t.transaction_date),
-        amount: t.usd_value || t.value || 0
+        amount: t.usd_value || t.value_usd || t.value || 0
       }))
       .filter((t: any) => !isNaN(t.dateObj.getTime())) // Filter out invalid dates
       .sort((a: any, b: any) => a.dateObj.getTime() - b.dateObj.getTime()) || []
@@ -279,7 +337,7 @@ export async function GET(
             period: dateObj.toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
             sortKey: `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, '0')}`,
             planned: 0,
-            actual: transaction.usd_value || transaction.value || 0,
+            actual: transaction.usd_value || transaction.value_usd || transaction.value || 0,
             type: 'actual'
           })
         }
@@ -307,11 +365,26 @@ export async function GET(
     
     console.log(`[Financial Analytics] Raw disbursement data entries: ${rawDisbursementData.length}`)
 
+    // Helper function to get role code (1-4) from iati_role_code or role_type
+    const getRoleCode = (org: any): string | null => {
+      if (org.iati_role_code) {
+        return String(org.iati_role_code)
+      }
+      // Map role_type to IATI role codes
+      const roleTypeMap: Record<string, string> = {
+        'funding': '1',
+        'government': '2',
+        'extending': '3',
+        'implementing': '4'
+      }
+      return roleTypeMap[org.role_type] || null
+    }
+
     // Funding Source Breakdown (by organization role and transactions)
     let fundingSources: any[] = []
     
     // First try to get funding from participating organizations with role = 1 (Funding)
-    const fundingOrgs = participatingOrgs?.filter((org: any) => org.role === '1') || []
+    const fundingOrgs = participatingOrgs?.filter((org: any) => getRoleCode(org) === '1') || []
     
     if (fundingOrgs.length > 0) {
       fundingSources = fundingOrgs
@@ -323,7 +396,7 @@ export async function GET(
               t.provider_org_id === org.organization_id && 
               (t.transaction_type === '1' || t.transaction_type === '2') // Incoming funds or commitments
             )
-            .reduce((sum: number, t: any) => sum + (t.usd_value || t.value || 0), 0) || 0
+            .reduce((sum: number, t: any) => sum + (t.usd_value || t.value_usd || t.value || 0), 0) || 0
           
           return {
             name: orgName,
@@ -344,7 +417,7 @@ export async function GET(
           const providerName = transaction.provider_organization?.name 
             || transaction.provider_org_ref 
             || 'Unspecified Donor'
-          const value = transaction.usd_value || transaction.value || 0
+          const value = transaction.usd_value || transaction.value_usd || transaction.value || 0
           
           if (value > 0) {
             if (!fundingByProvider[providerName]) {
@@ -375,22 +448,25 @@ export async function GET(
 
     // Financial Flow by Organization Role
     const financialFlow = {
-      nodes: participatingOrgs?.map((org: any) => ({
-        id: org.id,
-        name: org.organization?.name || org.organization_name || 'Unknown',
-        role: org.role
-      })) || [],
+      nodes: participatingOrgs?.map((org: any) => {
+        const roleCode = getRoleCode(org)
+        return {
+          id: org.id,
+          name: org.organization?.name || org.organization_name || 'Unknown',
+          role: roleCode || org.role_type || 'unknown' // Use role code (1-4) or role_type as fallback
+        }
+      }) || [],
       links: [] // Simplified for now - would need more complex logic for Sankey
     }
 
     // Calculate Commitment vs Disbursement Ratio
     const totalCommitment = transactions
       ?.filter((t: any) => t.transaction_type === '2')
-      .reduce((sum: number, t: any) => sum + (t.usd_value || t.value || 0), 0) || 0
+      .reduce((sum: number, t: any) => sum + (t.usd_value || t.value_usd || t.value || 0), 0) || 0
 
     const totalDisbursement = transactions
       ?.filter((t: any) => t.transaction_type === '3')
-      .reduce((sum: number, t: any) => sum + (t.usd_value || t.value || 0), 0) || 0
+      .reduce((sum: number, t: any) => sum + (t.usd_value || t.value_usd || t.value || 0), 0) || 0
 
     const commitmentRatio = totalCommitment > 0 ? (totalDisbursement / totalCommitment) * 100 : 0
 

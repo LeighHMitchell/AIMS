@@ -389,6 +389,10 @@ export function ExternalPublisherModal({
           <Button
             onClick={handleContinue}
             disabled={!selectedOption || (selectedOption === 'merge' && !currentActivityId)}
+            className="text-white"
+            style={{ backgroundColor: '#135667' }}
+            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#0f4552'}
+            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#135667'}
           >
             {iatiImportStrings['btn.continue']}
           </Button>

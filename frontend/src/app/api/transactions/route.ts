@@ -195,8 +195,14 @@ export async function GET(request: Request) {
       query = query.order(sortField, orderOptions);
     }
     
+    // Apply pagination at database level for own transactions
+    // Only apply range if limit is not 9999 (show all)
+    if (limit !== 9999) {
+      query = query.range(offset, offset + limit - 1);
+    }
+    
     // Execute the main query to get own transactions
-    const { data: ownTransactions, error, count } = await query;
+    const { data: ownTransactions, error, count: totalOwnCount } = await query;
     
     if (error) {
       console.error('[AIMS] Error fetching own transactions:', error);
@@ -213,24 +219,55 @@ export async function GET(request: Request) {
     }));
 
     // Fetch linked transactions if requested
+    // NOTE: For proper pagination, we should fetch linked transactions separately
+    // For now, we only fetch linked transactions for activities in the current page to avoid pagination issues
     if (includeLinked) {
-      // Get all user's activity IDs to find linked transactions
-      const userActivityIds = Array.from(new Set(allTransactions.map(t => t.activity_id)));
+      // Get activity IDs from the current page's transactions only
+      const userActivityIds = Array.from(new Set(
+        (ownTransactions || []).map((t: any) => t.activity_id).filter(Boolean)
+      ));
       
       if (userActivityIds.length > 0) {
         const linkedTransactions = await fetchAllLinkedTransactions(userActivityIds);
-        allTransactions = [...allTransactions, ...linkedTransactions];
+        // Apply transaction source filter to linked transactions if needed
+        let filteredLinked = linkedTransactions;
+        if (transactionSource !== 'all') {
+          filteredLinked = linkedTransactions.filter(t => t.transaction_source === transactionSource);
+        }
+        // Add linked transactions after own transactions
+        allTransactions = [...allTransactions, ...filteredLinked];
       }
     }
 
-    // Apply transaction source filtering
+    // Apply transaction source filtering to own transactions
     if (transactionSource !== 'all') {
       allTransactions = allTransactions.filter(t => t.transaction_source === transactionSource);
     }
 
-    // Apply pagination to combined results (client-side for now)
-    const totalCombined = allTransactions.length;
-    const paginatedTransactions = allTransactions.slice(offset, offset + limit);
+    // Calculate total count properly
+    // Own transactions count is from the database query
+    // For linked transactions, we need to count them separately for accurate pagination
+    let linkedTransactionsCount = 0;
+    if (includeLinked) {
+      // Count linked transactions separately - this is an approximation
+      // Ideally we'd query this from the database, but for now we count what we fetched
+      linkedTransactionsCount = allTransactions.length - (ownTransactions?.length || 0);
+    }
+    
+    const totalCombined = (totalOwnCount || 0) + linkedTransactionsCount;
+    
+    // IMPORTANT: Apply pagination to the combined results
+    // Since own transactions are already paginated at DB level, and linked transactions are added,
+    // we just need to ensure we don't exceed the limit per page
+    let paginatedTransactions;
+    if (limit === 9999) {
+      // Show all - no pagination
+      paginatedTransactions = allTransactions;
+    } else {
+      // Limit to the requested page size (own transactions are already limited by range,
+      // but linked transactions might push us over, so we trim to exact limit)
+      paginatedTransactions = allTransactions.slice(0, limit);
+    }
     
     // Transform the data for frontend compatibility
     const transformedTransactions = paginatedTransactions.map((t: any) => ({

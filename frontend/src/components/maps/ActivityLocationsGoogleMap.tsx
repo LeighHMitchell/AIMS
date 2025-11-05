@@ -78,6 +78,7 @@ export default function ActivityLocationsGoogleMap({
   const [regionCounts, setRegionCounts] = useState<Record<string, number>>({})
   const [selectedMarker, setSelectedMarker] = useState<Location | null>(null)
   const [map, setMap] = useState<google.maps.Map | null>(null)
+  const [isGoogleLoaded, setIsGoogleLoaded] = useState(false)
 
   // Load GeoJSON data for Myanmar regions
   useEffect(() => {
@@ -155,7 +156,7 @@ export default function ActivityLocationsGoogleMap({
   }
 
   // Convert GeoJSON coordinates to Google Maps format
-  const convertCoordinates = (coords: number[][][]): google.maps.LatLngLiteral[] => {
+  const convertCoordinates = (coords: number[][][]): Array<{ lat: number; lng: number }> => {
     return coords[0].map(coord => ({
       lat: coord[1],
       lng: coord[0]
@@ -164,22 +165,72 @@ export default function ActivityLocationsGoogleMap({
 
   const onLoad = useCallback((map: google.maps.Map) => {
     setMap(map)
+    setIsGoogleLoaded(true)
+  }, [])
+
+  // Check if google is loaded
+  useEffect(() => {
+    if (typeof window !== 'undefined' && window.google) {
+      setIsGoogleLoaded(true)
+    }
   }, [])
 
   const onUnmount = useCallback(() => {
     setMap(null)
   }, [])
 
-  // Custom marker icon
-  const markerIcon = {
-    path: 'M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z',
-    fillColor: '#ef4444',
-    fillOpacity: 1,
-    strokeColor: '#ffffff',
-    strokeWeight: 2,
-    scale: 2,
-    anchor: new google.maps.Point(12, 22)
-  }
+  // Custom marker icon - only create when google is available
+  const markerIcon = React.useMemo(() => {
+    try {
+      if (!isGoogleLoaded || typeof window === 'undefined' || !window.google?.maps?.Point) {
+        return undefined
+      }
+      return {
+        path: 'M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z',
+        fillColor: '#ef4444',
+        fillOpacity: 1,
+        strokeColor: '#ffffff',
+        strokeWeight: 2,
+        scale: 2,
+        anchor: new window.google.maps.Point(12, 22)
+      }
+    } catch (error) {
+      console.warn('Failed to create marker icon:', error)
+      return undefined
+    }
+  }, [isGoogleLoaded])
+
+  // Map options - created only when google is available
+  const mapOptions = React.useMemo(() => {
+    const baseOptions: any = {
+      restriction: {
+        latLngBounds: MYANMAR_BOUNDS,
+        strictBounds: false
+      },
+      minZoom: 6,
+      maxZoom: 18,
+      mapTypeControl: true,
+      streetViewControl: false,
+      fullscreenControl: true
+    }
+
+    // Add mapTypeControlOptions with safe enum access
+    if (typeof window !== 'undefined' && window.google?.maps) {
+      baseOptions.mapTypeControlOptions = {
+        style: window.google.maps.MapTypeControlStyle?.DROPDOWN_MENU ?? 2,
+        position: window.google.maps.ControlPosition?.TOP_RIGHT ?? 1,
+        mapTypeIds: ['roadmap', 'satellite', 'hybrid', 'terrain']
+      }
+    } else {
+      baseOptions.mapTypeControlOptions = {
+        style: 2, // DROPDOWN_MENU
+        position: 1, // TOP_RIGHT
+        mapTypeIds: ['roadmap', 'satellite', 'hybrid', 'terrain']
+      }
+    }
+
+    return baseOptions
+  }, [isGoogleLoaded])
 
   return (
     <LoadScript googleMapsApiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || ''}>
@@ -189,22 +240,7 @@ export default function ActivityLocationsGoogleMap({
         zoom={mapZoom}
         onLoad={onLoad}
         onUnmount={onUnmount}
-        options={{
-          restriction: {
-            latLngBounds: MYANMAR_BOUNDS,
-            strictBounds: false
-          },
-          minZoom: 6,
-          maxZoom: 18,
-          mapTypeControl: true,
-          mapTypeControlOptions: {
-            style: google.maps.MapTypeControlStyle.DROPDOWN_MENU,
-            position: google.maps.ControlPosition.TOP_RIGHT,
-            mapTypeIds: ['roadmap', 'satellite', 'hybrid', 'terrain']
-          },
-          streetViewControl: false,
-          fullscreenControl: true
-        }}
+        options={mapOptions}
       >
         {/* Render Myanmar regions as polygons with choropleth coloring */}
         {geoData && geoData.features.map((feature, idx) => {
@@ -311,6 +347,11 @@ export default function ActivityLocationsGoogleMap({
     </LoadScript>
   )
 }
+
+
+
+
+
 
 
 

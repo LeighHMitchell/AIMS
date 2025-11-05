@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { fetchBasicActivityWithCache, invalidateActivityCache } from '@/lib/activity-cache';
 import { getSectorInfo, getCleanSectorName, getSectorInfoFlexible } from '@/lib/dac-sector-utils';
+import { normaliseOrgRef, isValidIatiRef, getOrgRefDisplay } from '@/lib/org-ref-normalizer';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
@@ -21,10 +22,20 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { CountryCombobox } from '@/components/ui/country-combobox';
 import { toast } from 'sonner';
 import { supabase } from '@/lib/supabase';
-import { IATIXMLParser, validateIATIXML } from '@/lib/xml-parser';
+import { IATIXMLParser, validateIATIXML, ActivityMetadata } from '@/lib/xml-parser';
+import { checkExistingActivities, ExistingActivityInfo } from '@/lib/iati-activity-lookup';
+import { MultiActivityPreview } from '@/components/activities/MultiActivityPreview';
 import { IATI_REGIONS } from '@/data/iati-regions';
 import { IATI_COUNTRIES } from '@/data/iati-countries';
+import { countries } from '@/data/countries';
 import { LANGUAGES } from '@/data/languages';
+import { getOrganizationTypeName, IATI_ORGANIZATION_TYPES } from '@/data/iati-organization-types';
+import { getOrganizationRoleName } from '@/data/iati-organization-roles';
+import { getCollaborationTypeByCode, ALL_COLLABORATION_TYPES } from '@/data/iati-collaboration-types';
+import { IATI_ACTIVITY_SCOPE } from '@/data/iati-activity-scope';
+import { getActivityStatusByCode } from '@/data/activity-status-types';
+import financeTypesData from '@/data/finance-types.json';
+import flowTypesData from '@/data/flow-types.json';
 import { ExternalPublisherModal } from '@/components/import/ExternalPublisherModal';
 import { ImportValidationReport } from './results/ImportValidationReport';
 import { ImportResultsDisplay } from './ImportResultsDisplay';
@@ -50,6 +61,7 @@ import {
   Settings,
   ChevronRight,
   ChevronDown,
+  ChevronUp,
   ChevronsUpDown,
   Check,
   Lock,
@@ -63,7 +75,7 @@ import {
   Search,
 } from 'lucide-react';
 
-interface XmlImportTabProps {
+interface IatiImportTabProps {
   activityId: string;
 }
 
@@ -403,7 +415,6 @@ interface IatiSearchResultCardProps {
 
 const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: IatiSearchResultCardProps) => {
   const [isExpanded, setIsExpanded] = useState(false);
-  const [showFullDescription, setShowFullDescription] = useState(false);
   
   // Helper to get org by role
   const getOrgsByRole = (role: string) => {
@@ -415,326 +426,476 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
   const extendingOrgs = getOrgsByRole('3');
   const implementingOrgs = getOrgsByRole('4');
   
-  const descriptionLimit = 200;
-  const needsTruncation = activity.description && activity.description.length > descriptionLimit;
+  // Helper to get code with full name
+  const getCodeWithName = (code: string, name: string | undefined, lookupData: any[]) => {
+    if (!code) return null;
+    const lookup = lookupData.find(item => item.code === code);
+    const fullName = lookup?.name || name || 'Unknown';
+    return `${code} ${fullName}`;
+  };
   
   // Format currency with validation
   const formatCurrency = (value: number, currency?: string) => {
-    // Validate currency code (must be 3-letter ISO code)
     const isValidCurrency = currency && /^[A-Z]{3}$/.test(currency);
     const currencyCode = isValidCurrency ? currency : 'USD';
     
-    try {
-      return new Intl.NumberFormat('en-US', {
-        style: 'currency',
-        currency: currencyCode,
-        minimumFractionDigits: 0,
-        maximumFractionDigits: 0,
-      }).format(value);
-    } catch (error) {
-      // Fallback if currency formatting fails
-      return `${currencyCode} ${value.toLocaleString()}`;
-    }
+    // Format number with commas
+    const formattedValue = new Intl.NumberFormat('en-US', {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(value);
+    
+    // Return JSX with grey, smaller currency code
+    return (
+      <>
+        <span className="text-xs text-muted-foreground">{currencyCode}</span> {formattedValue}
+      </>
+    );
   };
   
   // Format date
   const formatDate = (dateStr: string) => {
-    return new Date(dateStr).toLocaleDateString('en-US', { 
-      year: 'numeric', 
-      month: 'short', 
-      day: 'numeric' 
-    });
+    if (!dateStr) return "N/A";
+    try {
+      return new Date(dateStr).toLocaleDateString('en-US', { 
+        year: 'numeric', 
+        month: 'short', 
+        day: 'numeric' 
+      });
+    } catch {
+      return dateStr;
+    }
   };
-  
-  // Status badge color
-  const statusColors: Record<string, any> = {
-    '1': 'outline',
-    '2': 'success',
-    '3': 'secondary',
-    '4': 'secondary',
-    '5': 'destructive',
-    '6': 'outline',
+
+  // Helper to format code with name: code in monospace gray, name normal
+  // If name contains code at start (e.g., "110 Standard grant"), extract just the name part
+  const formatCodeWithName = (code?: string, name?: string) => {
+    if (!code || code === '0') return null;
+    if (!name || name === code || name === '0' || name.trim() === '0') {
+      if (code === '0') return null;
+      return (
+        <code className="text-xs font-mono bg-slate-100 px-1.5 py-0.5 rounded text-slate-700">
+          {code}
+        </code>
+      );
+    }
+    
+    // Check if name starts with the code followed by a space
+    const nameTrimmed = name.trim();
+    const codeWithSpace = `${code} `;
+    let displayName = nameTrimmed;
+    
+    if (nameTrimmed.startsWith(codeWithSpace)) {
+      // Extract name part after code (e.g., "110 Standard grant" -> "Standard grant")
+      displayName = nameTrimmed.substring(codeWithSpace.length).trim();
+    }
+    
+    // Final safety check: don't render if displayName is "0" or empty
+    if (!displayName || displayName === '0' || displayName === code) {
+      return (
+        <code className="text-xs font-mono bg-slate-100 px-1.5 py-0.5 rounded text-slate-700">
+          {code}
+        </code>
+      );
+    }
+    
+    return (
+      <span className="inline-flex items-center gap-1">
+        <code className="text-xs font-mono bg-slate-100 px-1.5 py-0.5 rounded text-slate-700">
+          {code}
+        </code>
+        <span className="text-slate-900">{displayName}</span>
+      </span>
+    );
+  };
+
+  // Get country name from code
+  const getCountryName = (code?: string) => {
+    if (!code) return null;
+    const country = countries.find(c => c.code === code);
+    return country?.name || code;
   };
   
   return (
-    <div className="bg-white rounded-xl border border-gray-100 hover:border-gray-200 hover:shadow-lg transition-all duration-300 ease-in-out shadow-sm relative group">
-      <div className="p-6">
-        <div className="space-y-4">
-          {/* Header: Title + Import Button */}
-          <div className="flex items-start justify-between gap-4">
-            <div className="flex-1 min-w-0">
-              <h3 className="text-lg font-semibold text-foreground leading-tight line-clamp-2">
-                {activity.title || 'Untitled Activity'}
-              </h3>
-              {/* IATI Identifier - monospace with gray background */}
-              <div className="mt-2 text-xs">
-                <code className="font-mono bg-gray-100 px-2 py-1 rounded border border-gray-200 text-gray-700">
-                  {activity.iatiIdentifier}
-                </code>
-              </div>
-            </div>
-            <Button
-              size="sm"
-              onClick={() => onSelect(activity)}
-              disabled={isLoading}
-              className="flex-shrink-0"
-            >
-              {isLoading ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                'Import'
-              )}
-            </Button>
-          </div>
-
-          {/* Description */}
-          {activity.description && (
-            <div className="text-sm text-gray-600 leading-relaxed">
-              <p className={!showFullDescription && needsTruncation ? "line-clamp-3" : ""}>
-                {activity.description}
-              </p>
-              {needsTruncation && (
-                <button
-                  onClick={() => setShowFullDescription(!showFullDescription)}
-                  className="text-blue-600 hover:text-blue-700 text-xs font-medium mt-1.5 inline-flex items-center"
-                >
-                  {showFullDescription ? 'Show less' : 'Show more...'}
-                </button>
-              )}
-            </div>
-          )}
-
-          {/* Status & Dates Row */}
-          <div className="flex flex-wrap gap-2 items-center">
-            {(activity.status || activity.statusNarrative) && (
-              <Badge 
-                variant={statusColors[activity.status as keyof typeof statusColors] || 'outline'}
-                className="text-xs font-medium leading-tight"
+    <div className="border border-slate-200 rounded-lg bg-white hover:border-slate-300 transition-colors">
+      {/* Collapsed View */}
+      <div className="p-4">
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex-1 min-w-0">
+            {/* Import Button */}
+            <div className="flex items-start justify-end mb-3">
+              <Button 
+                size="sm" 
+                variant="outline"
+                onClick={() => onSelect(activity)}
+                disabled={isLoading}
+                className="shrink-0"
               >
-                {activity.statusNarrative || activity.status}
-              </Badge>
-            )}
-            {(activity.startDatePlanned || activity.startDateActual || 
-              activity.endDatePlanned || activity.endDateActual) && (
-              <span className="text-xs text-gray-500">
-                {activity.startDateActual && formatDate(activity.startDateActual)}
-                {!activity.startDateActual && activity.startDatePlanned && formatDate(activity.startDatePlanned)}
-                {(activity.startDateActual || activity.startDatePlanned) && 
-                 (activity.endDateActual || activity.endDatePlanned) && ' → '}
-                {activity.endDateActual && formatDate(activity.endDateActual)}
-                {!activity.endDateActual && activity.endDatePlanned && formatDate(activity.endDatePlanned)}
-              </span>
-            )}
-          </div>
-
-          {/* Key Details Section - Consistent with ActivityCard */}
-          <div className="space-y-2 pt-2 border-t border-gray-200">
-            {/* Reporting Organization */}
-            {activity.reportingOrg && (
-              <div className="flex justify-between items-center">
-                <span className="text-sm font-medium text-gray-700">Reported by</span>
-                <span className="text-sm text-gray-900 text-right truncate max-w-[60%]">
-                  {activity.reportingOrg}
-                </span>
-              </div>
-            )}
+                {isLoading ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  'Import'
+                )}
+              </Button>
+            </div>
             
-            {/* Budget */}
-            {activity.totalBudget && (
-              <div className="flex justify-between items-center">
-                <span className="text-sm font-medium text-gray-700">Total Budget</span>
-                <span className="text-sm text-gray-900">
-                  {formatCurrency(activity.totalBudget, activity.currency)}
-                </span>
+            {/* Essential Info - Three Column Layout */}
+            <div className="grid grid-cols-3 gap-x-6 gap-y-3 text-xs">
+              {/* Column 1: Reported by */}
+              {activity.reportingOrg && (
+                <div>
+                  <span className="text-slate-600 font-medium">Reported by:</span>
+                  <div className="mt-0.5">
+                    <div className="text-slate-900">{activity.reportingOrg}</div>
+                    {activity.reportingOrgRef && (
+                      <code className="text-xs font-mono bg-slate-100 px-1.5 py-0.5 rounded text-slate-700 mt-0.5 inline-block">
+                        {activity.reportingOrgRef}
+                      </code>
+                    )}
+                  </div>
+                </div>
+              )}
+              
+              {/* Column 2: Implementing Org */}
+              {implementingOrgs.length > 0 && (
+                <div>
+                  <span className="text-slate-600 font-medium">Implementing Org:</span>
+                  <div className="mt-0.5">
+                    {implementingOrgs[0] && (
+                      <>
+                        <div className="text-slate-900">{implementingOrgs[0].name}</div>
+                        {(() => {
+                          const refDisplay = getOrgRefDisplay(implementingOrgs[0].ref);
+                          if (!refDisplay.normalized) return null;
+                          
+                          return (
+                            <span className="flex items-center gap-1 mt-0.5">
+                              <code className={`text-xs font-mono bg-slate-100 px-1.5 py-0.5 rounded text-slate-700 inline-block ${!refDisplay.isValid ? 'border border-red-300' : ''}`}>
+                                {refDisplay.normalized}
+                              </code>
+                              {!refDisplay.isValid && (
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <span className="text-red-500 text-xs cursor-help">⚠</span>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p className="text-xs">Invalid IATI organization identifier format</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              )}
+                            </span>
+                          );
+                        })()}
+                      </>
+                    )}
+                  </div>
+                </div>
+              )}
+              
+              {/* Column 3: Financial Summary */}
+              <div className="space-y-1">
+                {activity.totalBudget && (
+                  <div>
+                    <span className="text-slate-600 font-medium">Total Budget:</span>
+                    <div className="mt-0.5 text-slate-900 font-medium">
+                      {formatCurrency(activity.totalBudget, activity.currency)}
+                    </div>
+                  </div>
+                )}
+                {activity.totalPlannedDisbursement && (
+                  <div>
+                    <span className="text-slate-600 font-medium">Total Planned Disbursement:</span>
+                    <div className="mt-0.5 text-slate-900 font-medium">
+                      {formatCurrency(activity.totalPlannedDisbursement, activity.currency)}
+                    </div>
+                  </div>
+                )}
+                {activity.totalOutgoingCommitment && (
+                  <div>
+                    <span className="text-slate-600 font-medium">Total Outgoing Commitment:</span>
+                    <div className="mt-0.5 text-slate-900 font-medium">
+                      {formatCurrency(activity.totalOutgoingCommitment, activity.currency)}
+                    </div>
+                  </div>
+                )}
+                {activity.totalDisbursement && (
+                  <div>
+                    <span className="text-slate-600 font-medium">Total Disbursement:</span>
+                    <div className="mt-0.5 text-slate-900 font-medium">
+                      {formatCurrency(activity.totalDisbursement, activity.currency)}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        {/* Expand/Collapse Button */}
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            setIsExpanded(!isExpanded);
+          }}
+          className="mt-3 flex items-center gap-1 text-xs text-slate-600 hover:text-slate-900 transition-colors"
+        >
+          {isExpanded ? (
+            <>
+              <ChevronUp className="h-3 w-3" />
+              <span>Show less</span>
+            </>
+          ) : (
+            <>
+              <ChevronDown className="h-3 w-3" />
+              <span>Show more details</span>
+            </>
+          )}
+        </button>
+      </div>
+      
+      {/* Expanded View - All data in 3 columns */}
+      {isExpanded && (
+        <div className="border-t border-slate-200 bg-white p-4">
+          <div className="grid grid-cols-3 gap-x-6 gap-y-3 text-xs">
+            {/* Column 1 */}
+            {activity.description && (
+              <div className="col-span-1">
+                <span className="text-slate-600 font-medium">Description:</span>
+                <div className="mt-0.5 text-slate-900 whitespace-pre-wrap">
+                  {activity.description.replace(/<[^>]*>/g, '')}
+                </div>
               </div>
             )}
 
-            {/* Aid Type */}
-            {(activity.aidType || activity.aidTypeName) && (
-              <div className="flex justify-between items-center">
-                <span className="text-sm font-medium text-gray-700">Aid Type</span>
-                <span className="text-sm text-gray-900 text-right truncate max-w-[60%]">
-                  {activity.aidTypeName || activity.aidType}
-                </span>
+            {activity.recipientCountries && activity.recipientCountries.length > 0 && (
+              <div className="col-span-1">
+                <span className="text-slate-600 font-medium">Recipient Country:</span>
+                <div className="mt-0.5 text-slate-900">
+                  {activity.recipientCountries.map((country: string, idx: number) => (
+                    <span key={idx}>
+                      {idx > 0 && ', '}
+                      {getCountryName(country) || country}
+                    </span>
+                  ))}
+                </div>
               </div>
             )}
 
-            {/* Finance Type */}
-            {(activity.financeType || activity.financeTypeName) && (
-              <div className="flex justify-between items-center">
-                <span className="text-sm font-medium text-gray-700">Finance Type</span>
-                <span className="text-sm text-gray-900 text-right truncate max-w-[60%]">
-                  {activity.financeTypeName || activity.financeType}
-                </span>
+            {activity.startDatePlanned && (
+              <div className="col-span-1">
+                <span className="text-slate-600 font-medium">Planned Start:</span>
+                <div className="mt-0.5 text-slate-900">{formatDate(activity.startDatePlanned)}</div>
               </div>
             )}
 
-            {/* Flow Type */}
-            {(activity.flowType || activity.flowTypeName) && (
-              <div className="flex justify-between items-center">
-                <span className="text-sm font-medium text-gray-700">Flow Type</span>
-                <span className="text-sm text-gray-900 text-right truncate max-w-[60%]">
-                  {activity.flowTypeName || activity.flowType}
-                </span>
+            {activity.startDateActual && (
+              <div className="col-span-1">
+                <span className="text-slate-600 font-medium">Actual Start:</span>
+                <div className="mt-0.5 text-slate-900">{formatDate(activity.startDateActual)}</div>
               </div>
             )}
 
-            {/* Tied Status */}
-            {(activity.tiedStatus || activity.tiedStatusName) && (
-              <div className="flex justify-between items-center">
-                <span className="text-sm font-medium text-gray-700">Tied Status</span>
-                <span className="text-sm text-gray-900 text-right truncate max-w-[60%]">
-                  {activity.tiedStatusName || activity.tiedStatus}
-                </span>
+            {activity.currency && (
+              <div className="col-span-1">
+                <span className="text-slate-600 font-medium">Default Currency:</span>
+                <div className="mt-0.5">
+                  <code className="text-xs font-mono bg-slate-100 px-1.5 py-0.5 rounded text-slate-700">
+                    {activity.currency}
+                  </code>
+                </div>
               </div>
             )}
 
-            {/* Collaboration Type */}
-            {activity.collaborationType && (
-              <div className="flex justify-between items-center">
-                <span className="text-sm font-medium text-gray-700">Collaboration Type</span>
-                <span className="text-sm text-gray-900 text-right truncate max-w-[60%]">
-                  {activity.collaborationType}
-                </span>
-              </div>
-            )}
-
-            {/* Activity Scope */}
             {activity.activityScope && (
-              <div className="flex justify-between items-center">
-                <span className="text-sm font-medium text-gray-700">Activity Scope</span>
-                <span className="text-sm text-gray-900 text-right truncate max-w-[60%]">
-                  {activity.activityScope}
-                </span>
+              <div className="col-span-1">
+                <span className="text-slate-600 font-medium">Activity Scope:</span>
+                <div className="mt-0.5">
+                  {(() => {
+                    const scopeType = IATI_ACTIVITY_SCOPE[0]?.types.find(t => t.code === activity.activityScope);
+                    const scopeName = scopeType?.name || activity.activityScope;
+                    return formatCodeWithName(activity.activityScope, scopeName);
+                  })()}
+                </div>
               </div>
             )}
 
-            {/* Hierarchy */}
-            {activity.hierarchy && (
-              <div className="flex justify-between items-center">
-                <span className="text-sm font-medium text-gray-700">Hierarchy</span>
-                <span className="text-sm text-gray-900 text-right truncate max-w-[60%]">
-                  {activity.hierarchyName || activity.hierarchy}
-                </span>
+            {/* Column 2 */}
+            {activity.participatingOrgs && activity.participatingOrgs.length > 0 && (() => {
+              const roleGroups: Record<string, Array<{ name: string; ref?: string }>> = {};
+              activity.participatingOrgs!.forEach((org: any) => {
+                if (org.role) {
+                  if (!roleGroups[org.role]) {
+                    roleGroups[org.role] = [];
+                  }
+                  roleGroups[org.role].push({ name: org.name, ref: org.ref });
+                }
+              });
+              
+              return (
+                <div className="col-span-1">
+                  <span className="text-slate-600 font-medium">Participating Organisations:</span>
+                  <div className="mt-0.5 space-y-1">
+                    {Object.entries(roleGroups).map(([roleCode, orgs]) => {
+                      const roleName = getOrganizationRoleName(roleCode);
+                      return orgs.map((org, idx) => (
+                        <div key={`${roleCode}-${idx}`} className="flex items-center gap-1.5 text-slate-900">
+                          <code className="text-xs font-mono bg-slate-100 px-1.5 py-0.5 rounded text-slate-700">
+                            {roleCode}
+                          </code>
+                          <span className="text-slate-600">{roleName}</span>
+                          <span className="text-slate-400">|</span>
+                          <span>{org.name}</span>
+                          {(() => {
+                            const refDisplay = getOrgRefDisplay(org.ref);
+                            if (!refDisplay.normalized) return null;
+                            
+                            return (
+                              <>
+                                <span className="text-slate-400">|</span>
+                                <span className="flex items-center gap-1">
+                                  <code className={`text-xs font-mono bg-slate-100 px-1.5 py-0.5 rounded text-slate-700 ${!refDisplay.isValid ? 'border border-red-300' : ''}`}>
+                                    {refDisplay.normalized}
+                                  </code>
+                                  {!refDisplay.isValid && (
+                                    <Tooltip>
+                                      <TooltipTrigger asChild>
+                                        <span className="text-red-500 text-xs cursor-help">⚠</span>
+                                      </TooltipTrigger>
+                                      <TooltipContent>
+                                        <p className="text-xs">Invalid IATI organization identifier format</p>
+                                      </TooltipContent>
+                                    </Tooltip>
+                                  )}
+                                </span>
+                              </>
+                            );
+                          })()}
+                        </div>
+                      ));
+                    })}
+                  </div>
+                </div>
+              );
+            })()}
+
+            {activity.sectors && activity.sectors.length > 0 && (
+              <div className="col-span-1">
+                <span className="text-slate-600 font-medium">Sectors:</span>
+                <div className="mt-0.5 flex flex-wrap gap-1.5">
+                  {activity.sectors.slice(0, 5).map((sector: string, idx: number) => (
+                    <code key={idx} className="text-xs font-mono bg-slate-100 px-1.5 py-0.5 rounded text-slate-700">
+                      {sector}
+                    </code>
+                  ))}
+                  {activity.sectors.length > 5 && (
+                    <span className="text-slate-500">+{activity.sectors.length - 5} more</span>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {activity.hierarchy && activity.hierarchy !== '0' && (
+              <div className="col-span-1">
+                <span className="text-slate-600 font-medium">Hierarchy:</span>
+                <div className="mt-0.5">
+                  {(() => {
+                    const hierarchyLabels: Record<string, string> = {
+                      '1': 'Parent activity',
+                      '2': 'Child activity',
+                      '3': 'Grandchild activity'
+                    };
+                    const hierarchyName = hierarchyLabels[activity.hierarchy] || (activity.hierarchyName && activity.hierarchyName !== '0' && activity.hierarchyName.trim() !== '' ? activity.hierarchyName : undefined) || `Level ${activity.hierarchy}`;
+                    const result = formatCodeWithName(activity.hierarchy, hierarchyName);
+                    // Double-check: don't render if result would somehow show "0"
+                    return result;
+                  })()}
+                </div>
+              </div>
+            )}
+
+            {activity.status && (
+              <div className="col-span-1">
+                <span className="text-slate-600 font-medium">Status:</span>
+                <div className="mt-0.5">
+                  {(() => {
+                    const statusInfo = getActivityStatusByCode(activity.status);
+                    const statusName = statusInfo?.name || activity.statusNarrative || activity.status;
+                    return formatCodeWithName(activity.status, statusName);
+                  })()}
+                </div>
+              </div>
+            )}
+
+            {activity.endDatePlanned && (
+              <div className="col-span-1">
+                <span className="text-slate-600 font-medium">Planned End:</span>
+                <div className="mt-0.5 text-slate-900">{formatDate(activity.endDatePlanned)}</div>
+              </div>
+            )}
+
+            {activity.endDateActual && (
+              <div className="col-span-1">
+                <span className="text-slate-600 font-medium">Actual End:</span>
+                <div className="mt-0.5 text-slate-900">{formatDate(activity.endDateActual)}</div>
+              </div>
+            )}
+
+            {activity.collaborationType && (
+              <div className="col-span-1">
+                <span className="text-slate-600 font-medium">Collaboration Type:</span>
+                <div className="mt-0.5">
+                  {(() => {
+                    const collabType = getCollaborationTypeByCode(activity.collaborationType);
+                    const collabName = collabType?.name || activity.collaborationTypeName;
+                    return formatCodeWithName(activity.collaborationType, collabName);
+                  })()}
+                </div>
+              </div>
+            )}
+
+            {/* Column 3 */}
+            {activity.totalBudget && (
+              <div className="col-span-1">
+                <span className="text-slate-600 font-medium">Total Value:</span>
+                <div className="mt-0.5 text-slate-900 font-medium">
+                  {formatCurrency(activity.totalBudget, activity.currency)}
+                </div>
+              </div>
+            )}
+
+            {(activity.aidType || activity.financeType || activity.flowType || activity.tiedStatus) && (
+              <div className="col-span-1">
+                <span className="text-slate-600 font-medium">Classifications:</span>
+                <div className="mt-0.5 space-y-1">
+                  {activity.aidType && (
+                    <div>{formatCodeWithName(`C${activity.aidType}`, activity.aidTypeName)}</div>
+                  )}
+                  {activity.financeType && (() => {
+                    const financeTypeData = financeTypesData.find((item: any) => item.code === activity.financeType);
+                    const financeTypeName = financeTypeData?.name || activity.financeTypeName;
+                    return <div>{formatCodeWithName(activity.financeType, financeTypeName)}</div>;
+                  })()}
+                  {activity.flowType && (() => {
+                    const flowTypeData = flowTypesData.find((item: any) => item.code === activity.flowType);
+                    const flowTypeName = flowTypeData?.name || activity.flowTypeName;
+                    return <div>{formatCodeWithName(activity.flowType, flowTypeName)}</div>;
+                  })()}
+                  {activity.tiedStatus && (
+                    <div>{formatCodeWithName(activity.tiedStatus, activity.tiedStatusName)}</div>
+                  )}
+                </div>
               </div>
             )}
           </div>
-
-          {/* Organizations Section */}
-          {(fundingOrgs.length > 0 || implementingOrgs.length > 0 || 
-            accountableOrgs.length > 0 || extendingOrgs.length > 0) && (
-            <div className="space-y-2 pt-2 border-t border-gray-200">
-              {fundingOrgs.length > 0 && (
-                <div className="flex justify-between items-start gap-2">
-                  <span className="text-sm font-medium text-gray-700 flex-shrink-0">Funding</span>
-                  <div className="flex flex-wrap gap-1 justify-end">
-                    {fundingOrgs.map((org: any, idx: number) => (
-                      <Badge key={idx} variant="secondary" className="text-xs">
-                        {org.name}
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
-              )}
-              
-              {implementingOrgs.length > 0 && (
-                <div className="flex justify-between items-start gap-2">
-                  <span className="text-sm font-medium text-gray-700 flex-shrink-0">Implementing</span>
-                  <div className="flex flex-wrap gap-1 justify-end">
-                    {implementingOrgs.map((org: any, idx: number) => (
-                      <Badge key={idx} variant="secondary" className="text-xs">
-                        {org.name}
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
-              )}
-              
-              {accountableOrgs.length > 0 && (
-                <div className="flex justify-between items-start gap-2">
-                  <span className="text-sm font-medium text-gray-700 flex-shrink-0">Accountable</span>
-                  <div className="flex flex-wrap gap-1 justify-end">
-                    {accountableOrgs.map((org: any, idx: number) => (
-                      <Badge key={idx} variant="secondary" className="text-xs">
-                        {org.name}
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
-              )}
-              
-              {extendingOrgs.length > 0 && (
-                <div className="flex justify-between items-start gap-2">
-                  <span className="text-sm font-medium text-gray-700 flex-shrink-0">Extending</span>
-                  <div className="flex flex-wrap gap-1 justify-end">
-                    {extendingOrgs.map((org: any, idx: number) => (
-                      <Badge key={idx} variant="secondary" className="text-xs">
-                        {org.name}
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Expandable Additional Info */}
-          {(activity.sectors?.length > 0 || activity.recipientCountries?.length > 0) && (
-            <div className="pt-2 border-t border-gray-200">
-              <Collapsible open={isExpanded} onOpenChange={setIsExpanded}>
-                <CollapsibleTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="w-full justify-between px-0 hover:bg-transparent h-auto text-sm font-medium text-gray-700"
-                  >
-                    <span>Additional Information</span>
-                    <ChevronDown
-                      className={`h-4 w-4 transition-transform duration-200 ${
-                        isExpanded ? 'transform rotate-180' : ''
-                      }`}
-                    />
-                  </Button>
-                </CollapsibleTrigger>
-                <CollapsibleContent className="space-y-3 pt-3">
-                  {activity.sectors && activity.sectors.length > 0 && (
-                    <div>
-                      <div className="text-sm font-medium text-gray-700 mb-2">Sectors</div>
-                      <div className="flex flex-wrap gap-1.5">
-                        {activity.sectors.map((sector: string, idx: number) => (
-                          <Badge key={idx} variant="outline" className="text-xs font-normal">
-                            {sector}
-                          </Badge>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                  
-                  {activity.recipientCountries && activity.recipientCountries.length > 0 && (
-                    <div>
-                      <div className="text-sm font-medium text-gray-700 mb-2">Recipient Countries</div>
-                      <div className="flex flex-wrap gap-1.5">
-                        {activity.recipientCountries.map((country: string, idx: number) => (
-                          <Badge key={idx} variant="outline" className="text-xs font-normal">
-                            {country}
-                          </Badge>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </CollapsibleContent>
-              </Collapsible>
-            </div>
-          )}
         </div>
-      </div>
+      )}
     </div>
   );
 });
 
 IatiSearchResultCard.displayName = 'IatiSearchResultCard';
 
-export default function XmlImportTab({ activityId }: XmlImportTabProps) {
+export default function IatiImportTab({ activityId }: IatiImportTabProps) {
   // Get user data from useUser hook
   const { user } = useUser();
   
@@ -781,6 +942,16 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
   const [lastImportSummary, setLastImportSummary] = useState<any>(null); // Store import summary for results display
   const [capturedConsoleLogs, setCapturedConsoleLogs] = useState<string[]>([]); // Capture console output during import
   const [orgPreferences, setOrgPreferences] = useState<any>(null); // Organization IATI import preferences
+  
+  // Multi-activity import state
+  const [multiActivityData, setMultiActivityData] = useState<{
+    count: number;
+    activities: ActivityMetadata[];
+    existingMap: Map<string, ExistingActivityInfo>;
+  } | null>(null);
+  const [selectedActivityIndices, setSelectedActivityIndices] = useState<number[]>([]);
+  const [multiActivityImportMode, setMultiActivityImportMode] = useState<'update_current' | 'create_new' | 'bulk_create'>('create_new');
+  const [showActivityPreview, setShowActivityPreview] = useState(false);
   
   // Debug console capture
   const captureConsoleLog = (message: string, ...args: any[]) => {
@@ -1834,6 +2005,50 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
       console.log('[XML Import Debug] Parsing IATI XML with real parser');
       setImportStatus({ stage: 'parsing', progress: 60 });
       const parser = new IATIXMLParser(content);
+      
+      // Multi-activity detection
+      const activityCount = parser.countActivities();
+      console.log(`[Multi-Activity] Detected ${activityCount} activities in XML`);
+      
+      if (activityCount > 1) {
+        console.log('[Multi-Activity] Multiple activities detected, showing preview modal');
+        setImportStatus({ stage: 'parsing', progress: 70 });
+        
+        try {
+          // Parse metadata for all activities
+          const activitiesMetadata = parser.parseAllActivitiesMetadata();
+          console.log('[Multi-Activity] Parsed metadata for all activities:', activitiesMetadata);
+          
+          // Check which exist in database
+          setImportStatus({ stage: 'parsing', progress: 80 });
+          const iatiIds = activitiesMetadata.map(a => a.iatiIdentifier);
+          const existingMap = await checkExistingActivities(iatiIds);
+          console.log('[Multi-Activity] Checked existing activities:', existingMap.size, 'found');
+          
+          // Show preview modal
+          setMultiActivityData({ 
+            count: activityCount, 
+            activities: activitiesMetadata, 
+            existingMap 
+          });
+          setShowActivityPreview(true);
+          setImportStatus({ stage: 'idle', progress: 0 });
+          setIsParsing(false);
+          
+          // Exit early - wait for user selection
+          toast.info(`Found ${activityCount} activities. Please select which ones to import.`);
+          return;
+        } catch (error) {
+          console.error('[Multi-Activity] Error during multi-activity detection:', error);
+          toast.error('Failed to parse multiple activities: ' + (error instanceof Error ? error.message : 'Unknown error'));
+          setImportStatus({ stage: 'idle', progress: 0 });
+          setIsParsing(false);
+          return;
+        }
+      }
+      
+      // Single activity - continue existing flow
+      console.log('[Multi-Activity] Single activity detected, continuing normal flow');
       const parsedActivity = parser.parseActivity();
       
       // Store parsed activity data in state for use by import function
@@ -1885,13 +2100,63 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
         return currentValue !== importValue;
       };
 
-      // Helper function to check if field is allowed by organization preferences
+      // Helper function to map iatiPath to registry field ID
+      // e.g., 'iati-activity/description[@type="1"]/narrative' -> 'iati-activity/description'
+      const mapIatiPathToRegistryId = (iatiPath: string): string => {
+        // Remove specific type selectors and narrative paths to match registry IDs
+        let registryId = iatiPath
+          .replace(/\[@type="\d+"\]/g, '') // Remove [@type="1"] etc
+          .replace(/\/narrative$/g, '') // Remove trailing /narrative
+          .replace(/\/narrative\[@xml:lang="[^"]+"\]$/g, ''); // Remove narrative with lang
+        
+        // Handle special cases
+        if (registryId.includes('activity-date[@type=')) {
+          // Keep the activity-date type selector
+          const match = registryId.match(/activity-date\[@type=([^\]]+)\]/);
+          if (match) {
+            registryId = `iati-activity/activity-date[@type=${match[1]}]`;
+          }
+        }
+        
+        return registryId;
+      };
+
+      // Helper function to get default selected state from organization preferences
+      const getDefaultSelectedFromPreferences = (iatiPath: string, fallbackValue: boolean): boolean => {
+        // If no preferences loaded, use fallback (from shouldSelectField logic)
+        if (!orgPreferences?.fields) return fallbackValue;
+        
+        // Map the iatiPath to registry field ID
+        const registryId = mapIatiPathToRegistryId(iatiPath);
+        
+        // Check if preference exists for this field
+        const preferenceValue = orgPreferences.fields[registryId];
+        
+        // If preference is explicitly set (true or false), use it
+        if (preferenceValue !== undefined) {
+          return preferenceValue === true;
+        }
+        
+        // If no preference found, try the exact iatiPath as fallback
+        const exactPreference = orgPreferences.fields[iatiPath];
+        if (exactPreference !== undefined) {
+          return exactPreference === true;
+        }
+        
+        // Default to fallback value if no preference found
+        return fallbackValue;
+      };
+
+      // Helper function to check if field is allowed by organization preferences (for backward compatibility)
       const isFieldAllowedByPreferences = (iatiPath: string): boolean => {
         // If no preferences loaded, default to allowing all fields
         if (!orgPreferences?.fields) return true;
         
+        // Map the iatiPath to registry field ID
+        const registryId = mapIatiPathToRegistryId(iatiPath);
+        
         // Check if field is explicitly disabled (false)
-        const fieldValue = orgPreferences.fields[iatiPath];
+        const fieldValue = orgPreferences.fields[registryId] ?? orgPreferences.fields[iatiPath];
         return fieldValue !== false;
       };
 
@@ -1965,12 +2230,13 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
           import: parsedActivity.title,
           shouldSelect: shouldSelectField(currentValue, parsedActivity.title)
         });
+        const titleShouldSelect = shouldSelectField(currentValue, parsedActivity.title);
         fields.push({
           fieldName: 'Activity Title',
           iatiPath: 'iati-activity/title/narrative',
           currentValue: currentValue,
           importValue: parsedActivity.title,
-          selected: isFieldAllowedByPreferences('iati-activity/title') && shouldSelectField(currentValue, parsedActivity.title),
+          selected: isFieldAllowedByPreferences('iati-activity/title') && getDefaultSelectedFromPreferences('iati-activity/title/narrative', titleShouldSelect),
           hasConflict: hasConflict(currentValue, parsedActivity.title),
           tab: 'other',
           description: 'Main title/name of the activity'
@@ -1984,12 +2250,13 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
           current: currentValue?.substring(0, 50),
           import: parsedActivity.description?.substring(0, 50)
         });
+        const descShouldSelect = shouldSelectField(currentValue, parsedActivity.description);
         fields.push({
           fieldName: 'Activity Description',
           iatiPath: 'iati-activity/description[@type="1"]/narrative',
           currentValue: currentValue,
           importValue: parsedActivity.description,
-          selected: isFieldAllowedByPreferences('iati-activity/description') && shouldSelectField(currentValue, parsedActivity.description),
+          selected: isFieldAllowedByPreferences('iati-activity/description') && getDefaultSelectedFromPreferences('iati-activity/description[@type="1"]/narrative', descShouldSelect),
           hasConflict: hasConflict(currentValue, parsedActivity.description),
           tab: 'descriptions',
           description: 'General activity description (IATI type="1")'
@@ -2587,7 +2854,8 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
           selected: true,
           hasConflict: false,
           tab: 'documents',
-          description: 'Activity-level document links from XML'
+          description: 'Activity-level document links from XML',
+          documentData: parsedActivity.document_links
         });
       }
 
@@ -2746,15 +3014,15 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
       
       // Always show recipient countries field if there's current data or import data (but only if not filtered out)
       const countryInfo = shouldShowField('recipient-country') && parsedActivity.recipientCountries && parsedActivity.recipientCountries.length > 0
-        ? parsedActivity.recipientCountries.map(c => ({
-            code: c.code,
-            name: `${(() => {
+        ? parsedActivity.recipientCountries.map(c => {
             const countryData = IATI_COUNTRIES.find(country => country.code === c.code);
             const countryName = countryData ? countryData.name : (c.narrative || c.code);
-            return countryName;
-          })()}${c.percentage ? ` (${c.percentage}%)` : ''}`,
-            vocabulary: 'A4 ISO Country'
-          }))
+            return {
+              code: c.code,
+              name: countryName,
+              vocabulary: 'A4 ISO Country'
+            };
+          })
         : null;
       
       const currentCountryInfo = currentActivityData.recipient_countries && currentActivityData.recipient_countries.length > 0
@@ -2764,7 +3032,7 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
             const countryName = countryData ? countryData.name : (c.country?.name || countryCode);
             return {
               code: countryCode,
-              name: `${countryName}${c.percentage ? ` (${c.percentage}%)` : ''}`,
+              name: countryName,
               vocabulary: 'A4 ISO Country'
             };
           })
@@ -3187,46 +3455,12 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
       // === CONDITIONS === (handled once below with structured conditionsData and auto-selected)
       
       // === BUDGETS ===
-      
-      if (parsedActivity.budgets && parsedActivity.budgets.length > 0) {
-        const currentBudgetsValue = 'Check Budgets tab for existing budgets';
-        const budgetsSummary = parsedActivity.budgets.map((b: any) => 
-          `${b.value || 0} ${b.currency || 'USD'} (${b.period?.start || 'N/A'} to ${b.period?.end || 'N/A'})`
-        ).join(', ');
-        
-        fields.push({
-          fieldName: 'Budgets',
-          iatiPath: 'iati-activity/budget',
-          currentValue: currentBudgetsValue,
-          importValue: budgetsSummary,
-          selected: isFieldAllowedByPreferences('iati-activity/budget'),
-          hasConflict: false,
-          tab: 'budgets',
-          description: `${parsedActivity.budgets.length} budget(s) found in XML`,
-          category: 'financial'
-        });
-      }
+      // Individual budget fields are created below (Budget 1, Budget 2, etc.)
+      // No need for a summary field since individual budgets show all details
       
       // === PLANNED DISBURSEMENTS ===
-      
-      if (parsedActivity.plannedDisbursements && parsedActivity.plannedDisbursements.length > 0) {
-        const currentPDValue = 'Check Planned Disbursements tab for existing data';
-        const pdSummary = parsedActivity.plannedDisbursements.map((pd: any) => 
-          `${pd.value || 0} ${pd.currency || 'USD'} (${pd.period?.start || 'N/A'} to ${pd.period?.end || 'N/A'})`
-        ).join(', ');
-        
-        fields.push({
-          fieldName: 'Planned Disbursements',
-          iatiPath: 'iati-activity/planned-disbursement',
-          currentValue: currentPDValue,
-          importValue: pdSummary,
-          selected: isFieldAllowedByPreferences('iati-activity/planned-disbursement'),
-          hasConflict: false,
-          tab: 'planned-disbursements',
-          description: `${parsedActivity.plannedDisbursements.length} planned disbursement(s) found in XML`,
-          category: 'financial'
-        });
-      }
+      // Individual planned disbursement fields are created below (Planned Disbursement 1, Planned Disbursement 2, etc.)
+      // No need for a summary field since individual planned disbursements show all details
       
       // === HUMANITARIAN SCOPE ===
       
@@ -3254,20 +3488,18 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
       
       if (parsedActivity.document_links && parsedActivity.document_links.length > 0) {
         const currentDocsValue = 'Check Documents tab for existing documents';
-        const docsSummary = parsedActivity.document_links.map((doc: any) => 
-          `${doc.title || 'Untitled'} (${doc.category_code || 'No category'})`
-        ).join(', ');
         
         fields.push({
           fieldName: 'Document Links',
           iatiPath: 'iati-activity/document-link',
           currentValue: currentDocsValue,
-          importValue: docsSummary,
+          importValue: parsedActivity.document_links,
           selected: isFieldAllowedByPreferences('iati-activity/document-link'),
           hasConflict: false,
           tab: 'documents',
           description: `${parsedActivity.document_links.length} document link(s) found in XML`,
-          category: 'documents'
+          category: 'documents',
+          documentData: parsedActivity.document_links
         });
       }
       
@@ -3366,7 +3598,7 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
           }
           
         fields.push({
-            fieldName: `Participating Organization: ${orgName}`,
+            fieldName: `Participating Organization ${index + 1}`,
             iatiPath: `iati-activity/participating-org[${index}]`,
           currentValue: currentValue,
             importValue: {
@@ -3408,7 +3640,7 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
         }
 
         const currentConditionsValue = existingConditions.length > 0 
-          ? `${existingConditions.length} condition(s) (Attached: ${existingConditions[0]?.attached ? 'Yes' : 'No'})`
+          ? `${existingConditions.length} condition(s), Attached: ${existingConditions[0]?.attached ? 'Yes' : 'No'}`
           : 'None';
 
         const importConditionsValue = parsedActivity.conditions.conditions.map((cond: any) => {
@@ -3422,7 +3654,7 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
           fieldName: 'Conditions',
           iatiPath: 'iati-activity/conditions',
           currentValue: currentConditionsValue,
-          importValue: `${parsedActivity.conditions.conditions.length} condition(s) (Attached: ${parsedActivity.conditions.attached ? 'Yes' : 'No'})`,
+          importValue: `${parsedActivity.conditions.conditions.length} condition(s), Attached: ${parsedActivity.conditions.attached ? 'Yes' : 'No'}`,
           selected: isFieldAllowedByPreferences('iati-activity/conditions'),
           hasConflict: existingConditions.length > 0,
           tab: 'conditions',
@@ -3446,13 +3678,32 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
         // Get relationship type labels for display
         const { getRelationshipTypeName } = await import('@/data/iati-relationship-types');
         
+        // Fetch existing linked activities to populate currentValue
+        let existingLinkedActivities: any[] = [];
+        if (activityId) {
+          try {
+            const linkedResponse = await fetch(`/api/activities/${activityId}/linked`);
+            if (linkedResponse.ok) {
+              existingLinkedActivities = await linkedResponse.json();
+              console.log(`[XML Import] Found ${existingLinkedActivities.length} existing linked activities`);
+            }
+          } catch (error) {
+            console.warn('[XML Import] Failed to fetch existing linked activities:', error);
+          }
+        }
+        
         parsedActivity.relatedActivities.forEach((relatedActivity: any, index: number) => {
           const relationshipTypeLabel = getRelationshipTypeName(relatedActivity.type);
           
+          // Find matching existing linked activity by IATI identifier
+          const existingLink = existingLinkedActivities.find((link: any) => 
+            link.iatiIdentifier === relatedActivity.ref
+          );
+          
           fields.push({
-            fieldName: `Related Activity: ${relatedActivity.ref}`,
+            fieldName: `Related Activity ${index + 1}`,
             iatiPath: `iati-activity/related-activity[${index}]`,
-            currentValue: null, // Will be checked against existing linked activities during import
+            currentValue: existingLink ? existingLink.iatiIdentifier : null,
             importValue: {
               ref: relatedActivity.ref,
               type: relatedActivity.type,
@@ -3817,14 +4068,14 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
   };
 
   // Helper functions for table component
-  const handleFieldToggle = (field: ParsedField) => {
+  const handleFieldToggle = (field: ParsedField, checked: boolean) => {
     const index = parsedFields.findIndex(f => 
       f.fieldName === field.fieldName && 
       f.iatiPath === field.iatiPath && 
       f.tab === field.tab
     );
     if (index !== -1) {
-      toggleFieldSelection(index);
+      toggleFieldSelection(index, checked);
     }
   };
 
@@ -3860,6 +4111,116 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
       });
       return updated;
     });
+  };
+
+  // Multi-activity import handler
+  const handleMultiActivityImport = async () => {
+    if (!selectedActivityIndices.length || !multiActivityData || !xmlContent) {
+      toast.error('Please select at least one activity');
+      return;
+    }
+
+    console.log('[Multi-Activity Import] Starting import with mode:', multiActivityImportMode);
+    console.log('[Multi-Activity Import] Selected indices:', selectedActivityIndices);
+
+    setShowActivityPreview(false);
+    setImportStatus({ stage: 'importing', progress: 0 });
+    setIsParsing(true);
+
+    try {
+      if (multiActivityImportMode === 'update_current' && selectedActivityIndices.length === 1) {
+        // Parse selected activity and continue with existing import flow
+        console.log('[Multi-Activity Import] Update current mode - parsing activity at index', selectedActivityIndices[0]);
+        
+        const parser = new IATIXMLParser(xmlContent);
+        const parsedActivity = parser.parseActivityByIndex(selectedActivityIndices[0]);
+        setParsedActivity(parsedActivity);
+        
+        console.log('[Multi-Activity Import] Parsed selected activity:', parsedActivity);
+        
+        // Continue with existing field mapping and import flow
+        // This will trigger the normal field selection UI
+        setImportStatus({ stage: 'parsing', progress: 80 });
+        
+        // Re-run the field mapping logic from parseXmlFile
+        // (The code following parseActivity() in parseXmlFile will handle this)
+        setIsParsing(false);
+        toast.success('Activity parsed successfully. Please review and select fields to import.');
+        
+      } else if (multiActivityImportMode === 'create_new' && selectedActivityIndices.length === 1) {
+        // Create a single new activity
+        console.log('[Multi-Activity Import] Create new mode - single activity');
+        
+        const response = await fetch('/api/activities/bulk-import-iati', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            xmlContent,
+            activityIndices: selectedActivityIndices,
+            createNew: true
+          })
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Failed to create activity');
+        }
+
+        const result = await response.json();
+        console.log('[Multi-Activity Import] Create new result:', result);
+        
+        setImportStatus({ stage: 'complete', progress: 100 });
+        toast.success(`Created 1 new activity successfully`);
+        
+        // Optionally redirect to the new activity
+        if (result.activityIds && result.activityIds.length > 0) {
+          setTimeout(() => {
+            window.location.href = `/activities/${result.activityIds[0]}`;
+          }, 1500);
+        }
+        
+      } else if (multiActivityImportMode === 'bulk_create') {
+        // Bulk create multiple activities
+        console.log('[Multi-Activity Import] Bulk create mode - creating', selectedActivityIndices.length, 'activities');
+        
+        const response = await fetch('/api/activities/bulk-import-iati', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            xmlContent,
+            activityIndices: selectedActivityIndices,
+            createNew: true
+          })
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Bulk import failed');
+        }
+
+        const result = await response.json();
+        console.log('[Multi-Activity Import] Bulk create result:', result);
+        
+        setImportStatus({ stage: 'complete', progress: 100 });
+        toast.success(`Created ${result.created || selectedActivityIndices.length} new activities successfully`);
+        
+        // Redirect to activities list
+        setTimeout(() => {
+          window.location.href = '/activities';
+        }, 1500);
+      }
+      
+      // Clear multi-activity state
+      setMultiActivityData(null);
+      setSelectedActivityIndices([]);
+      
+    } catch (error) {
+      console.error('[Multi-Activity Import] Error:', error);
+      toast.error('Import failed: ' + (error instanceof Error ? error.message : 'Unknown error'));
+      setImportStatus({ stage: 'idle', progress: 0 });
+    } finally {
+      setIsParsing(false);
+    }
   };
 
   // Handle sector refinement
@@ -4756,7 +5117,7 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
               if (!updateData.importedParticipatingOrgs) updateData.importedParticipatingOrgs = [];
               updateData.importedParticipatingOrgs.push(field.importValue);
               console.log(`[XML Import] Adding participating organization for import:`, field.importValue);
-            } else if (field.fieldName.startsWith('Related Activity:')) {
+            } else if (field.fieldName.startsWith('Related Activity')) {
               // Collect related activity data for import
               if (!updateData.importedRelatedActivities) updateData.importedRelatedActivities = [];
               updateData.importedRelatedActivities.push(field.importValue);
@@ -4974,6 +5335,29 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
         console.error('[XML Import] API Error response:', errorText);
         throw new Error(`Failed to update activity: ${response.statusText}`);
       }
+
+      // Refresh activity data to ensure subsequent imports use updated default_currency
+      console.log('[XML Import] Refreshing activity data after field updates...');
+      console.log('[XML Import] Current default_currency before refresh:', currentActivityData.default_currency);
+      
+      // Invalidate cache to force fresh fetch
+      await invalidateActivityCache(activityId);
+      
+      const refreshedActivity = await fetchBasicActivityWithCache(activityId);
+      
+      // Create fresh activity data object for immediate use (avoid async state issues)
+      const freshActivityData = {
+        ...currentActivityData,
+        default_currency: refreshedActivity.default_currency || refreshedActivity.defaultCurrency,
+        defaultFinanceType: refreshedActivity.defaultFinanceType,
+        defaultAidType: refreshedActivity.defaultAidType,
+        defaultFlowType: refreshedActivity.defaultFlowType,
+        defaultTiedStatus: refreshedActivity.defaultTiedStatus,
+      };
+      
+      // Update state for UI
+      setCurrentActivityData(freshActivityData);
+      console.log('[XML Import] ✅ Refreshed default_currency:', freshActivityData.default_currency);
 
       // Handle other identifiers import if any
       if (updateData.importedOtherIdentifiers && updateData.importedOtherIdentifiers.length > 0) {
@@ -5596,7 +5980,7 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
                 period_start: budget.period?.start,
                 period_end: budget.period?.end,
                 value: budget.value,
-                currency: budget.currency || currentActivityData?.default_currency || 'USD',
+                currency: budget.currency || freshActivityData?.default_currency || 'USD',
                 value_date: budget.valueDate || budget.period?.start
               };
 
@@ -5619,7 +6003,7 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
                   periodStart: budget.period?.start,
                   periodEnd: budget.period?.end,
                   value: budget.value,
-                  currency: budget.currency || currentActivityData?.default_currency || 'USD',
+                  currency: budget.currency || freshActivityData?.default_currency || 'USD',
                   reason: 'Successfully imported via API'
                 });
                 
@@ -5642,7 +6026,7 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
                   periodStart: budget.period?.start,
                   periodEnd: budget.period?.end,
                   value: budget.value,
-                  currency: budget.currency || currentActivityData?.default_currency || 'USD',
+                  currency: budget.currency || freshActivityData?.default_currency || 'USD',
                   reason: errorText,
                   httpStatus: response.status
                 });
@@ -5669,7 +6053,7 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
                 periodStart: budget.period?.start,
                 periodEnd: budget.period?.end,
                 value: budget.value,
-                currency: budget.currency || currentActivityData?.default_currency || 'USD',
+                currency: budget.currency || freshActivityData?.default_currency || 'USD',
                 reason: `Exception: ${errorMsg}`,
                 exceptionType: 'Network/Parse Error'
               });
@@ -5798,7 +6182,7 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
               
               const disbursementData = {
                 amount: disbursement.value,
-                currency: disbursement.currency || currentActivityData?.default_currency || 'USD',
+                currency: disbursement.currency || freshActivityData?.default_currency || 'USD',
                 period_start: disbursement.period?.start,
                 period_end: disbursement.period?.end,
                 provider_org_id: providerOrgId || null,
@@ -6583,7 +6967,7 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
                 transaction_type: transaction.type,
                 transaction_date: transaction.date,
                 value: transaction.value,
-                currency: transaction.currency || currentActivityData?.default_currency || 'USD',
+                currency: transaction.currency || freshActivityData?.default_currency || 'USD',
                 status: 'actual',
                 description: transaction.description,
                 provider_org_id: providerOrgId || null,
@@ -6634,7 +7018,7 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
                   type: transaction.type,
                   date: transaction.date,
                   value: transaction.value,
-                  currency: transaction.currency || currentActivityData?.default_currency || 'USD',
+                  currency: transaction.currency || freshActivityData?.default_currency || 'USD',
                   description: transaction.description?.substring(0, 100) || 'No description',
                   provider: transaction.providerOrg?.name || 'N/A',
                   receiver: transaction.receiverOrg?.name || 'N/A',
@@ -6663,7 +7047,7 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
                   type: transaction.type,
                   date: transaction.date,
                   value: transaction.value,
-                  currency: transaction.currency || currentActivityData?.default_currency || 'USD',
+                  currency: transaction.currency || freshActivityData?.default_currency || 'USD',
                   reason: errorMsg,
                   httpStatus: apiRes.status
                 });
@@ -6689,7 +7073,7 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
                 type: transaction.type,
                 date: transaction.date,
                 value: transaction.value,
-                currency: transaction.currency || currentActivityData?.default_currency || 'USD',
+                currency: transaction.currency || freshActivityData?.default_currency || 'USD',
                 reason: `Exception: ${errorMsg}`,
                 exceptionType: 'Network/Parse Error'
               });
@@ -7742,7 +8126,7 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
       'policy': 'Policy',
       'finance': 'Finance',
       'results': 'Results',
-      'docs': 'Docs',
+      'documents': 'Documents',
       'links': 'Links'
     };
 
@@ -7775,14 +8159,15 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
       'finances': 'finance',
       'budgets': 'finance',
       'planned_disbursements': 'finance',
+      'planned-disbursements': 'finance',
       'transactions': 'finance',
       'country-budget': 'finance',
       
       // Results - Results
       'results': 'results',
       
-      // Docs - Documents
-      'documents': 'docs',
+      // Documents - Documents
+      'documents': 'documents',
       
       // Links - Linked Activities
       'linked_activities': 'links'
@@ -8141,18 +8526,12 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
               </div>
               <div className="flex items-center gap-1">
                 <span className="text-xs text-gray-500">Name:</span>
-                <span className="text-xs text-gray-600 truncate max-w-32">{field.importValue.name}</span>
+                <span className="text-xs text-gray-600 truncate max-w-32">{field.importValue.name || field.importValue.narrative}</span>
               </div>
               {field.importValue.ref && (
                 <div className="flex items-center gap-1">
                   <span className="text-xs text-gray-500">Ref:</span>
                   <span className="text-xs text-gray-600 truncate max-w-32">{field.importValue.ref}</span>
-                </div>
-              )}
-              {field.importValue.type && (
-                <div className="flex items-center gap-1">
-                  <span className="text-xs text-gray-500">Type:</span>
-                  <span className="text-xs text-gray-600 truncate max-w-32">{field.importValue.type}</span>
                 </div>
               )}
             </div>
@@ -8647,6 +9026,17 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
                     setSnippetContent('');
                   }}
                   className="flex-1"
+                  style={importMethod === 'file' ? { backgroundColor: '#135667' } : {}}
+                  onMouseEnter={(e) => {
+                    if (importMethod === 'file') {
+                      e.currentTarget.style.backgroundColor = '#0f4552';
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (importMethod === 'file') {
+                      e.currentTarget.style.backgroundColor = '#135667';
+                    }
+                  }}
                 >
                   <FileCode className="h-4 w-4 mr-2" />
                   Upload File
@@ -8659,6 +9049,17 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
                     setSnippetContent('');
                   }}
                   className="flex-1"
+                  style={importMethod === 'url' ? { backgroundColor: '#135667' } : {}}
+                  onMouseEnter={(e) => {
+                    if (importMethod === 'url') {
+                      e.currentTarget.style.backgroundColor = '#0f4552';
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (importMethod === 'url') {
+                      e.currentTarget.style.backgroundColor = '#135667';
+                    }
+                  }}
                 >
                   <Globe className="h-4 w-4 mr-2" />
                   From URL
@@ -8670,6 +9071,17 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
                     setXmlUrl('');
                   }}
                   className="flex-1"
+                  style={importMethod === 'snippet' ? { backgroundColor: '#135667' } : {}}
+                  onMouseEnter={(e) => {
+                    if (importMethod === 'snippet') {
+                      e.currentTarget.style.backgroundColor = '#0f4552';
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (importMethod === 'snippet') {
+                      e.currentTarget.style.backgroundColor = '#135667';
+                    }
+                  }}
                 >
                   <ClipboardPaste className="h-4 w-4 mr-2" />
                   Paste Snippet
@@ -8758,6 +9170,17 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
                       onClick={parseXmlFile}
                       disabled={!xmlUrl.trim() || isParsing}
                       className="w-full"
+                      style={{ backgroundColor: '#135667' }}
+                      onMouseEnter={(e) => {
+                        if (!(!xmlUrl.trim() || isParsing)) {
+                          e.currentTarget.style.backgroundColor = '#0f4552';
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (!(!xmlUrl.trim() || isParsing)) {
+                          e.currentTarget.style.backgroundColor = '#135667';
+                        }
+                      }}
                     >
                       {isParsing ? (
                         <>
@@ -8806,6 +9229,17 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
                   disabled={!snippetContent.trim() || isParsing}
                   className="w-full"
                   data-action="parse-xml"
+                  style={{ backgroundColor: '#135667' }}
+                  onMouseEnter={(e) => {
+                    if (!(!snippetContent.trim() || isParsing)) {
+                      e.currentTarget.style.backgroundColor = '#0f4552';
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!(!snippetContent.trim() || isParsing)) {
+                      e.currentTarget.style.backgroundColor = '#135667';
+                    }
+                  }}
                 >
                   {isParsing ? (
                     <>
@@ -8862,7 +9296,7 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
                           <Label htmlFor="iati-title">Activity Title or IATI Identifier *</Label>
                           <Input
                             id="iati-title"
-                            placeholder="e.g., Health Project"
+                            placeholder="e.g., Health Project or 44000-P156634"
                             value={iatiSearchFilters.activityTitle}
                             onChange={(e) => setIatiSearchFilters({ ...iatiSearchFilters, activityTitle: e.target.value })}
                             onKeyPress={(e) => e.key === 'Enter' && handleIatiSearch()}
@@ -9020,43 +9454,18 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
             </CardHeader>
           </Card>
 
-          {/* Tabbed Field Interface */}
+          {/* Single List with Sections */}
           <Card>
             <CardContent className="pt-6">
-              <Tabs value={activeImportTab} onValueChange={setActiveImportTab}>
-                <TabsList className="flex flex-wrap w-full gap-1 h-auto bg-muted/50 p-1">
-                  {organizeFieldsByTabs(parsedFields).map((tabSection) => {
-                    const selectedCount = tabSection.fields.filter(f => f.selected).length;
-                    const totalCount = tabSection.fields.length;
-                    const hasConflicts = tabSection.fields.some(f => f.hasConflict && f.selected);
-                    
-                    return (
-                      <TabsTrigger 
-                        key={tabSection.tabId} 
-                        value={tabSection.tabId}
-                        className="relative flex-shrink-0 min-w-[120px]"
-                      >
-                        <span className="text-xs font-medium">{tabSection.tabName}</span>
-                        {hasConflicts && (
-                          <AlertCircle className="h-3 w-3 text-orange-500 ml-1" />
-                        )}
-                      </TabsTrigger>
-                    );
-                  })}
-                </TabsList>
-
-                {/* Tab Contents */}
-                {organizeFieldsByTabs(parsedFields).map((tabSection) => (
-                  <TabsContent key={tabSection.tabId} value={tabSection.tabId} className="mt-6">
-                    <IatiImportFieldsTable
-                      fields={tabSection.fields}
-                      onFieldToggle={handleFieldToggle}
-                      onSelectAll={() => handleSelectAllInTab(tabSection.fields)}
-                      onDeselectAll={() => handleDeselectAllInTab(tabSection.fields)}
-                    />
-                  </TabsContent>
-                ))}
-              </Tabs>
+              <IatiImportFieldsTable
+                sections={organizeFieldsByTabs(parsedFields).map(tab => ({
+                  sectionName: tab.tabName,
+                  fields: tab.fields
+                }))}
+                onFieldToggle={handleFieldToggle}
+                onSelectAll={() => handleSelectAllInTab(parsedFields)}
+                onDeselectAll={() => handleDeselectAllInTab(parsedFields)}
+              />
             </CardContent>
           </Card>
 
@@ -9631,6 +10040,48 @@ export default function XmlImportTab({ activityId }: XmlImportTabProps) {
           currentActivityId={activityId}
           currentActivityIatiId={currentActivityData.iati_identifier}
         />
+      )}
+
+      {/* Multi-Activity Preview Modal */}
+      {showActivityPreview && multiActivityData && (
+        <Dialog open={showActivityPreview} onOpenChange={setShowActivityPreview}>
+          <DialogContent className="max-w-5xl max-h-[90vh] overflow-hidden flex flex-col">
+            <DialogHeader>
+              <DialogTitle>
+                Multiple Activities Detected ({multiActivityData.count})
+              </DialogTitle>
+              <DialogDescription>
+                Select activities to import. You can import into the current activity or create new ones.
+              </DialogDescription>
+            </DialogHeader>
+            
+            <div className="flex-1 overflow-hidden">
+              <MultiActivityPreview
+                activities={multiActivityData.activities}
+                existingActivities={multiActivityData.existingMap}
+                onActivitySelect={setSelectedActivityIndices}
+                onImportMode={setMultiActivityImportMode}
+                currentActivityId={activityId}
+              />
+            </div>
+            
+            <DialogFooter>
+              <Button variant="outline" onClick={() => {
+                setShowActivityPreview(false);
+                setMultiActivityData(null);
+                setSelectedActivityIndices([]);
+              }}>
+                Cancel
+              </Button>
+              <Button 
+                onClick={handleMultiActivityImport}
+                disabled={selectedActivityIndices.length === 0}
+              >
+                Import Selected ({selectedActivityIndices.length})
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       )}
 
     </div>

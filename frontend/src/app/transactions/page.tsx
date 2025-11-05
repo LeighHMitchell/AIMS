@@ -79,7 +79,11 @@ export default function TransactionsPage() {
   useEffect(() => {
     const saved = localStorage.getItem("transactions-page-limit");
     if (saved) {
-      setPageLimit(Number(saved));
+      const savedLimit = Number(saved);
+      // Don't allow 9999 (show all) - default to 20
+      if (savedLimit !== 9999 && savedLimit > 0) {
+        setPageLimit(savedLimit);
+      }
     }
     
     // Fetch organizations for filter dropdown
@@ -185,6 +189,12 @@ export default function TransactionsPage() {
       return 0;
     });
   }, [transactions?.data, sortField, sortOrder]);
+
+  // Pagination logic
+  const totalTransactions = transactions?.total || 0;
+  const totalPages = Math.ceil(totalTransactions / pageLimit);
+  const startIndex = (currentPage - 1) * pageLimit;
+  const endIndex = Math.min(startIndex + pageLimit, totalTransactions);
 
   const handlePageLimitChange = (newLimit: number) => {
     setPageLimit(newLimit);
@@ -722,12 +732,12 @@ export default function TransactionsPage() {
         )}
 
         {/* Pagination */}
-        {(transactions?.total || 0) > pageLimit && pageLimit !== 9999 && (
+        {!loading && totalTransactions > pageLimit && (
           <Card>
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div className="text-sm text-gray-600">
-                  Showing {Math.min((currentPage - 1) * pageLimit + 1, transactions?.total || 0)} to {Math.min(currentPage * pageLimit, transactions?.total || 0)} of {transactions?.total || 0} transactions
+                  Showing {Math.min(startIndex + 1, totalTransactions)} to {Math.min(endIndex, totalTransactions)} of {totalTransactions} transactions
                 </div>
                 
                 <div className="flex items-center gap-2">
@@ -743,7 +753,10 @@ export default function TransactionsPage() {
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+                    onClick={() => {
+                      const newPage = Math.max(1, currentPage - 1);
+                      setCurrentPage(newPage);
+                    }}
                     disabled={currentPage === 1}
                   >
                     <ChevronLeft className="h-4 w-4" />
@@ -751,8 +764,7 @@ export default function TransactionsPage() {
                   </Button>
                   
                   <div className="flex items-center gap-1">
-                    {Array.from({ length: Math.min(5, Math.ceil((transactions?.total || 0) / pageLimit)) }, (_, i) => {
-                      const totalPages = Math.ceil((transactions?.total || 0) / pageLimit);
+                    {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
                       let pageNum;
                       if (totalPages <= 5) {
                         pageNum = i + 1;
@@ -781,12 +793,11 @@ export default function TransactionsPage() {
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() =>
-                      setCurrentPage((prev) =>
-                        Math.min(Math.ceil((transactions?.total || 0) / pageLimit), prev + 1)
-                      )
-                    }
-                    disabled={currentPage >= Math.ceil((transactions?.total || 0) / pageLimit)}
+                    onClick={() => {
+                      const newPage = Math.min(totalPages, currentPage + 1);
+                      setCurrentPage(newPage);
+                    }}
+                    disabled={currentPage === totalPages}
                   >
                     Next
                     <ChevronRight className="h-4 w-4" />
@@ -794,8 +805,8 @@ export default function TransactionsPage() {
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => setCurrentPage(Math.ceil((transactions?.total || 0) / pageLimit))}
-                    disabled={currentPage >= Math.ceil((transactions?.total || 0) / pageLimit)}
+                    onClick={() => setCurrentPage(totalPages)}
+                    disabled={currentPage === totalPages}
                   >
                     Last
                     <ChevronRight className="h-4 w-4" />

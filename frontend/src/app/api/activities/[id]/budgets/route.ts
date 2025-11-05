@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase';
 import { fixedCurrencyConverter } from '@/lib/currency-converter-fixed';
+import { resolveCurrency, resolveValueDate } from '@/lib/currency-helpers';
 
 export async function GET(
   request: NextRequest,
@@ -99,7 +100,8 @@ export async function POST(
     }
 
     // Validate required fields (using !== undefined for value to allow 0)
-    if (!body.type || !body.status || !body.period_start || !body.period_end || body.value === undefined || body.value === null || !body.currency || !body.value_date) {
+    // Note: currency and value_date are NOT required - they have defaults
+    if (!body.type || !body.status || !body.period_start || !body.period_end || body.value === undefined || body.value === null) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
@@ -117,18 +119,31 @@ export async function POST(
       return NextResponse.json({ error: 'Period start must be before period end' }, { status: 400 });
     }
 
+    // Resolve currency using helper (checks activity → USD)
+    const resolvedCurrency = await resolveCurrency(
+      body.currency,
+      activityId
+    );
+
+    // Resolve value_date (use provided or fallback to period_start)
+    const resolvedValueDate = resolveValueDate(
+      body.value_date,
+      body.period_start
+    );
+
     // Calculate USD value
     let usdValue = null;
-    if (body.currency !== 'USD') {
+    if (resolvedCurrency !== 'USD') {
       try {
         const result = await fixedCurrencyConverter.convertToUSD(
           body.value,
-          body.currency,
-          new Date(body.value_date)
+          resolvedCurrency,
+          new Date(resolvedValueDate)
         );
         usdValue = result.usd_amount;
+        console.log(`[POST /api/activities/[id]/budgets] Converted ${body.value} ${resolvedCurrency} → $${usdValue} USD`);
       } catch (error) {
-        console.error('Error converting to USD:', error);
+        console.error('[POST /api/activities/[id]/budgets] Error converting to USD:', error);
         // Continue without USD value rather than failing
       }
     } else {
@@ -142,8 +157,8 @@ export async function POST(
       period_start: body.period_start,
       period_end: body.period_end,
       value: Number(body.value),
-      currency: body.currency,
-      value_date: body.value_date,
+      currency: resolvedCurrency,
+      value_date: resolvedValueDate,
       usd_value: usdValue,
       budget_lines: body.budget_lines || []
     };

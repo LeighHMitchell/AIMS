@@ -7,6 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Plus, Edit, Trash2, Users, Loader2, ChevronUp, ChevronDown, Building2 } from 'lucide-react';
 import { HelpTextTooltip } from '@/components/ui/help-text-tooltip';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { ParticipatingOrgModal, ParticipatingOrgData } from '@/components/modals/ParticipatingOrgModal';
 import { useParticipatingOrganizations } from '@/hooks/use-participating-organizations';
 import { toast } from 'sonner';
@@ -454,11 +455,28 @@ export default function OrganisationsSection({
                           </Badge>
                         </TableCell>
                         <TableCell>
-                          <span className="text-sm text-gray-600 font-mono bg-gray-100 px-2 py-1 rounded">
-                            {participatingOrg.iati_org_ref || 
-                             participatingOrg.organization?.iati_org_id || 
-                             <span className="text-gray-400">Not set</span>}
-                          </span>
+                          <div className="flex items-center gap-1">
+                            <span className="text-sm text-gray-600 font-mono bg-gray-100 px-2 py-1 rounded">
+                              {participatingOrg.iati_org_ref || 
+                               participatingOrg.organization?.iati_org_id || 
+                               <span className="text-gray-400">Not set</span>}
+                            </span>
+                            {(participatingOrg as any).wasCorrected && (
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <span className="text-yellow-600 cursor-help">⚠️</span>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p>Corrected from misaligned XML import</p>
+                                    {(participatingOrg as any).original_ref && (
+                                      <p className="text-xs mt-1">Original: {(participatingOrg as any).original_ref}</p>
+                                    )}
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                            )}
+                          </div>
                         </TableCell>
                         <TableCell>
                           <span className="text-sm text-gray-600">

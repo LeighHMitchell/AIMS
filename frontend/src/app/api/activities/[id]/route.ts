@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase';
+import { resolveCurrencySync, resolveValueDate } from '@/lib/currency-helpers';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -378,16 +379,30 @@ export async function PATCH(
       
       // Insert new budgets
       if (validBudgets.length > 0) {
-        const budgetsToInsert = validBudgets.map((budget: any) => ({
-          activity_id: id,
-          type: parseInt(budget.type || '1'),
-          status: parseInt(budget.status || '1'),
-          period_start: budget.period.start,
-          period_end: budget.period.end,
-          value: parseFloat(budget.value),
-          currency: budget.currency || body.defaultCurrency || 'USD',
-          value_date: budget.valueDate
-        }));
+        const budgetsToInsert = validBudgets.map((budget: any) => {
+          // Resolve currency: budget.currency → activity.default_currency → 'USD'
+          const resolvedCurrency = resolveCurrencySync(
+            budget.currency,
+            body.defaultCurrency
+          );
+          
+          // Resolve value_date: provided → period_start
+          const resolvedValueDate = resolveValueDate(
+            budget.valueDate,
+            budget.period.start
+          );
+          
+          return {
+            activity_id: id,
+            type: parseInt(budget.type || '1'),
+            status: parseInt(budget.status || '1'),
+            period_start: budget.period.start,
+            period_end: budget.period.end,
+            value: parseFloat(budget.value),
+            currency: resolvedCurrency,
+            value_date: resolvedValueDate
+          };
+        });
         
         console.log('[AIMS API] Inserting budgets:', JSON.stringify(budgetsToInsert, null, 2));
         
@@ -618,14 +633,26 @@ export async function PATCH(
               disbursement.receiverOrg?.receiverActivityId
             );
             
+            // Resolve currency: disbursement.currency → activity.default_currency → 'USD'
+            const resolvedCurrency = resolveCurrencySync(
+              disbursement.currency,
+              body.defaultCurrency
+            );
+            
+            // Resolve value_date: provided → period_start
+            const resolvedValueDate = resolveValueDate(
+              disbursement.valueDate,
+              disbursement.period.start
+            );
+            
             return {
               activity_id: id,
               type: disbursement.type ? String(disbursement.type) : null,
               period_start: disbursement.period.start,
               period_end: disbursement.period.end,
               amount: parseFloat(disbursement.value),
-              currency: disbursement.currency || body.defaultCurrency || 'USD',
-              value_date: disbursement.valueDate,
+              currency: resolvedCurrency,
+              value_date: resolvedValueDate,
               // Link to organization records via foreign keys
               provider_org_id: providerOrgId,
               provider_org_name: disbursement.providerOrg?.name || null,

@@ -9,8 +9,6 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const [isMounted, setIsMounted] = useState(false);
 
-  console.log("[AuthGuard] Render - isLoading:", isLoading, "user:", user);
-
   useEffect(() => {
     setIsMounted(true);
   }, []);

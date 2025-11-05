@@ -22,12 +22,16 @@ interface FinancialSummaryCardsProps {
   budgets?: Budget[];
   // Control whether to show the bar chart on the Total Budgeted card
   showBudgetChart?: boolean;
+  // Control whether to hide the Total Budgeted card
+  hideTotalBudgeted?: boolean;
 }
 
-export function FinancialSummaryCards({ activityId, className, budgets, showBudgetChart = true }: FinancialSummaryCardsProps) {
+export function FinancialSummaryCards({ activityId, className, budgets, showBudgetChart = true, hideTotalBudgeted = false }: FinancialSummaryCardsProps) {
   const [totalBudgeted, setTotalBudgeted] = useState(0);
   const [plannedDisbursements, setPlannedDisbursements] = useState(0);
   const [totalCommitted, setTotalCommitted] = useState(0);
+  const [totalDisbursed, setTotalDisbursed] = useState(0);
+  const [totalExpended, setTotalExpended] = useState(0);
   const [totalDisbursedAndExpended, setTotalDisbursedAndExpended] = useState(0);
   const [hasMissingUsdValues, setHasMissingUsdValues] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
@@ -178,7 +182,7 @@ export function FinancialSummaryCards({ activityId, className, budgets, showBudg
     console.log('[FinancialSummaryCards] Transactions FULL RESPONSE:', { txs, txsError });
     console.log('[FinancialSummaryCards] Transaction columns:', txs?.[0] ? Object.keys(txs[0]) : 'No data');
     console.log('[FinancialSummaryCards] First transaction row data:', txs?.[0]);
-    let committed = 0, disbursed = 0, missingUsd = false;
+    let committed = 0, disbursed = 0, disbursedOnly = 0, expended = 0, missingUsd = false;
     if (!txsError && txs) {
       txs.forEach(t => {
         // VERIFIED: Use the correct USD column for transactions: value_usd (with fallbacks for schema variations)
@@ -199,19 +203,32 @@ export function FinancialSummaryCards({ activityId, className, budgets, showBudg
             console.log(`[FinancialSummaryCards] Commitment transaction ${t.id} missing USD value (${t.currency})`);
           }
         }
-        if (t.transaction_type === '3' || t.transaction_type === '4') {
+        if (t.transaction_type === '3') {
           if (usdValue && usdValue > 0) {
+            disbursedOnly += usdValue;
             disbursed += usdValue;
           } else if (t.currency !== 'USD') {
             // Only mark as missing USD if it's not a USD transaction
             missingUsd = true;
-            console.log(`[FinancialSummaryCards] Disbursement/Expenditure transaction ${t.id} missing USD value (${t.currency})`);
+            console.log(`[FinancialSummaryCards] Disbursement transaction ${t.id} missing USD value (${t.currency})`);
+          }
+        }
+        if (t.transaction_type === '4') {
+          if (usdValue && usdValue > 0) {
+            expended += usdValue;
+            disbursed += usdValue;
+          } else if (t.currency !== 'USD') {
+            // Only mark as missing USD if it's not a USD transaction
+            missingUsd = true;
+            console.log(`[FinancialSummaryCards] Expenditure transaction ${t.id} missing USD value (${t.currency})`);
           }
         }
       });
     }
-    console.log('[FinancialSummaryCards] Setting committed to:', committed, 'disbursed to:', disbursed);
+    console.log('[FinancialSummaryCards] Setting committed to:', committed, 'disbursedOnly to:', disbursedOnly, 'expended to:', expended, 'disbursed to:', disbursed);
     setTotalCommitted(committed);
+    setTotalDisbursed(disbursedOnly);
+    setTotalExpended(expended);
     setTotalDisbursedAndExpended(disbursed);
     setHasMissingUsdValues(missingUsd);
   }, [activityId]);
@@ -278,34 +295,34 @@ export function FinancialSummaryCards({ activityId, className, budgets, showBudg
     };
   }, [activityId, isInitialized, fetchFinancials]);
 
-  console.log('[FinancialSummaryCards] Rendering with state:', { totalBudgeted, plannedDisbursements, totalCommitted, totalDisbursedAndExpended });
+  console.log('[FinancialSummaryCards] Rendering with state:', { totalBudgeted, plannedDisbursements, totalCommitted, totalDisbursed, totalExpended, totalDisbursedAndExpended });
   console.log('[FinancialSummaryCards] Raw values being passed to HeroCards:', {
     totalBudgeted: totalBudgeted,
     plannedDisbursements: plannedDisbursements, 
     totalCommitted: totalCommitted,
+    totalDisbursed: totalDisbursed,
+    totalExpended: totalExpended,
     totalDisbursedAndExpended: totalDisbursedAndExpended,
     activityId: activityId
   });
 
   return (
     <div className={cn("grid gap-4 md:grid-cols-2 lg:grid-cols-4", className)}>
-      <HeroCard
-        title="Total Budgeted"
-        subtitle="Planned budget for the full activity lifecycle"
-        staticValue={totalBudgeted}
-        currency="USD"
-        animate={false}
-        budgetsByYear={budgetsByYear}
-        showChart={showBudgetChart}
-      />
-      
-      <HeroCard
-        title="Total Planned Disb."
-        subtitle="Future disbursements scheduled but not yet made"
-        staticValue={plannedDisbursements}
-        currency="USD"
-        animate={false}
-      />
+      {!hideTotalBudgeted && (
+        <HeroCard
+          title="Total Budgeted"
+          subtitle="Planned budget for the full activity lifecycle"
+          staticValue={totalBudgeted}
+          currency="USD"
+          animate={false}
+          budgetsByYear={budgetsByYear}
+          showChart={showBudgetChart}
+          secondaryValues={[
+            { value: totalDisbursed, label: "Total Disbursed" },
+            { value: totalExpended, label: "Total Expended" }
+          ]}
+        />
+      )}
       
       <HeroCard
         title="Total Disbursed & Expended"

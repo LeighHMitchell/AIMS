@@ -204,7 +204,6 @@ export default function ActivityBudgetsTab({
   const [copySourceBudget, setCopySourceBudget] = useState<ActivityBudget | null>(null);
   const [copyPeriodStart, setCopyPeriodStart] = useState('');
   const [copyPeriodEnd, setCopyPeriodEnd] = useState('');
-  const [copyOverlapWarning, setCopyOverlapWarning] = useState<string | null>(null);
 
   // Modal state for budget creation/editing
   const [showModal, setShowModal] = useState(false);
@@ -228,6 +227,15 @@ export default function ActivityBudgetsTab({
 
   // Expandable rows state
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
+
+  // Filter state
+  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [typeFilter, setTypeFilter] = useState<string>('all');
+
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [statusFilter, typeFilter]);
 
   // Expand all rows on current page
   const expandAllRows = () => {
@@ -259,11 +267,25 @@ export default function ActivityBudgetsTab({
     }
   }, [sortColumn]);
 
-  // Sorted budgets
+  // Filtered and sorted budgets
   const sortedBudgets = useMemo(() => {
-    if (!sortColumn) return budgets;
+    // Apply filters first
+    let filtered = [...budgets];
+    
+    if (statusFilter !== 'all') {
+      const statusValue = statusFilter === 'indicative' ? 1 : 2;
+      filtered = filtered.filter(b => b.status === statusValue);
+    }
+    
+    if (typeFilter !== 'all') {
+      const typeValue = typeFilter === 'original' ? 1 : 2;
+      filtered = filtered.filter(b => b.type === typeValue);
+    }
 
-    const sorted = [...budgets].sort((a, b) => {
+    // Then apply sorting
+    if (!sortColumn) return filtered;
+
+    const sorted = filtered.sort((a, b) => {
       let aValue: any;
       let bValue: any;
 
@@ -301,7 +323,7 @@ export default function ActivityBudgetsTab({
     });
 
     return sorted;
-  }, [budgets, sortColumn, sortDirection]);
+  }, [budgets, sortColumn, sortDirection, statusFilter, typeFilter]);
 
   // Pagination logic
   const totalPages = useMemo(() => 
@@ -372,7 +394,7 @@ export default function ActivityBudgetsTab({
     async function convertAll() {
       const newUsdValues: Record<string, { usd: number|null, rate: number|null, date: string, loading: boolean, error?: string }> = {};
       for (const budget of paginatedBudgets) {
-        if (!budget.value || !budget.currency || !budget.value_date) {
+        if (budget.value === null || budget.value === undefined || isNaN(budget.value) || !budget.currency || !budget.value_date) {
           newUsdValues[budget.id || `${budget.period_start}-${budget.period_end}`] = { usd: null, rate: null, date: budget.value_date, loading: false, error: 'Missing data' };
           continue;
         }
@@ -492,37 +514,15 @@ export default function ActivityBudgetsTab({
     return { aggregatedData, cumulativeData };
   }, [budgets, aggregationMode]);
 
-  // Validation helper - now only blocks critical errors, allows overlaps
+  // Validation helper - only blocks critical errors
   function validateBudget(budget: ActivityBudget, allBudgets: ActivityBudget[]) {
     if (!budget.activity_id || !budget.type || !budget.status || !budget.period_start || !budget.period_end || !budget.value_date || !budget.currency) {
       return 'Missing required fields';
     }
-    // Overlaps are now allowed - we just show warnings instead
+    // Overlapping budget periods are allowed
     return null;
   }
 
-  // Check for overlaps and return warning info
-  function checkBudgetOverlap(budget: ActivityBudget, allBudgets: ActivityBudget[]): ActivityBudget[] | null {
-    const budgetStart = parseISO(budget.period_start);
-    const budgetEnd = parseISO(budget.period_end);
-    
-    const overlappingBudgets = allBudgets.filter(b => {
-      // Skip if it's the same budget (comparing by ID or by reference)
-      if (b === budget || (budget.id && b.id === budget.id)) return false;
-      
-      const bStart = parseISO(b.period_start);
-      const bEnd = parseISO(b.period_end);
-      
-      // Check if periods overlap
-      return (
-        (budgetStart >= bStart && budgetStart <= bEnd) ||
-        (budgetEnd >= bStart && budgetEnd <= bEnd) ||
-        (budgetStart <= bStart && budgetEnd >= bEnd)
-      );
-    });
-    
-    return overlappingBudgets.length > 0 ? overlappingBudgets : null;
-  }
 
 
 
@@ -748,7 +748,6 @@ export default function ActivityBudgetsTab({
     if (nextPeriod) {
       setCopyPeriodStart(nextPeriod.period_start);
       setCopyPeriodEnd(nextPeriod.period_end);
-      setCopyOverlapWarning(null);
     } else {
       // If no period found, default to 1 year later
       const sourceStart = parseISO(budget.period_start);
@@ -757,44 +756,14 @@ export default function ActivityBudgetsTab({
       const newEnd = addYears(sourceEnd, 1);
       setCopyPeriodStart(format(newStart, 'yyyy-MM-dd'));
       setCopyPeriodEnd(format(newEnd, 'yyyy-MM-dd'));
-      checkCopyOverlap(format(newStart, 'yyyy-MM-dd'), format(newEnd, 'yyyy-MM-dd'));
     }
     setShowCopyDialog(true);
   }, [budgets, findNextAvailablePeriod]);
 
-  // Check for overlaps in copy dialog
-  const checkCopyOverlap = useCallback((startDate: string, endDate: string) => {
-    if (!startDate || !endDate) {
-      setCopyOverlapWarning(null);
-      return;
-    }
-
-    const newStart = parseISO(startDate);
-    const newEnd = parseISO(endDate);
-
-    const conflictingBudget = budgets.find(budget => {
-      const existingStart = parseISO(budget.period_start);
-      const existingEnd = parseISO(budget.period_end);
-      
-      return (
-        (isBefore(newStart, existingEnd) && isAfter(newEnd, existingStart)) ||
-        (isBefore(existingStart, newEnd) && isAfter(existingEnd, newStart))
-      );
-    });
-
-    if (conflictingBudget) {
-      setCopyOverlapWarning(
-        `Period overlaps with existing budget: ${conflictingBudget.period_start} to ${conflictingBudget.period_end}`
-      );
-    } else {
-      setCopyOverlapWarning(null);
-    }
-  }, [budgets]);
 
   // Execute the copy with the adjusted period
   const executeCopy = useCallback(() => {
     if (!copySourceBudget) return;
-    // Note: copyOverlapWarning no longer blocks the copy, it's just informational
 
     const today = formatDateFns(new Date(), 'yyyy-MM-dd');
     // Explicitly set fields to avoid copying unwanted metadata
@@ -838,20 +807,13 @@ export default function ActivityBudgetsTab({
     setCopySourceBudget(null);
     setCopyPeriodStart('');
     setCopyPeriodEnd('');
-    setCopyOverlapWarning(null);
       } catch (error) {
         console.error('Error copying budget:', error);
         toast.error(error instanceof Error ? error.message : 'Failed to copy budget');
       }
     })();
-  }, [copySourceBudget, copyPeriodStart, copyPeriodEnd, copyOverlapWarning, activityId, defaultCurrency]);
+  }, [copySourceBudget, copyPeriodStart, copyPeriodEnd, activityId, defaultCurrency]);
 
-  // Update overlap check when dates change
-  useEffect(() => {
-    if (showCopyDialog && copyPeriodStart && copyPeriodEnd) {
-      checkCopyOverlap(copyPeriodStart, copyPeriodEnd);
-    }
-  }, [copyPeriodStart, copyPeriodEnd, showCopyDialog, checkCopyOverlap]);
 
   // Export budgets to CSV
   const handleExport = useCallback(() => {
@@ -1501,24 +1463,25 @@ export default function ActivityBudgetsTab({
 
   return (
     <div className="space-y-6">
-      {/* Financial Summary Cards - Unified component */}
-      {activityId && !hideSummaryCards && (
-        <FinancialSummaryCards 
-          activityId={activityId} 
-          className="mb-6" 
-          budgets={memoizedBudgetsForSummary}
-          showBudgetChart={false}
-        />
-      )}
-
       {error && (
         <Alert variant="destructive">
           <AlertDescription>{error}</AlertDescription>
         </Alert>
       )}
 
-      {/* Budgets Table */}
-      <Card>
+      <div className="space-y-4">
+          {/* Financial Summary Cards */}
+          {activityId && !hideSummaryCards && (
+            <FinancialSummaryCards 
+              activityId={activityId} 
+              className="mb-6" 
+              budgets={memoizedBudgetsForSummary}
+              showBudgetChart={false}
+            />
+          )}
+          
+          {/* Budgets Table */}
+          <Card data-budgets-tab className="border-0">
         <CardHeader>
           <div className="flex items-center justify-between">
             {!hideSummaryCards && (
@@ -1528,7 +1491,7 @@ export default function ActivityBudgetsTab({
               </div>
             )}
             {hideSummaryCards && <div />}
-            <div className="flex items-center gap-2">
+            <div className={`flex items-center gap-2 ${hideSummaryCards ? 'hidden' : ''}`}>
               {!readOnly && (
                 <>
                   <Button
@@ -1561,14 +1524,57 @@ export default function ActivityBudgetsTab({
                   </Button>
                 </>
               )}
-              {budgets.length > 0 && !loading && (
+              {!hideSummaryCards && budgets.length > 0 && !loading && (
                 <>
+                  <div className="flex items-center gap-2">
+                    <Select value={statusFilter} onValueChange={setStatusFilter}>
+                      <SelectTrigger className="w-[160px] h-9">
+                        <SelectValue placeholder="Status" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Status</SelectItem>
+                        <SelectItem value="indicative">
+                          <span className="flex items-center gap-2">
+                            <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">1</span>
+                            <span>Indicative</span>
+                          </span>
+                        </SelectItem>
+                        <SelectItem value="committed">
+                          <span className="flex items-center gap-2">
+                            <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">2</span>
+                            <span>Committed</span>
+                          </span>
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Select value={typeFilter} onValueChange={setTypeFilter}>
+                      <SelectTrigger className="w-[160px] h-9">
+                        <SelectValue placeholder="Type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Types</SelectItem>
+                        <SelectItem value="original">
+                          <span className="flex items-center gap-2">
+                            <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">1</span>
+                            <span>Original</span>
+                          </span>
+                        </SelectItem>
+                        <SelectItem value="revised">
+                          <span className="flex items-center gap-2">
+                            <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">2</span>
+                            <span>Revised</span>
+                          </span>
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                   {expandedRows.size > 0 ? (
                     <Button 
                       variant="outline" 
                       size="sm" 
                       onClick={collapseAllRows}
                       title="Collapse all expanded rows"
+                      data-collapse-all
                     >
                       <ChevronUp className="h-4 w-4 mr-1" />
                       Collapse All
@@ -1579,12 +1585,13 @@ export default function ActivityBudgetsTab({
                       size="sm" 
                       onClick={expandAllRows}
                       title="Expand all rows"
+                      data-expand-all
                     >
                       <ChevronDown className="h-4 w-4 mr-1" />
                       Expand All
                     </Button>
                   )}
-                  <Button variant="outline" size="sm" onClick={handleExport}>
+                  <Button variant="outline" size="sm" onClick={handleExport} data-export>
                     <Download className="h-4 w-4 mr-1" />
                     Export
                   </Button>
@@ -1592,6 +1599,84 @@ export default function ActivityBudgetsTab({
               )}
             </div>
           </div>
+          {/* Filters for when hideSummaryCards is true - shown between title and buttons */}
+          {hideSummaryCards && budgets.length > 0 && !loading && (
+            <div className="px-6 pb-4 border-b">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Select value={statusFilter} onValueChange={setStatusFilter}>
+                    <SelectTrigger className="w-[160px] h-9">
+                      <SelectValue placeholder="Status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Status</SelectItem>
+                      <SelectItem value="indicative">
+                        <span className="flex items-center gap-2">
+                          <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">1</span>
+                          <span>Indicative</span>
+                        </span>
+                      </SelectItem>
+                      <SelectItem value="committed">
+                        <span className="flex items-center gap-2">
+                          <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">2</span>
+                          <span>Committed</span>
+                        </span>
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Select value={typeFilter} onValueChange={setTypeFilter}>
+                    <SelectTrigger className="w-[160px] h-9">
+                      <SelectValue placeholder="Type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Types</SelectItem>
+                      <SelectItem value="original">
+                        <span className="flex items-center gap-2">
+                          <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">1</span>
+                          <span>Original</span>
+                        </span>
+                      </SelectItem>
+                      <SelectItem value="revised">
+                        <span className="flex items-center gap-2">
+                          <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">2</span>
+                          <span>Revised</span>
+                        </span>
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="flex items-center gap-2">
+                  {expandedRows.size > 0 ? (
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={collapseAllRows}
+                      title="Collapse all expanded rows"
+                      data-collapse-all
+                    >
+                      <ChevronUp className="h-4 w-4 mr-1" />
+                      Collapse All
+                    </Button>
+                  ) : (
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={expandAllRows}
+                      title="Expand all rows"
+                      data-expand-all
+                    >
+                      <ChevronDown className="h-4 w-4 mr-1" />
+                      Expand All
+                    </Button>
+                  )}
+                  <Button variant="outline" size="sm" onClick={handleExport} data-export>
+                    <Download className="h-4 w-4 mr-1" />
+                    Export
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
           {selectedBudgetIds.size > 0 && (
             <div className="flex items-center justify-end mt-4">
               <Button
@@ -1624,7 +1709,6 @@ export default function ActivityBudgetsTab({
               setCopySourceBudget(null);
               setCopyPeriodStart('');
               setCopyPeriodEnd('');
-              setCopyOverlapWarning(null);
             }
           }}>
             <DialogContent>
@@ -1650,54 +1734,27 @@ export default function ActivityBudgetsTab({
                   <div>
                     <Label htmlFor="copy-period-start">
                       Period Start
-                      <UITooltip>
-                        <TooltipTrigger className="ml-1">
-                          <AlertCircle className="h-3 w-3 text-gray-400" />
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>⚠ Budget periods overlap (allowed, but not recommended)</p>
-                        </TooltipContent>
-                      </UITooltip>
                     </Label>
                     <Input
                       id="copy-period-start"
                       type="date"
                       value={copyPeriodStart}
                       onChange={(e) => setCopyPeriodStart(e.target.value)}
-                      className={copyOverlapWarning ? "border-red-500" : ""}
                     />
                   </div>
                   
                   <div>
                     <Label htmlFor="copy-period-end">
                       Period End
-                      <UITooltip>
-                        <TooltipTrigger className="ml-1">
-                          <AlertCircle className="h-3 w-3 text-gray-400" />
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>⚠ Budget periods overlap (allowed, but not recommended)</p>
-                        </TooltipContent>
-                      </UITooltip>
                     </Label>
                     <Input
                       id="copy-period-end"
                       type="date"
                       value={copyPeriodEnd}
                       onChange={(e) => setCopyPeriodEnd(e.target.value)}
-                      className={copyOverlapWarning ? "border-red-500" : ""}
                     />
                   </div>
                 </div>
-                
-                {copyOverlapWarning && (
-                  <Alert className="border-red-200 bg-red-50">
-                    <AlertCircle className="h-4 w-4 text-red-600" />
-                    <AlertDescription className="text-red-800">
-                      {copyOverlapWarning}
-                    </AlertDescription>
-                  </Alert>
-                )}
               </div>
               
               <DialogFooter>
@@ -1709,7 +1766,7 @@ export default function ActivityBudgetsTab({
                 </Button>
                 <Button 
                   onClick={executeCopy}
-                  disabled={!!copyOverlapWarning || !copyPeriodStart || !copyPeriodEnd}
+                  disabled={!copyPeriodStart || !copyPeriodEnd}
                 >
                   Copy Budget
                 </Button>
@@ -1745,24 +1802,14 @@ export default function ActivityBudgetsTab({
                       ) : (
                         <ArrowUpDown className="h-3 w-3 text-gray-400" />
                       )}
-                      <TooltipProvider>
-                        <UITooltip>
-                          <TooltipTrigger>
-                            <AlertCircle className="h-3 w-3 text-gray-400" />
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>⚠ Budget periods overlap (allowed, but not recommended)</p>
-                          </TooltipContent>
-                        </UITooltip>
-                      </TooltipProvider>
                     </div>
                   </TableHead>
                   {[
                     { label: "Status", width: 120, sortKey: "status", align: "left" },
                     { label: "Type", width: 110, sortKey: "type", align: "left" },
-                    { label: "Amount", width: 150, sortKey: "value", align: "right" },
-                    { label: "Value Date", width: 130, sortKey: "value_date", align: "left" },
-                    { label: "USD Value", width: 140, sortKey: "usd_value", align: "right" }
+                    { label: "Amount", width: 160, sortKey: "value", align: "right" },
+                    { label: "Value Date", width: 140, sortKey: "value_date", align: "left" },
+                    { label: "USD Value", width: 150, sortKey: "usd_value", align: "right" }
                   ].map((header, i) => (
                     <TableHead 
                       key={i + 2} 
@@ -1800,8 +1847,6 @@ export default function ActivityBudgetsTab({
                   </TableRow>
                 ) : (
                   paginatedBudgets.map((budget, index) => {
-                    const overlappingBudgets = checkBudgetOverlap(budget, sortedBudgets);
-                    const hasOverlapWarning = overlappingBudgets && overlappingBudgets.length > 0;
                     const budgetId = budget.id || `budget-${index}`;
                     const isExpanded = expandedRows.has(budgetId);
                     
@@ -1810,7 +1855,7 @@ export default function ActivityBudgetsTab({
                     <TableRow 
                       className={cn(
                         "border-b border-border/40 hover:bg-muted/30 transition-colors",
-                        budget.hasError ? 'bg-red-50' : hasOverlapWarning ? 'bg-orange-50/30' : '',
+                        budget.hasError ? 'bg-red-50' : '',
                         selectedBudgetIds.has(budget.id!) && "bg-blue-50 border-blue-200"
                       )}
                     > 
@@ -1850,54 +1895,32 @@ export default function ActivityBudgetsTab({
                           />
                         </TableCell>
                       )}
-                      <TableCell className="py-3 px-4 whitespace-nowrap">
-                        <div className="flex items-center gap-1">
-                          <span className="font-medium">
-                            {format(parseISO(budget.period_start), 'MMM yyyy')} - {format(parseISO(budget.period_end), 'MMM yyyy')}
-                          </span>
-                          {hasOverlapWarning && (
-                            <TooltipProvider>
-                              <UITooltip>
-                                <TooltipTrigger asChild>
-                                  <AlertCircle className="h-3 w-3 text-orange-500 flex-shrink-0" />
-                                </TooltipTrigger>
-                                <TooltipContent className="max-w-xs">
-                                  <div className="text-xs">
-                                    <div className="font-semibold mb-1">⚠️ Period Overlap Warning</div>
-                                    <div className="mb-1">This budget period overlaps with:</div>
-                                    {overlappingBudgets.map((ob, i) => (
-                                      <div key={i} className="text-muted-foreground">
-                                        • {format(parseISO(ob.period_start), 'MMM d, yyyy')} - {format(parseISO(ob.period_end), 'MMM d, yyyy')}
-                                      </div>
-                                    ))}
-                                  </div>
-                                </TooltipContent>
-                              </UITooltip>
-                            </TooltipProvider>
-                          )}
-                        </div>
+                      <TableCell className="py-3 px-4 whitespace-nowrap" style={{ width: '200px' }}>
+                        <span className="font-medium">
+                          {format(parseISO(budget.period_start), 'MMM yyyy')} - {format(parseISO(budget.period_end), 'MMM yyyy')}
+                        </span>
                       </TableCell>
-                      <TableCell className="py-3 px-4 whitespace-nowrap">
+                      <TableCell className="py-3 px-4 whitespace-nowrap" style={{ width: '120px' }}>
                         <span className="rounded-md bg-muted/60 px-2 py-0.5 text-xs">
                           {budget.status === 1 ? 'Indicative' : 'Committed'}
                         </span>
                       </TableCell>
-                      <TableCell className="py-3 px-4 whitespace-nowrap">
+                      <TableCell className="py-3 px-4 whitespace-nowrap" style={{ width: '110px' }}>
                         <span className="rounded-md bg-muted/60 px-2 py-0.5 text-xs">
                           {budget.type === 1 ? 'Original' : 'Revised'}
                         </span>
                       </TableCell>
-                      <TableCell className="py-3 px-4 text-right whitespace-nowrap">
+                      <TableCell className="py-3 px-4 text-right whitespace-nowrap" style={{ width: '160px' }}>
                         <span className="font-medium">
                           <span className="text-muted-foreground">{budget.currency}</span> {budget.value.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                         </span>
                       </TableCell>
-                      <TableCell className="py-3 px-4 whitespace-nowrap">
+                      <TableCell className="py-3 px-4 whitespace-nowrap" style={{ width: '140px' }}>
                         <span>
                           {budget.value_date ? format(parseISO(budget.value_date), 'MMM d, yyyy') : '-'}
                         </span>
                       </TableCell>
-                      <TableCell className="py-3 px-4 text-right whitespace-nowrap">
+                      <TableCell className="py-3 px-4 text-right whitespace-nowrap" style={{ width: '150px' }}>
                         <div className="flex items-center justify-end gap-1">
                         {usdValues[budget.id || `${budget.period_start}-${budget.period_end}`]?.loading ? (
                             <Loader2 className="h-4 w-4 animate-spin text-blue-500" />
@@ -1920,12 +1943,12 @@ export default function ActivityBudgetsTab({
                           </TooltipProvider>
                         ) : (
                           <div className="flex items-center gap-1">
-                            {budget.value === 0 ? (
-                                <AlertCircle className="h-3 w-3 text-orange-500" />
-                            ) : (
+                            {usdValues[budget.id || `${budget.period_start}-${budget.period_end}`]?.error ? (
                               <span className="text-sm text-red-500">
-                                {usdValues[budget.id || `${budget.period_start}-${budget.period_end}`]?.error || '-'}
+                                {usdValues[budget.id || `${budget.period_start}-${budget.period_end}`].error}
                               </span>
+                            ) : (
+                              <span className="text-muted-foreground">—</span>
                             )}
                           </div>
                         )}
@@ -1970,66 +1993,72 @@ export default function ActivityBudgetsTab({
                         <TableCell colSpan={readOnly ? 8 : 9} className="py-4 px-4 relative">
                           {/* CSV Export Button */}
                           <div className="absolute top-4 right-4 z-10">
-                            <UITooltip>
-                              <UITooltipTrigger asChild>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  className="h-8 w-8 p-0"
-                                  onClick={() => handleExportBudget(budget)}
-                                >
-                                  <Download className="h-4 w-4" />
-                                </Button>
-                              </UITooltipTrigger>
-                              <UITooltipContent>
-                                <p>Export to CSV</p>
-                              </UITooltipContent>
-                            </UITooltip>
+                            <TooltipProvider>
+                              <UITooltip>
+                                <TooltipTrigger asChild>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-8 w-8 p-0"
+                                    onClick={() => handleExportBudget(budget)}
+                                  >
+                                    <Download className="h-4 w-4" />
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p>Export to CSV</p>
+                                </TooltipContent>
+                              </UITooltip>
+                            </TooltipProvider>
                           </div>
                           <div className="space-y-4 text-sm">
                             {/* Budget Details */}
                             <div>
                               <h4 className="font-semibold text-xs uppercase text-muted-foreground mb-3">Budget Details</h4>
-                              <div className="grid grid-cols-2 gap-x-12 gap-y-3 ml-4">
-                                <div className="flex items-start gap-2">
-                                  <span className="text-muted-foreground min-w-[160px]">Type:</span>
-                                  <div className="flex items-center gap-2">
-                                    <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded">{budget.type}</span>
-                                    <span className="text-xs">{budget.type === 1 ? 'Original' : 'Revised'}</span>
+                              <div className="ml-4">
+                                <div className="flex flex-wrap gap-x-12 gap-y-3">
+                                  <div className="flex items-start gap-2">
+                                    <span className="text-muted-foreground min-w-[100px]">Type:</span>
+                                    <div className="flex items-center gap-2">
+                                      <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded">{budget.type}</span>
+                                      <span className="text-xs">{budget.type === 1 ? 'Original' : 'Revised'}</span>
+                                    </div>
                                   </div>
-                                </div>
-                                <div className="flex items-start gap-2">
-                                  <span className="text-muted-foreground min-w-[160px]">Status:</span>
-                                  <div className="flex items-center gap-2">
-                                    <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded">{budget.status}</span>
-                                    <span className="text-xs">{budget.status === 1 ? 'Indicative' : 'Committed'}</span>
+                                  <div className="flex items-start gap-2">
+                                    <span className="text-muted-foreground min-w-[100px]">Status:</span>
+                                    <div className="flex items-center gap-2">
+                                      <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded">{budget.status}</span>
+                                      <span className="text-xs">{budget.status === 1 ? 'Indicative' : 'Committed'}</span>
+                                    </div>
                                   </div>
-                                </div>
-                                <div className="flex items-start gap-2">
-                                  <span className="text-muted-foreground min-w-[160px]">USD Value:</span>
-                                  {usdValues[budget.id || `${budget.period_start}-${budget.period_end}`]?.usd != null ? (
-                                    <span className="font-medium"><span className="text-muted-foreground">USD</span> {usdValues[budget.id || `${budget.period_start}-${budget.period_end}`].usd?.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</span>
-                                  ) : (
-                                    <span className="text-gray-400">—</span>
-                                  )}
-                                </div>
-                                <div className="flex items-start gap-2">
-                                  <span className="text-muted-foreground min-w-[160px]">Period Start:</span>
-                                  <span className="font-medium">{format(parseISO(budget.period_start), 'MMM d, yyyy')}</span>
-                                </div>
-                                <div className="flex items-start gap-2">
-                                  <span className="text-muted-foreground min-w-[160px]">Original Value:</span>
-                                  <span className="font-medium">{budget.value?.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {budget.currency}</span>
-                                </div>
-                                <div className="flex items-start gap-2">
-                                  <span className="text-muted-foreground min-w-[160px]">Period End:</span>
-                                  <span className="font-medium">{format(parseISO(budget.period_end), 'MMM d, yyyy')}</span>
-                                </div>
-                                <div className="flex items-start gap-2">
-                                  <span className="text-muted-foreground min-w-[160px]">Value Date:</span>
-                                  <span className="font-medium">
-                                    {budget.value_date ? format(parseISO(budget.value_date), 'MMM d, yyyy') : '—'}
-                                  </span>
+                                  <div className="flex items-start gap-2 ml-auto">
+                                    <span className="text-muted-foreground">USD Value:</span>
+                                    <div className="text-right">
+                                      {usdValues[budget.id || `${budget.period_start}-${budget.period_end}`]?.usd != null ? (
+                                        <span className="font-medium"><span className="text-muted-foreground">USD</span> {usdValues[budget.id || `${budget.period_start}-${budget.period_end}`].usd?.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</span>
+                                      ) : (
+                                        <span className="text-gray-400">—</span>
+                                      )}
+                                    </div>
+                                  </div>
+                                  <div className="flex items-start gap-2">
+                                    <span className="text-muted-foreground min-w-[100px]">Period Start:</span>
+                                    <span className="font-medium">{format(parseISO(budget.period_start), 'MMM d, yyyy')}</span>
+                                  </div>
+                                  <div className="flex items-start gap-2">
+                                    <span className="text-muted-foreground min-w-[100px]">Original Value:</span>
+                                    <span className="font-medium">{budget.value?.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {budget.currency}</span>
+                                  </div>
+                                  <div className="flex items-start gap-2">
+                                    <span className="text-muted-foreground min-w-[100px]">Period End:</span>
+                                    <span className="font-medium">{format(parseISO(budget.period_end), 'MMM d, yyyy')}</span>
+                                  </div>
+                                  <div className="flex items-start gap-2">
+                                    <span className="text-muted-foreground min-w-[100px]">Value Date:</span>
+                                    <span className="font-medium">
+                                      {budget.value_date ? format(parseISO(budget.value_date), 'MMM d, yyyy') : '—'}
+                                    </span>
+                                  </div>
                                 </div>
                               </div>
                             </div>
@@ -2170,53 +2199,8 @@ export default function ActivityBudgetsTab({
         </CardContent>
       </Card>
 
-      {/* Budget Charts */}
-      {budgets.length > 0 && !readOnly && (
-        <>
-          <div className="flex flex-wrap gap-2 items-center mb-4 mt-8">
-            <Button
-              variant={aggregationMode === 'monthly' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setAggregationMode('monthly')}
-            >
-              Monthly
-            </Button>
-            <Button
-              variant={aggregationMode === 'quarterly' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setAggregationMode('quarterly')}
-            >
-              Quarterly
-            </Button>
-            <Button
-              variant={aggregationMode === 'semi-annual' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setAggregationMode('semi-annual')}
-            >
-              Semi-Annual
-            </Button>
-            <Button
-              variant={aggregationMode === 'annual' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setAggregationMode('annual')}
-            >
-              Annual
-            </Button>
-          </div>
-          <div className="w-full">
-            <BudgetLineChart 
-              title="Cumulative Budget"
-              data={chartData.cumulativeData}
-              dataKey="total"
-              color="#64748b"
-              currencyMode={currencyMode}
-              usdValues={usdValues}
-              budgets={budgets}
-              defaultCurrency={defaultCurrency}
-            />
-          </div>
-        </>
-      )}
+      </div>
+
       {/* If not authenticated, show message and disable editing */}
       {!user && !userLoading && (
         <div className="p-4 bg-yellow-50 border border-yellow-200 rounded text-yellow-800 text-center">

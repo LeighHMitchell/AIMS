@@ -47,9 +47,18 @@ import { ProjectPipeline } from '@/components/analytics/ProjectPipeline'
 import { DataHeatmap } from '@/components/analytics/DataHeatmap'
 import { TimelinessChart } from '@/components/analytics/TimelinessChart'
 import { BudgetVsActualChart } from '@/components/analytics/BudgetVsActualChart'
+import { TransactionActivityCalendar } from '@/components/analytics/TransactionActivityCalendar'
 
 // Disbursements by Sector components
 import { DashboardDisbursementsBySection } from '@/components/analytics/DashboardDisbursementsBySection'
+
+// Top 10 charts
+import { Top10TotalFinancialValueChart } from '@/components/analytics/Top10TotalFinancialValueChart'
+import { Top10ActiveProjectsChart } from '@/components/analytics/Top10ActiveProjectsChart'
+import { Top10DisbursementCommitmentRatioChart } from '@/components/analytics/Top10DisbursementCommitmentRatioChart'
+import { Top10GovernmentValidatedChart } from '@/components/analytics/Top10GovernmentValidatedChart'
+import { Top10SectorFocusedChart } from '@/components/analytics/Top10SectorFocusedChart'
+import { ODAByFlowTypeChart } from '@/components/analytics/ODAByFlowTypeChart'
 
 // Charts from analytics page
 import { BudgetVsSpendingChart } from '@/components/charts/BudgetVsSpendingChart'
@@ -103,10 +112,10 @@ export default function AnalyticsDashboardPage() {
     completedProjects: 0
   })
   
-  // Filter states
+  // Filter states - Initialize with very wide date range to show all data
   const [dateRange, setDateRange] = useState<DateRange>({
-    from: new Date('2012-01-01'), // Start from earliest transaction
-    to: new Date('2027-12-31')    // Go to latest transaction
+    from: new Date('1900-01-01'), // Start from earliest possible date
+    to: new Date('2099-12-31')    // Go to latest possible date
   })
   
   const [selectedCountry, setSelectedCountry] = useState<string>('all')
@@ -625,50 +634,6 @@ export default function AnalyticsDashboardPage() {
                 <Filter className="h-4 w-4" />
                 <span className="text-sm font-medium">Filters:</span>
               </div>
-              
-              {/* Date Range Picker */}
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn(
-                      "h-9 px-3 text-sm justify-start text-left font-normal bg-slate-100 border-slate-200 text-slate-800 hover:bg-slate-200",
-                      !dateRange && "text-muted-foreground"
-                    )}
-                  >
-                    <CalendarIcon className="mr-2 h-3 w-3" />
-                    {dateRange?.from ? (
-                      dateRange.to ? (
-                        <>
-                          {format(dateRange.from, "MMM d")} -{" "}
-                          {format(dateRange.to, "MMM d, y")}
-                        </>
-                      ) : (
-                        format(dateRange.from, "MMM d, y")
-                      )
-                    ) : (
-                      <span>Date range</span>
-                    )}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    initialFocus
-                    mode="range"
-                    defaultMonth={dateRange?.from}
-                    selected={{
-                      from: dateRange.from,
-                      to: dateRange.to
-                    }}
-                    onSelect={(range) => {
-                      if (range?.from && range?.to) {
-                        setDateRange({ from: range.from, to: range.to })
-                      }
-                    }}
-                    numberOfMonths={2}
-                  />
-                </PopoverContent>
-              </Popover>
 
               {/* Country Selector */}
               <Select value={selectedCountry} onValueChange={setSelectedCountry} disabled={loadingFilters}>
@@ -744,7 +709,7 @@ export default function AnalyticsDashboardPage() {
         {/* Main Dashboard Content with Tabs */}
         <div className="max-w-7xl mx-auto p-6">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-            <TabsList className="grid w-full grid-cols-6 max-w-4xl">
+            <TabsList className="grid w-full grid-cols-7 max-w-5xl">
               <TabsTrigger value="overview" className="flex items-center gap-2">
                 <BarChart3 className="h-4 w-4" />
                 Overview
@@ -764,6 +729,10 @@ export default function AnalyticsDashboardPage() {
               <TabsTrigger value="aid-flow" className="flex items-center gap-2">
                 <Network className="h-4 w-4" />
                 Aid Flow Map
+              </TabsTrigger>
+              <TabsTrigger value="top-10" className="flex items-center gap-2">
+                <Target className="h-4 w-4" />
+                Top 10
               </TabsTrigger>
               <TabsTrigger value="data-quality" className="flex items-center gap-2">
                 <CheckCircle2 className="h-4 w-4" />
@@ -1215,6 +1184,28 @@ export default function AnalyticsDashboardPage() {
                 </CardContent>
               </Card>
 
+              {/* ODA by Flow Type Chart */}
+              <Card className="bg-white border-slate-200">
+                <CardHeader>
+                  <CardTitle className="text-lg font-medium text-slate-700">
+                    ODA by Flow Type
+                  </CardTitle>
+                  <CardDescription>
+                    Composition of Official Development Assistance (ODA) flows by type of financial flow
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <ODAByFlowTypeChart 
+                    dateRange={dateRange}
+                    filters={{ 
+                      country: selectedCountry !== 'all' ? selectedCountry : undefined, 
+                      sector: selectedSector !== 'all' ? selectedSector : undefined 
+                    }}
+                    refreshKey={refreshKey}
+                  />
+                </CardContent>
+              </Card>
+
               {/* Project Pipeline Table */}
               <Card className="bg-white border-slate-200">
                 <CardHeader>
@@ -1240,6 +1231,17 @@ export default function AnalyticsDashboardPage() {
 
               {/* Disbursements by Sector Analysis */}
               <DashboardDisbursementsBySection
+                dateRange={dateRange}
+                filters={{ 
+                  country: selectedCountry !== 'all' ? selectedCountry : undefined, 
+                  donor: selectedDonor !== 'all' ? selectedDonor : undefined, 
+                  sector: selectedSector !== 'all' ? selectedSector : undefined 
+                }}
+                refreshKey={refreshKey}
+              />
+
+              {/* Transaction Activity Calendar */}
+              <TransactionActivityCalendar
                 dateRange={dateRange}
                 filters={{ 
                   country: selectedCountry !== 'all' ? selectedCountry : undefined, 
@@ -1305,6 +1307,118 @@ export default function AnalyticsDashboardPage() {
               />
 
 
+            </TabsContent>
+
+            {/* Top 10 Tab */}
+            <TabsContent value="top-10" className="space-y-6">
+              {/* Chart 1: Total Financial Value (Default) */}
+              <Card className="bg-white border-slate-200">
+                <CardHeader>
+                  <CardTitle className="text-lg font-medium text-slate-700">
+                    Top 10 Development Partners by Total Disbursements (USD)
+                  </CardTitle>
+                  <CardDescription>
+                    Sum of all commitments and disbursements made by each donor (funding organisation)
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <Top10TotalFinancialValueChart 
+                    dateRange={dateRange}
+                    filters={{ 
+                      country: selectedCountry !== 'all' ? selectedCountry : undefined, 
+                      sector: selectedSector !== 'all' ? selectedSector : undefined 
+                    }}
+                    refreshKey={refreshKey}
+                  />
+                </CardContent>
+              </Card>
+
+              {/* Chart 2: Number of Active Projects */}
+              <Card className="bg-white border-slate-200">
+                <CardHeader>
+                  <CardTitle className="text-lg font-medium text-slate-700">
+                    Top 10 Partners by Number of Active Projects
+                  </CardTitle>
+                  <CardDescription>
+                    Count of activities where the organisation is listed as a funding or implementing partner
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <Top10ActiveProjectsChart 
+                    filters={{ 
+                      country: selectedCountry !== 'all' ? selectedCountry : undefined, 
+                      sector: selectedSector !== 'all' ? selectedSector : undefined 
+                    }}
+                    refreshKey={refreshKey}
+                  />
+                </CardContent>
+              </Card>
+
+              {/* Chart 3: Disbursement-to-Commitment Ratio - Temporarily disabled due to data issue */}
+              {/* <Card className="bg-white border-slate-200">
+                <CardHeader>
+                  <CardTitle className="text-lg font-medium text-slate-700">
+                    Top 10 Partners by Delivery Rate (% of Commitments Disbursed)
+                  </CardTitle>
+                  <CardDescription>
+                    Shows predictability and delivery performance. Higher ratio = donors are delivering what they committed.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <Top10DisbursementCommitmentRatioChart 
+                    dateRange={dateRange}
+                    filters={{ 
+                      country: selectedCountry !== 'all' ? selectedCountry : undefined, 
+                      sector: selectedSector !== 'all' ? selectedSector : undefined 
+                    }}
+                    refreshKey={refreshKey}
+                  />
+                </CardContent>
+              </Card> */}
+
+              {/* Chart 4: Government-Validated Projects */}
+              <Card className="bg-white border-slate-200">
+                <CardHeader>
+                  <CardTitle className="text-lg font-medium text-slate-700">
+                    Top 10 Partners by Value of Government-Validated Projects
+                  </CardTitle>
+                  <CardDescription>
+                    Highlights alignment and mutual accountability. Shows projects that have been validated by the recipient government.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <Top10GovernmentValidatedChart 
+                    dateRange={dateRange}
+                    filters={{ 
+                      country: selectedCountry !== 'all' ? selectedCountry : undefined, 
+                      sector: selectedSector !== 'all' ? selectedSector : undefined 
+                    }}
+                    refreshKey={refreshKey}
+                  />
+                </CardContent>
+              </Card>
+
+              {/* Chart 5: Sector-Focused Ranking */}
+              <Card className="bg-white border-slate-200">
+                <CardHeader>
+                  <CardTitle className="text-lg font-medium text-slate-700">
+                    Top 10 Partners by Total Disbursements {selectedSector !== 'all' ? `(${sectors.find(s => s.code === selectedSector)?.name || selectedSector})` : '(Select a Sector)'}
+                  </CardTitle>
+                  <CardDescription>
+                    Top 10 partners within a specific sector. Used for sectoral coordination groups or working group dashboards.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <Top10SectorFocusedChart 
+                    dateRange={dateRange}
+                    filters={{ 
+                      country: selectedCountry !== 'all' ? selectedCountry : undefined, 
+                      sector: selectedSector !== 'all' ? selectedSector : undefined 
+                    }}
+                    refreshKey={refreshKey}
+                  />
+                </CardContent>
+              </Card>
             </TabsContent>
 
             {/* Data Quality Tab */}

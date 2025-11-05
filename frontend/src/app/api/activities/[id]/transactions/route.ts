@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase';
 import { convertTransactionToUSD, addUSDFieldsToTransaction } from '@/lib/transaction-usd-helper';
+import { resolveCurrency, resolveValueDate } from '@/lib/currency-helpers';
 
 export const dynamic = 'force-dynamic';
 
@@ -188,19 +189,32 @@ export async function POST(
     
     console.log('[AIMS] POST /api/activities/[id]/transactions - Creating transaction for activity:', activityId);
     
+    // Resolve currency using helper (checks activity → org → USD)
+    const resolvedCurrency = await resolveCurrency(
+      body.currency,
+      activityId,
+      body.provider_org_id
+    );
+    
+    // Resolve value_date (use provided or fallback to transaction_date)
+    const resolvedValueDate = resolveValueDate(
+      body.value_date,
+      body.transaction_date
+    );
+    
     // Prepare transaction data
     const transactionData = {
       activity_id: activityId,
       transaction_type: body.transaction_type,
       transaction_date: body.transaction_date,
       value: parseFloat(body.value) || 0,
-      currency: body.currency || 'USD',
+      currency: resolvedCurrency,
       status: body.status || 'draft',
       description: body.description || null,
       
       // Value date handling - only store if different from transaction_date
-      value_date: body.value_date && body.value_date !== body.transaction_date 
-        ? body.value_date 
+      value_date: resolvedValueDate !== body.transaction_date 
+        ? resolvedValueDate
         : null,
       
       // Transaction reference
@@ -249,11 +263,11 @@ export async function POST(
     };
     
     // Convert to USD following the same pattern as budgets and planned disbursements
-    console.log(`[AIMS] Converting transaction to USD: ${transactionData.value} ${transactionData.currency}`);
+    console.log(`[AIMS] Converting transaction to USD: ${transactionData.value} ${transactionData.currency} (resolved from ${body.currency || 'missing'})`);
     const usdResult = await convertTransactionToUSD(
       transactionData.value,
       transactionData.currency,
-      transactionData.value_date || transactionData.transaction_date
+      resolvedValueDate
     );
 
     if (usdResult.success) {

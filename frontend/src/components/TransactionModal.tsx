@@ -1508,7 +1508,6 @@ export default function TransactionModal({
                     }}
                     placeholder="Select currency"
                     id="currency"
-                    showCodeOnly={true}
                   />
                 </div>
               </div>

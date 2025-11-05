@@ -134,7 +134,7 @@ export function DisbursementChannelSearchableSelect({
                       )}
                     />
                     <div className="flex-1">
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 whitespace-nowrap">
                         <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{option.code}</span>
                         <span className="font-medium text-foreground">{option.name}</span>
                       </div>

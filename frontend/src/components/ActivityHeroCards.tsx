@@ -170,19 +170,15 @@ export const ActivityHeroCards: React.FC<ActivityHeroCardsProps> = ({
             </p>
           </div>
           <div>
-            <p className="text-sm text-blue-600 font-medium">Total Committed</p>
+            <p className="text-sm text-blue-600 font-medium">Total Disbursed</p>
             <p className="text-xl font-semibold text-blue-800">
-              {formatCurrency(financials.totalCommitment)}
+              {formatCurrency(financials.totalDisbursement)}
             </p>
           </div>
           <div>
-            <p className="text-sm text-blue-600 font-medium">Total Spent</p>
+            <p className="text-sm text-blue-600 font-medium">Total Expended</p>
             <p className="text-xl font-semibold text-blue-700">
-              {formatCurrency(financials.totalSpent)}
-            </p>
-            <p className="text-xs text-blue-500">
-              Disbursement: {formatCurrency(financials.totalDisbursement)} | 
-              Expenditure: {formatCurrency(financials.totalExpenditure)}
+              {formatCurrency(financials.totalExpenditure)}
             </p>
           </div>
         </CardContent>

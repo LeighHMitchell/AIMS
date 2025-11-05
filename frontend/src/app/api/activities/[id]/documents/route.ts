@@ -14,12 +14,38 @@ export async function GET(
       return NextResponse.json({ error: 'Database connection failed' }, { status: 500 });
     }
 
-    const activityId = params.id;
+    const activityIdParam = params.id;
 
-    // Query documents directly (bypassing the function for now)
+    // Check if it's a UUID or IATI identifier, and get the actual activity UUID
+    let activityId: string;
+    
+    // UUID format check (basic validation - UUIDs have a specific format)
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(activityIdParam);
+    
+    if (isUuid) {
+      activityId = activityIdParam;
+    } else {
+      // Assume it's an IATI identifier, look up the activity UUID
+      const { data: activity, error: activityError } = await supabase
+        .from('activities')
+        .select('id')
+        .eq('iati_identifier', activityIdParam)
+        .single();
+      
+      if (activityError || !activity) {
+        return NextResponse.json({ error: 'Activity not found' }, { status: 404 });
+      }
+      
+      activityId = activity.id;
+    }
+
+    // Query documents with joined categories
     const { data: documents, error } = await supabase
       .from('activity_documents')
-      .select('*')
+      .select(`
+        *,
+        activity_document_categories(category_code)
+      `)
       .eq('activity_id', activityId)
       .order('created_at', { ascending: false });
 
@@ -29,27 +55,40 @@ export async function GET(
     }
 
     // Transform to IATI DocumentLink format for frontend compatibility
-    const iatiDocuments = documents.map((doc: any) => ({
-      url: doc.url,
-      format: doc.format,
-      title: doc.title || [{ text: doc.file_name || 'Untitled', lang: 'en' }],
-      description: doc.description || [{ text: '', lang: 'en' }],
-      categoryCode: doc.category_code,
-      languageCodes: doc.language_codes || ['en'],
-      documentDate: doc.document_date || undefined,
-      recipientCountries: doc.recipient_countries || [],
-      thumbnailUrl: doc.thumbnail_url,
-      isImage: doc.format?.startsWith('image/') || false,
-      // Metadata for frontend
-      _id: doc.id,
-      _fileName: doc.file_name,
-      _fileSize: doc.file_size,
-      _isExternal: doc.is_external,
-      _createdAt: doc.created_at,
-      _updatedAt: doc.updated_at,
-      _uploadedBy: doc.uploaded_by_email,
-      _uploadedByName: doc.uploaded_by_name,
-    }));
+    const iatiDocuments = documents.map((doc: any) => {
+      // Extract category codes from junction table
+      const categoryCodes = doc.activity_document_categories 
+        ? doc.activity_document_categories.map((cat: any) => cat.category_code)
+        : [];
+      
+      // Fallback to single category_code for backward compatibility
+      const finalCategoryCodes = categoryCodes.length > 0 
+        ? categoryCodes 
+        : (doc.category_code ? [doc.category_code] : []);
+
+      return {
+        url: doc.url,
+        format: doc.format,
+        title: doc.title || [{ text: doc.file_name || 'Untitled', lang: 'en' }],
+        description: doc.description || [{ text: '', lang: 'en' }],
+        categoryCode: doc.category_code, // Keep for backward compatibility
+        categoryCodes: finalCategoryCodes, // New array field
+        languageCodes: doc.language_codes || ['en'],
+        documentDate: doc.document_date || undefined,
+        recipientCountries: doc.recipient_countries || [],
+        thumbnailUrl: doc.thumbnail_url,
+        isImage: doc.format?.startsWith('image/') || false,
+        // Metadata for frontend
+        _id: doc.id,
+        _fileName: doc.file_name,
+        _fileSize: doc.file_size,
+        _isExternal: doc.is_external,
+        _createdAt: doc.created_at,
+        _updatedAt: doc.updated_at,
+        _uploadedBy: doc.uploaded_by_email,
+        _uploadedByName: doc.uploaded_by_name,
+      };
+    });
 
     return NextResponse.json({
       documents: iatiDocuments,
@@ -110,6 +149,13 @@ export async function POST(
       return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
     }
 
+    // Get category codes - support both new array format and legacy single category
+    const categoryCodes = body.categoryCodes && Array.isArray(body.categoryCodes)
+      ? body.categoryCodes
+      : (body.categoryCode ? [body.categoryCode] : ['A01']);
+    
+    const firstCategoryCode = categoryCodes.length > 0 ? categoryCodes[0] : 'A01';
+
     // Prepare document data
     const documentData = {
       activity_id: activityId,
@@ -117,7 +163,7 @@ export async function POST(
       format: body.format,
       title: body.title, // Should be JSONB array of narratives
       description: body.description || [{ text: '', lang: 'en' }],
-      category_code: body.categoryCode,
+      category_code: firstCategoryCode, // For backward compatibility
       language_codes: body.languageCodes || ['en'],
       document_date: body.documentDate || null,
       recipient_countries: body.recipientCountries || [],
@@ -141,13 +187,41 @@ export async function POST(
       return NextResponse.json({ error: 'Failed to save document record' }, { status: 500 });
     }
 
+    // Insert all categories into junction table
+    if (categoryCodes.length > 0) {
+      const categoryData = categoryCodes.map((code: string) => ({
+        document_id: document.id,
+        category_code: code
+      }));
+
+      const { error: categoryError } = await supabase
+        .from('activity_document_categories')
+        .insert(categoryData);
+
+      if (categoryError) {
+        console.error('Error inserting document categories:', categoryError);
+        // Don't fail the whole request, categories are still in main table
+      }
+    }
+
+    // Fetch categories from junction table for response
+    const { data: categoryData } = await supabase
+      .from('activity_document_categories')
+      .select('category_code')
+      .eq('document_id', document.id);
+
+    const responseCategoryCodes = categoryData 
+      ? categoryData.map((cat: any) => cat.category_code)
+      : (document.category_code ? [document.category_code] : []);
+
     // Return the created document in IATI format
     const iatiDocument = {
       url: document.url,
       format: document.format,
       title: document.title,
       description: document.description,
-      categoryCode: document.category_code,
+      categoryCode: document.category_code, // For backward compatibility
+      categoryCodes: responseCategoryCodes, // New array field
       languageCodes: document.language_codes,
       documentDate: document.document_date,
       recipientCountries: document.recipient_countries,
@@ -220,13 +294,26 @@ export async function PUT(
       return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
     }
 
+    // Handle category codes - support both new array format and legacy single category
+    let categoryCodes: string[] | undefined;
+    if (body.categoryCodes !== undefined && Array.isArray(body.categoryCodes)) {
+      categoryCodes = body.categoryCodes;
+    } else if (body.categoryCode !== undefined) {
+      categoryCodes = [body.categoryCode];
+    }
+
     // Prepare update data (only include fields that are provided)
     const updateData: any = {};
     if (body.url !== undefined) updateData.url = body.url;
     if (body.format !== undefined) updateData.format = body.format;
     if (body.title !== undefined) updateData.title = body.title;
     if (body.description !== undefined) updateData.description = body.description;
-    if (body.categoryCode !== undefined) updateData.category_code = body.categoryCode;
+    if (categoryCodes !== undefined) {
+      // Update main table with first category for backward compatibility
+      updateData.category_code = categoryCodes.length > 0 ? categoryCodes[0] : null;
+    } else if (body.categoryCode !== undefined) {
+      updateData.category_code = body.categoryCode;
+    }
     if (body.languageCodes !== undefined) updateData.language_codes = body.languageCodes;
     if (body.documentDate !== undefined) updateData.document_date = body.documentDate;
     if (body.recipientCountries !== undefined) updateData.recipient_countries = body.recipientCountries;
@@ -245,13 +332,49 @@ export async function PUT(
       return NextResponse.json({ error: 'Failed to update document' }, { status: 500 });
     }
 
+    // Update categories in junction table if categoryCodes were provided
+    if (categoryCodes !== undefined) {
+      // Delete existing categories
+      await supabase
+        .from('activity_document_categories')
+        .delete()
+        .eq('document_id', body.documentId);
+
+      // Insert new categories
+      if (categoryCodes.length > 0) {
+        const categoryData = categoryCodes.map((code: string) => ({
+          document_id: body.documentId,
+          category_code: code
+        }));
+
+        const { error: categoryError } = await supabase
+          .from('activity_document_categories')
+          .insert(categoryData);
+
+        if (categoryError) {
+          console.error('Error updating document categories:', categoryError);
+        }
+      }
+    }
+
+    // Fetch categories from junction table for response
+    const { data: categoryData } = await supabase
+      .from('activity_document_categories')
+      .select('category_code')
+      .eq('document_id', body.documentId);
+
+    const responseCategoryCodes = categoryData 
+      ? categoryData.map((cat: any) => cat.category_code)
+      : (document.category_code ? [document.category_code] : []);
+
     // Return updated document in IATI format
     const iatiDocument = {
       url: document.url,
       format: document.format,
       title: document.title,
       description: document.description,
-      categoryCode: document.category_code,
+      categoryCode: document.category_code, // For backward compatibility
+      categoryCodes: responseCategoryCodes, // New array field
       languageCodes: document.language_codes,
       documentDate: document.document_date,
       recipientCountries: document.recipient_countries,

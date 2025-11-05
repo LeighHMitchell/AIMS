@@ -81,7 +81,7 @@ export async function GET(request: NextRequest) {
     }
     
     // Fetch organizations with pagination and all related data in parallel for maximum efficiency
-    const [orgsResult, activitiesResult, contributorsResult, countResult] = await Promise.all([
+    const [orgsResult, activitiesResult, contributorsResult, transactionsResult, countResult] = await Promise.all([
       // Get organizations with pagination
       getSupabaseAdmin()
         .from('organizations')
@@ -101,6 +101,11 @@ export async function GET(request: NextRequest) {
         .select('organization_id, activity_id, contribution_type')
         .in('contribution_type', ['funder', 'implementer', 'funding', 'implementing']),
         
+      // Get all transactions for financial calculations
+      getSupabaseAdmin()
+        .from('transactions')
+        .select('provider_org_id, receiver_org_id, transaction_type, value, currency'),
+        
       // Get total count for pagination metadata
       getSupabaseAdmin()
         .from('organizations')
@@ -110,6 +115,7 @@ export async function GET(request: NextRequest) {
     const { data: organizations, error: orgsError } = orgsResult;
     const { data: activities, error: activitiesError } = activitiesResult;
     const { data: contributors, error: contributorsError } = contributorsResult;
+    const { data: transactions, error: transactionsError } = transactionsResult;
     const { count: totalCount, error: countError } = countResult;
     
     if (orgsError) {
@@ -139,6 +145,8 @@ export async function GET(request: NextRequest) {
     // Create maps for efficient lookups
     const reportingOrgActivityCount = new Map<string, number>();
     const contributingOrgActivityCount = new Map<string, number>();
+    const orgTotalCommitted = new Map<string, number>();
+    const orgTotalDisbursed = new Map<string, number>();
 
     // Count activities where organization is the reporting organization
     if (activities && !activitiesError) {
@@ -173,6 +181,31 @@ export async function GET(request: NextRequest) {
       });
     }
 
+    // Calculate financial totals per organization
+    if (transactions && !transactionsError) {
+      transactions.forEach((transaction: any) => {
+        const value = parseFloat(transaction.value) || 0;
+        
+        // For committed funds: sum outgoing commitments (type '2') where org is provider
+        // Also include incoming commitments (type '1') where org is receiver
+        if (transaction.transaction_type === '2' && transaction.provider_org_id) {
+          // Outgoing commitment - this org is committing funds to others
+          const currentCommitted = orgTotalCommitted.get(transaction.provider_org_id) || 0;
+          orgTotalCommitted.set(transaction.provider_org_id, currentCommitted + value);
+        } else if (transaction.transaction_type === '1' && transaction.receiver_org_id) {
+          // Incoming commitment - this org is receiving committed funds
+          const currentCommitted = orgTotalCommitted.get(transaction.receiver_org_id) || 0;
+          orgTotalCommitted.set(transaction.receiver_org_id, currentCommitted + value);
+        }
+        
+        // For disbursed funds: sum disbursements (type '3') where org is provider
+        if (transaction.transaction_type === '3' && transaction.provider_org_id) {
+          const currentDisbursed = orgTotalDisbursed.get(transaction.provider_org_id) || 0;
+          orgTotalDisbursed.set(transaction.provider_org_id, currentDisbursed + value);
+        }
+      });
+    }
+
     // Process all organizations with calculated statistics
     const enhancedOrganizations = organizations.map((org: any) => {
       const reportingCount = reportingOrgActivityCount.get(org.id) || 0;
@@ -180,14 +213,18 @@ export async function GET(request: NextRequest) {
       
       // Total active projects (avoid double counting if org is both reporting and contributing to same activity)
       const totalActiveProjects = Math.max(reportingCount, contributingCount);
+      
+      // Get financial totals for this organization
+      const totalCommitted = orgTotalCommitted.get(org.id) || 0;
+      const totalDisbursed = orgTotalDisbursed.get(org.id) || 0;
 
       return {
         ...org,
         // Ensure we use the correct Organisation_Type_Code field
         Organisation_Type_Code: org.Organisation_Type_Code || org.type,
         activeProjects: totalActiveProjects,
-        totalBudgeted: 0, // TODO: Implement financial calculations efficiently
-        totalDisbursed: 0, // TODO: Implement financial calculations efficiently
+        totalBudgeted: totalCommitted, // Total committed funds (incoming + outgoing commitments)
+        totalDisbursed: totalDisbursed, // Total disbursed funds
         displayName: org.name && org.acronym ? `${org.name} (${org.acronym})` : org.name,
         derived_category: deriveCategory(org.Organisation_Type_Code || org.type, org.country_represented || org.country || ''),
         // Initialize project status breakdown with active count
@@ -198,7 +235,7 @@ export async function GET(request: NextRequest) {
           cancelled: 0 
         },
         lastProjectActivity: org.updated_at,
-        totalDisbursement: 0
+        totalDisbursement: totalDisbursed
       };
     });
 

@@ -14,7 +14,7 @@ import { useUser } from '@/hooks/useUser';
 import { toast } from 'sonner';
 import { LinkedActivityTitle } from '@/components/ui/linked-activity-title';
 import IatiLinkTab from './IatiLinkTab';
-import XmlImportTab from './XmlImportTab';
+import IatiImportTab from './IatiImportTab';
 import OrganizationsTab from './OrganizationsTab';
 import { ActivityScopeSearchableSelect } from '@/components/forms/ActivityScopeSearchableSelect';
 import { OtherIdentifierTypeSelect } from '@/components/forms/OtherIdentifierTypeSelect';
@@ -926,9 +926,9 @@ export default function EnhancedActivityEditor({ activityId, initialData = {} }:
             />
           </TabsContent>
 
-          {/* XML Import Tab */}
+          {/* IATI Import Tab */}
           <TabsContent value="xml-import" className="space-y-6">
-            <XmlImportTab 
+            <IatiImportTab 
               activityId={activityId}
             />
           </TabsContent>

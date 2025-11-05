@@ -527,6 +527,9 @@ export function EditOrganizationModal({
   // Reset form when organization changes
   useEffect(() => {
     if (organization) {
+      console.log('[EditOrgModal] Received organization:', organization.name);
+      console.log('[EditOrgModal] default_currency from prop:', organization.default_currency);
+      
       setFormData({
         iati_org_id: organization.iati_org_id || '',
         id: organization.id,
@@ -550,8 +553,18 @@ export function EditOrganizationModal({
         social_facebook: organization.social_facebook || '',
         social_linkedin: organization.social_linkedin || '',
         social_instagram: organization.social_instagram || '',
-        social_youtube: organization.social_youtube || ''
+        social_youtube: organization.social_youtube || '',
+        // IATI fields
+        reporting_org_ref: organization.reporting_org_ref || '',
+        reporting_org_type: organization.reporting_org_type || '',
+        reporting_org_name: organization.reporting_org_name || '',
+        reporting_org_secondary_reporter: organization.reporting_org_secondary_reporter || false,
+        last_updated_datetime: organization.last_updated_datetime || undefined,
+        default_currency: organization.default_currency || 'USD',
+        default_language: organization.default_language || 'en'
       })
+      
+      console.log('[EditOrgModal] Set formData.default_currency to:', organization.default_currency || 'USD');
       setValidationErrors([])
     } else {
       setFormData({
@@ -575,7 +588,15 @@ export function EditOrganizationModal({
         social_facebook: '',
         social_linkedin: '',
         social_instagram: '',
-        social_youtube: ''
+        social_youtube: '',
+        // IATI fields
+        reporting_org_ref: '',
+        reporting_org_type: '',
+        reporting_org_name: '',
+        reporting_org_secondary_reporter: false,
+        last_updated_datetime: undefined,
+        default_currency: 'USD',
+        default_language: 'en'
       })
       setValidationErrors([])
     }
@@ -604,10 +625,16 @@ export function EditOrganizationModal({
       formData.country_represented || ''
     )
     
-    const dataToSave = {
+    // Clean up the data before sending
+    const dataToSave: any = {
       ...formData,
       id: organization?.id,
       cooperation_modality: derivedModality
+    }
+    
+    // Remove undefined values and convert to null for timestamp fields
+    if (dataToSave.last_updated_datetime === undefined || dataToSave.last_updated_datetime === '') {
+      delete dataToSave.last_updated_datetime
     }
     
     const errors = validateOrganizationForm(dataToSave)

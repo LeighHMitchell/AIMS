@@ -18,6 +18,7 @@ import {
 import { OrganizationCombobox } from '@/components/ui/organization-combobox';
 import { useOrganizations } from '@/hooks/use-organizations';
 import { toast } from 'sonner';
+import Link from 'next/link';
 
 interface ParticipatingOrganization {
   id: string;
@@ -248,8 +249,20 @@ export default function OrganizationsTab({ activityId }: OrganizationsTabProps) 
                       <Building2 className="h-5 w-5 text-gray-500" />
                       <div>
                         <div className="font-medium text-gray-900">
-                          {org.organization?.name || 'Unknown Organization'}
-                          {org.organization?.acronym && ` (${org.organization.acronym})`}
+                          {org.organization?.name ? (
+                            <Link 
+                              href={`/organizations/${org.organization.id}`}
+                              className="hover:text-gray-700 transition-colors"
+                            >
+                              {org.organization.name}
+                              {org.organization.acronym && ` (${org.organization.acronym})`}
+                            </Link>
+                          ) : (
+                            <>
+                              Unknown Organization
+                              {org.organization?.acronym && ` (${org.organization.acronym})`}
+                            </>
+                          )}
                         </div>
                         {org.organization?.iati_org_id && (
                           <div className="text-xs text-gray-400">

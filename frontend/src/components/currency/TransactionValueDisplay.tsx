@@ -90,15 +90,15 @@ export function TransactionValueDisplay({
         maximumFractionDigits: 0,
       }).format(value);
       
-      // Return format: "EUR 3,000"
-      return `${safeCurrency} ${formattedValue}`;
+      // Return as JSX with gray currency code
+      return <><span className="text-muted-foreground">{safeCurrency}</span> {formattedValue}</>;
     } catch (error) {
       console.warn(`[TransactionValueDisplay] Invalid currency "${currency}", using USD:`, error);
       const formattedValue = new Intl.NumberFormat("en-US", {
         minimumFractionDigits: 0,
         maximumFractionDigits: 0,
       }).format(value);
-      return `USD ${formattedValue}`;
+      return <><span className="text-muted-foreground">USD</span> {formattedValue}</>;
     }
   };
 

@@ -20,14 +20,18 @@ import {
   Shield,
   HelpCircle
 } from "lucide-react"
+import { cn } from "@/lib/utils"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 
 interface SidebarNavProps {
   userRole?: string
   canManageUsers?: boolean
   isLoading?: boolean
+  isCollapsed?: boolean
+  isInitialLoad?: boolean
 }
 
-export function SidebarNav({ userRole, canManageUsers, isLoading }: SidebarNavProps) {
+export function SidebarNav({ userRole, canManageUsers, isLoading, isCollapsed = false, isInitialLoad = false }: SidebarNavProps) {
   const pathname = usePathname()
 
   if (isLoading) {
@@ -35,7 +39,7 @@ export function SidebarNav({ userRole, canManageUsers, isLoading }: SidebarNavPr
       <nav className="px-4 py-6">
         <div className="space-y-2">
           {[1, 2, 3, 4, 5].map((i) => (
-            <div key={i} className="h-10 bg-gray-200 rounded-md animate-pulse" />
+            <div key={i} className={`h-10 bg-gray-200 rounded-md animate-pulse ${isCollapsed ? 'w-12' : 'w-full'}`} />
           ))}
         </div>
       </nav>
@@ -134,30 +138,72 @@ export function SidebarNav({ userRole, canManageUsers, isLoading }: SidebarNavPr
   const filteredNavItems = navItems.filter(item => item.show)
 
   return (
-    <nav className="px-4 py-6">
-      <div className="space-y-1">
-        {filteredNavItems.map((item) => {
-          const isActive = pathname === item.href || (item.href !== '/' && pathname?.startsWith(item.href))
-          const Icon = item.icon
-          
-          return (
-            <Link
-              key={item.name}
-              href={item.href}
-              className={`
-                flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors
-                ${isActive 
-                  ? 'bg-blue-100 text-blue-700 border-r-2 border-blue-600' 
-                  : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
-                }
-              `}
-            >
-              <Icon className="mr-3 h-5 w-5 flex-shrink-0" />
-              {item.name}
-            </Link>
-          )
-        })}
-      </div>
-    </nav>
+    <TooltipProvider delayDuration={100} skipDelayDuration={0}>
+      <nav className="px-4 py-6">
+        <div className="space-y-1">
+          {filteredNavItems.map((item) => {
+            const isActive = pathname === item.href || (item.href !== '/' && pathname?.startsWith(item.href))
+            const Icon = item.icon
+            
+            const linkContent = (
+              <Link
+                href={item.href}
+                className={cn(
+                  "group relative flex items-center py-2 px-3 text-sm font-medium rounded-md",
+                  "transition-colors duration-200",
+                  "hover:bg-gray-100",
+                  isActive
+                    ? "bg-blue-100 text-blue-700 border-r-2 border-blue-600 shadow-sm"
+                    : "text-gray-700 hover:text-gray-900"
+                )}
+              >
+                <Icon 
+                  className={cn(
+                    "flex-shrink-0 h-5 w-5",
+                    isActive && "scale-110 transition-transform duration-200"
+                  )}
+                  style={{
+                    marginRight: isCollapsed ? '0' : '0.75rem',
+                    transition: isInitialLoad ? 'none' : 'margin-right 400ms cubic-bezier(0.4, 0.0, 0.2, 1)'
+                  }}
+                />
+                <span 
+                  className={cn(
+                    "whitespace-nowrap",
+                    isCollapsed 
+                      ? "opacity-0 w-0 overflow-hidden" 
+                      : "opacity-100 w-auto"
+                  )}
+                  style={{
+                    transitionProperty: isInitialLoad ? 'none' : 'opacity, width',
+                    transitionDuration: isCollapsed ? '200ms, 0ms' : '300ms, 0ms',
+                    transitionDelay: isCollapsed ? '0ms, 0ms' : '100ms, 0ms'
+                  }}
+                >
+                  {item.name}
+                </span>
+              </Link>
+            )
+            
+            return (
+              <div key={item.name}>
+                {isCollapsed ? (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      {linkContent}
+                    </TooltipTrigger>
+                    <TooltipContent side="right" className="font-medium">
+                      {item.name}
+                    </TooltipContent>
+                  </Tooltip>
+                ) : (
+                  linkContent
+                )}
+              </div>
+            )
+          })}
+        </div>
+      </nav>
+    </TooltipProvider>
   )
 }

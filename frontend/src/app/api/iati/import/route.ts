@@ -3,6 +3,7 @@ import { getSupabaseAdmin } from '@/lib/supabase';
 import { extractIatiMeta, IatiParseError } from '@/lib/iati/parseMeta';
 import { iatiAnalytics } from '@/lib/analytics';
 import { convertTransactionToUSD, addUSDFieldsToTransaction } from '@/lib/transaction-usd-helper';
+import { resolveCurrencySync, resolveValueDate } from '@/lib/currency-helpers';
 
 export const dynamic = 'force-dynamic';
 
@@ -338,15 +339,41 @@ export async function POST(request: NextRequest) {
               const providerOrgId = (transaction as any).providerOrg ? (orgMap.get((transaction as any).providerOrg) || null) : null;
               const receiverOrgId = (transaction as any).receiverOrg ? (orgMap.get((transaction as any).receiverOrg) || null) : null;
 
+              // Fetch activity default_currency for proper currency resolution
+              let activityDefaultCurrency: string | null = null;
+              try {
+                const { data: activityData } = await getSupabaseAdmin()
+                  .from('activities')
+                  .select('default_currency')
+                  .eq('id', activityId)
+                  .single();
+                activityDefaultCurrency = activityData?.default_currency || null;
+              } catch (err) {
+                console.warn('[IATI Import] Could not fetch activity default_currency:', err);
+              }
+
+              // Resolve currency: transaction.currency → activity.default_currency → USD
+              const resolvedCurrency = resolveCurrencySync(
+                (transaction as any).currency,
+                activityDefaultCurrency
+              );
+
+              // Resolve value_date: provided → transaction_date
+              const transactionDate = (transaction as any).date || new Date().toISOString().split('T')[0];
+              const resolvedValueDate = resolveValueDate(
+                (transaction as any).valueDate,
+                transactionDate
+              );
+
               const transactionData: any = {
                 activity_id: activityId,
                 transaction_type: dbTransactionType,
-                transaction_date: (transaction as any).date || new Date().toISOString().split('T')[0],
+                transaction_date: transactionDate,
                 value: (transaction as any).value,
-                currency: (transaction as any).currency || 'USD',
+                currency: resolvedCurrency,
                 status: 'actual',
                 transaction_reference: isAllowed('iati-activity/transaction') ? ((transaction as any).transactionReference || null) : null,
-                value_date: (transaction as any).valueDate || null,
+                value_date: resolvedValueDate !== transactionDate ? resolvedValueDate : null,
                 description: isAllowed('iati-activity/transaction') ? ((transaction as any).description || null) : null,
                 provider_org_id: providerOrgId,
                 provider_org_type: (transaction as any).providerOrgType || null,
@@ -374,11 +401,11 @@ export async function POST(request: NextRequest) {
               }
 
               // Convert to USD following the same pattern as budgets and planned disbursements
-              console.log(`[IATI Import] Converting transaction to USD: ${transactionData.value} ${transactionData.currency}`);
+              console.log(`[IATI Import] Converting transaction to USD: ${transactionData.value} ${transactionData.currency} (resolved from ${(transaction as any).currency || 'missing'})`);
               const usdResult = await convertTransactionToUSD(
                 transactionData.value,
                 transactionData.currency,
-                transactionData.value_date || transactionData.transaction_date
+                resolvedValueDate
               );
 
               if (usdResult.success) {

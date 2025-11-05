@@ -2,6 +2,20 @@
  * IATI XML Parser for extracting activity data
  */
 
+import { validateAndCorrectParticipatingOrgs } from './iati-participating-org-xml';
+
+export interface ActivityMetadata {
+  index: number;
+  iatiIdentifier: string;
+  title: string;
+  description: string;
+  status: string;
+  plannedDates: { start?: string; end?: string };
+  reportingOrg: { ref: string; name: string };
+  budget: number;
+  transactionCount: number;
+}
+
 interface ParsedActivity {
   // Basic Info
   iatiIdentifier?: string;
@@ -103,12 +117,16 @@ interface ParsedActivity {
   };
   participatingOrgs?: Array<{
     ref?: string;
+    original_ref?: string;
+    validated_ref?: string;
+    wasCorrected?: boolean;
     type?: string;
     role?: string;
     narrative?: string;
     activityId?: string;
     crsChannelCode?: string;
     narrativeLang?: string;
+    narratives?: Array<{ lang: string; text: string }>;
   }>;
   
   // Other Identifiers
@@ -872,7 +890,18 @@ export class IATIXMLParser {
     // Participating Organizations
     const participatingOrgs = activity.querySelectorAll('participating-org');
     if (participatingOrgs.length > 0) {
-      result.participatingOrgs = [];
+      // Step 1: Parse all orgs first
+      const parsedOrgs: Array<{
+        name: string;
+        ref: string | null;
+        role: string;
+        activityId: string | null;
+        type?: string;
+        crsChannelCode?: string;
+        narrativeLang: string;
+        narratives?: Array<{ lang: string; text: string }>;
+      }> = [];
+
       for (let i = 0; i < participatingOrgs.length; i++) {
         const org = participatingOrgs[i];
         
@@ -910,18 +939,45 @@ export class IATIXMLParser {
             narrativeLang = narrativeElements[0].getAttribute('xml:lang') || 'en';
           }
         }
-        
-        result.participatingOrgs.push({
-          ref: org.getAttribute('ref') || undefined,
+
+        parsedOrgs.push({
+          name: primaryNarrative,
+          ref: org.getAttribute('ref') || null,
+          role: org.getAttribute('role') || '4',
+          activityId: org.getAttribute('activity-id') || null,
           type: org.getAttribute('type') || undefined,
-          role: org.getAttribute('role') || undefined,
-          activityId: org.getAttribute('activity-id') || undefined,
           crsChannelCode: org.getAttribute('crs-channel-code') || undefined,
-          narrative: primaryNarrative || undefined,
           narrativeLang: narrativeLang,
           narratives: multilingualNarratives.length > 0 ? multilingualNarratives : undefined,
         });
       }
+
+      // Step 2: Apply validation
+      const validationInput = parsedOrgs.map(org => ({
+        name: org.name,
+        ref: org.ref,
+        role: org.role,
+        activityId: org.activityId
+      }));
+      const validatedOrgs = validateAndCorrectParticipatingOrgs(validationInput);
+
+      // Step 3: Map validated results back
+      result.participatingOrgs = parsedOrgs.map((org, index) => {
+        const validated = validatedOrgs[index];
+        return {
+          ref: validated.validated_ref || undefined, // Use validated_ref for display
+          original_ref: validated.original_ref || undefined,
+          validated_ref: validated.validated_ref || undefined,
+          wasCorrected: validated.wasCorrected,
+          type: org.type,
+          role: org.role,
+          activityId: org.activityId || undefined,
+          crsChannelCode: org.crsChannelCode,
+          narrative: org.name || undefined,
+          narrativeLang: org.narrativeLang,
+          narratives: org.narratives,
+        };
+      });
     }
 
     // === OTHER IDENTIFIERS ===
@@ -1305,6 +1361,15 @@ export class IATIXMLParser {
         const financeType = transaction.querySelector('finance-type');
         const aidType = transaction.querySelector('aid-type');
         const tiedStatus = transaction.querySelector('tied-status');
+
+        // DEBUG: Log value element extraction
+        console.log('[XML Parser DEBUG] Transaction value element:', {
+          exists: !!value,
+          textContent: value?.textContent,
+          currencyAttr: value?.getAttribute('currency'),
+          valueDateAttr: value?.getAttribute('value-date'),
+          allAttributes: value ? Array.from(value.attributes).map((attr: Attr) => ({name: attr.name, value: attr.value})) : []
+        });
 
         const transactionData: any = {
           ref: transaction.getAttribute('ref') || undefined,
@@ -1698,7 +1763,7 @@ export class IATIXMLParser {
         const docLink = activityDocLinks[i];
         const docTitle = docLink.querySelector('title');
         const docDescription = docLink.querySelector('description');
-        const docCategory = docLink.querySelector('category');
+        const docCategories = docLink.querySelectorAll('category');
         const docLanguage = docLink.querySelector('language');
         const docDate = docLink.querySelector('document-date');
         
@@ -1715,12 +1780,25 @@ export class IATIXMLParser {
             fixedUrl = fixedUrl.replace('https:', 'https://');
           }
           
+          // Extract all category codes
+          const categoryCodes: string[] = [];
+          for (let j = 0; j < docCategories.length; j++) {
+            const categoryCode = docCategories[j]?.getAttribute('code');
+            if (categoryCode) {
+              categoryCodes.push(categoryCode);
+            }
+          }
+          
+          // For backward compatibility, also include the first category as category_code
+          const firstCategoryCode = categoryCodes.length > 0 ? categoryCodes[0] : undefined;
+          
           result.document_links.push({
             format: docLink.getAttribute('format') || undefined,
             url: fixedUrl,
             title: this.extractNarrative(docTitle),
             description: this.extractNarrative(docDescription),
-            category_code: docCategory?.getAttribute('code') || undefined,
+            category_code: firstCategoryCode, // Keep for backward compatibility
+            category_codes: categoryCodes.length > 0 ? categoryCodes : undefined, // New field for all categories
             language_code: docLanguage?.getAttribute('code') || 'en',
             document_date: docDate?.getAttribute('iso-date') || undefined
           });
@@ -1754,9 +1832,9 @@ export class IATIXMLParser {
       errors.push('iati-activities element found but no iati-activity children');
     }
 
-    if (singleActivity.length > 1) {
-      errors.push('Multiple iati-activity elements found. This parser only supports single activity files.');
-    }
+    // Multi-activity support: removed old validation that rejected multiple activities
+    // The parser now fully supports multi-activity imports via countActivities(),
+    // parseAllActivitiesMetadata(), and parseActivityByIndex()
 
     // Check for required elements
     const activity = this.xmlDoc.querySelector('iati-activity');
@@ -1801,6 +1879,134 @@ export class IATIXMLParser {
       return {
         error: error instanceof Error ? error.message : 'Unknown parsing error'
       };
+    }
+  }
+
+  /**
+   * Count the number of activities in the XML document
+   * Multi-activity support: detect how many activities exist
+   */
+  public countActivities(): number {
+    if (!this.xmlDoc) return 0;
+    const activities = this.xmlDoc.querySelectorAll('iati-activity');
+    return activities.length;
+  }
+
+  /**
+   * Parse all activities with lightweight metadata for preview
+   * Multi-activity support: extract key fields from all activities
+   */
+  public parseAllActivitiesMetadata(): ActivityMetadata[] {
+    if (!this.xmlDoc) {
+      throw new Error('No XML document loaded');
+    }
+
+    const activities = this.xmlDoc.querySelectorAll('iati-activity');
+    if (activities.length === 0) {
+      throw new Error('No iati-activity elements found in XML');
+    }
+
+    const metadata: ActivityMetadata[] = [];
+
+    activities.forEach((activity, index) => {
+      // IATI Identifier
+      const iatiIdElement = activity.querySelector('iati-identifier');
+      const iatiIdentifier = iatiIdElement?.textContent?.trim() || `unknown-${index}`;
+
+      // Title
+      const titleElement = activity.querySelector('title');
+      const title = this.extractNarrative(titleElement) || 'Untitled Activity';
+
+      // Description
+      const descriptionElement = activity.querySelector('description');
+      const description = this.extractNarrative(descriptionElement) || '';
+
+      // Status
+      const statusAttr = activity.getAttribute('activity-status');
+      const status = statusAttr || '';
+
+      // Planned Dates
+      const plannedStartElement = activity.querySelector('activity-date[type="1"]') || 
+                                   activity.querySelector('activity-date[type="start-planned"]');
+      const plannedEndElement = activity.querySelector('activity-date[type="3"]') || 
+                                 activity.querySelector('activity-date[type="end-planned"]');
+      
+      const plannedDates = {
+        start: plannedStartElement?.getAttribute('iso-date') || undefined,
+        end: plannedEndElement?.getAttribute('iso-date') || undefined,
+      };
+
+      // Reporting Organization
+      const reportingOrgElement = activity.querySelector('reporting-org');
+      const reportingOrg = {
+        ref: reportingOrgElement?.getAttribute('ref') || '',
+        name: this.extractNarrative(reportingOrgElement) || 
+              reportingOrgElement?.getAttribute('ref') || 
+              'Unknown Organization',
+      };
+
+      // Budget (sum of all budget values)
+      const budgetElements = activity.querySelectorAll('budget > value');
+      let budget = 0;
+      budgetElements.forEach(budgetEl => {
+        const value = parseFloat(budgetEl.textContent || '0');
+        if (!isNaN(value)) {
+          budget += value;
+        }
+      });
+
+      // Transaction Count
+      const transactionElements = activity.querySelectorAll('transaction');
+      const transactionCount = transactionElements.length;
+
+      metadata.push({
+        index,
+        iatiIdentifier,
+        title,
+        description,
+        status,
+        plannedDates,
+        reportingOrg,
+        budget,
+        transactionCount,
+      });
+    });
+
+    return metadata;
+  }
+
+  /**
+   * Parse specific activity by index
+   * Multi-activity support: parse full activity data for selected activity
+   */
+  public parseActivityByIndex(index: number): ParsedActivity {
+    if (!this.xmlDoc) {
+      throw new Error('No XML document loaded');
+    }
+
+    const activities = this.xmlDoc.querySelectorAll('iati-activity');
+    if (index < 0 || index >= activities.length) {
+      throw new Error(`Activity index ${index} out of range (0-${activities.length - 1})`);
+    }
+
+    const activity = activities[index];
+    
+    // Create a temporary document with just this activity
+    // This allows us to reuse the existing parseActivity() logic
+    const tempDoc = document.implementation.createDocument(null, 'root', null);
+    const importedActivity = tempDoc.importNode(activity, true);
+    tempDoc.documentElement.appendChild(importedActivity);
+    
+    // Temporarily swap the document
+    const originalDoc = this.xmlDoc;
+    this.xmlDoc = tempDoc;
+    
+    try {
+      const result = this.parseActivity();
+      return result;
+    } finally {
+      // Restore original document
+      this.xmlDoc = originalDoc;
     }
   }
 }

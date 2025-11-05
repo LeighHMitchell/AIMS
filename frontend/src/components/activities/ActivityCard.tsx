@@ -116,14 +116,25 @@ const ActivityCard: React.FC<ActivityCardProps> = ({
   
 
 
-  // Currency formatting utility
+  // Currency formatting utility with compact notation
   const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(value);
+    if (value >= 1000000) {
+      // Format millions with 1 decimal place
+      const millions = value / 1000000;
+      return `$${millions.toFixed(1)}m`;
+    } else if (value >= 1000) {
+      // Format thousands with 1 decimal place
+      const thousands = value / 1000;
+      return `$${thousands.toFixed(1)}k`;
+    } else {
+      // Format regular numbers with no decimals
+      return new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: 'USD',
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0,
+      }).format(value);
+    }
   };
 
   // Export card as JPG
@@ -245,8 +256,8 @@ const ActivityCard: React.FC<ActivityCardProps> = ({
 
       <Link href={`/activities/${activity.id}`} className="block">
         {/* Banner Image */}
-        <div className="relative">
-          {activity.banner ? (
+        {activity.banner && (
+          <div className="relative">
             <img
               src={activity.banner}
               alt={`Banner for ${activity.title}`}
@@ -254,22 +265,15 @@ const ActivityCard: React.FC<ActivityCardProps> = ({
               onError={(e) => {
                 const target = e.target as HTMLImageElement;
                 target.style.display = 'none';
-                const placeholder = document.createElement('div');
-                placeholder.className = 'w-full h-48 bg-gradient-to-br from-gray-400 via-gray-500 to-gray-600';
-                target.parentNode?.appendChild(placeholder);
               }}
             />
-          ) : (
-            <div className="w-full h-48 bg-gradient-to-br from-gray-400 via-gray-500 to-gray-600" />
-          )}
-          {/* Subtle overlay for depth */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent"></div>
-          
-          {/* Activity Icon Overlay - Positioned with offset from right edge and vertically centered between banner and content */}
-          {(activity.icon || true) && (
-            <div className="absolute right-6 bottom-0 translate-y-1/2">
-              <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full border-2 border-white bg-white shadow-md overflow-hidden">
-                {activity.icon && activity.icon.trim() !== '' ? (
+            {/* Subtle overlay for depth */}
+            <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent"></div>
+            
+            {/* Activity Icon Overlay - Positioned with offset from right edge and vertically centered between banner and content */}
+            {activity.icon && activity.icon.trim() !== '' && (
+              <div className="absolute right-6 bottom-0 translate-y-1/2">
+                <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full border-2 border-white bg-white shadow-md overflow-hidden">
                   <img
                     src={activity.icon}
                     alt={`Icon for ${activity.title}`}
@@ -278,25 +282,38 @@ const ActivityCard: React.FC<ActivityCardProps> = ({
                       console.log("Icon failed to load for:", activity.title, "Icon data:", activity.icon?.substring(0, 100));
                       const target = e.target as HTMLImageElement;
                       target.style.display = 'none';
-                      // Show a fallback icon
-                      const fallback = document.createElement('div');
-                      fallback.className = 'w-full h-full bg-red-100 flex items-center justify-center';
-                      fallback.innerHTML = '<span class="text-red-600 font-semibold text-sm">!</span>';
-                      target.parentNode?.appendChild(fallback);
                     }}
                     onLoad={() => {
                       console.log("Icon loaded successfully for:", activity.title);
                     }}
                   />
-                ) : (
-                  <div className="w-full h-full bg-blue-100 flex items-center justify-center">
-                    <span className="text-blue-600 font-semibold text-sm">A</span>
-                  </div>
-                )}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+        {/* Activity Icon Overlay - When there's no banner, show icon below banner area */}
+        {!activity.banner && activity.icon && activity.icon.trim() !== '' && (
+          <div className="relative pt-6">
+            <div className="flex justify-end pr-6 pb-4">
+              <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full border-2 border-white bg-white shadow-md overflow-hidden">
+                <img
+                  src={activity.icon}
+                  alt={`Icon for ${activity.title}`}
+                  className="w-full h-full object-contain"
+                  onError={(e) => {
+                    console.log("Icon failed to load for:", activity.title, "Icon data:", activity.icon?.substring(0, 100));
+                    const target = e.target as HTMLImageElement;
+                    target.style.display = 'none';
+                  }}
+                  onLoad={() => {
+                    console.log("Icon loaded successfully for:", activity.title);
+                  }}
+                />
               </div>
             </div>
-          )}
-        </div>
+          </div>
+        )}
         
         {/* Content */}
         <div className="p-6">

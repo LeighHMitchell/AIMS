@@ -1,6 +1,7 @@
 "use client"
 
 import React from 'react';
+import Link from 'next/link';
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { ActivityContributor } from "@/lib/activity-permissions";
@@ -79,12 +80,24 @@ export function ContributorDisplay({
           <div className="space-y-1">
             {acceptedContributors.map((contributor, index) => (
               <div key={contributor.id} className="flex items-center justify-between text-xs">
-                <span className="font-medium">
-                  {contributor.organizationAcronym && contributor.organizationAcronym.trim() 
-                    ? `${contributor.organizationAcronym} • ${contributor.organizationName}`
-                    : contributor.organizationName
-                  }
-                </span>
+                {contributor.organizationId ? (
+                  <Link 
+                    href={`/organizations/${contributor.organizationId}`}
+                    className="font-medium hover:text-gray-700 transition-colors"
+                  >
+                    {contributor.organizationAcronym && contributor.organizationAcronym.trim() 
+                      ? `${contributor.organizationAcronym} • ${contributor.organizationName}`
+                      : contributor.organizationName
+                    }
+                  </Link>
+                ) : (
+                  <span className="font-medium">
+                    {contributor.organizationAcronym && contributor.organizationAcronym.trim() 
+                      ? `${contributor.organizationAcronym} • ${contributor.organizationName}`
+                      : contributor.organizationName
+                    }
+                  </span>
+                )}
                 <Badge 
                   variant="outline" 
                   className={`ml-2 text-xs ${getRoleBadgeColor(contributor.role)}`}
@@ -105,9 +118,18 @@ export function ContributorDisplay({
         {displayContributors.map((contributor, index) => (
           <React.Fragment key={contributor.id}>
             {index > 0 && ", "}
-            <span className="text-gray-900">
-              {formatOrganizationName(contributor)}
-            </span>
+            {contributor.organizationId ? (
+              <Link 
+                href={`/organizations/${contributor.organizationId}`}
+                className="text-gray-900 hover:text-gray-700 transition-colors"
+              >
+                {formatOrganizationName(contributor)}
+              </Link>
+            ) : (
+              <span className="text-gray-900">
+                {formatOrganizationName(contributor)}
+              </span>
+            )}
             {showRoles && (
               <Badge 
                 variant="outline" 
@@ -153,7 +175,16 @@ export function ContributorDisplayCompact({
     const contributor = acceptedContributors[0];
     return (
       <span className={`text-xs text-muted-foreground ${className}`}>
-        {contributor.organizationAcronym || contributor.organizationName}
+        {contributor.organizationId ? (
+          <Link 
+            href={`/organizations/${contributor.organizationId}`}
+            className="hover:text-gray-700 transition-colors"
+          >
+            {contributor.organizationAcronym || contributor.organizationName}
+          </Link>
+        ) : (
+          contributor.organizationAcronym || contributor.organizationName
+        )}
       </span>
     );
   }
@@ -171,12 +202,24 @@ export function ContributorDisplayCompact({
           <div className="space-y-1">
             {acceptedContributors.map((contributor) => (
               <div key={contributor.id} className="flex items-center justify-between text-xs">
-                <span className="font-medium">
-                  {contributor.organizationAcronym && contributor.organizationAcronym.trim() 
-                    ? `${contributor.organizationAcronym} • ${contributor.organizationName}`
-                    : contributor.organizationName
-                  }
-                </span>
+                {contributor.organizationId ? (
+                  <Link 
+                    href={`/organizations/${contributor.organizationId}`}
+                    className="font-medium hover:text-gray-700 transition-colors"
+                  >
+                    {contributor.organizationAcronym && contributor.organizationAcronym.trim() 
+                      ? `${contributor.organizationAcronym} • ${contributor.organizationName}`
+                      : contributor.organizationName
+                    }
+                  </Link>
+                ) : (
+                  <span className="font-medium">
+                    {contributor.organizationAcronym && contributor.organizationAcronym.trim() 
+                      ? `${contributor.organizationAcronym} • ${contributor.organizationName}`
+                      : contributor.organizationName
+                    }
+                  </span>
+                )}
                 <Badge variant="outline" className="ml-2 text-xs">
                   {contributor.role}
                 </Badge>

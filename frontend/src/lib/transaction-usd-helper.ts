@@ -12,9 +12,13 @@ export interface TransactionUSDResult {
 /**
  * Convert transaction value to USD following the same pattern as budgets and planned disbursements
  * 
- * @param value - The original transaction value
- * @param currency - The original currency code
- * @param valueDate - The value date for the transaction (for exchange rate lookup)
+ * IMPORTANT: Currency should be resolved using currency-helpers.ts before calling this function.
+ * Use resolveCurrency() to check activity → organization → USD fallback chain.
+ * 
+ * @param value - The original transaction value (supports negative values for refunds/corrections)
+ * @param currency - The resolved currency code (should never be null/undefined)
+ * @param valueDate - The value date for the transaction (for exchange rate lookup).
+ *                    Should default to transaction_date if not provided.
  * @returns Promise<TransactionUSDResult> - USD conversion result with all necessary fields
  */
 export async function convertTransactionToUSD(
