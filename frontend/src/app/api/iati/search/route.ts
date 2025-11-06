@@ -153,6 +153,9 @@ export async function POST(request: NextRequest) {
       console.log("[IATI Search API] Making fetch request to:", searchUrl)
       console.log("[IATI Search API] Headers:", Object.keys(headers))
       console.log("[IATI Search API] Has API key:", !!IATI_API_KEY)
+      console.log("[IATI Search API] API key length:", IATI_API_KEY ? IATI_API_KEY.length : 0)
+      console.log("[IATI Search API] API key first 4 chars:", IATI_API_KEY ? IATI_API_KEY.substring(0, 4) : 'N/A')
+      console.log("[IATI Search API] All env vars starting with IATI:", Object.keys(process.env).filter(k => k.includes('IATI')))
 
       const response = await fetch(searchUrl, {
         method: "GET",
@@ -168,6 +171,9 @@ export async function POST(request: NextRequest) {
         const errorText = await response.text().catch(() => '')
         console.error("[IATI Search API] 401 Unauthorized - API key may be missing or invalid")
         console.error("[IATI Search API] Error response:", errorText)
+        console.error("[IATI Search API] Debug - IATI_API_KEY exists:", !!IATI_API_KEY)
+        console.error("[IATI Search API] Debug - process.env.IATI_API_KEY:", !!process.env.IATI_API_KEY)
+        console.error("[IATI Search API] Debug - process.env.NEXT_PUBLIC_IATI_API_KEY:", !!process.env.NEXT_PUBLIC_IATI_API_KEY)
         
         // Provide helpful error message
         const errorMessage = !IATI_API_KEY 
@@ -177,7 +183,13 @@ export async function POST(request: NextRequest) {
         return NextResponse.json(
           { 
             error: errorMessage,
-            details: "The IATI Datastore API requires authentication. Please configure IATI_API_KEY in your Vercel environment variables."
+            details: "The IATI Datastore API requires authentication. Please configure IATI_API_KEY in your Vercel environment variables.",
+            debug: {
+              hasKey: !!IATI_API_KEY,
+              keyLength: IATI_API_KEY ? IATI_API_KEY.length : 0,
+              envVarExists: !!process.env.IATI_API_KEY,
+              publicEnvVarExists: !!process.env.NEXT_PUBLIC_IATI_API_KEY
+            }
           },
           { status: 401 }
         )

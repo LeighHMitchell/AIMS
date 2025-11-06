@@ -1322,17 +1322,23 @@ export default function ActivityDetailPage() {
                 {/* Main Content - Columns 1-3 */}
                 <div className="lg:col-span-3">
                   <div className="flex items-start gap-4">
-                    {/* Icon/Logo */}
-                    {(activity.icon || localIcon) && (
+                    {/* Left Column: Icon/Logo, Locations, Defaults, Tags */}
+                    {((activity.icon || localIcon) || 
+                      (countryAllocations.length > 0 || regionAllocations.length > 0) || 
+                      (activity.activityScope || activity.collaborationType || activity.defaultAidType || activity.defaultFinanceType || activity.defaultFlowType || activity.defaultTiedStatus || activity.hierarchy) ||
+                      (activity.tags && activity.tags.length > 0)) && (
                       <div className="flex-shrink-0">
-                        <img 
-                          src={activity.icon || localIcon || ""} 
-                          alt={`${activity.title} icon`}
-                          className="w-20 h-20 rounded-lg object-cover border border-slate-200"
-                        />
+                        {/* Icon/Logo */}
+                        {(activity.icon || localIcon) && (
+                          <img 
+                            src={activity.icon || localIcon || ""} 
+                            alt={`${activity.title} icon`}
+                            className="w-20 h-20 rounded-lg object-cover border border-slate-200"
+                          />
+                        )}
                         {/* Country/Region Pills */}
                         {(countryAllocations.length > 0 || regionAllocations.length > 0) && (
-                          <div className="mt-3 w-full max-w-[12rem]">
+                          <div className={`${(activity.icon || localIcon) ? 'mt-3' : ''} w-full max-w-[12rem]`}>
                             <div className="text-slate-500 mb-2 text-xs font-medium">Locations</div>
                             <div className="flex flex-wrap gap-1.5">
                               {countryAllocations.map((countryAlloc: any) => (
@@ -1362,7 +1368,7 @@ export default function ActivityDetailPage() {
                         )}
                         {/* Activity Classification Fields */}
                         {(activity.activityScope || activity.collaborationType || activity.defaultAidType || activity.defaultFinanceType || activity.defaultFlowType || activity.defaultTiedStatus || activity.hierarchy) && (
-                          <div className="mt-3 w-full max-w-[12rem] pb-3 border-b border-slate-200">
+                          <div className={`${(activity.icon || localIcon) || (countryAllocations.length > 0 || regionAllocations.length > 0) ? 'mt-3' : ''} w-full max-w-[12rem] ${(activity.tags && activity.tags.length > 0) ? 'pb-3 border-b border-slate-200' : ''}`}>
                             <div className="flex flex-col gap-y-2 text-xs">
                               {activity.hierarchy && (
                                 <div className="text-slate-600">
@@ -1488,9 +1494,13 @@ export default function ActivityDetailPage() {
                             </div>
                           </div>
                         )}
+                        {/* Divider between Defaults and Tags */}
+                        {((activity.activityScope || activity.collaborationType || activity.defaultAidType || activity.defaultFinanceType || activity.defaultFlowType || activity.defaultTiedStatus || activity.hierarchy) || (countryAllocations.length > 0 || regionAllocations.length > 0) || (activity.icon || localIcon)) && (activity.tags && activity.tags.length > 0) && (
+                          <div className="mt-3 mb-3 border-b border-slate-200"></div>
+                        )}
                         {/* Tags */}
                         {activity.tags && activity.tags.length > 0 && (
-                          <div className="mt-3 flex flex-wrap gap-1 max-w-[12rem]">
+                          <div className={`${(activity.icon || localIcon) || (countryAllocations.length > 0 || regionAllocations.length > 0) || (activity.activityScope || activity.collaborationType || activity.defaultAidType || activity.defaultFinanceType || activity.defaultFlowType || activity.defaultTiedStatus || activity.hierarchy) ? 'mt-3' : ''} flex flex-wrap gap-1 max-w-[12rem]`}>
                           {activity.tags.slice(0, 12).map((t: any) => (
                             <Badge key={t.id || t.name} variant="secondary" className="text-[10px] px-1 py-0.5">
                               {t.name}
