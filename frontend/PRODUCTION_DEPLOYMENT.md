@@ -45,6 +45,12 @@ NEXT_PUBLIC_ENABLE_ACTIVITY_OPTIMIZATION=true
 NODE_ENV=production
 ```
 
+#### Required for IATI Integration
+```
+IATI_API_KEY=your_iati_api_key
+```
+**⚠️ Important**: `IATI_API_KEY` is required for IATI search and import functionality. Without it, IATI API calls will return 401 Unauthorized errors. Get your API key from the IATI Datastore API portal.
+
 **⚠️ Important**: While `EXCHANGERATE_HOST_API_KEY` is optional, it's **highly recommended** for production to get accurate historical exchange rates. Without it, the app will use fallback rates from the database, which may not be as accurate for very old dates (before 2010).
 
 ### 4. Deploy
