@@ -61,6 +61,18 @@ export async function GET(request: NextRequest) {
       
       clearTimeout(timeoutId)
       
+      if (response.status === 401) {
+        const errorText = await response.text().catch(() => '')
+        console.error("[IATI Org Search] 401 Unauthorized - API key may be missing or invalid")
+        return NextResponse.json({ 
+          organizations: [],
+          error: !IATI_API_KEY 
+            ? "IATI API key is not configured. Please set IATI_API_KEY in your environment variables."
+            : "IATI API key is invalid or expired. Please check your IATI_API_KEY configuration.",
+          details: "The IATI Datastore API requires authentication. Please configure IATI_API_KEY in your Vercel environment variables."
+        }, { status: 401 })
+      }
+
       if (response.ok) {
         const data = await response.json()
         

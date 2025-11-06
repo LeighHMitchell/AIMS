@@ -152,6 +152,7 @@ export async function POST(request: NextRequest) {
 
       console.log("[IATI Search API] Making fetch request to:", searchUrl)
       console.log("[IATI Search API] Headers:", Object.keys(headers))
+      console.log("[IATI Search API] Has API key:", !!IATI_API_KEY)
 
       const response = await fetch(searchUrl, {
         method: "GET",
@@ -162,6 +163,25 @@ export async function POST(request: NextRequest) {
       clearTimeout(timeoutId)
 
       console.log("[IATI Search API] Response status:", response.status, response.statusText)
+
+      if (response.status === 401) {
+        const errorText = await response.text().catch(() => '')
+        console.error("[IATI Search API] 401 Unauthorized - API key may be missing or invalid")
+        console.error("[IATI Search API] Error response:", errorText)
+        
+        // Provide helpful error message
+        const errorMessage = !IATI_API_KEY 
+          ? "IATI API key is not configured. Please set IATI_API_KEY in your environment variables."
+          : "IATI API key is invalid or expired. Please check your IATI_API_KEY configuration."
+        
+        return NextResponse.json(
+          { 
+            error: errorMessage,
+            details: "The IATI Datastore API requires authentication. Please configure IATI_API_KEY in your Vercel environment variables."
+          },
+          { status: 401 }
+        )
+      }
 
       if (response.ok) {
         const data = await response.json()
