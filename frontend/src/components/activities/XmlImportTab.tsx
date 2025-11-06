@@ -522,8 +522,15 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
       <div className="p-4">
         <div className="flex items-start justify-between gap-4">
           <div className="flex-1 min-w-0">
-            {/* Import Button */}
-            <div className="flex items-start justify-end mb-3">
+            {/* Activity Title and Import Button */}
+            <div className="flex items-start justify-between gap-4 mb-3">
+              {/* Activity Title */}
+              <div className="flex-1 min-w-0">
+                <h3 className="text-base font-semibold text-slate-900 leading-tight">
+                  {activity.title || activity.title_narrative || 'Untitled Activity'}
+                </h3>
+              </div>
+              {/* Import Button */}
               <Button 
                 size="sm" 
                 variant="outline"
