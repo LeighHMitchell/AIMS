@@ -1494,10 +1494,6 @@ export default function ActivityDetailPage() {
                             </div>
                           </div>
                         )}
-                        {/* Divider between Defaults and Tags */}
-                        {((activity.activityScope || activity.collaborationType || activity.defaultAidType || activity.defaultFinanceType || activity.defaultFlowType || activity.defaultTiedStatus || activity.hierarchy) || (countryAllocations.length > 0 || regionAllocations.length > 0) || (activity.icon || localIcon)) && (activity.tags && activity.tags.length > 0) && (
-                          <div className="mt-3 mb-3 border-b border-slate-200"></div>
-                        )}
                         {/* Tags */}
                         {activity.tags && activity.tags.length > 0 && (
                           <div className={`${(activity.icon || localIcon) || (countryAllocations.length > 0 || regionAllocations.length > 0) || (activity.activityScope || activity.collaborationType || activity.defaultAidType || activity.defaultFinanceType || activity.defaultFlowType || activity.defaultTiedStatus || activity.hierarchy) ? 'mt-3' : ''} flex flex-wrap gap-1 max-w-[12rem]`}>

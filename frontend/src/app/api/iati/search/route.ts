@@ -46,7 +46,8 @@ interface IatiActivity {
   hierarchyName?: string
 }
 
-const IATI_API_KEY = process.env.IATI_API_KEY || process.env.NEXT_PUBLIC_IATI_API_KEY
+// Read API key at runtime to ensure we get the latest value from Vercel environment
+const getIatiApiKey = () => process.env.IATI_API_KEY || process.env.NEXT_PUBLIC_IATI_API_KEY
 
 /**
  * POST /api/iati/search
@@ -141,6 +142,9 @@ export async function POST(request: NextRequest) {
     const timeoutId = setTimeout(() => abortController.abort(), 30000)
 
     try {
+      // Get API key at runtime to ensure we have the latest value
+      const IATI_API_KEY = getIatiApiKey()
+      
       const headers: HeadersInit = {
         "Accept": "application/json",
         "User-Agent": "AIMS-IATI-Search/1.0"
@@ -169,6 +173,9 @@ export async function POST(request: NextRequest) {
 
       if (response.status === 401) {
         const errorText = await response.text().catch(() => '')
+        // Re-read API key for debug info
+        const IATI_API_KEY = getIatiApiKey()
+        
         console.error("[IATI Search API] 401 Unauthorized - API key may be missing or invalid")
         console.error("[IATI Search API] Error response:", errorText)
         console.error("[IATI Search API] Debug - IATI_API_KEY exists:", !!IATI_API_KEY)
