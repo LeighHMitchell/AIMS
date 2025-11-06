@@ -176,13 +176,21 @@ export async function POST(request: NextRequest) {
         // Re-read API key for debug info
         const IATI_API_KEY = getIatiApiKey()
         
+        // Check all possible env var sources
+        const directEnv = process.env.IATI_API_KEY
+        const publicEnv = process.env.NEXT_PUBLIC_IATI_API_KEY
+        const allEnvKeys = Object.keys(process.env).filter(k => k.includes('IATI'))
+        
         console.error("[IATI Search API] 401 Unauthorized - API key may be missing or invalid")
         console.error("[IATI Search API] Error response:", errorText)
         console.error("[IATI Search API] Debug - IATI_API_KEY exists:", !!IATI_API_KEY)
-        console.error("[IATI Search API] Debug - process.env.IATI_API_KEY:", !!process.env.IATI_API_KEY)
-        console.error("[IATI Search API] Debug - process.env.NEXT_PUBLIC_IATI_API_KEY:", !!process.env.NEXT_PUBLIC_IATI_API_KEY)
+        console.error("[IATI Search API] Debug - process.env.IATI_API_KEY:", !!directEnv, directEnv ? `length: ${directEnv.length}` : 'undefined')
+        console.error("[IATI Search API] Debug - process.env.NEXT_PUBLIC_IATI_API_KEY:", !!publicEnv)
+        console.error("[IATI Search API] Debug - All IATI env vars:", allEnvKeys)
+        console.error("[IATI Search API] Debug - VERCEL_ENV:", process.env.VERCEL_ENV)
+        console.error("[IATI Search API] Debug - NODE_ENV:", process.env.NODE_ENV)
         
-        // Provide helpful error message
+        // Provide helpful error message with debug info
         const errorMessage = !IATI_API_KEY 
           ? "IATI API key is not configured. Please set IATI_API_KEY in your environment variables."
           : "IATI API key is invalid or expired. Please check your IATI_API_KEY configuration."
@@ -194,8 +202,11 @@ export async function POST(request: NextRequest) {
             debug: {
               hasKey: !!IATI_API_KEY,
               keyLength: IATI_API_KEY ? IATI_API_KEY.length : 0,
-              envVarExists: !!process.env.IATI_API_KEY,
-              publicEnvVarExists: !!process.env.NEXT_PUBLIC_IATI_API_KEY
+              envVarExists: !!directEnv,
+              publicEnvVarExists: !!publicEnv,
+              allIatiEnvVars: allEnvKeys,
+              vercelEnv: process.env.VERCEL_ENV,
+              nodeEnv: process.env.NODE_ENV
             }
           },
           { status: 401 }
