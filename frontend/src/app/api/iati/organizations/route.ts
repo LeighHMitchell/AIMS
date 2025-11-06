@@ -48,41 +48,66 @@ export async function GET(request: NextRequest) {
     console.log("[IATI Org Search] Search query:", searchQuery)
     console.log("[IATI Org Search] API URL:", searchUrl)
     
-    const response = await fetch(searchUrl, {
-      method: "GET",
-      headers,
-      signal: AbortSignal.timeout(10000)
-    })
+    // Create abort controller for timeout (more compatible than AbortSignal.timeout)
+    const abortController = new AbortController()
+    const timeoutId = setTimeout(() => abortController.abort(), 10000)
     
-    if (response.ok) {
-      const data = await response.json()
+    try {
+      const response = await fetch(searchUrl, {
+        method: "GET",
+        headers,
+        signal: abortController.signal
+      })
       
-      console.log("[IATI Org Search] Raw response:", JSON.stringify(data, null, 2))
+      clearTimeout(timeoutId)
       
-      // Parse facets to get organization list
-      // Facets come as alternating array: [ref1, count1, ref2, count2, ...]
-      const facets = data.facet_counts?.facet_fields?.reporting_org_ref || []
-      const organizations: OrganizationResult[] = []
-      
-      console.log("[IATI Org Search] Facets array:", facets)
-      console.log("[IATI Org Search] Facets length:", facets.length)
-      
-      for (let i = 0; i < facets.length; i += 2) {
-        const ref = facets[i]
-        const count = facets[i + 1]
-        if (ref && count > 0) {
-          organizations.push({ ref, count })
+      if (response.ok) {
+        const data = await response.json()
+        
+        console.log("[IATI Org Search] Raw response:", JSON.stringify(data, null, 2))
+        
+        // Parse facets to get organization list
+        // Facets come as alternating array: [ref1, count1, ref2, count2, ...]
+        const facets = data.facet_counts?.facet_fields?.reporting_org_ref || []
+        const organizations: OrganizationResult[] = []
+        
+        console.log("[IATI Org Search] Facets array:", facets)
+        console.log("[IATI Org Search] Facets length:", facets.length)
+        
+        for (let i = 0; i < facets.length; i += 2) {
+          const ref = facets[i]
+          const count = facets[i + 1]
+          if (ref && count > 0) {
+            organizations.push({ ref, count })
+          }
         }
+        
+        console.log("[IATI Org Search] Found", organizations.length, "organizations")
+        
+        return NextResponse.json({ organizations })
+      } else {
+        console.error("[IATI Org Search] API returned status:", response.status, response.statusText)
+        const errorText = await response.text()
+        console.error("[IATI Org Search] Error response:", errorText)
+        return NextResponse.json({ 
+          organizations: [],
+          error: `IATI API returned error: ${response.status} ${response.statusText}`
+        }, { status: response.status >= 500 ? 502 : 200 })
+      }
+    } catch (fetchError) {
+      clearTimeout(timeoutId)
+      
+      // Check if it's a timeout error
+      if (fetchError instanceof Error && (fetchError.name === 'AbortError' || fetchError.message.includes('timeout'))) {
+        console.error("[IATI Org Search] Timeout error:", fetchError)
+        return NextResponse.json({ 
+          organizations: [],
+          error: "Request to IATI API timed out"
+        })
       }
       
-      console.log("[IATI Org Search] Found", organizations.length, "organizations")
-      
-      return NextResponse.json({ organizations })
-    } else {
-      console.error("[IATI Org Search] API returned status:", response.status, response.statusText)
-      const errorText = await response.text()
-      console.error("[IATI Org Search] Error response:", errorText)
-      return NextResponse.json({ organizations: [] })
+      // Re-throw to outer catch block for other errors
+      throw fetchError
     }
   } catch (error) {
     console.error("[IATI Org Search] Error:", error)

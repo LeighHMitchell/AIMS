@@ -42,43 +42,80 @@ export async function GET(
         headers["Ocp-Apim-Subscription-Key"] = IATI_API_KEY
       }
 
-      const response = await fetch(fetchUrl, {
-        method: "GET",
-        headers,
-        signal: AbortSignal.timeout(30000)
-      })
+      // Create abort controller for timeout (more compatible than AbortSignal.timeout)
+      const abortController = new AbortController()
+      const timeoutId = setTimeout(() => abortController.abort(), 30000)
 
-      if (response.ok) {
-        const xml = await response.text()
+      try {
+        const response = await fetch(fetchUrl, {
+          method: "GET",
+          headers,
+          signal: abortController.signal
+        })
 
-        if (xml && xml.trim().length > 0 && xml.includes('<iati-activity')) {
-          console.log(`[IATI Activity Fetch] Successfully fetched XML from IATI API (${xml.length} bytes)`)
+        clearTimeout(timeoutId)
+
+        if (response.ok) {
+          const xml = await response.text()
+
+          if (xml && xml.trim().length > 0 && xml.includes('<iati-activity')) {
+            console.log(`[IATI Activity Fetch] Successfully fetched XML from IATI API (${xml.length} bytes)`)
+            return NextResponse.json({
+              xml,
+              iatiIdentifier: iatiId,
+              source: "IATI API",
+              fetchedAt: new Date().toISOString()
+            })
+          }
+
+          console.log("[IATI Activity Fetch] No valid XML returned from IATI API")
           return NextResponse.json({
-            xml,
+            error: "No valid XML returned from IATI API",
+            iatiIdentifier: iatiId
+          }, { status: 404 })
+        } else {
+          console.error("[IATI Activity Fetch] API returned status:", response.status, response.statusText)
+          const errorText = await response.text().catch(() => '')
+          return NextResponse.json({
+            error: `IATI API returned error: ${response.status} ${response.statusText}`,
             iatiIdentifier: iatiId,
-            source: "IATI API",
-            fetchedAt: new Date().toISOString()
-          })
+            details: errorText || undefined
+          }, { status: response.status >= 500 ? 502 : response.status })
         }
-
-        console.log("[IATI Activity Fetch] No valid XML returned from IATI API")
-      } else {
-        console.error("[IATI Activity Fetch] API returned status:", response.status, response.statusText)
+      } catch (fetchError) {
+        clearTimeout(timeoutId)
+        
+        // Check if it's a timeout error
+        if (fetchError instanceof Error && (fetchError.name === 'AbortError' || fetchError.message.includes('timeout'))) {
+          return NextResponse.json({
+            error: "Request to IATI API timed out. Please try again.",
+            iatiIdentifier: iatiId
+          }, { status: 504 })
+        }
+        
+        // Re-throw to outer catch block for other errors
+        throw fetchError
       }
     } catch (apiError) {
       console.error("[IATI Activity Fetch] API Error:", apiError)
+      
+      // If it's a network error, return appropriate response
+      if (apiError instanceof TypeError || (apiError instanceof Error && apiError.message.includes('fetch'))) {
+        return NextResponse.json({
+          error: "Failed to connect to IATI API. Please check your connection and try again.",
+          iatiIdentifier: iatiId
+        }, { status: 503 })
+      }
+      
+      // If we get here, it means the activity wasn't found
+      return NextResponse.json({
+        error: "Activity not found in IATI Datastore",
+        iatiIdentifier: iatiId,
+        source: "IATI API",
+        fetchedAt: new Date().toISOString(),
+        note: "This IATI identifier was not found in the IATI Datastore"
+      }, { status: 404 })
     }
-
-    // Return error instead of mock data
-    console.log("[IATI Activity Fetch] Activity not found in IATI Datastore")
-
-    return NextResponse.json({
-      error: "Activity not found in IATI Datastore",
-      iatiIdentifier: iatiId,
-      source: "IATI API",
-      fetchedAt: new Date().toISOString(),
-      note: "This IATI identifier was not found in the IATI Datastore"
-    }, { status: 404 })
 
   } catch (error) {
     console.error("[IATI Activity Fetch] Error:", error)

@@ -43,50 +43,70 @@ export async function GET(
       headers["Authorization"] = `Bearer ${IATI_API_KEY}`
     }
 
-    const response = await fetch(fetchUrl, {
-      method: "GET",
-      headers,
-      // Add timeout
-      signal: AbortSignal.timeout(30000) // 30 second timeout
-    })
+    // Create abort controller for timeout (more compatible than AbortSignal.timeout)
+    const abortController = new AbortController()
+    const timeoutId = setTimeout(() => abortController.abort(), 30000)
 
-    if (!response.ok) {
-      console.error("[IATI Activity Fetch] API error:", response.status, response.statusText)
-      
-      // Try to get error details
-      let errorMessage = `IATI Datastore returned ${response.status}`
-      try {
-        const errorText = await response.text()
-        if (errorText) {
-          errorMessage = errorText
+    try {
+      const response = await fetch(fetchUrl, {
+        method: "GET",
+        headers,
+        signal: abortController.signal
+      })
+
+      clearTimeout(timeoutId)
+
+      if (!response.ok) {
+        console.error("[IATI Activity Fetch] API error:", response.status, response.statusText)
+        
+        // Try to get error details
+        let errorMessage = `IATI Datastore returned ${response.status}`
+        try {
+          const errorText = await response.text()
+          if (errorText) {
+            errorMessage = errorText
+          }
+        } catch {
+          // Ignore parse errors
         }
-      } catch {
-        // Ignore parse errors
+        
+        return NextResponse.json(
+          { error: errorMessage },
+          { status: response.status }
+        )
+      }
+
+      const xml = await response.text()
+      
+      if (!xml || xml.trim().length === 0) {
+        return NextResponse.json(
+          { error: "No XML data returned from IATI Datastore" },
+          { status: 404 }
+        )
+      }
+
+      console.log(`[IATI Activity Fetch] Successfully fetched XML (${xml.length} bytes)`)
+
+      return NextResponse.json({
+        xml,
+        iatiIdentifier: iatiId,
+        source: "IATI Datastore",
+        fetchedAt: new Date().toISOString()
+      })
+    } catch (fetchError) {
+      clearTimeout(timeoutId)
+      
+      // Check if it's a timeout error
+      if (fetchError instanceof Error && (fetchError.name === 'AbortError' || fetchError.message.includes('timeout'))) {
+        return NextResponse.json(
+          { error: "Request to IATI Datastore timed out. Please try again." },
+          { status: 504 }
+        )
       }
       
-      return NextResponse.json(
-        { error: errorMessage },
-        { status: response.status }
-      )
+      // Re-throw to outer catch block for other errors
+      throw fetchError
     }
-
-    const xml = await response.text()
-    
-    if (!xml || xml.trim().length === 0) {
-      return NextResponse.json(
-        { error: "No XML data returned from IATI Datastore" },
-        { status: 404 }
-      )
-    }
-
-    console.log(`[IATI Activity Fetch] Successfully fetched XML (${xml.length} bytes)`)
-
-    return NextResponse.json({
-      xml,
-      iatiIdentifier: iatiId,
-      source: "IATI Datastore",
-      fetchedAt: new Date().toISOString()
-    })
 
   } catch (error) {
     console.error("[IATI Activity Fetch] Error:", error)

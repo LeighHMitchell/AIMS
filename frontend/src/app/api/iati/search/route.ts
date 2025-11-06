@@ -136,6 +136,10 @@ export async function POST(request: NextRequest) {
 
     console.log("[IATI Search API] Final search URL:", searchUrl)
 
+    // Create abort controller for timeout (more compatible than AbortSignal.timeout)
+    const abortController = new AbortController()
+    const timeoutId = setTimeout(() => abortController.abort(), 30000)
+
     try {
       const headers: HeadersInit = {
         "Accept": "application/json",
@@ -147,13 +151,15 @@ export async function POST(request: NextRequest) {
       }
 
       console.log("[IATI Search API] Making fetch request to:", searchUrl)
-      console.log("[IATI Search API] Headers:", headers)
+      console.log("[IATI Search API] Headers:", Object.keys(headers))
 
       const response = await fetch(searchUrl, {
         method: "GET",
         headers,
-        signal: AbortSignal.timeout(30000)
+        signal: abortController.signal
       })
+
+      clearTimeout(timeoutId)
 
       console.log("[IATI Search API] Response status:", response.status, response.statusText)
 
@@ -525,28 +531,62 @@ export async function POST(request: NextRequest) {
 
         console.log("[IATI Search API] No activities found from IATI API")
         console.log("[IATI Search API] Response data:", data)
+        return NextResponse.json({
+          results: [],
+          count: 0,
+          total: data.response?.numFound || 0,
+          note: "No activities found in IATI Datastore matching your search criteria",
+          source: "IATI API"
+        })
       } else {
         console.error("[IATI Search API] API returned status:", response.status, response.statusText)
         const errorText = await response.text()
         console.error("[IATI Search API] Error response body:", errorText)
+        
+        // Return proper error response
+        return NextResponse.json(
+          { 
+            error: `IATI API returned error: ${response.status} ${response.statusText}`,
+            details: errorText.length > 0 ? errorText : undefined
+          },
+          { status: response.status >= 500 ? 502 : response.status }
+        )
       }
     } catch (apiError) {
+      clearTimeout(timeoutId)
+      
       console.error("[IATI Search API] API Error:", apiError)
       console.error("[IATI Search API] Error details:", {
         message: apiError instanceof Error ? apiError.message : 'Unknown error',
-        stack: apiError instanceof Error ? apiError.stack : undefined
+        stack: apiError instanceof Error ? apiError.stack : undefined,
+        name: apiError instanceof Error ? apiError.name : undefined
       })
+      
+      // Check if it's a timeout error
+      if (apiError instanceof Error && (apiError.name === 'AbortError' || apiError.message.includes('timeout'))) {
+        return NextResponse.json(
+          { error: "Request to IATI API timed out. Please try again." },
+          { status: 504 }
+        )
+      }
+      
+      // Check if it's a network error
+      if (apiError instanceof TypeError || (apiError instanceof Error && apiError.message.includes('fetch'))) {
+        return NextResponse.json(
+          { error: "Failed to connect to IATI API. Please check your connection and try again." },
+          { status: 503 }
+        )
+      }
+      
+      // Return generic error
+      return NextResponse.json(
+        { 
+          error: "Failed to search IATI Datastore",
+          details: apiError instanceof Error ? apiError.message : 'Unknown error'
+        },
+        { status: 500 }
+      )
     }
-
-    // Return empty results instead of mock data
-    console.log("[IATI Search API] No results found from IATI API - returning empty results")
-    return NextResponse.json({
-      results: [],
-      count: 0,
-      total: 0,
-      note: "No activities found in IATI Datastore matching your search criteria",
-      source: "IATI API"
-    })
 
   } catch (error) {
     console.error("[IATI Search] Error:", error)
