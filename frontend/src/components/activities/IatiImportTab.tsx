@@ -423,19 +423,64 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
     totalOutgoingCommitment?: number;
     totalDisbursement?: number;
     currency?: string;
+    currencies?: Set<string>; // Track multiple currencies
     loading?: boolean;
   }>({});
-  
+
   // Helper to get org by role
   const getOrgsByRole = (role: string) => {
     return activity.participatingOrgs?.filter((org: any) => org.role === role) || [];
   };
-  
+
   const fundingOrgs = getOrgsByRole('1');
   const accountableOrgs = getOrgsByRole('2');
   const extendingOrgs = getOrgsByRole('3');
   const implementingOrgs = getOrgsByRole('4');
-  
+
+  // Helper to detect currencies used in the activity
+  const detectCurrencies = () => {
+    const currencies = new Set<string>();
+
+    // Check budgets
+    if (activity.budgets && Array.isArray(activity.budgets)) {
+      activity.budgets.forEach((budget: any) => {
+        if (budget.currency || budget['@_currency']) {
+          currencies.add(budget.currency || budget['@_currency']);
+        }
+      });
+    }
+
+    // Check transactions
+    if (activity.transactions && Array.isArray(activity.transactions)) {
+      activity.transactions.forEach((transaction: any) => {
+        if (transaction.currency || transaction['@_currency']) {
+          currencies.add(transaction.currency || transaction['@_currency']);
+        }
+      });
+    }
+
+    // Check planned disbursements
+    if (activity.plannedDisbursements && Array.isArray(activity.plannedDisbursements)) {
+      activity.plannedDisbursements.forEach((disbursement: any) => {
+        if (disbursement.currency || disbursement['@_currency']) {
+          currencies.add(disbursement.currency || disbursement['@_currency']);
+        }
+      });
+    }
+
+    // Check default currency
+    if (activity.currency || activity.defaultCurrency || activity['@_default-currency']) {
+      currencies.add(activity.currency || activity.defaultCurrency || activity['@_default-currency']);
+    }
+
+    return currencies;
+  };
+
+  // Get the currencies used in this activity
+  const currencies = detectCurrencies();
+  const hasMultipleCurrencies = currencies.size > 1;
+  const singleCurrency = currencies.size === 1 ? Array.from(currencies)[0] : null;
+
   // Helper to get code with full name
   const getCodeWithName = (code: string, name: string | undefined, lookupData: any[]) => {
     if (!code) return null;
@@ -443,18 +488,33 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
     const fullName = lookup?.name || name || 'Unknown';
     return `${code} ${fullName}`;
   };
-  
-  // Format currency with validation
+
+  // Format currency with validation and multi-currency detection
   const formatCurrency = (value: number, currency?: string) => {
-    const isValidCurrency = currency && /^[A-Z]{3}$/.test(currency);
-    const currencyCode = isValidCurrency ? currency : 'USD';
-    
+    // If multiple currencies detected, show warning
+    if (hasMultipleCurrencies) {
+      const formattedValue = new Intl.NumberFormat('en-US', {
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0,
+      }).format(value);
+
+      return (
+        <>
+          <span className="text-xs text-amber-600 font-medium">Mixed currencies</span> {formattedValue}
+        </>
+      );
+    }
+
+    // Use the single currency detected, or fall back to the provided currency
+    const isValidCurrency = (currency || singleCurrency) && /^[A-Z]{3}$/.test(currency || singleCurrency || '');
+    const currencyCode = isValidCurrency ? (singleCurrency || currency) : 'N/A';
+
     // Format number with commas
     const formattedValue = new Intl.NumberFormat('en-US', {
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
     }).format(value);
-    
+
     // Return JSX with grey, smaller currency code
     return (
       <>
@@ -640,9 +700,9 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
   }, [activity.iatiIdentifier]);
   
   return (
-    <div className="border border-slate-200 rounded-lg bg-white hover:border-slate-300 transition-colors">
+    <div className="relative w-full rounded-lg border bg-white px-4 py-3 hover:bg-gray-50 transition-colors">
       {/* Collapsed View */}
-      <div className="p-4">
+      <div>
         <div className="flex items-start justify-between gap-4">
           <div className="flex-1 min-w-0">
             {/* Activity Title and Import Button */}
@@ -722,47 +782,132 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
                 </div>
               )}
               
-              {/* Column 3: Financial Summary */}
+              {/* Column 3: Financial Summary Table */}
               <div className="space-y-1">
-                <div>
-                  <span className="text-slate-600 font-medium">Total Budget:</span>
-                  <div className="mt-0.5 text-slate-900 font-medium">
-                    {financialData.loading ? (
-                      <span className="text-xs text-slate-500">Loading...</span>
-                    ) : (
-                      formatCurrency(financialData.totalBudget ?? activity.totalBudget ?? 0, financialData.currency ?? activity.currency)
-                    )}
+                <div className="text-slate-700 font-semibold text-sm mb-2">Financial Summary:</div>
+
+                {/* Multi-currency warning - shown at top if applicable */}
+                {hasMultipleCurrencies && (
+                  <div className="mb-2">
+                    <div className="flex items-start gap-1.5 text-xs text-amber-700 bg-amber-50 px-2 py-1.5 rounded border border-amber-200">
+                      <AlertCircle className="h-3.5 w-3.5 mt-0.5 flex-shrink-0" />
+                      <div>
+                        <p className="font-medium">Multiple currencies in use</p>
+                        <p className="text-amber-600 mt-0.5">
+                          {Array.from(currencies).join(', ')}
+                        </p>
+                      </div>
+                    </div>
                   </div>
-                </div>
-                <div>
-                  <span className="text-slate-600 font-medium">Total Planned Disbursement:</span>
-                  <div className="mt-0.5 text-slate-900 font-medium">
-                    {financialData.loading ? (
-                      <span className="text-xs text-slate-500">Loading...</span>
-                    ) : (
-                      formatCurrency(financialData.totalPlannedDisbursement ?? activity.totalPlannedDisbursement ?? 0, financialData.currency ?? activity.currency)
-                    )}
-                  </div>
-                </div>
-                <div>
-                  <span className="text-slate-600 font-medium">Total Outgoing Commitment:</span>
-                  <div className="mt-0.5 text-slate-900 font-medium">
-                    {financialData.loading ? (
-                      <span className="text-xs text-slate-500">Loading...</span>
-                    ) : (
-                      formatCurrency(financialData.totalOutgoingCommitment ?? activity.totalOutgoingCommitment ?? 0, financialData.currency ?? activity.currency)
-                    )}
-                  </div>
-                </div>
-                <div>
-                  <span className="text-slate-600 font-medium">Total Disbursement:</span>
-                  <div className="mt-0.5 text-slate-900 font-medium">
-                    {financialData.loading ? (
-                      <span className="text-xs text-slate-500">Loading...</span>
-                    ) : (
-                      formatCurrency(financialData.totalDisbursement ?? activity.totalDisbursement ?? 0, financialData.currency ?? activity.currency)
-                    )}
-                  </div>
+                )}
+
+                {/* Financial Summary Table */}
+                <div className="border border-slate-200 rounded-lg overflow-hidden">
+                  <table className="w-full text-sm">
+                    <thead className="bg-slate-50 border-b border-slate-200">
+                      <tr>
+                        <th className="text-left px-3 py-2 font-medium text-slate-700">Type</th>
+                        <th className="text-right px-3 py-2 font-medium text-slate-700">Count</th>
+                        <th className="text-right px-3 py-2 font-medium text-slate-700">Total Value</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {/* Budgets Row */}
+                      <tr className="hover:bg-slate-50">
+                        <td className="px-3 py-2 text-slate-700">Budgets</td>
+                        <td className="px-3 py-2 text-right text-slate-600">
+                          {activity.budgets?.length || 0}
+                        </td>
+                        <td className="px-3 py-2 text-right font-medium text-slate-900">
+                          {financialData.loading ? (
+                            <span className="text-xs text-slate-500">Loading...</span>
+                          ) : (
+                            formatCurrency(financialData.totalBudget ?? activity.totalBudget ?? 0, financialData.currency ?? activity.currency)
+                          )}
+                        </td>
+                      </tr>
+
+                      {/* Planned Disbursements Row */}
+                      <tr className="hover:bg-slate-50">
+                        <td className="px-3 py-2 text-slate-700">Planned Disbursements</td>
+                        <td className="px-3 py-2 text-right text-slate-600">
+                          {activity.plannedDisbursements?.length || 0}
+                        </td>
+                        <td className="px-3 py-2 text-right font-medium text-slate-900">
+                          {financialData.loading ? (
+                            <span className="text-xs text-slate-500">Loading...</span>
+                          ) : (
+                            formatCurrency(financialData.totalPlannedDisbursement ?? activity.totalPlannedDisbursement ?? 0, financialData.currency ?? activity.currency)
+                          )}
+                        </td>
+                      </tr>
+
+                      {/* Outgoing Commitments Row */}
+                      <tr className="hover:bg-slate-50">
+                        <td className="px-3 py-2 text-slate-700">Outgoing Commitments</td>
+                        <td className="px-3 py-2 text-right text-slate-600">
+                          {(() => {
+                            const commitmentTransactions = activity.transactions?.filter((t: any) =>
+                              t.transactionType === '2' || t['transaction-type']?.['@_code'] === '2'
+                            ) || [];
+                            return commitmentTransactions.length;
+                          })()}
+                        </td>
+                        <td className="px-3 py-2 text-right font-medium text-slate-900">
+                          {financialData.loading ? (
+                            <span className="text-xs text-slate-500">Loading...</span>
+                          ) : (
+                            formatCurrency(financialData.totalOutgoingCommitment ?? activity.totalOutgoingCommitment ?? 0, financialData.currency ?? activity.currency)
+                          )}
+                        </td>
+                      </tr>
+
+                      {/* Disbursements Row */}
+                      <tr className="hover:bg-slate-50">
+                        <td className="px-3 py-2 text-slate-700">Disbursements</td>
+                        <td className="px-3 py-2 text-right text-slate-600">
+                          {(() => {
+                            const disbursementTransactions = activity.transactions?.filter((t: any) =>
+                              t.transactionType === '3' || t['transaction-type']?.['@_code'] === '3'
+                            ) || [];
+                            return disbursementTransactions.length;
+                          })()}
+                        </td>
+                        <td className="px-3 py-2 text-right font-medium text-slate-900">
+                          {financialData.loading ? (
+                            <span className="text-xs text-slate-500">Loading...</span>
+                          ) : (
+                            formatCurrency(financialData.totalDisbursement ?? activity.totalDisbursement ?? 0, financialData.currency ?? activity.currency)
+                          )}
+                        </td>
+                      </tr>
+
+                      {/* Expenditures Row (if any) */}
+                      {(() => {
+                        const expenditureTransactions = activity.transactions?.filter((t: any) =>
+                          t.transactionType === '4' || t['transaction-type']?.['@_code'] === '4'
+                        ) || [];
+                        if (expenditureTransactions.length === 0) return null;
+
+                        const totalExpenditure = expenditureTransactions.reduce((sum: number, t: any) => {
+                          const value = parseFloat(t.value || t.value?.['#text'] || 0);
+                          return sum + value;
+                        }, 0);
+
+                        return (
+                          <tr className="hover:bg-slate-50">
+                            <td className="px-3 py-2 text-slate-700">Expenditures</td>
+                            <td className="px-3 py-2 text-right text-slate-600">
+                              {expenditureTransactions.length}
+                            </td>
+                            <td className="px-3 py-2 text-right font-medium text-slate-900">
+                              {formatCurrency(totalExpenditure, financialData.currency ?? activity.currency)}
+                            </td>
+                          </tr>
+                        );
+                      })()}
+                    </tbody>
+                  </table>
                 </div>
               </div>
             </div>
@@ -793,31 +938,31 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
       
       {/* Expanded View - All data in 2 columns (first wider) */}
       {isExpanded && (
-        <div className="border-t border-slate-200 bg-white p-4">
-          <div className="grid grid-cols-[2fr,1fr] gap-x-6 gap-y-3 text-xs">
-            {/* Description spans across both columns */}
+        <div className="mt-4 pt-4 border-t border-slate-200 bg-slate-50 rounded-b-lg px-4 pb-4 overflow-hidden">
+          <div className="space-y-4 text-sm min-w-0 w-full max-w-full">
+            {/* Description */}
             {activity.description && (
-              <div className="col-span-2">
-                <span className="text-slate-600 font-medium">Description:</span>
-                <div className="mt-0.5 text-slate-900 whitespace-pre-wrap">
+              <div className="min-w-0 max-w-full overflow-hidden pb-4 border-b border-slate-200">
+                <span className="text-slate-700 font-semibold block mb-2 text-sm">Description:</span>
+                <div className="text-slate-900 whitespace-pre-wrap break-words max-w-full leading-relaxed" style={{ wordBreak: 'break-word', overflowWrap: 'break-word' }}>
                   {activity.description.replace(/<[^>]*>/g, '')}
                 </div>
               </div>
             )}
 
             {activity.recipientCountries && activity.recipientCountries.length > 0 && (
-              <div className="col-span-1">
-                <span className="text-slate-600 font-medium">Recipient Country:</span>
-                <div className="mt-0.5 space-y-1">
+              <div className="min-w-0 max-w-full overflow-hidden pb-4 border-b border-slate-200">
+                <span className="text-slate-700 font-semibold block mb-2">Recipient Country:</span>
+                <div className="space-y-2">
                   {activity.recipientCountries.map((country: string, idx: number) => {
                     const countryName = getCountryName(country);
                     return (
-                      <div key={idx} className="flex items-center gap-1.5 flex-wrap">
-                        <code className="text-xs font-mono bg-slate-100 px-1.5 py-0.5 rounded text-slate-700">
+                      <div key={idx} className="flex items-center gap-1.5 flex-wrap min-w-0">
+                        <code className="text-xs font-mono bg-slate-100 px-1.5 py-0.5 rounded text-slate-700 shrink-0">
                           {country}
                         </code>
                         {countryName && (
-                          <span className="text-slate-900 text-xs">{countryName}</span>
+                          <span className="text-slate-900 text-xs break-words min-w-0">{countryName}</span>
                         )}
                       </div>
                     );
@@ -827,34 +972,35 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
             )}
 
             {activity.startDatePlanned && (
-              <div className="col-span-1">
-                <span className="text-slate-600 font-medium">Planned Start:</span>
-                <div className="mt-0.5 text-slate-900">{formatDate(activity.startDatePlanned)}</div>
+              <div className="min-w-0 max-w-full overflow-hidden pb-4 border-b border-slate-200">
+                <span className="text-slate-700 font-semibold block mb-2">Planned Start:</span>
+                <div className="text-slate-900 break-words">{formatDate(activity.startDatePlanned)}</div>
               </div>
             )}
 
             {activity.startDateActual && (
-              <div className="col-span-1">
-                <span className="text-slate-600 font-medium">Actual Start:</span>
-                <div className="mt-0.5 text-slate-900">{formatDate(activity.startDateActual)}</div>
+              <div className="min-w-0 max-w-full overflow-hidden pb-4 border-b border-slate-200">
+                <span className="text-slate-700 font-semibold block mb-2">Actual Start:</span>
+                <div className="text-slate-900 break-words">{formatDate(activity.startDateActual)}</div>
               </div>
             )}
 
             {activity.currency && (
-              <div className="col-span-1">
-                <span className="text-slate-600 font-medium">Default Currency:</span>
-                <div className="mt-0.5 text-slate-900">
+              <div className="min-w-0 max-w-full overflow-hidden pb-4 border-b border-slate-200">
+                <span className="text-slate-700 font-semibold block mb-2">Default Currency:</span>
+                <div className="text-slate-900 break-words">
                   {(() => {
                     const currencyInfo = getCurrencyByCode(activity.currency);
                     const currencyName = currencyInfo?.name || activity.currency;
                     return (
-                      <>
+                      <div className="flex items-center gap-1.5">
                         <code className="text-xs font-mono bg-slate-100 px-1.5 py-0.5 rounded text-slate-700">
                           {activity.currency}
                         </code>
-                        {' '}
-                        <span>{currencyName}</span>
-                      </>
+                        {currencyName && currencyName !== activity.currency && (
+                          <span className="break-words">{currencyName}</span>
+                        )}
+                      </div>
                     );
                   })()}
                 </div>
@@ -862,9 +1008,9 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
             )}
 
             {activity.activityScope && (
-              <div className="col-span-1">
-                <span className="text-slate-600 font-medium">Activity Scope:</span>
-                <div className="mt-0.5">
+              <div className="min-w-0 max-w-full overflow-hidden pb-4 border-b border-slate-200">
+                <span className="text-slate-700 font-semibold block mb-2">Activity Scope:</span>
+                <div className="break-words">
                   {(() => {
                     const scopeType = IATI_ACTIVITY_SCOPE[0]?.types.find(t => t.code === activity.activityScope);
                     const scopeName = scopeType?.name || activity.activityScope;
@@ -874,7 +1020,6 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
               </div>
             )}
 
-            {/* Column 2 */}
             {activity.participatingOrgs && activity.participatingOrgs.length > 0 && (() => {
               const roleGroups: Record<string, Array<{ name: string; ref?: string }>> = {};
               activity.participatingOrgs!.forEach((org: any) => {
@@ -887,39 +1032,37 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
               });
               
               return (
-                <div className="col-span-1">
-                  <span className="text-slate-600 font-medium">Participating Organisations:</span>
-                  <div className="mt-0.5 space-y-1">
+                <div className="min-w-0 max-w-full overflow-hidden pb-4 border-b border-slate-200">
+                  <span className="text-slate-700 font-semibold block mb-2">Participating Organisations:</span>
+                  <div className="space-y-3">
                     {Object.entries(roleGroups).map(([roleCode, orgs]) => {
                       const roleName = getOrganizationRoleName(roleCode);
                       return orgs.map((org, idx) => (
-                        <div key={`${roleCode}-${idx}`} className="flex flex-wrap items-baseline gap-2 text-slate-900">
-                          <span className="whitespace-nowrap">
-                            <code className="text-xs font-mono bg-slate-100 px-1.5 py-0.5 rounded text-slate-700">{roleCode}</code>
-                            {' '}
-                            <span className="font-semibold text-slate-600">{roleName}</span>
-                          </span>
-                          <span className="whitespace-nowrap">{org.name}</span>
+                        <div key={`${roleCode}-${idx}`} className="text-slate-900">
+                          <span className="font-semibold text-slate-600">{roleName}:</span>
+                          {' '}
+                          <span>{org.name}</span>
                           {(() => {
                             const refDisplay = getOrgRefDisplay(org.ref);
                             if (!refDisplay.normalized) return null;
-                            
+
                             return (
-                              <span className="whitespace-nowrap flex items-center gap-1">
+                              <>
+                                {' '}
                                 <code className={`text-xs font-mono bg-slate-100 px-1.5 py-0.5 rounded text-slate-700 ${!refDisplay.isValid ? 'border border-red-300' : ''}`}>
                                   {refDisplay.normalized}
                                 </code>
                                 {!refDisplay.isValid && (
                                   <Tooltip>
                                     <TooltipTrigger asChild>
-                                      <span className="text-red-500 text-xs cursor-help">⚠</span>
+                                      <span className="text-red-500 text-xs cursor-help ml-1">⚠</span>
                                     </TooltipTrigger>
                                     <TooltipContent>
                                       <p className="text-xs">Invalid IATI organization identifier format</p>
                                     </TooltipContent>
                                   </Tooltip>
                                 )}
-                              </span>
+                              </>
                             );
                           })()}
                         </div>
@@ -931,20 +1074,20 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
             })()}
 
             {activity.sectors && activity.sectors.length > 0 && (
-              <div className="col-span-1">
-                <span className="text-slate-600 font-medium">Sectors:</span>
-                <div className="mt-0.5 space-y-1">
+              <div className="min-w-0 max-w-full overflow-hidden pb-4 border-b border-slate-200">
+                <span className="text-slate-700 font-semibold block mb-2">Sectors:</span>
+                <div className="space-y-2">
                   {(Array.isArray(activity.sectors) ? activity.sectors : []).slice(0, 5).map((sector: any, idx: number) => {
                     const sectorCode = typeof sector === 'string' ? sector : sector.code || sector;
                     const sectorName = typeof sector === 'object' && sector.name ? sector.name : null;
                     const sectorPercentage = typeof sector === 'object' && sector.percentage !== undefined ? sector.percentage : null;
                     return (
-                      <div key={idx} className="text-slate-900 text-xs">
+                      <div key={idx} className="text-slate-900 text-xs break-words">
                         <code className="text-xs font-mono bg-slate-100 px-1.5 py-0.5 rounded text-slate-700">
                           {sectorCode}
                         </code>
                         {sectorName && sectorName !== sectorCode && (
-                          <span> {sectorName}</span>
+                          <span className="break-words"> {sectorName}</span>
                         )}
                         {sectorPercentage !== null && sectorPercentage !== undefined && (
                           <span className="text-slate-600 font-medium"> ({sectorPercentage}%)</span>
@@ -960,9 +1103,9 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
             )}
 
             {activity.hierarchy && activity.hierarchy !== '0' && (
-              <div className="col-span-1">
-                <span className="text-slate-600 font-medium">Hierarchy:</span>
-                <div className="mt-0.5">
+              <div className="min-w-0 max-w-full overflow-hidden pb-4 border-b border-slate-200">
+                <span className="text-slate-700 font-semibold block mb-2">Hierarchy:</span>
+                <div className="break-words">
                   {(() => {
                     const hierarchyLabels: Record<string, string> = {
                       '1': 'Parent activity',
@@ -979,9 +1122,9 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
             )}
 
             {activity.status && (
-              <div className="col-span-1">
-                <span className="text-slate-600 font-medium">Status:</span>
-                <div className="mt-0.5">
+              <div className="pb-4 border-b border-slate-200">
+                <span className="text-slate-700 font-semibold block mb-2">Status:</span>
+                <div>
                   {(() => {
                     const statusInfo = getActivityStatusByCode(activity.status);
                     const statusName = statusInfo?.name || activity.statusNarrative || activity.status;
@@ -992,23 +1135,23 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
             )}
 
             {activity.endDatePlanned && (
-              <div className="col-span-1">
-                <span className="text-slate-600 font-medium">Planned End:</span>
-                <div className="mt-0.5 text-slate-900">{formatDate(activity.endDatePlanned)}</div>
+              <div className="pb-4 border-b border-slate-200">
+                <span className="text-slate-700 font-semibold block mb-2">Planned End:</span>
+                <div className="text-slate-900">{formatDate(activity.endDatePlanned)}</div>
               </div>
             )}
 
             {activity.endDateActual && (
-              <div className="col-span-1">
-                <span className="text-slate-600 font-medium">Actual End:</span>
-                <div className="mt-0.5 text-slate-900">{formatDate(activity.endDateActual)}</div>
+              <div className="pb-4 border-b border-slate-200">
+                <span className="text-slate-700 font-semibold block mb-2">Actual End:</span>
+                <div className="text-slate-900">{formatDate(activity.endDateActual)}</div>
               </div>
             )}
 
             {activity.collaborationType && (
-              <div className="col-span-1">
-                <span className="text-slate-600 font-medium">Collaboration Type:</span>
-                <div className="mt-0.5">
+              <div className="pb-4 border-b border-slate-200">
+                <span className="text-slate-700 font-semibold block mb-2">Collaboration Type:</span>
+                <div>
                   {(() => {
                     const collabType = getCollaborationTypeByCode(activity.collaborationType);
                     const collabName = collabType?.name || activity.collaborationTypeName;
@@ -1018,11 +1161,10 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
               </div>
             )}
 
-            {/* Column 2 */}
             {(financialData.totalBudget ?? activity.totalBudget) && (
-              <div className="col-span-1">
-                <span className="text-slate-600 font-medium">Total Value:</span>
-                <div className="mt-0.5 text-slate-900 font-medium">
+              <div className="pb-4 border-b border-slate-200">
+                <span className="text-slate-700 font-semibold block mb-2">Total Value:</span>
+                <div className="text-slate-900 font-medium">
                   {financialData.loading ? (
                     <span className="text-xs text-slate-500">Loading...</span>
                   ) : (
@@ -1033,9 +1175,9 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
             )}
 
             {(activity.aidType || activity.financeType || activity.flowType || activity.tiedStatus) && (
-              <div className="col-span-1">
-                <span className="text-slate-600 font-medium">Classifications:</span>
-                <div className="mt-0.5 space-y-1">
+              <div className="pb-4 border-b border-slate-200">
+                <span className="text-slate-700 font-semibold block mb-2">Classifications:</span>
+                <div className="space-y-2">
                   {activity.aidType && (() => {
                     // Handle CC01 format - remove extra C
                     const aidTypeStr = String(activity.aidType);
@@ -1142,6 +1284,7 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
   const [importStatus, setImportStatus] = useState<ImportStatus>(cachedData?.importStatus || { stage: 'idle' });
   const [xmlContent, setXmlContent] = useState<string>(cachedData?.xmlContent || '');
   const [isParsing, setIsParsing] = useState(false);
+  const [importCancelRequested, setImportCancelRequested] = useState(false);
   const [resultsImportSummary, setResultsImportSummary] = useState<any>(null);
   const [showXmlPreview, setShowXmlPreview] = useState(false);
   const [currentActivityData, setCurrentActivityData] = useState<ActivityData>({});
@@ -1295,7 +1438,8 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
   const [externalPublisherMeta, setExternalPublisherMeta] = useState<any>(null);
   const [userPublisherRefs, setUserPublisherRefs] = useState<string[]>([]);
   const [userOrgName, setUserOrgName] = useState<string>('');
-  
+  const [selectedImportMode, setSelectedImportMode] = useState<'fork' | 'merge' | 'reference' | 'import_as_reporting_org' | null>(null);
+
   // Financial Detail Selection Modal States
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [selectedItem, setSelectedItem] = useState<{
@@ -4547,7 +4691,7 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
   }, [iatiSearchFilters]);
 
   // Handle External Publisher modal choice
-  const handleExternalPublisherChoice = async (choice: 'reference' | 'fork' | 'merge') => {
+  const handleExternalPublisherChoice = async (choice: 'reference' | 'fork' | 'merge' | 'import_as_reporting_org') => {
     console.log('[External Publisher] User chose:', choice);
     console.log('[External Publisher] Current state:', {
       parsedFieldsCount: parsedFields.length,
@@ -4556,10 +4700,18 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
       hasSnippetContent: !!snippetContent
     });
     setShowExternalPublisherModal(false);
-    
+
     if (choice === 'reference') {
       // Just store as a reference without importing
       toast.info('Reference mode selected. Activity will be stored as external reference.');
+    } else if (choice === 'import_as_reporting_org') {
+      // Import under original publisher - show inline field selection
+      console.log('[External Publisher] Import as reporting org - showing inline field selection');
+      setSelectedImportMode('import_as_reporting_org');
+      setImportStatus({ stage: 'previewing', progress: 100 });
+      toast.success('Review fields below', {
+        description: 'Select which fields to import. Activity will be created under the original reporting organization.'
+      });
     } else {
       // For fork or merge, the fields are already parsed and preview is already showing
       // Ensure the import status is set correctly
@@ -4879,7 +5031,12 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
         updateData._importTransactions = true;
         console.log(`[IATI Import] Auto-enabled bulk import for ${parsedActivity.transactions.length} transactions`);
       }
-      
+
+      if (parsedActivity?.participatingOrgs?.length > 0) {
+        updateData.importedParticipatingOrgs = parsedActivity.participatingOrgs;
+        console.log(`[IATI Import] Auto-enabled bulk import for ${parsedActivity.participatingOrgs.length} participating organizations`);
+      }
+
       if (parsedActivity?.budgets?.length > 0) {
         updateData._importBudgets = true;
         console.log(`[IATI Import] Auto-enabled bulk import for ${parsedActivity.budgets.length} budgets`);
@@ -4955,6 +5112,8 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
       return;
     }
 
+    // Reset cancel flag
+    setImportCancelRequested(false);
     setImportStatus({ stage: 'importing', progress: 0 });
 
     try {
@@ -5009,12 +5168,18 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
       });
 
       selectedFieldsList.forEach(field => {
-        setImportStatus({ 
-          stage: 'importing', 
+        // Check for cancel request
+        if (importCancelRequested) {
+          console.log('[IATI Import] Import cancelled by user during field processing');
+          return; // Skip this field
+        }
+
+        setImportStatus({
+          stage: 'importing',
           progress: Math.round((selectedFieldsList.indexOf(field) / selectedFieldsList.length) * 50),
           message: `Preparing ${field.fieldName}...`
         });
-        
+
         // PHASE 1: Diagnostic logging for each field being processed
         console.log(`🔍 [IATI Import] DIAGNOSTIC - Processing Field: ${field.fieldName} (tab: ${field.tab})`);
         console.log(`🔍 [IATI Import] DIAGNOSTIC - Field Data:`, {
@@ -5102,6 +5267,19 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
             } else {
               updateData.capital_spend_percentage = null;
               console.warn(`[IATI Import] Invalid capital spend percentage value: ${percentageStr}`);
+            }
+            break;
+          case 'Reporting Organization':
+            // Handle reporting organization import
+            if (field.importValue && typeof field.importValue === 'object') {
+              updateData.reporting_org_name = field.importValue.name || field.importValue.narrative;
+              updateData.reporting_org_ref = field.importValue.ref;
+              updateData.reporting_org_type = field.importValue.type; // Add organization type
+              console.log(`[IATI Import] Setting reporting org:`, {
+                name: updateData.reporting_org_name,
+                ref: updateData.reporting_org_ref,
+                type: updateData.reporting_org_type
+              });
             }
             break;
           case 'Sectors':
@@ -5581,16 +5759,26 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
         }
       });
 
-      setImportStatus({ 
-        stage: 'importing', 
+      // Check for cancel before making API call
+      if (importCancelRequested) {
+        console.log('[IATI Import] Import cancelled before API call');
+        toast.warning('Import cancelled', {
+          description: 'The import was cancelled. No data was saved.'
+        });
+        setImportStatus({ stage: 'previewing', progress: 100 });
+        setImportCancelRequested(false);
+        return;
+      }
+
+      setImportStatus({
+        stage: 'importing',
         progress: 75,
         message: 'Saving to database...'
       });
 
       // Make API call to update the activity
       console.log('[IATI Import] Making API call with data:', updateData);
-      console.log('[IATI Import] API URL:', `/api/activities/${activityId}`);
-      
+
       // Log budget mapping data specifically if present
       if (updateData.importedCountryBudgetItems) {
         console.log('[IATI Import] 🎯 Budget Mapping Data Being Sent:', {
@@ -5598,14 +5786,47 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
           items: updateData.importedCountryBudgetItems
         });
       }
-      
-      const response = await fetch(`/api/activities/${activityId}`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(updateData),
-      });
+
+      let response;
+
+      // Check if this is an "import as reporting org" operation (external publisher import)
+      if (selectedImportMode === 'import_as_reporting_org') {
+        console.log('[IATI Import] Using import-as-reporting-org endpoint for external publisher import');
+
+        // Build selected fields map
+        const selectedFieldsMap: Record<string, boolean> = {};
+        parsedFields.forEach(field => {
+          if (field.selected) {
+            selectedFieldsMap[field.iatiPath] = true;
+          }
+        });
+
+        response = await fetch('/api/iati/import-as-reporting-org', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            xmlContent: xmlContent || snippetContent,
+            userId: user?.id,
+            userRole: user?.role,
+            fields: selectedFieldsMap,
+            iati_data: {
+              _parsedActivity: parsedActivity,
+              ...updateData
+            }
+          }),
+        });
+      } else {
+        // Regular import flow - update existing activity (merge/fork/reference)
+        console.log('[IATI Import] API URL:', `/api/activities/${activityId}`);
+
+        response = await fetch(`/api/activities/${activityId}`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(updateData),
+        });
+      }
 
       console.log('[IATI Import] API Response status:', response.status);
       console.log('[IATI Import] API Response ok:', response.ok);
@@ -5614,6 +5835,30 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
         const errorText = await response.text();
         console.error('[IATI Import] API Error response:', errorText);
         throw new Error(`Failed to update activity: ${response.statusText}`);
+      }
+
+      // Handle import-as-reporting-org response (creates new activity)
+      if (selectedImportMode === 'import_as_reporting_org') {
+        const newActivity = await response.json();
+        console.log('[IATI Import] New activity created:', newActivity);
+
+        setImportStatus({
+          stage: 'complete',
+          progress: 100,
+          message: 'Activity imported successfully!'
+        });
+
+        toast.success('Activity imported successfully!', {
+          description: `Created new activity under ${parsedActivity?.reporting_org?.narrative || 'original publisher'}. Redirecting...`,
+          duration: 5000,
+        });
+
+        // Redirect to the new activity
+        setTimeout(() => {
+          router.push(`/activities/new?id=${newActivity.id}`);
+        }, 1500);
+
+        return; // Exit early since we're redirecting
       }
 
       // Refresh activity data to ensure subsequent imports use updated default_currency
@@ -7605,6 +7850,7 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
           let errorCount = 0;
 
           for (const orgData of updateData.importedParticipatingOrgs) {
+            importSummary.participatingOrgs.attempted++;
             try {
               console.log('[IATI Import] Processing org data:', {
                 name: orgData.narrative,
@@ -7621,27 +7867,28 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
               
               // Try to find organization in database by IATI ref
               let organizationId = null;
-              
+
               if (orgData.ref) {
                 console.log(`[IATI Import] Searching for organization with IATI ref: "${orgData.ref}"`);
-                
+
                 // Fetch ALL organizations and filter client-side for exact match
                 // This is a workaround until the API properly supports iati_org_id filtering
                 const searchResponse = await fetch(`/api/organizations`);
                 console.log(`[IATI Import] Organizations API response status:`, searchResponse.status);
-                
+
                 if (searchResponse.ok) {
                   const allOrgs = await searchResponse.json();
                   console.log(`[IATI Import] Fetched ${allOrgs.length} total organizations`);
-                  
-                  // Filter client-side for EXACT IATI ID match
-                  const matchedOrg = allOrgs.find((o: any) => 
-                    o.iati_org_id && o.iati_org_id.trim() === orgData.ref.trim()
+
+                  // Filter client-side for EXACT IATI ID match or alias_refs match
+                  const matchedOrg = allOrgs.find((o: any) =>
+                    (o.iati_org_id && o.iati_org_id.trim() === orgData.ref.trim()) ||
+                    (o.alias_refs && o.alias_refs.includes(orgData.ref.trim()))
                   );
-                  
+
                   if (matchedOrg) {
                     organizationId = matchedOrg.id;
-                    console.log(`[IATI Import] ⚠️ Found exact IATI ref match:`, {
+                    console.log(`[IATI Import] ✅ Found organization by IATI ref or alias:`, {
                       ref: orgData.ref,
                       matched: matchedOrg.name,
                       matchedIatiId: matchedOrg.iati_org_id,
@@ -7649,7 +7896,7 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
                       logo: matchedOrg.logo ? 'HAS LOGO' : 'NO LOGO'
                     });
                   } else {
-                    console.log(`[IATI Import] ✓ No organization found with exact IATI ref "${orgData.ref}"`);
+                    console.log(`[IATI Import] ❌ No organization found with IATI ref "${orgData.ref}"`);
                     console.log(`[IATI Import] Checked ${allOrgs.length} organizations for match`);
                   }
                 } else {
@@ -7693,16 +7940,18 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
                 console.log(`[IATI Import] New org data:`, {
                   name: orgData.narrative || orgData.ref || 'Imported Organization',
                   iati_org_id: orgData.ref || null,
-                  Organisation_Type_Code: orgData.type || null
+                  type: orgData.type || '10',
+                  country_represented: 'Myanmar'
                 });
-                
+
                 const createResponse = await fetch('/api/organizations', {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json' },
                   body: JSON.stringify({
                     name: orgData.narrative || orgData.ref || 'Imported Organization',
                     iati_org_id: orgData.ref || null,
-                    Organisation_Type_Code: orgData.type || null
+                    type: orgData.type || '10',
+                    country_represented: 'Myanmar'
                   })
                 });
 
@@ -7778,9 +8027,10 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
               );
 
               console.log('[IATI Import] API response status:', participatingOrgResponse.status);
-              
+
               if (participatingOrgResponse.ok) {
                 successCount++;
+                importSummary.participatingOrgs.successful++;
                 const createdOrg = await participatingOrgResponse.json();
                 console.log(`[IATI Import] ✅ Successfully imported participating organization:`, {
                   name: orgData.narrative || orgData.ref,
@@ -7789,6 +8039,14 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
                   crs_channel_code: createdOrg.crs_channel_code,
                   org_type: createdOrg.org_type,
                   id: createdOrg.id
+                });
+
+                importSummary.participatingOrgs.details.push({
+                  name: orgData.narrative || orgData.ref,
+                  role: roleType,
+                  iati_role_code: createdOrg.iati_role_code,
+                  iati_org_ref: orgData.ref,
+                  org_type: createdOrg.org_type
                 });
               } else {
                 const errorData = await participatingOrgResponse.json().catch(e => ({ message: 'Could not parse error response' }));
@@ -7810,13 +8068,29 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
                 // If it's a duplicate (409), it might be okay
                 if (participatingOrgResponse.status === 409) {
                   console.warn('[IATI Import] Organization already exists in this role - skipping');
+                  importSummary.participatingOrgs.skipped++;
                 } else {
                   errorCount++;
+                  importSummary.participatingOrgs.failed++;
+                  importSummary.participatingOrgs.failures.push({
+                    name: orgData.narrative || orgData.ref,
+                    role: orgData.role,
+                    reason: errorData.message || errorData.error || 'Unknown error',
+                    status: participatingOrgResponse.status
+                  });
                 }
               }
             } catch (orgError) {
               console.error(`[IATI Import] Error importing participating organization:`, orgError);
               errorCount++;
+              importSummary.participatingOrgs.failed++;
+              const errorMsg = orgError instanceof Error ? orgError.message : 'Unknown error';
+              importSummary.participatingOrgs.failures.push({
+                name: orgData.narrative || orgData.ref,
+                role: orgData.role,
+                reason: errorMsg,
+                status: 'Exception'
+              });
             }
           }
 
@@ -7841,9 +8115,20 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
 
       // Handle related activities import if any
       if (updateData.importedRelatedActivities && updateData.importedRelatedActivities.length > 0) {
+        // Check for cancel before processing related activities
+        if (importCancelRequested) {
+          console.log('[IATI Import] Import cancelled before related activities processing');
+          toast.warning('Import cancelled', {
+            description: 'Main fields were saved, but related activities were not imported.'
+          });
+          setImportStatus({ stage: 'previewing', progress: 100 });
+          setImportCancelRequested(false);
+          return;
+        }
+
         console.log('[IATI Import] Processing related activities import...');
-        setImportStatus({ 
-          stage: 'importing', 
+        setImportStatus({
+          stage: 'importing',
           progress: 95,
           message: 'Importing related activities...'
         });
@@ -7867,6 +8152,12 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
           }
 
           for (const relatedActivityData of updateData.importedRelatedActivities) {
+            // Check for cancel in loop
+            if (importCancelRequested) {
+              console.log('[IATI Import] Import cancelled during related activities processing');
+              break; // Exit the loop
+            }
+
             importSummary.relatedActivities.attempted++;
             try {
               console.log('[IATI Import] Processing related activity:', {
@@ -7877,14 +8168,34 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
 
               // First, try to find the activity by IATI identifier using Supabase directly
               console.log(`[IATI Import] Searching for activity with IATI ID: ${relatedActivityData.ref}`);
-              
-              // Use Supabase directly instead of search API to avoid CORS issues
-              const { data: matchingActivities, error: searchError } = await supabase
-                .from('activities')
-                .select('id, iati_identifier, title_narrative')
-                .eq('iati_identifier', relatedActivityData.ref)
-                .limit(1);
-              
+
+              // Use Supabase directly with timeout to avoid hanging
+              let matchingActivities = null;
+              let searchError = null;
+
+              try {
+                // Create a timeout promise
+                const timeoutPromise = new Promise((_, reject) =>
+                  setTimeout(() => reject(new Error('Query timeout after 10 seconds')), 10000)
+                );
+
+                // Race between the query and timeout
+                const queryPromise = supabase
+                  .from('activities')
+                  .select('id, iati_identifier, title_narrative')
+                  .eq('iati_identifier', relatedActivityData.ref)
+                  .limit(1);
+
+                const result = await Promise.race([queryPromise, timeoutPromise]) as any;
+                matchingActivities = result.data;
+                searchError = result.error;
+
+                console.log(`[IATI Import] Query completed for ${relatedActivityData.ref}`);
+              } catch (timeoutError: any) {
+                console.error(`[IATI Import] Query timeout for ${relatedActivityData.ref}:`, timeoutError);
+                searchError = timeoutError;
+              }
+
               if (searchError) {
                 console.error(`[IATI Import] Supabase search error for ${relatedActivityData.ref}:`, searchError);
                 skippedCount++;
@@ -7985,6 +8296,17 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
                 });
               }
             }
+          }
+
+          // Check if cancelled after loop
+          if (importCancelRequested) {
+            console.log('[IATI Import] Import was cancelled during related activities');
+            toast.warning('Import cancelled', {
+              description: `${successCount} relationship(s) were created before cancellation.`
+            });
+            setImportStatus({ stage: 'previewing', progress: 100 });
+            setImportCancelRequested(false);
+            return;
           }
 
           // Show results
@@ -8400,11 +8722,14 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
     setParsedFields([]);
     setImportStatus({ stage: 'idle' });
     setXmlContent('');
+    setSnippetContent('');
     setShowXmlPreview(false);
     setXmlUrl('');
     setImportMethod('file');
     setXmlMetadata(null);
     setResultsImportSummary(null);
+    setIatiSearchResults([]);
+    setSearchError(null);
     // Clear cache for this activity
     if (activityId) {
       parsedXmlCache.delete(activityId);
@@ -9306,15 +9631,33 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
                   <span className="font-medium">
                     {importStatus.stage === 'uploading' && 'Uploading XML file...'}
                     {importStatus.stage === 'parsing' && 'Parsing XML content...'}
-                    {importStatus.stage === 'importing' && (importStatus.message || 'Importing data...')}
+                    {importStatus.stage === 'importing' && (importCancelRequested ? 'Cancelling import...' : (importStatus.message || 'Importing data...'))}
                   </span>
                 </div>
-                <span className="text-sm text-gray-500">
-                  {importStatus.progress || 0}%
-                </span>
+                <div className="flex items-center gap-3">
+                  <span className="text-sm text-gray-500">
+                    {importStatus.progress || 0}%
+                  </span>
+                  {importStatus.stage === 'importing' && !importCancelRequested && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        console.log('[IATI Import] Cancel requested by user');
+                        setImportCancelRequested(true);
+                        toast.info('Cancelling import...', {
+                          description: 'The import will stop after the current operation completes.'
+                        });
+                      }}
+                      className="text-red-600 border-red-200 hover:bg-red-50"
+                    >
+                      Cancel Import
+                    </Button>
+                  )}
+                </div>
               </div>
-              <Progress 
-                value={importStatus.progress || 0} 
+              <Progress
+                value={importStatus.progress || 0}
                 className="h-2"
               />
             </div>
@@ -9745,6 +10088,27 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
       {/* Parsed Fields Preview - Tabbed Interface */}
       {parsedFields.length > 0 && importStatus.stage === 'previewing' && (
         <div className="space-y-6">
+          {/* Action Buttons at Top */}
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={resetImport}>
+              Cancel Import
+            </Button>
+            <Button 
+              onClick={() => {
+                console.log('[IATI Import] Button clicked!');
+                importSelectedFields();
+              }}
+              disabled={parsedFields.filter(f => f.selected).length === 0}
+              className="text-white"
+              style={{ backgroundColor: '#135667' }}
+              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#0f4552'}
+              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#135667'}
+            >
+              <Database className="h-4 w-4 mr-2" />
+              Import Selected Fields
+            </Button>
+          </div>
+          
           {/* Overview Header */}
           <Card>
             <CardHeader>
@@ -9806,26 +10170,6 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
             </CardContent>
           </Card>
 
-          {/* Import Actions */}
-          <div className="flex justify-end gap-2 pt-6">
-            <Button variant="outline" onClick={resetImport}>
-              Cancel Import
-            </Button>
-            <Button 
-              onClick={() => {
-                console.log('[IATI Import] Button clicked!');
-                importSelectedFields();
-              }}
-              disabled={parsedFields.filter(f => f.selected).length === 0}
-              className="text-white"
-              style={{ backgroundColor: '#135667' }}
-              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#0f4552'}
-              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#135667'}
-            >
-              <Database className="h-4 w-4 mr-2" />
-              Import Selected Fields
-            </Button>
-          </div>
         </div>
       )}
 
@@ -9995,6 +10339,9 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
           meta={externalPublisherMeta}
           userOrgName={userOrgName}
           userPublisherRefs={userPublisherRefs}
+          userRole={user?.role}
+          userId={user?.id}
+          xmlContent={xmlContent}
           currentActivityId={activityId}
           currentActivityIatiId={currentActivityData.iati_identifier}
           existingActivity={existingActivity}
@@ -10071,7 +10418,7 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
                         userId: user.id
                       })
                     });
-                    
+
                     if (response.ok) {
                       toast.success('Linked successfully', {
                         description: 'External record linked to your existing activity.'
@@ -10082,6 +10429,15 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
                       setImportStatus({ stage: 'previewing', progress: 100 });
                     }
                   }
+                  break;
+
+                case 'import_as_reporting_org':
+                  // Import under original reporting organization
+                  toast.info('Preparing import under original publisher...');
+                  setShowExternalPublisherModal(false);
+                  // Continue with the field comparison that was already parsed
+                  // The parsed fields are already set, just update the status
+                  setImportStatus({ stage: 'previewing', progress: 100 });
                   break;
               }
               

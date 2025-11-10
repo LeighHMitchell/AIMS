@@ -138,47 +138,53 @@ export function Top10DisbursementCommitmentRatioChart({
       <div className="flex items-center justify-center h-[400px] bg-slate-50 rounded-lg">
         <div className="text-center">
           <TrendingUp className="h-8 w-8 text-slate-400 mx-auto mb-4" />
-          <p className="text-slate-600">No delivery rate data available</p>
+          <p className="text-slate-600">No disbursement data available</p>
           <p className="text-sm text-slate-500 mt-2">Try adjusting your date range or filters</p>
         </div>
       </div>
     )
   }
 
+  const formatCurrency = (value: number) => {
+    if (value === null || value === undefined || isNaN(value) || !isFinite(value)) {
+      return '$0'
+    }
+    return `$${(value / 1000000).toFixed(1)}M`
+  }
+
   // Final data sanitization to ensure no NaN values
   const sanitizedData = data.map(item => ({
     ...item,
-    ratio: isNaN(item.ratio) || !isFinite(item.ratio) ? 0 : item.ratio
+    disbursements: isNaN(item.disbursements) || !isFinite(item.disbursements) ? 0 : item.disbursements
   }))
 
   return (
     <ResponsiveContainer width="100%" height={400}>
-      <BarChart 
+      <BarChart
         data={sanitizedData}
         layout="horizontal"
         margin={{ top: 5, right: 30, left: 100, bottom: 5 }}
       >
-        <CartesianGrid 
-          strokeDasharray="3 3" 
-          stroke="#e2e8f0" 
+        <CartesianGrid
+          strokeDasharray="3 3"
+          stroke="#e2e8f0"
           horizontal={false}
         />
-        <XAxis 
+        <XAxis
           type="number"
-          tickFormatter={formatPercentage}
+          tickFormatter={formatCurrency}
           tick={{ fill: '#64748b', fontSize: 12 }}
           axisLine={{ stroke: '#cbd5e1' }}
-          domain={[0, 100]}
         />
-        <YAxis 
+        <YAxis
           type="category"
           dataKey="shortName"
           tick={{ fill: '#64748b', fontSize: 12 }}
           axisLine={{ stroke: '#cbd5e1' }}
           width={90}
         />
-        <Tooltip 
-          formatter={(value: number) => formatPercentage(value)}
+        <Tooltip
+          formatter={(value: number) => formatCurrency(value)}
           contentStyle={{
             backgroundColor: '#1e293b',
             border: 'none',
@@ -188,7 +194,7 @@ export function Top10DisbursementCommitmentRatioChart({
           labelStyle={{ color: '#94a3b8' }}
           cursor={{ fill: 'rgba(148, 163, 184, 0.1)' }}
         />
-        <Bar dataKey="ratio" radius={[0, 4, 4, 0]}>
+        <Bar dataKey="disbursements" radius={[0, 4, 4, 0]}>
           {sanitizedData.map((entry, index) => (
             <Cell 
               key={`cell-${index}`} 

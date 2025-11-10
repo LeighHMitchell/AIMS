@@ -4,7 +4,7 @@ import React from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { cn } from "@/lib/utils"
 import { Lock } from "lucide-react"
-import { TabCompletionIndicator } from "@/utils/tab-completion"
+import { TabCompletionIndicator } from "@/utils/tab-completion-indicator"
 import { StableTabCompletionIndicator } from "@/utils/stable-tab-completion"
 import {
   Tooltip,
@@ -128,7 +128,7 @@ export default function ActivityEditorNavigation({
 
   return (
     <TooltipProvider>
-      <nav className="w-64 bg-white border-r border-gray-200 p-4 space-y-6 h-full flex flex-col">
+      <nav className="w-64 bg-white border-r border-gray-200 border-b-0 p-4 space-y-6 h-full flex flex-col">
         {/* Navigation Groups */}
         {navigationGroups.map((group, groupIndex) => (
           <div 

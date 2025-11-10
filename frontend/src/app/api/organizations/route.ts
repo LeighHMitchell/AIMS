@@ -197,14 +197,42 @@ export async function POST(request: NextRequest) {
       ...otherFields
     };
     
-    // Check if organization with same name or acronym already exists
-    const { data: existing } = await getSupabaseAdmin()
+    // Check if organization with same name, acronym, or IATI org ID already exists
+    let existingQuery = getSupabaseAdmin()
       .from('organizations')
-      .select('id, name, acronym')
-      .or(`name.ilike.${organizationData.name},acronym.ilike.${organizationData.acronym}`);
-    
-    if (existing && existing.length > 0) {
-      return NextResponse.json({ error: 'Organization with this name or acronym already exists' }, { status: 400 });
+      .select('id, name, acronym, iati_org_id');
+
+    // Build OR conditions dynamically
+    const orConditions = [];
+    if (organizationData.name) {
+      orConditions.push(`name.ilike.${organizationData.name}`);
+    }
+    if (organizationData.acronym) {
+      orConditions.push(`acronym.ilike.${organizationData.acronym}`);
+    }
+    if (organizationData.iati_org_id) {
+      orConditions.push(`iati_org_id.eq.${organizationData.iati_org_id}`);
+    }
+
+    if (orConditions.length > 0) {
+      existingQuery = existingQuery.or(orConditions.join(','));
+
+      const { data: existing } = await existingQuery;
+
+      if (existing && existing.length > 0) {
+        // Check if it's an exact match
+        const exactMatch = existing.find(org =>
+          org.name?.toLowerCase().trim() === organizationData.name?.toLowerCase().trim() ||
+          (organizationData.acronym && org.acronym?.toLowerCase().trim() === organizationData.acronym?.toLowerCase().trim()) ||
+          (organizationData.iati_org_id && org.iati_org_id === organizationData.iati_org_id)
+        );
+
+        if (exactMatch) {
+          console.log('[AIMS] Organization already exists, returning existing:', exactMatch);
+          // Return the existing organization instead of error
+          return NextResponse.json(exactMatch, { status: 200 });
+        }
+      }
     }
     
     const { data, error } = await getSupabaseAdmin()

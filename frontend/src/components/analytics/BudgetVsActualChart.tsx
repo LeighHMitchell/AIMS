@@ -22,12 +22,13 @@ interface BudgetVsActualChartProps {
     from: Date
     to: Date
   }
-  filters: {
+  filters?: {
     country?: string
     donor?: string
     sector?: string
   }
   refreshKey: number
+  onDataChange?: (data: ChartData[]) => void
 }
 
 interface ChartData {
@@ -40,7 +41,7 @@ interface ChartData {
 
 type GroupByMode = 'calendar' | 'fiscal' | 'quarter'
 
-export function BudgetVsActualChart({ dateRange, filters, refreshKey }: BudgetVsActualChartProps) {
+export function BudgetVsActualChart({ dateRange, filters, refreshKey, onDataChange }: BudgetVsActualChartProps) {
   const [data, setData] = useState<ChartData[]>([])
   const [loading, setLoading] = useState(true)
   const [groupBy, setGroupBy] = useState<GroupByMode>('calendar')
@@ -110,7 +111,7 @@ export function BudgetVsActualChart({ dateRange, filters, refreshKey }: BudgetVs
         .lte('transaction_date', dateRange.to.toISOString())
 
       // Apply filters
-      if (filters.donor && filters.donor !== 'all') {
+      if (filters?.donor && filters?.donor !== 'all') {
         transactionQuery = transactionQuery.eq('provider_org_id', filters.donor)
       }
 
@@ -174,6 +175,7 @@ export function BudgetVsActualChart({ dateRange, filters, refreshKey }: BudgetVs
       }
 
       setData(chartData)
+      onDataChange?.(chartData)
     } catch (error) {
       console.error('Error fetching budget vs actual data:', error)
     } finally {

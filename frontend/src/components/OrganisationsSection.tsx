@@ -225,10 +225,6 @@ export default function OrganisationsSection({
           aValue = getOrganizationRoleName(a.iati_role_code || 0);
           bValue = getOrganizationRoleName(b.iati_role_code || 0);
           break;
-        case 'iati_identifier':
-          aValue = (a.iati_org_ref || a.organization?.iati_org_id || '').toLowerCase();
-          bValue = (b.iati_org_ref || b.organization?.iati_org_id || '').toLowerCase();
-          break;
         case 'type':
           aValue = getOrganizationTypeName(a.org_type || '');
           bValue = getOrganizationTypeName(b.org_type || '');
@@ -263,17 +259,14 @@ export default function OrganisationsSection({
             <Table>
               <TableHeader>
                 <TableRow className="bg-gray-50">
-                  <TableHead className="w-[28%]">
+                  <TableHead className="w-[40%]">
                     <div className="h-4 w-24 bg-gray-200 animate-pulse rounded" />
                   </TableHead>
-                  <TableHead className="w-[18%]">
+                  <TableHead className="w-[20%]">
                     <div className="h-4 w-16 bg-gray-200 animate-pulse rounded" />
                   </TableHead>
-                  <TableHead className="w-[22%]">
+                  <TableHead className="w-[26%]">
                     <div className="h-4 w-28 bg-gray-200 animate-pulse rounded" />
-                  </TableHead>
-                  <TableHead className="w-[18%]">
-                    <div className="h-4 w-16 bg-gray-200 animate-pulse rounded" />
                   </TableHead>
                   <TableHead className="w-[14%] text-right">
                     <div className="h-4 w-16 bg-gray-200 animate-pulse rounded ml-auto" />
@@ -294,9 +287,6 @@ export default function OrganisationsSection({
                     </TableCell>
                     <TableCell>
                       <div className="h-6 w-24 bg-gray-200 animate-pulse rounded-full" />
-                    </TableCell>
-                    <TableCell>
-                      <div className="h-6 w-32 bg-gray-200 animate-pulse rounded" />
                     </TableCell>
                     <TableCell>
                       <div className="h-6 w-28 bg-gray-200 animate-pulse rounded" />
@@ -347,8 +337,8 @@ export default function OrganisationsSection({
                 <Table>
                   <TableHeader>
                     <TableRow className="bg-gray-50">
-                      <TableHead 
-                        className="w-[28%] font-semibold cursor-pointer hover:bg-gray-100 select-none"
+                      <TableHead
+                        className="w-[40%] font-semibold cursor-pointer hover:bg-gray-100 select-none"
                         onClick={() => handleSort('organization')}
                       >
                         <div className="flex items-center">
@@ -356,8 +346,8 @@ export default function OrganisationsSection({
                           {getSortIcon('organization')}
                         </div>
                       </TableHead>
-                      <TableHead 
-                        className="w-[18%] font-semibold cursor-pointer hover:bg-gray-100 select-none"
+                      <TableHead
+                        className="w-[20%] font-semibold cursor-pointer hover:bg-gray-100 select-none"
                         onClick={() => handleSort('role')}
                       >
                         <div className="flex items-center">
@@ -365,21 +355,12 @@ export default function OrganisationsSection({
                           {getSortIcon('role')}
                         </div>
                       </TableHead>
-                      <TableHead 
-                        className="w-[22%] font-semibold cursor-pointer hover:bg-gray-100 select-none"
-                        onClick={() => handleSort('iati_identifier')}
-                      >
-                        <div className="flex items-center">
-                          IATI Identifier
-                          {getSortIcon('iati_identifier')}
-                        </div>
-                      </TableHead>
-                      <TableHead 
-                        className="w-[18%] font-semibold cursor-pointer hover:bg-gray-100 select-none"
+                      <TableHead
+                        className="w-[26%] font-semibold cursor-pointer hover:bg-gray-100 select-none"
                         onClick={() => handleSort('type')}
                       >
                         <div className="flex items-center">
-                          Type
+                          Organisation Type
                           {getSortIcon('type')}
                         </div>
                       </TableHead>
@@ -412,42 +393,36 @@ export default function OrganisationsSection({
                             <div className="min-w-0 flex-1">
                               <div className="font-medium text-gray-900 truncate">
                                 {participatingOrg.organization_id ? (
-                                  <Link 
+                                  <Link
                                     href={`/organizations/${participatingOrg.organization_id}`}
                                     className="hover:text-gray-700 transition-colors"
                                   >
-                                    {participatingOrg.narrative || 
-                                     participatingOrg.organization?.name || 
+                                    {participatingOrg.narrative ||
+                                     participatingOrg.organization?.name ||
                                      'Unknown Organization'}
-                                    {participatingOrg.organization?.acronym && 
+                                    {participatingOrg.organization?.acronym &&
                                      ` (${participatingOrg.organization.acronym})`}
                                   </Link>
                                 ) : (
                                   <span>
-                                    {participatingOrg.narrative || 
-                                     participatingOrg.organization?.name || 
+                                    {participatingOrg.narrative ||
+                                     participatingOrg.organization?.name ||
                                      'Unknown Organization'}
-                                    {participatingOrg.organization?.acronym && 
+                                    {participatingOrg.organization?.acronym &&
                                      ` (${participatingOrg.organization.acronym})`}
                                   </span>
                                 )}
                               </div>
-                              {participatingOrg.narrative && participatingOrg.organization?.name && 
-                               participatingOrg.narrative !== participatingOrg.organization.name && (
-                                <div className="text-xs text-gray-500">
-                                  From: {participatingOrg.organization.name}
-              </div>
-            )}
-                              {participatingOrg.organization?.country && (
-                                <div className="text-xs text-gray-500">
-                                  {participatingOrg.organization.country}
-              </div>
-            )}
+                              {(participatingOrg.iati_org_ref || participatingOrg.organization?.iati_org_id) && (
+                                <div className="text-xs text-gray-500 font-mono mt-1">
+                                  {participatingOrg.iati_org_ref || participatingOrg.organization?.iati_org_id}
+                                </div>
+                              )}
           </div>
                           </div>
                         </TableCell>
                         <TableCell>
-                          <Badge 
+                          <Badge
                             variant="outline"
                             className={`${getRoleBadgeColor(participatingOrg.iati_role_code)} border`}
                           >
@@ -455,38 +430,8 @@ export default function OrganisationsSection({
                           </Badge>
                         </TableCell>
                         <TableCell>
-                          <div className="flex items-center gap-1">
-                            <span className="text-sm text-gray-600 font-mono bg-gray-100 px-2 py-1 rounded">
-                              {participatingOrg.iati_org_ref || 
-                               participatingOrg.organization?.iati_org_id || 
-                               <span className="text-gray-400">Not set</span>}
-                            </span>
-                            {(participatingOrg as any).wasCorrected && (
-                              <TooltipProvider>
-                                <Tooltip>
-                                  <TooltipTrigger asChild>
-                                    <span className="text-yellow-600 cursor-help">⚠️</span>
-                                  </TooltipTrigger>
-                                  <TooltipContent>
-                                    <p>Corrected from misaligned XML import</p>
-                                    {(participatingOrg as any).original_ref && (
-                                      <p className="text-xs mt-1">Original: {(participatingOrg as any).original_ref}</p>
-                                    )}
-                                  </TooltipContent>
-                                </Tooltip>
-                              </TooltipProvider>
-                            )}
-                          </div>
-                        </TableCell>
-                        <TableCell>
                           <span className="text-sm text-gray-600">
-                            {participatingOrg.org_type ? (
-                              <span title={getOrganizationTypeName(participatingOrg.org_type)}>
-                                <span className="font-mono bg-gray-100 px-2 py-1 rounded">{participatingOrg.org_type}</span> {getOrganizationTypeName(participatingOrg.org_type)}
-                              </span>
-                            ) : (
-                              <span className="text-gray-400">Not set</span>
-                            )}
+                            {participatingOrg.org_type ? getOrganizationTypeName(participatingOrg.org_type) : <span className="text-gray-400">Not set</span>}
                           </span>
                         </TableCell>
                         <TableCell className="text-right">

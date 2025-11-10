@@ -181,6 +181,7 @@ export function QuickAddActivityModal({ isOpen, onClose, user }: QuickAddActivit
         defaultFinanceType: formData.defaultFinanceType || undefined,
         publicationStatus: 'draft',
         submissionStatus: 'draft',
+        created_via: 'quick_add',
         user: {
           id: user?.id,
           organizationId: user?.organizationId || user?.organization?.id,

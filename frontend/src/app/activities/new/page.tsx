@@ -1677,7 +1677,7 @@ function SectionContent({ section, general, setGeneral, sectors, setSectors, tra
     case "xml-import":
       console.log('🔥 ACTIVITY EDITOR: Rendering IATI Import section for activityId:', general.id);
       return (
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
+        <div className="bg-white rounded-lg p-8">
           <IatiImportTab 
             activityId={general.id || ''}
           />
@@ -1968,10 +1968,21 @@ function NewActivityPageContent() {
   // All state declarations first
   const [activeSection, setActiveSection] = useState("general");
   const [showActivityMetadata, setShowActivityMetadata] = useState(false);
-  
+
   // OPTIMIZATION: Track which tabs have been loaded for lazy loading
   const [loadedTabs, setLoadedTabs] = useState<Set<string>>(new Set(['general'])); // General is always loaded
-  
+
+  // Handle initial tab from query parameter (for import flow)
+  useEffect(() => {
+    const tabParam = searchParams?.get("tab");
+    if (tabParam) {
+      console.log('[ActivityEditor] Setting initial tab from query param:', tabParam);
+      setActiveSection(tabParam);
+      // Mark this tab as loaded
+      setLoadedTabs(prev => new Set([...prev, tabParam]));
+    }
+  }, [searchParams]);
+
   // Initialize form state with saved data or defaults
   
   const [general, setGeneral] = useState(() => {
@@ -3414,7 +3425,7 @@ function NewActivityPageContent() {
         isInProgress: aidEffectivenessCompletion.isInProgress
       } : { isComplete: false, isInProgress: false }
     }
-  }, [general, sectors, getDateFieldStatus, sectorValidation, sectorsCompletionStatus, specificLocations, tags, workingGroups, policyMarkers, hasUnsavedChanges, transactions, budgets, budgetNotProvided, plannedDisbursements, forwardSpendCount, humanitarian, humanitarianScopes, sdgMappings, iatiSyncState, subnationalBreakdowns, extendingPartners, implementingPartners, governmentPartners, participatingOrgsCount, linkedActivitiesCount, resultsCount, capitalSpendPercentage, conditionsCount, financingTermsCount, documents, governmentInputs, contacts, countryBudgetItemsCount]);
+  }, [general, sectors, getDateFieldStatus, sectorValidation, specificLocations, countries, regions, tags, workingGroups, policyMarkers, hasUnsavedChanges, transactions, budgets, budgetNotProvided, plannedDisbursements, forwardSpendCount, humanitarian, humanitarianScopes, sdgMappings, iatiSyncState, subnationalBreakdowns, extendingPartners, implementingPartners, governmentPartners, participatingOrgsCount, linkedActivitiesCount, resultsCount, capitalSpendPercentage, conditionsCount, financingTermsCount, documents, governmentInputs, contacts, countryBudgetItemsCount]);
 
   // Helper to get next section id - moved here to avoid temporal dead zone
   const getNextSection = useCallback((currentId: string) => {
@@ -3743,7 +3754,6 @@ function NewActivityPageContent() {
                           showIcon={false}
                         />
                       </div>
-                      <ExternalLink className="h-5 w-5 ml-2 text-gray-400 flex-shrink-0" />
                     </div>
                     <button
                       onClick={() => setShowActivityMetadata(!showActivityMetadata)}

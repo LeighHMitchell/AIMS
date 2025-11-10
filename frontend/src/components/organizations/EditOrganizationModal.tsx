@@ -490,6 +490,8 @@ export function EditOrganizationModal({
   const [iatiBudgets, setIatiBudgets] = useState<any[]>([])
   const [iatiDocuments, setIatiDocuments] = useState<any[]>([])
   const [showIatiImport, setShowIatiImport] = useState(false)
+  const [countrySearchTerm, setCountrySearchTerm] = useState('')
+  const [countrySelectOpen, setCountrySelectOpen] = useState(false)
 
   // Handle both isOpen and open props
   const modalOpen = isOpen ?? open ?? false
@@ -795,10 +797,15 @@ export function EditOrganizationModal({
                 <Label htmlFor="country_represented" className="text-sm font-medium">
                   Location Represented <span className="text-red-500">*</span>
                 </Label>
-                <Select 
+                <Select
                   key={`country-${organization?.id || 'new'}`}
-                  value={formData.country_represented || ''} 
-                  onValueChange={(value) => handleInputChange('country_represented', value)}
+                  value={formData.country_represented || ''}
+                  onValueChange={(value) => {
+                    handleInputChange('country_represented', value)
+                    setCountrySearchTerm('')
+                  }}
+                  open={countrySelectOpen}
+                  onOpenChange={setCountrySelectOpen}
                 >
                   <SelectTrigger className={validationErrors.some(e => e.includes('Location Represented')) ? 'border-red-500' : ''}>
                     <SelectValue placeholder="Select country or region">
@@ -815,32 +822,74 @@ export function EditOrganizationModal({
                     </SelectValue>
                   </SelectTrigger>
                   <SelectContent>
-                    {/* Regional/Global Options */}
-                    <div className="px-2 py-1.5 text-sm font-semibold text-gray-600">
-                      Region / Global
+                    {/* Search Box */}
+                    <div className="px-2 pb-2 border-b sticky top-0 bg-white z-10">
+                      <Input
+                        placeholder="Search countries..."
+                        value={countrySearchTerm}
+                        onChange={(e) => setCountrySearchTerm(e.target.value)}
+                        onClick={(e) => e.stopPropagation()}
+                        onKeyDown={(e) => e.stopPropagation()}
+                        className="h-8"
+                      />
                     </div>
-                    {REGIONAL_OPTIONS.map((region) => (
-                      <SelectItem key={region.code} value={region.name}>
-                        {region.name}
-                      </SelectItem>
-                    ))}
-                    
-                    <div className="my-1 border-t" />
-                    
-                    {/* Country Options */}
-                    <div className="px-2 py-1.5 text-sm font-semibold text-gray-600">
-                      Countries
-                    </div>
-                    {ISO_COUNTRIES.map((country) => (
-                      <SelectItem key={country.code} value={country.name}>
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
-                            {country.code}
-                          </span>
-                          <span>{country.name}</span>
-                        </div>
-                      </SelectItem>
-                    ))}
+
+                    {(() => {
+                      const searchLower = countrySearchTerm.toLowerCase()
+                      const filteredRegions = REGIONAL_OPTIONS.filter(region =>
+                        region.name.toLowerCase().includes(searchLower) ||
+                        region.code.toLowerCase().includes(searchLower)
+                      )
+                      const filteredCountries = ISO_COUNTRIES.filter(country =>
+                        country.name.toLowerCase().includes(searchLower) ||
+                        country.code.toLowerCase().includes(searchLower)
+                      )
+
+                      return (
+                        <>
+                          {/* Regional/Global Options */}
+                          {filteredRegions.length > 0 && (
+                            <>
+                              <div className="px-2 py-1.5 text-sm font-semibold text-gray-600">
+                                Region / Global
+                              </div>
+                              {filteredRegions.map((region) => (
+                                <SelectItem key={region.code} value={region.name}>
+                                  {region.name}
+                                </SelectItem>
+                              ))}
+                              {filteredCountries.length > 0 && <div className="my-1 border-t" />}
+                            </>
+                          )}
+
+                          {/* Country Options */}
+                          {filteredCountries.length > 0 && (
+                            <>
+                              <div className="px-2 py-1.5 text-sm font-semibold text-gray-600">
+                                Countries
+                              </div>
+                              {filteredCountries.map((country) => (
+                                <SelectItem key={country.code} value={country.name}>
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
+                                      {country.code}
+                                    </span>
+                                    <span>{country.name}</span>
+                                  </div>
+                                </SelectItem>
+                              ))}
+                            </>
+                          )}
+
+                          {/* No Results */}
+                          {filteredRegions.length === 0 && filteredCountries.length === 0 && (
+                            <div className="px-2 py-6 text-center text-sm text-gray-500">
+                              No countries found for "{countrySearchTerm}"
+                            </div>
+                          )}
+                        </>
+                      )
+                    })()}
                   </SelectContent>
                 </Select>
                 <p className="text-xs text-muted-foreground">

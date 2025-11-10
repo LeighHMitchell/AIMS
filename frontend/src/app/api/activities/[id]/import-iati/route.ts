@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase';
+import { fixedCurrencyConverter } from '@/lib/currency-converter-fixed';
 
 interface ImportRequest {
   fields: Record<string, boolean>;
@@ -917,7 +918,7 @@ export async function POST(
             currentActivity?.default_currency,
             organizationDefaultCurrency
           );
-          
+
           if (!resolvedCurrency) {
             // Skip this budget and log validation error
             skippedBudgets.push({
@@ -933,16 +934,38 @@ export async function POST(
             });
             continue;
           }
-          
+
+          // Calculate USD value using the same logic as the budgets API
+          let usdValue = null;
+          const valueDate = budget.valueDate || budget.period?.start;
+
+          if (resolvedCurrency !== 'USD' && valueDate) {
+            try {
+              const result = await fixedCurrencyConverter.convertToUSD(
+                budget.value,
+                resolvedCurrency,
+                new Date(valueDate)
+              );
+              usdValue = result.usd_amount;
+              console.log(`[IATI Import] Converted budget ${budget.value} ${resolvedCurrency} → $${usdValue} USD`);
+            } catch (error) {
+              console.error('[IATI Import] Error converting budget to USD:', error);
+              // Continue without USD value rather than failing
+            }
+          } else if (resolvedCurrency === 'USD') {
+            usdValue = budget.value;
+          }
+
           validBudgets.push({
             activity_id: activityId,
-            budget_type: budget.type || '1',
-            budget_status: budget.status || '1',
+            type: budget.type || '1',
+            status: budget.status || '1',
             period_start: budget.period?.start,
             period_end: budget.period?.end,
-            amount: budget.value,
+            value: budget.value,
             currency: resolvedCurrency,
-            value_date: budget.valueDate
+            value_date: valueDate,
+            usd_value: usdValue
           });
         }
         

@@ -517,7 +517,7 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
   };
   
   return (
-    <div className="border border-slate-200 rounded-lg bg-white hover:border-slate-300 transition-colors">
+    <div className="rounded-lg border border-gray-400 bg-white hover:border-gray-500 transition-colors shadow-sm">
       {/* Collapsed View */}
       <div className="p-4">
         <div className="flex items-start justify-between gap-4">
@@ -663,12 +663,12 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
       {/* Expanded View - All data in 3 columns */}
       {isExpanded && (
         <div className="border-t border-slate-200 bg-white p-4">
-          <div className="grid grid-cols-3 gap-x-6 gap-y-3 text-xs">
+          <div className="grid grid-cols-3 gap-x-6 gap-y-3 text-xs min-w-0">
             {/* Column 1 */}
             {activity.description && (
-              <div className="col-span-1">
+              <div className="col-span-1 min-w-0 max-w-full overflow-hidden">
                 <span className="text-slate-600 font-medium">Description:</span>
-                <div className="mt-0.5 text-slate-900 whitespace-pre-wrap">
+                <div className="mt-0.5 text-slate-900 whitespace-pre-wrap break-words max-w-full overflow-wrap-anywhere" style={{ wordBreak: 'break-word', overflowWrap: 'anywhere' }}>
                   {activity.description.replace(/<[^>]*>/g, '')}
                 </div>
               </div>
@@ -9662,6 +9662,9 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
           meta={externalPublisherMeta}
           userOrgName={userOrgName}
           userPublisherRefs={userPublisherRefs}
+          userRole={user?.role}
+          userId={user?.id}
+          xmlContent={xmlContent}
           currentActivityId={activityId}
           currentActivityIatiId={currentActivityData.iati_identifier}
           existingActivity={existingActivity}

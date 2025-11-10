@@ -5,6 +5,9 @@ import { fixedCurrencyConverter } from '@/lib/currency-converter-fixed'
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
 
+// Force dynamic rendering to bypass fetch cache
+export const dynamic = 'force-dynamic'
+
 export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } }
@@ -13,10 +16,12 @@ export async function GET(
     const supabase = createClient(supabaseUrl, supabaseServiceKey)
     const activityId = params.id
 
-    // Fetch activity data
+    console.log(`[Financial Analytics] Optimized version - fetching data for activity ${activityId}`)
+
+    // Fetch activity data (only fields we actually use)
     const { data: activity, error: activityError } = await supabase
       .from('activities')
-      .select('*')
+      .select('id, planned_start_date')
       .eq('id', activityId)
       .single()
 
@@ -27,17 +32,17 @@ export async function GET(
       )
     }
 
-    // Fetch budgets (from activity_budgets table)
+    // Fetch budgets (from activity_budgets table) - only needed fields
     const { data: budgets } = await supabase
       .from('activity_budgets')
-      .select('*')
+      .select('id, value, currency, usd_value, value_date, period_start, period_end, budget_type')
       .eq('activity_id', activityId)
 
     console.log(`[Financial Analytics] Fetched ${budgets?.length || 0} budgets for activity ${activityId}`)
 
-    // Convert budgets to USD if needed (real-time conversion for missing usd_value)
+    // Convert budgets to USD if needed (parallel conversion for performance)
     if (budgets && budgets.length > 0) {
-      for (const budget of budgets) {
+      await Promise.all(budgets.map(async (budget) => {
         if (!budget.usd_value && budget.value && budget.currency) {
           try {
             const valueDate = budget.value_date ? new Date(budget.value_date) : new Date()
@@ -67,45 +72,56 @@ export async function GET(
           // For USD budgets without usd_value, just use the value
           budget.usd_value = budget.value
         }
-      }
+      }))
     }
 
-    // Fetch transactions
+    // Fetch transactions - only needed fields to reduce response size
     const { data: transactions } = await supabase
       .from('transactions')
       .select(`
-        *,
+        id,
+        value,
+        currency,
+        usd_value,
+        value_usd,
+        value_date,
+        transaction_date,
+        transaction_type,
+        provider_org_id,
+        provider_org_ref,
+        receiver_org_id,
+        receiver_org_ref,
         provider_organization:organizations!provider_org_id(name, default_currency),
         receiver_organization:organizations!receiver_org_id(name, default_currency)
       `)
       .eq('activity_id', activityId)
 
     console.log(`[Financial Analytics] Fetched ${transactions?.length || 0} transactions for activity ${activityId}`)
-    
-    // Convert transactions to USD if needed (real-time conversion for missing USD values)
+
+    // Convert transactions to USD if needed (parallel conversion for performance)
     if (transactions && transactions.length > 0) {
-      for (const transaction of transactions) {
+      await Promise.all(transactions.map(async (transaction) => {
         // 1. Fallback to provider org default currency if transaction currency is missing
         if (!transaction.currency && transaction.provider_organization?.default_currency) {
           transaction.currency = transaction.provider_organization.default_currency
           console.log(`[Financial Analytics] Using provider org default currency: ${transaction.currency}`)
         }
-        
+
         // 2. Convert if missing both USD value fields
         if ((!transaction.usd_value && !transaction.value_usd) && transaction.value && transaction.currency) {
           try {
-            const valueDate = transaction.value_date 
-              ? new Date(transaction.value_date) 
-              : transaction.transaction_date 
-              ? new Date(transaction.transaction_date) 
+            const valueDate = transaction.value_date
+              ? new Date(transaction.value_date)
+              : transaction.transaction_date
+              ? new Date(transaction.transaction_date)
               : new Date()
-            
+
             const result = await fixedCurrencyConverter.convertToUSD(
               transaction.value,
               transaction.currency,
               valueDate
             )
-            
+
             if (result.success && result.usd_amount) {
               // Store in both fields for compatibility
               transaction.usd_value = result.usd_amount
@@ -132,8 +148,8 @@ export async function GET(
           transaction.usd_value = transaction.value
           transaction.value_usd = transaction.value
         }
-      }
-      
+      }))
+
       const transactionTypes = transactions.reduce((acc: any, t: any) => {
         acc[t.transaction_type] = (acc[t.transaction_type] || 0) + 1
         return acc
@@ -141,17 +157,21 @@ export async function GET(
       console.log(`[Financial Analytics] Transaction types breakdown:`, transactionTypes)
     }
 
-    // Fetch planned disbursements
+    // Fetch planned disbursements - only needed fields
     const { data: plannedDisbursements } = await supabase
       .from('planned_disbursements')
-      .select('*')
+      .select('id, amount, currency, usd_amount, period_start, period_end, provider_org_name, provider_org_ref, receiver_org_name, receiver_org_ref')
       .eq('activity_id', activityId)
 
-    // Fetch participating organizations
+    // Fetch participating organizations - only needed fields
     const { data: participatingOrgs } = await supabase
       .from('activity_participating_organizations')
       .select(`
-        *,
+        id,
+        organization_id,
+        organization_name,
+        iati_role_code,
+        role_type,
         organization:organizations(name, iati_identifier)
       `)
       .eq('activity_id', activityId)
@@ -163,10 +183,22 @@ export async function GET(
     budgets?.forEach((budget: any) => {
       if (budget.period_start) {
         const dateObj = new Date(budget.period_start)
+
+        // ONLY use USD values - try usd_value first, then if currency is USD use value
+        let budgetUsd = parseFloat(budget.usd_value) || 0
+
+        // Only use raw value if currency is explicitly USD and no USD conversion exists
+        if (!budgetUsd && budget.currency === 'USD' && budget.value && Number(budget.value) > 0) {
+          budgetUsd = parseFloat(String(budget.value)) || 0
+        }
+
+        // Skip budgets without valid USD values
+        if (!budgetUsd) return
+
         rawBudgetData.push({
           date: budget.period_start,
           year: dateObj.getFullYear(),
-          budget: budget.usd_value || budget.value || 0,
+          budget: budgetUsd,
           actual: 0,
           type: 'budget'
         })
@@ -177,11 +209,23 @@ export async function GET(
     transactions?.forEach((transaction: any) => {
       if (transaction.transaction_date && (transaction.transaction_type === '3' || transaction.transaction_type === '4')) {
         const dateObj = new Date(transaction.transaction_date)
+
+        // ONLY use USD values - try usd_value first, then value_usd, then if currency is USD use value
+        let usdValue = parseFloat(transaction.usd_value) || parseFloat(transaction.value_usd) || 0
+
+        // Only use raw value if currency is explicitly USD and no USD conversion exists
+        if (!usdValue && transaction.currency === 'USD' && transaction.value && Number(transaction.value) > 0) {
+          usdValue = parseFloat(String(transaction.value)) || 0
+        }
+
+        // Skip transactions without valid USD values
+        if (!usdValue) return
+
         rawBudgetData.push({
           date: transaction.transaction_date,
           year: dateObj.getFullYear(),
           budget: 0,
-          actual: transaction.usd_value || transaction.value_usd || transaction.value || 0,
+          actual: usdValue,
           type: 'transaction'
         })
       }
@@ -207,12 +251,22 @@ export async function GET(
     // Calculate Cumulative Spending
     const transactionsByDate = transactions
       ?.filter((t: any) => t.transaction_date && (t.transaction_type === '3' || t.transaction_type === '4'))
-      .map((t: any) => ({
-        date: t.transaction_date,
-        dateObj: new Date(t.transaction_date),
-        amount: t.usd_value || t.value_usd || t.value || 0
-      }))
-      .filter((t: any) => !isNaN(t.dateObj.getTime())) // Filter out invalid dates
+      .map((t: any) => {
+        // ONLY use USD values - try usd_value first, then value_usd, then if currency is USD use value
+        let usdValue = parseFloat(t.usd_value) || parseFloat(t.value_usd) || 0
+
+        // Only use raw value if currency is explicitly USD and no USD conversion exists
+        if (!usdValue && t.currency === 'USD' && t.value && Number(t.value) > 0) {
+          usdValue = parseFloat(String(t.value)) || 0
+        }
+
+        return {
+          date: t.transaction_date,
+          dateObj: new Date(t.transaction_date),
+          amount: usdValue
+        }
+      })
+      .filter((t: any) => t.amount > 0 && !isNaN(t.dateObj.getTime())) // Filter out invalid dates and zero/missing USD values
       .sort((a: any, b: any) => a.dateObj.getTime() - b.dateObj.getTime()) || []
 
     let cumulative = 0
@@ -243,10 +297,18 @@ export async function GET(
       const sortedBudgets = budgets
         .filter((b: any) => b.period_start)
         .sort((a: any, b: any) => new Date(a.period_start).getTime() - new Date(b.period_start).getTime())
-      
+
       cumulative = 0
       uniqueCumulativeData = sortedBudgets.slice(0, 5).map((budget: any) => {
-        cumulative += budget.usd_value || budget.value || 0
+        // ONLY use USD values - try usd_value first, then if currency is USD use value
+        let budgetUsd = parseFloat(budget.usd_value) || 0
+
+        // Only use raw value if currency is explicitly USD and no USD conversion exists
+        if (!budgetUsd && budget.currency === 'USD' && budget.value && Number(budget.value) > 0) {
+          budgetUsd = parseFloat(String(budget.value)) || 0
+        }
+
+        cumulative += budgetUsd
         const dateObj = new Date(budget.period_start)
         return {
           date: budget.period_start,
@@ -264,15 +326,22 @@ export async function GET(
       if (budget.budget_type === '1') typeName = 'Original'
       else if (budget.budget_type === '2') typeName = 'Revised'
       else if (budget.budget_type) typeName = `Type ${budget.budget_type}`
-      
+
       const existing = acc.find(item => item.name === typeName)
-      const value = budget.usd_value || budget.value || 0
-      
-      if (value > 0) {
+
+      // ONLY use USD values - try usd_value first, then if currency is USD use value
+      let budgetUsd = parseFloat(budget.usd_value) || 0
+
+      // Only use raw value if currency is explicitly USD and no USD conversion exists
+      if (!budgetUsd && budget.currency === 'USD' && budget.value && Number(budget.value) > 0) {
+        budgetUsd = parseFloat(String(budget.value)) || 0
+      }
+
+      if (budgetUsd > 0) {
         if (existing) {
-          existing.value += value
+          existing.value += budgetUsd
         } else {
-          acc.push({ name: typeName, value })
+          acc.push({ name: typeName, value: budgetUsd })
         }
       }
       return acc
@@ -281,22 +350,29 @@ export async function GET(
     // If no budget composition data but we have budgets, group by year or status
     if (budgetComposition.length === 0 && budgets && budgets.length > 0) {
       const budgetsByStatus = budgets.reduce((acc: any, budget: any) => {
-        const year = budget.period_start 
+        const year = budget.period_start
           ? new Date(budget.period_start).getFullYear().toString()
           : 'Unspecified'
-        const value = budget.usd_value || budget.value || 0
-        
-        if (value > 0) {
+
+        // ONLY use USD values - try usd_value first, then if currency is USD use value
+        let budgetUsd = parseFloat(budget.usd_value) || 0
+
+        // Only use raw value if currency is explicitly USD and no USD conversion exists
+        if (!budgetUsd && budget.currency === 'USD' && budget.value && Number(budget.value) > 0) {
+          budgetUsd = parseFloat(String(budget.value)) || 0
+        }
+
+        if (budgetUsd > 0) {
           const existing = acc.find((item: any) => item.name === year)
           if (existing) {
-            existing.value += value
+            existing.value += budgetUsd
           } else {
-            acc.push({ name: year, value })
+            acc.push({ name: year, value: budgetUsd })
           }
         }
         return acc
       }, [])
-      
+
       if (budgetsByStatus.length > 0) {
         budgetComposition = budgetsByStatus
       }
@@ -310,12 +386,23 @@ export async function GET(
       if (pd.period_start) {
         const dateObj = new Date(pd.period_start)
         if (!isNaN(dateObj.getTime())) {
+          // ONLY use USD values - try usd_amount first, then if currency is USD use amount
+          let plannedUsd = parseFloat(pd.usd_amount) || 0
+
+          // Only use raw amount if currency is explicitly USD and no USD conversion exists
+          if (!plannedUsd && pd.currency === 'USD' && pd.amount && Number(pd.amount) > 0) {
+            plannedUsd = parseFloat(String(pd.amount)) || 0
+          }
+
+          // Skip planned disbursements without valid USD values
+          if (!plannedUsd) return
+
           rawDisbursementData.push({
             date: pd.period_start,
             timestamp: dateObj.getTime(),
             period: dateObj.toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
             sortKey: `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, '0')}`,
-            planned: pd.usd_amount || pd.amount || 0,
+            planned: plannedUsd,
             actual: 0,
             type: 'planned'
           })
@@ -331,13 +418,24 @@ export async function GET(
       if (transaction.transaction_date) {
         const dateObj = new Date(transaction.transaction_date)
         if (!isNaN(dateObj.getTime())) {
+          // ONLY use USD values - try usd_value first, then value_usd, then if currency is USD use value
+          let usdValue = parseFloat(transaction.usd_value) || parseFloat(transaction.value_usd) || 0
+
+          // Only use raw value if currency is explicitly USD and no USD conversion exists
+          if (!usdValue && transaction.currency === 'USD' && transaction.value && Number(transaction.value) > 0) {
+            usdValue = parseFloat(String(transaction.value)) || 0
+          }
+
+          // Skip transactions without valid USD values
+          if (!usdValue) return
+
           rawDisbursementData.push({
             date: transaction.transaction_date,
             timestamp: dateObj.getTime(),
             period: dateObj.toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
             sortKey: `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, '0')}`,
             planned: 0,
-            actual: transaction.usd_value || transaction.value_usd || transaction.value || 0,
+            actual: usdValue,
             type: 'actual'
           })
         }
@@ -392,11 +490,17 @@ export async function GET(
           const orgName = org.organization?.name || org.organization_name || 'Unknown Donor'
           // Calculate total from this funding source via incoming funds transactions
           const total = transactions
-            ?.filter((t: any) => 
-              t.provider_org_id === org.organization_id && 
+            ?.filter((t: any) =>
+              t.provider_org_id === org.organization_id &&
               (t.transaction_type === '1' || t.transaction_type === '2') // Incoming funds or commitments
             )
-            .reduce((sum: number, t: any) => sum + (t.usd_value || t.value_usd || t.value || 0), 0) || 0
+            .reduce((sum: number, t: any) => {
+              let usdValue = parseFloat(t.usd_value) || parseFloat(t.value_usd) || 0
+              if (!usdValue && t.currency === 'USD' && t.value && Number(t.value) > 0) {
+                usdValue = parseFloat(String(t.value)) || 0
+              }
+              return sum + usdValue
+            }, 0) || 0
           
           return {
             name: orgName,
@@ -414,16 +518,20 @@ export async function GET(
         .filter((t: any) => t.transaction_type === '1' || t.transaction_type === '2') // Incoming funds or commitments
         .forEach((transaction: any) => {
           // Include ALL transactions, even those without provider organizations
-          const providerName = transaction.provider_organization?.name 
-            || transaction.provider_org_ref 
+          const providerName = transaction.provider_organization?.name
+            || transaction.provider_org_ref
             || 'Unspecified Donor'
-          const value = transaction.usd_value || transaction.value_usd || transaction.value || 0
-          
-          if (value > 0) {
+
+          let usdValue = parseFloat(transaction.usd_value) || parseFloat(transaction.value_usd) || 0
+          if (!usdValue && transaction.currency === 'USD' && transaction.value && Number(transaction.value) > 0) {
+            usdValue = parseFloat(String(transaction.value)) || 0
+          }
+
+          if (usdValue > 0) {
             if (!fundingByProvider[providerName]) {
               fundingByProvider[providerName] = 0
             }
-            fundingByProvider[providerName] += value
+            fundingByProvider[providerName] += usdValue
           }
         })
       
@@ -435,10 +543,18 @@ export async function GET(
     
     // If still no funding sources but we have budgets, use budget data
     if (fundingSources.length === 0 && budgets && budgets.length > 0) {
-      const totalBudget = budgets.reduce((sum: number, b: any) => 
-        sum + (b.usd_value || b.value || 0), 0
-      )
-      
+      const totalBudget = budgets.reduce((sum: number, b: any) => {
+        // ONLY use USD values - try usd_value first, then if currency is USD use value
+        let budgetUsd = parseFloat(b.usd_value) || 0
+
+        // Only use raw value if currency is explicitly USD and no USD conversion exists
+        if (!budgetUsd && b.currency === 'USD' && b.value && Number(b.value) > 0) {
+          budgetUsd = parseFloat(String(b.value)) || 0
+        }
+
+        return sum + budgetUsd
+      }, 0)
+
       if (totalBudget > 0) {
         fundingSources = [
           { name: 'Total Budget', value: totalBudget }
@@ -462,11 +578,23 @@ export async function GET(
     // Calculate Commitment vs Disbursement Ratio
     const totalCommitment = transactions
       ?.filter((t: any) => t.transaction_type === '2')
-      .reduce((sum: number, t: any) => sum + (t.usd_value || t.value_usd || t.value || 0), 0) || 0
+      .reduce((sum: number, t: any) => {
+        let usdValue = parseFloat(t.usd_value) || parseFloat(t.value_usd) || 0
+        if (!usdValue && t.currency === 'USD' && t.value && Number(t.value) > 0) {
+          usdValue = parseFloat(String(t.value)) || 0
+        }
+        return sum + usdValue
+      }, 0) || 0
 
     const totalDisbursement = transactions
       ?.filter((t: any) => t.transaction_type === '3')
-      .reduce((sum: number, t: any) => sum + (t.usd_value || t.value_usd || t.value || 0), 0) || 0
+      .reduce((sum: number, t: any) => {
+        let usdValue = parseFloat(t.usd_value) || parseFloat(t.value_usd) || 0
+        if (!usdValue && t.currency === 'USD' && t.value && Number(t.value) > 0) {
+          usdValue = parseFloat(String(t.value)) || 0
+        }
+        return sum + usdValue
+      }, 0) || 0
 
     const commitmentRatio = totalCommitment > 0 ? (totalDisbursement / totalCommitment) * 100 : 0
 

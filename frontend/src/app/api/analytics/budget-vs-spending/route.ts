@@ -40,10 +40,9 @@ export async function GET(request: NextRequest) {
         planned_end_date,
         activity_status,
         publication_status,
-        transactions (
+        transactions:transactions!transactions_activity_id_fkey1 (
           transaction_type,
-          value,
-          currency,
+          value_usd,
           transaction_date
         )
       `)
@@ -101,47 +100,40 @@ export async function GET(request: NextRequest) {
 
     // Process activities and their transactions
     activities?.forEach((activity: any) => {
-      // Determine the time period for this activity
-      const startDate = activity.planned_start_date ? new Date(activity.planned_start_date) : new Date();
-      
-      let periodKey: string;
-      if (timePeriod === 'quarter') {
-        const quarter = Math.floor(startDate.getMonth() / 3) + 1;
-        periodKey = `${startDate.getFullYear()}-Q${quarter}`;
-      } else {
-        periodKey = startDate.getFullYear().toString();
-      }
-
-      // Initialize period data if not exists
-      if (!dataMap.has(periodKey)) {
-        dataMap.set(periodKey, {
-          period: periodKey,
-          budget: 0,
-          disbursements: 0,
-          expenditures: 0,
-          totalSpending: 0,
-        });
-      }
-
-      const periodData = dataMap.get(periodKey)!;
-
-      // Process transactions
+      // Process transactions - use transaction date, not activity start date (USD only)
       activity.transactions?.forEach((transaction: any) => {
-        // Safely parse transaction value
-        let value = 0;
-        if (transaction.value !== null && transaction.value !== undefined) {
-          if (typeof transaction.value === 'string') {
-            value = parseFloat(transaction.value) || 0;
-          } else if (typeof transaction.value === 'number') {
-            value = transaction.value;
-          } else if (typeof transaction.value === 'object' && transaction.value.toString) {
-            value = parseFloat(transaction.value.toString()) || 0;
-          }
+        // Parse transaction value (USD only)
+        const value = parseFloat(transaction.value_usd?.toString() || '0') || 0;
+
+        if (isNaN(value) || !isFinite(value) || value === 0) {
+          return; // Skip invalid or non-USD values
         }
-        
-        if (isNaN(value) || !isFinite(value)) {
-          return; // Skip invalid values
+
+        // Use transaction date to determine the period, not activity start date
+        const transactionDate = transaction.transaction_date
+          ? new Date(transaction.transaction_date)
+          : (activity.planned_start_date ? new Date(activity.planned_start_date) : new Date());
+
+        let periodKey: string;
+        if (timePeriod === 'quarter') {
+          const quarter = Math.floor(transactionDate.getMonth() / 3) + 1;
+          periodKey = `${transactionDate.getFullYear()}-Q${quarter}`;
+        } else {
+          periodKey = transactionDate.getFullYear().toString();
         }
+
+        // Initialize period data if not exists
+        if (!dataMap.has(periodKey)) {
+          dataMap.set(periodKey, {
+            period: periodKey,
+            budget: 0,
+            disbursements: 0,
+            expenditures: 0,
+            totalSpending: 0,
+          });
+        }
+
+        const periodData = dataMap.get(periodKey)!;
 
         switch (transaction.transaction_type) {
           case '2': // Commitment

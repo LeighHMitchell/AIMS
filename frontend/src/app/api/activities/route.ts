@@ -1110,6 +1110,7 @@ export async function POST(request: Request) {
         created_by: cleanUUIDValue(body.user?.id),
         last_edited_by: cleanUUIDValue(body.user?.id),
         submitted_by: userOrgData.submitted_by,
+        created_via: body.created_via || 'manual',
       };
     } catch (error: any) {
       return NextResponse.json(

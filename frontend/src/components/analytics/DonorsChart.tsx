@@ -13,18 +13,18 @@ import {
 } from 'recharts'
 import { supabase } from '@/lib/supabase'
 import { Skeleton } from '@/components/ui/skeleton'
-import { BarChart3 } from 'lucide-react'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { BarChart3, DollarSign, Wallet, Calendar } from 'lucide-react'
+
+type ViewMode = 'budgets' | 'disbursements' | 'planned'
 
 interface DonorsChartProps {
   dateRange: {
     from: Date
     to: Date
   }
-  filters: {
-    country?: string
-    sector?: string
-  }
   refreshKey: number
+  onDataChange?: (data: DonorData[]) => void
 }
 
 interface DonorData {
@@ -33,106 +33,153 @@ interface DonorData {
   shortName: string
 }
 
-export function DonorsChart({ dateRange, filters, refreshKey }: DonorsChartProps) {
+export function DonorsChart({ dateRange, refreshKey, onDataChange }: DonorsChartProps) {
   const [data, setData] = useState<DonorData[]>([])
   const [loading, setLoading] = useState(true)
+  const [viewMode, setViewMode] = useState<ViewMode>('disbursements')
 
   useEffect(() => {
     fetchData()
-  }, [dateRange, filters, refreshKey])
+  }, [dateRange, refreshKey, viewMode])
 
   const fetchData = async () => {
     try {
       setLoading(true)
-      console.log('[DonorsChart] Starting data fetch...')
-      
+      console.log('[DonorsChart] Starting data fetch for view:', viewMode)
+
       // First get organizations to map IDs to names
       const { data: orgs } = await supabase
         .from('organizations')
         .select('id, name')
-      
+
       const orgMap = new Map(orgs?.map((o: any) => [o.id, o.name]) || [])
       console.log('[DonorsChart] Organization count:', orgMap.size)
-      
-      // Query activities to properly apply country and sector filters
-      // Use !inner on sectors only when filtering by sector
-      // Specify the relationship name to avoid ambiguity
-      const selectFields = filters.sector && filters.sector !== 'all'
-        ? `
-          id,
-          locations,
-          activity_sectors!inner(sector_code),
-          transactions!transactions_activity_id_fkey1!inner(
-            provider_org_id,
-            value,
-            transaction_type,
-            status,
-            transaction_date
-          )
-        `
-        : `
-          id,
-          locations,
-          activity_sectors(sector_code),
-          transactions!transactions_activity_id_fkey1!inner(
-            provider_org_id,
-            value,
-            transaction_type,
-            status,
-            transaction_date
-          )
-        `
-      
-      let activityQuery = supabase
-        .from('activities')
-        .select(selectFields)
-        .eq('publication_status', 'published')
-        .eq('transactions.transaction_type', '3') // Disbursement
-        .eq('transactions.status', 'actual')
-        .gte('transactions.transaction_date', dateRange.from.toISOString())
-        .lte('transactions.transaction_date', dateRange.to.toISOString())
-        .not('transactions.provider_org_id', 'is', null)
-      
-      // Apply country filter
-      if (filters.country && filters.country !== 'all') {
-        activityQuery = activityQuery.contains('locations', [{ country_code: filters.country }])
-      }
-      
-      // Apply sector filter
-      if (filters.sector && filters.sector !== 'all') {
-        activityQuery = activityQuery.eq('activity_sectors.sector_code', filters.sector)
-      }
-      
-      const { data: activities, error } = await activityQuery
-      
-      if (error) {
-        console.error('[DonorsChart] Query error:', error)
-        return
-      }
-      
-      // Extract transactions from activities
-      const transactions = activities?.flatMap((activity: any) => 
-        (activity.transactions || []).map((t: any) => ({
-          ...t,
-          activityId: activity.id
-        }))
-      ) || []
-      
-      console.log('[DonorsChart] Transactions found:', transactions?.length || 0)
-      
-      // Aggregate by donor
+
       const donorTotals = new Map<string, number>()
-      
-      transactions?.forEach((t: any) => {
-        const current = donorTotals.get(t.provider_org_id) || 0
-        const value = parseFloat(t.value) || 0
-        if (!isNaN(value)) {
-          donorTotals.set(t.provider_org_id, current + value)
+
+      if (viewMode === 'budgets') {
+        // Query budgets
+        const { data: budgets, error } = await supabase
+          .from('budgets')
+          .select('activity_id, value_usd')
+          .gte('period_start', dateRange.from.toISOString())
+          .lte('period_end', dateRange.to.toISOString())
+
+        if (error) {
+          console.error('[DonorsChart] Budgets query error:', error)
+          setLoading(false)
+          return
         }
-      })
-      
+
+        // Get activity IDs to find funding orgs
+        const activityIds = [...new Set(budgets?.map(b => b.activity_id) || [])]
+
+        if (activityIds.length > 0) {
+          const { data: participatingOrgs } = await supabase
+            .from('participating_organizations')
+            .select('activity_id, organization_id, role')
+            .in('activity_id', activityIds)
+            .eq('role', '1') // Funding role
+
+          // Map activity to funding orgs
+          const activityToOrgs = new Map<string, string[]>()
+          participatingOrgs?.forEach(po => {
+            if (!activityToOrgs.has(po.activity_id)) {
+              activityToOrgs.set(po.activity_id, [])
+            }
+            activityToOrgs.get(po.activity_id)!.push(po.organization_id)
+          })
+
+          // Aggregate budgets by funding org
+          budgets?.forEach((budget: any) => {
+            const fundingOrgs = activityToOrgs.get(budget.activity_id) || []
+            const budgetValue = parseFloat(budget.value_usd) || 0
+
+            if (fundingOrgs.length > 0 && !isNaN(budgetValue)) {
+              // Split budget equally among funding orgs
+              const valuePerOrg = budgetValue / fundingOrgs.length
+              fundingOrgs.forEach(orgId => {
+                const current = donorTotals.get(orgId) || 0
+                donorTotals.set(orgId, current + valuePerOrg)
+              })
+            }
+          })
+        }
+      } else if (viewMode === 'disbursements') {
+        // Query actual disbursements
+        const { data: transactions, error } = await supabase
+          .from('transactions')
+          .select('provider_org_id, value_usd')
+          .eq('transaction_type', '3') // Disbursement
+          .gte('transaction_date', dateRange.from.toISOString())
+          .lte('transaction_date', dateRange.to.toISOString())
+          .not('provider_org_id', 'is', null)
+
+        if (error) {
+          console.error('[DonorsChart] Disbursements query error:', error)
+          setLoading(false)
+          return
+        }
+
+        transactions?.forEach((t: any) => {
+          const current = donorTotals.get(t.provider_org_id) || 0
+          const value = parseFloat(t.value_usd) || 0
+          if (!isNaN(value)) {
+            donorTotals.set(t.provider_org_id, current + value)
+          }
+        })
+      } else if (viewMode === 'planned') {
+        // Query planned disbursements
+        const { data: plannedDisbursements, error } = await supabase
+          .from('planned_disbursements')
+          .select('activity_id, value_usd, period_start, period_end')
+          .gte('period_start', dateRange.from.toISOString())
+          .lte('period_end', dateRange.to.toISOString())
+
+        if (error) {
+          console.error('[DonorsChart] Planned disbursements query error:', error)
+          setLoading(false)
+          return
+        }
+
+        // Get activity IDs to find funding orgs
+        const activityIds = [...new Set(plannedDisbursements?.map(pd => pd.activity_id) || [])]
+
+        if (activityIds.length > 0) {
+          const { data: participatingOrgs } = await supabase
+            .from('participating_organizations')
+            .select('activity_id, organization_id, role')
+            .in('activity_id', activityIds)
+            .eq('role', '1') // Funding role
+
+          // Map activity to funding orgs
+          const activityToOrgs = new Map<string, string[]>()
+          participatingOrgs?.forEach(po => {
+            if (!activityToOrgs.has(po.activity_id)) {
+              activityToOrgs.set(po.activity_id, [])
+            }
+            activityToOrgs.get(po.activity_id)!.push(po.organization_id)
+          })
+
+          // Aggregate planned disbursements by funding org
+          plannedDisbursements?.forEach((pd: any) => {
+            const fundingOrgs = activityToOrgs.get(pd.activity_id) || []
+            const plannedValue = parseFloat(pd.value_usd) || 0
+
+            if (fundingOrgs.length > 0 && !isNaN(plannedValue)) {
+              // Split planned disbursement equally among funding orgs
+              const valuePerOrg = plannedValue / fundingOrgs.length
+              fundingOrgs.forEach(orgId => {
+                const current = donorTotals.get(orgId) || 0
+                donorTotals.set(orgId, current + valuePerOrg)
+              })
+            }
+          })
+        }
+      }
+
       console.log('[DonorsChart] Unique donors:', donorTotals.size)
-      
+
       // Convert to array and sort by value
       const sortedDonors = Array.from(donorTotals.entries())
         .map(([id, value]) => {
@@ -146,9 +193,10 @@ export function DonorsChart({ dateRange, filters, refreshKey }: DonorsChartProps
         })
         .sort((a, b) => b.value - a.value)
         .slice(0, 10) // Top 10
-      
+
       console.log('[DonorsChart] Top donors:', sortedDonors.map(d => ({ name: d.shortName, value: d.value })))
       setData(sortedDonors)
+      onDataChange?.(sortedDonors)
     } catch (error) {
       console.error('[DonorsChart] Error fetching donor data:', error)
     } finally {
@@ -199,20 +247,111 @@ export function DonorsChart({ dateRange, filters, refreshKey }: DonorsChartProps
     )
   }
 
+  const getViewLabel = () => {
+    switch (viewMode) {
+      case 'budgets':
+        return 'budget data'
+      case 'disbursements':
+        return 'disbursement data'
+      case 'planned':
+        return 'planned disbursement data'
+    }
+  }
+
+  const getViewIcon = () => {
+    switch (viewMode) {
+      case 'budgets':
+        return <Wallet className="h-4 w-4" />
+      case 'disbursements':
+        return <DollarSign className="h-4 w-4" />
+      case 'planned':
+        return <Calendar className="h-4 w-4" />
+    }
+  }
+
   if (!data || data.length === 0) {
     return (
-      <div className="flex items-center justify-center h-[400px] bg-slate-50 rounded-lg">
-        <div className="text-center">
-          <BarChart3 className="h-8 w-8 text-slate-400 mx-auto mb-4" />
-          <p className="text-slate-600">No donor disbursement data available</p>
-          <p className="text-sm text-slate-500 mt-2">Try adjusting your date range or filters</p>
+      <div className="space-y-4">
+        {/* View Selector */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2 text-sm text-slate-600">
+            {getViewIcon()}
+            <span>Viewing by:</span>
+          </div>
+          <Select value={viewMode} onValueChange={(value: ViewMode) => setViewMode(value)}>
+            <SelectTrigger className="w-[220px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="budgets">
+                <div className="flex items-center gap-2">
+                  <Wallet className="h-4 w-4" />
+                  <span>Total Budgets</span>
+                </div>
+              </SelectItem>
+              <SelectItem value="disbursements">
+                <div className="flex items-center gap-2">
+                  <DollarSign className="h-4 w-4" />
+                  <span>Total Disbursements</span>
+                </div>
+              </SelectItem>
+              <SelectItem value="planned">
+                <div className="flex items-center gap-2">
+                  <Calendar className="h-4 w-4" />
+                  <span>Total Planned Disbursements</span>
+                </div>
+              </SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="flex items-center justify-center h-[400px] bg-slate-50 rounded-lg">
+          <div className="text-center">
+            <BarChart3 className="h-8 w-8 text-slate-400 mx-auto mb-4" />
+            <p className="text-slate-600">No donor {getViewLabel()} available</p>
+            <p className="text-sm text-slate-500 mt-2">Try adjusting your date range or filters</p>
+          </div>
         </div>
       </div>
     )
   }
 
   return (
-    <ResponsiveContainer width="100%" height={400}>
+    <div className="space-y-4">
+      {/* View Selector */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2 text-sm text-slate-600">
+          {getViewIcon()}
+          <span>Viewing by:</span>
+        </div>
+        <Select value={viewMode} onValueChange={(value: ViewMode) => setViewMode(value)}>
+          <SelectTrigger className="w-[220px]">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="budgets">
+              <div className="flex items-center gap-2">
+                <Wallet className="h-4 w-4" />
+                <span>Total Budgets</span>
+              </div>
+            </SelectItem>
+            <SelectItem value="disbursements">
+              <div className="flex items-center gap-2">
+                <DollarSign className="h-4 w-4" />
+                <span>Total Disbursements</span>
+              </div>
+            </SelectItem>
+            <SelectItem value="planned">
+              <div className="flex items-center gap-2">
+                <Calendar className="h-4 w-4" />
+                <span>Total Planned Disbursements</span>
+              </div>
+            </SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      <ResponsiveContainer width="100%" height={400}>
       <BarChart 
         data={data}
         layout="horizontal"
@@ -254,5 +393,6 @@ export function DonorsChart({ dateRange, filters, refreshKey }: DonorsChartProps
         </Bar>
       </BarChart>
     </ResponsiveContainer>
+    </div>
   )
 } 

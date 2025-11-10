@@ -19,11 +19,12 @@ interface Top10GovernmentValidatedChartProps {
     from: Date
     to: Date
   }
-  filters: {
+  filters?: {
     country?: string
     sector?: string
   }
   refreshKey: number
+  onDataChange?: (data: PartnerData[]) => void
 }
 
 interface PartnerData {
@@ -35,10 +36,11 @@ interface PartnerData {
   shortName: string
 }
 
-export function Top10GovernmentValidatedChart({ 
-  dateRange, 
-  filters, 
-  refreshKey 
+export function Top10GovernmentValidatedChart({
+  dateRange,
+  filters,
+  refreshKey,
+  onDataChange
 }: Top10GovernmentValidatedChartProps) {
   const [data, setData] = useState<PartnerData[]>([])
   const [loading, setLoading] = useState(true)
@@ -57,10 +59,10 @@ export function Top10GovernmentValidatedChart({
         limit: '10'
       })
       
-      if (filters.country && filters.country !== 'all') {
+      if (filters?.country && filters.country !== 'all') {
         params.append('country', filters.country)
       }
-      if (filters.sector && filters.sector !== 'all') {
+      if (filters?.sector && filters.sector !== 'all') {
         params.append('sector', filters.sector)
       }
 
@@ -77,6 +79,7 @@ export function Top10GovernmentValidatedChart({
       }))
 
       setData(partners)
+      onDataChange?.(partners)
     } catch (error) {
       console.error('[Top10GovernmentValidatedChart] Error:', error)
       setData([])
@@ -197,6 +200,9 @@ export function Top10GovernmentValidatedChart({
     </ResponsiveContainer>
   )
 }
+
+
+
 
 
 

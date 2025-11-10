@@ -24,10 +24,12 @@ interface StatusData {
 
 interface ActivityStatusChartProps {
   filters: any;
+  onDataChange?: (data: any[]) => void;
 }
 
 export const ActivityStatusChart: React.FC<ActivityStatusChartProps> = ({
   filters,
+  onDataChange,
 }) => {
   const [data, setData] = useState<{
     activityStatus: StatusData[];

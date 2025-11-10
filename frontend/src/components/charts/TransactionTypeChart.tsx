@@ -27,10 +27,12 @@ interface TransactionTypeData {
 
 interface TransactionTypeChartProps {
   filters: any;
+  onDataChange?: (data: any[]) => void;
 }
 
 export const TransactionTypeChart: React.FC<TransactionTypeChartProps> = ({
   filters,
+  onDataChange,
 }) => {
   const [data, setData] = useState<TransactionTypeData[]>([]);
   const [loading, setLoading] = useState(false);

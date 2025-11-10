@@ -1,16 +1,8 @@
-import React, { useState, useEffect } from "react";
-import {
-  ResponsiveContainer,
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-} from "recharts";
-import { Loader2, AlertCircle } from "lucide-react";
+import React, { useState, useEffect, useMemo } from "react";
+import { DATA_COLORS, CHART_STRUCTURE_COLORS } from "@/lib/chart-colors";
+import { Loader2, AlertCircle, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
 import { toast } from "sonner";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 interface AnalyticsFilters {
   donor: string;
@@ -23,23 +15,33 @@ interface AnalyticsFilters {
 
 interface ChartDataPoint {
   organization: string;
+  acronym: string;
   budget: number;
   disbursements: number;
   expenditures: number;
   totalSpending: number;
+  iati_id?: string;
+  org_type?: string;
 }
+
+type SortField = 'organization' | 'budget' | 'disbursements' | 'expenditures' | 'totalSpending';
+type SortDirection = 'asc' | 'desc';
 
 interface ReportingOrgChartProps {
   filters: AnalyticsFilters;
+  onDataChange?: (data: any[]) => void;
 }
 
 export const ReportingOrgChart: React.FC<ReportingOrgChartProps> = ({
   filters,
+  onDataChange,
 }) => {
   const [data, setData] = useState<ChartDataPoint[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [currency, setCurrency] = useState<string>('USD');
+  const [sortField, setSortField] = useState<SortField>('organization');
+  const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
 
   // Fetch chart data whenever filters change
   useEffect(() => {
@@ -82,48 +84,64 @@ export const ReportingOrgChart: React.FC<ReportingOrgChartProps> = ({
     }
   };
 
-  const formatYAxis = (value: number) => {
-    if (value >= 1000000000) {
-      return `${(value / 1000000000).toFixed(1)}B`;
-    } else if (value >= 1000000) {
-      return `${(value / 1000000).toFixed(1)}M`;
-    } else if (value >= 1000) {
-      return `${(value / 1000).toFixed(0)}K`;
+  const handleSort = (field: SortField) => {
+    if (sortField === field) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortDirection('desc');
     }
-    return value.toString();
   };
 
-  const formatTooltipValue = (value: number) => {
-    return `${currency} ${value.toLocaleString()}`;
+  const getSortIcon = (field: SortField) => {
+    if (sortField !== field) {
+      return <ArrowUpDown className="h-4 w-4 text-gray-400" />;
+    }
+    return sortDirection === 'asc'
+      ? <ArrowUp className="h-4 w-4 text-gray-400" />
+      : <ArrowDown className="h-4 w-4 text-gray-400" />;
   };
 
-  const CustomTooltip = ({ active, payload, label }: any) => {
-    if (active && payload && payload.length) {
-      return (
-        <div className="bg-white p-4 border border-gray-200 rounded-lg shadow-lg">
-          <p className="font-semibold text-gray-900 mb-2">{`Organization: ${label}`}</p>
-          {payload.map((entry: any, index: number) => (
-            <p
-              key={index}
-              className="text-sm"
-              style={{ color: entry.color }}
-            >
-              {`${entry.name}: ${formatTooltipValue(entry.value)}`}
-            </p>
-          ))}
-          {payload.length >= 3 && (
-            <div className="border-t pt-2 mt-2">
-              <p className="text-sm font-medium text-gray-700">
-                Execution Rate: {payload[0]?.payload?.budget > 0 
-                  ? ((payload[0].payload.totalSpending / payload[0].payload.budget) * 100).toFixed(1) 
-                  : 0}%
-              </p>
-            </div>
-          )}
-        </div>
-      );
-    }
-    return null;
+  const sortedData = useMemo(() => {
+    if (!sortField) return data;
+
+    return [...data].sort((a, b) => {
+      let aValue: string | number;
+      let bValue: string | number;
+
+      switch (sortField) {
+        case 'organization':
+          aValue = a.organization.toLowerCase();
+          bValue = b.organization.toLowerCase();
+          break;
+        case 'budget':
+          aValue = a.budget;
+          bValue = b.budget;
+          break;
+        case 'disbursements':
+          aValue = a.disbursements;
+          bValue = b.disbursements;
+          break;
+        case 'expenditures':
+          aValue = a.expenditures;
+          bValue = b.expenditures;
+          break;
+        case 'totalSpending':
+          aValue = a.totalSpending;
+          bValue = b.totalSpending;
+          break;
+        default:
+          return 0;
+      }
+
+      if (aValue < bValue) return sortDirection === 'asc' ? -1 : 1;
+      if (aValue > bValue) return sortDirection === 'asc' ? 1 : -1;
+      return 0;
+    });
+  }, [data, sortField, sortDirection]);
+
+  const formatCurrency = (value: number) => {
+    return `${currency} ${value.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
   };
 
   // Loading state
@@ -165,96 +183,106 @@ export const ReportingOrgChart: React.FC<ReportingOrgChartProps> = ({
 
   return (
     <div className="w-full">
-      {/* Chart Legend */}
-      <div className="flex items-center justify-center gap-6 mb-6 p-4 bg-gray-50 rounded-lg">
-        <div className="flex items-center gap-2">
-          <div className="w-4 h-4 bg-blue-500 rounded"></div>
-          <span className="text-sm font-medium">Budget</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="w-4 h-4 rounded" style={{ backgroundColor: '#10B981' }}></div>
-          <span className="text-sm font-medium">Disbursements</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="w-4 h-4 rounded" style={{ backgroundColor: '#F59E0B' }}></div>
-          <span className="text-sm font-medium">Expenditures</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="w-4 h-4 bg-purple-500 rounded"></div>
-          <span className="text-sm font-medium">Total Spending</span>
-        </div>
+      <div className="rounded-md border">
+        <Table className="table-fixed w-full">
+          <TableHeader className="bg-muted/50 border-b border-border/70">
+            <TableRow>
+              <TableHead
+                className="text-sm font-medium text-foreground/90 py-3 px-3 cursor-pointer hover:bg-muted/30 transition-colors whitespace-nowrap"
+                style={{ width: '25%' }}
+                onClick={() => handleSort('organization')}
+              >
+                <div className="flex items-center gap-1">
+                  <span>Organization</span>
+                  {getSortIcon('organization')}
+                </div>
+              </TableHead>
+              <TableHead className="text-sm font-medium text-foreground/90 py-3 px-3 whitespace-nowrap" style={{ width: '15%' }}>
+                Organisation Type
+              </TableHead>
+              <TableHead
+                className="text-sm font-medium text-foreground/90 py-3 px-3 text-right cursor-pointer hover:bg-muted/30 transition-colors whitespace-nowrap"
+                style={{ width: '15%' }}
+                onClick={() => handleSort('budget')}
+              >
+                <div className="flex items-center justify-end gap-1">
+                  <span>Budget</span>
+                  {getSortIcon('budget')}
+                </div>
+              </TableHead>
+              <TableHead
+                className="text-sm font-medium text-foreground/90 py-3 px-3 text-right cursor-pointer hover:bg-muted/30 transition-colors whitespace-nowrap"
+                style={{ width: '15%' }}
+                onClick={() => handleSort('disbursements')}
+              >
+                <div className="flex items-center justify-end gap-1">
+                  <span>Disbursements</span>
+                  {getSortIcon('disbursements')}
+                </div>
+              </TableHead>
+              <TableHead
+                className="text-sm font-medium text-foreground/90 py-3 px-3 text-right cursor-pointer hover:bg-muted/30 transition-colors whitespace-nowrap"
+                style={{ width: '15%' }}
+                onClick={() => handleSort('expenditures')}
+              >
+                <div className="flex items-center justify-end gap-1">
+                  <span>Expenditures</span>
+                  {getSortIcon('expenditures')}
+                </div>
+              </TableHead>
+              <TableHead
+                className="text-sm font-medium text-foreground/90 py-3 px-3 text-right cursor-pointer hover:bg-muted/30 transition-colors whitespace-nowrap"
+                style={{ width: '15%' }}
+                onClick={() => handleSort('totalSpending')}
+              >
+                <div className="flex items-center justify-end gap-1">
+                  <span>Total Spending</span>
+                  {getSortIcon('totalSpending')}
+                </div>
+              </TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {sortedData.map((org, index) => (
+              <TableRow key={index} className="hover:bg-gray-50">
+                <TableCell className="py-3 px-3">
+                  <div className="flex flex-col">
+                    <div className="font-medium text-gray-900">
+                      {org.organization} {org.acronym && org.acronym !== org.organization && `(${org.acronym})`}
+                    </div>
+                    {org.iati_id && (
+                      <div className="text-xs text-gray-500 font-mono mt-1">
+                        {org.iati_id}
+                      </div>
+                    )}
+                  </div>
+                </TableCell>
+                <TableCell className="py-3 px-3 text-sm text-gray-600">
+                  {org.org_type || '—'}
+                </TableCell>
+                <TableCell className="py-3 px-3 text-sm text-right text-gray-900">
+                  {formatCurrency(org.budget)}
+                </TableCell>
+                <TableCell className="py-3 px-3 text-sm text-right text-gray-900">
+                  {formatCurrency(org.disbursements)}
+                </TableCell>
+                <TableCell className="py-3 px-3 text-sm text-right text-gray-900">
+                  {formatCurrency(org.expenditures)}
+                </TableCell>
+                <TableCell className="py-3 px-3 text-sm text-right font-medium text-gray-900">
+                  {formatCurrency(org.totalSpending)}
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
       </div>
 
-      {/* Responsive Chart Container */}
-      <ResponsiveContainer width="100%" height={500}>
-        <BarChart
-          data={data}
-          margin={{ top: 20, right: 30, left: 20, bottom: 80 }}
-          barCategoryGap="20%"
-        >
-          <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
-          <XAxis 
-            dataKey="organization" 
-            stroke="#6B7280" 
-            fontSize={12}
-            angle={-45}
-            textAnchor="end"
-            height={100}
-            interval={0}
-          />
-          <YAxis 
-            tickFormatter={formatYAxis} 
-            stroke="#6B7280" 
-            fontSize={12}
-            label={{ 
-              value: `Amount (${currency})`, 
-              angle: -90, 
-              position: 'insideLeft',
-              style: { textAnchor: 'middle' }
-            }}
-          />
-          <Tooltip content={<CustomTooltip />} />
-          <Legend />
-          
-          {/* Budget Bar */}
-          <Bar 
-            dataKey="budget" 
-            name="Budget" 
-            fill="#3B82F6"
-            radius={[2, 2, 0, 0]}
-          />
-          
-          {/* Disbursements Bar */}
-          <Bar 
-            dataKey="disbursements" 
-            name="Disbursements" 
-            fill="#10B981"
-            radius={[2, 2, 0, 0]}
-          />
-          
-          {/* Expenditures Bar */}
-          <Bar 
-            dataKey="expenditures" 
-            name="Expenditures" 
-            fill="#F59E0B"
-            radius={[2, 2, 0, 0]}
-          />
-          
-          {/* Total Spending Bar */}
-          <Bar 
-            dataKey="totalSpending" 
-            name="Total Spending" 
-            fill="#8B5CF6"
-            radius={[2, 2, 0, 0]}
-          />
-        </BarChart>
-      </ResponsiveContainer>
-
-      {/* Chart info */}
+      {/* Table info */}
       <div className="mt-4 text-sm text-muted-foreground">
         <p>
-          <strong>Showing:</strong> {filters.topN === 'all' ? 'All' : `Top ${filters.topN}`} organizations by total budget | 
-          <strong> Currency:</strong> {currency} | 
+          <strong>Showing:</strong> {filters.topN === 'all' ? 'All' : `Top ${filters.topN}`} organizations by total budget |
+          <strong> Currency:</strong> {currency} |
           <strong> Organizations:</strong> {data.length}
         </p>
       </div>

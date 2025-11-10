@@ -1154,47 +1154,47 @@ export default function TransactionList({
           ) : (
             <>
             <div className="rounded-md border">
-              <Table className="table-fixed">
+              <Table className="table-fixed w-full">
                 <TableHeader className="bg-muted/50 border-b border-border/70">
                   <TableRow>
-                    <TableHead className="py-3 px-2 whitespace-nowrap" style={{ width: '50px' }}></TableHead>
-                    <TableHead className="text-sm font-medium text-foreground/90 py-3 px-4 cursor-pointer hover:bg-muted/30 transition-colors whitespace-nowrap" style={{ width: '140px' }} onClick={() => handleSort('transaction_date')}>
+                    <TableHead className="py-3 px-2 whitespace-nowrap" style={{ width: '40px', maxWidth: '40px' }}></TableHead>
+                    <TableHead className="text-sm font-medium text-foreground/90 py-3 px-3 cursor-pointer hover:bg-muted/30 transition-colors whitespace-nowrap" style={{ width: '110px', maxWidth: '110px' }} onClick={() => handleSort('transaction_date')}>
                       <div className="flex items-center gap-1">
                         <span>Date</span>
                         {getSortIcon('transaction_date')}
                       </div>
                     </TableHead>
-                    <TableHead className="text-sm font-medium text-foreground/90 py-3 px-4 cursor-pointer hover:bg-muted/30 transition-colors whitespace-nowrap" style={{ width: '200px' }} onClick={() => handleSort('transaction_type')}>
+                    <TableHead className="text-sm font-medium text-foreground/90 py-3 px-3 cursor-pointer hover:bg-muted/30 transition-colors whitespace-nowrap" style={{ width: '160px', maxWidth: '160px' }} onClick={() => handleSort('transaction_type')}>
                       <div className="flex items-center gap-1">
-                        <span>Transaction Type</span>
+                        <span>Type</span>
                         {getSortIcon('transaction_type')}
                       </div>
                     </TableHead>
-                    <TableHead className="text-sm font-medium text-foreground/90 py-3 px-4 cursor-pointer hover:bg-muted/30 transition-colors whitespace-nowrap" style={{ width: '340px' }} onClick={() => handleSort('finance_type')}>
+                    <TableHead className="text-sm font-medium text-foreground/90 py-3 px-3 cursor-pointer hover:bg-muted/30 transition-colors whitespace-nowrap" style={{ width: '200px', maxWidth: '200px' }} onClick={() => handleSort('finance_type')}>
                       <div className="flex items-center gap-1">
                         <span>Finance Type</span>
                         {getSortIcon('finance_type')}
                       </div>
                     </TableHead>
-                    <TableHead className="text-sm font-medium text-foreground/90 py-3 px-4 cursor-pointer hover:bg-muted/30 transition-colors whitespace-nowrap" style={{ minWidth: '320px' }} onClick={() => handleSort('provider_org_name')}>
+                    <TableHead className="text-sm font-medium text-foreground/90 py-3 px-3 cursor-pointer hover:bg-muted/30 transition-colors whitespace-nowrap" style={{ width: '280px', maxWidth: '280px' }} onClick={() => handleSort('provider_org_name')}>
                       <div className="flex items-center gap-1">
                         <span>Provider → Receiver</span>
                         {getSortIcon('provider_org_name')}
                       </div>
                     </TableHead>
-                    <TableHead className="text-sm font-medium text-foreground/90 py-3 px-4 text-right cursor-pointer hover:bg-muted/30 transition-colors whitespace-nowrap" style={{ width: '160px' }} onClick={() => handleSort('value')}>
+                    <TableHead className="text-sm font-medium text-foreground/90 py-3 px-3 text-right cursor-pointer hover:bg-muted/30 transition-colors whitespace-nowrap" style={{ width: '130px', maxWidth: '130px' }} onClick={() => handleSort('value')}>
                       <div className="flex items-center justify-end gap-1">
                         <span>Amount</span>
                         {getSortIcon('value')}
                       </div>
                     </TableHead>
-                    <TableHead className="text-sm font-medium text-foreground/90 py-3 px-4 cursor-pointer hover:bg-muted/30 transition-colors whitespace-nowrap" style={{ width: '140px' }} onClick={() => handleSort('value_date')}>
+                    <TableHead className="text-sm font-medium text-foreground/90 py-3 px-3 cursor-pointer hover:bg-muted/30 transition-colors whitespace-nowrap" style={{ width: '110px', maxWidth: '110px' }} onClick={() => handleSort('value_date')}>
                       <div className="flex items-center gap-1">
-                        <span>Value Date</span>
+                        <span>Val. Date</span>
                         {getSortIcon('value_date')}
                       </div>
                     </TableHead>
-                    <TableHead className="text-sm font-medium text-foreground/90 py-3 px-4 text-right cursor-pointer hover:bg-muted/30 transition-colors whitespace-nowrap" style={{ width: '150px' }} onClick={() => handleSort('value_usd')}>
+                    <TableHead className="text-sm font-medium text-foreground/90 py-3 px-3 text-right cursor-pointer hover:bg-muted/30 transition-colors whitespace-nowrap" style={{ width: '130px', maxWidth: '130px' }} onClick={() => handleSort('value_usd')}>
                       <div className="flex items-center justify-end gap-1">
                         <span>USD Value</span>
                         {getSortIcon('value_usd')}
@@ -1334,45 +1334,45 @@ export default function TransactionList({
                       </TableCell>
                       
                       {/* Provider → Receiver */}
-                      <TableCell className="py-3 px-4 whitespace-nowrap">
-                        <div className="flex items-center gap-2 font-medium">
-                          <div className="flex items-center gap-1.5">
+                      <TableCell className="py-3 px-3" style={{ maxWidth: '280px' }}>
+                        <div className="flex items-center gap-1.5 font-medium overflow-hidden">
+                          <div className="flex items-center gap-1.5 min-w-0 flex-shrink">
                             <OrganizationLogo
                               logo={getOrgLogo(transaction.provider_org_id, transaction.provider_org_ref) || (transaction as any).provider_org_logo}
                               name={getOrgAcronymOrName(transaction.provider_org_id, transaction.provider_org_name, transaction.provider_org_ref) || "Unknown"}
                               size="sm"
                             />
                             {getOrgId(transaction.provider_org_id, transaction.provider_org_ref) ? (
-                              <Link 
+                              <Link
                                 href={`/organizations/${getOrgId(transaction.provider_org_id, transaction.provider_org_ref)}`}
-                                className="truncate max-w-[120px] hover:text-gray-700 transition-colors"
+                                className="truncate hover:text-gray-700 transition-colors block"
                                 onClick={(e) => e.stopPropagation()}
                               >
                                 {getOrgAcronymOrName(transaction.provider_org_id, transaction.provider_org_name, transaction.provider_org_ref) || "Unknown"}
                               </Link>
                             ) : (
-                              <span className="truncate max-w-[120px]">
+                              <span className="truncate block">
                                 {getOrgAcronymOrName(transaction.provider_org_id, transaction.provider_org_name, transaction.provider_org_ref) || "Unknown"}
                               </span>
                             )}
                           </div>
-                          <span className="text-muted-foreground">→</span>
-                          <div className="flex items-center gap-1.5">
+                          <span className="text-muted-foreground flex-shrink-0">→</span>
+                          <div className="flex items-center gap-1.5 min-w-0 flex-shrink">
                             <OrganizationLogo
                               logo={getOrgLogo(transaction.receiver_org_id, transaction.receiver_org_ref) || (transaction as any).receiver_org_logo}
                               name={getOrgAcronymOrName(transaction.receiver_org_id, transaction.receiver_org_name, transaction.receiver_org_ref) || "Unknown"}
                               size="sm"
                             />
                             {getOrgId(transaction.receiver_org_id, transaction.receiver_org_ref) ? (
-                              <Link 
+                              <Link
                                 href={`/organizations/${getOrgId(transaction.receiver_org_id, transaction.receiver_org_ref)}`}
-                                className="truncate max-w-[120px] hover:text-gray-700 transition-colors"
+                                className="truncate hover:text-gray-700 transition-colors block"
                                 onClick={(e) => e.stopPropagation()}
                               >
                                 {getOrgAcronymOrName(transaction.receiver_org_id, transaction.receiver_org_name, transaction.receiver_org_ref) || "Unknown"}
                               </Link>
                             ) : (
-                              <span className="truncate max-w-[120px]">
+                              <span className="truncate block">
                                 {getOrgAcronymOrName(transaction.receiver_org_id, transaction.receiver_org_name, transaction.receiver_org_ref) || "Unknown"}
                               </span>
                             )}

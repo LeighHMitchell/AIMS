@@ -164,7 +164,7 @@ export async function GET(request: NextRequest) {
       if (!transaction.transaction_date) return;
       
       const year = new Date(transaction.transaction_date).getFullYear();
-      const transactionValue = transaction.value_usd || transaction.value || 0;
+      const transactionValue = transaction.value_usd || 0;
       const activitySectors = activitySectorsMap.get(transaction.activity_id) || [];
       
       // Check if this transaction has sector lines
@@ -243,6 +243,9 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
+
+
+
 
 
 

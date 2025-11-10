@@ -19,11 +19,12 @@ interface Top10TotalFinancialValueChartProps {
     from: Date
     to: Date
   }
-  filters: {
+  filters?: {
     country?: string
     sector?: string
   }
   refreshKey: number
+  onDataChange?: (data: DonorData[]) => void
 }
 
 interface DonorData {
@@ -34,10 +35,11 @@ interface DonorData {
   shortName: string
 }
 
-export function Top10TotalFinancialValueChart({ 
-  dateRange, 
-  filters, 
-  refreshKey 
+export function Top10TotalFinancialValueChart({
+  dateRange,
+  filters,
+  refreshKey,
+  onDataChange
 }: Top10TotalFinancialValueChartProps) {
   const [data, setData] = useState<DonorData[]>([])
   const [loading, setLoading] = useState(true)
@@ -56,10 +58,10 @@ export function Top10TotalFinancialValueChart({
         limit: '10'
       })
       
-      if (filters.country && filters.country !== 'all') {
+      if (filters?.country && filters.country !== 'all') {
         params.append('country', filters.country)
       }
-      if (filters.sector && filters.sector !== 'all') {
+      if (filters?.sector && filters.sector !== 'all') {
         params.append('sector', filters.sector)
       }
 
@@ -81,6 +83,7 @@ export function Top10TotalFinancialValueChart({
 
       console.log('[Top10TotalFinancialValue] Final data count:', donors.length, 'items:', donors)
       setData(donors)
+      onDataChange?.(donors)
     } catch (error) {
       console.error('[Top10TotalFinancialValueChart] Error:', error)
       setData([])

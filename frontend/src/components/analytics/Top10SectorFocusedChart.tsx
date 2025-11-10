@@ -19,11 +19,8 @@ interface Top10SectorFocusedChartProps {
     from: Date
     to: Date
   }
-  filters: {
-    country?: string
-    sector?: string
-  }
   refreshKey: number
+  onDataChange?: (data: PartnerData[]) => void
 }
 
 interface PartnerData {
@@ -34,39 +31,28 @@ interface PartnerData {
   shortName: string
 }
 
-export function Top10SectorFocusedChart({ 
-  dateRange, 
-  filters, 
-  refreshKey 
+export function Top10SectorFocusedChart({
+  dateRange,
+  refreshKey,
+  onDataChange
 }: Top10SectorFocusedChartProps) {
   const [data, setData] = useState<PartnerData[]>([])
   const [loading, setLoading] = useState(true)
-  const [sectorName, setSectorName] = useState<string>('')
+  const [sectorName, setSectorName] = useState<string>('All Sectors')
 
   useEffect(() => {
     fetchData()
-  }, [dateRange, filters, refreshKey])
+  }, [dateRange, refreshKey])
 
   const fetchData = async () => {
     try {
       setLoading(true)
       
-      if (!filters.sector || filters.sector === 'all') {
-        setData([])
-        setLoading(false)
-        return
-      }
-      
       const params = new URLSearchParams({
         dateFrom: dateRange.from.toISOString(),
         dateTo: dateRange.to.toISOString(),
-        sector: filters.sector,
         limit: '10'
       })
-      
-      if (filters.country && filters.country !== 'all') {
-        params.append('country', filters.country)
-      }
 
       const response = await fetch(`/api/analytics/top-10/sector-focused?${params}`)
       if (!response.ok) {
@@ -74,14 +60,15 @@ export function Top10SectorFocusedChart({
       }
 
       const result = await response.json()
-      
+
       const partners = (result.partners || []).map((p: any) => ({
         ...p,
         shortName: p.acronym || p.name.split(' ').slice(0, 2).join(' ')
       }))
 
       setData(partners)
-      setSectorName(result.sectorName || `Sector ${filters.sector}`)
+      onDataChange?.(partners)
+      setSectorName(result.sectorName || 'All Sectors')
     } catch (error) {
       console.error('[Top10SectorFocusedChart] Error:', error)
       setData([])
@@ -125,17 +112,6 @@ export function Top10SectorFocusedChart({
     '#5eead4',
     '#94a3b8' // slate-400 for "Others"
   ]
-
-  if (!filters.sector || filters.sector === 'all') {
-    return (
-      <div className="flex items-center justify-center h-[400px] bg-slate-50 rounded-lg">
-        <div className="text-center">
-          <Target className="h-8 w-8 text-slate-400 mx-auto mb-4" />
-          <p className="text-slate-600">Please select a sector to view sector-focused rankings</p>
-        </div>
-      </div>
-    )
-  }
 
   if (loading) {
     return (
@@ -205,6 +181,9 @@ export function Top10SectorFocusedChart({
     </ResponsiveContainer>
   )
 }
+
+
+
 
 
 

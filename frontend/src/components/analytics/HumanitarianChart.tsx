@@ -22,12 +22,8 @@ interface HumanitarianChartProps {
     from: Date
     to: Date
   }
-  filters: {
-    country?: string
-    donor?: string
-    sector?: string
-  }
   refreshKey: number
+  onDataChange?: (data: ChartData[]) => void
 }
 
 interface ChartData {
@@ -39,14 +35,14 @@ interface ChartData {
 
 type GroupByMode = 'calendar' | 'fiscal' | 'quarter'
 
-export function HumanitarianChart({ dateRange, filters, refreshKey }: HumanitarianChartProps) {
+export function HumanitarianChart({ dateRange, refreshKey, onDataChange }: HumanitarianChartProps) {
   const [data, setData] = useState<ChartData[]>([])
   const [loading, setLoading] = useState(true)
   const [groupBy, setGroupBy] = useState<GroupByMode>('calendar')
 
   useEffect(() => {
     fetchData()
-  }, [dateRange, filters, refreshKey, groupBy])
+  }, [dateRange, refreshKey, groupBy])
 
   const getFiscalYear = (date: Date): string => {
     const year = getYear(date)
@@ -71,58 +67,14 @@ export function HumanitarianChart({ dateRange, filters, refreshKey }: Humanitari
     try {
       setLoading(true)
       
-      // Build base query through activities to properly apply country and sector filters
-      let activityQuery = supabase
-        .from('activities')
-        .select(`
-          id,
-          locations,
-          collaboration_type,
-          activity_sectors!inner(sector_code),
-          transactions!transactions_activity_id_fkey1!inner(
-            value,
-            aid_type,
-            transaction_date,
-            activity_id,
-            is_humanitarian,
-            description,
-            provider_org_id,
-            transaction_type,
-            status
-          )
-        `)
-        .eq('publication_status', 'published')
-        .in('transactions.transaction_type', ['2', '3', '4']) // Include Commitments, Disbursements, and Expenditures
-        .in('transactions.status', ['actual', 'draft']) // Include both actual and draft transactions
-        .gte('transactions.transaction_date', dateRange.from.toISOString())
-        .lte('transactions.transaction_date', dateRange.to.toISOString())
-
-      // Apply country filter
-      if (filters.country && filters.country !== 'all') {
-        activityQuery = activityQuery.contains('locations', [{ country_code: filters.country }])
-      }
-
-      // Apply sector filter
-      if (filters.sector && filters.sector !== 'all') {
-        activityQuery = activityQuery.eq('activity_sectors.sector_code', filters.sector)
-      }
-
-      // Apply donor filter
-      if (filters.donor && filters.donor !== 'all') {
-        activityQuery = activityQuery.eq('transactions.provider_org_id', filters.donor)
-      }
-
-      const { data: activities, error: queryError } = await activityQuery
-      
-      // Extract transactions from activities with activity metadata
-      const transactions = activities?.flatMap((activity: any) => 
-        (activity.transactions || []).map((t: any) => ({
-          ...t,
-          activities: {
-            collaboration_type: activity.collaboration_type
-          }
-        }))
-      ) || []
+      // Query transactions directly
+      const { data: transactions, error: queryError } = await supabase
+        .from('transactions')
+        .select('value, transaction_date, is_humanitarian, transaction_type, status')
+        .in('transaction_type', ['2', '3', '4']) // Include Commitments, Disbursements, and Expenditures
+        .eq('status', 'actual')
+        .gte('transaction_date', dateRange.from.toISOString())
+        .lte('transaction_date', dateRange.to.toISOString())
       
       console.log('[HumanitarianChart] Query results:', {
         transactionCount: transactions?.length || 0,
@@ -209,6 +161,7 @@ export function HumanitarianChart({ dateRange, filters, refreshKey }: Humanitari
       }
 
       setData(chartData)
+      onDataChange?.(chartData)
     } catch (error) {
       console.error('Error fetching humanitarian data:', error)
     } finally {

@@ -341,6 +341,9 @@ export default function IatiImportDemoPage() {
           meta={modalData.meta}
           userOrgName={modalData.userOrgName}
           userPublisherRefs={modalData.userPublisherRefs}
+          userRole="super_user"
+          userId={MOCK_USER.id}
+          xmlContent={undefined}
           onChoose={handleModalChoice}
           existingActivity={modalData.existingActivity}
         />

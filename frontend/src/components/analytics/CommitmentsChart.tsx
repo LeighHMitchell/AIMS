@@ -22,12 +22,8 @@ interface CommitmentsChartProps {
     from: Date
     to: Date
   }
-  filters: {
-    country?: string
-    donor?: string
-    sector?: string
-  }
   refreshKey: number
+  onDataChange?: (data: ChartData[]) => void
 }
 
 interface ChartData {
@@ -39,14 +35,14 @@ interface ChartData {
 
 type GroupByMode = 'calendar' | 'fiscal' | 'quarter'
 
-export function CommitmentsChart({ dateRange, filters, refreshKey }: CommitmentsChartProps) {
+export function CommitmentsChart({ dateRange, refreshKey, onDataChange }: CommitmentsChartProps) {
   const [data, setData] = useState<ChartData[]>([])
   const [loading, setLoading] = useState(true)
   const [groupBy, setGroupBy] = useState<GroupByMode>('calendar')
 
   useEffect(() => {
     fetchData()
-  }, [dateRange, filters, refreshKey, groupBy])
+  }, [dateRange, refreshKey, groupBy])
 
   const getFiscalYear = (date: Date): string => {
     const year = getYear(date)
@@ -95,21 +91,14 @@ export function CommitmentsChart({ dateRange, filters, refreshKey }: Commitments
     try {
       setLoading(true)
       
-      // Build base query for all transactions
-      let transactionsQuery = supabase
+      // Query all transactions
+      const { data: transactions, error } = await supabase
         .from('transactions')
         .select('value, transaction_type, transaction_date')
         .in('transaction_type', ['2', '3']) // Commitments and Disbursements
         .eq('status', 'actual')
         .gte('transaction_date', dateRange.from.toISOString())
         .lte('transaction_date', dateRange.to.toISOString())
-
-      // Apply filters
-      if (filters.donor && filters.donor !== 'all') {
-        transactionsQuery = transactionsQuery.eq('provider_org_id', filters.donor)
-      }
-
-      const { data: transactions, error } = await transactionsQuery
 
       if (error) {
         console.error('Error fetching transactions:', error)
@@ -163,6 +152,7 @@ export function CommitmentsChart({ dateRange, filters, refreshKey }: Commitments
       }
 
       setData(chartData)
+      onDataChange?.(chartData)
     } catch (error) {
       console.error('Error fetching commitments data:', error)
     } finally {

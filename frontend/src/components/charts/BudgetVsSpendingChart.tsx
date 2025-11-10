@@ -13,6 +13,7 @@ import {
 import { Card, CardContent } from "@/components/ui/card";
 import { Loader2, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
+import { DATA_COLORS, CHART_STRUCTURE_COLORS } from "@/lib/chart-colors";
 
 interface AnalyticsFilters {
   donor: string;
@@ -32,10 +33,12 @@ interface ChartDataPoint {
 
 interface BudgetVsSpendingChartProps {
   filters: AnalyticsFilters;
+  onDataChange?: (data: ChartDataPoint[]) => void;
 }
 
 export const BudgetVsSpendingChart: React.FC<BudgetVsSpendingChartProps> = ({
   filters,
+  onDataChange,
 }) => {
   const [data, setData] = useState<ChartDataPoint[]>([]);
   const [loading, setLoading] = useState(false);
@@ -72,8 +75,10 @@ export const BudgetVsSpendingChart: React.FC<BudgetVsSpendingChartProps> = ({
         throw new Error(result.error);
       }
 
-      setData(result.data || []);
+      const chartData = result.data || [];
+      setData(chartData);
       setCurrency(result.currency || 'USD');
+      onDataChange?.(chartData);
     } catch (error) {
       console.error('Error fetching chart data:', error);
       setError(error instanceof Error ? error.message : 'Failed to load chart data');
@@ -101,22 +106,22 @@ export const BudgetVsSpendingChart: React.FC<BudgetVsSpendingChartProps> = ({
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
       return (
-        <div className="bg-white p-4 border border-gray-200 rounded-lg shadow-lg">
-          <p className="font-semibold text-gray-900 mb-2">{`Period: ${label}`}</p>
+        <div style={{ backgroundColor: CHART_STRUCTURE_COLORS.tooltipBg }} className="p-4 border-0 rounded-lg shadow-lg">
+          <p className="font-semibold mb-2" style={{ color: CHART_STRUCTURE_COLORS.tooltipText }}>{`Period: ${label}`}</p>
           {payload.map((entry: any, index: number) => (
             <p
               key={index}
               className="text-sm"
-              style={{ color: entry.color }}
+              style={{ color: CHART_STRUCTURE_COLORS.tooltipText }}
             >
-              {`${entry.name}: ${formatTooltipValue(entry.value)}`}
+              <span style={{ color: entry.color }}>■</span> {`${entry.name}: ${formatTooltipValue(entry.value)}`}
             </p>
           ))}
           {payload.length >= 3 && (
-            <div className="border-t pt-2 mt-2">
-              <p className="text-sm font-medium text-gray-700">
-                Execution Rate: {payload[0]?.payload?.budget > 0 
-                  ? ((payload[0].payload.totalSpending / payload[0].payload.budget) * 100).toFixed(1) 
+            <div className="border-t border-slate-600 pt-2 mt-2">
+              <p className="text-sm font-medium" style={{ color: CHART_STRUCTURE_COLORS.tooltipText }}>
+                Execution Rate: {payload[0]?.payload?.budget > 0
+                  ? ((payload[0].payload.totalSpending / payload[0].payload.budget) * 100).toFixed(1)
                   : 0}%
               </p>
             </div>
@@ -167,22 +172,22 @@ export const BudgetVsSpendingChart: React.FC<BudgetVsSpendingChartProps> = ({
   return (
     <div className="w-full">
       {/* Chart Legend */}
-      <div className="flex items-center justify-center gap-6 mb-6 p-4 bg-gray-50 rounded-lg">
+      <div className="flex items-center justify-center gap-6 mb-6 p-4 bg-slate-50 rounded-lg">
         <div className="flex items-center gap-2">
-          <div className="w-4 h-4 bg-blue-500 rounded"></div>
-          <span className="text-sm font-medium">Budget</span>
+          <div className="w-4 h-4 rounded" style={{ backgroundColor: DATA_COLORS.budget }}></div>
+          <span className="text-sm font-medium text-slate-700">Budget</span>
         </div>
         <div className="flex items-center gap-2">
-          <div className="w-4 h-4 rounded" style={{ backgroundColor: '#10B981' }}></div>
-          <span className="text-sm font-medium">Disbursements</span>
+          <div className="w-4 h-4 rounded" style={{ backgroundColor: DATA_COLORS.disbursements }}></div>
+          <span className="text-sm font-medium text-slate-700">Disbursements</span>
         </div>
         <div className="flex items-center gap-2">
-          <div className="w-4 h-4 rounded" style={{ backgroundColor: '#F59E0B' }}></div>
-          <span className="text-sm font-medium">Expenditures</span>
+          <div className="w-4 h-4 rounded" style={{ backgroundColor: DATA_COLORS.expenditures }}></div>
+          <span className="text-sm font-medium text-slate-700">Expenditures</span>
         </div>
         <div className="flex items-center gap-2">
-          <div className="w-4 h-4 bg-purple-500 rounded"></div>
-          <span className="text-sm font-medium">Total Spending</span>
+          <div className="w-4 h-4 rounded" style={{ backgroundColor: DATA_COLORS.totalSpending }}></div>
+          <span className="text-sm font-medium text-slate-700">Total Spending</span>
         </div>
       </div>
 
@@ -193,59 +198,59 @@ export const BudgetVsSpendingChart: React.FC<BudgetVsSpendingChartProps> = ({
           margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
           barCategoryGap="20%"
         >
-          <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
-          <XAxis 
-            dataKey="period" 
-            stroke="#6B7280" 
+          <CartesianGrid strokeDasharray="3 3" stroke={CHART_STRUCTURE_COLORS.grid} />
+          <XAxis
+            dataKey="period"
+            stroke={CHART_STRUCTURE_COLORS.axis}
             fontSize={12}
             angle={data.length > 10 ? -45 : 0}
             textAnchor={data.length > 10 ? "end" : "middle"}
             height={data.length > 10 ? 80 : 60}
           />
-          <YAxis 
-            tickFormatter={formatYAxis} 
-            stroke="#6B7280" 
+          <YAxis
+            tickFormatter={formatYAxis}
+            stroke={CHART_STRUCTURE_COLORS.axis}
             fontSize={12}
-            label={{ 
-              value: `Amount (${currency})`, 
-              angle: -90, 
+            label={{
+              value: `Amount (${currency})`,
+              angle: -90,
               position: 'insideLeft',
-              style: { textAnchor: 'middle' }
+              style: { textAnchor: 'middle', fill: CHART_STRUCTURE_COLORS.axis }
             }}
           />
           <Tooltip content={<CustomTooltip />} />
           <Legend />
-          
+
           {/* Budget Bar */}
-          <Bar 
-            dataKey="budget" 
-            name="Budget" 
-            fill="#3B82F6"
-            radius={[2, 2, 0, 0]}
+          <Bar
+            dataKey="budget"
+            name="Budget"
+            fill={DATA_COLORS.budget}
+            radius={[4, 4, 0, 0]}
           />
-          
+
           {/* Disbursements Bar */}
-          <Bar 
-            dataKey="disbursements" 
-            name="Disbursements" 
-            fill="#10B981"
-            radius={[2, 2, 0, 0]}
+          <Bar
+            dataKey="disbursements"
+            name="Disbursements"
+            fill={DATA_COLORS.disbursements}
+            radius={[4, 4, 0, 0]}
           />
-          
+
           {/* Expenditures Bar */}
-          <Bar 
-            dataKey="expenditures" 
-            name="Expenditures" 
-            fill="#F59E0B"
-            radius={[2, 2, 0, 0]}
+          <Bar
+            dataKey="expenditures"
+            name="Expenditures"
+            fill={DATA_COLORS.expenditures}
+            radius={[4, 4, 0, 0]}
           />
-          
+
           {/* Total Spending Bar */}
-          <Bar 
-            dataKey="totalSpending" 
-            name="Total Spending" 
-            fill="#8B5CF6"
-            radius={[2, 2, 0, 0]}
+          <Bar
+            dataKey="totalSpending"
+            name="Total Spending"
+            fill={DATA_COLORS.totalSpending}
+            radius={[4, 4, 0, 0]}
           />
         </BarChart>
       </ResponsiveContainer>

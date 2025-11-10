@@ -13,10 +13,10 @@ import {
   X,
   Cloud,
   ExternalLink,
-  LayoutGrid,
-  Table as TableIcon,
   Edit,
   Trash2,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -81,7 +81,6 @@ export function DocumentsAndImagesTabV2({
 }: DocumentsAndImagesTabV2Props) {
   const [searchQuery, setSearchQuery] = React.useState('');
   const [filterCategory, setFilterCategory] = React.useState<string>('all');
-  const [viewMode, setViewMode] = React.useState<'cards' | 'table'>('cards');
   const [isFormOpen, setIsFormOpen] = React.useState(false);
   const [editingDocument, setEditingDocument] = React.useState<IatiDocumentLink | null>(null);
   const [draggedIndex, setDraggedIndex] = React.useState<number | null>(null);
@@ -89,6 +88,10 @@ export function DocumentsAndImagesTabV2({
   const [isDragOver, setIsDragOver] = React.useState(false);
   const [uploadingFiles, setUploadingFiles] = React.useState<UploadingFile[]>([]);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
+
+  // Pagination state
+  const [currentPage, setCurrentPage] = React.useState(1);
+  const [itemsPerPage] = React.useState(10);
   
   const categories = customCategories || DOCUMENT_CATEGORIES;
   const languages = customLanguages || COMMON_LANGUAGES;
@@ -129,34 +132,56 @@ export function DocumentsAndImagesTabV2({
       // Search filter
       if (searchQuery) {
         const query = searchQuery.toLowerCase();
-        const matchesTitle = doc.title.some(n => 
+        const matchesTitle = doc.title.some(n =>
           n.text.toLowerCase().includes(query)
         );
-        const matchesDescription = doc.description?.some(n => 
+        const matchesDescription = doc.description?.some(n =>
           n.text.toLowerCase().includes(query)
         );
         const matchesUrl = doc.url.toLowerCase().includes(query);
-        
+
         if (!matchesTitle && !matchesDescription && !matchesUrl) {
           return false;
         }
       }
-      
+
       // Category filter - check if any category matches
       if (filterCategory !== 'all') {
         const docCategories = doc.categoryCodes && doc.categoryCodes.length > 0
           ? doc.categoryCodes
           : (doc.categoryCode ? [doc.categoryCode] : []);
-        
+
         if (!docCategories.includes(filterCategory)) {
           return false;
         }
       }
-      
+
       return true;
     });
   }, [documents, searchQuery, filterCategory]);
-  
+
+  // Pagination logic
+  const totalPages = React.useMemo(
+    () => Math.ceil(filteredDocuments.length / itemsPerPage),
+    [filteredDocuments.length, itemsPerPage]
+  );
+
+  // Ensure currentPage is within bounds
+  React.useEffect(() => {
+    if (currentPage > totalPages && totalPages > 0) {
+      setCurrentPage(totalPages);
+    } else if (currentPage < 1) {
+      setCurrentPage(1);
+    }
+  }, [currentPage, totalPages]);
+
+  // Get paginated documents
+  const paginatedDocuments = React.useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    return filteredDocuments.slice(startIndex, endIndex);
+  }, [filteredDocuments, currentPage, itemsPerPage]);
+
   // Validation status
   const validationStatus = React.useMemo(() => {
     const issues = documents.flatMap(doc => {
@@ -512,26 +537,6 @@ export function DocumentsAndImagesTabV2({
                   className="pb-0"
                 />
               </div>
-              
-              {/* View Toggle */}
-              <div className="flex border rounded-md">
-                <Button
-                  variant={viewMode === 'cards' ? 'default' : 'ghost'}
-                  size="sm"
-                  onClick={() => setViewMode('cards')}
-                  className="rounded-r-none"
-                >
-                  <LayoutGrid className="w-4 h-4" />
-                </Button>
-                <Button
-                  variant={viewMode === 'table' ? 'default' : 'ghost'}
-                  size="sm"
-                  onClick={() => setViewMode('table')}
-                  className="rounded-l-none"
-                >
-                  <TableIcon className="w-4 h-4" />
-                </Button>
-              </div>
             </div>
           </div>
         </div>
@@ -569,7 +574,7 @@ export function DocumentsAndImagesTabV2({
       
       {/* Document List or Empty State */}
       {filteredDocuments.length === 0 ? (
-        <div 
+        <div
           className={cn(
             "text-center py-12 border-2 border-dashed rounded-lg transition-colors",
             isDragging ? "border-blue-400 bg-blue-50" : "border-gray-200"
@@ -598,87 +603,25 @@ export function DocumentsAndImagesTabV2({
             </>
           )}
         </div>
-      ) : viewMode === 'cards' ? (
-        <>
-          {/* Card View */}
-          {(() => {
-            const uploadedDocs = filteredDocuments.filter(doc => isDocumentUploaded(doc));
-            const linkedDocs = filteredDocuments.filter(doc => !isDocumentUploaded(doc));
-            
-            return (
-              <div className="space-y-6">
-                {uploadedDocs.length > 0 && (
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-2 pb-2 border-b">
-                      <Cloud className="w-5 h-5 text-gray-600" />
-                      <h4 className="font-medium text-gray-900">Uploaded Files ({uploadedDocs.length})</h4>
-                    </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                      {uploadedDocs.map((doc, index) => (
-                        <div
-                          key={doc.url}
-                          className="bg-green-50 border border-green-200 rounded-lg p-2"
-                        >
-                          <DocumentCard
-                            document={doc}
-                            onEdit={() => handleEditDocument(doc)}
-                            onDelete={() => handleDeleteDocument(doc.url)}
-                            locale={locale}
-                            readOnly={readOnly}
-                          />
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-                
-                {linkedDocs.length > 0 && (
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-2 pb-2 border-b">
-                      <ExternalLink className="w-5 h-5 text-gray-600" />
-                      <h4 className="font-medium text-gray-900">Linked Documents ({linkedDocs.length})</h4>
-                    </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                      {linkedDocs.map((doc, index) => (
-                        <div
-                          key={doc.url}
-                          className="bg-white border border-gray-200 rounded-lg p-2"
-                        >
-                          <DocumentCard
-                            document={doc}
-                            onEdit={() => handleEditDocument(doc)}
-                            onDelete={() => handleDeleteDocument(doc.url)}
-                            locale={locale}
-                            readOnly={readOnly}
-                          />
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            );
-          })()}
-        </>
       ) : (
         <>
           {/* Table View */}
-          <div className="border rounded-lg overflow-hidden">
+          <div className="rounded-md border">
             <Table>
-              <TableHeader className="bg-muted/50 border-b border-border">
+              <TableHeader>
                 <TableRow>
-                  <TableHead className={cn("h-12 px-4 py-3 text-left align-middle text-sm font-medium text-muted-foreground w-[300px]")}>Title</TableHead>
-                  <TableHead className={cn("h-12 px-4 py-3 text-left align-middle text-sm font-medium text-muted-foreground")}>Description</TableHead>
-                  <TableHead className={cn("h-12 px-4 py-3 text-left align-middle text-sm font-medium text-muted-foreground w-[200px]")}>Category</TableHead>
-                  <TableHead className={cn("h-12 px-4 py-3 text-left align-middle text-sm font-medium text-muted-foreground w-[100px]")}>Format</TableHead>
-                  <TableHead className={cn("h-12 px-4 py-3 text-left align-middle text-sm font-medium text-muted-foreground w-[120px]")}>Language</TableHead>
-                  <TableHead className={cn("h-12 px-4 py-3 text-left align-middle text-sm font-medium text-muted-foreground w-[120px]")}>Date</TableHead>
-                  <TableHead className={cn("h-12 px-4 py-3 text-left align-middle text-sm font-medium text-muted-foreground w-[100px]")}>Type</TableHead>
-                  <TableHead className={cn("h-12 px-4 py-3 text-right align-middle text-sm font-medium text-muted-foreground w-[120px]")}>Actions</TableHead>
+                  <TableHead className="font-medium w-[300px]">Title</TableHead>
+                  <TableHead className="font-medium">Description</TableHead>
+                  <TableHead className="font-medium w-[200px]">Category</TableHead>
+                  <TableHead className="font-medium w-[100px]">Format</TableHead>
+                  <TableHead className="font-medium w-[120px]">Language</TableHead>
+                  <TableHead className="font-medium w-[120px]">Date</TableHead>
+                  <TableHead className="font-medium w-[100px]">Type</TableHead>
+                  <TableHead className="font-medium text-right w-[120px]">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredDocuments.map((doc, index) => {
+                {paginatedDocuments.map((doc, index) => {
                   const primaryTitle = getPrimaryTitle(doc);
                   const primaryDescription = getPrimaryDescription(doc);
                   const categoryNames = getCategoryNames(doc);
@@ -686,14 +629,10 @@ export function DocumentsAndImagesTabV2({
                   const isUploaded = isDocumentUploaded(doc);
                   
                   return (
-                    <TableRow 
+                    <TableRow
                       key={doc.url}
-                      className={cn(
-                        "hover:bg-muted/10 transition-colors",
-                        index % 2 === 1 && "bg-muted/5"
-                      )}
                     >
-                      <TableCell className={cn("px-4 py-3 text-sm font-normal text-foreground font-medium")}>
+                      <TableCell className="font-medium">
                         <div className="flex items-start gap-3">
                           {(isImageMime(doc.format) || doc.thumbnailUrl) ? (
                             <div className="w-10 h-10 rounded overflow-hidden bg-gray-100 flex-shrink-0">
@@ -711,31 +650,35 @@ export function DocumentsAndImagesTabV2({
                               <FileText className="w-5 h-5 text-gray-500" />
                             </div>
                           )}
-                          <span className="text-left">{primaryTitle.text}</span>
+                          <span>{primaryTitle.text}</span>
                         </div>
                       </TableCell>
-                      <TableCell className={cn("px-4 py-3 text-sm font-normal text-foreground")}>
-                        <span className="text-sm text-gray-600 text-left">
+                      <TableCell>
+                        <span className="text-sm text-gray-600">
                           {primaryDescription?.text || '-'}
                         </span>
                       </TableCell>
-                      <TableCell className={cn("px-4 py-3 text-sm font-normal text-foreground")}>
-                        <span className="text-sm text-left">{categoryNames || '-'}</span>
-                      </TableCell>
-                      <TableCell className={cn("px-4 py-3 text-sm font-normal text-foreground")}>
-                        <Badge variant="secondary" className="text-xs">
+                      <TableCell>{categoryNames || '-'}</TableCell>
+                      <TableCell>
+                        <Badge
+                          variant="secondary"
+                          className="text-xs"
+                          style={
+                            getFormatLabel(doc.format) === 'HTML'
+                              ? { backgroundColor: '#0000FF', color: 'white', borderColor: '#0000FF' }
+                              : getFormatLabel(doc.format) === 'PDF'
+                              ? { backgroundColor: '#FA0F00', color: 'white', borderColor: '#FA0F00' }
+                              : undefined
+                          }
+                        >
                           {getFormatLabel(doc.format)}
                         </Badge>
                       </TableCell>
-                      <TableCell className={cn("px-4 py-3 text-sm font-normal text-foreground")}>
-                        <span className="text-sm text-left">{languageNames || '-'}</span>
+                      <TableCell>{languageNames || '-'}</TableCell>
+                      <TableCell>
+                        {doc.documentDate ? format(new Date(doc.documentDate), 'MMM d, yyyy') : '-'}
                       </TableCell>
-                      <TableCell className={cn("px-4 py-3 text-sm font-normal text-foreground")}>
-                        <span className="text-sm text-left">
-                          {doc.documentDate ? format(new Date(doc.documentDate), 'MMM d, yyyy') : '-'}
-                        </span>
-                      </TableCell>
-                      <TableCell className={cn("px-4 py-3 text-sm font-normal text-foreground")}>
+                      <TableCell>
                         <Badge variant={isUploaded ? 'default' : 'outline'} className="text-xs">
                           {isUploaded ? (
                             <>
@@ -750,7 +693,7 @@ export function DocumentsAndImagesTabV2({
                           )}
                         </Badge>
                       </TableCell>
-                      <TableCell className={cn("px-4 py-3 text-sm font-normal text-foreground text-right")}>
+                      <TableCell className="text-right">
                         <div className="flex justify-end gap-1">
                           <Button
                             size="sm"
@@ -788,6 +731,79 @@ export function DocumentsAndImagesTabV2({
               </TableBody>
             </Table>
           </div>
+
+          {/* Pagination Controls */}
+          {filteredDocuments.length > itemsPerPage && (
+            <div className="flex items-center justify-between mt-4 px-2">
+              <div className="text-sm text-muted-foreground">
+                Showing {((currentPage - 1) * itemsPerPage) + 1} to {Math.min(currentPage * itemsPerPage, filteredDocuments.length)} of {filteredDocuments.length} documents
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(1)}
+                  disabled={currentPage === 1}
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                  First
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(currentPage - 1)}
+                  disabled={currentPage === 1}
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                  Previous
+                </Button>
+                <div className="flex items-center gap-1">
+                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                    let pageNum;
+                    if (totalPages <= 5) {
+                      pageNum = i + 1;
+                    } else if (currentPage <= 3) {
+                      pageNum = i + 1;
+                    } else if (currentPage >= totalPages - 2) {
+                      pageNum = totalPages - 4 + i;
+                    } else {
+                      pageNum = currentPage - 2 + i;
+                    }
+
+                    return (
+                      <Button
+                        key={pageNum}
+                        variant={currentPage === pageNum ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => setCurrentPage(pageNum)}
+                        className="w-8 h-8 p-0"
+                      >
+                        {pageNum}
+                      </Button>
+                    );
+                  })}
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(currentPage + 1)}
+                  disabled={currentPage === totalPages}
+                >
+                  Next
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(totalPages)}
+                  disabled={currentPage === totalPages}
+                >
+                  Last
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          )}
         </>
       )}
       

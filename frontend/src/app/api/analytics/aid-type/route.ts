@@ -54,10 +54,9 @@ export async function GET(request: NextRequest) {
       .select(`
         id,
         title_narrative,
-        transactions (
+        transactions:transactions!transactions_activity_id_fkey1 (
           transaction_type,
-          value,
-          currency
+          value_usd
         )
       `)
       .eq('publication_status', 'published');
@@ -97,22 +96,13 @@ export async function GET(request: NextRequest) {
 
       const aidTypeData = aidTypeMap.get(aidTypeCode)!;
 
-      // Process transactions
+      // Process transactions (USD only)
       activity.transactions?.forEach((transaction: any) => {
-        // Safely parse transaction value
-        let value = 0;
-        if (transaction.value !== null && transaction.value !== undefined) {
-          if (typeof transaction.value === 'string') {
-            value = parseFloat(transaction.value) || 0;
-          } else if (typeof transaction.value === 'number') {
-            value = transaction.value;
-          } else if (typeof transaction.value === 'object' && transaction.value.toString) {
-            value = parseFloat(transaction.value.toString()) || 0;
-          }
-        }
-        
-        if (isNaN(value) || !isFinite(value)) {
-          return; // Skip invalid values
+        // Parse transaction value (USD only)
+        const value = parseFloat(transaction.value_usd?.toString() || '0') || 0;
+
+        if (isNaN(value) || !isFinite(value) || value === 0) {
+          return; // Skip invalid or non-USD values
         }
 
         switch (transaction.transaction_type) {

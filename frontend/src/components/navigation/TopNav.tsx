@@ -16,12 +16,13 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { FolderPlus, User, LogOut, Briefcase, Settings, Shield, MessageSquare, ChevronDown, Zap, Eye } from "lucide-react"
+import { FolderPlus, User, LogOut, Briefcase, Settings, Shield, MessageSquare, ChevronDown, Zap, Eye, Upload } from "lucide-react"
 import { USER_ROLES, ROLE_LABELS } from "@/types/user"
 import { getRoleBadgeVariant, getRoleDisplayLabel } from "@/lib/role-badge-utils"
 import { GlobalSearchBar } from "@/components/search/GlobalSearchBar"
 import { FeedbackModal } from "@/components/ui/feedback-modal"
 import { QuickAddActivityModal } from "@/components/modals/QuickAddActivityModal"
+import { ImportActivityModal } from "@/components/modals/ImportActivityModal"
 
 interface TopNavProps {
   user?: {
@@ -51,6 +52,7 @@ export function TopNav({ user, canCreateActivities, isInActivityEditor = false, 
   const router = useRouter();
   const [isFeedbackModalOpen, setIsFeedbackModalOpen] = useState(false);
   const [showQuickAddModal, setShowQuickAddModal] = useState(false);
+  const [showImportModal, setShowImportModal] = useState(false);
 
   // Function to construct full name - only FirstName LastName
   const getFullName = (user: TopNavProps['user']) => {
@@ -103,6 +105,13 @@ export function TopNav({ user, canCreateActivities, isInActivityEditor = false, 
                   <div className="flex flex-col">
                     <span className="font-medium">Quick Add</span>
                     <span className="text-xs text-muted-foreground">Minimal activity creation</span>
+                  </div>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setShowImportModal(true)}>
+                  <Upload className="mr-2 h-4 w-4" />
+                  <div className="flex flex-col">
+                    <span className="font-medium">Import from IATI/XML</span>
+                    <span className="text-xs text-muted-foreground">Import via Search, File, URL, or Paste</span>
                   </div>
                 </DropdownMenuItem>
               </DropdownMenuContent>
@@ -218,6 +227,13 @@ export function TopNav({ user, canCreateActivities, isInActivityEditor = false, 
       <QuickAddActivityModal
         isOpen={showQuickAddModal}
         onClose={() => setShowQuickAddModal(false)}
+        user={user}
+      />
+
+      {/* Import Activity Modal */}
+      <ImportActivityModal
+        isOpen={showImportModal}
+        onClose={() => setShowImportModal(false)}
         user={user}
       />
     </nav>

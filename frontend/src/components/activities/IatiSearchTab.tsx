@@ -828,7 +828,7 @@ export default function IatiSearchTab({ activityId }: IatiSearchTabProps) {
                 return (
                   <div
                     key={`${activity.iatiIdentifier}-${index}`}
-                    className="border border-slate-200 rounded-lg bg-white hover:border-slate-300 transition-colors"
+                    className="rounded-lg border border-gray-400 bg-white hover:border-gray-500 transition-colors shadow-sm"
                   >
                     {/* Collapsed View */}
                     <div className="p-4">
@@ -1367,6 +1367,9 @@ export default function IatiSearchTab({ activityId }: IatiSearchTabProps) {
           meta={externalPublisherMeta}
           userOrgName={user?.organization?.name || user?.organisation || ""}
           userPublisherRefs={[userOrgIatiId].filter(Boolean)}
+          userRole={user?.role}
+          userId={user?.id}
+          xmlContent={importedXml}
           onChoose={handleExternalPublisherChoice}
           currentActivityId={activityId}
           currentActivityIatiId={undefined}

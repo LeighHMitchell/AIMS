@@ -152,7 +152,11 @@ export function useActivitiesCache(limit = 100) {
  * Hook for accessing pre-cache manager methods
  */
 export function usePreCache() {
-  return {
+  const { useMemo } = require('react')
+
+  // Use useMemo to prevent creating new bound functions on every render
+  // This prevents infinite loops when these functions are used in useEffect dependencies
+  return useMemo(() => ({
     preCacheAPI: preCacheManager.preCacheAPI.bind(preCacheManager),
     preloadResources: preCacheManager.preloadResources.bind(preCacheManager),
     preCacheActivityEditor: preCacheManager.preCacheActivityEditor.bind(preCacheManager),
@@ -161,7 +165,7 @@ export function usePreCache() {
     smartPreCache: preCacheManager.smartPreCache.bind(preCacheManager),
     clearCache: preCacheManager.clearCache.bind(preCacheManager),
     getCacheStats: preCacheManager.getCacheStats.bind(preCacheManager),
-  }
+  }), [])
 }
 
 /**

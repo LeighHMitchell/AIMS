@@ -29,7 +29,7 @@ export async function GET() {
     // Get all transactions with their types and values
     const { data: transactions, error } = await supabaseAdmin
       .from('transactions')
-      .select('transaction_type, value, currency');
+      .select('transaction_type, value_usd');
 
     if (error) {
       console.error('Error fetching transactions:', error);
@@ -57,7 +57,7 @@ export async function GET() {
 
     transactions.forEach((transaction: any) => {
       const transactionType = transaction.transaction_type || 'Unknown';
-      const value = transaction.value || 0;
+      const value = transaction.value_usd || 0;
       
       if (!typeMap.has(transactionType)) {
         typeMap.set(transactionType, {

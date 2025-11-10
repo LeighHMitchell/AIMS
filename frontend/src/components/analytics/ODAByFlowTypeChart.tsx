@@ -23,11 +23,12 @@ interface ODAByFlowTypeChartProps {
     from: Date
     to: Date
   }
-  filters: {
+  filters?: {
     country?: string
     sector?: string
   }
   refreshKey: number
+  onDataChange?: (data: FlowData[]) => void
 }
 
 interface FlowData {
@@ -37,10 +38,11 @@ interface FlowData {
   totalValue: number
 }
 
-export function ODAByFlowTypeChart({ 
-  dateRange, 
-  filters, 
-  refreshKey 
+export function ODAByFlowTypeChart({
+  dateRange,
+  filters,
+  refreshKey,
+  onDataChange
 }: ODAByFlowTypeChartProps) {
   const [data, setData] = useState<FlowData[]>([])
   const [loading, setLoading] = useState(true)
@@ -60,10 +62,10 @@ export function ODAByFlowTypeChart({
         includeNonODA: includeNonODA.toString()
       })
       
-      if (filters.country && filters.country !== 'all') {
+      if (filters?.country && filters.country !== 'all') {
         params.append('country', filters.country)
       }
-      if (filters.sector && filters.sector !== 'all') {
+      if (filters?.sector && filters.sector !== 'all') {
         params.append('sector', filters.sector)
       }
 
@@ -73,7 +75,9 @@ export function ODAByFlowTypeChart({
       }
 
       const result = await response.json()
-      setData(result.flows || [])
+      const flows = result.flows || []
+      setData(flows)
+      onDataChange?.(flows)
     } catch (error) {
       console.error('[ODAByFlowTypeChart] Error:', error)
       setData([])
@@ -224,6 +228,9 @@ export function ODAByFlowTypeChart({
     </div>
   )
 }
+
+
+
 
 
 

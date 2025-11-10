@@ -1,9 +1,30 @@
 'use client';
 
-import React, { useState, useMemo, useRef, useEffect } from 'react';
+import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react';
 import * as d3 from 'd3';
+import { sankey, sankeyLinkHorizontal, SankeyNode, SankeyLink } from 'd3-sankey';
 // @ts-ignore
 import sectorGroupData from '@/data/SectorGroup.json';
+import { Button } from '@/components/ui/button';
+import { Download, GitBranch, Table as TableIcon, PieChart, BarChart3 } from 'lucide-react';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { exportToCSV } from '@/lib/csv-export';
+import { exportChartToJPG } from '@/lib/chart-export';
 
 // User's simplified data structure
 interface SectorAllocation {
@@ -12,13 +33,25 @@ interface SectorAllocation {
   percentage: number;
 }
 
-interface Props {
-  allocations: SectorAllocation[];
-  onSegmentClick?: (code: string, level: 'category' | 'sector' | 'subsector') => void;
-  className?: string;
+interface SectorFinancialData {
+  code: string;
+  budget?: number;
+  commitment?: number;
+  plannedDisbursement?: number;
+  actualDisbursement?: number;
 }
 
-interface SankeyNode {
+interface Props {
+  allocations: SectorAllocation[];
+  financialData?: SectorFinancialData[];
+  onSegmentClick?: (code: string, level: 'category' | 'sector' | 'subsector') => void;
+  className?: string;
+  showControls?: boolean; // Whether to show view mode and metric controls
+  defaultView?: ViewMode; // Default view mode
+  defaultMetric?: MetricMode; // Default metric mode
+}
+
+interface CustomSankeyNode {
   id: string;
   name: string;
   level: 'category' | 'sector' | 'subsector';
@@ -30,7 +63,7 @@ interface SankeyNode {
   color: string;
 }
 
-interface PositionedNode extends SankeyNode {
+interface PositionedNode extends CustomSankeyNode {
   x0: number;
   x1: number;
   y0: number;
@@ -39,12 +72,15 @@ interface PositionedNode extends SankeyNode {
   height: number;
 }
 
-interface SankeyLink {
+interface CustomSankeyLink {
   source: string;
   target: string;
   value: number;
   color: string;
 }
+
+type ViewMode = 'sankey' | 'table' | 'pie' | 'bar';
+type MetricMode = 'percentage' | 'budget' | 'planned' | 'actual';
 
 // Extended color palette for unique colors per segment (same as sunburst)
 const BASE_COLORS = [
@@ -65,17 +101,17 @@ const generateShades = (baseColor: string) => {
   const r = parseInt(hex.substr(0, 2), 16);
   const g = parseInt(hex.substr(2, 2), 16);
   const b = parseInt(hex.substr(4, 2), 16);
-  
+
   // Generate darker shade (multiply by 0.7)
   const darkerR = Math.round(r * 0.7);
   const darkerG = Math.round(g * 0.7);
   const darkerB = Math.round(b * 0.7);
-  
+
   // Generate lighter shade (blend with white)
   const lighterR = Math.round(r + (255 - r) * 0.4);
   const lighterG = Math.round(g + (255 - g) * 0.4);
   const lighterB = Math.round(b + (255 - b) * 0.4);
-  
+
   return {
     darker: `rgb(${darkerR}, ${darkerG}, ${darkerB})`,
     base: baseColor,
@@ -89,9 +125,9 @@ const generateVariedShades = (baseColor: string, shadeIndex: number, totalShades
   const r = parseInt(hex.substr(0, 2), 16);
   const g = parseInt(hex.substr(2, 2), 16);
   const b = parseInt(hex.substr(4, 2), 16);
-  
+
   let minLighten, maxLighten;
-  
+
   if (ringLevel === 'sector') {
     // Middle ring - moderate lightening range
     minLighten = 0.1;
@@ -101,30 +137,47 @@ const generateVariedShades = (baseColor: string, shadeIndex: number, totalShades
     minLighten = 0.4;
     maxLighten = 0.7;
   }
-  
-  const lightenFactor = totalShades === 1 ? 
+
+  const lightenFactor = totalShades === 1 ?
     (minLighten + maxLighten) / 2 : // Use middle value if only one shade
     minLighten + (maxLighten - minLighten) * (shadeIndex / (totalShades - 1));
-  
+
   const lighterR = Math.round(r + (255 - r) * lightenFactor);
   const lighterG = Math.round(g + (255 - g) * lightenFactor);
   const lighterB = Math.round(b + (255 - b) * lightenFactor);
-  
+
   return `rgb(${lighterR}, ${lighterG}, ${lighterB})`;
 };
 
-export default function SectorSankeyVisualization({ 
-  allocations, 
-  onSegmentClick, 
-  className = '' 
+export default function SectorSankeyVisualization({
+  allocations,
+  financialData = [],
+  onSegmentClick,
+  className = '',
+  showControls = true,
+  defaultView = 'sankey',
+  defaultMetric = 'percentage'
 }: Props) {
   const svgRef = useRef<SVGSVGElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const [containerSize, setContainerSize] = useState({ width: 800, height: 600 });
+  const [viewMode, setViewMode] = useState<ViewMode>(defaultView);
+  const [metricMode, setMetricMode] = useState<MetricMode>(defaultMetric);
+
+  // Update view mode when defaultView prop changes
+  useEffect(() => {
+    setViewMode(defaultView);
+  }, [defaultView]);
+
+  // Update metric mode when defaultMetric prop changes
+  useEffect(() => {
+    setMetricMode(defaultMetric);
+  }, [defaultMetric]);
 
   // Build hierarchy data for Sankey
   const sankeyData = useMemo(() => {
     console.log('Processing allocations for Sankey:', allocations);
-    
+
     const categoryMap = new Map<string, {
       code: string;
       name: string;
@@ -140,7 +193,7 @@ export default function SectorSankeyVisualization({
     // Process each allocation
     allocations.forEach(allocation => {
       const sectorData = sectorGroupData.data.find((s: any) => s.code === allocation.code);
-      
+
       if (!sectorData) {
         console.warn(`Sector data not found for code: ${allocation.code}`);
         return;
@@ -162,6 +215,7 @@ export default function SectorSankeyVisualization({
       }
 
       const category = categoryMap.get(categoryCode)!;
+      category.percentage += allocation.percentage;
 
       // Initialize sector if not exists
       if (!category.sectors.has(sectorCode)) {
@@ -174,487 +228,877 @@ export default function SectorSankeyVisualization({
       }
 
       const sector = category.sectors.get(sectorCode)!;
-
-      // Add subsector and update percentages
-      sector.subsectors.push(allocation);
       sector.percentage += allocation.percentage;
-      category.percentage += allocation.percentage;
+      sector.subsectors.push(allocation);
     });
 
     // Convert to Sankey format
-    const nodes: SankeyNode[] = [];
-    const links: SankeyLink[] = [];
-    
-    const categories = Array.from(categoryMap.entries());
+    const nodes: CustomSankeyNode[] = [];
+    const links: CustomSankeyLink[] = [];
+    const nodeIds = new Set<string>();
 
-    // Add root node
-    nodes.push({
-      id: 'root',
-      name: 'Total Budgeted',
-      level: 'category',
-      value: allocations.reduce((sum, a) => sum + a.percentage, 0),
-      color: '#6b7280'
-    });
+    // Track color assignment
+    let categoryIndex = 0;
+    const categoryColors = new Map<string, string>();
 
-    // Add category nodes and links
-    categories.forEach(([categoryCode, category], categoryIndex) => {
-      // Each category gets its own base color from the same palette as sunburst
-      const categoryBaseColor = BASE_COLORS[categoryIndex % BASE_COLORS.length];
-      const categoryColorSet = generateShades(categoryBaseColor);
-      
-      nodes.push({
-        id: `cat-${categoryCode}`,
-        name: category.name,
-        level: 'category',
-        value: category.percentage,
-        color: categoryColorSet.darker // Use darker shade for categories (same as sunburst inner ring)
-      });
+    categoryMap.forEach((category, categoryCode) => {
+      // Assign color to category
+      const baseColor = BASE_COLORS[categoryIndex % BASE_COLORS.length];
+      categoryColors.set(categoryCode, baseColor);
+      categoryIndex++;
 
-      links.push({
-        source: 'root',
-        target: `cat-${categoryCode}`,
-        value: category.percentage,
-        color: categoryColorSet.base
-      });
+      const categoryId = `cat-${categoryCode}`;
 
-      // Add sector nodes and links
-      const sectors = Array.from(category.sectors.entries());
-      sectors.forEach(([sectorCode, sector], sectorIndex) => {
-        // Generate varied shade for sector within the same color family
-        const sectorColor = generateVariedShades(categoryBaseColor, sectorIndex, sectors.length, 'sector');
-        
+      if (!nodeIds.has(categoryId)) {
         nodes.push({
-          id: `sec-${sectorCode}`,
-          name: sector.name,
-          level: 'sector',
-          value: sector.percentage,
-          color: sectorColor
+          id: categoryId,
+          name: category.name,
+          level: 'category',
+          value: category.percentage,
+          color: baseColor
         });
+        nodeIds.add(categoryId);
+      }
+
+      let sectorIndexWithinCategory = 0;
+      const sectorsInCategory = category.sectors.size;
+
+      category.sectors.forEach((sector, sectorCode) => {
+        const sectorId = `sec-${sectorCode}`;
+        const sectorColor = generateVariedShades(baseColor, sectorIndexWithinCategory, sectorsInCategory, 'sector');
+
+        if (!nodeIds.has(sectorId)) {
+          nodes.push({
+            id: sectorId,
+            name: sector.name,
+            level: 'sector',
+            value: sector.percentage,
+            color: sectorColor
+          });
+          nodeIds.add(sectorId);
+        }
 
         links.push({
-          source: `cat-${categoryCode}`,
-          target: `sec-${sectorCode}`,
+          source: categoryId,
+          target: sectorId,
           value: sector.percentage,
           color: sectorColor
         });
 
-        // Add subsector nodes and links
-        sector.subsectors.forEach((subsector, subsectorIndex) => {
-          // Generate varied shade for subsector within the same color family
-          const subsectorColor = generateVariedShades(categoryBaseColor, subsectorIndex, sector.subsectors.length, 'subsector');
-          
-          nodes.push({
-            id: `sub-${subsector.code}`,
-            name: subsector.name,
-            level: 'subsector',
+        let subsectorIndex = 0;
+        const subsectorsInSector = sector.subsectors.length;
+
+        sector.subsectors.forEach(subsector => {
+          const subsectorId = `sub-${subsector.code}`;
+          const subsectorColor = generateVariedShades(baseColor, subsectorIndex, subsectorsInSector, 'subsector');
+
+          if (!nodeIds.has(subsectorId)) {
+            nodes.push({
+              id: subsectorId,
+              name: subsector.name,
+              level: 'subsector',
+              value: subsector.percentage,
+              color: subsectorColor
+            });
+            nodeIds.add(subsectorId);
+          }
+
+          links.push({
+            source: sectorId,
+            target: subsectorId,
             value: subsector.percentage,
             color: subsectorColor
           });
 
-          links.push({
-            source: `sec-${sectorCode}`,
-            target: `sub-${subsector.code}`,
-            value: subsector.percentage,
-            color: subsectorColor
-          });
+          subsectorIndex++;
         });
+
+        sectorIndexWithinCategory++;
       });
     });
 
+    console.log('Generated Sankey data:', { nodes, links });
     return { nodes, links };
   }, [allocations]);
 
-  // Handle container resize
-  useEffect(() => {
-    const resizeObserver = new ResizeObserver(entries => {
-      if (entries[0]) {
-        const { width, height } = entries[0].contentRect;
-        setContainerSize({ width: Math.max(600, width), height: Math.max(400, height) });
-      }
+  // Calculate financial totals
+  const financialTotals = useMemo(() => {
+    const totals = {
+      budget: 0,
+      commitment: 0,
+      plannedDisbursement: 0,
+      actualDisbursement: 0
+    };
+
+    financialData.forEach(data => {
+      totals.budget += data.budget || 0;
+      totals.commitment += data.commitment || 0;
+      totals.plannedDisbursement += data.plannedDisbursement || 0;
+      totals.actualDisbursement += data.actualDisbursement || 0;
     });
 
-    if (svgRef.current?.parentElement) {
-      resizeObserver.observe(svgRef.current.parentElement);
-    }
+    return totals;
+  }, [financialData]);
 
-    return () => resizeObserver.disconnect();
+  // Get display data based on metric mode
+  const displayData = useMemo(() => {
+    return allocations.map(allocation => {
+      const financial = financialData.find(f => f.code === allocation.code);
+      let value = allocation.percentage;
+
+      if (metricMode === 'budget') {
+        value = financial?.budget || 0;
+      } else if (metricMode === 'planned') {
+        value = financial?.plannedDisbursement || 0;
+      } else if (metricMode === 'actual') {
+        value = financial?.actualDisbursement || 0;
+      }
+
+      return {
+        ...allocation,
+        displayValue: value
+      };
+    }).filter(d => d.displayValue > 0);
+  }, [allocations, financialData, metricMode]);
+
+  // Get total for current metric
+  const currentTotal = useMemo(() => {
+    if (metricMode === 'percentage') {
+      return allocations.reduce((sum, a) => sum + a.percentage, 0);
+    } else if (metricMode === 'budget') {
+      return financialTotals.budget;
+    } else if (metricMode === 'planned') {
+      return financialTotals.plannedDisbursement;
+    } else {
+      return financialTotals.actualDisbursement;
+    }
+  }, [metricMode, allocations, financialTotals]);
+
+  // Calculate container size
+  useEffect(() => {
+    const updateSize = () => {
+      if (svgRef.current) {
+        const container = svgRef.current.parentElement;
+        if (container) {
+          setContainerSize({
+            width: container.clientWidth,
+            height: container.clientHeight
+          });
+        }
+      }
+    };
+
+    updateSize();
+    window.addEventListener('resize', updateSize);
+    return () => window.removeEventListener('resize', updateSize);
   }, []);
 
-  // Render custom Sankey-style flow diagram
+  // Render Sankey diagram
   useEffect(() => {
-    if (!svgRef.current || !sankeyData.nodes.length) return;
+    if (!svgRef.current || sankeyData.nodes.length === 0 || viewMode !== 'sankey') return;
 
-    console.log('Rendering custom Sankey with data:', sankeyData);
+    const svg = d3.select(svgRef.current);
+    svg.selectAll('*').remove();
 
-    // Clear previous chart
-    d3.select(svgRef.current).selectAll('*').remove();
-
-    const width = containerSize.width;
-    const height = containerSize.height;
-    const format = d3.format(',.1f');
-    const margin = { top: 20, right: 80, bottom: 20, left: 80 };
+    const { width, height } = containerSize;
+    const margin = { top: 10, right: 200, bottom: 10, left: 200 };
     const innerWidth = width - margin.left - margin.right;
     const innerHeight = height - margin.top - margin.bottom;
-
-    // Create SVG
-    const svg = d3.select(svgRef.current)
-      .attr('width', width)
-      .attr('height', height)
-      .attr('viewBox', [0, 0, width, height])
-      .style('max-width', '100%')
-      .style('height', 'auto')
-      .style('font-family', 'system-ui, -apple-system, sans-serif');
 
     const g = svg.append('g')
       .attr('transform', `translate(${margin.left},${margin.top})`);
 
-    // Create tooltip
-    const tooltip = d3.select('body').append('div')
-      .attr('class', 'absolute bg-gray-900 text-white p-3 rounded-lg shadow-lg text-sm pointer-events-none z-50')
-      .style('opacity', 0);
+    // Prepare data for d3-sankey
+    const sankeyGenerator = sankey<any, any>()
+      .nodeId((d: any) => d.id)
+      .nodeWidth(15)
+      .nodePadding(10)
+      .extent([[0, 0], [innerWidth, innerHeight]]);
 
-    // Manual layout for Sankey-style positioning with proper flow conservation
-    const nodeWidth = 20;
-    const nodePadding = 8;
-    const levelCount = 4; // root, category, sector, subsector
-    const levelWidth = innerWidth / (levelCount - 1);
-
-    // Group nodes by level
-    const nodesByLevel = {
-      root: sankeyData.nodes.filter(n => n.id === 'root'),
-      category: sankeyData.nodes.filter(n => n.level === 'category' && n.id !== 'root'),
-      sector: sankeyData.nodes.filter(n => n.level === 'sector'),
-      subsector: sankeyData.nodes.filter(n => n.level === 'subsector')
+    // Create a deep copy for d3-sankey to mutate
+    const graph = {
+      nodes: sankeyData.nodes.map(n => ({ ...n })),
+      links: sankeyData.links.map(l => ({ ...l }))
     };
 
-    // Calculate total value for consistent scaling
-    const totalValue = nodesByLevel.root[0]?.value || 100;
-    const availableHeight = innerHeight - (nodePadding * Math.max(nodesByLevel.category.length, nodesByLevel.sector.length, nodesByLevel.subsector.length));
-    const valueToHeightScale = availableHeight / totalValue;
+    // Compute the Sankey layout
+    const { nodes, links } = sankeyGenerator(graph);
 
-    // Calculate positions for each level
-    const positionedNodes: PositionedNode[] = [];
+    // Create gradients for links
+    const defs = svg.append('defs');
 
-    // Position root node - height should match total outgoing flow
-    nodesByLevel.root.forEach(node => {
-      const nodeHeight = Math.max(40, node.value * valueToHeightScale);
-      const positioned = {
-        ...node,
-        x0: 0,
-        x1: nodeWidth,
-        y0: (innerHeight - nodeHeight) / 2,
-        y1: (innerHeight - nodeHeight) / 2 + nodeHeight,
-        width: nodeWidth,
-        height: nodeHeight
-      };
-      positionedNodes.push(positioned);
-    });
-
-    // Position category nodes - heights proportional to their values
-    let categoryY = 0;
-    nodesByLevel.category.forEach(node => {
-      const nodeHeight = Math.max(20, node.value * valueToHeightScale);
-      const positioned = {
-        ...node,
-        x0: levelWidth,
-        x1: levelWidth + nodeWidth,
-        y0: categoryY,
-        y1: categoryY + nodeHeight,
-        width: nodeWidth,
-        height: nodeHeight
-      };
-      positionedNodes.push(positioned);
-      categoryY += nodeHeight + nodePadding;
-    });
-
-    // Position sector nodes - heights proportional to their values
-    let sectorY = 0;
-    nodesByLevel.sector.forEach(node => {
-      const nodeHeight = Math.max(15, node.value * valueToHeightScale);
-      const positioned = {
-        ...node,
-        x0: levelWidth * 2,
-        x1: levelWidth * 2 + nodeWidth,
-        y0: sectorY,
-        y1: sectorY + nodeHeight,
-        width: nodeWidth,
-        height: nodeHeight
-      };
-      positionedNodes.push(positioned);
-      sectorY += nodeHeight + nodePadding;
-    });
-
-    // Position subsector nodes - heights proportional to their values
-    let subsectorY = 0;
-    nodesByLevel.subsector.forEach(node => {
-      const nodeHeight = Math.max(12, node.value * valueToHeightScale);
-      const positioned = {
-        ...node,
-        x0: levelWidth * 3,
-        x1: levelWidth * 3 + nodeWidth,
-        y0: subsectorY,
-        y1: subsectorY + nodeHeight,
-        width: nodeWidth,
-        height: nodeHeight
-      };
-      positionedNodes.push(positioned);
-      subsectorY += nodeHeight + nodePadding;
-    });
-
-    // Create a map for quick node lookup
-    const nodeMap = new Map(positionedNodes.map(n => [n.id, n]));
-
-    // Helper function to get detailed node information for tooltips
-    const getNodeDetails = (node: PositionedNode) => {
-      if (node.id === 'root') {
-        return {
-          title: 'Total Budgeted',
-          category: null,
-          sector: null,
-          subsector: null,
-          level: 'Total',
-          code: null
-        };
-      }
-
-      const nodeId = node.id.replace(/^(cat-|sec-|sub-)/, '');
-      
-      if (node.id.startsWith('cat-')) {
-        // Category node - find in sankeyData
-        const categoryNode = sankeyData.nodes.find(n => n.id === `cat-${nodeId}`);
-        return {
-          title: categoryNode?.name || node.name,
-          category: categoryNode?.name || node.name,
-          sector: null,
-          subsector: null,
-          level: 'Sector Category',
-          code: nodeId
-        };
-      } else if (node.id.startsWith('sec-')) {
-        // Sector node - find parent category through links
-        const sectorNode = sankeyData.nodes.find(n => n.id === `sec-${nodeId}`);
-        const parentLink = sankeyData.links.find(l => l.target === `sec-${nodeId}`);
-        const parentCategoryNode = parentLink ? sankeyData.nodes.find(n => n.id === parentLink.source) : null;
-        
-        return {
-          title: sectorNode?.name || node.name,
-          category: parentCategoryNode?.name || null,
-          sector: sectorNode?.name || node.name,
-          subsector: null,
-          level: 'Sector',
-          code: nodeId
-        };
-      } else if (node.id.startsWith('sub-')) {
-        // Subsector node - find parent sector and category through links
-        const subsectorNode = sankeyData.nodes.find(n => n.id === `sub-${nodeId}`);
-        const parentSectorLink = sankeyData.links.find(l => l.target === `sub-${nodeId}`);
-        const parentSectorNode = parentSectorLink ? sankeyData.nodes.find(n => n.id === parentSectorLink.source) : null;
-        const parentCategoryLink = parentSectorNode ? sankeyData.links.find(l => l.target === parentSectorNode.id) : null;
-        const parentCategoryNode = parentCategoryLink ? sankeyData.nodes.find(n => n.id === parentCategoryLink.source) : null;
-        
-        return {
-          title: subsectorNode?.name || node.name,
-          category: parentCategoryNode?.name || null,
-          sector: parentSectorNode?.name || null,
-          subsector: subsectorNode?.name || node.name,
-          level: 'Sub-sector',
-          code: nodeId
-        };
-      }
-      
-      return {
-        title: node.name,
-        category: null,
-        sector: null,
-        subsector: null,
-        level: 'Unknown',
-        code: node.id || ''
-      };
-    };
-
-
-    // Calculate link positions for proper flow conservation
-    const calculateLinkPositions = () => {
-      const linkPositions = new Map();
-      
-      // Track cumulative heights for each node's incoming and outgoing flows
-      const nodeIncomingY = new Map();
-      const nodeOutgoingY = new Map();
-      
-      // Initialize positions
-      positionedNodes.forEach(node => {
-        nodeIncomingY.set(node.id, node.y0);
-        nodeOutgoingY.set(node.id, node.y0);
-      });
-      
-      return { nodeIncomingY, nodeOutgoingY };
-    };
-    
-    const { nodeIncomingY, nodeOutgoingY } = calculateLinkPositions();
-
-    // Custom link path generator with proper flow positioning
-    const linkPath = (source: PositionedNode, target: PositionedNode, linkHeight: number, sourceY: number, targetY: number) => {
-      const x0 = source.x1;
-      const x1 = target.x0;
-      const y0s = sourceY;
-      const y0e = sourceY + linkHeight;
-      const y1s = targetY;
-      const y1e = targetY + linkHeight;
-      
-      const xi = d3.interpolateNumber(x0, x1);
-      const x2 = xi(0.5);
-      const x3 = xi(0.5);
-      
-      return `M${x0},${y0s}C${x2},${y0s} ${x3},${y1s} ${x1},${y1s}L${x1},${y1e}C${x3},${y1e} ${x2},${y0e} ${x0},${y0e}Z`;
-    };
-
-    // Draw links first (so they appear behind nodes)
-    const linkGroup = g.append('g')
-      .attr('fill-opacity', 0.6)
-      .attr('stroke', 'none');
-
-    sankeyData.links.forEach((link, i) => {
-      const source = nodeMap.get(link.source);
-      const target = nodeMap.get(link.target);
-      
-      if (!source || !target) return;
-
-      // Calculate link height based on the same scale as nodes
-      const linkHeight = Math.max(2, link.value * valueToHeightScale);
-      
-      // Get current positions for source outgoing and target incoming
-      const sourceY = nodeOutgoingY.get(source.id);
-      const targetY = nodeIncomingY.get(target.id);
-      
-      // Update positions for next links
-      nodeOutgoingY.set(source.id, sourceY + linkHeight);
-      nodeIncomingY.set(target.id, targetY + linkHeight);
-      
-      // Create gradient for each link
+    links.forEach((link: any, i: number) => {
       const gradientId = `gradient-${i}`;
-      const gradient = svg.append('defs').append('linearGradient')
+      const gradient = defs.append('linearGradient')
         .attr('id', gradientId)
         .attr('gradientUnits', 'userSpaceOnUse')
-        .attr('x1', source.x1)
-        .attr('x2', target.x0);
+        .attr('x1', link.source.x1)
+        .attr('x2', link.target.x0);
 
       gradient.append('stop')
         .attr('offset', '0%')
-        .attr('stop-color', source.color);
+        .attr('stop-color', link.source.color)
+        .attr('stop-opacity', 0.3);
 
       gradient.append('stop')
         .attr('offset', '100%')
-        .attr('stop-color', target.color);
-
-      // Draw the link path with proper flow conservation
-      linkGroup.append('path')
-        .attr('d', linkPath(source, target, linkHeight, sourceY, targetY))
-        .attr('fill', `url(#${gradientId})`)
-        .style('cursor', 'pointer')
-        .on('mouseover', function(event) {
-          d3.select(this).attr('fill-opacity', 0.9);
-          
-          tooltip.style('opacity', 1);
-          
-          const sourceDetails = getNodeDetails(source);
-          const targetDetails = getNodeDetails(target);
-          
-          tooltip.html(`
-            <div class="font-semibold">${sourceDetails.code && sourceDetails.code.trim() ? `<span class="font-mono">${sourceDetails.code}</span> - ` : ''}${sourceDetails.title} → ${targetDetails.code && targetDetails.code.trim() ? `<span class="font-mono">${targetDetails.code}</span> - ` : ''}${targetDetails.title}</div>
-            <div class="text-lg font-bold text-gray-300">${format(link.value)}%</div>
-          `)
-            .style('left', (event.pageX + 10) + 'px')
-            .style('top', (event.pageY - 10) + 'px');
-        })
-        .on('mouseout', function() {
-          d3.select(this).attr('fill-opacity', 0.6);
-          
-          tooltip.style('opacity', 0);
-        });
+        .attr('stop-color', link.target.color)
+        .attr('stop-opacity', 0.3);
     });
 
-    // Draw nodes
-    const nodeGroup = g.selectAll('.node')
-      .data(positionedNodes)
-      .join('g')
-      .attr('class', 'node')
-      .attr('transform', d => `translate(${d.x0},${d.y0})`)
-      .style('cursor', 'pointer');
+    // Draw links using d3-sankey's sankeyLinkHorizontal
+    const link = g.append('g')
+      .selectAll('.link')
+      .data(links)
+      .enter()
+      .append('path')
+      .attr('class', 'link')
+      .attr('d', sankeyLinkHorizontal())
+      .attr('stroke', (d: any, i: number) => `url(#gradient-${i})`)
+      .attr('stroke-width', (d: any) => Math.max(1, d.width))
+      .attr('fill', 'none')
+      .attr('opacity', 0.5)
+      .on('mouseover', function() {
+        d3.select(this).attr('opacity', 0.7);
+      })
+      .on('mouseout', function() {
+        d3.select(this).attr('opacity', 0.5);
+      });
 
-    // Add node rectangles
-    nodeGroup.append('rect')
-      .attr('width', d => d.width)
-      .attr('height', d => d.height)
-      .attr('fill', d => d.color)
-      .attr('stroke', '#ffffff')
-      .attr('stroke-width', 1.5)
+    // Create tooltip
+    const tooltip = d3.select('body')
+      .append('div')
+      .attr('class', 'absolute bg-slate-800 text-white px-3 py-2 rounded shadow-lg text-sm pointer-events-none z-50')
+      .style('opacity', 0);
+
+    const format = d3.format('.1f');
+
+    // Draw nodes
+    const node = g.append('g')
+      .selectAll('.node')
+      .data(nodes)
+      .enter()
+      .append('g')
+      .attr('class', 'node');
+
+    node.append('rect')
+      .attr('x', (d: any) => d.x0)
+      .attr('y', (d: any) => d.y0)
+      .attr('height', (d: any) => d.y1 - d.y0)
+      .attr('width', (d: any) => d.x1 - d.x0)
+      .attr('fill', (d: any) => d.color)
+      .attr('stroke', '#fff')
+      .attr('stroke-width', 2)
       .attr('rx', 3)
-      .attr('ry', 3)
-              .on('mouseover', function(event, d) {
+      .style('cursor', 'pointer')
+      .on('mouseover', function(event, d: any) {
         d3.select(this).style('filter', 'brightness(1.2)');
-        
         tooltip.style('opacity', 1);
-        
-        const details = getNodeDetails(d);
-        let hierarchyHtml = '';
-        
-        // Build hierarchy display with codes in monotype font
-        if (details.category) {
-          hierarchyHtml += `<div class="text-xs text-blue-200 mb-1">Category: <span class="font-mono">${details.code}</span> - ${details.category}</div>`;
-        }
-        if (details.sector) {
-          hierarchyHtml += `<div class="text-xs text-green-200 mb-1">Sector: <span class="font-mono">${details.code}</span> - ${details.sector}</div>`;
-        }
-        if (details.subsector) {
-          hierarchyHtml += `<div class="text-xs text-yellow-200 mb-1">Sub-sector: <span class="font-mono">${details.code}</span> - ${details.subsector}</div>`;
-        }
-        
+
+        const code = d.id.replace(/^(cat-|sec-|sub-)/, '');
         tooltip.html(`
-          <div class="font-semibold">${details.code && details.code.trim() ? `<span class="font-mono">${details.code}</span> - ` : ''}${details.title}</div>
-          <div class="text-lg font-bold mt-2 text-gray-300">${format(d.value)}%</div>
+          <div class="font-semibold">${code ? `<span class="font-mono">${code}</span> - ` : ''}${d.name}</div>
+          <div class="text-lg font-bold mt-1 text-gray-300">${format(d.value)}%</div>
         `)
           .style('left', (event.pageX + 10) + 'px')
           .style('top', (event.pageY - 10) + 'px');
       })
       .on('mouseout', function() {
         d3.select(this).style('filter', 'none');
-        
         tooltip.style('opacity', 0);
       })
-      .on('click', function(event, d) {
-        if (onSegmentClick && d.id !== 'root') {
+      .on('click', function(event, d: any) {
+        if (onSegmentClick) {
           const code = d.id.replace(/^(cat-|sec-|sub-)/, '');
-          const level = d.level === 'category' ? 'category' : 
+          const level = d.level === 'category' ? 'category' :
                       d.level === 'sector' ? 'sector' : 'subsector';
           onSegmentClick(code, level);
         }
       });
 
-    // Add node labels
-    nodeGroup.append('text')
-      .attr('x', d => d.x0 < innerWidth / 2 ? d.width + 8 : -8)
-      .attr('y', d => d.height / 2)
-      .attr('dy', '0.35em')
-      .attr('text-anchor', d => d.x0 < innerWidth / 2 ? 'start' : 'end')
-      .attr('font-size', d => d.level === 'subsector' ? '10px' : '11px')
-      .attr('font-weight', d => d.level === 'category' ? 'bold' : 'normal')
-      .attr('fill', '#374151')
-      .text(d => {
-        const maxLength = d.x0 < innerWidth / 2 ? 20 : 15;
-        return d.name.length > maxLength ? d.name.substring(0, maxLength) + '...' : d.name;
-      })
-      .style('pointer-events', 'none');
+    // Add node labels with wrapping and sector codes on the same line
+    node.each(function(d: any) {
+      const nodeGroup = d3.select(this);
+      const isLeftSide = d.x0 < innerWidth / 2;
+      const x = isLeftSide ? d.x1 + 6 : d.x0 - 6;
+      const y = (d.y1 + d.y0) / 2;
+      const anchor = isLeftSide ? 'start' : 'end';
+      const code = d.id.replace(/^(cat-|sec-|sub-)/, '');
 
-    // Add native tooltips
-    nodeGroup.append('title')
-      .text(d => `${d.name}\n${d.level}\n${format(d.value)}%`);
+      // Combine code and name with wrapping
+      const fullText = `${code} ${d.name}`;
+      const words = fullText.split(/\s+/);
+      const maxCharsPerLine = 30;
+      const lines: string[] = [];
+      let currentLine = '';
+      let isFirstWord = true;
+
+      words.forEach((word: string) => {
+        const testLine = currentLine ? currentLine + ' ' + word : word;
+        if (testLine.length > maxCharsPerLine && currentLine) {
+          lines.push(currentLine);
+          currentLine = word;
+          isFirstWord = false;
+        } else {
+          currentLine = testLine;
+        }
+      });
+
+      if (currentLine) {
+        lines.push(currentLine);
+      }
+
+      // Limit to 2 lines
+      const displayLines = lines.slice(0, 2);
+      if (lines.length > 2) {
+        displayLines[1] = displayLines[1].substring(0, 27) + '...';
+      }
+
+      displayLines.forEach((line: string, i: number) => {
+        const text = nodeGroup.append('text')
+          .attr('x', x)
+          .attr('y', y - (displayLines.length - 1) * 6 + (i * 12))
+          .attr('text-anchor', anchor)
+          .attr('font-size', '11px')
+          .attr('font-weight', d.level === 'category' ? 'bold' : 'normal')
+          .attr('fill', '#1e293b')
+          .style('pointer-events', 'none');
+
+        // Check if this line starts with the code (first line, first word)
+        if (i === 0) {
+          const codeMatch = line.match(new RegExp(`^${code}\\s`));
+          if (codeMatch) {
+            // Add code with background
+            const codeTspan = text.append('tspan')
+              .attr('font-family', 'monospace')
+              .attr('font-size', '10px')
+              .attr('fill', '#475569')
+              .text(code);
+
+            // Add background for code
+            codeTspan.each(function() {
+              const bbox = (this as SVGTextElement).getBBox();
+              nodeGroup.insert('rect', 'text')
+                .attr('x', bbox.x - 2)
+                .attr('y', bbox.y - 1)
+                .attr('width', bbox.width + 4)
+                .attr('height', bbox.height + 2)
+                .attr('fill', '#e2e8f0')
+                .attr('rx', 2)
+                .style('pointer-events', 'none');
+            });
+
+            // Add the rest of the text
+            text.append('tspan')
+              .attr('dx', 3)
+              .text(line.substring(code.length));
+          } else {
+            text.text(line);
+          }
+        } else {
+          text.text(line);
+        }
+      });
+    });
+
+    // Percentage labels removed - only shown on hover
 
     // Cleanup tooltip on unmount
     return () => {
       tooltip.remove();
     };
 
-  }, [sankeyData, containerSize, onSegmentClick]);
+  }, [sankeyData, containerSize, onSegmentClick, viewMode]);
+
+  // Render Sunburst Chart (3-level hierarchy)
+  useEffect(() => {
+    if (!svgRef.current || allocations.length === 0 || viewMode !== 'pie') return;
+
+    const svg = d3.select(svgRef.current);
+    svg.selectAll('*').remove();
+
+    const { width, height } = containerSize;
+    const radius = Math.min(width, height) / 2 - 60;
+
+    const g = svg.append('g')
+      .attr('transform', `translate(${width / 2},${height / 2})`);
+
+    // Build hierarchical data structure
+    const hierarchyData: any = {
+      name: 'root',
+      children: []
+    };
+
+    const categoryMap = new Map<string, any>();
+
+    allocations.forEach(allocation => {
+      const sectorData = sectorGroupData.data.find((s: any) => s.code === allocation.code);
+      if (!sectorData) return;
+
+      const categoryCode = sectorData['codeforiati:group-code'];
+      const categoryName = sectorData['codeforiati:group-name'];
+      const sectorCode = sectorData['codeforiati:category-code'];
+      const sectorName = sectorData['codeforiati:category-name'];
+
+      // Get or create category
+      if (!categoryMap.has(categoryCode)) {
+        const category = {
+          name: categoryName,
+          code: categoryCode,
+          level: 'category',
+          children: [],
+          sectors: new Map()
+        };
+        categoryMap.set(categoryCode, category);
+        hierarchyData.children.push(category);
+      }
+
+      const category = categoryMap.get(categoryCode);
+
+      // Get or create sector
+      if (!category.sectors.has(sectorCode)) {
+        const sector = {
+          name: sectorName,
+          code: sectorCode,
+          level: 'sector',
+          children: []
+        };
+        category.sectors.set(sectorCode, sector);
+        category.children.push(sector);
+      }
+
+      const sector = category.sectors.get(sectorCode);
+
+      // Add subsector (the actual allocation)
+      const financial = financialData.find(f => f.code === allocation.code);
+      let displayValue = allocation.percentage;
+
+      if (metricMode === 'budget') {
+        displayValue = financial?.budget || 0;
+      } else if (metricMode === 'planned') {
+        displayValue = financial?.plannedDisbursement || 0;
+      } else if (metricMode === 'actual') {
+        displayValue = financial?.actualDisbursement || 0;
+      }
+
+      sector.children.push({
+        name: allocation.name,
+        code: allocation.code,
+        level: 'subsector',
+        value: allocation.percentage, // Always use percentage for sizing
+        displayValue: displayValue // Use selected metric for display
+      });
+    });
+
+    // Create d3 hierarchy
+    const root = d3.hierarchy(hierarchyData)
+      .sum((d: any) => d.value || 0)
+      .sort((a, b) => (b.value || 0) - (a.value || 0));
+
+    // Create partition layout
+    const partition = d3.partition<any>()
+      .size([2 * Math.PI, radius]);
+
+    partition(root);
+
+    // Create arc generator
+    const arc = d3.arc<any>()
+      .startAngle(d => d.x0)
+      .endAngle(d => d.x1)
+      .innerRadius(d => d.y0)
+      .outerRadius(d => d.y1);
+
+    // Create tooltip
+    const tooltip = d3.select('body')
+      .append('div')
+      .attr('class', 'absolute bg-slate-800 text-white px-3 py-2 rounded shadow-lg text-sm pointer-events-none z-50')
+      .style('opacity', 0);
+
+    const format = metricMode === 'percentage' ? d3.format('.1f') : d3.format(',.0f');
+    const isPercentage = metricMode === 'percentage';
+
+    // Track color assignment
+    let categoryIndex = 0;
+    const categoryColorMap = new Map<string, string>();
+
+    // Draw arcs
+    const paths = g.selectAll('path')
+      .data(root.descendants().filter((d: any) => d.depth > 0))
+      .enter()
+      .append('path')
+      .attr('d', arc)
+      .attr('fill', (d: any) => {
+        // Assign color based on category
+        if (d.depth === 1) {
+          // Category level - base color
+          const color = BASE_COLORS[categoryIndex % BASE_COLORS.length];
+          categoryColorMap.set(d.data.code, color);
+          categoryIndex++;
+          return color;
+        } else {
+          // Find parent category
+          let parent = d.parent;
+          while (parent && parent.depth > 1) {
+            parent = parent.parent;
+          }
+          const baseColor = parent ? categoryColorMap.get(parent.data.code) || BASE_COLORS[0] : BASE_COLORS[0];
+
+          if (d.depth === 2) {
+            // Sector level - lighter shade
+            return generateVariedShades(baseColor, d.parent!.children.indexOf(d), d.parent!.children.length, 'sector');
+          } else {
+            // Subsector level - lightest shade
+            return generateVariedShades(baseColor, d.parent!.children.indexOf(d), d.parent!.children.length, 'subsector');
+          }
+        }
+      })
+      .attr('stroke', '#fff')
+      .attr('stroke-width', 1.5)
+      .style('cursor', 'pointer')
+      .on('mouseover', function(event, d: any) {
+        d3.select(this).style('filter', 'brightness(1.2)');
+        tooltip.style('opacity', 1);
+
+        const percentage = ((d.value || 0) / (root.value || 1) * 100).toFixed(1);
+
+        tooltip.html(`
+          <div class="font-semibold">${d.data.code || ''} - ${d.data.name}</div>
+          <div class="text-lg font-bold mt-1">${percentage}%</div>
+        `)
+          .style('left', (event.pageX + 10) + 'px')
+          .style('top', (event.pageY - 10) + 'px');
+      })
+      .on('mouseout', function() {
+        d3.select(this).style('filter', 'none');
+        tooltip.style('opacity', 0);
+      })
+      .on('click', function(event, d: any) {
+        if (onSegmentClick && d.data.code) {
+          const level = d.data.level === 'category' ? 'category' :
+                       d.data.level === 'sector' ? 'sector' : 'subsector';
+          onSegmentClick(d.data.code, level);
+        }
+      });
+
+    // Center label removed for cleaner visualization
+
+    return () => {
+      tooltip.remove();
+    };
+  }, [allocations, financialData, containerSize, viewMode, currentTotal, metricMode, onSegmentClick]);
+
+  // Render Bar Chart
+  useEffect(() => {
+    if (!svgRef.current || displayData.length === 0 || viewMode !== 'bar') return;
+
+    const svg = d3.select(svgRef.current);
+    svg.selectAll('*').remove();
+
+    const { width, height } = containerSize;
+    const margin = { top: 20, right: 30, bottom: 40, left: 300 };
+    const innerWidth = width - margin.left - margin.right;
+    const innerHeight = height - margin.top - margin.bottom;
+
+    const g = svg.append('g')
+      .attr('transform', `translate(${margin.left},${margin.top})`);
+
+    const sortedData = [...displayData].sort((a, b) => b.displayValue - a.displayValue);
+
+    const yScale = d3.scaleBand()
+      .domain(sortedData.map(d => d.name))
+      .range([0, innerHeight])
+      .padding(0.3);
+
+    const xScale = d3.scaleLinear()
+      .domain([0, d3.max(sortedData, d => d.displayValue) || 0])
+      .range([0, innerWidth]);
+
+    const tooltip = d3.select('body')
+      .append('div')
+      .attr('class', 'absolute bg-slate-800 text-white px-3 py-2 rounded shadow-lg text-sm pointer-events-none z-50')
+      .style('opacity', 0);
+
+    const format = d3.format(',.0f'); // Always format as whole numbers
+    const isPercentage = metricMode === 'percentage';
+
+    // Add bars
+    g.selectAll('.bar')
+      .data(sortedData)
+      .enter()
+      .append('rect')
+      .attr('class', 'bar')
+      .attr('x', 0)
+      .attr('y', d => yScale(d.name) || 0)
+      .attr('width', d => xScale(d.displayValue))
+      .attr('height', yScale.bandwidth())
+      .attr('fill', (d, i) => BASE_COLORS[i % BASE_COLORS.length])
+      .attr('rx', 4)
+      .style('cursor', 'pointer')
+      .on('mouseover', function(event, d) {
+        d3.select(this).style('filter', 'brightness(1.2)');
+        tooltip.style('opacity', 1);
+        const percentage = (d.displayValue / currentTotal * 100).toFixed(0);
+        tooltip.html(`
+          <div class="font-semibold">${d.code} - ${d.name}</div>
+          <div class="text-lg font-bold mt-1">${isPercentage ? format(d.displayValue) + '%' : '$' + format(d.displayValue)}</div>
+          <div class="text-xs text-gray-300">${percentage}% of total</div>
+        `)
+          .style('left', (event.pageX + 10) + 'px')
+          .style('top', (event.pageY - 10) + 'px');
+      })
+      .on('mouseout', function() {
+        d3.select(this).style('filter', 'none');
+        tooltip.style('opacity', 0);
+      })
+      .on('click', function(event, d) {
+        if (onSegmentClick) {
+          onSegmentClick(d.code, 'subsector');
+        }
+      });
+
+    // Add value labels
+    g.selectAll('.label')
+      .data(sortedData)
+      .enter()
+      .append('text')
+      .attr('class', 'label')
+      .attr('x', d => xScale(d.displayValue) + 5)
+      .attr('y', d => (yScale(d.name) || 0) + yScale.bandwidth() / 2)
+      .attr('dy', '0.35em')
+      .attr('font-size', '11px')
+      .attr('fill', '#374151')
+      .text(d => isPercentage ? format(d.displayValue) + '%' : '$' + format(d.displayValue));
+
+    // Add y-axis labels with wrapping
+    const wrapText = (text: string, maxWidth: number) => {
+      const words = text.split(/\s+/);
+      const lines: string[] = [];
+      let currentLine = '';
+
+      words.forEach(word => {
+        const testLine = currentLine ? currentLine + ' ' + word : word;
+        // Rough estimate: 6 pixels per character
+        if (testLine.length * 6 > maxWidth && currentLine) {
+          lines.push(currentLine);
+          currentLine = word;
+        } else {
+          currentLine = testLine;
+        }
+      });
+
+      if (currentLine) {
+        lines.push(currentLine);
+      }
+
+      return lines;
+    };
+
+    g.selectAll('.y-label-group')
+      .data(sortedData)
+      .enter()
+      .append('g')
+      .attr('class', 'y-label-group')
+      .attr('transform', d => `translate(-10, ${(yScale(d.name) || 0) + yScale.bandwidth() / 2})`)
+      .style('cursor', 'pointer')
+      .on('click', function(event, d) {
+        if (onSegmentClick) {
+          onSegmentClick(d.code, 'subsector');
+        }
+      })
+      .each(function(d) {
+        const group = d3.select(this);
+        const lines = wrapText(d.name, 280);
+        const lineHeight = 12;
+        const yOffset = -(lines.length - 1) * lineHeight / 2;
+
+        lines.forEach((line, i) => {
+          group.append('text')
+            .attr('x', 0)
+            .attr('y', yOffset + i * lineHeight)
+            .attr('text-anchor', 'end')
+            .attr('font-size', '11px')
+            .attr('fill', '#374151')
+            .text(line);
+        });
+      });
+
+    // Add x-axis with formatted labels
+    const formatXAxis = (value: number) => {
+      if (isPercentage) {
+        return value.toFixed(0) + '%';
+      } else {
+        // Format currency values
+        if (value >= 1000000) {
+          return '$' + (value / 1000000).toFixed(0) + 'm';
+        } else if (value >= 1000) {
+          return '$' + (value / 1000).toFixed(0) + 'k';
+        } else {
+          return '$' + value.toFixed(0);
+        }
+      }
+    };
+
+    const xAxis = d3.axisBottom(xScale)
+      .ticks(5)
+      .tickFormat(formatXAxis as any);
+
+    g.append('g')
+      .attr('transform', `translate(0,${innerHeight})`)
+      .call(xAxis)
+      .selectAll('text')
+      .attr('font-size', '11px')
+      .attr('fill', '#64748b');
+
+    return () => {
+      tooltip.remove();
+    };
+  }, [displayData, containerSize, viewMode, currentTotal, metricMode, onSegmentClick]);
+
+  const totalPercentage = useMemo(() => {
+    return allocations.reduce((sum, allocation) => sum + allocation.percentage, 0);
+  }, [allocations]);
+
+  const handleExportCSV = useCallback(() => {
+    const csvData = allocations.map(allocation => {
+      const financial = financialData.find(f => f.code === allocation.code);
+      return {
+        'Sector Code': allocation.code,
+        'Sector Name': allocation.name,
+        'Percentage': allocation.percentage,
+        'Budget (USD)': financial?.budget || 0,
+        'Commitment (USD)': financial?.commitment || 0,
+        'Planned Disbursement (USD)': financial?.plannedDisbursement || 0,
+        'Actual Disbursement (USD)': financial?.actualDisbursement || 0
+      };
+    });
+    exportToCSV(csvData, 'sector-allocations');
+  }, [allocations, financialData]);
+
+  const handleExportJPG = useCallback(() => {
+    if (containerRef.current) {
+      exportChartToJPG(containerRef.current, 'sector-visualization');
+    }
+  }, []);
+
+  const renderTable = () => {
+    const formatCurrency = (v: number) => {
+      if (v === 0) return '$0';
+      if (v >= 1000000) return '$' + (v / 1000000).toFixed(1) + 'm';
+      if (v >= 1000) return '$' + (v / 1000).toFixed(1) + 'k';
+      return '$' + v.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+    };
+
+    const formatPercentage = (v: number) => v.toFixed(0) + '%';
+
+    // Calculate total percentage
+    const totalPercentage = allocations.reduce((sum, a) => sum + a.percentage, 0);
+
+    // Build table data with hierarchy information
+    const tableData = allocations.map(allocation => {
+      const sectorData = sectorGroupData.data.find((s: any) => s.code === allocation.code);
+      const financial = financialData.find(f => f.code === allocation.code);
+
+      let category = '';
+      let sector = '';
+      let subsector = '';
+
+      if (sectorData) {
+        const categoryCode = sectorData['codeforiati:group-code'];
+        const categoryName = sectorData['codeforiati:group-name'];
+        const sectorCode = sectorData['codeforiati:category-code'];
+        const sectorName = sectorData['codeforiati:category-name'];
+
+        category = `${categoryCode} ${categoryName}`;
+        sector = `${sectorCode} ${sectorName}`;
+        subsector = `${allocation.code} ${allocation.name}`;
+      } else {
+        subsector = `${allocation.code} ${allocation.name}`;
+      }
+
+      return {
+        category,
+        sector,
+        subsector,
+        allocation,
+        financial
+      };
+    });
+
+    return (
+      <div className="overflow-x-auto">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Sector Category</TableHead>
+              <TableHead>Sector</TableHead>
+              <TableHead>Sub-sector</TableHead>
+              <TableHead className="text-right w-[80px]">%</TableHead>
+              <TableHead className="text-right w-[100px]">Budget</TableHead>
+              <TableHead className="text-right w-[120px]">Commitment</TableHead>
+              <TableHead className="text-right w-[160px]">Planned Disbursement</TableHead>
+              <TableHead className="text-right w-[120px]">Actual Spending</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {tableData
+              .sort((a, b) => b.allocation.percentage - a.allocation.percentage)
+              .map((row, index) => {
+                // Extract codes and names for styling
+                const categoryParts = row.category.split(' ');
+                const categoryCode = categoryParts[0];
+                const categoryName = categoryParts.slice(1).join(' ');
+
+                const sectorParts = row.sector.split(' ');
+                const sectorCode = sectorParts[0];
+                const sectorName = sectorParts.slice(1).join(' ');
+
+                const subsectorParts = row.subsector.split(' ');
+                const subsectorCode = subsectorParts[0];
+                const subsectorName = subsectorParts.slice(1).join(' ');
+
+                return (
+                  <TableRow key={index}>
+                    <TableCell className="text-sm">
+                      {row.category && (
+                        <>
+                          <span className="font-mono text-xs bg-slate-100 px-1.5 py-0.5 rounded mr-2">{categoryCode}</span>
+                          <span className="font-medium">{categoryName}</span>
+                        </>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-sm">
+                      {row.sector && (
+                        <>
+                          <span className="font-mono text-xs bg-slate-100 px-1.5 py-0.5 rounded mr-2">{sectorCode}</span>
+                          <span className="font-medium">{sectorName}</span>
+                        </>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-sm">
+                      <span className="font-mono text-xs bg-slate-100 px-1.5 py-0.5 rounded mr-2">{subsectorCode}</span>
+                      <span className="font-medium">{subsectorName}</span>
+                    </TableCell>
+                    <TableCell className="text-right font-medium">{formatPercentage(row.allocation.percentage)}</TableCell>
+                    <TableCell className="text-right">{formatCurrency(row.financial?.budget || 0)}</TableCell>
+                    <TableCell className="text-right">{formatCurrency(row.financial?.commitment || 0)}</TableCell>
+                    <TableCell className="text-right">{formatCurrency(row.financial?.plannedDisbursement || 0)}</TableCell>
+                    <TableCell className="text-right">{formatCurrency(row.financial?.actualDisbursement || 0)}</TableCell>
+                  </TableRow>
+                );
+              })}
+            <TableRow className="font-semibold bg-slate-50 border-t-2">
+              <TableCell colSpan={3}>Total</TableCell>
+              <TableCell className="text-right">{formatPercentage(totalPercentage)}</TableCell>
+              <TableCell className="text-right">{formatCurrency(financialTotals.budget)}</TableCell>
+              <TableCell className="text-right">{formatCurrency(financialTotals.commitment)}</TableCell>
+              <TableCell className="text-right">{formatCurrency(financialTotals.plannedDisbursement)}</TableCell>
+              <TableCell className="text-right">{formatCurrency(financialTotals.actualDisbursement)}</TableCell>
+            </TableRow>
+          </TableBody>
+        </Table>
+      </div>
+    );
+  };
 
   if (allocations.length === 0) {
     return (
@@ -667,9 +1111,112 @@ export default function SectorSankeyVisualization({
     );
   }
 
+  const getMetricLabel = () => {
+    switch (metricMode) {
+      case 'percentage': return 'Percentage Allocation';
+      case 'budget': return 'Total Budget';
+      case 'planned': return 'Total Planned Disbursement';
+      case 'actual': return 'Total Actual Disbursement';
+      default: return 'Total';
+    }
+  };
+
+  const formatTotal = (value: number) => {
+    if (metricMode === 'percentage') {
+      return value.toFixed(1) + '%';
+    }
+    return '$' + value.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+  };
+
   return (
-    <div className={`w-full h-96 ${className}`}>
-      <svg ref={svgRef} className="w-full h-full" />
+    <div ref={containerRef} className={`w-full ${className}`}>
+      {/* Controls - only shown if showControls is true */}
+      {showControls && (
+        <>
+          <div className="flex flex-wrap items-center justify-between gap-3 mb-4 pb-4 border-b">
+            <div className="flex flex-wrap items-center gap-4">
+              {/* View Mode Tabs */}
+              <Tabs value={viewMode} onValueChange={(value) => setViewMode(value as ViewMode)} className="w-auto">
+                <TabsList className="h-9">
+                  <TabsTrigger value="sankey" className="text-xs px-3">
+                    <GitBranch className="h-3.5 w-3.5 mr-1.5" />
+                    Flow
+                  </TabsTrigger>
+                  <TabsTrigger value="pie" className="text-xs px-3">
+                    <PieChart className="h-3.5 w-3.5 mr-1.5" />
+                    Pie
+                  </TabsTrigger>
+                  <TabsTrigger value="bar" className="text-xs px-3">
+                    <BarChart3 className="h-3.5 w-3.5 mr-1.5" />
+                    Bar
+                  </TabsTrigger>
+                  <TabsTrigger value="table" className="text-xs px-3">
+                    <TableIcon className="h-3.5 w-3.5 mr-1.5" />
+                    Table
+                  </TabsTrigger>
+                </TabsList>
+              </Tabs>
+
+              {/* Metric Selector */}
+              <Select value={metricMode} onValueChange={(value: MetricMode) => setMetricMode(value)}>
+                <SelectTrigger className="w-[180px] h-9">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="percentage">Percentage</SelectItem>
+                  <SelectItem value="budget">Budget</SelectItem>
+                  <SelectItem value="planned">Planned Disbursement</SelectItem>
+                  <SelectItem value="actual">Actual Disbursement</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleExportCSV}
+              >
+                <Download className="h-4 w-4 mr-1" />
+                CSV
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleExportJPG}
+              >
+                <Download className="h-4 w-4 mr-1" />
+                JPG
+              </Button>
+            </div>
+          </div>
+
+          {/* Total Display */}
+          <div className="flex items-center justify-between p-3 bg-slate-50 rounded-lg mb-4">
+            <span className="text-sm font-medium text-slate-600">{getMetricLabel()}:</span>
+            <span className={`text-lg font-bold ${metricMode === 'percentage' && currentTotal === 100 ? 'text-green-600' : 'text-slate-900'}`}>
+              {formatTotal(currentTotal)}
+            </span>
+          </div>
+        </>
+      )}
+
+      {/* View */}
+      {viewMode === 'sankey' ? (
+        <div className="w-full h-96">
+          <svg ref={svgRef} className="w-full h-full" />
+        </div>
+      ) : viewMode === 'pie' ? (
+        <div className="w-full h-96">
+          <svg ref={svgRef} className="w-full h-full" />
+        </div>
+      ) : viewMode === 'bar' ? (
+        <div className="w-full h-96">
+          <svg ref={svgRef} className="w-full h-full" />
+        </div>
+      ) : (
+        renderTable()
+      )}
     </div>
   );
 }

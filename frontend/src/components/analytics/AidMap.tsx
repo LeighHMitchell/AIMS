@@ -10,7 +10,7 @@ interface AidMapProps {
     from: Date
     to: Date
   }
-  filters: {
+  filters?: {
     donor?: string
     sector?: string
   }
@@ -59,10 +59,10 @@ export function AidMap({ dateRange, filters, country, refreshKey }: AidMapProps)
         .lte('transactions.transaction_date', dateRange.to.toISOString())
       
       // Apply filters
-      if (filters.donor && filters.donor !== 'all') {
+      if (filters?.donor && filters?.donor !== 'all') {
         query = query.eq('transactions.provider_org_id', filters.donor)
       }
-      
+
       if (country && country !== 'all') {
         query = query.contains('locations', { country_code: country })
       }

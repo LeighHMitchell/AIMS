@@ -35,7 +35,80 @@ export async function PATCH(
     console.log('[AIMS API] Request body keys:', Object.keys(body));
     console.log('[AIMS API] publicationStatus:', body.publicationStatus);
     console.log('[AIMS API] Update data:', JSON.stringify(body, null, 2));
-    
+
+    // Handle reporting organization fields from IATI import
+    let reportingOrgId: string | null = null;
+    let reportingOrgAcronym: string | null = null;
+
+    if (body.reporting_org_name || body.reportingOrgName) {
+      const reportingOrgName = body.reporting_org_name || body.reportingOrgName;
+      const reportingOrgRef = body.reporting_org_ref || body.reportingOrgRef;
+      const reportingOrgType = body.reporting_org_type || body.reportingOrgType || '10'; // Default to 10 (Government) if not provided
+
+      console.log(`[AIMS API] Processing reporting organization: ${reportingOrgName}${reportingOrgRef ? ` (${reportingOrgRef})` : ' (no ref)'}, Type: ${reportingOrgType}`);
+
+      // Build query - if we have a ref, search by ref/name, otherwise just by name
+      let query = getSupabaseAdmin()
+        .from('organizations')
+        .select('id, name, iati_org_id, alias_refs, acronym');
+
+      if (reportingOrgRef) {
+        query = query.or(`iati_org_id.eq.${reportingOrgRef},name.ilike.${reportingOrgName},alias_refs.cs.{${reportingOrgRef}}`);
+      } else {
+        query = query.ilike('name', reportingOrgName);
+      }
+
+      const { data: existingOrgs } = await query;
+
+      // Check if any of the found orgs match
+      const matchingOrg = existingOrgs?.find(org => {
+        // If we have a ref, match by ref first
+        if (reportingOrgRef) {
+          return org.iati_org_id === reportingOrgRef ||
+                 org.alias_refs?.includes(reportingOrgRef) ||
+                 org.name?.toLowerCase() === reportingOrgName?.toLowerCase();
+        }
+        // Otherwise just match by name
+        return org.name?.toLowerCase() === reportingOrgName?.toLowerCase();
+      });
+
+      if (matchingOrg) {
+        reportingOrgId = matchingOrg.id;
+        reportingOrgAcronym = matchingOrg.acronym;
+        console.log(`[AIMS API] Found existing organization: ${matchingOrg.name} (ID: ${reportingOrgId})`);
+      } else {
+        // Create the reporting organization (name is required, ref is optional)
+        console.log(`[AIMS API] Creating new organization: ${reportingOrgName}${reportingOrgRef ? ` with ref ${reportingOrgRef}` : ' (no ref)'}`);
+
+        const { data: newOrg, error: orgError } = await getSupabaseAdmin()
+          .from('organizations')
+          .insert({
+            name: reportingOrgName,
+            iati_org_id: reportingOrgRef || null,
+            type: reportingOrgType, // Use the IATI organization type code
+            country: 'MM',
+            alias_refs: reportingOrgRef ? [reportingOrgRef] : []
+          })
+          .select('id, name, acronym')
+          .single();
+
+        if (!orgError && newOrg) {
+          reportingOrgId = newOrg.id;
+          reportingOrgAcronym = newOrg.acronym;
+          console.log(`[AIMS API] Created new organization: ${newOrg.name} (ID: ${reportingOrgId})`);
+        } else if (orgError) {
+          console.error(`[AIMS API] Error creating organization:`, {
+            error: orgError,
+            message: orgError.message,
+            code: orgError.code,
+            details: orgError.details,
+            hint: orgError.hint
+          });
+          // Continue anyway - we'll use name fields even without org ID
+        }
+      }
+    }
+
     // Handle basic activity field updates (title, description, dates, etc.)
     const activityFields: any = {};
     const fieldsToUpdate = [
@@ -88,6 +161,20 @@ export async function PATCH(
     if (body.acronym !== undefined) activityFields.acronym = body.acronym;
     if (body.activityScope !== undefined) activityFields.activity_scope = normalizeScope(body.activityScope);
     if (body.publicationStatus !== undefined) activityFields.publication_status = body.publicationStatus;
+
+    // Add reporting organization fields if they were processed
+    if (reportingOrgId) {
+      activityFields.reporting_org_id = reportingOrgId;
+      activityFields.created_by_org_name = body.reporting_org_name || body.reportingOrgName;
+      activityFields.created_by_org_acronym = reportingOrgAcronym;
+      activityFields.reporting_org_ref = body.reporting_org_ref || body.reportingOrgRef;
+      activityFields.reporting_org_name = body.reporting_org_name || body.reportingOrgName;
+      console.log(`[AIMS API] Setting reporting org fields:`, {
+        reporting_org_id: reportingOrgId,
+        created_by_org_name: activityFields.created_by_org_name,
+        created_by_org_acronym: reportingOrgAcronym
+      });
+    }
 
     fieldsToUpdate.forEach(field => {
       if (body[field] !== undefined) {

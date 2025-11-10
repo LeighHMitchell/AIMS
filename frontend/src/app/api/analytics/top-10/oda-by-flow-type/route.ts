@@ -99,7 +99,7 @@ export async function GET(request: NextRequest) {
         return;
       }
       
-      const value = parseFloat(t.value_usd?.toString() || t.value?.toString() || '0') || 0;
+      const value = parseFloat(t.value_usd?.toString() || '0') || 0;
       const current = flowTypeTotals.get(t.flow_type) || 0;
       flowTypeTotals.set(t.flow_type, current + value);
     });

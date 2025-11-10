@@ -5,10 +5,13 @@ export const dynamic = 'force-dynamic';
 
 interface ChartDataPoint {
   organization: string;
+  acronym: string;
   budget: number;
   disbursements: number;
   expenditures: number;
   totalSpending: number;
+  iati_id?: string;
+  org_type?: string;
 }
 
 export async function GET(request: NextRequest) {
@@ -33,7 +36,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Get activities with transactions
+    // Get activities with transactions and organization details
     const { data: activities, error: activitiesError } = await supabaseAdmin
       .from('activities')
       .select(`
@@ -42,10 +45,13 @@ export async function GET(request: NextRequest) {
         reporting_org_id,
         created_by_org_name,
         created_by_org_acronym,
-        transactions (
+        reporting_org:organizations!activities_reporting_org_id_fkey (
+          iati_org_id,
+          org_type
+        ),
+        transactions:transactions!transactions_activity_id_fkey1 (
           transaction_type,
-          value,
-          currency
+          value_usd
         )
       `)
       .eq('publication_status', 'published');
@@ -64,36 +70,33 @@ export async function GET(request: NextRequest) {
 
     activities?.forEach((activity: any) => {
       const orgName = activity.created_by_org_name || activity.created_by_org_acronym || 'Unknown Organization';
-      
+      const orgAcronym = activity.created_by_org_acronym || orgName;
+      const iatiId = activity.reporting_org?.iati_org_id;
+      const orgType = activity.reporting_org?.org_type;
+
       // Initialize organization data if not exists
       if (!orgMap.has(orgName)) {
         orgMap.set(orgName, {
           organization: orgName,
+          acronym: orgAcronym,
           budget: 0,
           disbursements: 0,
           expenditures: 0,
           totalSpending: 0,
+          iati_id: iatiId,
+          org_type: orgType,
         });
       }
 
       const orgData = orgMap.get(orgName)!;
 
-      // Process transactions
+      // Process transactions (USD only)
       activity.transactions?.forEach((transaction: any) => {
-        // Safely parse transaction value
-        let value = 0;
-        if (transaction.value !== null && transaction.value !== undefined) {
-          if (typeof transaction.value === 'string') {
-            value = parseFloat(transaction.value) || 0;
-          } else if (typeof transaction.value === 'number') {
-            value = transaction.value;
-          } else if (typeof transaction.value === 'object' && transaction.value.toString) {
-            value = parseFloat(transaction.value.toString()) || 0;
-          }
-        }
-        
-        if (isNaN(value) || !isFinite(value)) {
-          return; // Skip invalid values
+        // Parse transaction value (USD only)
+        const value = parseFloat(transaction.value_usd?.toString() || '0') || 0;
+
+        if (isNaN(value) || !isFinite(value) || value === 0) {
+          return; // Skip invalid or non-USD values
         }
 
         switch (transaction.transaction_type) {

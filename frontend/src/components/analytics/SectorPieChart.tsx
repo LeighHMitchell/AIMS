@@ -17,11 +17,8 @@ interface SectorPieChartProps {
     from: Date
     to: Date
   }
-  filters: {
-    country?: string
-    donor?: string
-  }
   refreshKey: number
+  onDataChange?: (data: SectorData[]) => void
 }
 
 interface SectorData {
@@ -41,35 +38,33 @@ const COLORS = [
   '#f1f5f9'  // slate-100
 ]
 
-export function SectorPieChart({ dateRange, filters, refreshKey }: SectorPieChartProps) {
+export function SectorPieChart({ dateRange, refreshKey, onDataChange }: SectorPieChartProps) {
   const [data, setData] = useState<SectorData[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     fetchData()
-  }, [dateRange, filters, refreshKey])
+  }, [dateRange, refreshKey])
 
   const fetchData = async () => {
     try {
       setLoading(true)
       
       // Get activities with their sectors and transactions
-      let query = supabase
+      const { data: activities } = await supabase
         .from('activities')
         .select(`
           id,
-          locations,
           activity_sectors (
             sector_code,
             sector_name,
             percentage
           ),
-          transactions!inner (
+          transactions:transactions!transactions_activity_id_fkey1!inner (
             value,
             transaction_type,
             status,
-            transaction_date,
-            provider_org_id
+            transaction_date
           )
         `)
         .eq('publication_status', 'published')
@@ -77,18 +72,6 @@ export function SectorPieChart({ dateRange, filters, refreshKey }: SectorPieChar
         .eq('transactions.status', 'actual')
         .gte('transactions.transaction_date', dateRange.from.toISOString())
         .lte('transactions.transaction_date', dateRange.to.toISOString())
-      
-      // Apply country filter if specified
-      if (filters.country && filters.country !== 'all') {
-        query = query.contains('locations', [{ country_code: filters.country }])
-      }
-      
-      // Apply donor filter if specified
-      if (filters.donor && filters.donor !== 'all') {
-        query = query.eq('transactions.provider_org_id', filters.donor)
-      }
-      
-      const { data: activities } = await query
       
       // Aggregate by sector
       const sectorTotals = new Map<string, number>()
@@ -168,8 +151,9 @@ export function SectorPieChart({ dateRange, filters, refreshKey }: SectorPieChar
         value: isNaN(item.value) || !isFinite(item.value) ? 0 : item.value,
         percentage: isNaN(item.percentage) || !isFinite(item.percentage) ? 0 : item.percentage
       }))
-      
+
       setData(safeData)
+      onDataChange?.(safeData)
     } catch (error) {
       console.error('Error fetching sector data:', error)
     } finally {

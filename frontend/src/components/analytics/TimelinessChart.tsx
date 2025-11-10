@@ -20,7 +20,7 @@ interface TimelinessChartProps {
     from: Date
     to: Date
   }
-  filters: {
+  filters?: {
     country?: string
     sector?: string
   }

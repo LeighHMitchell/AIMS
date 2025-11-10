@@ -9,6 +9,7 @@ import {
   Tooltip,
   Legend,
 } from "recharts";
+import { DATA_COLORS, CHART_STRUCTURE_COLORS } from "@/lib/chart-colors";
 import { Loader2, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 
@@ -31,10 +32,12 @@ interface ChartDataPoint {
 
 interface OrgTypeChartProps {
   filters: AnalyticsFilters;
+  onDataChange?: (data: any[]) => void;
 }
 
 export const OrgTypeChart: React.FC<OrgTypeChartProps> = ({
   filters,
+  onDataChange,
 }) => {
   const [data, setData] = useState<ChartDataPoint[]>([]);
   const [loading, setLoading] = useState(false);
@@ -186,10 +189,10 @@ export const OrgTypeChart: React.FC<OrgTypeChartProps> = ({
           margin={{ top: 20, right: 30, left: 20, bottom: 60 }}
           barCategoryGap="20%"
         >
-          <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
+          <CartesianGrid strokeDasharray="3 3" stroke={CHART_STRUCTURE_COLORS.grid} />
           <XAxis 
             dataKey="orgType" 
-            stroke="#6B7280" 
+            stroke={CHART_STRUCTURE_COLORS.axis} 
             fontSize={12}
             angle={-30}
             textAnchor="end"
@@ -198,7 +201,7 @@ export const OrgTypeChart: React.FC<OrgTypeChartProps> = ({
           />
           <YAxis 
             tickFormatter={formatYAxis} 
-            stroke="#6B7280" 
+            stroke={CHART_STRUCTURE_COLORS.axis} 
             fontSize={12}
             label={{ 
               value: `Amount (${currency})`, 
@@ -213,25 +216,25 @@ export const OrgTypeChart: React.FC<OrgTypeChartProps> = ({
           <Bar 
             dataKey="budget" 
             name="Budget" 
-            fill="#3B82F6"
+            fill={DATA_COLORS.budget}
             radius={[2, 2, 0, 0]}
           />
           <Bar 
             dataKey="disbursements" 
             name="Disbursements" 
-            fill="#10B981"
+            fill={DATA_COLORS.disbursements}
             radius={[2, 2, 0, 0]}
           />
           <Bar 
             dataKey="expenditures" 
             name="Expenditures" 
-            fill="#F59E0B"
+            fill={DATA_COLORS.expenditures}
             radius={[2, 2, 0, 0]}
           />
           <Bar 
             dataKey="totalSpending" 
             name="Total Spending" 
-            fill="#8B5CF6"
+            fill={DATA_COLORS.totalSpending}
             radius={[2, 2, 0, 0]}
           />
         </BarChart>

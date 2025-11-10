@@ -155,6 +155,8 @@ class PreCacheManager {
     console.log(`[PreCache] Smart pre-cache for path: ${currentPath}`)
 
     // Pre-cache based on current path
+    // Note: We don't need to pre-cache common resources separately as they're
+    // already included in the specific page pre-cache functions
     if (currentPath.includes('/activities/new')) {
       await this.preCacheActivityEditor()
     } else if (currentPath.includes('/activities/')) {
@@ -169,11 +171,8 @@ class PreCacheManager {
       await this.preCacheActivityList()
     }
 
-    // Always pre-cache common resources
-    await this.preloadResources([
-      '/api/iati-reference-values',
-      '/api/organizations',
-    ], { priority: 'low', background: true })
+    // Common resources are already handled by the specific pre-cache functions above
+    // No need to duplicate them here
   }
 
   /**
@@ -300,7 +299,11 @@ export const preCacheManager = new PreCacheManager()
 
 // Export hook for React components
 export function usePreCache() {
-  return {
+  // Use useMemo to prevent creating new bound functions on every render
+  // This prevents infinite loops when these functions are used in useEffect dependencies
+  const { useMemo } = require('react')
+
+  return useMemo(() => ({
     preCacheAPI: preCacheManager.preCacheAPI.bind(preCacheManager),
     preloadResources: preCacheManager.preloadResources.bind(preCacheManager),
     preCacheActivityEditor: preCacheManager.preCacheActivityEditor.bind(preCacheManager),
@@ -309,7 +312,7 @@ export function usePreCache() {
     smartPreCache: preCacheManager.smartPreCache.bind(preCacheManager),
     clearCache: preCacheManager.clearCache.bind(preCacheManager),
     getCacheStats: preCacheManager.getCacheStats.bind(preCacheManager),
-  }
+  }), [])
 }
 
 // Utility function to wrap fetch with caching

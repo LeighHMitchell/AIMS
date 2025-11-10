@@ -84,7 +84,7 @@ export async function GET(request: NextRequest) {
     transactions?.forEach((t: any) => {
       if (!t.provider_org_id) return;
       
-      const value = parseFloat(t.value_usd?.toString() || t.value?.toString() || '0') || 0;
+      const value = parseFloat(t.value_usd?.toString() || '0') || 0;
       const current = donorTotals.get(t.provider_org_id) || { total: 0, orgId: t.provider_org_id };
       current.total += value;
       donorTotals.set(t.provider_org_id, current);

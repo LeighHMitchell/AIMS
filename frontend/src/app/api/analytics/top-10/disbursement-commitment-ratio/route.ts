@@ -107,20 +107,22 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to fetch disbursements' }, { status: 500 });
     }
 
-    // Aggregate commitments by donor
+    // Aggregate commitments by donor (USD only)
     const commitmentsByDonor = new Map<string, number>();
     commitments?.forEach((t: any) => {
       if (!t.provider_org_id) return;
-      const value = parseFloat(t.value_usd?.toString() || t.value?.toString() || '0') || 0;
+      const value = parseFloat(t.value_usd?.toString() || '0') || 0;
+      if (value === 0) return; // Skip non-USD transactions
       const current = commitmentsByDonor.get(t.provider_org_id) || 0;
       commitmentsByDonor.set(t.provider_org_id, current + value);
     });
 
-    // Aggregate disbursements by donor
+    // Aggregate disbursements by donor (USD only)
     const disbursementsByDonor = new Map<string, number>();
     disbursements?.forEach((t: any) => {
       if (!t.provider_org_id) return;
-      const value = parseFloat(t.value_usd?.toString() || t.value?.toString() || '0') || 0;
+      const value = parseFloat(t.value_usd?.toString() || '0') || 0;
+      if (value === 0) return; // Skip non-USD transactions
       const current = disbursementsByDonor.get(t.provider_org_id) || 0;
       disbursementsByDonor.set(t.provider_org_id, current + value);
     });
@@ -137,18 +139,18 @@ export async function GET(request: NextRequest) {
 
     const orgMap = new Map(orgs?.map((o: any) => [o.id, { name: o.name, acronym: o.acronym }]) || []);
 
-    // Calculate ratios (only for donors with commitments > 0)
+    // Calculate ratios for all donors with disbursements
     const ratios = Array.from(allOrgIds)
       .map((orgId) => {
         const commitmentsTotal = commitmentsByDonor.get(orgId) || 0;
         const disbursementsTotal = disbursementsByDonor.get(orgId) || 0;
-        
-        // Only include donors with commitments
-        if (commitmentsTotal === 0) return null;
 
-        const ratio = (disbursementsTotal / commitmentsTotal) * 100;
+        // Only include donors with disbursements (not just commitments)
+        if (disbursementsTotal === 0) return null;
+
+        const ratio = commitmentsTotal > 0 ? (disbursementsTotal / commitmentsTotal) * 100 : 0;
         const org = orgMap.get(orgId);
-        
+
         return {
           orgId,
           name: org?.name || 'Unknown Organization',
@@ -159,7 +161,7 @@ export async function GET(request: NextRequest) {
         };
       })
       .filter((item): item is NonNullable<typeof item> => item !== null)
-      .sort((a, b) => b.ratio - a.ratio)
+      .sort((a, b) => b.disbursements - a.disbursements) // Sort by disbursement amount, not ratio
       .slice(0, limit);
 
     // Calculate "Others" if there are more donors

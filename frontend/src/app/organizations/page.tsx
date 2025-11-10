@@ -1232,6 +1232,13 @@ const OrganizationListView: React.FC<{
                   </Button>
                 )}
               </div>
+
+              {/* Location */}
+              <div className="flex-shrink-0 min-w-[120px]">
+                <p className="text-sm text-gray-600">
+                  {org.country_represented || org.country || 'No location'}
+                </p>
+              </div>
             </div>
 
             {/* Right section: Action buttons */}

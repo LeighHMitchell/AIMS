@@ -24,9 +24,6 @@ interface Transaction {
   transaction_date: string
   transaction_type: string
   value: number
-  value_usd?: number
-  usd_value?: number
-  value_USD?: number
 }
 
 export function TransactionActivityCalendar({ 
@@ -44,48 +41,26 @@ export function TransactionActivityCalendar({
         setLoading(true)
         setError(null)
 
-        // Build base query through activities to properly apply filters
-        let activityQuery = supabase
-          .from('activities')
-          .select(`
-            id,
-            locations,
-            activity_sectors!inner(sector_code),
-            transactions!transactions_activity_id_fkey1(
-              transaction_date,
-              transaction_type,
-              value,
-              value_usd,
-              usd_value,
-              value_USD,
-              provider_org_id
-            )
-          `)
-          .eq('publication_status', 'published')
+        // Query transactions directly for better performance and to show all transactions
+        let transactionsQuery = supabase
+          .from('transactions')
+          .select('transaction_date, transaction_type, value, provider_org_id, activity_id')
+          .eq('status', 'actual')
+          .order('transaction_date', { ascending: true })
 
         // Apply date range filter
         if (dateRange) {
-          activityQuery = activityQuery
-            .gte('transactions.transaction_date', dateRange.from.toISOString())
-            .lte('transactions.transaction_date', dateRange.to.toISOString())
-        }
-
-        // Apply country filter
-        if (filters?.country) {
-          activityQuery = activityQuery.contains('locations', [{ country_code: filters.country }])
-        }
-
-        // Apply sector filter
-        if (filters?.sector) {
-          activityQuery = activityQuery.eq('activity_sectors.sector_code', filters.sector)
+          transactionsQuery = transactionsQuery
+            .gte('transaction_date', dateRange.from.toISOString())
+            .lte('transaction_date', dateRange.to.toISOString())
         }
 
         // Apply donor filter
         if (filters?.donor) {
-          activityQuery = activityQuery.eq('transactions.provider_org_id', filters.donor)
+          transactionsQuery = transactionsQuery.eq('provider_org_id', filters.donor)
         }
 
-        const { data: activities, error: queryError } = await activityQuery
+        const { data: transactionsData, error: queryError } = await transactionsQuery
 
         if (queryError) {
           console.error('[TransactionActivityCalendar] Error fetching transactions:', queryError)
@@ -93,24 +68,12 @@ export function TransactionActivityCalendar({
           return
         }
 
-        // Extract and flatten transactions from activities
-        const allTransactions: Transaction[] = []
-        activities?.forEach((activity: any) => {
-          if (activity.transactions && Array.isArray(activity.transactions)) {
-            activity.transactions.forEach((t: any) => {
-              if (t.transaction_date) {
-                allTransactions.push({
-                  transaction_date: t.transaction_date,
-                  transaction_type: t.transaction_type || '',
-                  value: parseFloat(String(t.value || 0)),
-                  value_usd: t.value_usd ? parseFloat(String(t.value_usd)) : undefined,
-                  usd_value: t.usd_value ? parseFloat(String(t.usd_value)) : undefined,
-                  value_USD: t.value_USD ? parseFloat(String(t.value_USD)) : undefined,
-                })
-              }
-            })
-          }
-        })
+        // Convert to expected format
+        const allTransactions: Transaction[] = (transactionsData || []).map((t: any) => ({
+          transaction_date: t.transaction_date,
+          transaction_type: t.transaction_type || '',
+          value: parseFloat(String(t.value || 0)),
+        }))
 
         setTransactions(allTransactions)
       } catch (err) {
@@ -181,5 +144,8 @@ export function TransactionActivityCalendar({
     </Card>
   )
 }
+
+
+
 
 

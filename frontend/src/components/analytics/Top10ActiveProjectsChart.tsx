@@ -15,11 +15,12 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { BarChart3, Activity } from 'lucide-react'
 
 interface Top10ActiveProjectsChartProps {
-  filters: {
+  filters?: {
     country?: string
     sector?: string
   }
   refreshKey: number
+  onDataChange?: (data: PartnerData[]) => void
 }
 
 interface PartnerData {
@@ -30,9 +31,10 @@ interface PartnerData {
   shortName: string
 }
 
-export function Top10ActiveProjectsChart({ 
-  filters, 
-  refreshKey 
+export function Top10ActiveProjectsChart({
+  filters,
+  refreshKey,
+  onDataChange
 }: Top10ActiveProjectsChartProps) {
   const [data, setData] = useState<PartnerData[]>([])
   const [loading, setLoading] = useState(true)
@@ -49,10 +51,10 @@ export function Top10ActiveProjectsChart({
         limit: '10'
       })
       
-      if (filters.country && filters.country !== 'all') {
+      if (filters?.country && filters.country !== 'all') {
         params.append('country', filters.country)
       }
-      if (filters.sector && filters.sector !== 'all') {
+      if (filters?.sector && filters.sector !== 'all') {
         params.append('sector', filters.sector)
       }
 
@@ -69,6 +71,7 @@ export function Top10ActiveProjectsChart({
       }))
 
       setData(partners)
+      onDataChange?.(partners)
     } catch (error) {
       console.error('[Top10ActiveProjectsChart] Error:', error)
       setData([])
@@ -159,6 +162,9 @@ export function Top10ActiveProjectsChart({
     </ResponsiveContainer>
   )
 }
+
+
+
 
 
 

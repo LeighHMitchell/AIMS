@@ -3,27 +3,27 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { getOrgRefDisplay } from '@/lib/org-ref-normalizer';
 
 interface NormalizedOrgRefProps {
-  ref?: string | null;
+  orgRef?: string | null;
   className?: string;
   showValidationIndicator?: boolean;
 }
 
 /**
  * Component to display a normalized organization reference/ID
- * 
+ *
  * Features:
  * - Normalizes refs by removing spaces and converting to uppercase
  * - Validates IATI format and shows warning for invalid refs
  * - Preserves original data (doesn't mutate stored values)
- * 
+ *
  * @example
- * <NormalizedOrgRef ref="FR-RCS-523 369 619" />
+ * <NormalizedOrgRef orgRef="FR-RCS-523 369 619" />
  * // Displays: FR-RCS-523369619
  */
-export function NormalizedOrgRef({ 
-  ref: orgRef, 
+export function NormalizedOrgRef({
+  orgRef,
   className = '',
-  showValidationIndicator = true 
+  showValidationIndicator = true
 }: NormalizedOrgRefProps) {
   const refDisplay = getOrgRefDisplay(orgRef);
   

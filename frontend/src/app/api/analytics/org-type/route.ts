@@ -49,17 +49,16 @@ export async function GET(request: NextRequest) {
     });
 
     // Get activities with transactions
-    const { data: activities, error: activitiesError } = await supabaseAdmin
+    const { data: activities, error: activitiesError} = await supabaseAdmin
       .from('activities')
       .select(`
         id,
         title_narrative,
         reporting_org_id,
         created_by_org_name,
-        transactions (
+        transactions:transactions!transactions_activity_id_fkey1 (
           transaction_type,
-          value,
-          currency
+          value_usd
         )
       `)
       .eq('publication_status', 'published');
@@ -92,22 +91,13 @@ export async function GET(request: NextRequest) {
 
       const orgTypeData = orgTypeMap.get(orgType)!;
 
-      // Process transactions
+      // Process transactions (USD only)
       activity.transactions?.forEach((transaction: any) => {
-        // Safely parse transaction value
-        let value = 0;
-        if (transaction.value !== null && transaction.value !== undefined) {
-          if (typeof transaction.value === 'string') {
-            value = parseFloat(transaction.value) || 0;
-          } else if (typeof transaction.value === 'number') {
-            value = transaction.value;
-          } else if (typeof transaction.value === 'object' && transaction.value.toString) {
-            value = parseFloat(transaction.value.toString()) || 0;
-          }
-        }
-        
-        if (isNaN(value) || !isFinite(value)) {
-          return; // Skip invalid values
+        // Parse transaction value (USD only)
+        const value = parseFloat(transaction.value_usd?.toString() || '0') || 0;
+
+        if (isNaN(value) || !isFinite(value) || value === 0) {
+          return; // Skip invalid or non-USD values
         }
 
         switch (transaction.transaction_type) {

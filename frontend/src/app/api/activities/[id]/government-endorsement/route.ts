@@ -18,7 +18,19 @@ export async function GET(
       .eq('activity_id', params.id)
       .single();
 
-    if (error && error.code !== 'PGRST116') { // PGRST116 is "not found"
+    // Handle missing table or no data found
+    if (error) {
+      if (error.code === 'PGRST116') {
+        // Not found - return null
+        return NextResponse.json({ endorsement: null });
+      }
+      if (error.code === '42P01') {
+        // Table does not exist - return null instead of error
+        console.log('[AIMS API ERROR LOG] ===== ROUTE CALLED =====');
+        console.log('Error fetching government endorsement:', error);
+        return NextResponse.json({ endorsement: null });
+      }
+      // Other errors
       console.error('Error fetching government endorsement:', error);
       return NextResponse.json({ error: error.message }, { status: 500 });
     }

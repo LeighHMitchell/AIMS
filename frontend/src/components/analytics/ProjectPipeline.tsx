@@ -13,7 +13,7 @@ interface ProjectPipelineProps {
     from: Date
     to: Date
   }
-  filters: {
+  filters?: {
     country?: string
     donor?: string
     sector?: string

@@ -13,18 +13,12 @@ interface DateRange {
 
 interface DashboardDisbursementsBySectionProps {
   dateRange: DateRange;
-  filters: {
-    country?: string;
-    donor?: string;
-    sector?: string;
-  };
   refreshKey?: number;
 }
 
-export function DashboardDisbursementsBySection({ 
-  dateRange, 
-  filters,
-  refreshKey = 0 
+export function DashboardDisbursementsBySection({
+  dateRange,
+  refreshKey = 0
 }: DashboardDisbursementsBySectionProps) {
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -34,25 +28,15 @@ export function DashboardDisbursementsBySection({
     const fetchData = async () => {
       setLoading(true);
       setError(null);
-      
+
       try {
         // Build query parameters
         const params = new URLSearchParams();
         params.append('dateFrom', dateRange.from.toISOString());
         params.append('dateTo', dateRange.to.toISOString());
-        
-        if (filters.country && filters.country !== 'all') {
-          params.append('country', filters.country);
-        }
-        if (filters.donor && filters.donor !== 'all') {
-          params.append('donor', filters.donor);
-        }
-        if (filters.sector && filters.sector !== 'all') {
-          params.append('sector', filters.sector);
-        }
 
         const response = await fetch(`/api/analytics/disbursements-by-sector?${params.toString()}`);
-        
+
         if (!response.ok) {
           throw new Error('Failed to fetch disbursements data');
         }
@@ -69,7 +53,7 @@ export function DashboardDisbursementsBySection({
     };
 
     fetchData();
-  }, [dateRange, filters.country, filters.donor, filters.sector, refreshKey]);
+  }, [dateRange, refreshKey]);
 
   if (error) {
     return (
@@ -95,6 +79,9 @@ export function DashboardDisbursementsBySection({
     </div>
   );
 }
+
+
+
 
 
 

@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react'
 import { MainLayout } from '@/components/layout/main-layout'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
+import { ExpandableCard } from '@/components/ui/expandable-card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -37,13 +38,12 @@ import { toast } from 'sonner'
 
 // Chart components
 import { CommitmentsChart } from '@/components/analytics/CommitmentsChart'
-import { DonorsChart } from '@/components/analytics/DonorsChart'
+import { AllDonorsHorizontalBarChart } from '@/components/analytics/AllDonorsHorizontalBarChart'
 import { SectorPieChart } from '@/components/analytics/SectorPieChart'
 import { HumanitarianChart } from '@/components/analytics/HumanitarianChart'
 import { AidMap } from '@/components/analytics/AidMap'
 import { AidFlowMap } from '@/components/analytics/AidFlowMap'
 import { SankeyFlow } from '@/components/analytics/SankeyFlow'
-import { ProjectPipeline } from '@/components/analytics/ProjectPipeline'
 import { DataHeatmap } from '@/components/analytics/DataHeatmap'
 import { TimelinessChart } from '@/components/analytics/TimelinessChart'
 import { BudgetVsActualChart } from '@/components/analytics/BudgetVsActualChart'
@@ -51,6 +51,12 @@ import { TransactionActivityCalendar } from '@/components/analytics/TransactionA
 
 // Disbursements by Sector components
 import { DashboardDisbursementsBySection } from '@/components/analytics/DashboardDisbursementsBySection'
+
+// New visualizations from Activity Profile
+import { CumulativeFinancialOverview } from '@/components/analytics/CumulativeFinancialOverview'
+import { CumulativeSpendingOverTime } from '@/components/analytics/CumulativeSpendingOverTime'
+import { PlannedVsActualDisbursements } from '@/components/analytics/PlannedVsActualDisbursements'
+import { FundingSourceBreakdown } from '@/components/analytics/FundingSourceBreakdown'
 
 // Top 10 charts
 import { Top10TotalFinancialValueChart } from '@/components/analytics/Top10TotalFinancialValueChart'
@@ -117,10 +123,7 @@ export default function AnalyticsDashboardPage() {
     from: new Date('1900-01-01'), // Start from earliest possible date
     to: new Date('2099-12-31')    // Go to latest possible date
   })
-  
-  const [selectedCountry, setSelectedCountry] = useState<string>('all')
-  const [selectedDonor, setSelectedDonor] = useState<string>('all')
-  const [selectedSector, setSelectedSector] = useState<string>('all')
+
   const [refreshKey, setRefreshKey] = useState(0)
 
   // Additional filters for analytics charts
@@ -133,89 +136,58 @@ export default function AnalyticsDashboardPage() {
     topN: '10'
   })
 
-  // Dropdown options from real data
-  const [countries, setCountries] = useState<Array<{code: string, name: string}>>([])
-  const [donors, setDonors] = useState<Array<{id: string, name: string}>>([])
-  const [sectors, setSectors] = useState<Array<{code: string, name: string}>>([])
+  // Chart data for exports - individual state for each chart
+  const [budgetVsSpendingData, setBudgetVsSpendingData] = useState<any[]>([])
+  const [reportingOrgData, setReportingOrgData] = useState<any[]>([])
+  const [aidTypeData, setAidTypeData] = useState<any[]>([])
+  const [financeTypeData, setFinanceTypeData] = useState<any[]>([])
+  const [orgTypeData, setOrgTypeData] = useState<any[]>([])
+  const [activityStatusData, setActivityStatusData] = useState<any[]>([])
+  const [transactionTypeData, setTransactionTypeData] = useState<any[]>([])
+  const [sectorAnalysisData, setSectorAnalysisData] = useState<any[]>([])
+  const [donorsData, setDonorsData] = useState<any[]>([])
+  const [sectorPieData, setSectorPieData] = useState<any[]>([])
+  const [humanitarianData, setHumanitarianData] = useState<any[]>([])
+  const [commitmentsData, setCommitmentsData] = useState<any[]>([])
+  const [budgetVsActualData, setBudgetVsActualData] = useState<any[]>([])
+  const [odaByFlowTypeData, setOdaByFlowTypeData] = useState<any[]>([])
+  const [top10TotalFinancialData, setTop10TotalFinancialData] = useState<any[]>([])
+  const [top10ActiveProjectsData, setTop10ActiveProjectsData] = useState<any[]>([])
+  const [top10GovernmentValidatedData, setTop10GovernmentValidatedData] = useState<any[]>([])
+  const [top10SectorFocusedData, setTop10SectorFocusedData] = useState<any[]>([])
+
+  // Dropdown options for Comprehensive tab
   const [aidTypes, setAidTypes] = useState<Array<{code: string, name: string}>>([])
   const [financeTypes, setFinanceTypes] = useState<Array<{code: string, name: string}>>([])
   const [flowTypes, setFlowTypes] = useState<Array<{code: string, name: string}>>([])
   const [loadingFilters, setLoadingFilters] = useState(true)
 
-  // Fetch filter options
+  // Fetch filter options for Comprehensive tab
   const fetchFilterOptions = async () => {
     try {
       setLoadingFilters(true)
-      
-      // Get unique countries from activities
-      const { data: activityData } = await supabase
-        .from('activities')
-        .select('locations')
-        .eq('publication_status', 'published')
-      
-      // For now, use common countries (you can expand this based on actual location data)
-      setCountries([
-        { code: 'mm', name: 'Myanmar' },
-        { code: 'tz', name: 'Tanzania' },
-        { code: 'ke', name: 'Kenya' },
-        { code: 'ug', name: 'Uganda' },
-        { code: 'rw', name: 'Rwanda' },
-        { code: 'et', name: 'Ethiopia' }
-      ])
-      
-      // Get unique donors from organizations
-      const { data: orgData } = await supabase
-        .from('organizations')
-        .select('id, name')
-        .in('organization_type', ['donor', 'multilateral', 'foundation'])
-        .order('name')
-      
-      if (orgData) {
-        setDonors(orgData)
-      }
-      
-      // Get unique sectors from activity_sectors
-      const { data: sectorData } = await supabase
-        .from('activity_sectors')
-        .select('sector_code, sector_name')
-        .order('sector_name')
-      
-      // Deduplicate sectors
-      const uniqueSectors = new Map<string, string>()
-      sectorData?.forEach((s: any) => {
-        if (s.sector_code && s.sector_name) {
-          uniqueSectors.set(s.sector_code, s.sector_name)
-        }
-      })
-      
-      setSectors(Array.from(uniqueSectors.entries()).map(([code, name]) => ({ code, name })))
-      
+
       // Fetch aid types, finance types, and flow types
-      try {
-        const [aidTypesRes, financeTypesRes, flowTypesRes] = await Promise.all([
-          fetch('/api/analytics/aid-types'),
-          fetch('/api/analytics/finance-types'),
-          fetch('/api/analytics/flow-types')
-        ])
+      const [aidTypesRes, financeTypesRes, flowTypesRes] = await Promise.all([
+        fetch('/api/analytics/aid-types'),
+        fetch('/api/analytics/finance-types'),
+        fetch('/api/analytics/flow-types')
+      ])
 
-        if (aidTypesRes.ok) {
-          const aidTypesData = await aidTypesRes.json()
-          setAidTypes(aidTypesData)
-        }
-
-        if (financeTypesRes.ok) {
-          const financeTypesData = await financeTypesRes.json()
-          setFinanceTypes(financeTypesData)
-        }
-
-        if (flowTypesRes.ok) {
-          const flowTypesData = await flowTypesRes.json()
-          setFlowTypes(flowTypesData)
-        }
-      } catch (err) {
-        console.error('Error fetching type options:', err)
+      if (aidTypesRes.ok) {
+        const aidTypesData = await aidTypesRes.json()
+        setAidTypes(aidTypesData)
       }
-      
+
+      if (financeTypesRes.ok) {
+        const financeTypesData = await financeTypesRes.json()
+        setFinanceTypes(financeTypesData)
+      }
+
+      if (flowTypesRes.ok) {
+        const flowTypesData = await flowTypesRes.json()
+        setFlowTypes(flowTypesData)
+      }
     } catch (error) {
       console.error('Error fetching filter options:', error)
     } finally {
@@ -228,29 +200,18 @@ export default function AnalyticsDashboardPage() {
     try {
       setLoading(true)
       setError(null)
-      
-      // Build filters
-      let filters: any = {
-        dateFrom: dateRange.from.toISOString(),
-        dateTo: dateRange.to.toISOString()
-      }
-      
-      if (selectedCountry !== 'all') filters.country = selectedCountry
-      if (selectedDonor !== 'all') filters.donor = selectedDonor
-      if (selectedSector !== 'all') filters.sector = selectedSector
-      
+
+      const dateFrom = dateRange.from.toISOString()
+      const dateTo = dateRange.to.toISOString()
+
       // Get total disbursed
-      let disbursedQuery = supabase
+      const disbursedQuery = supabase
         .from('transactions')
         .select('value')
         .eq('transaction_type', '3') // Disbursement
         .eq('status', 'actual')
-        .gte('transaction_date', filters.dateFrom)
-        .lte('transaction_date', filters.dateTo)
-      
-      if (filters.donor) {
-        disbursedQuery = disbursedQuery.eq('provider_org_id', filters.donor)
-      }
+        .gte('transaction_date', dateFrom)
+        .lte('transaction_date', dateTo)
       
       const { data: disbursedData, error: disbursedError } = await disbursedQuery
       
@@ -306,17 +267,13 @@ export default function AnalyticsDashboardPage() {
       }
 
       // Get commitments
-      let commitmentQuery = supabase
+      const commitmentQuery = supabase
         .from('transactions')
         .select('value')
         .eq('transaction_type', '2') // Commitment
         .eq('status', 'actual')
-        .gte('transaction_date', filters.dateFrom)
-        .lte('transaction_date', filters.dateTo)
-        
-      if (filters.donor) {
-        commitmentQuery = commitmentQuery.eq('provider_org_id', filters.donor)
-      }
+        .gte('transaction_date', dateFrom)
+        .lte('transaction_date', dateTo)
       
       const { data: commitmentData, error: commitmentError } = await commitmentQuery
       
@@ -346,28 +303,12 @@ export default function AnalyticsDashboardPage() {
         commitmentsDisbursedPercent = isNaN(percentage) ? 0 : Math.round(percentage)
       }
 
-      // Get activities with their sectors and transactions
-      let projectsQuery = supabase
+      // Get active projects
+      const { count: activeProjects } = await supabase
         .from('activities')
         .select('*', { count: 'exact', head: true })
         .eq('activity_status', '2') // IATI code 2 = Implementation (active/ongoing)
         .eq('publication_status', 'published')
-      
-      // Apply country filter to activities
-      if (filters.country && filters.country !== 'all') {
-        // For now, filter by country code in locations (you may need to adjust based on your location structure)
-        projectsQuery = projectsQuery.contains('locations', { country_code: filters.country })
-      }
-      
-      // Apply sector filter to activities
-      if (filters.sector && filters.sector !== 'all') {
-        // Need to join with activity_sectors to filter by sector
-        projectsQuery = projectsQuery
-          .select('*, activity_sectors!inner(*)')
-          .eq('activity_sectors.sector_code', filters.sector)
-      }
-        
-      const { count: activeProjects, error: activeProjectsError } = await projectsQuery
       
 
       // Get unique donors
@@ -375,32 +316,19 @@ export default function AnalyticsDashboardPage() {
         .from('transactions')
         .select('provider_org_id')
         .eq('status', 'actual')
-        .gte('transaction_date', filters.dateFrom)
-        .lte('transaction_date', filters.dateTo)
+        .gte('transaction_date', dateFrom)
+        .lte('transaction_date', dateTo)
         .not('provider_org_id', 'is', null)
       
       const uniqueDonors = new Set(donorData?.filter((t: any) => t.provider_org_id).map((t: any) => t.provider_org_id) || [])
       const donorsReporting = uniqueDonors.size
 
       // Get total budget
-      let budgetQuery = supabase
+      const { data: budgetData } = await supabase
         .from('activity_budgets')
         .select('value, activity_id')
-        .gte('period_start', filters.dateFrom)
-        .lte('period_end', filters.dateTo)
-      
-      if (filters.donor) {
-        // Join with activities to filter by donor through transactions
-        budgetQuery = budgetQuery.in('activity_id', 
-          supabase
-            .from('transactions')
-            .select('activity_id')
-            .eq('provider_org_id', filters.donor)
-            .not('activity_id', 'is', null)
-        )
-      }
-      
-      const { data: budgetData } = await budgetQuery
+        .gte('period_start', dateFrom)
+        .lte('period_end', dateTo)
       
       const totalBudget = budgetData?.reduce((sum: number, b: any) => {
         const value = parseFloat(b.value?.toString() || '0') || 0
@@ -408,19 +336,13 @@ export default function AnalyticsDashboardPage() {
       }, 0) || 0
 
       // Get expenditure
-      let expenditureQuery = supabase
+      const { data: expenditureData } = await supabase
         .from('transactions')
         .select('value')
         .eq('transaction_type', '4') // Expenditure
         .eq('status', 'actual')
-        .gte('transaction_date', filters.dateFrom)
-        .lte('transaction_date', filters.dateTo)
-      
-      if (filters.donor) {
-        expenditureQuery = expenditureQuery.eq('provider_org_id', filters.donor)
-      }
-      
-      const { data: expenditureData } = await expenditureQuery
+        .gte('transaction_date', dateFrom)
+        .lte('transaction_date', dateTo)
       
       const totalExpenditure = expenditureData?.reduce((sum: number, t: any) => {
         const value = parseFloat(t.value?.toString() || '0') || 0
@@ -462,20 +384,15 @@ export default function AnalyticsDashboardPage() {
     setFilters(prev => ({ ...prev, [key]: value }))
   }
 
-  // Sync donor filter between both filter systems
-  useEffect(() => {
-    setFilters(prev => ({ ...prev, donor: selectedDonor }))
-  }, [selectedDonor])
-
   // Fetch filter options on mount
   useEffect(() => {
     fetchFilterOptions()
   }, [])
 
-  // Fetch KPI data when filters change
+  // Fetch KPI data when date range or refresh changes
   useEffect(() => {
     fetchKPIData()
-  }, [dateRange, selectedCountry, selectedDonor, selectedSector, refreshKey])
+  }, [dateRange, refreshKey])
 
   const formatCurrency = (value: number) => {
     try {
@@ -569,17 +486,14 @@ export default function AnalyticsDashboardPage() {
   const handleExport = () => {
     const exportData = {
       exportDate: new Date().toISOString(),
-      filters: {
-        dateRange,
-        selectedCountry,
-        selectedDonor,
-        selectedSector
-      },
+      dateRange,
       summary: {
         totalDisbursed: formatCurrency(kpiData.totalDisbursed),
         commitmentsDisbursedPercent: `${kpiData.commitmentsDisbursedPercent}%`,
         activeProjects: kpiData.activeProjects,
-        donorsReporting: kpiData.donorsReporting
+        donorsReporting: kpiData.donorsReporting,
+        totalBudget: formatCurrency(kpiData.totalBudget),
+        totalExpenditure: formatCurrency(kpiData.totalExpenditure)
       }
     };
 
@@ -589,16 +503,16 @@ export default function AnalyticsDashboardPage() {
       ['Dashboard Export', new Date().toLocaleDateString()],
       [''],
       ['Summary'],
+      ['Total Budgeted', exportData.summary.totalBudget],
       ['Total Disbursed', exportData.summary.totalDisbursed],
+      ['Total Expenditure', exportData.summary.totalExpenditure],
       ['Commitments Disbursed %', exportData.summary.commitmentsDisbursedPercent],
       ['Active Projects', exportData.summary.activeProjects.toString()],
       ['Donors Reporting', exportData.summary.donorsReporting.toString()],
       [''],
-      ['Filters Applied'],
-      ['Date Range', `${dateRange.from.toDateString()} - ${dateRange.to.toDateString()}`],
-      ['Country', selectedCountry === 'all' ? 'All Countries' : selectedCountry],
-      ['Donor', selectedDonor === 'all' ? 'All Donors' : selectedDonor],
-      ['Sector', selectedSector === 'all' ? 'All Sectors' : selectedSector]
+      ['Date Range'],
+      ['From', dateRange.from.toDateString()],
+      ['To', dateRange.to.toDateString()]
     ].map(row => row.join(',')).join('\n');
 
     // Download as CSV
@@ -626,283 +540,99 @@ export default function AnalyticsDashboardPage() {
   return (
     <MainLayout>
       <div className="min-h-screen bg-slate-50">
-        {/* Sticky Filter Bar */}
+        {/* Sticky Action Bar */}
         <div className="sticky top-0 z-50 bg-white border-b border-slate-200 px-4 py-3">
           <div className="max-w-7xl mx-auto">
-            <div className="flex items-center gap-3 flex-wrap">
-              <div className="flex items-center gap-2 text-slate-600">
-                <Filter className="h-4 w-4" />
-                <span className="text-sm font-medium">Filters:</span>
-              </div>
-
-              {/* Country Selector */}
-              <Select value={selectedCountry} onValueChange={setSelectedCountry} disabled={loadingFilters}>
-                <SelectTrigger className="h-9 w-[140px] text-sm bg-slate-100 border-slate-200 text-slate-800 hover:bg-slate-200">
-                  <SelectValue placeholder="All Countries" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Countries</SelectItem>
-                  {countries.map(country => (
-                    <SelectItem key={country.code} value={country.code}>
-                      {country.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-
-              {/* Donor Selector */}
-              <Select value={selectedDonor} onValueChange={setSelectedDonor} disabled={loadingFilters}>
-                <SelectTrigger className="h-9 w-[160px] text-sm bg-slate-100 border-slate-200 text-slate-800 hover:bg-slate-200">
-                  <SelectValue placeholder="All Donors" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Donors</SelectItem>
-                  {donors.map(donor => (
-                    <SelectItem key={donor.id} value={donor.id}>
-                      {donor.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-
-              {/* Sector Dropdown */}
-              <Select value={selectedSector} onValueChange={setSelectedSector} disabled={loadingFilters}>
-                <SelectTrigger className="h-9 w-[160px] text-sm bg-slate-100 border-slate-200 text-slate-800 hover:bg-slate-200">
-                  <SelectValue placeholder="All Sectors" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Sectors</SelectItem>
-                  {sectors.map(sector => (
-                    <SelectItem key={sector.code} value={sector.code}>
-                      {sector.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-
-              <div className="ml-auto flex gap-2">
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  onClick={() => {
-                    setRefreshKey(prev => prev + 1)
-                  }}
-                  className="h-9 border-slate-200 text-slate-600 hover:bg-slate-100"
-                >
-                  <RefreshCw className="h-3 w-3 mr-1" />
-                  Refresh
-                </Button>
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  onClick={handleExport}
-                  className="h-9 border-slate-200 text-slate-600 hover:bg-slate-100"
-                >
-                  <Download className="h-3 w-3 mr-1" />
-                  Export
-                </Button>
-              </div>
+            <div className="flex items-center justify-end gap-3 flex-wrap">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setRefreshKey(prev => prev + 1)
+                }}
+                className="h-9 border-slate-200 text-slate-600 hover:bg-slate-100"
+              >
+                <RefreshCw className="h-3 w-3 mr-1" />
+                Refresh
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleExport}
+                className="h-9 border-slate-200 text-slate-600 hover:bg-slate-100"
+              >
+                <Download className="h-3 w-3 mr-1" />
+                Export
+              </Button>
             </div>
           </div>
         </div>
 
-        {/* Main Dashboard Content with Tabs */}
+        {/* Main Dashboard Content */}
         <div className="max-w-7xl mx-auto p-6">
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-            <TabsList className="grid w-full grid-cols-7 max-w-5xl">
-              <TabsTrigger value="overview" className="flex items-center gap-2">
-                <BarChart3 className="h-4 w-4" />
-                Overview
-              </TabsTrigger>
-              <TabsTrigger value="comprehensive" className="flex items-center gap-2">
-                <Activity className="h-4 w-4" />
-                Comprehensive
-              </TabsTrigger>
-              <TabsTrigger value="trends" className="flex items-center gap-2">
-                <LineChart className="h-4 w-4" />
-                Trends
-              </TabsTrigger>
-              <TabsTrigger value="geographic" className="flex items-center gap-2">
-                <MapPin className="h-4 w-4" />
-                Geographic
-              </TabsTrigger>
-              <TabsTrigger value="aid-flow" className="flex items-center gap-2">
-                <Network className="h-4 w-4" />
-                Aid Flow Map
-              </TabsTrigger>
-              <TabsTrigger value="top-10" className="flex items-center gap-2">
-                <Target className="h-4 w-4" />
-                Top 10
-              </TabsTrigger>
-              <TabsTrigger value="data-quality" className="flex items-center gap-2">
-                <CheckCircle2 className="h-4 w-4" />
-                Data Quality
-              </TabsTrigger>
+          {/* Error Display */}
+          {error && (
+            <Card className="bg-red-50 border-red-200 mb-6">
+              <CardContent className="p-4">
+                <p className="text-red-700">{error}</p>
+              </CardContent>
+            </Card>
+          )}
+
+          <Tabs defaultValue="analytics" className="space-y-6">
+            <TabsList className="grid w-full grid-cols-3 max-w-md">
+              <TabsTrigger value="analytics">Analytics</TabsTrigger>
+              <TabsTrigger value="activities">Activities</TabsTrigger>
+              <TabsTrigger value="transactions">Transactions</TabsTrigger>
             </TabsList>
 
-            {/* Overview Tab */}
-            <TabsContent value="overview" className="space-y-6">
-              {/* Error Display */}
-              {error && (
-                <Card className="bg-red-50 border-red-200">
-                  <CardContent className="p-4">
-                    <p className="text-red-700">{error}</p>
-                  </CardContent>
-                </Card>
-              )}
-              
-              {/* Section 1: KPI Summary Cards */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                {kpiCards.map((kpi, index) => (
-                  <Card 
-                    key={index} 
-                    className="bg-white border-slate-200 hover:shadow-md transition-all duration-200"
-                  >
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                      <CardTitle className="text-sm font-medium text-slate-600 uppercase tracking-wide">
-                        {kpi.title}
-                      </CardTitle>
-                      <div className="flex items-center gap-2">
-                        {kpi.trend === 'up' && <TrendingUp className="h-3 w-3 text-green-500" />}
-                        {kpi.trend === 'good' && <CheckCircle2 className="h-3 w-3 text-green-500" />}
-                        {kpi.trend === 'warning' && <AlertCircle className="h-3 w-3 text-amber-500" />}
-                        <kpi.icon className="h-4 w-4 text-slate-400" strokeWidth={1.5} />
-                      </div>
-                    </CardHeader>
-                    <CardContent>
-                      {loading ? (
-                        <Skeleton className="h-8 w-24 bg-slate-100" />
-                      ) : (
-                        <>
-                          <div className="text-2xl font-bold text-slate-800">
-                            {kpi.value}
-                          </div>
-                          <p className="text-xs text-slate-500 mt-1">
-                            {kpi.description}
-                          </p>
-                        </>
-                      )}
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-
-              {/* Budget Analysis Summary */}
-              {kpiData.totalBudget > 0 && (
-                <Card className="bg-gradient-to-r from-slate-50 to-slate-100 border-slate-200">
-                  <CardHeader>
-                    <CardTitle className="text-lg font-medium text-slate-700">
-                      Budget Analysis Summary
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                      <div className="text-center">
-                        <div className="text-sm text-slate-600 mb-1">Budget Remaining</div>
-                        <div className="text-2xl font-bold text-slate-800">
-                          ${formatCurrency(kpiData.totalBudget - kpiData.totalDisbursed)}
-                        </div>
-                        <div className="text-xs text-slate-500 mt-1">
-                          Available for disbursement
-                        </div>
-                      </div>
-                      <div className="text-center">
-                        <div className="text-sm text-slate-600 mb-1">Burn Rate</div>
-                        <div className="text-2xl font-bold text-slate-800">
-                          ${formatCurrency(kpiData.totalDisbursed / 12)}/month
-                        </div>
-                        <div className="text-xs text-slate-500 mt-1">
-                          Average monthly disbursement
-                        </div>
-                      </div>
-                      <div className="text-center">
-                        <div className="text-sm text-slate-600 mb-1">Efficiency Rate</div>
-                        <div className="text-2xl font-bold text-slate-800">
-                          {kpiData.totalDisbursed > 0 ? Math.round((kpiData.totalExpenditure / kpiData.totalDisbursed) * 100) : 0}%
-                        </div>
-                        <div className="text-xs text-slate-500 mt-1">
-                          Expenditure vs Disbursement
-                        </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-
-              {/* Top Donors Chart */}
-              <Card className="bg-white border-slate-200">
-                <CardHeader>
-                  <CardTitle className="text-lg font-medium text-slate-700">
-                    Top 10 Donors by Disbursement
-                  </CardTitle>
-                  <CardDescription>
-                    Organizations providing the most funding
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <DonorsChart 
-                    dateRange={dateRange}
-                    filters={{ 
-                      country: selectedCountry !== 'all' ? selectedCountry : undefined, 
-                      sector: selectedSector !== 'all' ? selectedSector : undefined 
-                    }}
-                    refreshKey={refreshKey}
-                  />
-                </CardContent>
-              </Card>
+            <TabsContent value="analytics">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* All Donors Chart - Replaced Top 10 */}
+              <ExpandableCard
+                className="bg-white border-slate-200"
+                title="All Donors Financial Overview"
+                description="Complete ranking of all donors by total budgets, planned disbursements, or actual disbursements in USD"
+                exportData={donorsData}
+              >
+                <AllDonorsHorizontalBarChart
+                  dateRange={dateRange}
+                  refreshKey={refreshKey}
+                  onDataChange={setDonorsData}
+                />
+              </ExpandableCard>
 
               {/* Aid by Sector */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <Card className="bg-white border-slate-200">
-                  <CardHeader>
-                    <CardTitle className="text-lg font-medium text-slate-700">
-                      Aid Distribution by Sector
-                    </CardTitle>
-                    <CardDescription>
-                      Breakdown of funding across sectors
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <SectorPieChart 
-                      dateRange={dateRange}
-                      filters={{ 
-                        country: selectedCountry !== 'all' ? selectedCountry : undefined, 
-                        donor: selectedDonor !== 'all' ? selectedDonor : undefined 
-                      }}
-                      refreshKey={refreshKey}
-                    />
-                  </CardContent>
-                </Card>
+              <ExpandableCard
+                className="bg-white border-slate-200"
+                title="Aid Distribution by Sector"
+                description="Breakdown of funding across sectors"
+                exportData={sectorPieData}
+              >
+                <SectorPieChart
+                  dateRange={dateRange}
+                  refreshKey={refreshKey}
+                  onDataChange={setSectorPieData}
+                />
+              </ExpandableCard>
 
-                {/* Humanitarian vs Development */}
-                <Card className="bg-white border-slate-200">
-                  <CardHeader>
-                    <CardTitle className="text-lg font-medium text-slate-700">
-                      Humanitarian vs Development Aid
-                    </CardTitle>
-                    <CardDescription>
-                      Comparison of aid types over time
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <HumanitarianChart 
-                      dateRange={dateRange}
-                      filters={{ 
-                        country: selectedCountry !== 'all' ? selectedCountry : undefined, 
-                        donor: selectedDonor !== 'all' ? selectedDonor : undefined, 
-                        sector: selectedSector !== 'all' ? selectedSector : undefined 
-                      }}
-                      refreshKey={refreshKey}
-                    />
-                  </CardContent>
-                </Card>
-              </div>
-            </TabsContent>
+              {/* Humanitarian vs Development */}
+              <ExpandableCard
+                className="bg-white border-slate-200"
+                title="Humanitarian vs Development Aid"
+                description="Comparison of aid types over time"
+                exportData={humanitarianData}
+              >
+                <HumanitarianChart
+                  dateRange={dateRange}
+                  refreshKey={refreshKey}
+                  onDataChange={setHumanitarianData}
+                />
+              </ExpandableCard>
 
-            {/* Comprehensive Analysis Tab */}
-            <TabsContent value="comprehensive" className="space-y-6">
+              {/* Comprehensive Analysis Section */}
               {/* Additional Filters for this tab */}
-              <Card className="bg-white border-slate-200">
+              <Card className="bg-white border-slate-200 lg:col-span-2">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <Filter className="h-5 w-5" />
@@ -1008,351 +738,255 @@ export default function AnalyticsDashboardPage() {
               </Card>
 
               {/* Time Series Chart */}
-              <Card className="bg-white border-slate-200">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
+              <ExpandableCard
+                className="bg-white border-slate-200 lg:col-span-2"
+                title={
+                  <div className="flex items-center gap-2">
                     <TrendingUp className="h-5 w-5" />
-                    Budget vs. Spending Over Time
-                  </CardTitle>
-                  <CardDescription>
-                    Compare total budget allocations with actual spending (disbursements + expenditures) over time
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <BudgetVsSpendingChart filters={filters} />
-                </CardContent>
-              </Card>
+                    <span>Budget vs. Spending Over Time</span>
+                  </div>
+                }
+                description="Compare total budget allocations with actual spending (disbursements + expenditures) over time"
+                exportData={budgetVsSpendingData}
+              >
+                <BudgetVsSpendingChart
+                  filters={filters}
+                  onDataChange={setBudgetVsSpendingData}
+                />
+              </ExpandableCard>
 
               {/* Reporting Organization Chart */}
-              <Card className="bg-white border-slate-200">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
+              <ExpandableCard
+                className="bg-white border-slate-200"
+                title={
+                  <div className="flex items-center gap-2">
                     <Building2 className="h-5 w-5" />
-                    Budget vs. Spending by Reporting Organization
-                  </CardTitle>
-                  <CardDescription>
-                    Compare budget and spending across different reporting organizations
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <ReportingOrgChart filters={filters} />
-                </CardContent>
-              </Card>
+                    <span>Budget vs. Spending by Reporting Organization</span>
+                  </div>
+                }
+                description="Compare budget and spending across different reporting organizations"
+                exportData={reportingOrgData}
+              >
+                <ReportingOrgChart
+                  filters={filters}
+                  onDataChange={setReportingOrgData}
+                />
+              </ExpandableCard>
 
               {/* Aid Type Chart */}
-              <Card className="bg-white border-slate-200">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
+              <ExpandableCard
+                className="bg-white border-slate-200"
+                title={
+                  <div className="flex items-center gap-2">
                     <Info className="h-5 w-5" />
-                    Budget vs. Spending by Aid Type
-                  </CardTitle>
-                  <CardDescription>
-                    Analyze budget and spending patterns across different aid types
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <AidTypeChart filters={filters} />
-                </CardContent>
-              </Card>
+                    <span>Budget vs. Spending by Aid Type</span>
+                  </div>
+                }
+                description="Analyze budget and spending patterns across different aid types"
+                exportData={aidTypeData}
+              >
+                <AidTypeChart
+                  filters={filters}
+                  onDataChange={setAidTypeData}
+                />
+              </ExpandableCard>
 
               {/* Finance Type Chart */}
-              <Card className="bg-white border-slate-200">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
+              <ExpandableCard
+                className="bg-white border-slate-200"
+                title={
+                  <div className="flex items-center gap-2">
                     <DollarSign className="h-5 w-5" />
-                    Budget vs. Spending by Finance Type
-                  </CardTitle>
-                  <CardDescription>
-                    Compare budget and spending across different finance types
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <FinanceTypeChart filters={filters} />
-                </CardContent>
-              </Card>
+                    <span>Budget vs. Spending by Finance Type</span>
+                  </div>
+                }
+                description="Compare budget and spending across different finance types"
+                exportData={financeTypeData}
+              >
+                <FinanceTypeChart
+                  filters={filters}
+                  onDataChange={setFinanceTypeData}
+                />
+              </ExpandableCard>
 
               {/* Organization Type Chart */}
-              <Card className="bg-white border-slate-200">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
+              <ExpandableCard
+                className="bg-white border-slate-200"
+                title={
+                  <div className="flex items-center gap-2">
                     <Users className="h-5 w-5" />
-                    Budget vs. Spending by Organization Type
-                  </CardTitle>
-                  <CardDescription>
-                    Analyze budget and spending patterns by organization type (Government, NGO, Multilateral, etc.)
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <OrgTypeChart filters={filters} />
-                </CardContent>
-              </Card>
+                    <span>Budget vs. Spending by Organization Type</span>
+                  </div>
+                }
+                description="Analyze budget and spending patterns by organization type (Government, NGO, Multilateral, etc.)"
+                exportData={orgTypeData}
+              >
+                <OrgTypeChart
+                  filters={filters}
+                  onDataChange={setOrgTypeData}
+                />
+              </ExpandableCard>
 
               {/* Activity Status Chart */}
-              <Card className="bg-white border-slate-200">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
+              <ExpandableCard
+                className="bg-white border-slate-200"
+                title={
+                  <div className="flex items-center gap-2">
                     <CheckCircle2 className="h-5 w-5" />
-                    Activity Status Distribution
-                  </CardTitle>
-                  <CardDescription>
-                    Analyze the distribution of activities by their status (activity, publication, and submission status)
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <ActivityStatusChart filters={filters} />
-                </CardContent>
-              </Card>
+                    <span>Activity Status Distribution</span>
+                  </div>
+                }
+                description="Analyze the distribution of activities by their status (activity, publication, and submission status)"
+                exportData={activityStatusData}
+              >
+                <ActivityStatusChart
+                  filters={filters}
+                  onDataChange={setActivityStatusData}
+                />
+              </ExpandableCard>
 
               {/* Transaction Type Chart */}
-              <Card className="bg-white border-slate-200">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
+              <ExpandableCard
+                className="bg-white border-slate-200"
+                title={
+                  <div className="flex items-center gap-2">
                     <DollarSign className="h-5 w-5" />
-                    Transaction Type Analysis
-                  </CardTitle>
-                  <CardDescription>
-                    Compare transaction types by count and total value (Commitments, Disbursements, Expenditures, etc.)
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <TransactionTypeChart filters={filters} />
-                </CardContent>
-              </Card>
+                    <span>Transaction Type Analysis</span>
+                  </div>
+                }
+                description="Compare transaction types by count and total value (Commitments, Disbursements, Expenditures, etc.)"
+                exportData={transactionTypeData}
+              >
+                <TransactionTypeChart
+                  filters={filters}
+                  onDataChange={setTransactionTypeData}
+                />
+              </ExpandableCard>
 
               {/* Sector Analysis Chart */}
-              <Card className="bg-white border-slate-200">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
+              <ExpandableCard
+                className="bg-white border-slate-200"
+                title={
+                  <div className="flex items-center gap-2">
                     <Target className="h-5 w-5" />
-                    Sector Analysis
-                  </CardTitle>
-                  <CardDescription>
-                    Analyze activity distribution across different sectors with percentage allocations
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <SectorAnalysisChart filters={filters} />
-                </CardContent>
-              </Card>
-            </TabsContent>
+                    <span>Sector Analysis</span>
+                  </div>
+                }
+                description="Analyze activity distribution across different sectors with percentage allocations"
+                exportData={sectorAnalysisData}
+              >
+                <SectorAnalysisChart
+                  filters={filters}
+                  onDataChange={setSectorAnalysisData}
+                />
+              </ExpandableCard>
 
-            {/* Trends Tab */}
-            <TabsContent value="trends" className="space-y-6">
+              {/* Trends Section */}
+              {/* Cumulative Financial Overview */}
+              <CumulativeFinancialOverview
+                dateRange={dateRange}
+                refreshKey={refreshKey}
+              />
+
               {/* Commitments vs Disbursements Chart */}
-              <Card className="bg-white border-slate-200">
-                <CardHeader>
-                  <CardTitle className="text-lg font-medium text-slate-700">
-                    Commitments vs Disbursements Over Time
-                  </CardTitle>
-                  <CardDescription>
-                    Track funding commitments and actual disbursements by period
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <CommitmentsChart 
-                    dateRange={dateRange}
-                    filters={{ 
-                      country: selectedCountry !== 'all' ? selectedCountry : undefined, 
-                      donor: selectedDonor !== 'all' ? selectedDonor : undefined, 
-                      sector: selectedSector !== 'all' ? selectedSector : undefined 
-                    }}
-                    refreshKey={refreshKey}
-                  />
-                </CardContent>
-              </Card>
+              <ExpandableCard
+                className="bg-white border-slate-200 lg:col-span-2"
+                title="Commitments vs Disbursements Over Time"
+                description="Track funding commitments and actual disbursements by period"
+                exportData={commitmentsData}
+              >
+                <CommitmentsChart
+                  dateRange={dateRange}
+                  refreshKey={refreshKey}
+                  onDataChange={setCommitmentsData}
+                />
+              </ExpandableCard>
+
+              {/* Planned vs Actual Disbursements */}
+              <PlannedVsActualDisbursements
+                dateRange={dateRange}
+                refreshKey={refreshKey}
+              />
+
+              {/* Cumulative Spending Over Time */}
+              <CumulativeSpendingOverTime
+                dateRange={dateRange}
+                refreshKey={refreshKey}
+              />
 
               {/* Budget vs Actual Chart */}
-              <Card className="bg-white border-slate-200">
-                <CardHeader>
-                  <CardTitle className="text-lg font-medium text-slate-700">
-                    Budget vs Actual Spending
-                  </CardTitle>
-                  <CardDescription>
-                    Compare planned budgets with actual expenditures
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <BudgetVsActualChart 
-                    dateRange={dateRange}
-                    filters={{ 
-                      country: selectedCountry !== 'all' ? selectedCountry : undefined, 
-                      donor: selectedDonor !== 'all' ? selectedDonor : undefined, 
-                      sector: selectedSector !== 'all' ? selectedSector : undefined 
-                    }}
-                    refreshKey={refreshKey}
-                  />
-                </CardContent>
-              </Card>
+              <ExpandableCard
+                className="bg-white border-slate-200"
+                title="Budget vs Actual Spending"
+                description="Compare planned budgets with actual expenditures"
+                exportData={budgetVsActualData}
+              >
+                <BudgetVsActualChart
+                  dateRange={dateRange}
+                  refreshKey={refreshKey}
+                  onDataChange={setBudgetVsActualData}
+                />
+              </ExpandableCard>
 
               {/* ODA by Flow Type Chart */}
-              <Card className="bg-white border-slate-200">
-                <CardHeader>
-                  <CardTitle className="text-lg font-medium text-slate-700">
-                    ODA by Flow Type
-                  </CardTitle>
-                  <CardDescription>
-                    Composition of Official Development Assistance (ODA) flows by type of financial flow
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <ODAByFlowTypeChart 
-                    dateRange={dateRange}
-                    filters={{ 
-                      country: selectedCountry !== 'all' ? selectedCountry : undefined, 
-                      sector: selectedSector !== 'all' ? selectedSector : undefined 
-                    }}
-                    refreshKey={refreshKey}
-                  />
-                </CardContent>
-              </Card>
-
-              {/* Project Pipeline Table */}
-              <Card className="bg-white border-slate-200">
-                <CardHeader>
-                  <CardTitle className="text-lg font-medium text-slate-700">
-                    Project Pipeline
-                  </CardTitle>
-                  <CardDescription>
-                    Overview of all projects by status and funding stage
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <ProjectPipeline 
-                    dateRange={dateRange}
-                    filters={{ 
-                      country: selectedCountry !== 'all' ? selectedCountry : undefined, 
-                      donor: selectedDonor !== 'all' ? selectedDonor : undefined, 
-                      sector: selectedSector !== 'all' ? selectedSector : undefined 
-                    }}
-                    refreshKey={refreshKey}
-                  />
-                </CardContent>
-              </Card>
+              <ExpandableCard
+                className="bg-white border-slate-200"
+                title="ODA by Flow Type"
+                description="Composition of Official Development Assistance (ODA) flows by type of financial flow"
+                exportData={odaByFlowTypeData}
+              >
+                <ODAByFlowTypeChart
+                  dateRange={dateRange}
+                  refreshKey={refreshKey}
+                  onDataChange={setOdaByFlowTypeData}
+                />
+              </ExpandableCard>
 
               {/* Disbursements by Sector Analysis */}
               <DashboardDisbursementsBySection
                 dateRange={dateRange}
-                filters={{ 
-                  country: selectedCountry !== 'all' ? selectedCountry : undefined, 
-                  donor: selectedDonor !== 'all' ? selectedDonor : undefined, 
-                  sector: selectedSector !== 'all' ? selectedSector : undefined 
-                }}
                 refreshKey={refreshKey}
               />
 
               {/* Transaction Activity Calendar */}
               <TransactionActivityCalendar
                 dateRange={dateRange}
-                filters={{ 
-                  country: selectedCountry !== 'all' ? selectedCountry : undefined, 
-                  donor: selectedDonor !== 'all' ? selectedDonor : undefined, 
-                  sector: selectedSector !== 'all' ? selectedSector : undefined 
-                }}
                 refreshKey={refreshKey}
               />
-            </TabsContent>
 
-            {/* Geographic Tab */}
-            <TabsContent value="geographic" className="space-y-6">
-              {/* Aid by Location Map */}
-              <Card className="bg-white border-slate-200">
-                <CardHeader>
-                  <CardTitle className="text-lg font-medium text-slate-700">
-                    Aid Distribution by Subnational Location
-                  </CardTitle>
-                  <CardDescription>
-                    Visualize aid distribution across regions and townships
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="h-[500px]">
-                  <AidMap 
-                    dateRange={dateRange}
-                    filters={{ 
-                      donor: selectedDonor !== 'all' ? selectedDonor : undefined, 
-                      sector: selectedSector !== 'all' ? selectedSector : undefined 
-                    }}
-                    country={selectedCountry !== 'all' ? selectedCountry : undefined}
-                    refreshKey={refreshKey}
-                  />
-                </CardContent>
-              </Card>
-
-              {/* Sankey Flow Diagram */}
-              <Card className="bg-white border-slate-200">
-                <CardHeader>
-                  <CardTitle className="text-lg font-medium text-slate-700">
-                    Donor → Sector → Recipient Flow
-                  </CardTitle>
-                  <CardDescription>
-                    Follow the flow of funds from donors through sectors to recipients
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="h-[600px]">
-                  <SankeyFlow 
-                    dateRange={dateRange}
-                    filters={{ 
-                      country: selectedCountry !== 'all' ? selectedCountry : undefined 
-                    }}
-                    refreshKey={refreshKey}
-                  />
-                </CardContent>
-              </Card>
-            </TabsContent>
-
-            {/* Aid Flow Map Tab */}
-            <TabsContent value="aid-flow" className="space-y-6">
-              <AidFlowMap 
-                height={600}
-                initialDateRange={dateRange}
+              {/* Funding Source Breakdown */}
+              <FundingSourceBreakdown
+                dateRange={dateRange}
+                refreshKey={refreshKey}
               />
 
-
-            </TabsContent>
-
-            {/* Top 10 Tab */}
-            <TabsContent value="top-10" className="space-y-6">
+              {/* Top 10 Section */}
               {/* Chart 1: Total Financial Value (Default) */}
-              <Card className="bg-white border-slate-200">
-                <CardHeader>
-                  <CardTitle className="text-lg font-medium text-slate-700">
-                    Top 10 Development Partners by Total Disbursements (USD)
-                  </CardTitle>
-                  <CardDescription>
-                    Sum of all commitments and disbursements made by each donor (funding organisation)
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <Top10TotalFinancialValueChart 
-                    dateRange={dateRange}
-                    filters={{ 
-                      country: selectedCountry !== 'all' ? selectedCountry : undefined, 
-                      sector: selectedSector !== 'all' ? selectedSector : undefined 
-                    }}
-                    refreshKey={refreshKey}
-                  />
-                </CardContent>
-              </Card>
+              <ExpandableCard
+                className="bg-white border-slate-200"
+                title="Top 10 Development Partners by Total Disbursements (USD)"
+                description="Sum of all commitments and disbursements made by each donor (funding organisation)"
+                exportData={top10TotalFinancialData}
+              >
+                <Top10TotalFinancialValueChart
+                  dateRange={dateRange}
+                  refreshKey={refreshKey}
+                  onDataChange={setTop10TotalFinancialData}
+                />
+              </ExpandableCard>
 
               {/* Chart 2: Number of Active Projects */}
-              <Card className="bg-white border-slate-200">
-                <CardHeader>
-                  <CardTitle className="text-lg font-medium text-slate-700">
-                    Top 10 Partners by Number of Active Projects
-                  </CardTitle>
-                  <CardDescription>
-                    Count of activities where the organisation is listed as a funding or implementing partner
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <Top10ActiveProjectsChart 
-                    filters={{ 
-                      country: selectedCountry !== 'all' ? selectedCountry : undefined, 
-                      sector: selectedSector !== 'all' ? selectedSector : undefined 
-                    }}
-                    refreshKey={refreshKey}
-                  />
-                </CardContent>
-              </Card>
+              <ExpandableCard
+                className="bg-white border-slate-200"
+                title="Top 10 Partners by Number of Active Projects"
+                description="Count of activities where the organisation is listed as a funding or implementing partner"
+                exportData={top10ActiveProjectsData}
+              >
+                <Top10ActiveProjectsChart
+                  refreshKey={refreshKey}
+                  onDataChange={setTop10ActiveProjectsData}
+                />
+              </ExpandableCard>
 
               {/* Chart 3: Disbursement-to-Commitment Ratio - Temporarily disabled due to data issue */}
               {/* <Card className="bg-white border-slate-200">
@@ -1377,93 +1011,63 @@ export default function AnalyticsDashboardPage() {
               </Card> */}
 
               {/* Chart 4: Government-Validated Projects */}
-              <Card className="bg-white border-slate-200">
-                <CardHeader>
-                  <CardTitle className="text-lg font-medium text-slate-700">
-                    Top 10 Partners by Value of Government-Validated Projects
-                  </CardTitle>
-                  <CardDescription>
-                    Highlights alignment and mutual accountability. Shows projects that have been validated by the recipient government.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <Top10GovernmentValidatedChart 
-                    dateRange={dateRange}
-                    filters={{ 
-                      country: selectedCountry !== 'all' ? selectedCountry : undefined, 
-                      sector: selectedSector !== 'all' ? selectedSector : undefined 
-                    }}
-                    refreshKey={refreshKey}
-                  />
-                </CardContent>
-              </Card>
+              <ExpandableCard
+                className="bg-white border-slate-200"
+                title="Top 10 Partners by Value of Government-Validated Projects"
+                description="Highlights alignment and mutual accountability. Shows projects that have been validated by the recipient government."
+                exportData={top10GovernmentValidatedData}
+              >
+                <Top10GovernmentValidatedChart
+                  dateRange={dateRange}
+                  refreshKey={refreshKey}
+                  onDataChange={setTop10GovernmentValidatedData}
+                />
+              </ExpandableCard>
 
               {/* Chart 5: Sector-Focused Ranking */}
+              <ExpandableCard
+                className="bg-white border-slate-200"
+                title="Top 10 Partners by Total Disbursements (All Sectors)"
+                description="Top 10 partners across all sectors. Used for sectoral coordination groups or working group dashboards."
+                exportData={top10SectorFocusedData}
+              >
+                <Top10SectorFocusedChart
+                  dateRange={dateRange}
+                  refreshKey={refreshKey}
+                  onDataChange={setTop10SectorFocusedData}
+                />
+              </ExpandableCard>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="activities">
               <Card className="bg-white border-slate-200">
                 <CardHeader>
                   <CardTitle className="text-lg font-medium text-slate-700">
-                    Top 10 Partners by Total Disbursements {selectedSector !== 'all' ? `(${sectors.find(s => s.code === selectedSector)?.name || selectedSector})` : '(Select a Sector)'}
+                    All Activities
                   </CardTitle>
                   <CardDescription>
-                    Top 10 partners within a specific sector. Used for sectoral coordination groups or working group dashboards.
+                    Complete list of all activities in the system
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <Top10SectorFocusedChart 
-                    dateRange={dateRange}
-                    filters={{ 
-                      country: selectedCountry !== 'all' ? selectedCountry : undefined, 
-                      sector: selectedSector !== 'all' ? selectedSector : undefined 
-                    }}
-                    refreshKey={refreshKey}
-                  />
+                  <p className="text-slate-600">Activities list will be displayed here...</p>
                 </CardContent>
               </Card>
             </TabsContent>
 
-            {/* Data Quality Tab */}
-            <TabsContent value="data-quality" className="space-y-6">
-              {/* Data Completeness Heatmap */}
+            <TabsContent value="transactions">
               <Card className="bg-white border-slate-200">
                 <CardHeader>
                   <CardTitle className="text-lg font-medium text-slate-700">
-                    Data Completeness by Donor
+                    All Transactions
                   </CardTitle>
                   <CardDescription>
-                    Assess the quality and completeness of reported data
+                    Complete list of all transactions in the system
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <DataHeatmap 
-                    dateRange={dateRange}
-                    filters={{ 
-                      country: selectedCountry !== 'all' ? selectedCountry : undefined, 
-                      sector: selectedSector !== 'all' ? selectedSector : undefined 
-                    }}
-                    refreshKey={refreshKey}
-                  />
-                </CardContent>
-              </Card>
-
-              {/* Disbursement Timeliness */}
-              <Card className="bg-white border-slate-200">
-                <CardHeader>
-                  <CardTitle className="text-lg font-medium text-slate-700">
-                    Disbursement Timeliness by Donor
-                  </CardTitle>
-                  <CardDescription>
-                    Analyze how timely disbursements are reported
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <TimelinessChart 
-                    dateRange={dateRange}
-                    filters={{ 
-                      country: selectedCountry !== 'all' ? selectedCountry : undefined, 
-                      sector: selectedSector !== 'all' ? selectedSector : undefined 
-                    }}
-                    refreshKey={refreshKey}
-                  />
+                  <p className="text-slate-600">Transactions list will be displayed here...</p>
                 </CardContent>
               </Card>
             </TabsContent>

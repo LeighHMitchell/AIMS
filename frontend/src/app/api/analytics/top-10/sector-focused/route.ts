@@ -10,27 +10,38 @@ export async function GET(request: NextRequest) {
     const dateFrom = searchParams.get('dateFrom');
     const dateTo = searchParams.get('dateTo');
     const country = searchParams.get('country');
-    const sector = searchParams.get('sector'); // Required for this chart
+    const sector = searchParams.get('sector');
     const limit = parseInt(searchParams.get('limit') || '10');
 
+    let activityIds: string[] = [];
+
+    // If sector is 'all' or not provided, get all published activities
     if (!sector || sector === 'all') {
-      return NextResponse.json({ error: 'Sector parameter is required' }, { status: 400 });
+      const { data: activities, error: activitiesError } = await supabase
+        .from('activities')
+        .select('id')
+        .eq('publication_status', 'published');
+
+      if (activitiesError) {
+        console.error('[Top10SectorFocused] Activities error:', activitiesError);
+        return NextResponse.json({ error: 'Failed to fetch activities' }, { status: 500 });
+      }
+
+      activityIds = activities?.map(a => a.id) || [];
+    } else {
+      // Get activity IDs in the specified sector
+      const { data: sectorActivities, error: sectorActivitiesError } = await supabase
+        .from('activity_sectors')
+        .select('activity_id')
+        .eq('sector_code', sector);
+
+      if (sectorActivitiesError) {
+        console.error('[Top10SectorFocused] Sector activities error:', sectorActivitiesError);
+        return NextResponse.json({ error: 'Failed to fetch sector activities' }, { status: 500 });
+      }
+
+      activityIds = sectorActivities?.map(s => s.activity_id) || [];
     }
-
-    // First, get activity IDs in the specified sector
-    let sectorActivitiesQuery = supabase
-      .from('activity_sectors')
-      .select('activity_id')
-      .eq('sector_code', sector);
-
-    const { data: sectorActivities, error: sectorActivitiesError } = await sectorActivitiesQuery;
-
-    if (sectorActivitiesError) {
-      console.error('[Top10SectorFocused] Sector activities error:', sectorActivitiesError);
-      return NextResponse.json({ error: 'Failed to fetch sector activities' }, { status: 500 });
-    }
-
-    let activityIds = sectorActivities?.map(s => s.activity_id) || [];
 
     // Apply country filter if specified
     if (country && country !== 'all' && activityIds.length > 0) {
@@ -77,14 +88,17 @@ export async function GET(request: NextRequest) {
     }
 
     // Get sector name
-    const { data: sectorData } = await supabase
-      .from('activity_sectors')
-      .select('sector_name')
-      .eq('sector_code', sector)
-      .limit(1)
-      .single();
+    let sectorName = 'All Sectors';
+    if (sector && sector !== 'all') {
+      const { data: sectorData } = await supabase
+        .from('activity_sectors')
+        .select('sector_name')
+        .eq('sector_code', sector)
+        .limit(1)
+        .single();
 
-    const sectorName = sectorData?.sector_name || `Sector ${sector}`;
+      sectorName = sectorData?.sector_name || `Sector ${sector}`;
+    }
 
     // Aggregate by donor organization
     const donorTotals = new Map<string, number>();
@@ -92,7 +106,7 @@ export async function GET(request: NextRequest) {
     transactions?.forEach((t: any) => {
       if (!t.provider_org_id) return;
       
-      const value = parseFloat(t.value_usd?.toString() || t.value?.toString() || '0') || 0;
+      const value = parseFloat(t.value_usd?.toString() || '0') || 0;
       const current = donorTotals.get(t.provider_org_id) || 0;
       donorTotals.set(t.provider_org_id, current + value);
     });
