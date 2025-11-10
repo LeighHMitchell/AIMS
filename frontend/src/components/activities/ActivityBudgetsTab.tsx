@@ -83,6 +83,7 @@ interface ActivityBudgetsTabProps {
   onBudgetsChange?: (budgets: ActivityBudget[]) => void;
   hideSummaryCards?: boolean;
   readOnly?: boolean;
+  renderFilters?: (filters: React.ReactNode) => React.ReactNode;
 }
 
 // Granularity types removed - users can now create any period length they want
@@ -179,14 +180,15 @@ function BudgetLineChart({ title, data, dataKey, color = "#64748b", currencyMode
 
 // generateBudgetPeriods function removed - users can now create custom periods freely
 
-export default function ActivityBudgetsTab({ 
-  activityId, 
-  startDate, 
-  endDate, 
+export default function ActivityBudgetsTab({
+  activityId,
+  startDate,
+  endDate,
   defaultCurrency = 'USD',
   onBudgetsChange,
   hideSummaryCards = false,
-  readOnly = false
+  readOnly = false,
+  renderFilters
 }: ActivityBudgetsTabProps) {
   console.log('[ActivityBudgetsTab] Component mounted with:', { activityId, startDate, endDate, defaultCurrency });
 
@@ -350,23 +352,19 @@ export default function ActivityBudgetsTab({
         setLoading(true);
         setError(null);
         console.log('[ActivityBudgetsTab] Fetching budgets for activity:', activityId);
-        if (!supabase) {
-          console.error('[ActivityBudgetsTab] Supabase client not initialized');
-          setError('Supabase client not initialized');
-          return;
+
+        // Use API endpoint instead of direct Supabase query to avoid RLS issues
+        const response = await fetch(`/api/activities/${activityId}/budgets`);
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Failed to fetch budgets');
         }
-        // Fetch budgets
-        const { data: budgetsData, error: budgetsError } = await supabase
-          .from('activity_budgets')
-          .select('*')
-          .eq('activity_id', activityId)
-          .order('period_start', { ascending: true });
-        if (budgetsError) {
-          console.error('[ActivityBudgetsTab] Budgets fetch error:', budgetsError);
-          setError(budgetsError.message || 'Failed to load budget data');
-        }
+
+        const budgetsData = await response.json();
+        console.log('[ActivityBudgetsTab] Fetched budgets:', budgetsData?.length || 0);
+
         // Just load existing budgets - no auto-generation
-          setBudgets(budgetsData || []);
+        setBudgets(budgetsData || []);
       } catch (err: any) {
         console.error('[ActivityBudgetsTab] Error fetching budget data:', err);
         setError(err.message || 'Failed to load budget data');
@@ -1600,7 +1598,7 @@ export default function ActivityBudgetsTab({
             </div>
           </div>
           {/* Filters for when hideSummaryCards is true - shown between title and buttons */}
-          {hideSummaryCards && budgets.length > 0 && !loading && (
+          {hideSummaryCards && budgets.length > 0 && !loading && !renderFilters && (
             <div className="px-6 pb-4 border-b">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
@@ -1647,9 +1645,9 @@ export default function ActivityBudgetsTab({
                 </div>
                 <div className="flex items-center gap-2">
                   {expandedRows.size > 0 ? (
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
+                    <Button
+                      variant="outline"
+                      size="sm"
                       onClick={collapseAllRows}
                       title="Collapse all expanded rows"
                       data-collapse-all
@@ -1658,9 +1656,9 @@ export default function ActivityBudgetsTab({
                       Collapse All
                     </Button>
                   ) : (
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
+                    <Button
+                      variant="outline"
+                      size="sm"
                       onClick={expandAllRows}
                       title="Expand all rows"
                       data-expand-all
@@ -1675,6 +1673,78 @@ export default function ActivityBudgetsTab({
                   </Button>
                 </div>
               </div>
+            </div>
+          )}
+          {/* Render filters externally if callback provided */}
+          {renderFilters && hideSummaryCards && budgets.length > 0 && !loading && renderFilters(
+            <div className="flex items-center gap-2">
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="w-[140px] h-9">
+                  <SelectValue placeholder="Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Status</SelectItem>
+                  <SelectItem value="indicative">
+                    <span className="flex items-center gap-2">
+                      <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">1</span>
+                      <span>Indicative</span>
+                    </span>
+                  </SelectItem>
+                  <SelectItem value="committed">
+                    <span className="flex items-center gap-2">
+                      <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">2</span>
+                      <span>Committed</span>
+                    </span>
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={typeFilter} onValueChange={setTypeFilter}>
+                <SelectTrigger className="w-[140px] h-9">
+                  <SelectValue placeholder="Type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Types</SelectItem>
+                  <SelectItem value="original">
+                    <span className="flex items-center gap-2">
+                      <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">1</span>
+                      <span>Original</span>
+                    </span>
+                  </SelectItem>
+                  <SelectItem value="revised">
+                    <span className="flex items-center gap-2">
+                      <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">2</span>
+                      <span>Revised</span>
+                    </span>
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+              {expandedRows.size > 0 ? (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={collapseAllRows}
+                  title="Collapse all expanded rows"
+                  data-collapse-all
+                >
+                  <ChevronUp className="h-4 w-4 mr-1" />
+                  Collapse All
+                </Button>
+              ) : (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={expandAllRows}
+                  title="Expand all rows"
+                  data-expand-all
+                >
+                  <ChevronDown className="h-4 w-4 mr-1" />
+                  Expand All
+                </Button>
+              )}
+              <Button variant="outline" size="sm" onClick={handleExport} data-export>
+                <Download className="h-4 w-4 mr-1" />
+                Export
+              </Button>
             </div>
           )}
           {selectedBudgetIds.size > 0 && (

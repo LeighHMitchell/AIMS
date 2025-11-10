@@ -1,5 +1,6 @@
 "use client"
 import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react"
+import ReactDOM from "react-dom"
 import { useParams, useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
 import Image from "next/image"
@@ -8,23 +9,24 @@ import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/com
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { format } from "date-fns"
-import { 
-  ArrowLeft, 
-  Edit, 
-  Download, 
-  FileText, 
-  MapPin, 
-  Users, 
-  DollarSign, 
-  Phone, 
+import {
+  ArrowLeft,
+  Edit,
+  Download,
+  FileText,
+  MapPin,
+  Users,
+  DollarSign,
+  Phone,
   Mail,
   Calendar,
   Eye,
   Trash2,
   Upload,
   ImageIcon,
-  PieChart,
+  PieChart as PieChartIcon,
   Banknote,
   Globe,
   Activity,
@@ -59,7 +61,10 @@ import {
   HelpCircle,
   FileCode,
   FileCheck,
-  Target
+  Target,
+  ArrowUpDown,
+  ArrowUp,
+  ArrowDown
 } from "lucide-react"
 import { toast } from "sonner"
 import { Transaction } from "@/types/transaction"
@@ -101,10 +106,11 @@ import {
 import { Skeleton } from "@/components/ui/skeleton"
 import { v4 as uuidv4 } from 'uuid'
 import { BarChart as RechartsBarChart, Bar, XAxis, YAxis, Tooltip as RechartsTooltip2, ResponsiveContainer, Cell, PieChart as RechartsPieChart, Pie, Legend } from 'recharts'
-import { ChevronDown, ChevronUp, ChevronRight, BarChart3, GitBranch, Printer } from 'lucide-react'
+import { ChevronDown, ChevronUp, ChevronRight, BarChart3 as BarChart3Icon, GitBranch, Printer, FileImage } from 'lucide-react'
 import SectorSankeyVisualization from '@/components/charts/SectorSankeyVisualization'
 import FinanceTypeDonut from '@/components/charts/FinanceTypeDonut'
 import PolicyMarkersSectionIATIWithCustom from '@/components/PolicyMarkersSectionIATIWithCustom'
+import { PolicyMarkersAnalyticsTab } from '@/components/activities/PolicyMarkersAnalyticsTab'
 import { DocumentsAndImagesTabV2 } from '@/components/activities/DocumentsAndImagesTabV2'
 import {
   DropdownMenu,
@@ -115,10 +121,16 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { getOrganizationTypeName } from "@/data/iati-organization-types"
 import { getOrganizationRoleName, getRoleCodeFromType } from "@/data/iati-organization-roles"
-import ActivityLocationsMapView from "@/components/maps/ActivityLocationsMapView"
+import dynamic from 'next/dynamic'
 import MyanmarRegionsMap from "@/components/MyanmarRegionsMap"
 import { NormalizedOrgRef } from "@/components/ui/normalized-org-ref"
 import LocationCard from "@/components/locations/LocationCard"
+
+// Dynamic import to avoid SSR issues with Leaflet
+const ActivityLocationsMapView = dynamic(
+  () => import('@/components/maps/ActivityLocationsMapView'),
+  { ssr: false, loading: () => <div className="flex items-center justify-center h-96">Loading map...</div> }
+)
 import type { LocationSchema } from "@/lib/schemas/location"
 import { formatNumberWithAbbreviation } from "@/utils/format-helpers"
 import { IATI_ACTIVITY_SCOPE } from "@/data/iati-activity-scope"
@@ -346,6 +358,9 @@ export default function ActivityDetailPage() {
   const { user } = useUser()
   const searchParams = useSearchParams()
   const [copiedId, setCopiedId] = useState<string | null>(null)
+  const [partnershipsSortField, setPartnershipsSortField] = useState<string>('organization')
+  const [partnershipsSortDirection, setPartnershipsSortDirection] = useState<'asc' | 'desc'>('asc')
+  const [hiddenRoles, setHiddenRoles] = useState<Set<number>>(new Set())
 
   // Copy to clipboard function
   const copyToClipboard = (text: string, type: 'activityId' | 'iatiIdentifier') => {
@@ -443,7 +458,9 @@ export default function ActivityDetailPage() {
   const [disbursementProgressView, setDisbursementProgressView] = useState<'chart' | 'table'>('chart')
   const [sectorBreakdownView, setSectorBreakdownView] = useState<'chart' | 'table'>('chart')
   const [sectorFlowView, setSectorFlowView] = useState<'flow' | 'distribution'>('flow')
-  
+  const [sectorViewMode, setSectorViewMode] = useState<'sankey' | 'pie' | 'bar' | 'table'>('sankey')
+  const [sectorMetricMode, setSectorMetricMode] = useState<'percentage' | 'budget' | 'planned' | 'actual'>('percentage')
+
   const [partners, setPartners] = useState<Partner[]>([])
   const [allPartners, setAllPartners] = useState<Partner[]>([])
   const [sdgMappings, setSdgMappings] = useState<any[]>([])
@@ -1021,27 +1038,41 @@ export default function ActivityDetailPage() {
       .reduce((sum, t) => {
         // Use USD value from transaction with fallbacks
         let usdValue = parseFloat(t.value_usd) || parseFloat(t.value_USD) || parseFloat(t.usd_value) || 0;
-        
+
         // If transaction is in USD but value_usd is missing, use the original value
         if (!usdValue && t.currency === 'USD' && t.value && Number(t.value) > 0) {
           usdValue = parseFloat(String(t.value)) || 0;
         }
-        
+
         return sum + (usdValue > 0 ? usdValue : 0);
       }, 0)
-    
+
     const disbursement = allTransactions
       .filter(t => t.transaction_type === "3")
       .reduce((sum, t) => {
-        const value = parseFloat(t.value) || 0
-        return sum + (isNaN(value) ? 0 : value)
+        // Use USD value from transaction with fallbacks
+        let usdValue = parseFloat(t.value_usd) || parseFloat(t.value_USD) || parseFloat(t.usd_value) || 0;
+
+        // If transaction is in USD but value_usd is missing, use the original value
+        if (!usdValue && t.currency === 'USD' && t.value && Number(t.value) > 0) {
+          usdValue = parseFloat(String(t.value)) || 0;
+        }
+
+        return sum + (usdValue > 0 ? usdValue : 0);
       }, 0)
-    
+
     const expenditure = allTransactions
       .filter(t => t.transaction_type === "4")
       .reduce((sum, t) => {
-        const value = parseFloat(t.value) || 0
-        return sum + (isNaN(value) ? 0 : value)
+        // Use USD value from transaction with fallbacks
+        let usdValue = parseFloat(t.value_usd) || parseFloat(t.value_USD) || parseFloat(t.usd_value) || 0;
+
+        // If transaction is in USD but value_usd is missing, use the original value
+        if (!usdValue && t.currency === 'USD' && t.value && Number(t.value) > 0) {
+          usdValue = parseFloat(String(t.value)) || 0;
+        }
+
+        return sum + (usdValue > 0 ? usdValue : 0);
       }, 0)
     
     // Get unique aid types and flow types
@@ -1069,13 +1100,35 @@ export default function ActivityDetailPage() {
 
   const financials = calculateFinancials()
 
-  // Calculate total planned disbursements
-  const totalPlannedDisbursements = plannedDisbursements.reduce((sum: number, pd: any) => 
-    sum + (pd.usdAmount || (pd.currency === 'USD' ? pd.amount : 0) || 0), 0);
+  // Calculate total planned disbursements (USD only)
+  const totalPlannedDisbursements = plannedDisbursements.reduce((sum: number, pd: any) => {
+    // Use usdAmount if available (primary source)
+    if (pd.usdAmount != null && pd.usdAmount > 0) {
+      return sum + parseFloat(pd.usdAmount);
+    }
+    // If currency is USD, use the amount directly
+    if (pd.currency === 'USD' && pd.amount && pd.amount > 0) {
+      return sum + parseFloat(pd.amount);
+    }
+    // For non-USD planned disbursements without usdAmount, skip (0 contribution)
+    // This ensures we only show USD values
+    return sum;
+  }, 0);
 
-  // Calculate total budgeted (return 0 if no budgets)
-  const totalBudgeted = budgets?.length > 0 ? budgets.reduce((sum: number, b: any) => 
-    sum + (b.usd_value || (b.currency === 'USD' ? b.value : 0) || 0), 0) : 0;
+  // Calculate total budgeted (USD only, return 0 if no budgets)
+  const totalBudgeted = budgets?.length > 0 ? budgets.reduce((sum: number, b: any) => {
+    // Use usd_value if available (primary source)
+    if (b.usd_value != null && b.usd_value > 0) {
+      return sum + parseFloat(b.usd_value);
+    }
+    // If currency is USD, use the value directly
+    if (b.currency === 'USD' && b.value && b.value > 0) {
+      return sum + parseFloat(b.value);
+    }
+    // For non-USD budgets without usd_value, skip (0 contribution)
+    // This ensures we only show USD values
+    return sum;
+  }, 0) : 0;
 
   // Calculate progress percentages
   const financialDeliveryPercent = financials.totalCommitment > 0 
@@ -1085,6 +1138,30 @@ export default function ActivityDetailPage() {
   const implementationVsPlanPercent = totalBudgeted > 0
     ? Math.round(((financials.totalDisbursement + financials.totalExpenditure) / totalBudgeted) * 100)
     : 0;
+
+  // Calculate actual spending (disbursement + expenditure) in USD
+  const totalActualSpending = (activity.transactions || []).reduce((sum: number, t: any) => {
+    if (t.transaction_type === '3' || t.transaction_type === '4') {
+      // Use USD value from transaction with fallbacks
+      let usdValue = parseFloat(t.value_usd) || parseFloat(t.value_USD) || parseFloat(t.usd_value) || 0;
+
+      // If transaction is in USD but value_usd is missing, use the original value
+      if (!usdValue && t.currency === 'USD' && t.value && Number(t.value) > 0) {
+        usdValue = parseFloat(String(t.value)) || 0;
+      }
+
+      return sum + (usdValue > 0 ? usdValue : 0);
+    }
+    return sum;
+  }, 0);
+  // Calculate financial data by sector based on percentage allocation
+  const sectorFinancialData = activity.sectors?.map((sector: any) => ({
+    code: sector.sector_code || sector.code,
+    budget: totalBudgeted * ((sector.percentage || 0) / 100),
+    commitment: financials.totalCommitment * ((sector.percentage || 0) / 100),
+    plannedDisbursement: totalPlannedDisbursements * ((sector.percentage || 0) / 100),
+    actualDisbursement: totalActualSpending * ((sector.percentage || 0) / 100)
+  })) || [];
 
   const formatDate = (dateString: string) => {
     if (!dateString) return 'Not set'
@@ -2078,22 +2155,25 @@ export default function ActivityDetailPage() {
                 <div className="flex items-start justify-between">
                   <div className="space-y-2 w-full">
                     <div>
-                      <LabelWithHelp 
-                        label="Total Disbursed" 
-                        helpText="The total amount of funds actually transferred to implementers (IATI transaction type 3 - Disbursement). This represents money that has been paid out."
+                      <LabelWithHelp
+                        label="Total Spent"
+                        helpText="The total amount of funds disbursed and expended (IATI transaction types 3 + 4). This represents the combined total of money paid out to implementers and money spent on project activities."
                       />
                       <p className="text-lg font-bold text-slate-900">
-                      ${formatCompactNumber(financials.totalDisbursement)}
+                      ${formatCompactNumber(financials.totalDisbursement + financials.totalExpenditure)}
                     </p>
                   </div>
                     <div className="border-t border-slate-200 pt-2">
-                      <LabelWithHelp 
-                        label="Total Expended" 
-                        helpText="The total amount of funds spent by implementers (IATI transaction type 4 - Expenditure). This represents money that has been used for project activities."
-                      />
-                      <p className="text-lg font-bold text-slate-900">
-                      ${formatCompactNumber(financials.totalExpenditure)}
-                    </p>
+                      <div className="grid grid-cols-2 gap-2 text-xs">
+                        <div>
+                          <p className="text-slate-500">Disbursed</p>
+                          <p className="font-semibold text-slate-700">${formatCompactNumber(financials.totalDisbursement)}</p>
+                        </div>
+                        <div>
+                          <p className="text-slate-500">Expended</p>
+                          <p className="font-semibold text-slate-700">${formatCompactNumber(financials.totalExpenditure)}</p>
+                        </div>
+                      </div>
                   </div>
                   </div>
                   <Wallet className="h-6 w-6 text-slate-400 flex-shrink-0" />
@@ -2584,31 +2664,39 @@ export default function ActivityDetailPage() {
                   {/* Budgets */}
                   <div className="border rounded-lg">
                     <div className="px-4 py-3 border-b border-slate-200">
-                      <div className="flex items-center justify-between gap-4">
+                      <div className="flex items-start justify-between gap-4">
                         <button
                           onClick={() => setIsBudgetsOpen(!isBudgetsOpen)}
-                          className="flex items-center gap-2 text-left hover:text-slate-900 transition-colors flex-1"
+                          className="flex items-center gap-2 text-left hover:text-slate-900 transition-colors"
                           aria-label={isBudgetsOpen ? 'Collapse Budgets' : 'Expand Budgets'}
                         >
                           {isBudgetsOpen ? <ChevronUp className="h-4 w-4 text-slate-600 flex-shrink-0" /> : <ChevronDown className="h-4 w-4 text-slate-600 flex-shrink-0" />}
-                          <div className="flex-1">
+                          <div>
                             <p className="text-lg font-bold text-slate-900">Budgets</p>
-                            {isBudgetsOpen && (
-                              <p className="text-xs text-slate-500 mt-1">Activity budget allocations by period</p>
-                            )}
+                            <p className="text-xs text-slate-500 mt-1">Activity budget allocations by period</p>
                           </div>
                         </button>
+                        {isBudgetsOpen && (
+                          <div id="budget-filters-container" />
+                        )}
                       </div>
                     </div>
                     {isBudgetsOpen && (
                       <div className="p-4">
-                        <ActivityBudgetsTab 
+                        <ActivityBudgetsTab
                           activityId={activity.id}
                           startDate={activity.plannedStartDate || activity.actualStartDate || ""}
                           endDate={activity.plannedEndDate || activity.actualEndDate || ""}
                           defaultCurrency="USD"
                           hideSummaryCards={true}
                           readOnly={true}
+                          renderFilters={(filters) => {
+                            const container = document.getElementById('budget-filters-container');
+                            if (container) {
+                              return ReactDOM.createPortal(filters, container);
+                            }
+                            return null;
+                          }}
                         />
                       </div>
                     )}
@@ -2617,25 +2705,26 @@ export default function ActivityDetailPage() {
                   {/* Planned Disbursements */}
                   <div className="border rounded-lg">
                     <div className="px-4 py-3 border-b border-slate-200">
-                      <div className="flex items-center justify-between gap-4">
+                      <div className="flex items-start justify-between gap-4">
                         <button
                           onClick={() => setIsPlannedOpen(!isPlannedOpen)}
-                          className="flex items-center gap-2 text-left hover:text-slate-900 transition-colors flex-1"
+                          className="flex items-center gap-2 text-left hover:text-slate-900 transition-colors"
                           aria-label={isPlannedOpen ? 'Collapse Planned Disbursements' : 'Expand Planned Disbursements'}
                         >
                           {isPlannedOpen ? <ChevronUp className="h-4 w-4 text-slate-600 flex-shrink-0" /> : <ChevronDown className="h-4 w-4 text-slate-600 flex-shrink-0" />}
-                          <div className="flex-1">
+                          <div>
                             <p className="text-lg font-bold text-slate-900">Planned Disbursements</p>
-                            {isPlannedOpen && (
-                              <p className="text-xs text-slate-500 mt-1">Scheduled future disbursements</p>
-                            )}
+                            <p className="text-xs text-slate-500 mt-1">Scheduled future disbursements</p>
                           </div>
                         </button>
+                        {isPlannedOpen && (
+                          <div id="planned-filters-container" />
+                        )}
                       </div>
                     </div>
                     {isPlannedOpen && (
                       <div className="p-4">
-                        <PlannedDisbursementsTab 
+                        <PlannedDisbursementsTab
                           activityId={activity.id}
                           startDate={activity.plannedStartDate || activity.actualStartDate || ""}
                           endDate={activity.plannedEndDate || activity.actualEndDate || ""}
@@ -2643,6 +2732,13 @@ export default function ActivityDetailPage() {
                           readOnly={true}
                           onDisbursementsChange={setPlannedDisbursements}
                           hideSummaryCards={true}
+                          renderFilters={(filters) => {
+                            const container = document.getElementById('planned-filters-container');
+                            if (container) {
+                              return ReactDOM.createPortal(filters, container);
+                            }
+                            return null;
+                          }}
                         />
                       </div>
                     )}
@@ -2704,310 +2800,176 @@ export default function ActivityDetailPage() {
                   <div className="space-y-6">
                   {/* Sector Allocation Visualization */}
                   {activity.sectors && activity.sectors.length > 0 ? (
-                    <div className="grid grid-cols-2 gap-6">
-                      {/* Sector Flow Visualization - First Column */}
+                    <div className="space-y-6">
+                      {/* Sector Flow Visualization - Full Width */}
                       <Card className="border-slate-200">
                         <CardHeader>
-                          <div className="flex items-center justify-between">
+                          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
                             <div>
-                              <CardTitle className="text-slate-900 flex items-center gap-2">
-                                <GitBranch className="h-5 w-5" />
+                              <CardTitle className="text-lg font-semibold text-slate-900">
                                 Sector Flow Visualization
                               </CardTitle>
                               <CardDescription>
-                                {sectorFlowView === 'flow' ? 'Hierarchical view of sector allocations from categories to subsectors' : 'Visual breakdown of sector allocations'}
+                                Interactive view of sector allocations with multiple visualization options and financial metrics
                               </CardDescription>
                             </div>
-                            <div className="flex gap-2">
-                              <Button
-                                variant={sectorFlowView === 'flow' ? 'default' : 'outline'}
-                                size="sm"
-                                onClick={() => setSectorFlowView('flow')}
-                              >
-                                <GitBranch className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                variant={sectorFlowView === 'distribution' ? 'default' : 'outline'}
-                                size="sm"
-                                onClick={() => setSectorFlowView('distribution')}
-                              >
-                                <PieChart className="h-4 w-4" />
-                              </Button>
+                            <div className="flex items-center gap-2 flex-wrap">
+                              {/* View Type Buttons */}
+                              <div className="flex gap-1 border rounded-lg p-1 bg-white">
+                                <Button
+                                  variant={sectorViewMode === 'sankey' ? 'default' : 'ghost'}
+                                  size="sm"
+                                  onClick={() => setSectorViewMode('sankey')}
+                                  className="h-8"
+                                >
+                                  <GitBranch className="h-4 w-4 mr-1.5" />
+                                  Flow
+                                </Button>
+                                <Button
+                                  variant={sectorViewMode === 'pie' ? 'default' : 'ghost'}
+                                  size="sm"
+                                  onClick={() => setSectorViewMode('pie')}
+                                  className="h-8"
+                                >
+                                  <PieChartIcon className="h-4 w-4 mr-1.5" />
+                                  Pie
+                                </Button>
+                                <Button
+                                  variant={sectorViewMode === 'bar' ? 'default' : 'ghost'}
+                                  size="sm"
+                                  onClick={() => setSectorViewMode('bar')}
+                                  className="h-8"
+                                >
+                                  <BarChart3Icon className="h-4 w-4 mr-1.5" />
+                                  Bar
+                                </Button>
+                                <Button
+                                  variant={sectorViewMode === 'table' ? 'default' : 'ghost'}
+                                  size="sm"
+                                  onClick={() => setSectorViewMode('table')}
+                                  className="h-8"
+                                >
+                                  <TableIcon className="h-4 w-4 mr-1.5" />
+                                  Table
+                                </Button>
+                              </div>
+
+                              {/* Metric Buttons */}
+                              <div className="flex gap-1 border rounded-lg p-1 bg-white">
+                                <Button
+                                  variant={sectorMetricMode === 'percentage' ? 'default' : 'ghost'}
+                                  size="sm"
+                                  onClick={() => setSectorMetricMode('percentage')}
+                                  className="h-8"
+                                >
+                                  %
+                                </Button>
+                                <Button
+                                  variant={sectorMetricMode === 'budget' ? 'default' : 'ghost'}
+                                  size="sm"
+                                  onClick={() => setSectorMetricMode('budget')}
+                                  className="h-8"
+                                >
+                                  Budget
+                                </Button>
+                                <Button
+                                  variant={sectorMetricMode === 'planned' ? 'default' : 'ghost'}
+                                  size="sm"
+                                  onClick={() => setSectorMetricMode('planned')}
+                                  className="h-8"
+                                >
+                                  Planned
+                                </Button>
+                                <Button
+                                  variant={sectorMetricMode === 'actual' ? 'default' : 'ghost'}
+                                  size="sm"
+                                  onClick={() => setSectorMetricMode('actual')}
+                                  className="h-8"
+                                >
+                                  Actual
+                                </Button>
+                              </div>
+
+                              {/* Export Buttons */}
+                              <div className="flex gap-1">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => {
+                                    const csvData = activity.sectors.map((allocation: any) => {
+                                      const financial = sectorFinancialData.find((f: any) => f.code === (allocation.sector_code || allocation.code));
+                                      return {
+                                        'Sector Code': allocation.sector_code || allocation.code,
+                                        'Sector Name': allocation.sector_name || allocation.name,
+                                        'Percentage': allocation.percentage,
+                                        'Budget (USD)': financial?.budget || 0,
+                                        'Commitment (USD)': financial?.commitment || 0,
+                                        'Planned Disbursement (USD)': financial?.plannedDisbursement || 0,
+                                        'Actual Disbursement (USD)': financial?.actualDisbursement || 0
+                                      };
+                                    });
+                                    const csvContent = [
+                                      Object.keys(csvData[0]).join(','),
+                                      ...csvData.map(row => Object.values(row).join(','))
+                                    ].join('\n');
+                                    const blob = new Blob([csvContent], { type: 'text/csv' });
+                                    const url = window.URL.createObjectURL(blob);
+                                    const a = document.createElement('a');
+                                    a.href = url;
+                                    a.download = 'sector-allocations.csv';
+                                    a.click();
+                                  }}
+                                  className="h-8 px-2"
+                                  title="Export to CSV"
+                                >
+                                  <Download className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => {
+                                    const element = document.querySelector('#sector-visualization-container');
+                                    if (element) {
+                                      import('@/lib/chart-export').then(({ exportChartToJPG }) => {
+                                        exportChartToJPG(element as HTMLElement, 'sector-visualization');
+                                      });
+                                    }
+                                  }}
+                                  className="h-8 px-2"
+                                  title="Export to JPG"
+                                  disabled={sectorViewMode === 'table'}
+                                >
+                                  <FileImage className="h-4 w-4" />
+                                </Button>
+                              </div>
                             </div>
                           </div>
                         </CardHeader>
                         <CardContent>
-                          {sectorFlowView === 'flow' ? (
-                            <div className="w-full h-[500px]">
-                              <SectorSankeyVisualization 
-                                allocations={activity.sectors.map((s: any) => ({
-                                  code: s.sector_code || s.code,
-                                  name: s.sector_name || s.name,
-                                  percentage: s.percentage || 0
-                                }))}
-                                onSegmentClick={(code) => {
-                                  console.log('Sector clicked:', code);
-                                }}
-                              />
-                            </div>
-                          ) : (
-                            <div className="w-full h-[500px] flex items-center justify-center">
-                              <ResponsiveContainer width="100%" height="100%">
-                                <RechartsPieChart>
-                                  <Pie
-                                    data={activity.sectors.map((s: any, idx: number) => ({
-                                      code: s.sector_code || s.code,
-                                      name: s.sector_name || s.name,
-                                      value: s.percentage,
-                                      fill: ['#1e40af', '#3b82f6', '#0f172a', '#475569', '#64748b', '#334155', '#94a3b8', '#0ea5e9'][idx % 8]
-                                    }))}
-                                    cx="50%"
-                                    cy="50%"
-                                    innerRadius={80}
-                                    outerRadius={140}
-                                    paddingAngle={2}
-                                    dataKey="value"
-                                    label={({ name, value }) => `${value}%`}
-                                    labelLine={true}
-                                  >
-                                    {activity.sectors.map((_: any, index: number) => (
-                                      <Cell key={`cell-${index}`} />
-                                    ))}
-                                  </Pie>
-                                  <RechartsTooltip2 
-                                    content={({ active, payload }) => {
-                                      if (active && payload && payload.length) {
-                                        const data = payload[0].payload
-                                        return (
-                                          <div className="bg-white p-3 border border-gray-200 rounded shadow-lg">
-                                            <div className="flex items-center gap-2 mb-2">
-                                              <code className="text-xs px-1.5 py-0.5 bg-slate-100 text-slate-700 rounded font-mono">
-                                                {data.code}
-                                              </code>
-                                            </div>
-                                            <p className="text-sm font-semibold text-slate-900">{data.name}</p>
-                                            <p className="text-lg font-bold text-slate-900 mt-1">{data.value}%</p>
-                                          </div>
-                                        )
-                                      }
-                                      return null
-                                    }}
-                                  />
-                                  <Legend 
-                                    verticalAlign="bottom" 
-                                    height={36}
-                                    formatter={(value, entry: any) => {
-                                      return (
-                                        <span className="text-xs text-slate-700">
-                                          {entry.payload.code}: {entry.payload.name.length > 30 ? entry.payload.name.substring(0, 30) + '...' : entry.payload.name}
-                                        </span>
-                                      );
-                                    }}
-                                  />
-                                </RechartsPieChart>
-                              </ResponsiveContainer>
-                            </div>
-                          )}
-                        </CardContent>
-                      </Card>
-
-                      {/* Sector Allocations Table - Second Column */}
-                      <Card className="border-slate-200">
-                        <CardHeader>
-                          <div className="flex items-start justify-between">
-                            <div>
-                              <CardTitle className="text-slate-900">Sector Allocations</CardTitle>
-                              <CardDescription>
-                                Detailed breakdown with budget, commitment, planned, and actual spending by sector
-                              </CardDescription>
-                            </div>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => {
-                                // Calculate totals (return 0 if no budgets)
-                                const totalBudget = budgets?.length > 0 ? budgets.reduce((sum: number, b: any) => 
-                                  sum + (b.usd_value || (b.currency === 'USD' ? b.value : 0) || 0), 0) : 0;
-                                
-                                const totalCommitment = financials.totalCommitment;
-                                
-                                const totalPlannedDisbursements = plannedDisbursements.reduce((sum: number, pd: any) => 
-                                  sum + (pd.usdAmount || (pd.currency === 'USD' ? pd.amount : 0) || 0), 0);
-                                
-                                const totalActualSpending = (activity.transactions || []).reduce((sum: number, t: any) => {
-                                  if (t.transaction_type === '3' || t.transaction_type === '4') {
-                                    return sum + (parseFloat(t.value) || 0);
-                                  }
-                                  return sum;
-                                }, 0);
-
-                                // Prepare CSV data
-                                const csvRows = [
-                                  ['Sector Code', 'Sector Name', 'Percentage (%)', 'Budget (USD)', 'Commitment (USD)', 'Planned Disbursement (USD)', 'Actual Spending (USD)'],
-                                  ...activity.sectors.map((sector: any) => {
-                                    const sectorBudget = totalBudget * (sector.percentage / 100);
-                                    const sectorCommitment = totalCommitment * (sector.percentage / 100);
-                                    const sectorPlannedDisb = totalPlannedDisbursements * (sector.percentage / 100);
-                                    const sectorActual = totalActualSpending * (sector.percentage / 100);
-                                    
-                                    return [
-                                      sector.sector_code || sector.code || '',
-                                      sector.sector_name || sector.name || '',
-                                      sector.percentage || 0,
-                                      sectorBudget.toFixed(2),
-                                      sectorCommitment.toFixed(2),
-                                      sectorPlannedDisb.toFixed(2),
-                                      sectorActual.toFixed(2)
-                                    ];
-                                  }),
-                                  [
-                                    'Total',
-                                    '',
-                                    activity.sectors.reduce((sum: number, s: any) => sum + (s.percentage || 0), 0),
-                                    totalBudget.toFixed(2),
-                                    totalCommitment.toFixed(2),
-                                    totalPlannedDisbursements.toFixed(2),
-                                    totalActualSpending.toFixed(2)
-                                  ]
-                                ];
-
-                                // Escape CSV values
-                                const escapeCSV = (value: any): string => {
-                                  if (value === null || value === undefined) return '';
-                                  const stringValue = String(value);
-                                  if (stringValue.includes(',') || stringValue.includes('"') || stringValue.includes('\n')) {
-                                    return `"${stringValue.replace(/"/g, '""')}"`;
-                                  }
-                                  return stringValue;
-                                };
-
-                                const csvContent = csvRows.map(row => 
-                                  row.map(escapeCSV).join(',')
-                                ).join('\n');
-
-                                // Download CSV
-                                const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-                                const url = URL.createObjectURL(blob);
-                                const link = document.createElement('a');
-                                link.setAttribute('href', url);
-                                link.setAttribute('download', `sector-allocations-${activity.id || 'export'}-${new Date().toISOString().split('T')[0]}.csv`);
-                                link.style.visibility = 'hidden';
-                                document.body.appendChild(link);
-                                link.click();
-                                document.body.removeChild(link);
-                                URL.revokeObjectURL(url);
-                                
-                                toast.success('Sector allocations exported to CSV');
+                          <div id="sector-visualization-container">
+                            <SectorSankeyVisualization
+                              allocations={activity.sectors.map((s: any) => ({
+                                code: s.sector_code || s.code,
+                                name: s.sector_name || s.name,
+                                percentage: s.percentage || 0
+                              }))}
+                              financialData={sectorFinancialData}
+                              onSegmentClick={(code) => {
+                                console.log('Sector clicked:', code);
                               }}
-                            >
-                              <Download className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </CardHeader>
-                        <CardContent>
-                          <div className="h-[500px] overflow-y-auto">
-                            {(() => {
-                              // Calculate totals (return 0 if no budgets)
-                              const totalBudget = budgets?.length > 0 ? budgets.reduce((sum: number, b: any) => 
-                                sum + (b.usd_value || (b.currency === 'USD' ? b.value : 0) || 0), 0) : 0;
-                              
-                              const totalCommitment = financials.totalCommitment;
-                              
-                              const totalPlannedDisbursements = plannedDisbursements.reduce((sum: number, pd: any) => 
-                                sum + (pd.usdAmount || (pd.currency === 'USD' ? pd.amount : 0) || 0), 0);
-                              
-                              const totalActualSpending = (activity.transactions || []).reduce((sum: number, t: any) => {
-                                if (t.transaction_type === '3' || t.transaction_type === '4') {
-                                  return sum + (parseFloat(t.value) || 0);
-                                }
-                                return sum;
-                              }, 0);
-                              
-                              return (
-                                <table className="w-full text-xs">
-                                  <thead>
-                                    <tr className="border-b border-slate-200">
-                                      <th className="text-left py-1 text-slate-600 font-medium">Sector</th>
-                                      <th className="text-right py-1 text-slate-600 font-medium">%</th>
-                                      <th className="text-right py-1 text-slate-600 font-medium">Budget</th>
-                                      <th className="text-right py-1 text-slate-600 font-medium">Commitment</th>
-                                      <th className="text-right py-1 text-slate-600 font-medium">Planned Disb.</th>
-                                      <th className="text-right py-1 text-slate-600 font-medium">Actual Spending</th>
-                                    </tr>
-                                  </thead>
-                                  <tbody>
-                                    {activity.sectors.map((sector: any, idx: number) => {
-                                      const sectorBudget = totalBudget * (sector.percentage / 100);
-                                      const sectorCommitment = totalCommitment * (sector.percentage / 100);
-                                      const sectorPlannedDisb = totalPlannedDisbursements * (sector.percentage / 100);
-                                      const sectorActual = totalActualSpending * (sector.percentage / 100);
-                                      
-                                      return (
-                                        <tr key={idx} className="border-b border-slate-100">
-                                          <td className="py-1 text-slate-900">
-                                            <div className="flex items-center gap-2">
-                                              <div 
-                                                className="w-3 h-3 rounded flex-shrink-0" 
-                                                style={{ 
-                                                  backgroundColor: ['#1e40af', '#3b82f6', '#0f172a', '#475569', '#64748b', '#334155', '#94a3b8', '#0ea5e9'][idx % 8]
-                                                }}
-                                              />
-                                              <code className="text-xs font-mono bg-slate-100 px-1.5 py-0.5 rounded">
-                                                {sector.sector_code || sector.code}
-                                              </code>
-                                              <span className="text-xs text-slate-900">
-                                                {sector.sector_name || sector.name}
-                                              </span>
-                                            </div>
-                                          </td>
-                                          <td className="text-right py-1 text-slate-900 font-medium">
-                                            {sector.percentage}%
-                                          </td>
-                                          <td className="text-right py-1 text-slate-900 font-medium">
-                                            {formatNumberWithAbbreviation(sectorBudget, { currency: '$', decimals: 1 })}
-                                          </td>
-                                          <td className="text-right py-1 text-slate-900 font-medium">
-                                            {formatNumberWithAbbreviation(sectorCommitment, { currency: '$', decimals: 1 })}
-                                          </td>
-                                          <td className="text-right py-1 text-slate-900 font-medium">
-                                            {formatNumberWithAbbreviation(sectorPlannedDisb, { currency: '$', decimals: 1 })}
-                                          </td>
-                                          <td className="text-right py-1 text-slate-900 font-medium">
-                                            {formatNumberWithAbbreviation(sectorActual, { currency: '$', decimals: 1 })}
-                                          </td>
-                                        </tr>
-                                      );
-                                    })}
-                                    <tr className="border-b border-slate-200 bg-slate-50">
-                                      <td className="py-1 text-slate-900 font-medium">Total</td>
-                                      <td className="text-right py-1 text-slate-900 font-medium">
-                                        {activity.sectors.reduce((sum: number, s: any) => sum + (s.percentage || 0), 0)}%
-                                      </td>
-                                      <td className="text-right py-1 text-slate-900 font-medium">
-                                        {formatNumberWithAbbreviation(totalBudget, { currency: '$', decimals: 1 })}
-                                      </td>
-                                      <td className="text-right py-1 text-slate-900 font-medium">
-                                        {formatNumberWithAbbreviation(totalCommitment, { currency: '$', decimals: 1 })}
-                                      </td>
-                                      <td className="text-right py-1 text-slate-900 font-medium">
-                                        {formatNumberWithAbbreviation(totalPlannedDisbursements, { currency: '$', decimals: 1 })}
-                                      </td>
-                                      <td className="text-right py-1 text-slate-900 font-medium">
-                                        {formatNumberWithAbbreviation(totalActualSpending, { currency: '$', decimals: 1 })}
-                                      </td>
-                                    </tr>
-                                  </tbody>
-                                </table>
-                              );
-                            })()}
+                              showControls={false}
+                              defaultView={sectorViewMode}
+                              defaultMetric={sectorMetricMode}
+                            />
                           </div>
                         </CardContent>
                       </Card>
+
                     </div>
                   ) : (
                     <Card className="border-slate-200">
                       <CardContent className="text-center py-12">
-                        <PieChart className="h-12 w-12 text-slate-300 mx-auto mb-4" />
+                        <PieChartIcon className="h-12 w-12 text-slate-300 mx-auto mb-4" />
                         <p className="text-slate-500">No sectors have been allocated for this activity.</p>
                       </CardContent>
                     </Card>
@@ -3141,6 +3103,55 @@ export default function ActivityDetailPage() {
                     return colors[roleCode] || 'bg-gray-100 text-gray-800 border-gray-300';
                   };
 
+                  // Sorting logic for participating organizations
+                  const handlePartnershipsSort = (field: string) => {
+                    if (partnershipsSortField === field) {
+                      setPartnershipsSortDirection(partnershipsSortDirection === 'asc' ? 'desc' : 'asc');
+                    } else {
+                      setPartnershipsSortField(field);
+                      setPartnershipsSortDirection('desc');
+                    }
+                  };
+
+                  const getPartnershipsSortIcon = (field: string) => {
+                    if (partnershipsSortField !== field) {
+                      return <ArrowUpDown className="h-4 w-4 text-gray-400" />;
+                    }
+                    return partnershipsSortDirection === 'asc'
+                      ? <ArrowUp className="h-4 w-4 text-gray-400" />
+                      : <ArrowDown className="h-4 w-4 text-gray-400" />;
+                  };
+
+                  const sortedParticipatingOrgs = [...participatingOrgs].sort((a, b) => {
+                    let aValue: string | number;
+                    let bValue: string | number;
+
+                    switch (partnershipsSortField) {
+                      case 'organization':
+                        aValue = (a.narrative || a.organization?.name || '').toLowerCase();
+                        bValue = (b.narrative || b.organization?.name || '').toLowerCase();
+                        break;
+                      case 'role':
+                        aValue = getOrganizationRoleName(a.iati_role_code || getRoleCodeFromType(a.role_type));
+                        bValue = getOrganizationRoleName(b.iati_role_code || getRoleCodeFromType(b.role_type));
+                        break;
+                      case 'type':
+                        aValue = getOrganizationTypeName(a.org_type || a.organization?.Organisation_Type_Code || '');
+                        bValue = getOrganizationTypeName(b.org_type || b.organization?.Organisation_Type_Code || '');
+                        break;
+                      case 'country':
+                        aValue = (a.organization?.country || '').toLowerCase();
+                        bValue = (b.organization?.country || '').toLowerCase();
+                        break;
+                      default:
+                        return 0;
+                    }
+
+                    if (aValue < bValue) return partnershipsSortDirection === 'asc' ? -1 : 1;
+                    if (aValue > bValue) return partnershipsSortDirection === 'asc' ? 1 : -1;
+                    return 0;
+                  });
+
                   return (
                 <div className="space-y-6">
                   {/* Reporting Organisation */}
@@ -3155,64 +3166,89 @@ export default function ActivityDetailPage() {
                           The organization that reports this activity
                         </CardDescription>
                     </CardHeader>
-                    <CardContent>
-                        <div className="flex items-center gap-4">
-                                  <div className="flex-shrink-0">
-                            {reportingOrg.logo ? (
-                              <img 
-                                src={reportingOrg.logo} 
-                                alt={reportingOrg.name || 'Organization logo'}
-                                className="w-16 h-16 rounded object-cover border border-slate-200"
-                                onError={(e) => {
-                                  (e.target as HTMLImageElement).style.display = 'none';
-                                }}
-                              />
-                            ) : (
-                              <div className="w-16 h-16 bg-slate-100 rounded flex items-center justify-center">
-                                <Building2 className="h-8 w-8 text-slate-400" />
-                                  </div>
-                                )}
-                          </div>
-                                  <div className="flex-1 min-w-0">
-                            <div className="font-semibold text-slate-900 text-lg">
-                              {reportingOrg.id ? (
-                                <Link 
-                                  href={`/organizations/${reportingOrg.id}`}
-                                  className="hover:text-blue-600 transition-colors"
-                                >
-                                  {reportingOrg.name || 'Unknown Organization'}
-                                </Link>
-                              ) : (
-                                <span>{reportingOrg.name || 'Unknown Organization'}</span>
-                              )}
+                    <CardContent className="p-6 pt-0">
+                        <div className="rounded-md border overflow-x-auto">
+                          <Table className="table-fixed">
+                            <TableHeader className="bg-muted/50 border-b border-border/70">
+                              <TableRow>
+                                <TableHead className="text-sm font-medium text-foreground/90 py-3 px-4 whitespace-nowrap" style={{ width: '35%' }}>Organization</TableHead>
+                                <TableHead className="text-sm font-medium text-foreground/90 py-3 px-4 whitespace-nowrap" style={{ width: '20%' }}>Role</TableHead>
+                                <TableHead className="text-sm font-medium text-foreground/90 py-3 px-4 whitespace-nowrap" style={{ width: '30%' }}>Organisation Type</TableHead>
+                                <TableHead className="text-sm font-medium text-foreground/90 py-3 px-4 whitespace-nowrap" style={{ width: '15%' }}>Country</TableHead>
+                              </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                              <TableRow className="border-b border-border/40 hover:bg-muted/30 transition-colors">
+                                <TableCell className="py-3 px-4">
+                                  <div className="flex items-center gap-3">
+                                    <div className="flex-shrink-0">
+                                      {reportingOrg.logo ? (
+                                        <img
+                                          src={reportingOrg.logo}
+                                          alt={reportingOrg.name || 'Organization logo'}
+                                          className="w-10 h-10 rounded object-cover border border-slate-200"
+                                          onError={(e) => {
+                                            (e.target as HTMLImageElement).style.display = 'none';
+                                          }}
+                                        />
+                                      ) : (
+                                        <div className="w-10 h-10 bg-slate-100 rounded flex items-center justify-center">
+                                          <Building2 className="h-5 w-5 text-slate-400" />
+                                        </div>
+                                      )}
                                     </div>
-                            {reportingOrg.acronym && reportingOrg.acronym !== reportingOrg.name && (
-                              <div className="text-sm text-slate-600 mt-1">
-                                {reportingOrg.acronym}
+                                    <div className="min-w-0 flex-1">
+                                      <div className="font-medium text-slate-900">
+                                        {reportingOrg.id ? (
+                                          <Link
+                                            href={`/organizations/${reportingOrg.id}`}
+                                            className="hover:text-blue-600 transition-colors"
+                                          >
+                                            {reportingOrg.name || 'Unknown Organization'}
+                                            {reportingOrg.acronym && reportingOrg.acronym !== reportingOrg.name && ` (${reportingOrg.acronym})`}
+                                          </Link>
+                                        ) : (
+                                          <span>
+                                            {reportingOrg.name || 'Unknown Organization'}
+                                            {reportingOrg.acronym && reportingOrg.acronym !== reportingOrg.name && ` (${reportingOrg.acronym})`}
+                                          </span>
+                                        )}
                                       </div>
-                                    )}
-                            <div className="flex flex-wrap gap-3 mt-2 text-sm text-slate-600">
-                              {reportingOrg.iati_org_id && (
-                                <div>
-                                  <span className="font-medium">IATI ID:</span>{' '}
-                                  <span className="font-mono">{reportingOrg.iati_org_id}</span>
+                                      {reportingOrg.iati_org_id && (
+                                        <div className="text-xs text-slate-500 font-mono mt-1">
+                                          {reportingOrg.iati_org_id}
+                                        </div>
+                                      )}
+                                    </div>
                                   </div>
-                              )}
-                              {reportingOrg.organisation_type && (
-                                <div>
-                                  <span className="font-medium">Type:</span>{' '}
-                                  {getOrganizationTypeName(reportingOrg.organisation_type)}
-                                    </div>
+                                </TableCell>
+                                <TableCell className="py-3 px-4 whitespace-nowrap">
+                                  <Badge
+                                    variant="outline"
+                                    className="bg-blue-100 text-blue-800 border-blue-300 border"
+                                  >
+                                    Reporting
+                                  </Badge>
+                                </TableCell>
+                                <TableCell className="py-3 px-4 whitespace-nowrap">
+                                  <span className="text-sm text-slate-600">
+                                    {reportingOrg.organisation_type
+                                      ? getOrganizationTypeName(reportingOrg.organisation_type)
+                                      : <span className="text-slate-400">Not set</span>
+                                    }
+                                  </span>
+                                </TableCell>
+                                <TableCell className="py-3 px-4 whitespace-nowrap">
+                                  {reportingOrg.country ? (
+                                    <span className="text-sm text-slate-600">{reportingOrg.country}</span>
+                                  ) : (
+                                    <span className="text-slate-400 text-sm">—</span>
                                   )}
-                              {reportingOrg.country && (
-                                <div>
-                                  <span className="font-medium">Country:</span>{' '}
-                                  {reportingOrg.country}
-                                    </div>
-                                  )}
-                                </div>
-                              </div>
-                          </div>
+                                </TableCell>
+                              </TableRow>
+                            </TableBody>
+                          </Table>
+                        </div>
                     </CardContent>
                   </Card>
                   )}
@@ -3233,22 +3269,57 @@ export default function ActivityDetailPage() {
                           <Table className="table-fixed">
                             <TableHeader className="bg-muted/50 border-b border-border/70">
                               <TableRow>
-                                <TableHead className="text-sm font-medium text-foreground/90 py-3 px-4 whitespace-nowrap">Organization</TableHead>
-                                <TableHead className="text-sm font-medium text-foreground/90 py-3 px-4 whitespace-nowrap">Role</TableHead>
-                                <TableHead className="text-sm font-medium text-foreground/90 py-3 px-4 whitespace-nowrap">Org Type</TableHead>
-                                <TableHead className="text-sm font-medium text-foreground/90 py-3 px-4 whitespace-nowrap">IATI ID</TableHead>
-                                <TableHead className="text-sm font-medium text-foreground/90 py-3 px-4 whitespace-nowrap">Country</TableHead>
+                                <TableHead
+                                  className="text-sm font-medium text-foreground/90 py-3 px-4 whitespace-nowrap cursor-pointer hover:bg-muted/30 transition-colors"
+                                  style={{ width: '35%' }}
+                                  onClick={() => handlePartnershipsSort('organization')}
+                                >
+                                  <div className="flex items-center gap-1">
+                                    <span>Organization</span>
+                                    {getPartnershipsSortIcon('organization')}
+                                  </div>
+                                </TableHead>
+                                <TableHead
+                                  className="text-sm font-medium text-foreground/90 py-3 px-4 whitespace-nowrap cursor-pointer hover:bg-muted/30 transition-colors"
+                                  style={{ width: '20%' }}
+                                  onClick={() => handlePartnershipsSort('role')}
+                                >
+                                  <div className="flex items-center gap-1">
+                                    <span>Role</span>
+                                    {getPartnershipsSortIcon('role')}
+                                  </div>
+                                </TableHead>
+                                <TableHead
+                                  className="text-sm font-medium text-foreground/90 py-3 px-4 whitespace-nowrap cursor-pointer hover:bg-muted/30 transition-colors"
+                                  style={{ width: '30%' }}
+                                  onClick={() => handlePartnershipsSort('type')}
+                                >
+                                  <div className="flex items-center gap-1">
+                                    <span>Organisation Type</span>
+                                    {getPartnershipsSortIcon('type')}
+                                  </div>
+                                </TableHead>
+                                <TableHead
+                                  className="text-sm font-medium text-foreground/90 py-3 px-4 whitespace-nowrap cursor-pointer hover:bg-muted/30 transition-colors"
+                                  style={{ width: '15%' }}
+                                  onClick={() => handlePartnershipsSort('country')}
+                                >
+                                  <div className="flex items-center gap-1">
+                                    <span>Country</span>
+                                    {getPartnershipsSortIcon('country')}
+                                  </div>
+                                </TableHead>
                               </TableRow>
                             </TableHeader>
                             <TableBody>
-                              {participatingOrgs.map((org: any) => (
+                              {sortedParticipatingOrgs.map((org: any) => (
                                 <TableRow key={org.id} className="border-b border-border/40 hover:bg-muted/30 transition-colors">
                                   <TableCell className="py-3 px-4">
                                     <div className="flex items-center gap-3">
                                   <div className="flex-shrink-0">
                                         {org.organization?.logo ? (
-                                    <img 
-                                      src={org.organization.logo} 
+                                    <img
+                                      src={org.organization.logo}
                                             alt={org.organization.name || 'Organization logo'}
                                             className="w-10 h-10 rounded object-cover border border-slate-200"
                                             onError={(e) => {
@@ -3264,19 +3335,23 @@ export default function ActivityDetailPage() {
                                       <div className="min-w-0 flex-1">
                                         <div className="font-medium text-slate-900">
                                     {org.organization?.id ? (
-                                            <Link 
+                                            <Link
                                               href={`/organizations/${org.organization.id}`}
                                               className="hover:text-blue-600 transition-colors"
                                             >
                                               {org.narrative || org.organization?.name || 'Unknown Organization'}
+                                              {org.organization?.acronym && org.organization.acronym !== org.organization.name && ` (${org.organization.acronym})`}
                                             </Link>
                                     ) : (
-                                            <span>{org.narrative || org.organization?.name || 'Unknown Organization'}</span>
+                                            <span>
+                                              {org.narrative || org.organization?.name || 'Unknown Organization'}
+                                              {org.organization?.acronym && org.organization.acronym !== org.organization.name && ` (${org.organization.acronym})`}
+                                            </span>
                                           )}
                                         </div>
-                                        {org.organization?.acronym && org.organization.acronym !== org.organization.name && (
-                                          <div className="text-sm text-slate-600">
-                                            {org.organization.acronym}
+                                        {(org.iati_org_ref || org.organization?.iati_org_id) && (
+                                          <div className="text-xs text-slate-500 font-mono mt-1">
+                                            {org.iati_org_ref || org.organization?.iati_org_id}
                                           </div>
                                     )}
                                   </div>
@@ -3291,24 +3366,12 @@ export default function ActivityDetailPage() {
                                         </Badge>
                                   </TableCell>
                                   <TableCell className="py-3 px-4 whitespace-nowrap">
-                                    {org.org_type || org.organization?.Organisation_Type_Code ? (
-                                      <div className="flex items-center gap-2">
-                                        <span className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
-                                          {org.org_type || org.organization?.Organisation_Type_Code}
-                                        </span>
-                                        <span className="font-medium">
-                                          {getOrganizationTypeName(org.org_type || org.organization?.Organisation_Type_Code || '')}
-                                        </span>
-                                    </div>
-                                    ) : (
-                                      <span className="text-muted-foreground text-sm">Not set</span>
-                                    )}
-                                  </TableCell>
-                                  <TableCell className="py-3 px-4 whitespace-nowrap">
-                                    <NormalizedOrgRef 
-                                      ref={org.iati_org_ref || org.organization?.iati_org_id} 
-                                      className="bg-muted"
-                                    />
+                                    <span className="text-sm text-slate-600">
+                                      {org.org_type || org.organization?.Organisation_Type_Code
+                                        ? getOrganizationTypeName(org.org_type || org.organization?.Organisation_Type_Code || '')
+                                        : <span className="text-slate-400">Not set</span>
+                                      }
+                                    </span>
                                   </TableCell>
                                   <TableCell className="py-3 px-4 whitespace-nowrap">
                                     {org.organization?.country ? (
@@ -3321,6 +3384,496 @@ export default function ActivityDetailPage() {
                               ))}
                             </TableBody>
                           </Table>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )}
+
+                  {/* Organizational Network Graph */}
+                  {(reportingOrg || participatingOrgs.length > 0) && (
+                    <Card className="border-slate-200">
+                      <CardHeader>
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <CardTitle className="text-slate-900 flex items-center gap-2">
+                              <Building2 className="h-5 w-5" />
+                              Organizational Network
+                            </CardTitle>
+                            <CardDescription>
+                              Interactive network showing organizational relationships and roles
+                            </CardDescription>
+                          </div>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={async () => {
+                              try {
+                                const svg = document.querySelector('#org-network-svg') as SVGSVGElement;
+                                if (!svg) return;
+
+                                // Clone the SVG to avoid modifying the original
+                                const svgClone = svg.cloneNode(true) as SVGSVGElement;
+
+                                // Convert all image elements to data URLs for proper rendering
+                                const images = svgClone.querySelectorAll('image');
+                                const imagePromises = Array.from(images).map(async (img) => {
+                                  const href = img.getAttribute('href');
+                                  if (href && href.startsWith('http')) {
+                                    try {
+                                      // Fetch and convert to data URL
+                                      const response = await fetch(href);
+                                      const blob = await response.blob();
+                                      const dataUrl = await new Promise<string>((resolve) => {
+                                        const reader = new FileReader();
+                                        reader.onloadend = () => resolve(reader.result as string);
+                                        reader.readAsDataURL(blob);
+                                      });
+                                      img.setAttribute('href', dataUrl);
+                                    } catch (e) {
+                                      console.error('Failed to load image:', href);
+                                    }
+                                  }
+                                });
+
+                                await Promise.all(imagePromises);
+
+                                // Create a canvas
+                                const canvas = document.createElement('canvas');
+                                const ctx = canvas.getContext('2d');
+                                if (!ctx) return;
+
+                                // Set canvas size to match SVG viewBox
+                                const viewBox = svgClone.getAttribute('viewBox')?.split(' ') || ['0', '0', '1000', '600'];
+                                canvas.width = parseInt(viewBox[2]);
+                                canvas.height = parseInt(viewBox[3]);
+
+                                // Fill white background
+                                ctx.fillStyle = 'white';
+                                ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                                // Convert SVG to string
+                                const svgString = new XMLSerializer().serializeToString(svgClone);
+                                const svgBlob = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' });
+                                const url = URL.createObjectURL(svgBlob);
+
+                                // Create image from SVG
+                                const imgElement = new window.Image();
+                                imgElement.onload = () => {
+                                  ctx.drawImage(imgElement, 0, 0);
+                                  URL.revokeObjectURL(url);
+
+                                  // Convert to JPG and download
+                                  canvas.toBlob((blob) => {
+                                    if (!blob) return;
+                                    const downloadUrl = URL.createObjectURL(blob);
+                                    const link = document.createElement('a');
+                                    link.href = downloadUrl;
+                                    link.download = `organizational-network-${new Date().getTime()}.jpg`;
+                                    link.click();
+                                    URL.revokeObjectURL(downloadUrl);
+                                  }, 'image/jpeg', 0.95);
+                                };
+                                imgElement.onerror = (e) => {
+                                  console.error('Failed to load SVG as image:', e);
+                                  URL.revokeObjectURL(url);
+                                  toast.error('Failed to export image');
+                                };
+                                imgElement.src = url;
+                              } catch (error) {
+                                console.error('Export error:', error);
+                                toast.error('Failed to export image');
+                              }
+                            }}
+                          >
+                            <Download className="h-4 w-4 mr-2" />
+                            Export JPG
+                          </Button>
+                        </div>
+                      </CardHeader>
+                      <CardContent>
+                        {/* Legend */}
+                        <div className="flex flex-wrap gap-4 mb-6 p-4 bg-white rounded-lg">
+                          {[
+                            { roleCode: 0, color: 'bg-slate-700', label: 'Reporting' },
+                            { roleCode: 1, color: 'bg-slate-500', label: 'Funding' },
+                            { roleCode: 2, color: 'bg-blue-600', label: 'Accountable' },
+                            { roleCode: 3, color: 'bg-slate-600', label: 'Extending' },
+                            { roleCode: 4, color: 'bg-slate-400', label: 'Implementing' },
+                          ].map(({ roleCode, color, label }) => {
+                            const isHidden = hiddenRoles.has(roleCode);
+                            return (
+                              <div
+                                key={roleCode}
+                                className={`flex items-center gap-2 cursor-pointer px-3 py-1.5 rounded-md transition-all ${
+                                  isHidden ? 'opacity-40 hover:opacity-60' : 'hover:bg-slate-50'
+                                }`}
+                                onClick={() => {
+                                  const newHiddenRoles = new Set(hiddenRoles);
+                                  if (isHidden) {
+                                    newHiddenRoles.delete(roleCode);
+                                  } else {
+                                    newHiddenRoles.add(roleCode);
+                                  }
+                                  setHiddenRoles(newHiddenRoles);
+                                }}
+                              >
+                                <div className={`w-4 h-4 rounded-full ${color} ${isHidden ? 'opacity-50' : ''}`}></div>
+                                <span className={`text-sm font-medium text-slate-700 ${isHidden ? 'line-through' : ''}`}>
+                                  {label}
+                                </span>
+                              </div>
+                            );
+                          })}
+                        </div>
+
+                        {/* Network Graph Canvas */}
+                        <div className="relative w-full h-[600px] bg-white rounded-lg border border-slate-200 overflow-hidden">
+                          {(() => {
+                            // Build nodes
+                            const nodes: any[] = [];
+                            const roleColors: Record<number, string> = {
+                              0: '#334155', // Reporting - slate-700
+                              1: '#64748b', // Funding - slate-500
+                              2: '#2563eb', // Accountable - blue-600
+                              3: '#475569', // Extending - slate-600
+                              4: '#94a3b8', // Implementing - slate-400
+                            };
+
+                            // Add reporting org as central node (if not hidden)
+                            if (reportingOrg && !hiddenRoles.has(0)) {
+                              nodes.push({
+                                id: `reporting-${reportingOrg.id || 'main'}`,
+                                name: reportingOrg.acronym || reportingOrg.name || 'Reporting Org',
+                                fullName: reportingOrg.name || 'Unknown',
+                                role: 'Reporting',
+                                roleCode: 0,
+                                color: roleColors[0],
+                                size: 50,
+                                logo: reportingOrg.logo,
+                              });
+                            }
+
+                            // Add participating organizations (filter by hidden roles)
+                            sortedParticipatingOrgs.forEach((org: any) => {
+                              const roleCode = org.iati_role_code || getRoleCodeFromType(org.role_type) || 1;
+                              if (!hiddenRoles.has(roleCode)) {
+                                nodes.push({
+                                  id: org.id,
+                                  name: org.organization?.acronym || org.narrative || org.organization?.name || 'Unknown',
+                                  fullName: org.narrative || org.organization?.name || 'Unknown',
+                                  role: getOrganizationRoleName(roleCode),
+                                  roleCode: roleCode,
+                                  color: roleColors[roleCode] || '#64748b',
+                                  size: 40,
+                                  logo: org.organization?.logo,
+                                });
+                              }
+                            });
+
+                            // Calculate positions in horizontal flow layout
+                            const width = 1000;
+                            const height = 600;
+                            const padding = 120;
+
+                            // Group by role
+                            const fundingOrgs = nodes.filter(n => n.roleCode === 1);
+                            const reportingNode = nodes.find(n => n.roleCode === 0);
+                            const extendingOrgs = nodes.filter(n => n.roleCode === 3);
+                            const implementingOrgs = nodes.filter(n => n.roleCode === 4);
+                            const accountableOrgs = nodes.filter(n => n.roleCode === 2);
+
+                            // Position nodes in horizontal flow: Funding → Reporting → Extending → Implementing
+                            // with Accountable positioned above for oversight
+                            const columnWidth = (width - 2 * padding) / 4;
+
+                            // Position Funding orgs (leftmost)
+                            fundingOrgs.forEach((node, i) => {
+                              node.x = padding;
+                              node.y = height / 2 + (i - (fundingOrgs.length - 1) / 2) * 70;
+                            });
+
+                            // Position Reporting org (center-left)
+                            if (reportingNode) {
+                              reportingNode.x = padding + columnWidth;
+                              reportingNode.y = height / 2;
+                            }
+
+                            // Position Extending orgs (center-right)
+                            extendingOrgs.forEach((node, i) => {
+                              node.x = padding + columnWidth * 2;
+                              node.y = height / 2 + (i - (extendingOrgs.length - 1) / 2) * 70;
+                            });
+
+                            // Position Implementing orgs (rightmost) - use 2 columns if more than 8
+                            implementingOrgs.forEach((node, i) => {
+                              if (implementingOrgs.length > 8) {
+                                // Two-column layout
+                                const col = i % 2;
+                                const row = Math.floor(i / 2);
+                                const rowsPerColumn = Math.ceil(implementingOrgs.length / 2);
+                                node.x = padding + columnWidth * 3 + (col * 80);
+                                node.y = height / 2 + (row - (rowsPerColumn - 1) / 2) * 65;
+                              } else {
+                                // Single column layout
+                                node.x = padding + columnWidth * 3;
+                                node.y = height / 2 + (i - (implementingOrgs.length - 1) / 2) * 70;
+                              }
+                            });
+
+                            // Position Accountable orgs (top, centered)
+                            accountableOrgs.forEach((node, i) => {
+                              node.x = width / 2 + (i - (accountableOrgs.length - 1) / 2) * 90;
+                              node.y = padding - 20;
+                            });
+
+                            // Create edges following IATI flow structure:
+                            // Funding → Reporting/Extending → Implementing
+                            // Accountable provides oversight (dashed lines)
+                            // Only create edges between visible nodes
+                            const edges: any[] = [];
+                            const nodeIds = new Set(nodes.map(n => n.id));
+
+                            // Funding → Reporting
+                            fundingOrgs.forEach(funding => {
+                              if (reportingNode && nodeIds.has(funding.id) && nodeIds.has(reportingNode.id)) {
+                                edges.push({
+                                  source: funding.id,
+                                  target: reportingNode.id,
+                                  type: 'flow',
+                                  label: 'Funds',
+                                });
+                              }
+                            });
+
+                            // Reporting → Extending
+                            if (reportingNode && nodeIds.has(reportingNode.id)) {
+                              extendingOrgs.forEach(extending => {
+                                if (nodeIds.has(extending.id)) {
+                                  edges.push({
+                                    source: reportingNode.id,
+                                    target: extending.id,
+                                    type: 'flow',
+                                    label: 'Channels',
+                                  });
+                                }
+                              });
+                            }
+
+                            // Extending → Implementing
+                            if (extendingOrgs.length > 0) {
+                              extendingOrgs.forEach(extending => {
+                                if (nodeIds.has(extending.id)) {
+                                  implementingOrgs.forEach(implementing => {
+                                    if (nodeIds.has(implementing.id)) {
+                                      edges.push({
+                                        source: extending.id,
+                                        target: implementing.id,
+                                        type: 'flow',
+                                        label: 'Executes',
+                                      });
+                                    }
+                                  });
+                                }
+                              });
+                            } else if (reportingNode && nodeIds.has(reportingNode.id)) {
+                              // If no Extending orgs, Reporting → Implementing directly
+                              implementingOrgs.forEach(implementing => {
+                                if (nodeIds.has(implementing.id)) {
+                                  edges.push({
+                                    source: reportingNode.id,
+                                    target: implementing.id,
+                                    type: 'flow',
+                                    label: 'Executes',
+                                  });
+                                }
+                              });
+                            }
+
+                            // Accountable → oversight connections (to Reporting and Implementing)
+                            accountableOrgs.forEach(accountable => {
+                              if (nodeIds.has(accountable.id)) {
+                                if (reportingNode && nodeIds.has(reportingNode.id)) {
+                                  edges.push({
+                                    source: accountable.id,
+                                    target: reportingNode.id,
+                                    type: 'oversight',
+                                    label: 'Oversees',
+                                  });
+                                }
+                                implementingOrgs.forEach(implementing => {
+                                  if (nodeIds.has(implementing.id)) {
+                                    edges.push({
+                                      source: accountable.id,
+                                      target: implementing.id,
+                                      type: 'oversight',
+                                      label: 'Supervises',
+                                    });
+                                  }
+                                });
+                              }
+                            });
+
+                            return (
+                              <svg id="org-network-svg" className="w-full h-full" viewBox={`0 0 ${width} ${height}`}>
+                                {/* Define arrow markers and clip paths */}
+                                <defs>
+                                  <marker
+                                    id="arrowhead-flow"
+                                    markerWidth="10"
+                                    markerHeight="10"
+                                    refX="9"
+                                    refY="3"
+                                    orient="auto"
+                                  >
+                                    <polygon points="0 0, 10 3, 0 6" fill="#475569" />
+                                  </marker>
+                                  <marker
+                                    id="arrowhead-oversight"
+                                    markerWidth="10"
+                                    markerHeight="10"
+                                    refX="9"
+                                    refY="3"
+                                    orient="auto"
+                                  >
+                                    <polygon points="0 0, 10 3, 0 6" fill="#2563eb" />
+                                  </marker>
+                                  {/* Clip paths for circular logos */}
+                                  {nodes.map((node) => (
+                                    <clipPath key={`clip-${node.id}`} id={`clip-${node.id}`}>
+                                      <circle cx={node.x} cy={node.y} r={node.size / 2} />
+                                    </clipPath>
+                                  ))}
+                                </defs>
+
+                                {/* Draw edges */}
+                                <g>
+                                  {edges.map((edge, i) => {
+                                    const source = nodes.find(n => n.id === edge.source);
+                                    const target = nodes.find(n => n.id === edge.target);
+                                    if (!source || !target) return null;
+
+                                    const isOversight = edge.type === 'oversight';
+
+                                    return (
+                                      <g key={i}>
+                                        <line
+                                          x1={source.x}
+                                          y1={source.y}
+                                          x2={target.x}
+                                          y2={target.y}
+                                          stroke={isOversight ? '#2563eb' : '#475569'}
+                                          strokeWidth={isOversight ? '2' : '3'}
+                                          strokeDasharray={isOversight ? '5,5' : '0'}
+                                          opacity="0.5"
+                                          markerEnd={isOversight ? 'url(#arrowhead-oversight)' : 'url(#arrowhead-flow)'}
+                                        />
+                                        {/* Edge label */}
+                                        <text
+                                          x={(source.x + target.x) / 2}
+                                          y={(source.y + target.y) / 2 - 5}
+                                          textAnchor="middle"
+                                          className="text-[9px] fill-slate-600 font-medium"
+                                        >
+                                          {edge.label}
+                                        </text>
+                                      </g>
+                                    );
+                                  })}
+                                </g>
+
+                                {/* Draw nodes */}
+                                <g>
+                                  {nodes.map((node) => (
+                                    <g key={node.id} className="cursor-pointer">
+                                      {/* Node circle background - only show if no logo */}
+                                      {!node.logo && (
+                                        <circle
+                                          cx={node.x}
+                                          cy={node.y}
+                                          r={node.size / 2}
+                                          fill={node.color}
+                                          stroke="white"
+                                          strokeWidth="3"
+                                          className="transition-all hover:stroke-slate-700"
+                                        />
+                                      )}
+
+                                      {/* Org logo if available - fills entire circle */}
+                                      {node.logo && (
+                                        <>
+                                          <image
+                                            x={node.x - node.size / 2}
+                                            y={node.y - node.size / 2}
+                                            width={node.size}
+                                            height={node.size}
+                                            href={node.logo}
+                                            clipPath={`url(#clip-${node.id})`}
+                                            preserveAspectRatio="xMidYMid slice"
+                                          />
+                                          {/* White border over logo */}
+                                          <circle
+                                            cx={node.x}
+                                            cy={node.y}
+                                            r={node.size / 2}
+                                            fill="none"
+                                            stroke="white"
+                                            strokeWidth="3"
+                                            className="transition-all hover:stroke-slate-700"
+                                          />
+                                        </>
+                                      )}
+
+                                      {/* Node label - with wrapping */}
+                                      <foreignObject
+                                        x={node.x - 50}
+                                        y={node.y + node.size / 2 + 5}
+                                        width="100"
+                                        height="50"
+                                      >
+                                        <div
+                                          style={{
+                                            display: 'flex',
+                                            flexDirection: 'column',
+                                            alignItems: 'center',
+                                            justifyContent: 'flex-start',
+                                            width: '100%',
+                                            textAlign: 'center',
+                                          }}
+                                        >
+                                          <div
+                                            style={{
+                                              fontSize: '11px',
+                                              fontWeight: '600',
+                                              color: '#0f172a',
+                                              lineHeight: '1.2',
+                                              wordWrap: 'break-word',
+                                              overflow: 'hidden',
+                                              maxHeight: '28px',
+                                            }}
+                                          >
+                                            {node.name}
+                                          </div>
+                                          <div
+                                            style={{
+                                              fontSize: '9px',
+                                              color: '#64748b',
+                                              marginTop: '2px',
+                                            }}
+                                          >
+                                            {node.role}
+                                          </div>
+                                        </div>
+                                      </foreignObject>
+
+                                      {/* Tooltip on hover */}
+                                      <title>{node.fullName} ({node.role})</title>
+                                    </g>
+                                  ))}
+                                </g>
+
+                              </svg>
+                            );
+                          })()}
                         </div>
                       </CardContent>
                     </Card>
@@ -3589,14 +4142,9 @@ export default function ActivityDetailPage() {
               {/* Policy Markers Tab */}
               <TabsContent value="policy-markers" className="p-6 border-0">
                 {activeTab === "policy-markers" && (
-                <PolicyMarkersSectionIATIWithCustom
-                  activityId={activity.id}
+                <PolicyMarkersAnalyticsTab
                   policyMarkers={activity.policyMarkers || []}
-                  onChange={(markers) => {
-                    setActivity(prev => prev ? { ...prev, policyMarkers: markers } : null);
-                  }}
-                  setHasUnsavedChanges={() => {}}
-                  readOnly={true}
+                  activityTitle={activity.title || 'Activity'}
                 />
                 )}
               </TabsContent>
@@ -3617,7 +4165,10 @@ export default function ActivityDetailPage() {
               {/* Related Activities Tab */}
               <TabsContent value="related-activities" className="p-6 border-0">
                 {activeTab === "related-activities" && (
-                  <RelatedActivitiesTab activityId={activity.id} />
+                  <RelatedActivitiesTab
+                    activityId={activity.id}
+                    activityTitle={activity.title || 'Current Activity'}
+                  />
                 )}
               </TabsContent>
 

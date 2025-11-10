@@ -217,10 +217,11 @@ export default function PolicyMarkersSectionIATIWithCustom({ activityId, policyM
     // Convert to array for parent component
     const updatedMarkers = Array.from(newSelectedMarkers.values());
     onChange(updatedMarkers);
-    
-    // Trigger autosave
+
+    // Trigger autosave - only save markers with valid significance (not 0)
     if (policyMarkersAutosave) {
-      policyMarkersAutosave.trigger(updatedMarkers);
+      const validMarkers = updatedMarkers.filter(m => m.significance && m.significance > 0);
+      policyMarkersAutosave.triggerFieldSave(validMarkers);
     }
     
     setHasUnsavedChanges?.(true);

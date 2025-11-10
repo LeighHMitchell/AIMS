@@ -98,6 +98,7 @@ interface PlannedDisbursementsTabProps {
   readOnly?: boolean;
   onDisbursementsChange?: (disbursements: PlannedDisbursement[]) => void;
   hideSummaryCards?: boolean;
+  renderFilters?: (filters: React.ReactNode) => React.ReactNode;
 }
 
 interface Organization {
@@ -110,14 +111,15 @@ interface Organization {
   iati_org_id?: string;
 }
 
-export default function PlannedDisbursementsTab({ 
-  activityId, 
-  startDate, 
-  endDate, 
+export default function PlannedDisbursementsTab({
+  activityId,
+  startDate,
+  endDate,
   defaultCurrency = 'USD',
   readOnly = false,
   onDisbursementsChange,
-  hideSummaryCards = false
+  hideSummaryCards = false,
+  renderFilters
 }: PlannedDisbursementsTabProps) {
   const [disbursements, setDisbursements] = useState<PlannedDisbursement[]>([]);
   const [organizations, setOrganizations] = useState<Organization[]>([]);
@@ -545,40 +547,50 @@ export default function PlannedDisbursementsTab({
         setLoading(false);
         return;
       }
-      
+
       setLoading(true);
       try {
-        const { data, error } = await supabase
-          .from('planned_disbursements')
-          .select(`
-            *,
-            provider_organization:organizations!provider_org_id (
-              id,
-              name,
-              acronym,
-              logo
-            ),
-            receiver_organization:organizations!receiver_org_id (
-              id,
-              name,
-              acronym,
-              logo
-            )
-          `)
-          .eq('activity_id', activityId)
-          .order('period_start', { ascending: true });
+        // Use API endpoint instead of direct Supabase query to avoid RLS issues
+        const response = await fetch(`/api/activities/${activityId}/planned-disbursements`);
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Failed to fetch planned disbursements');
+        }
 
-        if (error) throw error;
+        const data = await response.json();
+        console.log('[PlannedDisbursementsTab] Fetched planned disbursements:', data?.length || 0);
 
         // If no disbursements exist, show empty state (users can create custom periods)
         if (!data || data.length === 0) {
           setDisbursements([]);
         } else {
+          // Fetch organization data separately for logos via API
+          const orgIds = new Set<string>();
+          data.forEach((d: any) => {
+            if (d.provider_org_id) orgIds.add(d.provider_org_id);
+            if (d.receiver_org_id) orgIds.add(d.receiver_org_id);
+          });
+
+          let orgData: Record<string, any> = {};
+          if (orgIds.size > 0) {
+            try {
+              const orgResponse = await fetch('/api/organizations');
+              if (orgResponse.ok) {
+                const allOrgs = await orgResponse.json();
+                // Filter to only the organizations we need
+                const relevantOrgs = allOrgs.filter((org: any) => orgIds.has(org.id));
+                orgData = Object.fromEntries(relevantOrgs.map((org: any) => [org.id, org]));
+              }
+            } catch (err) {
+              console.warn('[PlannedDisbursementsTab] Failed to fetch organization data:', err);
+            }
+          }
+
           // Use real-time USD conversion (same logic as FinancialSummaryCards)
           const disbursementsWithUSD = await Promise.all(
             data.map(async (disbursement: any) => {
               let usdAmount = 0;
-              
+
               if (disbursement.amount && disbursement.currency) {
                 if (disbursement.currency === 'USD') {
                   usdAmount = disbursement.amount;
@@ -598,27 +610,32 @@ export default function PlannedDisbursementsTab({
                   }
                 }
               }
-              
-              // Include organization logos from joined data
-              const result = { 
-                ...disbursement, 
+
+              // Include organization logos from fetched data
+              const providerOrg = disbursement.provider_org_id ? orgData[disbursement.provider_org_id] : null;
+              const receiverOrg = disbursement.receiver_org_id ? orgData[disbursement.receiver_org_id] : null;
+
+              const result = {
+                ...disbursement,
                 usdAmount,
-                provider_org_logo: disbursement.provider_organization?.logo,
-                receiver_org_logo: disbursement.receiver_organization?.logo,
+                provider_organization: providerOrg,
+                receiver_organization: receiverOrg,
+                provider_org_logo: providerOrg?.logo,
+                receiver_org_logo: receiverOrg?.logo,
               };
-              
+
               // Debug logging
               if (disbursement.provider_org_name || disbursement.receiver_org_name) {
                 console.log('[PlannedDisbursementsTab] Organization logos:', {
                   provider: disbursement.provider_org_name,
-                  provider_logo: disbursement.provider_organization?.logo ? 'HAS LOGO' : 'NO LOGO',
+                  provider_logo: providerOrg?.logo ? 'HAS LOGO' : 'NO LOGO',
                   receiver: disbursement.receiver_org_name,
-                  receiver_logo: disbursement.receiver_organization?.logo ? 'HAS LOGO' : 'NO LOGO',
-                  provider_org_data: disbursement.provider_organization,
-                  receiver_org_data: disbursement.receiver_organization
+                  receiver_logo: receiverOrg?.logo ? 'HAS LOGO' : 'NO LOGO',
+                  provider_org_data: providerOrg,
+                  receiver_org_data: receiverOrg
                 });
               }
-              
+
               return result;
             })
           );
@@ -1584,7 +1601,7 @@ export default function PlannedDisbursementsTab({
             </div>
           </div>
           {/* Filters for when hideSummaryCards is true - shown between title and buttons */}
-          {hideSummaryCards && disbursements.length > 0 && !loading && (
+          {hideSummaryCards && disbursements.length > 0 && !loading && !renderFilters && (
             <div className="px-6 pb-4 border-b">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
@@ -1611,9 +1628,9 @@ export default function PlannedDisbursementsTab({
                 </div>
                 <div className="flex items-center gap-2">
                   {expandedRows.size > 0 ? (
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
+                    <Button
+                      variant="outline"
+                      size="sm"
                       onClick={collapseAllRows}
                       title="Collapse all expanded rows"
                       data-collapse-all
@@ -1622,9 +1639,9 @@ export default function PlannedDisbursementsTab({
                       Collapse All
                     </Button>
                   ) : (
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
+                    <Button
+                      variant="outline"
+                      size="sm"
                       onClick={expandAllRows}
                       title="Expand all rows"
                       data-expand-all
@@ -1639,6 +1656,58 @@ export default function PlannedDisbursementsTab({
                   </Button>
                 </div>
               </div>
+            </div>
+          )}
+          {/* Render filters externally if callback provided */}
+          {renderFilters && hideSummaryCards && disbursements.length > 0 && !loading && renderFilters(
+            <div className="flex items-center gap-2">
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="w-[140px] h-9">
+                  <SelectValue placeholder="Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Status</SelectItem>
+                  <SelectItem value="original">
+                    <span className="flex items-center gap-2">
+                      <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">1</span>
+                      <span>Original</span>
+                    </span>
+                  </SelectItem>
+                  <SelectItem value="revised">
+                    <span className="flex items-center gap-2">
+                      <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">2</span>
+                      <span>Revised</span>
+                    </span>
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+              {expandedRows.size > 0 ? (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={collapseAllRows}
+                  title="Collapse all expanded rows"
+                  data-collapse-all
+                >
+                  <ChevronUp className="h-4 w-4 mr-1" />
+                  Collapse All
+                </Button>
+              ) : (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={expandAllRows}
+                  title="Expand all rows"
+                  data-expand-all
+                >
+                  <ChevronDown className="h-4 w-4 mr-1" />
+                  Expand All
+                </Button>
+              )}
+              <Button variant="outline" size="sm" onClick={handleExport} data-export>
+                <Download className="h-4 w-4 mr-1" />
+                Export
+              </Button>
             </div>
           )}
           {selectedDisbursementIds.size > 0 && (
