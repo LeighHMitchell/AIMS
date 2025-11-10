@@ -57,6 +57,7 @@ import { CumulativeFinancialOverview } from '@/components/analytics/CumulativeFi
 import { CumulativeSpendingOverTime } from '@/components/analytics/CumulativeSpendingOverTime'
 import { PlannedVsActualDisbursements } from '@/components/analytics/PlannedVsActualDisbursements'
 import { FundingSourceBreakdown } from '@/components/analytics/FundingSourceBreakdown'
+import { FinanceTypeFlowChart } from '@/components/analytics/FinanceTypeFlowChart'
 
 // Top 10 charts
 import { Top10TotalFinancialValueChart } from '@/components/analytics/Top10TotalFinancialValueChart'
@@ -155,6 +156,7 @@ export default function AnalyticsDashboardPage() {
   const [top10ActiveProjectsData, setTop10ActiveProjectsData] = useState<any[]>([])
   const [top10GovernmentValidatedData, setTop10GovernmentValidatedData] = useState<any[]>([])
   const [top10SectorFocusedData, setTop10SectorFocusedData] = useState<any[]>([])
+  const [financeTypeFlowData, setFinanceTypeFlowData] = useState<any[]>([])
 
   // Dropdown options for Comprehensive tab
   const [aidTypes, setAidTypes] = useState<Array<{code: string, name: string}>>([])
@@ -539,10 +541,10 @@ export default function AnalyticsDashboardPage() {
 
   return (
     <MainLayout>
-      <div className="min-h-screen bg-slate-50">
+      <div className="min-h-screen bg-white">
         {/* Sticky Action Bar */}
         <div className="sticky top-0 z-50 bg-white border-b border-slate-200 px-4 py-3">
-          <div className="max-w-7xl mx-auto">
+          <div className="mx-auto px-4">
             <div className="flex items-center justify-end gap-3 flex-wrap">
               <Button
                 variant="outline"
@@ -569,7 +571,7 @@ export default function AnalyticsDashboardPage() {
         </div>
 
         {/* Main Dashboard Content */}
-        <div className="max-w-7xl mx-auto p-6">
+        <div className="mx-auto p-6">
           {/* Error Display */}
           {error && (
             <Card className="bg-red-50 border-red-200 mb-6">
@@ -587,7 +589,24 @@ export default function AnalyticsDashboardPage() {
             </TabsList>
 
             <TabsContent value="analytics">
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Cumulative Financial Overview - Full Width at Top */}
+              <div className="mb-6">
+                <CumulativeFinancialOverview
+                  dateRange={dateRange}
+                  refreshKey={refreshKey}
+                />
+              </div>
+
+              {/* Finance Type Flow Chart - Full Width Below Cumulative Overview */}
+              <div className="mb-6">
+                <FinanceTypeFlowChart
+                  dateRange={dateRange}
+                  refreshKey={refreshKey}
+                  onDataChange={setFinanceTypeFlowData}
+                />
+              </div>
+
+              <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
               {/* All Donors Chart - Replaced Top 10 */}
               <ExpandableCard
                 className="bg-white border-slate-200"
@@ -629,113 +648,6 @@ export default function AnalyticsDashboardPage() {
                   onDataChange={setHumanitarianData}
                 />
               </ExpandableCard>
-
-              {/* Comprehensive Analysis Section */}
-              {/* Additional Filters for this tab */}
-              <Card className="bg-white border-slate-200 lg:col-span-2">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Filter className="h-5 w-5" />
-                    Additional Filters
-                  </CardTitle>
-                  <CardDescription>
-                    Filter by aid type, finance type, flow type, and more
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
-                    {/* Aid Type Filter */}
-                    <Select value={filters.aidType} onValueChange={(value) => handleFilterChange('aidType', value)}>
-                      <SelectTrigger className="h-9 text-sm">
-                        <SelectValue placeholder="Select aid type" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">All Aid Types</SelectItem>
-                        {aidTypes.map((type) => (
-                          <SelectItem key={type.code} value={type.code}>
-                            {type.code} - {type.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-
-                    {/* Finance Type Filter */}
-                    <Select value={filters.financeType} onValueChange={(value) => handleFilterChange('financeType', value)}>
-                      <SelectTrigger className="h-9 text-sm">
-                        <SelectValue placeholder="Select finance type" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">All Finance Types</SelectItem>
-                        {financeTypes.map((type) => (
-                          <SelectItem key={type.code} value={type.code}>
-                            {type.code} - {type.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-
-                    {/* Flow Type Filter */}
-                    <Select value={filters.flowType} onValueChange={(value) => handleFilterChange('flowType', value)}>
-                      <SelectTrigger className="h-9 text-sm">
-                        <SelectValue placeholder="Select flow type" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">All Flow Types</SelectItem>
-                        {flowTypes.map((type) => (
-                          <SelectItem key={type.code} value={type.code}>
-                            {type.code} - {type.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-
-                    {/* Time Period Filter */}
-                    <Select value={filters.timePeriod} onValueChange={(value) => handleFilterChange('timePeriod', value as TimePeriodType)}>
-                      <SelectTrigger className="h-9 text-sm">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="year">Calendar Year</SelectItem>
-                        <SelectItem value="quarter">Financial Quarter</SelectItem>
-                      </SelectContent>
-                    </Select>
-
-                    {/* Top N Filter */}
-                    <Select value={filters.topN} onValueChange={(value) => handleFilterChange('topN', value)}>
-                      <SelectTrigger className="h-9 text-sm">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="10">Top 10</SelectItem>
-                        <SelectItem value="20">Top 20</SelectItem>
-                        <SelectItem value="50">Top 50</SelectItem>
-                        <SelectItem value="all">Show All</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  {/* Active Filters Display */}
-                  <div className="mt-4 flex flex-wrap gap-2">
-                    {Object.entries(filters).map(([key, value]) => {
-                      if (value !== 'all' && value !== 'year' && value !== '10') {
-                        return (
-                          <Badge key={key} variant="secondary" className="flex items-center gap-1">
-                            {key}: {value}
-                            <button
-                              onClick={() => handleFilterChange(key as keyof AnalyticsFilters, 
-                                key === 'timePeriod' ? 'year' : key === 'topN' ? '10' : 'all')}
-                              className="ml-1 hover:bg-slate-200 rounded-full w-4 h-4 flex items-center justify-center text-xs"
-                            >
-                              ×
-                            </button>
-                          </Badge>
-                        )
-                      }
-                      return null
-                    })}
-                  </div>
-                </CardContent>
-              </Card>
 
               {/* Time Series Chart */}
               <ExpandableCard
@@ -882,12 +794,6 @@ export default function AnalyticsDashboardPage() {
               </ExpandableCard>
 
               {/* Trends Section */}
-              {/* Cumulative Financial Overview */}
-              <CumulativeFinancialOverview
-                dateRange={dateRange}
-                refreshKey={refreshKey}
-              />
-
               {/* Commitments vs Disbursements Chart */}
               <ExpandableCard
                 className="bg-white border-slate-200 lg:col-span-2"

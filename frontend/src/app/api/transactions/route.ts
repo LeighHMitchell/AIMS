@@ -119,6 +119,7 @@ export async function GET(request: Request) {
     // Filters
     const transactionType = searchParams.get('transactionType');
     const flowType = searchParams.get('flowType');
+    const financeType = searchParams.get('financeType');
     const status = searchParams.get('status');
     const dateFrom = searchParams.get('dateFrom');
     const dateTo = searchParams.get('dateTo');
@@ -153,11 +154,15 @@ export async function GET(request: Request) {
     if (transactionType && transactionType !== 'all') {
       query = query.eq('transaction_type', transactionType);
     }
-    
+
     if (flowType && flowType !== 'all') {
       query = query.eq('flow_type', flowType);
     }
-    
+
+    if (financeType && financeType !== 'all') {
+      query = query.eq('finance_type', financeType);
+    }
+
     if (status && status !== 'all') {
       query = query.eq('status', status);
     }

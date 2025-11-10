@@ -42,6 +42,7 @@ export default function TransactionsPage() {
   const [editingTransaction, setEditingTransaction] = useState<any>(null);
   const [viewMode, setViewMode] = useState<'table' | 'card'>('table');
   const [organizations, setOrganizations] = useState<any[]>([]);
+  const [financeTypes, setFinanceTypes] = useState<Array<{code: string, name: string}>>([]);
   const [activityPartnerId, setActivityPartnerId] = useState<string | null>(null);
   
   // Bulk selection state
@@ -85,9 +86,10 @@ export default function TransactionsPage() {
         setPageLimit(savedLimit);
       }
     }
-    
-    // Fetch organizations for filter dropdown
+
+    // Fetch organizations and finance types for filter dropdowns
     fetchOrganizations();
+    fetchFinanceTypes();
   }, []);
 
   const fetchOrganizations = async () => {
@@ -99,6 +101,18 @@ export default function TransactionsPage() {
       }
     } catch (error) {
       console.error('Error fetching organizations:', error);
+    }
+  };
+
+  const fetchFinanceTypes = async () => {
+    try {
+      const response = await fetch('/api/analytics/finance-types');
+      if (response.ok) {
+        const data = await response.json();
+        setFinanceTypes(data);
+      }
+    } catch (error) {
+      console.error('Error fetching finance types:', error);
     }
   };
 
@@ -630,6 +644,37 @@ export default function TransactionsPage() {
                   ))}
                 </SelectContent>
               </Select>
+              <Select value={filters.financeType} onValueChange={(value) => setFilters({...filters, financeType: value})}>
+                <SelectTrigger className="w-[200px]">
+                  <SelectValue placeholder="Finance Type">
+                    {filters.financeType === "all" ? "All Finance Types" :
+                     financeTypes.find(ft => ft.code === filters.financeType) ? (
+                       <span className="flex items-center gap-2">
+                         <code className="px-1.5 py-0.5 rounded bg-slate-100 text-slate-700 font-mono text-xs">
+                           {filters.financeType}
+                         </code>
+                         <span className="text-sm truncate">
+                           {financeTypes.find(ft => ft.code === filters.financeType)?.name}
+                         </span>
+                       </span>
+                     ) : "Finance Type"
+                    }
+                  </SelectValue>
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Finance Types</SelectItem>
+                  {financeTypes.map((ft) => (
+                    <SelectItem key={ft.code} value={ft.code}>
+                      <span className="flex items-center gap-2">
+                        <code className="px-1.5 py-0.5 rounded bg-slate-100 text-slate-700 font-mono text-xs">
+                          {ft.code}
+                        </code>
+                        <span className="text-sm">{ft.name}</span>
+                      </span>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
               <Select value={filters.transactionSource} onValueChange={(value) => setFilters({...filters, transactionSource: value})}>
                 <SelectTrigger className="w-[140px]">
                   <SelectValue placeholder="Source" />
@@ -697,7 +742,7 @@ export default function TransactionsPage() {
               </div>
             </div>
           </div>
-        ) : searchQuery || filters.transactionType !== "all" || filters.status !== "all" || filters.organization !== "all" ? (
+        ) : searchQuery || filters.transactionType !== "all" || filters.status !== "all" || filters.organization !== "all" || filters.financeType !== "all" ? (
           <div className="bg-white rounded-md shadow-sm border border-gray-200 p-8 text-center">
             <div className="text-slate-500">No matching transactions found</div>
           </div>

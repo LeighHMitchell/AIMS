@@ -5,6 +5,9 @@ import {
   ResponsiveContainer,
   LineChart,
   Line,
+  BarChart,
+  Bar,
+  Cell,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -13,18 +16,14 @@ import {
 } from 'recharts'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
-import { AlertCircle } from 'lucide-react'
+import { AlertCircle, Download, FileImage, LineChart as LineChartIcon, BarChart3, Table as TableIcon } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { Button } from '@/components/ui/button'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { exportToCSV } from '@/lib/csv-export'
 
-type TimePeriod = '1m' | '3m' | '6m' | '1y' | '5y' | 'all'
+type DataMode = 'cumulative' | 'periodic'
+type ChartType = 'line' | 'bar' | 'table' | 'total'
 
 interface CumulativeFinancialOverviewProps {
   dateRange?: {
@@ -47,7 +46,9 @@ export function CumulativeFinancialOverview({
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [cumulativeData, setCumulativeData] = useState<any[]>([])
-  const [timePeriod, setTimePeriod] = useState<TimePeriod>('all')
+  const [dataMode, setDataMode] = useState<DataMode>('cumulative')
+  const [chartType, setChartType] = useState<ChartType>('line')
+  const [hiddenSeries, setHiddenSeries] = useState<Set<string>>(new Set())
 
   useEffect(() => {
     const fetchData = async () => {
@@ -221,8 +222,8 @@ export function CumulativeFinancialOverview({
         let cumulativePlannedDisbursements = 0
         let cumulativePlannedBudgets = 0
 
-        // Aggregate into monthly buckets for cleaner visualization
-        const monthlyMap = new Map<string, any>()
+        // Aggregate into yearly buckets for cleaner visualization
+        const yearlyMap = new Map<string, any>()
 
         sortedPoints.forEach((point) => {
           cumulativeIncomingFunds += point.incomingFunds
@@ -232,16 +233,16 @@ export function CumulativeFinancialOverview({
           cumulativePlannedDisbursements += point.plannedDisbursements
           cumulativePlannedBudgets += point.plannedBudgets
 
-          // Use year-month as key for monthly aggregation
-          const monthKey = `${point.date.getFullYear()}-${String(point.date.getMonth() + 1).padStart(2, '0')}`
+          // Use year as key for yearly aggregation
+          const yearKey = `${point.date.getFullYear()}`
 
-          // Keep the latest cumulative values for each month (end of month snapshot)
-          monthlyMap.set(monthKey, {
+          // Keep the latest cumulative values for each year (end of year snapshot)
+          yearlyMap.set(yearKey, {
             date: point.date.toISOString(),
             timestamp: point.timestamp,
-            monthKey,
-            displayDate: point.date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
-            fullDate: point.date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' }),
+            yearKey,
+            displayDate: `${point.date.getFullYear()}`,
+            fullDate: `${point.date.getFullYear()}`,
             'Incoming Funds': cumulativeIncomingFunds,
             'Commitments': cumulativeCommitments,
             'Disbursements': cumulativeDisbursements,
@@ -251,9 +252,9 @@ export function CumulativeFinancialOverview({
           })
         })
 
-        const sortedData = Array.from(monthlyMap.values()).sort((a, b) => a.timestamp - b.timestamp)
+        const sortedData = Array.from(yearlyMap.values()).sort((a, b) => a.timestamp - b.timestamp)
 
-        // Fill in missing months to ensure continuous time axis
+        // Fill in missing years to ensure continuous time axis
         if (sortedData.length === 0) {
           setCumulativeData([])
           return
@@ -264,11 +265,11 @@ export function CumulativeFinancialOverview({
         const lastDate = new Date(sortedData[sortedData.length - 1].timestamp)
 
         // Create a map for quick lookup
-        const dataMap = new Map(sortedData.map(d => [d.monthKey, d]))
+        const dataMap = new Map(sortedData.map(d => [d.yearKey, d]))
 
-        // Iterate through all months from first to last
-        let currentDate = new Date(firstDate.getFullYear(), firstDate.getMonth(), 1)
-        const endDate = new Date(lastDate.getFullYear(), lastDate.getMonth(), 1)
+        // Iterate through all years from first to last
+        const startYear = firstDate.getFullYear()
+        const endYear = lastDate.getFullYear()
 
         let lastCumulativeValues = {
           incomingFunds: 0,
@@ -279,11 +280,11 @@ export function CumulativeFinancialOverview({
           plannedBudgets: 0
         }
 
-        while (currentDate <= endDate) {
-          const monthKey = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}`
+        for (let year = startYear; year <= endYear; year++) {
+          const yearKey = `${year}`
 
-          if (dataMap.has(monthKey)) {
-            const existingData = dataMap.get(monthKey)!
+          if (dataMap.has(yearKey)) {
+            const existingData = dataMap.get(yearKey)!
             filledData.push(existingData)
             // Update last known cumulative values
             lastCumulativeValues = {
@@ -295,13 +296,14 @@ export function CumulativeFinancialOverview({
               plannedBudgets: existingData['Planned Budgets']
             }
           } else {
-            // Fill missing month with last cumulative values (carry forward)
+            // Fill missing year with last cumulative values (carry forward)
+            const yearDate = new Date(year, 0, 1)
             filledData.push({
-              date: currentDate.toISOString(),
-              timestamp: currentDate.getTime(),
-              monthKey,
-              displayDate: currentDate.toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
-              fullDate: currentDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' }),
+              date: yearDate.toISOString(),
+              timestamp: yearDate.getTime(),
+              yearKey,
+              displayDate: `${year}`,
+              fullDate: `${year}`,
               'Incoming Funds': lastCumulativeValues.incomingFunds,
               'Commitments': lastCumulativeValues.commitments,
               'Disbursements': lastCumulativeValues.disbursements,
@@ -310,9 +312,6 @@ export function CumulativeFinancialOverview({
               'Planned Budgets': lastCumulativeValues.plannedBudgets
             })
           }
-
-          // Move to next month
-          currentDate.setMonth(currentDate.getMonth() + 1)
         }
 
         setCumulativeData(filledData)
@@ -327,85 +326,120 @@ export function CumulativeFinancialOverview({
     fetchData()
   }, [dateRange, filters, refreshKey])
 
-  // Calculate cutoff date based on time period
-  const getCutoffDate = (period: TimePeriod): Date | null => {
-    if (period === 'all') return null
-
-    const now = new Date()
-    const cutoff = new Date()
-
-    switch (period) {
-      case '1m':
-        cutoff.setMonth(now.getMonth() - 1)
-        break
-      case '3m':
-        cutoff.setMonth(now.getMonth() - 3)
-        break
-      case '6m':
-        cutoff.setMonth(now.getMonth() - 6)
-        break
-      case '1y':
-        cutoff.setFullYear(now.getFullYear() - 1)
-        break
-      case '5y':
-        cutoff.setFullYear(now.getFullYear() - 5)
-        break
-    }
-
-    return cutoff
-  }
-
-  // Filter data by time period
+  // No filtering - use all available data
   const filteredData = useMemo(() => {
-    const cutoff = getCutoffDate(timePeriod)
-    if (!cutoff) return cumulativeData
+    return cumulativeData
+  }, [cumulativeData])
 
-    return cumulativeData.filter(item => {
-      const itemDate = new Date(item.date)
-      return itemDate >= cutoff
+  // Calculate periodic (non-cumulative) data
+  const periodicData = useMemo(() => {
+    if (filteredData.length === 0) return []
+
+    return filteredData.map((item, index) => {
+      if (index === 0) {
+        // First period shows the actual values (not differences)
+        return {
+          ...item,
+          'Incoming Funds': item['Incoming Funds'],
+          'Commitments': item['Commitments'],
+          'Disbursements': item['Disbursements'],
+          'Expenditures': item['Expenditures'],
+          'Planned Disbursements': item['Planned Disbursements'],
+          'Planned Budgets': item['Planned Budgets']
+        }
+      }
+
+      const prevItem = filteredData[index - 1]
+      return {
+        ...item,
+        'Incoming Funds': item['Incoming Funds'] - prevItem['Incoming Funds'],
+        'Commitments': item['Commitments'] - prevItem['Commitments'],
+        'Disbursements': item['Disbursements'] - prevItem['Disbursements'],
+        'Expenditures': item['Expenditures'] - prevItem['Expenditures'],
+        'Planned Disbursements': item['Planned Disbursements'] - prevItem['Planned Disbursements'],
+        'Planned Budgets': item['Planned Budgets'] - prevItem['Planned Budgets']
+      }
     })
-  }, [cumulativeData, timePeriod])
+  }, [filteredData])
+
+  // Calculate totals
+  const totals = useMemo(() => {
+    if (filteredData.length === 0) return null
+
+    const lastItem = filteredData[filteredData.length - 1]
+    return {
+      'Incoming Funds': lastItem['Incoming Funds'],
+      'Commitments': lastItem['Commitments'],
+      'Disbursements': lastItem['Disbursements'],
+      'Expenditures': lastItem['Expenditures'],
+      'Planned Disbursements': lastItem['Planned Disbursements'],
+      'Planned Budgets': lastItem['Planned Budgets']
+    }
+  }, [filteredData])
+
+  // Get display data based on data mode
+  const displayData = useMemo(() => {
+    if (dataMode === 'periodic') return periodicData
+    return filteredData
+  }, [dataMode, filteredData, periodicData])
 
   // Determine which series have any non-zero data to show in legend
   const activeSeries = useMemo(() => {
-    if (filteredData.length === 0) return new Set()
+    if (displayData.length === 0) return new Set()
 
     const series = new Set<string>()
     const seriesKeys = ['Incoming Funds', 'Commitments', 'Disbursements', 'Expenditures', 'Planned Disbursements', 'Planned Budgets']
 
     seriesKeys.forEach(key => {
-      const hasData = filteredData.some(d => d[key] && d[key] > 0)
+      const hasData = displayData.some(d => d[key] && d[key] > 0)
       if (hasData) series.add(key)
     })
 
     return series
-  }, [filteredData])
+  }, [displayData])
 
-  // Calculate intelligent tick interval for x-axis
+  // Calculate intelligent tick interval for x-axis (for yearly data)
   const getXAxisInterval = (dataLength: number) => {
-    if (dataLength <= 12) return 0
-    if (dataLength <= 24) return 1
-    if (dataLength <= 36) return 2
-    if (dataLength <= 60) return 4
-    return Math.floor(dataLength / 12)
+    if (dataLength <= 10) return 0  // Show all years if 10 or fewer
+    if (dataLength <= 20) return 1  // Show every other year
+    if (dataLength <= 30) return 2  // Show every 3rd year
+    return Math.floor(dataLength / 10)  // Show ~10 ticks
   }
 
   const formatCurrency = (value: number) => {
-    if (value >= 1000000) {
-      return `$${(value / 1000000).toFixed(1)}m`
-    } else if (value >= 1000) {
-      return `$${(value / 1000).toFixed(1)}k`
+    const isNegative = value < 0
+    const absValue = Math.abs(value)
+
+    let formatted = ''
+    if (absValue >= 1000000000) {
+      formatted = `$${Math.round(absValue / 1000000000)}b`
+    } else if (absValue >= 1000000) {
+      formatted = `$${Math.round(absValue / 1000000)}m`
+    } else if (absValue >= 1000) {
+      formatted = `$${Math.round(absValue / 1000)}k`
+    } else {
+      formatted = `$${Math.round(absValue)}`
     }
-    return `$${value.toFixed(0)}`
+
+    return isNegative ? `-${formatted}` : formatted
   }
 
   const formatTooltipValue = (value: number) => {
-    if (value >= 1000000) {
-      return `$${(value / 1000000).toFixed(1)}m`
-    } else if (value >= 1000) {
-      return `$${(value / 1000).toFixed(1)}k`
+    const isNegative = value < 0
+    const absValue = Math.abs(value)
+
+    let formatted = ''
+    if (absValue >= 1000000000) {
+      formatted = `$${(absValue / 1000000000).toFixed(1)}b`
+    } else if (absValue >= 1000000) {
+      formatted = `$${(absValue / 1000000).toFixed(1)}m`
+    } else if (absValue >= 1000) {
+      formatted = `$${(absValue / 1000).toFixed(1)}k`
+    } else {
+      formatted = `$${absValue.toLocaleString()}`
     }
-    return `$${value.toLocaleString()}`
+
+    return isNegative ? `-${formatted}` : formatted
   }
 
   const CustomTooltip = ({ active, payload, label }: any) => {
@@ -451,34 +485,92 @@ export function CumulativeFinancialOverview({
     return null
   }
 
-  const TimePeriodFilter = () => {
-    const periods: { value: TimePeriod; label: string }[] = [
-      { value: '1m', label: '1 Month' },
-      { value: '3m', label: '3 Months' },
-      { value: '6m', label: '6 Months' },
-      { value: '1y', label: '1 Year' },
-      { value: '5y', label: '5 Years' },
-      { value: 'all', label: 'All Time' },
-    ]
+  // Handle legend click to toggle series visibility
+  const handleLegendClick = (e: any) => {
+    if (!e || !e.dataKey) return
 
-    const selectedPeriod = periods.find(p => p.value === timePeriod)
+    const dataKey = e.dataKey
+    const newHiddenSeries = new Set(hiddenSeries)
+
+    if (newHiddenSeries.has(dataKey)) {
+      newHiddenSeries.delete(dataKey)
+    } else {
+      newHiddenSeries.add(dataKey)
+    }
+
+    setHiddenSeries(newHiddenSeries)
+  }
+
+  // Custom legend formatter to show opacity for hidden series
+  const renderLegend = (props: any) => {
+    const { payload } = props
 
     return (
-      <Select value={timePeriod} onValueChange={(val) => setTimePeriod(val as TimePeriod)}>
-        <SelectTrigger className="h-8 px-3 border rounded-lg text-sm font-medium bg-white">
-          <SelectValue placeholder="Select period">
-            {selectedPeriod?.label || 'All Time'}
-          </SelectValue>
-        </SelectTrigger>
-        <SelectContent>
-          {periods.map(period => (
-            <SelectItem key={period.value} value={period.value} className="text-sm">
-              {period.label}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+      <ul className="flex flex-wrap justify-center gap-4 mt-4">
+        {payload.map((entry: any, index: number) => {
+          const isHidden = hiddenSeries.has(entry.dataKey)
+
+          return (
+            <li
+              key={`item-${index}`}
+              className="flex items-center gap-2 cursor-pointer select-none"
+              onClick={() => handleLegendClick({ dataKey: entry.dataKey })}
+              style={{ opacity: isHidden ? 0.3 : 1 }}
+            >
+              <span
+                className="w-3 h-3 rounded-sm"
+                style={{ backgroundColor: entry.color }}
+              />
+              <span className="text-sm text-slate-700">{entry.value}</span>
+            </li>
+          )
+        })}
+      </ul>
     )
+  }
+
+  // Export to CSV
+  const handleExportCSV = () => {
+    const dataToExport = displayData.map(d => ({
+      'Period': d.fullDate || d.displayDate,
+      'Incoming Funds': d['Incoming Funds']?.toFixed(2) || '0.00',
+      'Commitments': d['Commitments']?.toFixed(2) || '0.00',
+      'Disbursements': d['Disbursements']?.toFixed(2) || '0.00',
+      'Expenditures': d['Expenditures']?.toFixed(2) || '0.00',
+      'Planned Disbursements': d['Planned Disbursements']?.toFixed(2) || '0.00',
+      'Planned Budgets': d['Planned Budgets']?.toFixed(2) || '0.00'
+    }))
+
+    const csv = [
+      Object.keys(dataToExport[0] || {}).join(","),
+      ...dataToExport.map(row => Object.values(row).map(v => `"${v}"`).join(","))
+    ].join("\n")
+
+    exportToCSV(csv, `cumulative-financial-overview-${new Date().getTime()}.csv`)
+  }
+
+  // Export to JPG
+  const handleExportJPG = () => {
+    const chartElement = document.querySelector('#cumulative-financial-chart') as HTMLElement
+    if (!chartElement) return
+
+    import('html2canvas').then(({ default: html2canvas }) => {
+      html2canvas(chartElement, {
+        backgroundColor: '#ffffff',
+        scale: 2
+      }).then(canvas => {
+        canvas.toBlob((blob) => {
+          if (blob) {
+            const url = URL.createObjectURL(blob)
+            const link = document.createElement('a')
+            link.download = `cumulative-financial-overview-${new Date().getTime()}.jpg`
+            link.href = url
+            link.click()
+            URL.revokeObjectURL(url)
+          }
+        }, 'image/jpeg', 0.95)
+      })
+    })
   }
 
   if (loading) {
@@ -525,99 +617,355 @@ export function CumulativeFinancialOverview({
   return (
     <Card className="border-slate-200">
       <CardHeader>
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div className="flex flex-col gap-4">
+          {/* Title and Description */}
           <div>
             <CardTitle className="text-lg font-semibold text-slate-900">
-              Cumulative Financial Overview
+              Financial Overview
             </CardTitle>
             <CardDescription>
-              Cumulative view of all transaction types, planned disbursements, and planned budgets over time (aggregated from all activities)
+              {dataMode === 'cumulative' && chartType !== 'total' && 'Cumulative tracking of actual transactions, planned disbursements, and budgets across all activities over time'}
+              {dataMode === 'periodic' && chartType !== 'total' && 'Period-by-period changes in actual transactions, planned disbursements, and budgets across all activities'}
+              {chartType === 'total' && 'Total values of transactions, planned disbursements, and budgets aggregated across all periods and activities'}
             </CardDescription>
           </div>
-          <TimePeriodFilter />
+
+          {/* Controls Row */}
+          <div className="flex items-center gap-2 flex-wrap">
+            {/* Periodic/Cumulative Toggle */}
+            <div className="flex gap-1 border rounded-lg p-1 bg-white">
+              <Button
+                variant={dataMode === 'periodic' ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => setDataMode('periodic')}
+                className="h-8"
+              >
+                Periodic
+              </Button>
+              <Button
+                variant={dataMode === 'cumulative' ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => setDataMode('cumulative')}
+                className="h-8"
+              >
+                Cumulative
+              </Button>
+            </div>
+
+            {/* Chart Type Toggle */}
+            <div className="flex gap-1 border rounded-lg p-1 bg-white">
+              <Button
+                variant={chartType === 'line' ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => setChartType('line')}
+                className="h-8"
+              >
+                <LineChartIcon className="h-4 w-4 mr-1.5" />
+                Line
+              </Button>
+              <Button
+                variant={chartType === 'bar' ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => setChartType('bar')}
+                className="h-8"
+              >
+                <BarChart3 className="h-4 w-4 mr-1.5" />
+                Bar
+              </Button>
+              <Button
+                variant={chartType === 'table' ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => setChartType('table')}
+                className="h-8"
+              >
+                <TableIcon className="h-4 w-4 mr-1.5" />
+                Table
+              </Button>
+              <Button
+                variant={chartType === 'total' ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => setChartType('total')}
+                className="h-8"
+              >
+                <BarChart3 className="h-4 w-4 mr-1.5" />
+                Total
+              </Button>
+            </div>
+
+            {/* Export Buttons */}
+            <div className="flex gap-1">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleExportCSV}
+                className="h-8 px-2"
+                title="Export to CSV"
+              >
+                <Download className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleExportJPG}
+                className="h-8 px-2"
+                title="Export to JPG"
+                disabled={chartType === 'table'}
+              >
+                <FileImage className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
         </div>
       </CardHeader>
-      <CardContent>
-        {filteredData.length > 0 ? (
-          <ResponsiveContainer width="100%" height={500}>
-            <LineChart data={filteredData} margin={{ top: 20, right: 30, left: 20, bottom: 80 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e1" opacity={0.5} />
-              <XAxis
-                dataKey="displayDate"
-                stroke="#64748B"
-                fontSize={12}
-                angle={-45}
-                textAnchor="end"
-                height={80}
-                interval={getXAxisInterval(filteredData.length)}
-              />
-              <YAxis tickFormatter={formatCurrency} stroke="#64748B" fontSize={12} />
-              <Tooltip content={<CustomTooltip />} />
-              <Legend />
-              {activeSeries.has('Incoming Funds') && (
-                <Line
-                  type="monotone"
-                  dataKey="Incoming Funds"
-                  stroke="#1e40af"
-                  strokeWidth={2.5}
-                  dot={{ fill: '#1e40af', r: 3 }}
-                  animationDuration={300}
-                />
-              )}
-              {activeSeries.has('Commitments') && (
-                <Line
-                  type="monotone"
-                  dataKey="Commitments"
-                  stroke="#0f172a"
-                  strokeWidth={2.5}
-                  dot={{ fill: '#0f172a', r: 3 }}
-                  animationDuration={300}
-                />
-              )}
-              {activeSeries.has('Disbursements') && (
-                <Line
-                  type="monotone"
-                  dataKey="Disbursements"
-                  stroke="#475569"
-                  strokeWidth={2.5}
-                  dot={{ fill: '#475569', r: 3 }}
-                  animationDuration={300}
-                />
-              )}
-              {activeSeries.has('Expenditures') && (
-                <Line
-                  type="monotone"
-                  dataKey="Expenditures"
-                  stroke="#64748b"
-                  strokeWidth={2.5}
-                  dot={{ fill: '#64748b', r: 3 }}
-                  animationDuration={300}
-                />
-              )}
-              {activeSeries.has('Planned Disbursements') && (
-                <Line
-                  type="monotone"
-                  dataKey="Planned Disbursements"
-                  stroke="#1e3a8a"
-                  strokeWidth={2}
-                  strokeDasharray="5 5"
-                  dot={{ fill: '#1e3a8a', r: 3 }}
-                  animationDuration={300}
-                />
-              )}
-              {activeSeries.has('Planned Budgets') && (
-                <Line
-                  type="monotone"
-                  dataKey="Planned Budgets"
-                  stroke="#334155"
-                  strokeWidth={2}
-                  strokeDasharray="5 5"
-                  dot={{ fill: '#334155', r: 3 }}
-                  animationDuration={300}
-                />
-              )}
-            </LineChart>
-          </ResponsiveContainer>
+      <CardContent id="cumulative-financial-chart">
+        {displayData.length > 0 ? (
+          <>
+            {/* Table View */}
+            {chartType === 'table' && (
+              <div className="rounded-md border">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Period</TableHead>
+                      <TableHead className="text-right">Incoming Funds</TableHead>
+                      <TableHead className="text-right">Commitments</TableHead>
+                      <TableHead className="text-right">Disbursements</TableHead>
+                      <TableHead className="text-right">Expenditures</TableHead>
+                      <TableHead className="text-right">Planned Disbursements</TableHead>
+                      <TableHead className="text-right">Planned Budgets</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {displayData.map((item, index) => (
+                      <TableRow key={index}>
+                        <TableCell className="font-medium">{item.fullDate || item.displayDate}</TableCell>
+                        <TableCell className="text-right">{formatTooltipValue(item['Incoming Funds'] || 0)}</TableCell>
+                        <TableCell className="text-right">{formatTooltipValue(item['Commitments'] || 0)}</TableCell>
+                        <TableCell className="text-right">{formatTooltipValue(item['Disbursements'] || 0)}</TableCell>
+                        <TableCell className="text-right">{formatTooltipValue(item['Expenditures'] || 0)}</TableCell>
+                        <TableCell className="text-right">{formatTooltipValue(item['Planned Disbursements'] || 0)}</TableCell>
+                        <TableCell className="text-right">{formatTooltipValue(item['Planned Budgets'] || 0)}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
+
+            {/* Total View */}
+            {chartType === 'total' && totals && (
+              <ResponsiveContainer width="100%" height={600}>
+                <BarChart
+                  data={Object.entries(totals)
+                    .map(([key, value]) => ({
+                      name: key,
+                      value,
+                      fill: key === 'Incoming Funds' ? '#1e40af' :
+                            key === 'Commitments' ? '#0f172a' :
+                            key === 'Disbursements' ? '#475569' :
+                            key === 'Expenditures' ? '#64748b' :
+                            key === 'Planned Disbursements' ? '#1e3a8a' :
+                            key === 'Planned Budgets' ? '#334155' : '#1e40af'
+                    }))
+                    .sort((a, b) => b.value - a.value)
+                  }
+                  margin={{ top: 20, right: 30, left: 20, bottom: 60 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e1" opacity={0.5} />
+                  <XAxis
+                    dataKey="name"
+                    stroke="#64748B"
+                    fontSize={12}
+                    angle={0}
+                    textAnchor="middle"
+                    height={60}
+                    interval={0}
+                  />
+                  <YAxis tickFormatter={formatCurrency} stroke="#64748B" fontSize={12} />
+                  <Tooltip
+                    content={({ active, payload }) => {
+                      if (active && payload && payload.length) {
+                        return (
+                          <div className="bg-white border border-slate-200 rounded-lg shadow-lg px-3 py-2">
+                            <p className="font-semibold text-slate-900 text-sm">{payload[0].payload.name}</p>
+                            <p className="font-bold text-slate-900 text-lg">{formatTooltipValue(payload[0].value as number)}</p>
+                          </div>
+                        )
+                      }
+                      return null
+                    }}
+                  />
+                  <Bar dataKey="value">
+                    {Object.entries(totals).map(([key, value], index) => (
+                      <Cell
+                        key={`cell-${index}`}
+                        fill={
+                          key === 'Incoming Funds' ? '#1e40af' :
+                          key === 'Commitments' ? '#0f172a' :
+                          key === 'Disbursements' ? '#475569' :
+                          key === 'Expenditures' ? '#64748b' :
+                          key === 'Planned Disbursements' ? '#1e3a8a' :
+                          key === 'Planned Budgets' ? '#334155' : '#1e40af'
+                        }
+                      />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            )}
+
+            {/* Bar Chart View */}
+            {chartType === 'bar' && (
+              <ResponsiveContainer width="100%" height={600}>
+                <BarChart data={displayData} margin={{ top: 20, right: 30, left: 20, bottom: 60 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e1" opacity={0.5} />
+                  <XAxis
+                    dataKey="displayDate"
+                    stroke="#64748B"
+                    fontSize={12}
+                    angle={0}
+                    textAnchor="middle"
+                    height={60}
+                    interval={0}
+                  />
+                  <YAxis tickFormatter={formatCurrency} stroke="#64748B" fontSize={12} />
+                  <Tooltip content={<CustomTooltip />} />
+                  <Legend content={renderLegend} />
+                  {activeSeries.has('Incoming Funds') && (
+                    <Bar
+                      dataKey="Incoming Funds"
+                      fill={hiddenSeries.has('Incoming Funds') ? '#cbd5e1' : '#1e40af'}
+                      opacity={hiddenSeries.has('Incoming Funds') ? 0.3 : 1}
+                    />
+                  )}
+                  {activeSeries.has('Commitments') && (
+                    <Bar
+                      dataKey="Commitments"
+                      fill={hiddenSeries.has('Commitments') ? '#cbd5e1' : '#0f172a'}
+                      opacity={hiddenSeries.has('Commitments') ? 0.3 : 1}
+                    />
+                  )}
+                  {activeSeries.has('Disbursements') && (
+                    <Bar
+                      dataKey="Disbursements"
+                      fill={hiddenSeries.has('Disbursements') ? '#cbd5e1' : '#475569'}
+                      opacity={hiddenSeries.has('Disbursements') ? 0.3 : 1}
+                    />
+                  )}
+                  {activeSeries.has('Expenditures') && (
+                    <Bar
+                      dataKey="Expenditures"
+                      fill={hiddenSeries.has('Expenditures') ? '#cbd5e1' : '#64748b'}
+                      opacity={hiddenSeries.has('Expenditures') ? 0.3 : 1}
+                    />
+                  )}
+                  {activeSeries.has('Planned Disbursements') && (
+                    <Bar
+                      dataKey="Planned Disbursements"
+                      fill={hiddenSeries.has('Planned Disbursements') ? '#cbd5e1' : '#1e3a8a'}
+                      opacity={hiddenSeries.has('Planned Disbursements') ? 0.3 : 1}
+                    />
+                  )}
+                  {activeSeries.has('Planned Budgets') && (
+                    <Bar
+                      dataKey="Planned Budgets"
+                      fill={hiddenSeries.has('Planned Budgets') ? '#cbd5e1' : '#334155'}
+                      opacity={hiddenSeries.has('Planned Budgets') ? 0.3 : 1}
+                    />
+                  )}
+                </BarChart>
+              </ResponsiveContainer>
+            )}
+
+            {/* Line Chart View */}
+            {chartType === 'line' && (
+              <ResponsiveContainer width="100%" height={600}>
+                <LineChart data={displayData} margin={{ top: 20, right: 30, left: 20, bottom: 60 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e1" opacity={0.5} />
+                  <XAxis
+                    dataKey="displayDate"
+                    stroke="#64748B"
+                    fontSize={12}
+                    angle={0}
+                    textAnchor="middle"
+                    height={60}
+                    interval={0}
+                  />
+                  <YAxis tickFormatter={formatCurrency} stroke="#64748B" fontSize={12} />
+                  <Tooltip content={<CustomTooltip />} />
+                  <Legend content={renderLegend} />
+                  {activeSeries.has('Incoming Funds') && (
+                    <Line
+                      type="monotone"
+                      dataKey="Incoming Funds"
+                      stroke={hiddenSeries.has('Incoming Funds') ? '#cbd5e1' : '#1e40af'}
+                      strokeWidth={hiddenSeries.has('Incoming Funds') ? 1 : 2.5}
+                      dot={{ fill: hiddenSeries.has('Incoming Funds') ? '#cbd5e1' : '#1e40af', r: 3 }}
+                      animationDuration={300}
+                      opacity={hiddenSeries.has('Incoming Funds') ? 0.3 : 1}
+                    />
+                  )}
+                  {activeSeries.has('Commitments') && (
+                    <Line
+                      type="monotone"
+                      dataKey="Commitments"
+                      stroke={hiddenSeries.has('Commitments') ? '#cbd5e1' : '#0f172a'}
+                      strokeWidth={hiddenSeries.has('Commitments') ? 1 : 2.5}
+                      dot={{ fill: hiddenSeries.has('Commitments') ? '#cbd5e1' : '#0f172a', r: 3 }}
+                      animationDuration={300}
+                      opacity={hiddenSeries.has('Commitments') ? 0.3 : 1}
+                    />
+                  )}
+                  {activeSeries.has('Disbursements') && (
+                    <Line
+                      type="monotone"
+                      dataKey="Disbursements"
+                      stroke={hiddenSeries.has('Disbursements') ? '#cbd5e1' : '#475569'}
+                      strokeWidth={hiddenSeries.has('Disbursements') ? 1 : 2.5}
+                      dot={{ fill: hiddenSeries.has('Disbursements') ? '#cbd5e1' : '#475569', r: 3 }}
+                      animationDuration={300}
+                      opacity={hiddenSeries.has('Disbursements') ? 0.3 : 1}
+                    />
+                  )}
+                  {activeSeries.has('Expenditures') && (
+                    <Line
+                      type="monotone"
+                      dataKey="Expenditures"
+                      stroke={hiddenSeries.has('Expenditures') ? '#cbd5e1' : '#64748b'}
+                      strokeWidth={hiddenSeries.has('Expenditures') ? 1 : 2.5}
+                      dot={{ fill: hiddenSeries.has('Expenditures') ? '#cbd5e1' : '#64748b', r: 3 }}
+                      animationDuration={300}
+                      opacity={hiddenSeries.has('Expenditures') ? 0.3 : 1}
+                    />
+                  )}
+                  {activeSeries.has('Planned Disbursements') && (
+                    <Line
+                      type="monotone"
+                      dataKey="Planned Disbursements"
+                      stroke={hiddenSeries.has('Planned Disbursements') ? '#cbd5e1' : '#1e3a8a'}
+                      strokeWidth={hiddenSeries.has('Planned Disbursements') ? 1 : 2}
+                      strokeDasharray="5 5"
+                      dot={{ fill: hiddenSeries.has('Planned Disbursements') ? '#cbd5e1' : '#1e3a8a', r: 3 }}
+                      animationDuration={300}
+                      opacity={hiddenSeries.has('Planned Disbursements') ? 0.3 : 1}
+                    />
+                  )}
+                  {activeSeries.has('Planned Budgets') && (
+                    <Line
+                      type="monotone"
+                      dataKey="Planned Budgets"
+                      stroke={hiddenSeries.has('Planned Budgets') ? '#cbd5e1' : '#334155'}
+                      strokeWidth={hiddenSeries.has('Planned Budgets') ? 1 : 2}
+                      strokeDasharray="5 5"
+                      dot={{ fill: hiddenSeries.has('Planned Budgets') ? '#cbd5e1' : '#334155', r: 3 }}
+                      animationDuration={300}
+                      opacity={hiddenSeries.has('Planned Budgets') ? 0.3 : 1}
+                    />
+                  )}
+                </LineChart>
+              </ResponsiveContainer>
+            )}
+          </>
         ) : (
           <div className="flex items-center justify-center h-96 text-slate-400">
             <div className="text-center">

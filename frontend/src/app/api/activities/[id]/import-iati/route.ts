@@ -998,18 +998,170 @@ export async function POST(
     // Handle planned disbursements if selected
     if (fields.planned_disbursements && iati_data.plannedDisbursements) {
       console.log('[IATI Import] Updating planned disbursements');
-      
+
       // Clear existing planned disbursements
       await supabase
         .from('planned_disbursements')
         .delete()
         .eq('activity_id', activityId);
-      
+
       // Insert new planned disbursements with IATI-compliant currency resolution
       if (Array.isArray(iati_data.plannedDisbursements) && iati_data.plannedDisbursements.length > 0) {
+        // First, collect all unique organizations from planned disbursements and create/link them
+        const pdOrgRefs = new Set<string>();
+        const pdOrgData = new Map<string, { name: string, ref: string }>();
+
+        iati_data.plannedDisbursements.forEach((pd: any, index: number) => {
+          console.log(`[IATI Import] Processing planned disbursement ${index + 1}:`, {
+            providerOrg: pd.providerOrg,
+            receiverOrg: pd.receiverOrg
+          });
+
+          if (pd.providerOrg?.ref) {
+            pdOrgRefs.add(pd.providerOrg.ref);
+            pdOrgData.set(pd.providerOrg.ref, {
+              name: pd.providerOrg.name || pd.providerOrg.ref,
+              ref: pd.providerOrg.ref
+            });
+          } else if (pd.providerOrg?.name) {
+            // Use name as fallback if no ref provided
+            const cleanName = pd.providerOrg.name.trim();
+            pdOrgData.set(cleanName, {
+              name: cleanName,
+              ref: cleanName // Use name as ref
+            });
+            console.log(`[IATI Import] Provider org (name-only): "${cleanName}" (length: ${cleanName.length})`);
+          }
+
+          if (pd.receiverOrg?.ref) {
+            pdOrgRefs.add(pd.receiverOrg.ref);
+            pdOrgData.set(pd.receiverOrg.ref, {
+              name: pd.receiverOrg.name || pd.receiverOrg.ref,
+              ref: pd.receiverOrg.ref
+            });
+          } else if (pd.receiverOrg?.name) {
+            // Use name as fallback if no ref provided
+            const cleanName = pd.receiverOrg.name.trim();
+            pdOrgData.set(cleanName, {
+              name: cleanName,
+              ref: cleanName // Use name as ref
+            });
+            console.log(`[IATI Import] Receiver org (name-only): "${cleanName}" (length: ${cleanName.length})`);
+          }
+        });
+
+        // Build org name map for planned disbursements
+        const pdOrgNameMap = new Map<string, string>();
+
+        if (pdOrgRefs.size > 0 || pdOrgData.size > 0) {
+          // Check which organizations already exist
+          // Separate refs and names for proper querying
+          const refsToLookup = Array.from(pdOrgRefs);
+          const namesToLookup = Array.from(pdOrgData.keys()).filter(key => !pdOrgRefs.has(key));
+
+          console.log('[IATI Import] Looking up planned disbursement organizations:', {
+            refs: refsToLookup,
+            names: namesToLookup,
+            totalToLookup: refsToLookup.length + namesToLookup.length
+          });
+
+          let existingPDOrgs: any[] = [];
+
+          if (refsToLookup.length > 0 || namesToLookup.length > 0) {
+            // Query by refs
+            if (refsToLookup.length > 0) {
+              const { data: orgsByRef } = await supabase
+                .from('organizations')
+                .select('id, name, iati_org_id, acronym')
+                .in('iati_org_id', refsToLookup);
+
+              if (orgsByRef) {
+                existingPDOrgs.push(...orgsByRef);
+              }
+            }
+
+            // Query by names
+            if (namesToLookup.length > 0) {
+              console.log('[IATI Import] Querying organizations by names:', namesToLookup);
+
+              const { data: orgsByName, error: nameQueryError } = await supabase
+                .from('organizations')
+                .select('id, name, iati_org_id, acronym')
+                .in('name', namesToLookup);
+
+              console.log('[IATI Import] Query by name result:', {
+                found: orgsByName?.length || 0,
+                orgs: orgsByName,
+                error: nameQueryError
+              });
+
+              if (orgsByName) {
+                existingPDOrgs.push(...orgsByName);
+              }
+            }
+
+            console.log('[IATI Import] Found existing organizations for planned disbursements:', {
+              count: existingPDOrgs.length,
+              orgs: existingPDOrgs.map(o => ({ name: o.name, acronym: o.acronym, iati_org_id: o.iati_org_id }))
+            });
+
+            const existingPDOrgRefs = new Set((existingPDOrgs || []).map((o: any) => o.iati_org_id).filter(Boolean));
+            const existingPDOrgNames = new Set((existingPDOrgs || []).map((o: any) => o.name).filter(Boolean));
+
+            // Update pdOrgNameMap with existing organizations
+            (existingPDOrgs || []).forEach((org: any) => {
+              if (org.iati_org_id) {
+                pdOrgNameMap.set(org.iati_org_id, org.id);
+              }
+              if (org.name) {
+                pdOrgNameMap.set(org.name, org.id);
+              }
+            });
+
+            // Determine which organizations need to be created
+            const pdOrgsToCreate = Array.from(pdOrgData.entries())
+              .filter(([key, data]) => {
+                return !existingPDOrgRefs.has(data.ref) && !existingPDOrgNames.has(data.name);
+              })
+              .map(([key, data]) => ({
+                name: data.name,
+                iati_org_id: data.ref !== data.name ? data.ref : null, // Only set iati_org_id if we have a proper ref
+                organization_type: 'other',
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+              }));
+
+            // Create missing organizations for planned disbursements
+            if (pdOrgsToCreate.length > 0) {
+              console.log(`[IATI Import] Creating ${pdOrgsToCreate.length} missing organizations for planned disbursements:`, pdOrgsToCreate);
+
+              const { data: newPDOrgs, error: createPDOrgsError } = await supabase
+                .from('organizations')
+                .insert(pdOrgsToCreate)
+                .select('id, name, iati_org_id');
+
+              if (createPDOrgsError) {
+                console.error('[IATI Import] Error creating organizations for planned disbursements:', createPDOrgsError);
+              } else {
+                console.log(`[IATI Import] Successfully created ${newPDOrgs?.length || 0} organizations for planned disbursements`);
+
+                // Update pdOrgNameMap with newly created organizations
+                (newPDOrgs || []).forEach((org: any) => {
+                  if (org.iati_org_id) {
+                    pdOrgNameMap.set(org.iati_org_id, org.id);
+                  }
+                  if (org.name) {
+                    pdOrgNameMap.set(org.name, org.id);
+                  }
+                });
+              }
+            }
+          }
+        }
+
         const validPDs: any[] = [];
         const skippedPDs: any[] = [];
-        
+
         for (const pd of iati_data.plannedDisbursements) {
           // Resolve currency following IATI Standard §4.2
           const resolvedCurrency = resolveCurrency(
@@ -1017,7 +1169,7 @@ export async function POST(
             currentActivity?.default_currency,
             organizationDefaultCurrency
           );
-          
+
           if (!resolvedCurrency) {
             // Skip this planned disbursement and log validation error
             skippedPDs.push({
@@ -1033,7 +1185,31 @@ export async function POST(
             });
             continue;
           }
-          
+
+          // Look up organization IDs using ref or name as fallback
+          const providerOrgId = pd.providerOrg?.ref ?
+            pdOrgNameMap.get(pd.providerOrg.ref) :
+            (pd.providerOrg?.name ? pdOrgNameMap.get(pd.providerOrg.name?.trim()) : null);
+
+          const receiverOrgId = pd.receiverOrg?.ref ?
+            pdOrgNameMap.get(pd.receiverOrg.ref) :
+            (pd.receiverOrg?.name ? pdOrgNameMap.get(pd.receiverOrg.name?.trim()) : null);
+
+          console.log('[IATI Import] Linking planned disbursement organizations:', {
+            provider: {
+              name: pd.providerOrg?.name,
+              ref: pd.providerOrg?.ref,
+              foundId: providerOrgId,
+              mapHasName: pd.providerOrg?.name ? pdOrgNameMap.has(pd.providerOrg.name.trim()) : false
+            },
+            receiver: {
+              name: pd.receiverOrg?.name,
+              ref: pd.receiverOrg?.ref,
+              foundId: receiverOrgId,
+              mapHasName: pd.receiverOrg?.name ? pdOrgNameMap.has(pd.receiverOrg.name.trim()) : false
+            }
+          });
+
           validPDs.push({
             activity_id: activityId,
             disbursement_type: pd.type || '1',
@@ -1042,6 +1218,10 @@ export async function POST(
             amount: pd.value,
             currency: resolvedCurrency,
             value_date: pd.valueDate,
+            // Organization FK references (new)
+            provider_org_id: providerOrgId || null,
+            receiver_org_id: receiverOrgId || null,
+            // Organization text references (legacy, for backwards compatibility)
             provider_org_ref: pd.providerOrg?.ref,
             provider_org_name: pd.providerOrg?.name,
             provider_org_activity_id: pd.providerOrg?.providerActivityId,
@@ -1050,13 +1230,13 @@ export async function POST(
             receiver_org_activity_id: pd.receiverOrg?.receiverActivityId
           });
         }
-        
+
         // Insert only valid planned disbursements
         if (validPDs.length > 0) {
           const { error: pdError } = await supabase
             .from('planned_disbursements')
             .insert(validPDs);
-          
+
           if (!pdError) {
             updatedFields.push('planned_disbursements');
             console.log(`[IATI Import] ✓ Imported ${validPDs.length} planned disbursements`);
@@ -1064,7 +1244,7 @@ export async function POST(
             console.error('[IATI Import] Error inserting planned disbursements:', pdError);
           }
         }
-        
+
         // Add skipped planned disbursements to warnings
         if (skippedPDs.length > 0) {
           importWarnings.push({

@@ -6094,47 +6094,70 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
           // Build organization lookup map for planned disbursements
           console.log('[XML Import] Building organization lookup map for planned disbursements...');
           const pdOrgRefToIdMap = new Map<string, string>();
+          const pdOrgNameToIdMap = new Map<string, string>(); // NEW: Track by name too
           let pdOrgsCreated = 0;
           let pdOrgsLinked = 0;
-          
-          // Collect all unique org refs from planned disbursements
+
+          // Collect all unique org refs AND names from planned disbursements
           const pdUniqueOrgRefs = new Set<string>();
+          const pdUniqueOrgNames = new Set<string>(); // NEW: Track name-only orgs
           const pdOrgRefToNameMap = new Map<string, string>();
           updateData.importedPlannedDisbursements.forEach((pd: any) => {
             if (pd.providerOrg?.ref) {
               pdUniqueOrgRefs.add(pd.providerOrg.ref);
               pdOrgRefToNameMap.set(pd.providerOrg.ref, pd.providerOrg.name || pd.providerOrg.ref);
+            } else if (pd.providerOrg?.name) {
+              // NEW: Track name-only orgs
+              pdUniqueOrgNames.add(pd.providerOrg.name);
             }
+
             if (pd.receiverOrg?.ref) {
               pdUniqueOrgRefs.add(pd.receiverOrg.ref);
               pdOrgRefToNameMap.set(pd.receiverOrg.ref, pd.receiverOrg.name || pd.receiverOrg.ref);
+            } else if (pd.receiverOrg?.name) {
+              // NEW: Track name-only orgs
+              pdUniqueOrgNames.add(pd.receiverOrg.name);
             }
           });
-          
+
+          console.log(`[IATI Import] Building organization lookup map for planned disbursements...`);
+          console.log(`[IATI Import] Found ${pdUniqueOrgRefs.size} orgs with refs, ${pdUniqueOrgNames.size} orgs name-only`);
+
           // Fetch and create organizations if needed
-          if (pdUniqueOrgRefs.size > 0) {
+          if (pdUniqueOrgRefs.size > 0 || pdUniqueOrgNames.size > 0) {
             try {
               const orgsResponse = await fetch('/api/organizations');
               if (orgsResponse.ok) {
                 const allOrgs = await orgsResponse.json();
-                console.log(`[XML Import] Fetched ${allOrgs.length} organizations for planned disbursements`);
-                
+                console.log(`[IATI Import] Fetched ${allOrgs.length} organizations for planned disbursements`);
+
                 // Build lookup map for existing organizations
                 const existingOrgRefs = new Set<string>();
+                const existingOrgNames = new Set<string>(); // NEW
+
                 allOrgs.forEach((org: any) => {
+                  // Link by IATI ref
                   if (org.iati_org_id && pdUniqueOrgRefs.has(org.iati_org_id)) {
                     pdOrgRefToIdMap.set(org.iati_org_id, org.id);
                     existingOrgRefs.add(org.iati_org_id);
                     pdOrgsLinked++;
-                    console.log(`[XML Import] Linked existing org for PD: "${org.iati_org_id}" -> "${org.name}"`);
+                    console.log(`[IATI Import] Linked existing org for PD: "${org.iati_org_id}" -> "${org.name}"`);
+                  }
+
+                  // NEW: Link by name (for name-only orgs)
+                  if (org.name && pdUniqueOrgNames.has(org.name)) {
+                    pdOrgNameToIdMap.set(org.name, org.id);
+                    existingOrgNames.add(org.name);
+                    pdOrgsLinked++;
+                    console.log(`[IATI Import] Linked existing org by name for PD: "${org.name}" (${org.acronym || 'no acronym'})`);
                   }
                 });
                 
-                // Create missing organizations
+                // Create missing organizations (by ref)
                 const missingOrgRefs = Array.from(pdUniqueOrgRefs).filter(ref => !existingOrgRefs.has(ref));
                 if (missingOrgRefs.length > 0) {
-                  console.log(`[XML Import] Creating ${missingOrgRefs.length} missing organizations for planned disbursements...`);
-                  
+                  console.log(`[IATI Import] Creating ${missingOrgRefs.length} missing organizations (with refs) for planned disbursements...`);
+
                   for (const ref of missingOrgRefs) {
                     const orgName = pdOrgRefToNameMap.get(ref) || ref;
                     try {
@@ -6147,15 +6170,44 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
                           organization_type: 'other'
                         })
                       });
-                      
+
                       if (createResponse.ok) {
                         const newOrg = await createResponse.json();
                         pdOrgRefToIdMap.set(ref, newOrg.id);
                         pdOrgsCreated++;
-                        console.log(`[XML Import] Created new org for PD: "${ref}" -> "${orgName}"`);
+                        console.log(`[IATI Import] Created new org for PD: "${ref}" -> "${orgName}"`);
                       }
                     } catch (createError) {
-                      console.error(`[XML Import] Error creating org ${ref}:`, createError);
+                      console.error(`[IATI Import] Error creating org ${ref}:`, createError);
+                    }
+                  }
+                }
+
+                // NEW: Create missing name-only organizations
+                const missingOrgNames = Array.from(pdUniqueOrgNames).filter(name => !existingOrgNames.has(name));
+                if (missingOrgNames.length > 0) {
+                  console.log(`[IATI Import] Creating ${missingOrgNames.length} missing name-only organizations for planned disbursements...`);
+
+                  for (const name of missingOrgNames) {
+                    try {
+                      const createResponse = await fetch('/api/organizations', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                          name: name,
+                          iati_org_id: null, // No IATI ref for name-only orgs
+                          organization_type: 'other'
+                        })
+                      });
+
+                      if (createResponse.ok) {
+                        const newOrg = await createResponse.json();
+                        pdOrgNameToIdMap.set(name, newOrg.id);
+                        pdOrgsCreated++;
+                        console.log(`[IATI Import] Created new name-only org for PD: "${name}"`);
+                      }
+                    } catch (createError) {
+                      console.error(`[IATI Import] Error creating name-only org ${name}:`, createError);
                     }
                   }
                 }
@@ -6179,13 +6231,19 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
 
           for (const disbursement of updateData.importedPlannedDisbursements) {
             try {
-              // Look up organization IDs
-              const providerOrgId = disbursement.providerOrg?.ref 
-                ? pdOrgRefToIdMap.get(disbursement.providerOrg.ref) 
-                : undefined;
-              const receiverOrgId = disbursement.receiverOrg?.ref 
-                ? pdOrgRefToIdMap.get(disbursement.receiverOrg.ref) 
-                : undefined;
+              // Look up organization IDs (by ref OR by name)
+              const providerOrgId = disbursement.providerOrg?.ref
+                ? pdOrgRefToIdMap.get(disbursement.providerOrg.ref)
+                : (disbursement.providerOrg?.name ? pdOrgNameToIdMap.get(disbursement.providerOrg.name) : undefined);
+
+              const receiverOrgId = disbursement.receiverOrg?.ref
+                ? pdOrgRefToIdMap.get(disbursement.receiverOrg.ref)
+                : (disbursement.receiverOrg?.name ? pdOrgNameToIdMap.get(disbursement.receiverOrg.name) : undefined);
+
+              console.log(`[IATI Import] Inserting PD with orgs:`, {
+                provider: { name: disbursement.providerOrg?.name, ref: disbursement.providerOrg?.ref, id: providerOrgId },
+                receiver: { name: disbursement.receiverOrg?.name, ref: disbursement.receiverOrg?.ref, id: receiverOrgId }
+              });
               
               const disbursementData = {
                 amount: disbursement.value,

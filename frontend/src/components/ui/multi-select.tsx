@@ -31,6 +31,10 @@ interface MultiSelectProps {
   placeholder?: string
   className?: string
   disabled?: boolean
+  renderOption?: (option: MultiSelectOption) => React.ReactNode
+  showSelectAll?: boolean
+  onClear?: () => void
+  selectedLabel?: string
 }
 
 export function MultiSelect({
@@ -40,6 +44,10 @@ export function MultiSelect({
   placeholder = "Select items...",
   className,
   disabled = false,
+  renderOption,
+  showSelectAll = false,
+  onClear,
+  selectedLabel,
 }: MultiSelectProps) {
   const [open, setOpen] = React.useState(false)
 
@@ -48,10 +56,25 @@ export function MultiSelect({
   }
 
   const handleSelect = (item: string) => {
+    if (item === "SELECT_ALL") {
+      // Select all options
+      onChange(options.map(opt => opt.value))
+      return
+    }
+
     if (selected.includes(item)) {
       handleUnselect(item)
     } else {
       onChange([...selected, item])
+    }
+  }
+
+  const handleClear = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    if (onClear) {
+      onClear()
+    } else {
+      onChange([])
     }
   }
 
@@ -80,55 +103,44 @@ export function MultiSelect({
           className={cn("w-full justify-between", className)}
           disabled={disabled}
         >
-          <div className="flex gap-1 flex-wrap">
-            {selected.length === 0 && placeholder}
-            {selected.slice(0, 2).map((item) => {
-              const option = options.find((opt) => opt.value === item)
-              return (
-                <Badge
-                  variant="secondary"
-                  key={item}
-                  className="mr-1 mb-1"
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    handleUnselect(item)
-                  }}
-                >
-                  {option?.label}
-                  <button
-                    className="ml-1 ring-offset-background rounded-full outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") {
-                        handleUnselect(item)
-                      }
-                    }}
-                    onMouseDown={(e) => {
-                      e.preventDefault()
-                      e.stopPropagation()
-                    }}
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      handleUnselect(item)
-                    }}
-                  >
-                    <X className="h-3 w-3 text-muted-foreground hover:text-foreground" />
-                  </button>
-                </Badge>
-              )
-            })}
-            {selected.length > 2 && (
-              <Badge variant="secondary" className="mr-1 mb-1">
-                +{selected.length - 2} more
-              </Badge>
+          <div className="flex gap-1 flex-wrap truncate">
+            {selected.length === 0 ? (
+              placeholder
+            ) : (
+              <span className="text-sm text-muted-foreground">
+                {selected.length} {selectedLabel || 'selected'}
+              </span>
             )}
           </div>
-          <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50" />
+          <div className="flex items-center gap-1">
+            {selected.length > 0 && (
+              <X
+                className="h-4 w-4 shrink-0 opacity-50 hover:opacity-100 cursor-pointer"
+                onClick={handleClear}
+              />
+            )}
+            <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50" />
+          </div>
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-full p-0" align="start">
         <Command>
-          <CommandInput placeholder="Search..." autoFocus />
-          <CommandEmpty>No items found.</CommandEmpty>
+          {showSelectAll && (
+            <CommandGroup>
+              <CommandItem
+                onSelect={() => handleSelect("SELECT_ALL")}
+                className="font-semibold"
+              >
+                <Check
+                  className={cn(
+                    "mr-2 h-4 w-4",
+                    selected.length === options.length ? "opacity-100" : "opacity-0"
+                  )}
+                />
+                Select All
+              </CommandItem>
+            </CommandGroup>
+          )}
           {Object.entries(groupedOptions).map(([groupName, groupOptions]) => (
             <CommandGroup key={groupName} heading={groupName}>
               {groupOptions.map((option) => (
@@ -142,7 +154,7 @@ export function MultiSelect({
                       selected.includes(option.value) ? "opacity-100" : "opacity-0"
                     )}
                   />
-                  {option.label}
+                  {renderOption ? renderOption(option) : option.label}
                 </CommandItem>
               ))}
             </CommandGroup>
