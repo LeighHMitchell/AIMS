@@ -22,6 +22,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { CountryCombobox } from '@/components/ui/country-combobox';
 import { toast } from 'sonner';
 import { supabase } from '@/lib/supabase';
+import { getOrCreateOrganization } from '@/lib/organization-helpers';
 import { IATIXMLParser, validateIATIXML, ActivityMetadata } from '@/lib/xml-parser';
 import { checkExistingActivities, ExistingActivityInfo } from '@/lib/iati-activity-lookup';
 import { MultiActivityPreview } from '@/components/activities/MultiActivityPreview';
@@ -4338,8 +4339,20 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
       const response = await fetch(`/api/iati/activity/${encodeURIComponent(activity.iatiIdentifier)}`);
       
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Failed to fetch activity XML');
+        let errorMessage = 'Failed to fetch activity XML';
+        try {
+          const error = await response.json();
+          errorMessage = error.error || errorMessage;
+        } catch (parseError) {
+          // Response isn't JSON, try text
+          try {
+            const text = await response.text();
+            errorMessage = text || `Server error: ${response.status} ${response.statusText}`;
+          } catch {
+            errorMessage = `Server error: ${response.status} ${response.statusText}`;
+          }
+        }
+        throw new Error(errorMessage);
       }
       
       const data = await response.json();
@@ -7387,134 +7400,17 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
               const roleType = roleMap[orgData.role] || 'implementing';
               console.log('[XML Import] Mapped role', orgData.role, 'to role_type:', roleType);
               
-              // Try to find organization in database by IATI ref
-              let organizationId = null;
+              // Use shared helper to find or create organization
+              const organizationId = await getOrCreateOrganization(supabase, {
+                ref: orgData.ref,
+                name: orgData.narrative,
+                type: orgData.type
+              });
               
-              if (orgData.ref) {
-                console.log(`[XML Import] Searching for organization with IATI ref: "${orgData.ref}"`);
-                
-                // Fetch ALL organizations and filter client-side for exact match
-                // This is a workaround until the API properly supports iati_org_id filtering
-                const searchResponse = await fetch(`/api/organizations`);
-                console.log(`[XML Import] Organizations API response status:`, searchResponse.status);
-                
-                if (searchResponse.ok) {
-                  const allOrgs = await searchResponse.json();
-                  console.log(`[XML Import] Fetched ${allOrgs.length} total organizations`);
-                  
-                  // Filter client-side for EXACT IATI ID match
-                  const matchedOrg = allOrgs.find((o: any) => 
-                    o.iati_org_id && o.iati_org_id.trim() === orgData.ref.trim()
-                  );
-                  
-                  if (matchedOrg) {
-                    organizationId = matchedOrg.id;
-                    console.log(`[XML Import] ⚠️ Found exact IATI ref match:`, {
-                      ref: orgData.ref,
-                      matched: matchedOrg.name,
-                      matchedIatiId: matchedOrg.iati_org_id,
-                      id: matchedOrg.id,
-                      logo: matchedOrg.logo ? 'HAS LOGO' : 'NO LOGO'
-                    });
-                  } else {
-                    console.log(`[XML Import] ✓ No organization found with exact IATI ref "${orgData.ref}"`);
-                    console.log(`[XML Import] Checked ${allOrgs.length} organizations for match`);
-                  }
-                } else {
-                  console.error(`[XML Import] Organizations API failed:`, searchResponse.status);
-                }
-              }
-
-              // If not found by ref, try by name (EXACT match only)
-              if (!organizationId && orgData.narrative) {
-                console.log(`[XML Import] No IATI ref match. Searching by name: "${orgData.narrative}"`);
-                
-                // Fetch ALL organizations (we already have them from the previous call if ref was checked)
-                // Use cached result if available
-                const searchResponse = await fetch(`/api/organizations`);
-                
-                if (searchResponse.ok) {
-                  const allOrgs = await searchResponse.json();
-                  
-                  // Find EXACT match (case-insensitive)
-                  const exactMatch = allOrgs.find((org: any) => 
-                    (org.name?.toLowerCase().trim() === orgData.narrative?.toLowerCase().trim()) ||
-                    (org.acronym?.toLowerCase().trim() === orgData.narrative?.toLowerCase().trim())
-                  );
-                  
-                  if (exactMatch) {
-                    organizationId = exactMatch.id;
-                    console.log(`[XML Import] ⚠️ Matched organization by exact name "${orgData.narrative}":`, {
-                      matched: exactMatch.name,
-                      id: exactMatch.id,
-                      logo: exactMatch.logo ? 'HAS LOGO' : 'NO LOGO'
-                    });
-                  } else {
-                    console.log(`[XML Import] ✓ No exact name match found for "${orgData.narrative}". Checked ${allOrgs.length} organizations.`);
-                  }
-                }
-              }
-
-              // If still not found, create a new organization
               if (!organizationId) {
-                console.log(`[XML Import] Creating new organization: ${orgData.narrative || orgData.ref}`);
-                console.log(`[XML Import] New org data:`, {
-                  name: orgData.narrative || orgData.ref || 'Imported Organization',
-                  iati_org_id: orgData.ref || null,
-                  Organisation_Type_Code: orgData.type || null
-                });
-                
-                const createResponse = await fetch('/api/organizations', {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({
-                    name: orgData.narrative || orgData.ref || 'Imported Organization',
-                    iati_org_id: orgData.ref || null,
-                    Organisation_Type_Code: orgData.type || null
-                  })
-                });
-
-                if (createResponse.ok) {
-                  const newOrg = await createResponse.json();
-                  organizationId = newOrg.id;
-                  console.log(`[XML Import] Created new organization successfully:`, {
-                    id: newOrg.id,
-                    name: newOrg.name,
-                    iati_org_id: newOrg.iati_org_id,
-                    logo: newOrg.logo || 'NO LOGO'
-                  });
-                } else if (createResponse.status === 400) {
-                  // Organization might already exist (created by previous import)
-                  const errorData = await createResponse.json().catch(() => ({}));
-                  console.log(`[XML Import] Organization already exists, searching again:`, errorData);
-                  
-                  // Try searching one more time (it might have been created moments ago)
-                  const retryResponse = await fetch(`/api/organizations?search=${encodeURIComponent(orgData.narrative)}`);
-                  if (retryResponse.ok) {
-                    const orgs = await retryResponse.json();
-                    const exactMatch = orgs.find((org: any) => 
-                      org.name?.toLowerCase() === orgData.narrative?.toLowerCase()
-                    );
-                    
-                    if (exactMatch) {
-                      organizationId = exactMatch.id;
-                      console.log(`[XML Import] Found organization on retry:`, exactMatch.name);
-                    } else {
-                      console.error(`[XML Import] Organization exists but couldn't find it:`, errorData);
-                      errorCount++;
-                      continue;
-                    }
-                  } else {
-                    console.error(`[XML Import] Failed to create and retry failed:`, errorData);
-                    errorCount++;
-                    continue;
-                  }
-                } else {
-                  const errorData = await createResponse.json().catch(() => ({}));
-                  console.error(`[XML Import] Failed to create organization:`, errorData);
-                  errorCount++;
-                  continue;
-                }
+                console.error(`[XML Import] Failed to resolve or create organization:`, orgData);
+                errorCount++;
+                continue;
               }
 
               // Now create the participating organization record

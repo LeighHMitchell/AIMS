@@ -13,10 +13,12 @@ const IATI_API_KEY = process.env.IATI_API_KEY || process.env.NEXT_PUBLIC_IATI_AP
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { iatiId: string } }
+  { params }: { params: { iatiId: string } | Promise<{ iatiId: string }> }
 ) {
   try {
-    const { iatiId } = params
+    // Handle both sync and async params (Next.js 14/15 compatibility)
+    const resolvedParams = await Promise.resolve(params);
+    const { iatiId } = resolvedParams;
 
     if (!iatiId) {
       return NextResponse.json(
@@ -28,7 +30,9 @@ export async function GET(
     console.log("[IATI Activity Fetch] Fetching activity:", iatiId)
 
     // Build the correct IATI Datastore API URL for fetching XML
-    const fetchUrl = `https://api.iatistandard.org/datastore/activity/iati?q=iati_identifier:${encodeURIComponent(iatiId)}`
+    // The iatiId should be quoted in the Solr query
+    const query = `iati_identifier:"${iatiId}"`
+    const fetchUrl = `https://api.iatistandard.org/datastore/activity/iati?q=${encodeURIComponent(query)}`
 
     console.log("[IATI Activity Fetch] API URL:", fetchUrl)
 
@@ -131,6 +135,15 @@ export async function GET(
 
   } catch (error) {
     console.error("[IATI Activity Fetch] Error:", error)
+
+    // Log detailed error information
+    if (error instanceof Error) {
+      console.error('[IATI Activity Fetch] Error name:', error.name);
+      console.error('[IATI Activity Fetch] Error message:', error.message);
+      console.error('[IATI Activity Fetch] Error stack:', error.stack);
+    } else {
+      console.error('[IATI Activity Fetch] Non-Error object thrown:', JSON.stringify(error, null, 2));
+    }
 
     const message = error instanceof Error ? error.message : "Failed to fetch activity from IATI Datastore"
 

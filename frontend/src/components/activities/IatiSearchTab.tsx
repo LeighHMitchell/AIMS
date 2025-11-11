@@ -255,8 +255,20 @@ export default function IatiSearchTab({ activityId }: IatiSearchTabProps) {
       const response = await fetch(`/api/iati/activity/${encodeURIComponent(activity.iatiIdentifier)}`)
       
       if (!response.ok) {
-        const error = await response.json()
-        throw new Error(error.error || "Failed to fetch activity XML")
+        let errorMessage = 'Failed to fetch activity XML';
+        try {
+          const error = await response.json();
+          errorMessage = error.error || errorMessage;
+        } catch (parseError) {
+          // Response isn't JSON, try text
+          try {
+            const text = await response.text();
+            errorMessage = text || `Server error: ${response.status} ${response.statusText}`;
+          } catch {
+            errorMessage = `Server error: ${response.status} ${response.statusText}`;
+          }
+        }
+        throw new Error(errorMessage);
       }
       
       const data = await response.json()
