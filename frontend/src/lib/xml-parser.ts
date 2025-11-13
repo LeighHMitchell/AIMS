@@ -50,7 +50,19 @@ interface ParsedActivity {
   plannedEndDate?: string;
   actualStartDate?: string;
   actualEndDate?: string;
-  
+
+  // Date narratives/descriptions
+  plannedStartDescription?: string;
+  plannedEndDescription?: string;
+  actualStartDescription?: string;
+  actualEndDescription?: string;
+
+  // Date narratives with languages
+  plannedStartNarratives?: Array<{ text: string; lang?: string }>;
+  plannedEndNarratives?: Array<{ text: string; lang?: string }>;
+  actualStartNarratives?: Array<{ text: string; lang?: string }>;
+  actualEndNarratives?: Array<{ text: string; lang?: string }>;
+
   // Financial Info
   defaultFinanceType?: string;
   defaultFlowType?: string;
@@ -229,6 +241,7 @@ interface ParsedActivity {
       type?: string;
       narrative?: string;
       narrativeLang?: string;
+      narratives?: Array<{ text: string; lang?: string }>;
     }>;
   };
   
@@ -491,6 +504,46 @@ export class IATIXMLParser {
   }
 
   /**
+   * Extract date and narrative from activity-date elements
+   */
+  private extractActivityDateWithNarrative(type: string): { date?: string; narrative?: string; narratives?: Array<{ text: string; lang?: string }> } {
+    if (!this.xmlDoc) return {};
+
+    const dateElement = this.xmlDoc.querySelector(`iati-activity activity-date[type="${type}"]`);
+    if (!dateElement) return {};
+
+    const result: { date?: string; narrative?: string; narratives?: Array<{ text: string; lang?: string }> } = {};
+
+    // Extract iso-date attribute
+    const isoDate = dateElement.getAttribute('iso-date');
+    if (isoDate) {
+      result.date = isoDate;
+    }
+
+    // Extract all narrative elements with their languages
+    const narrativeElements = dateElement.querySelectorAll('narrative');
+    if (narrativeElements.length > 0) {
+      const narrativesArray: Array<{ text: string; lang?: string }> = [];
+
+      narrativeElements.forEach(narrative => {
+        const narrativeText = narrative.textContent?.trim();
+        if (narrativeText) {
+          const lang = narrative.getAttribute('xml:lang') || undefined;
+          narrativesArray.push({ text: narrativeText, lang });
+        }
+      });
+
+      if (narrativesArray.length > 0) {
+        result.narratives = narrativesArray;
+        // Keep the first narrative as the default for backward compatibility
+        result.narrative = narrativesArray[0].text;
+      }
+    }
+
+    return result;
+  }
+
+  /**
    * Parse the main activity data
    */
   public parseActivity(): ParsedActivity {
@@ -633,10 +686,25 @@ export class IATIXMLParser {
     result.defaultCurrency = activity.getAttribute('default-currency') || undefined;
 
     // === DATES ===
-    result.plannedStartDate = this.extractActivityDate('1'); // Planned start
-    result.actualStartDate = this.extractActivityDate('2'); // Actual start
-    result.plannedEndDate = this.extractActivityDate('3'); // Planned end
-    result.actualEndDate = this.extractActivityDate('4'); // Actual end
+    const plannedStart = this.extractActivityDateWithNarrative('1'); // Planned start
+    result.plannedStartDate = plannedStart.date;
+    result.plannedStartDescription = plannedStart.narrative;
+    result.plannedStartNarratives = plannedStart.narratives;
+
+    const actualStart = this.extractActivityDateWithNarrative('2'); // Actual start
+    result.actualStartDate = actualStart.date;
+    result.actualStartDescription = actualStart.narrative;
+    result.actualStartNarratives = actualStart.narratives;
+
+    const plannedEnd = this.extractActivityDateWithNarrative('3'); // Planned end
+    result.plannedEndDate = plannedEnd.date;
+    result.plannedEndDescription = plannedEnd.narrative;
+    result.plannedEndNarratives = plannedEnd.narratives;
+
+    const actualEnd = this.extractActivityDateWithNarrative('4'); // Actual end
+    result.actualEndDate = actualEnd.date;
+    result.actualEndDescription = actualEnd.narrative;
+    result.actualEndNarratives = actualEnd.narratives;
 
     // === FINANCIAL INFO ===
     
@@ -1525,15 +1593,26 @@ export class IATIXMLParser {
       const conditionElements = conditionsElement.querySelectorAll('condition');
       for (let i = 0; i < conditionElements.length; i++) {
         const condition = conditionElements[i];
-        const narratives = condition.querySelectorAll('narrative');
-        
-        // Extract primary narrative
+        const narrativeElements = condition.querySelectorAll('narrative');
+
+        // Extract primary narrative (for backward compatibility)
         const narrative = this.extractNarrative(condition);
-        
+
+        // Extract all narratives with their languages
+        const narrativesArray: Array<{ text: string; lang?: string }> = [];
+        narrativeElements.forEach(narrativeEl => {
+          const narrativeText = narrativeEl.textContent?.trim();
+          if (narrativeText) {
+            const lang = narrativeEl.getAttribute('xml:lang') || undefined;
+            narrativesArray.push({ text: narrativeText, lang });
+          }
+        });
+
         result.conditions.conditions.push({
           type: condition.getAttribute('type') || undefined,
           narrative: narrative,
-          narrativeLang: narratives[0]?.getAttribute('xml:lang') || 'en'
+          narrativeLang: narrativeElements[0]?.getAttribute('xml:lang') || 'en',
+          narratives: narrativesArray
         });
       }
     }

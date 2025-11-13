@@ -89,31 +89,45 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
       // because narrative is just a child element and we want to show the whole parent structure
       // (e.g., for title/narrative, show the full <title> block; for description/narrative, show <description>)
       if (elementName === 'narrative' && pathParts.length > 1) {
-        elementName = pathParts[pathParts.length - 2];
+        elementName = pathParts[pathParts.length - 2].replace(/\[@type="\d+"\]/, '');
       }
 
-      // Pattern to match:
-      // 1. Optional comment like <!--element-name starts-->
-      // 2. The actual element (self-closing or with content)
-      // 3. Optional comment like <!--element-name ends-->
-      const pattern = new RegExp(
-        `(?:<!--\\s*${elementName}[^>]*starts[^>]*-->\\s*)?` +  // Optional start comment
-        `(<${elementName}[^>]*>.*?<\\/${elementName}>|<${elementName}[^>]*\\s*\\/>)` +  // The element itself
-        `(?:\\s*<!--\\s*${elementName}[^>]*ends[^>]*-->)?`,  // Optional end comment
+      // Remove any attribute selectors from element name (e.g., activity-date[@type="1"] -> activity-date)
+      elementName = elementName.replace(/\[@[^\]]+\]/g, '');
+
+      // Check if this is a description or activity-date field with type attribute
+      const typeMatch = iatiPath.match(/@type="(\d+)"/);
+      const expectedType = typeMatch ? typeMatch[1] : null;
+
+      // First, try to match individual elements without comments (more reliable for multiple elements)
+      const elementPattern = new RegExp(
+        `(<${elementName}[^>]*>.*?<\\/${elementName}>|<${elementName}[^>]*\\s*\\/>)`,
         'gs'
       );
 
-      const matches = Array.from(xmlContent.matchAll(pattern));
+      const elementMatches = Array.from(xmlContent.matchAll(elementPattern));
 
-      if (matches.length === 0) return null;
+      if (elementMatches.length === 0) return null;
 
-      // Determine which match to use (based on index if multiple)
-      const targetIndex = index !== undefined ? index : 0;
-      const match = matches[targetIndex] || matches[0];
+      // For description or activity-date elements with type attribute, find the one with matching type
+      let elementMatch;
+      if ((elementName === 'description' || elementName === 'activity-date') && expectedType) {
+        for (const match of elementMatches) {
+          const typeAttrMatch = match[0].match(/type="(\d+)"/);
+          if (typeAttrMatch && typeAttrMatch[1] === expectedType) {
+            elementMatch = match;
+            break;
+          }
+        }
+      } else {
+        // Determine which match to use (based on index if multiple)
+        const targetIndex = index !== undefined ? index : 0;
+        elementMatch = elementMatches[targetIndex] || elementMatches[0];
+      }
 
-      if (!match) return null;
+      if (!elementMatch) return null;
 
-      let xmlString = match[0];
+      let xmlString = elementMatch[0];
 
       // Extract just this element's content, trim leading/trailing whitespace but preserve internal formatting
       xmlString = xmlString.trim();
@@ -228,6 +242,16 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
     if (typeof value === 'object') {
       if (Array.isArray(value)) {
         return { text: `[${value.length} items]` };
+      }
+      // Handle structured date objects (date + narratives)
+      if (value.date) {
+        return { text: value.date, isCode: false };
+      }
+      // Handle structured conditions objects
+      if (value.conditions && Array.isArray(value.conditions)) {
+        const conditionCount = value.conditions.length;
+        const attached = value.attached ? 'Attached' : 'Not Attached';
+        return { text: `${conditionCount} condition(s), ${attached}`, isCode: false };
       }
       if (value.code && value.name) {
         return { code: value.code, name: value.name, isCode: true };
@@ -488,7 +512,7 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
     // If it's already in YYYY-MM-DD format, format it nicely
     if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
       const date = new Date(dateStr + 'T00:00:00');
-      return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+      return date.toLocaleDateString('en-GB', { year: 'numeric', month: 'long', day: 'numeric' });
     }
     return dateStr;
   };
@@ -657,6 +681,51 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
 
   // Render formatted value with all enhancements
   const renderValue = (value: any, rowId: string, column: 'current' | 'import', fieldName?: string, field?: ParsedField) => {
+    // Special handling for date fields with structured format (date + narratives)
+    const isDateField = fieldName && (
+      fieldName === 'Planned Start Date' ||
+      fieldName === 'Actual Start Date' ||
+      fieldName === 'Planned End Date' ||
+      fieldName === 'Actual End Date'
+    );
+
+    if (isDateField && typeof value === 'object' && value !== null && value.date) {
+      const dateValue = value.date;
+      const narratives = value.narratives || [];
+
+      // Show date with narrative inline (if exists) in smaller gray font
+      return (
+        <div className="flex items-baseline gap-2">
+          <span className="text-sm text-gray-900">{formatDateDisplay(dateValue)}</span>
+          {narratives.length > 0 && narratives[0].text && (
+            <span className="text-xs text-gray-500">{narratives[0].text}</span>
+          )}
+        </div>
+      );
+    }
+
+    // Special handling for Conditions field - show inline like dates
+    if (fieldName === 'Conditions' && typeof value === 'object' && value !== null && value.conditions) {
+      const conditions = value.conditions || [];
+
+      return (
+        <div className="space-y-1">
+          {conditions.map((condition: any, idx: number) => {
+            const typeLabel = condition.type === '1' ? 'Policy' :
+                             condition.type === '2' ? 'Performance' :
+                             condition.type === '3' ? 'Fiduciary' : 'Unknown';
+
+            return (
+              <div key={idx} className="flex items-baseline gap-2">
+                <span className="text-sm text-gray-900">{typeLabel}</span>
+                <span className="text-xs text-gray-500">{condition.narrative || 'No description'}</span>
+              </div>
+            );
+          })}
+        </div>
+      );
+    }
+
     // Special handling for Sectors field - show all sectors
     if (fieldName && fieldName.includes('Sectors')) {
       if (Array.isArray(value) && value.length > 0) {
@@ -1359,22 +1428,22 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                   <SortIndicator column="fieldName" />
                 </div>
               </TableHead>
-              <TableHead 
-                className="cursor-pointer hover:bg-gray-100 transition-colors w-[35%]"
-                onClick={() => handleSort('currentValue')}
-              >
-                <div className="flex items-center">
-                  Current Value
-                  <SortIndicator column="currentValue" />
-                </div>
-              </TableHead>
-              <TableHead 
+              <TableHead
                 className="cursor-pointer hover:bg-gray-100 transition-colors w-[35%]"
                 onClick={() => handleSort('importValue')}
               >
                 <div className="flex items-center">
                   Import Value
                   <SortIndicator column="importValue" />
+                </div>
+              </TableHead>
+              <TableHead
+                className="cursor-pointer hover:bg-gray-100 transition-colors w-[35%]"
+                onClick={() => handleSort('currentValue')}
+              >
+                <div className="flex items-center">
+                  Current Value
+                  <SortIndicator column="currentValue" />
                 </div>
               </TableHead>
               <TableHead 
@@ -1509,10 +1578,10 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                           {field.fieldName}
                         </TableCell>
                         <TableCell className={`text-sm text-gray-700 break-words ${field.fieldName === 'Activity Title' ? '[vertical-align:top]' : ''}`}>
-                          {renderValue(field.currentValue, rowId, 'current', field.fieldName, field)}
+                          {renderValue(field.importValue, rowId, 'import', field.fieldName, field)}
                         </TableCell>
                         <TableCell className={`text-sm text-gray-700 break-words ${field.fieldName === 'Activity Title' ? '[vertical-align:top]' : ''}`}>
-                          {renderValue(field.importValue, rowId, 'import', field.fieldName, field)}
+                          {renderValue(field.currentValue, rowId, 'current', field.fieldName, field)}
                         </TableCell>
                         <TableCell className="text-center">
                           {field.hasConflict && (
@@ -2131,11 +2200,17 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                   return iatiShades[index % iatiShades.length];
                                 };
 
-                                // Generate XML snippet for first tag (representative)
-                                const firstTag = importTags[0];
-                                const xmlSnippet = firstTag ? `<tag vocabulary="${firstTag.vocabulary || ''}"${firstTag.vocabularyUri ? ` vocabulary-uri="${firstTag.vocabularyUri}"` : ''}${firstTag.code ? ` code="${firstTag.code}"` : ''}>
-  ${firstTag.narrative ? `<narrative>${firstTag.narrative}</narrative>` : ''}
-</tag>${importTags.length > 1 ? `\n... and ${importTags.length - 1} more tag${importTags.length - 1 !== 1 ? 's' : ''}` : ''}` : '<tag />';
+                                // Generate XML snippet for all tags
+                                const xmlSnippet = importTags.length > 0 ? `<!--tag starts-->
+${importTags.map((tag: any) => {
+  const vocabularyAttr = tag.vocabulary ? ` vocabulary="${tag.vocabulary}"` : '';
+  const vocabularyUriAttr = tag.vocabularyUri ? ` vocabulary-uri="${tag.vocabularyUri}"` : '';
+  const codeAttr = tag.code ? ` code="${tag.code}"` : '';
+  return `<tag${vocabularyAttr}${vocabularyUriAttr}${codeAttr}>
+  ${tag.narrative ? `<narrative>${tag.narrative}</narrative>` : ''}
+</tag>`;
+}).join('\n')}
+<!--tag ends-->` : '<tag />';
 
                                 return (
                                   <div className="mb-6 border-b border-gray-200 pb-6">
@@ -2156,24 +2231,47 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
 
                                       {/* Column 2: Import Value */}
                                       <div className="bg-gray-50 rounded-md p-3 border border-gray-200">
-                                        <div className="text-xs font-semibold text-gray-700 mb-2">Import Tags ({importTags.length})</div>
+                                        <div className="text-xs font-semibold text-gray-700 mb-2">Import Value</div>
                                         {importTags.length > 0 ? (
-                                          <div className="flex flex-wrap gap-2">
-                                            {importTags.map((tag: any, idx: number) => (
-                                              <Badge
-                                                key={idx}
-                                                variant="outline"
-                                                className={`${getTagBadgeColor(tag, idx)} border px-2.5 py-1 rounded-md text-xs font-medium`}
-                                              >
-                                                {tag.narrative || 'Unnamed tag'}
-                                                {tag.vocabulary && (
-                                                  <span className="ml-1.5 text-xs opacity-75">
-                                                    ({getVocabLabel(String(tag.vocabulary))})
-                                                  </span>
-                                                )}
-                                              </Badge>
-                                            ))}
-                                          </div>
+                                          <table className="w-full text-xs">
+                                            <tbody>
+                                              {importTags.map((tag: any, idx: number) => (
+                                                <React.Fragment key={idx}>
+                                                  {tag.vocabulary && (
+                                                    <tr className="border-b border-gray-100 align-top">
+                                                      <td className="py-1.5 pr-2 font-medium text-gray-600">Vocabulary:</td>
+                                                      <td className="py-1.5 text-gray-900">
+                                                        <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                          {tag.vocabulary}
+                                                        </code>
+                                                        <span className="ml-2">{getVocabLabel(String(tag.vocabulary))}</span>
+                                                      </td>
+                                                    </tr>
+                                                  )}
+                                                  {tag.vocabularyUri && (
+                                                    <tr className="border-b border-gray-100 align-top">
+                                                      <td className="py-1.5 pr-2 font-medium text-gray-600">Vocabulary URI:</td>
+                                                      <td className="py-1.5 text-gray-900 break-all">{tag.vocabularyUri}</td>
+                                                    </tr>
+                                                  )}
+                                                  {tag.code && (
+                                                    <tr className="border-b border-gray-100 align-top">
+                                                      <td className="py-1.5 pr-2 font-medium text-gray-600">Code:</td>
+                                                      <td className="py-1.5 text-gray-900">
+                                                        <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                          {tag.code}
+                                                        </code>
+                                                      </td>
+                                                    </tr>
+                                                  )}
+                                                  <tr className={idx < importTags.length - 1 ? "border-b-2 border-gray-300 align-top" : "align-top"}>
+                                                    <td className="py-1.5 pr-2 font-medium text-gray-600">Narrative:</td>
+                                                    <td className="py-1.5 text-gray-900">{tag.narrative || '—'}</td>
+                                                  </tr>
+                                                </React.Fragment>
+                                              ))}
+                                            </tbody>
+                                          </table>
                                         ) : (
                                           <div className="text-xs text-gray-500 italic">No tags to import</div>
                                         )}
@@ -2181,7 +2279,7 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
 
                                       {/* Column 3: Current Value */}
                                       <div className="bg-gray-50 rounded-md p-3 border border-gray-200">
-                                        <div className="text-xs font-semibold text-gray-700 mb-2">Current Tags</div>
+                                        <div className="text-xs font-semibold text-gray-700 mb-2">Current Value</div>
                                         {existingTags.length > 0 ? (
                                           <div className="flex flex-wrap gap-2">
                                             {existingTags.map((tag: any, idx: number) => (
@@ -2355,10 +2453,14 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                 );
                               }
                               
-                              // Financial Items (Budgets, Transactions, Planned Disbursements)
+                              // Financial Items (Budgets, Transactions, Planned Disbursements, Country Budget Items)
                               if (field.itemData && field.isFinancialItem) {
                                 const item = field.itemData;
-                                const itemLabel = field.itemType === 'budget' ? 'Budget' : field.itemType === 'transaction' ? 'Transaction' : field.itemType === 'plannedDisbursement' ? 'Planned Disbursement' : 'Financial Item';
+                                const itemLabel = field.itemType === 'budget' ? 'Budget' :
+                                                 field.itemType === 'transaction' ? 'Transaction' :
+                                                 field.itemType === 'plannedDisbursement' ? 'Planned Disbursement' :
+                                                 field.itemType === 'countryBudgetItems' ? 'Country Budget Items' :
+                                                 'Financial Item';
 
                                 // Generate XML snippet based on item type
                                 let xmlSnippet = '';
@@ -2368,6 +2470,18 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
   <period-end iso-date="${item.period?.end || item.end || ''}" />
   <value currency="${item.currency || ''}" value-date="${item.value_date || ''}">${item.value || ''}</value>
 </budget>`;
+                                } else if (field.itemType === 'countryBudgetItems') {
+                                  // Generate XML for country budget items
+                                  const budgetItems = item.budget_items || [];
+                                  xmlSnippet = `<!--country-budget-items starts-->
+<country-budget-items vocabulary="${item.vocabulary || ''}">
+${budgetItems.map((bi: any) => `  <budget-item code="${bi.code || ''}"${bi.percentage ? ` percentage="${bi.percentage}"` : ''}>
+    <description>
+      <narrative>${bi.description || ''}</narrative>
+    </description>
+  </budget-item>`).join('\n')}
+</country-budget-items>
+<!--country-budget-items ends-->`;
                                 } else if (field.itemType === 'transaction') {
                                   xmlSnippet = `<transaction>
   <transaction-type code="${item.transaction_type || item.type || ''}" />
@@ -2402,32 +2516,87 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                       {/* Column 2: Import Value */}
                                       <div className="bg-gray-50 rounded-md p-3 border border-gray-200">
                                         <div className="text-xs font-semibold text-gray-700 mb-2">Import Value</div>
-                                        <table className="w-full text-xs">
+                                        {field.itemType === 'countryBudgetItems' ? (
+                                          // Special display for country budget items
+                                          <table className="w-full text-xs">
+                                            <tbody>
+                                              {item.vocabulary && (
+                                                <tr className="border-b border-gray-100 align-top">
+                                                  <td className="py-1.5 pr-2 font-medium text-gray-600">Vocabulary:</td>
+                                                  <td className="py-1.5 text-gray-900">
+                                                    <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                      {item.vocabulary}
+                                                    </code>
+                                                  </td>
+                                                </tr>
+                                              )}
+                                              {item.budget_items && item.budget_items.map((bi: any, biIdx: number) => (
+                                                <React.Fragment key={biIdx}>
+                                                  <tr className="border-b border-gray-100 align-top">
+                                                    <td className="py-1.5 pr-2 font-medium text-gray-600">Code:</td>
+                                                    <td className="py-1.5 text-gray-900">
+                                                      <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                        {bi.code}
+                                                      </code>
+                                                    </td>
+                                                  </tr>
+                                                  {bi.percentage !== undefined && (
+                                                    <tr className="border-b border-gray-100 align-top">
+                                                      <td className="py-1.5 pr-2 font-medium text-gray-600">Percentage:</td>
+                                                      <td className="py-1.5 text-gray-900">{bi.percentage}%</td>
+                                                    </tr>
+                                                  )}
+                                                  <tr className={biIdx < item.budget_items.length - 1 ? "border-b-2 border-gray-300 align-top" : "align-top"}>
+                                                    <td className="py-1.5 pr-2 font-medium text-gray-600">Description:</td>
+                                                    <td className="py-1.5 text-gray-900">{bi.description || '—'}</td>
+                                                  </tr>
+                                                </React.Fragment>
+                                              ))}
+                                            </tbody>
+                                          </table>
+                                        ) : (
+                                          // Regular display for budgets, transactions, planned disbursements
+                                          <table className="w-full text-xs">
                                           <tbody>
                                             {item.value !== undefined && item.currency && (
                                               <tr className="border-b border-gray-100 align-top">
                                                 <td className="py-1.5 pr-2 font-medium text-gray-600">Amount:</td>
                                                 <td className="py-1.5 text-gray-900">
-                                                  <span className="font-mono">{item.currency} {item.value?.toLocaleString()}</span>
+                                                  <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                    {item.currency}
+                                                  </code>
+                                                  <span className="ml-2">{item.value?.toLocaleString()}</span>
                                                 </td>
                                               </tr>
                                             )}
                                             {(item.period?.start || item.start) && (
                                               <tr className="border-b border-gray-100 align-top">
                                                 <td className="py-1.5 pr-2 font-medium text-gray-600">Start:</td>
-                                                <td className="py-1.5 text-gray-900">{formatDateDisplay(item.period?.start || item.start)}</td>
+                                                <td className="py-1.5 text-gray-900">
+                                                  <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                    {item.period?.start || item.start}
+                                                  </code>
+                                                </td>
                                               </tr>
                                             )}
                                             {(item.period?.end || item.end) && (
                                               <tr className="border-b border-gray-100 align-top">
                                                 <td className="py-1.5 pr-2 font-medium text-gray-600">End:</td>
-                                                <td className="py-1.5 text-gray-900">{formatDateDisplay(item.period?.end || item.end)}</td>
+                                                <td className="py-1.5 text-gray-900">
+                                                  <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                    {item.period?.end || item.end}
+                                                  </code>
+                                                </td>
                                               </tr>
                                             )}
                                             {item.value_date && (
                                               <tr className="border-b border-gray-100 align-top">
                                                 <td className="py-1.5 pr-2 font-medium text-gray-600">Value Date:</td>
-                                                <td className="py-1.5 text-gray-900">{formatDateDisplay(item.value_date)}</td>
+                                                <td className="py-1.5 text-gray-900">
+                                                  <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                    {item.value_date}
+                                                  </code>
+                                                </td>
                                               </tr>
                                             )}
                                             {item.status && (
@@ -2437,6 +2606,9 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                                   <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
                                                     {item.status}
                                                   </code>
+                                                  {item.statusName && (
+                                                    <span className="ml-2">{item.statusName}</span>
+                                                  )}
                                                 </td>
                                               </tr>
                                             )}
@@ -2447,6 +2619,9 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                                   <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
                                                     {item.type}
                                                   </code>
+                                                  {item.typeName && (
+                                                    <span className="ml-2">{item.typeName}</span>
+                                                  )}
                                                 </td>
                                               </tr>
                                             )}
@@ -2457,11 +2632,15 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                                   <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
                                                     {item.transaction_type}
                                                   </code>
+                                                  {item.transaction_type_name && (
+                                                    <span className="ml-2">{item.transaction_type_name}</span>
+                                                  )}
                                                 </td>
                                               </tr>
                                             )}
                                           </tbody>
                                         </table>
+                                        )}
                                       </div>
 
                                       {/* Column 3: Current Value */}
@@ -2625,7 +2804,7 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                               if (field.isConditionsField && field.conditionsData) {
                                 const cond = field.conditionsData;
                                 const conditionCount = cond.conditions && Array.isArray(cond.conditions) ? cond.conditions.length : 0;
-                                
+
                                 // Helper to get condition type label
                                 const getTypeLabel = (type: string) => {
                                   if (type === '1') return 'Policy';
@@ -2633,56 +2812,120 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                   if (type === '3') return 'Fiduciary';
                                   return `Type ${type}`;
                                 };
-                                
+
+                                // Generate XML snippet for conditions
+                                const xmlSnippet = `<!--conditions starts-->
+<conditions attached="${cond.attached ? '1' : '0'}">
+${cond.conditions && cond.conditions.map((condition: any, idx: number) => {
+  // Handle multiple narratives with languages
+  const narratives = condition.narrative || {};
+  const narrativeLines = Object.entries(narratives).map(([lang, text]) => {
+    if (lang === 'en' || !lang) {
+      return `   <narrative>${text}</narrative>`;
+    }
+    return `   <narrative xml:lang="${lang}">${text}</narrative>`;
+  }).join('\n');
+
+  return ` <condition type="${condition.type}">
+${narrativeLines}
+ </condition>`;
+}).join('\n')}
+</conditions>
+<!--conditions ends-->`;
+
                                 return (
                                   <div className="mb-6 border-b border-gray-200 pb-6">
                                     <div className="text-sm font-semibold mb-3 text-gray-900 flex items-center gap-2">
                                       <AlertCircle className="h-4 w-4" />
-                                      Import Value Conditions Details
+                                      Conditions Details
                                     </div>
-                                    <div className="bg-white rounded-md p-3 border border-gray-200">
-                                      <div className="space-y-3">
-                                        <div className="flex items-center gap-2">
-                                          <span className="text-sm font-medium text-gray-700">Attached:</span>
-                                          <Badge variant={cond.attached ? "default" : "outline"}>
-                                            {cond.attached ? 'Yes' : 'No'}
-                                          </Badge>
-                                        </div>
-                                        {conditionCount > 0 && (
-                                          <div className="space-y-3">
-                                            {cond.conditions.map((condition: any, idx: number) => {
-                                              // Get the first available narrative text (prefer English, then any)
-                                              const narrativeText = condition.narrative?.['en'] || 
-                                                                   (condition.narrative && Object.values(condition.narrative)[0]) || 
-                                                                   '';
-                                              const narrativeLang = condition.narrative?.['en'] ? 'en' : 
-                                                                     (condition.narrative ? Object.keys(condition.narrative)[0] : '');
-                                              
+
+                                    {/* 3-column layout */}
+                                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                                      {/* Column 1: Raw XML */}
+                                      <div className="bg-gray-50 rounded-md p-3 border border-gray-200">
+                                        <div className="text-xs font-semibold text-gray-700 mb-2">Raw XML</div>
+                                        <pre className="text-xs font-mono text-gray-800 overflow-x-auto whitespace-pre-wrap break-all">
+{xmlSnippet}
+                                        </pre>
+                                      </div>
+
+                                      {/* Column 2: Import Value */}
+                                      <div className="bg-gray-50 rounded-md p-3 border border-gray-200">
+                                        <div className="text-xs font-semibold text-gray-700 mb-2">Import Value</div>
+                                        <table className="w-full text-xs">
+                                          <tbody>
+                                            <tr className="border-b border-gray-100 align-top">
+                                              <td className="py-1.5 pr-2 font-medium text-gray-600">Conditions:</td>
+                                              <td className="py-1.5 text-gray-900">
+                                                <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                  {cond.attached ? '1' : '0'}
+                                                </code>
+                                                <span className="ml-2">{cond.attached ? 'Yes' : 'No'}</span>
+                                              </td>
+                                            </tr>
+                                            {conditionCount > 0 && cond.conditions.map((condition: any, idx: number) => {
+                                              // Get all narratives with their languages
+                                              const narratives = condition.narrative || {};
+                                              const narrativeEntries = Object.entries(narratives);
+
                                               return (
-                                                <div key={idx} className="border-l-2 border-blue-200 pl-3 py-2 bg-gray-50 rounded-r">
-                                                  <div className="grid grid-cols-3 gap-3 text-xs">
-                                                    <div>
-                                                      <span className="text-gray-600 font-medium">Type:</span>
-                                                      <div className="mt-1">
-                                                        <Badge variant="outline" className="text-xs">
-                                                          {getTypeLabel(condition.type)}
-                                                        </Badge>
-                                                      </div>
-                                                    </div>
-                                                    <div className="col-span-2">
-                                                      <span className="text-gray-600 font-medium">Condition Narrative:</span>
-                                                      <div className="text-sm text-gray-900 mt-1">
-                                                        {narrativeLang && narrativeLang !== 'en' && (
-                                                          <span className="text-xs text-gray-500 italic mr-1">({narrativeLang})</span>
-                                                        )}
-                                                        {narrativeText || 'No description'}
-                                                      </div>
-                                                    </div>
-                                                  </div>
-                                                </div>
+                                                <tr key={idx} className={idx < conditionCount - 1 ? "border-b border-gray-100 align-top" : "align-top"}>
+                                                  <td className="py-1.5 pr-2 font-medium text-gray-600">
+                                                    Condition Type:
+                                                  </td>
+                                                  <td className="py-1.5 text-gray-900">
+                                                    <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                      {condition.type}
+                                                    </code>
+                                                    <span className="ml-2">{getTypeLabel(condition.type)}</span>
+                                                  </td>
+                                                </tr>
                                               );
                                             })}
+                                            {conditionCount > 0 && cond.conditions.map((condition: any, idx: number) => {
+                                              // Get all narratives with their languages
+                                              const narratives = condition.narrative || {};
+                                              const narrativeEntries = Object.entries(narratives);
+
+                                              // Return separate rows for each narrative language
+                                              return narrativeEntries.map(([lang, text], nIdx) => {
+                                                // Gray out non-English narratives as system can't accept them yet
+                                                const isNonEnglish = lang && lang !== 'en';
+                                                const isLastNarrative = idx === conditionCount - 1 && nIdx === narrativeEntries.length - 1;
+
+                                                return (
+                                                  <tr key={`narrative-${idx}-${lang}`} className={isLastNarrative ? "align-top" : "border-b border-gray-100 align-top"}>
+                                                    <td className={`py-1.5 pr-2 font-medium ${isNonEnglish ? 'text-gray-400' : 'text-gray-600'}`}>
+                                                      {isNonEnglish ? `Narrative (${lang.toUpperCase()}):` : 'Narrative:'}
+                                                    </td>
+                                                    <td className={`py-1.5 ${isNonEnglish ? 'text-gray-400' : 'text-gray-900'}`}>
+                                                      {text || <span className="text-gray-500 italic">No description</span>}
+                                                    </td>
+                                                  </tr>
+                                                );
+                                              });
+                                            })}
+                                          </tbody>
+                                        </table>
+                                        {/* Check if there are any non-English narratives to show the note */}
+                                        {conditionCount > 0 && cond.conditions.some((condition: any) => {
+                                          const narratives = condition.narrative || {};
+                                          return Object.keys(narratives).some(lang => lang && lang !== 'en');
+                                        }) && (
+                                          <div className="mt-2 text-xs text-gray-500 italic">
+                                            Note: Grayed-out languages are recognized but not currently imported by the system
                                           </div>
+                                        )}
+                                      </div>
+
+                                      {/* Column 3: Current Value */}
+                                      <div className="bg-gray-50 rounded-md p-3 border border-gray-200">
+                                        <div className="text-xs font-semibold text-gray-700 mb-2">Current Value</div>
+                                        {field.currentValue && field.currentValue !== 'None' ? (
+                                          <div className="text-xs text-gray-900">{field.currentValue}</div>
+                                        ) : (
+                                          <div className="text-xs text-gray-500 italic">No existing conditions</div>
                                         )}
                                       </div>
                                     </div>
@@ -2942,20 +3185,17 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                         {importCode ? (
                                           <table className="w-full text-xs">
                                             <tbody>
-                                              <tr className="border-b border-gray-100 align-top">
-                                                <td className="py-1.5 pr-2 font-medium text-gray-600">Code:</td>
+                                              <tr className="align-top">
+                                                <td className="py-1.5 pr-2 font-medium text-gray-600">Value:</td>
                                                 <td className="py-1.5 text-gray-900">
                                                   <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
                                                     {importCode}
                                                   </code>
+                                                  {importName && (
+                                                    <span className="ml-2 text-gray-600">{importName}</span>
+                                                  )}
                                                 </td>
                                               </tr>
-                                              {importName && (
-                                                <tr className="align-top">
-                                                  <td className="py-1.5 pr-2 font-medium text-gray-600">Name:</td>
-                                                  <td className="py-1.5 text-gray-900">{importName}</td>
-                                                </tr>
-                                              )}
                                             </tbody>
                                           </table>
                                         ) : (
@@ -2969,20 +3209,205 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                         {currentCode ? (
                                           <table className="w-full text-xs">
                                             <tbody>
-                                              <tr className="border-b border-gray-100 align-top">
-                                                <td className="py-1.5 pr-2 font-medium text-gray-600">Code:</td>
+                                              <tr className="align-top">
+                                                <td className="py-1.5 pr-2 font-medium text-gray-600">Value:</td>
                                                 <td className="py-1.5 text-gray-900">
                                                   <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
                                                     {currentCode}
                                                   </code>
+                                                  {currentName && (
+                                                    <span className="ml-2 text-gray-600">{currentName}</span>
+                                                  )}
                                                 </td>
                                               </tr>
-                                              {currentName && (
-                                                <tr className="align-top">
-                                                  <td className="py-1.5 pr-2 font-medium text-gray-600">Name:</td>
-                                                  <td className="py-1.5 text-gray-900">{currentName}</td>
+                                            </tbody>
+                                          </table>
+                                        ) : (
+                                          <div className="text-xs text-gray-500 italic">No existing value</div>
+                                        )}
+                                      </div>
+                                    </div>
+                                  </div>
+                                );
+                              }
+
+                              // Activity Dates - show type, iso-date, and narratives in table format
+                              if ((field.fieldName === 'Planned Start Date' ||
+                                   field.fieldName === 'Actual Start Date' ||
+                                   field.fieldName === 'Planned End Date' ||
+                                   field.fieldName === 'Actual End Date')) {
+
+                                const xmlSnippet = extractXmlSnippet(field.iatiPath, field.itemIndex);
+
+                                // Extract date type info and iso-date from IATI path and XML
+                                let dateType = '';
+                                let dateTypeName = '';
+                                let isoDate = '';
+
+                                // Extract type attribute from IATI path if present (e.g., activity-date[@type="1"])
+                                const typeMatch = field.iatiPath.match(/@type="(\d+)"/);
+                                const expectedType = typeMatch ? typeMatch[1] : null;
+
+                                // Extract ALL data from the raw XML
+                                let allXmlNarratives: Array<{ text: string; lang?: string; isImported: boolean }> = [];
+                                if (xmlContent && field.iatiPath) {
+                                  try {
+                                    const parser = new DOMParser();
+                                    const xmlDoc = parser.parseFromString(xmlContent, 'text/xml');
+                                    const elements = xmlDoc.querySelectorAll('activity-date');
+
+                                    // Find the activity-date element with matching type attribute
+                                    let targetElement: Element | null = null;
+                                    if (expectedType) {
+                                      for (let i = 0; i < elements.length; i++) {
+                                        if (elements[i].getAttribute('type') === expectedType) {
+                                          targetElement = elements[i];
+                                          break;
+                                        }
+                                      }
+                                    } else {
+                                      targetElement = elements[field.itemIndex || 0] || elements[0];
+                                    }
+
+                                    if (targetElement) {
+                                      // Extract type attribute
+                                      dateType = targetElement.getAttribute('type') || '';
+                                      // Map type codes to names
+                                      const typeNames: Record<string, string> = {
+                                        '1': 'Planned start',
+                                        '2': 'Actual start',
+                                        '3': 'Planned end',
+                                        '4': 'Actual end'
+                                      };
+                                      dateTypeName = typeNames[dateType] || '';
+
+                                      // Extract iso-date attribute
+                                      isoDate = targetElement.getAttribute('iso-date') || '';
+
+                                      // Extract narratives if they exist
+                                      const narratives = targetElement.querySelectorAll('narrative');
+                                      narratives.forEach((narrative, idx) => {
+                                        const lang = narrative.getAttribute('xml:lang');
+                                        const text = narrative.textContent?.trim() || '';
+                                        // First narrative (usually English/default) is imported, others are not
+                                        const isImported = idx === 0 || (!lang || lang === 'en');
+                                        allXmlNarratives.push({ text, lang, isImported });
+                                      });
+                                    }
+                                  } catch (error) {
+                                    console.error('Error parsing activity-date from XML:', error);
+                                  }
+                                }
+
+                                // Get current value data if exists
+                                let currentIsoDate = '';
+
+                                if (field.currentValue) {
+                                  // Current value might be just a date string or an object
+                                  if (typeof field.currentValue === 'string') {
+                                    currentIsoDate = field.currentValue;
+                                  } else if (typeof field.currentValue === 'object') {
+                                    currentIsoDate = field.currentValue.date || field.currentValue.isoDate || '';
+                                  }
+                                }
+
+                                return (
+                                  <div className="mb-6 border-b border-gray-200 pb-6">
+                                    <div className="text-sm font-semibold mb-3 text-gray-900">
+                                      Field Details
+                                    </div>
+
+                                    {/* 3-column layout */}
+                                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                                      {/* Column 1: Raw XML */}
+                                      <div className="bg-gray-50 rounded-md p-3 border border-gray-200">
+                                        <div className="text-xs font-semibold text-gray-700 mb-2">Raw XML</div>
+                                        {xmlSnippet ? (
+                                          <pre className="text-xs font-mono text-gray-800 overflow-x-auto whitespace-pre-wrap break-all">
+{xmlSnippet}
+                                          </pre>
+                                        ) : (
+                                          <div className="text-xs text-gray-500 italic">
+                                            See IATI Path below for XML structure
+                                          </div>
+                                        )}
+                                      </div>
+
+                                      {/* Column 2: Import Value */}
+                                      <div className="bg-gray-50 rounded-md p-3 border border-gray-200">
+                                        <div className="text-xs font-semibold text-gray-700 mb-2">Import Value</div>
+                                        {(dateType || isoDate || allXmlNarratives.length > 0) ? (
+                                          <table className="w-full text-xs">
+                                            <tbody>
+                                              {/* Show date type (grayed out - redundant with field name) */}
+                                              {dateType && (
+                                                <tr className="border-b border-gray-100 align-top" style={{ opacity: 0.4 }}>
+                                                  <td className="py-1.5 pr-2 font-medium text-gray-600 whitespace-nowrap">Date Type:</td>
+                                                  <td className="py-1.5 text-gray-900">
+                                                    <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                      {dateType}
+                                                    </code>
+                                                    {dateTypeName && (
+                                                      <span className="ml-2 text-gray-600">{dateTypeName}</span>
+                                                    )}
+                                                  </td>
                                                 </tr>
                                               )}
+                                              {/* Show iso-date */}
+                                              {isoDate && (
+                                                <tr className="border-b border-gray-100 align-top">
+                                                  <td className="py-1.5 pr-2 font-medium text-gray-600 whitespace-nowrap">ISO Date:</td>
+                                                  <td className="py-1.5 text-gray-900">
+                                                    <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                      {isoDate}
+                                                    </code>
+                                                  </td>
+                                                </tr>
+                                              )}
+                                              {/* Show narratives if they exist - show first one normal (imported), others grayed out */}
+                                              {allXmlNarratives.map((narrative, idx) => (
+                                                <tr
+                                                  key={idx}
+                                                  className="border-b border-gray-100 align-top last:border-b-0"
+                                                  style={{ opacity: idx === 0 ? 1 : 0.4 }}
+                                                >
+                                                  <td className="py-1.5 pr-2 font-medium text-gray-600 whitespace-nowrap">
+                                                    {narrative.lang ? `Narrative (${narrative.lang.toUpperCase()}):` : 'Narrative (Default):'}
+                                                  </td>
+                                                  <td className="py-1.5 text-gray-900">{narrative.text}</td>
+                                                </tr>
+                                              ))}
+                                              {(dateType || allXmlNarratives.length > 1) && (
+                                                <tr>
+                                                  <td colSpan={2} className="pt-2">
+                                                    <div className="text-xs text-gray-500 italic">
+                                                      Note: Grayed out items are {dateType && allXmlNarratives.length > 1 ? 'redundant or ' : dateType ? 'redundant' : ''}not imported by default
+                                                    </div>
+                                                  </td>
+                                                </tr>
+                                              )}
+                                            </tbody>
+                                          </table>
+                                        ) : (
+                                          <div className="text-xs text-gray-500 italic">No import value</div>
+                                        )}
+                                      </div>
+
+                                      {/* Column 3: Current Value */}
+                                      <div className="bg-gray-50 rounded-md p-3 border border-gray-200">
+                                        <div className="text-xs font-semibold text-gray-700 mb-2">Current Value</div>
+                                        {currentIsoDate ? (
+                                          <table className="w-full text-xs">
+                                            <tbody>
+                                              {/* Show iso-date */}
+                                              <tr className="align-top">
+                                                <td className="py-1.5 pr-2 font-medium text-gray-600 whitespace-nowrap">ISO Date:</td>
+                                                <td className="py-1.5 text-gray-900">
+                                                  <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                    {currentIsoDate}
+                                                  </code>
+                                                </td>
+                                              </tr>
                                             </tbody>
                                           </table>
                                         ) : (
@@ -2999,6 +3424,15 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                   (Array.isArray(field.importValue) || typeof field.importValue === 'string')) {
 
                                 const xmlSnippet = extractXmlSnippet(field.iatiPath, field.itemIndex);
+                                const isDescription = field.fieldName?.includes('Description');
+
+                                // Extract description type info if this is a description field
+                                let descriptionType = '';
+                                let descriptionTypeName = '';
+
+                                // Extract type attribute from IATI path if present (e.g., description[@type="2"])
+                                const typeMatch = field.iatiPath.match(/@type="(\d+)"/);
+                                const expectedType = typeMatch ? typeMatch[1] : null;
 
                                 // Extract ALL narratives from the raw XML to show what's available
                                 let allXmlNarratives: Array<{ text: string; lang?: string; isImported: boolean }> = [];
@@ -3007,13 +3441,40 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                     const parser = new DOMParser();
                                     const xmlDoc = parser.parseFromString(xmlContent, 'text/xml');
                                     const cleanPath = field.iatiPath.replace('iati-activity/', '').replace(/\[\d+\]/g, '').split('/');
-                                    const parentElement = cleanPath.length > 1 ? cleanPath[cleanPath.length - 2] : null;
+                                    const parentElement = cleanPath.length > 1 ? cleanPath[cleanPath.length - 2].replace(/\[@type="\d+"\]/, '') : null;
 
                                     if (parentElement) {
                                       const elements = xmlDoc.querySelectorAll(parentElement);
-                                      const targetElement = elements[field.itemIndex || 0] || elements[0];
+
+                                      // For descriptions, find the element with matching type attribute
+                                      let targetElement: Element | null = null;
+                                      if (isDescription && parentElement === 'description' && expectedType) {
+                                        // Find the description element with the matching type
+                                        for (let i = 0; i < elements.length; i++) {
+                                          if (elements[i].getAttribute('type') === expectedType) {
+                                            targetElement = elements[i];
+                                            break;
+                                          }
+                                        }
+                                      } else {
+                                        // Use itemIndex for other elements
+                                        targetElement = elements[field.itemIndex || 0] || elements[0];
+                                      }
 
                                       if (targetElement) {
+                                        // Extract type attribute for descriptions
+                                        if (isDescription && parentElement === 'description') {
+                                          descriptionType = targetElement.getAttribute('type') || '';
+                                          // Map type codes to names
+                                          const typeNames: Record<string, string> = {
+                                            '1': 'General',
+                                            '2': 'Objectives',
+                                            '3': 'Target Groups',
+                                            '4': 'Other'
+                                          };
+                                          descriptionTypeName = typeNames[descriptionType] || '';
+                                        }
+
                                         const narratives = targetElement.querySelectorAll('narrative');
                                         narratives.forEach((narrative, idx) => {
                                           const lang = narrative.getAttribute('xml:lang');
@@ -3046,6 +3507,9 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
 
                                 // Convert current value to array of narratives
                                 let currentNarratives: Array<{ text: string; lang?: string }> = [];
+                                let currentDescriptionType = '';
+                                let currentDescriptionTypeName = '';
+
                                 if (field.currentValue) {
                                   if (Array.isArray(field.currentValue)) {
                                     currentNarratives = field.currentValue.map(v => ({
@@ -3054,6 +3518,29 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                     }));
                                   } else if (typeof field.currentValue === 'string') {
                                     currentNarratives = [{ text: field.currentValue }];
+                                  }
+
+                                  // Extract current description type from field name
+                                  if (isDescription) {
+                                    const typeNames: Record<string, string> = {
+                                      '1': 'General',
+                                      '2': 'Objectives',
+                                      '3': 'Target Groups',
+                                      '4': 'Other'
+                                    };
+                                    if (field.fieldName?.includes('General')) {
+                                      currentDescriptionType = '1';
+                                      currentDescriptionTypeName = 'General';
+                                    } else if (field.fieldName?.includes('Objectives')) {
+                                      currentDescriptionType = '2';
+                                      currentDescriptionTypeName = 'Objectives';
+                                    } else if (field.fieldName?.includes('Target Groups')) {
+                                      currentDescriptionType = '3';
+                                      currentDescriptionTypeName = 'Target Groups';
+                                    } else if (field.fieldName?.includes('Other')) {
+                                      currentDescriptionType = '4';
+                                      currentDescriptionTypeName = 'Other';
+                                    }
                                   }
                                 }
 
@@ -3082,14 +3569,29 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                       {/* Column 2: Import Value */}
                                       <div className="bg-gray-50 rounded-md p-3 border border-gray-200">
                                         <div className="text-xs font-semibold text-gray-700 mb-2">Import Value</div>
-                                        {displayNarratives.length > 0 ? (
+                                        {displayNarratives.length > 0 || (isDescription && descriptionType) ? (
                                           <div className="space-y-2">
                                             <table className="w-full text-xs">
                                               <tbody>
+                                                {/* Show description type for description fields */}
+                                                {isDescription && descriptionType && (
+                                                  <tr className="border-b border-gray-100 align-top">
+                                                    <td className="py-1.5 pr-2 font-medium text-gray-600 whitespace-nowrap">Description Type:</td>
+                                                    <td className="py-1.5 text-gray-900">
+                                                      <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                        {descriptionType}
+                                                      </code>
+                                                      {descriptionTypeName && (
+                                                        <span className="ml-2 text-gray-600">{descriptionTypeName}</span>
+                                                      )}
+                                                    </td>
+                                                  </tr>
+                                                )}
+                                                {/* Show narratives */}
                                                 {displayNarratives.map((narrative, idx) => (
                                                   <tr key={idx} className={`border-b border-gray-100 align-top last:border-b-0 ${!narrative.isImported ? 'opacity-50' : ''}`}>
                                                     <td className="py-1.5 pr-2 font-medium text-gray-600 whitespace-nowrap">
-                                                      {narrative.lang ? `Language (${narrative.lang}):` : 'Default:'}
+                                                      {narrative.lang ? `Narrative (${narrative.lang.toUpperCase()}):` : 'Narrative (Default):'}
                                                     </td>
                                                     <td className="py-1.5 text-gray-900">{narrative.text}</td>
                                                   </tr>
@@ -3110,13 +3612,28 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                       {/* Column 3: Current Value */}
                                       <div className="bg-gray-50 rounded-md p-3 border border-gray-200">
                                         <div className="text-xs font-semibold text-gray-700 mb-2">Current Value</div>
-                                        {currentNarratives.length > 0 ? (
+                                        {currentNarratives.length > 0 || (isDescription && currentDescriptionType) ? (
                                           <table className="w-full text-xs">
                                             <tbody>
+                                              {/* Show description type for description fields */}
+                                              {isDescription && currentDescriptionType && (
+                                                <tr className="border-b border-gray-100 align-top">
+                                                  <td className="py-1.5 pr-2 font-medium text-gray-600 whitespace-nowrap">Description Type:</td>
+                                                  <td className="py-1.5 text-gray-900">
+                                                    <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                      {currentDescriptionType}
+                                                    </code>
+                                                    {currentDescriptionTypeName && (
+                                                      <span className="ml-2 text-gray-600">{currentDescriptionTypeName}</span>
+                                                    )}
+                                                  </td>
+                                                </tr>
+                                              )}
+                                              {/* Show narratives */}
                                               {currentNarratives.map((narrative, idx) => (
                                                 <tr key={idx} className="border-b border-gray-100 align-top last:border-b-0">
                                                   <td className="py-1.5 pr-2 font-medium text-gray-600 whitespace-nowrap">
-                                                    {narrative.lang ? `Language (${narrative.lang}):` : 'Default:'}
+                                                    {narrative.lang ? `Narrative (${narrative.lang.toUpperCase()}):` : 'Narrative (Default):'}
                                                   </td>
                                                   <td className="py-1.5 text-gray-900">{narrative.text}</td>
                                                 </tr>
@@ -3171,6 +3688,31 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                   const entries = Object.entries(value).filter(([k, v]) => v !== null && v !== undefined && v !== '');
                                   if (entries.length === 0) {
                                     return <div className="text-xs text-gray-500 italic">No value</div>;
+                                  }
+
+                                  // Check if this is a code/name pair - if so, display on same line
+                                  const hasCode = entries.some(([k]) => k.toLowerCase() === 'code');
+                                  const hasName = entries.some(([k]) => k.toLowerCase() === 'name');
+
+                                  if (hasCode && hasName && entries.length === 2) {
+                                    const code = entries.find(([k]) => k.toLowerCase() === 'code')?.[1];
+                                    const name = entries.find(([k]) => k.toLowerCase() === 'name')?.[1];
+
+                                    return (
+                                      <table className="w-full text-xs">
+                                        <tbody>
+                                          <tr className="align-top">
+                                            <td className="py-1.5 pr-2 font-medium text-gray-600">Value:</td>
+                                            <td className="py-1.5 text-gray-900">
+                                              <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                {String(code)}
+                                              </code>
+                                              <span className="ml-2 text-gray-600">{String(name)}</span>
+                                            </td>
+                                          </tr>
+                                        </tbody>
+                                      </table>
+                                    );
                                   }
 
                                   return (
@@ -3247,12 +3789,16 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                             <div className="mt-4 text-sm flex items-center gap-2">
                               <span className="font-semibold">IATI Path:</span>
                               <a
-                                href={`https://iatistandard.org/en/iati-standard/203/activity-standard/iati-activities/iati-activity/${field.iatiPath.replace('iati-activity/', '').replace(/\[\d+\]/g, '')}/`}
+                                href={`https://iatistandard.org/en/iati-standard/203/activity-standard/iati-activities/iati-activity/${field.iatiPath.replace('iati-activity/', '').replace(/\[\d+\]/g, '').replace(/\[@[^\]]+\]/g, '').replace(/\/narrative$/, '')}/`}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="text-xs font-mono text-blue-600 hover:text-blue-800 hover:underline"
                               >
-                                {field.iatiPath.replace(/\[\d+\]/g, '')}
+                                {field.iatiPath
+                                  .replace('iati-activity/', 'iati-activities/iati-activity/')
+                                  .replace(/\[\d+\]/g, '')
+                                  .replace(/\[@[^\]]+\]/g, '')
+                                  .replace(/\/narrative$/, '')}
                               </a>
                             </div>
                           </TableCell>

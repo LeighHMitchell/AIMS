@@ -2732,30 +2732,24 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
         });
       }
 
-      if (parsedActivity.language) {
-        const currentLanguageLabel = currentActivityData.language ? getLanguageLabel(currentActivityData.language) : null;
-        const importLanguageLabel = getLanguageLabel(parsedActivity.language);
-        fields.push({
-          fieldName: 'Narrative Language',
-          iatiPath: 'iati-activity[@xml:lang]',
-          currentValue: currentLanguageLabel,
-          importValue: importLanguageLabel,
-          selected: shouldSelectField(currentLanguageLabel, importLanguageLabel),
-          hasConflict: hasConflict(currentLanguageLabel, importLanguageLabel),
-          tab: 'basic',
-          description: 'Primary language of the activity (if multilingual)'
-        });
-      }
+      // Narrative Language field removed - language is handled within title/description narratives
 
       // === DATES TAB ===
       
       if (parsedActivity.plannedStartDate) {
         const currentValue = currentActivityData.planned_start_date || null;
+
+        // Create structured import value with date and narratives
+        const importValue = {
+          date: parsedActivity.plannedStartDate,
+          narratives: parsedActivity.plannedStartNarratives || []
+        };
+
         fields.push({
           fieldName: 'Planned Start Date',
           iatiPath: 'iati-activity/activity-date[@type="1"]',
           currentValue: currentValue,
-          importValue: parsedActivity.plannedStartDate,
+          importValue: importValue,
           selected: isFieldAllowedByPreferences('iati-activity/activity-date[@type=start-planned]') && shouldSelectField(currentValue, parsedActivity.plannedStartDate),
           hasConflict: hasConflict(currentValue, parsedActivity.plannedStartDate),
           tab: 'dates',
@@ -2764,11 +2758,17 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
       }
 
       if (parsedActivity.plannedEndDate) {
+        // Create structured import value with date and narratives
+        const importValue = {
+          date: parsedActivity.plannedEndDate,
+          narratives: parsedActivity.plannedEndNarratives || []
+        };
+
         fields.push({
           fieldName: 'Planned End Date',
           iatiPath: 'iati-activity/activity-date[@type="3"]',
           currentValue: currentActivityData.planned_end_date || null,
-          importValue: parsedActivity.plannedEndDate,
+          importValue: importValue,
           selected: isFieldAllowedByPreferences('iati-activity/activity-date[@type=end-planned]') && shouldSelectField(currentActivityData.planned_end_date || null, parsedActivity.plannedEndDate),
           hasConflict: hasConflict(currentActivityData.planned_end_date || null, parsedActivity.plannedEndDate),
           tab: 'dates',
@@ -2777,11 +2777,17 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
       }
 
       if (parsedActivity.actualStartDate) {
+        // Create structured import value with date and narratives
+        const importValue = {
+          date: parsedActivity.actualStartDate,
+          narratives: parsedActivity.actualStartNarratives || []
+        };
+
         fields.push({
           fieldName: 'Actual Start Date',
           iatiPath: 'iati-activity/activity-date[@type="2"]',
           currentValue: currentActivityData.actual_start_date || null,
-          importValue: parsedActivity.actualStartDate,
+          importValue: importValue,
           selected: isFieldAllowedByPreferences('iati-activity/activity-date[@type=start-actual]') && shouldSelectField(currentActivityData.actual_start_date || null, parsedActivity.actualStartDate),
           hasConflict: hasConflict(currentActivityData.actual_start_date || null, parsedActivity.actualStartDate),
           tab: 'dates',
@@ -2790,11 +2796,17 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
       }
 
       if (parsedActivity.actualEndDate) {
+        // Create structured import value with date and narratives
+        const importValue = {
+          date: parsedActivity.actualEndDate,
+          narratives: parsedActivity.actualEndNarratives || []
+        };
+
         fields.push({
           fieldName: 'Actual End Date',
           iatiPath: 'iati-activity/activity-date[@type="4"]',
           currentValue: currentActivityData.actual_end_date || null,
-          importValue: parsedActivity.actualEndDate,
+          importValue: importValue,
           selected: isFieldAllowedByPreferences('iati-activity/activity-date[@type=end-actual]') && shouldSelectField(currentActivityData.actual_end_date || null, parsedActivity.actualEndDate),
           hasConflict: hasConflict(currentActivityData.actual_end_date || null, parsedActivity.actualEndDate),
           tab: 'dates',
@@ -3070,7 +3082,11 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
             isFinancialItem: true,
             itemType: 'budget',
             itemIndex: budgetIndex,
-            itemData: budget
+            itemData: {
+              ...budget,
+              typeName: typeLabel,
+              statusName: statusLabel
+            }
           });
         });
       }
@@ -3139,7 +3155,10 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
             isFinancialItem: true,
             itemType: 'plannedDisbursement',
             itemIndex: disbIndex,
-            itemData: disbursement
+            itemData: {
+              ...disbursement,
+              typeName: typeLabel
+            }
           });
         });
       }
@@ -3356,7 +3375,10 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
             isFinancialItem: true,
             itemType: 'transaction',
             itemIndex: transIndex,
-            itemData: transaction
+            itemData: {
+              ...transaction,
+              transaction_type_name: transactionType
+            }
           });
         });
       }
@@ -3780,30 +3802,32 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
           console.warn('[IATI Import] Error fetching existing tags:', error);
         }
 
-        const currentTagsValue = existingTags.length > 0 
-          ? existingTags.map(t => t.name).join(', ')
-          : 'None';
+        // Create a separate field for each tag
+        parsedActivity.tagClassifications.forEach((tag: any, tagIndex: number) => {
+          const vocabLabel = tag.vocabulary === '1' ? 'OECD DAC CRS Purpose Codes (5 digit)' :
+                            tag.vocabulary === '99' ? 'Reporting Organisation' :
+                            tag.vocabulary ? `Vocabulary ${tag.vocabulary}` : 'Unknown';
 
-        const importTagsValue = parsedActivity.tagClassifications.map((tag: any) => {
-          const vocabLabel = tag.vocabulary === '1' ? '[Standard]' : 
-                            tag.vocabulary === '99' ? '[Custom]' : 
-                            tag.vocabulary ? `[Vocab ${tag.vocabulary}]` : '';
-          const codeLabel = tag.code ? ` (${tag.code})` : '';
-          return `${vocabLabel}${codeLabel} ${tag.narrative || 'Unnamed tag'}`;
-        }).join(', ');
+          const tagSummary = [
+            `Vocabulary: ${vocabLabel}`,
+            tag.vocabularyUri && `URI: ${tag.vocabularyUri}`,
+            tag.code && `Code: ${tag.code}`,
+            tag.narrative && `Description: ${tag.narrative}`
+          ].filter(Boolean).join(' | ');
 
-        fields.push({
-          fieldName: 'Tags',
-          iatiPath: 'iati-activity/tag',
-          currentValue: currentTagsValue,
-          importValue: importTagsValue,
-          selected: isFieldAllowedByPreferences('iati-activity/tag'),
-          hasConflict: existingTags.length > 0,
-          tab: 'tags',
-          description: `${parsedActivity.tagClassifications.length} tag(s) found in XML`,
-          isTagField: true,
-          tagData: parsedActivity.tagClassifications,
-          existingTags: existingTags
+          fields.push({
+            fieldName: `Tag ${tagIndex + 1}`,
+            iatiPath: `iati-activity/tag[${tagIndex + 1}]`,
+            currentValue: existingTags.length > 0 ? existingTags.map(t => t.name).join(', ') : 'None',
+            importValue: tagSummary,
+            selected: isFieldAllowedByPreferences('iati-activity/tag'),
+            hasConflict: existingTags.length > 0,
+            tab: 'tags',
+            description: `Tag ${tagIndex + 1} - ${tag.narrative || 'Unnamed tag'}`,
+            isTagField: true,
+            tagData: [tag], // Single tag in array for compatibility
+            existingTags: existingTags
+          });
         });
       }
 
@@ -4021,17 +4045,37 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
           : 'None';
 
         const importConditionsValue = parsedActivity.conditions.conditions.map((cond: any) => {
-          const typeLabel = cond.type === '1' ? 'Policy' : 
-                           cond.type === '2' ? 'Performance' : 
+          const typeLabel = cond.type === '1' ? 'Policy' :
+                           cond.type === '2' ? 'Performance' :
                            cond.type === '3' ? 'Fiduciary' : 'Unknown';
           return `[${typeLabel}] ${cond.narrative || 'No description'}`;
         }).join('; ');
+
+        // Create structured import value with conditions data
+        const conditionsImportValue = {
+          attached: parsedActivity.conditions.attached,
+          conditions: parsedActivity.conditions.conditions.map((condition: any) => {
+            // Get first narrative for display (prefer English)
+            let displayNarrative = '';
+            if (condition.narratives && condition.narratives.length > 0) {
+              const enNarrative = condition.narratives.find((n: any) => !n.lang || n.lang === 'en');
+              displayNarrative = enNarrative ? enNarrative.text : condition.narratives[0].text;
+            } else {
+              displayNarrative = condition.narrative || '';
+            }
+
+            return {
+              type: condition.type || '1',
+              narrative: displayNarrative
+            };
+          })
+        };
 
         fields.push({
           fieldName: 'Conditions',
           iatiPath: 'iati-activity/conditions',
           currentValue: currentConditionsValue,
-          importValue: `${parsedActivity.conditions.conditions.length} condition(s), Attached: ${parsedActivity.conditions.attached ? 'Yes' : 'No'}`,
+          importValue: conditionsImportValue,
           selected: isFieldAllowedByPreferences('iati-activity/conditions'),
           hasConflict: existingConditions.length > 0,
           tab: 'conditions',
@@ -4039,12 +4083,24 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
           isConditionsField: true,
           conditionsData: {
             attached: parsedActivity.conditions.attached,
-            conditions: parsedActivity.conditions.conditions.map((condition: any) => ({
-              type: condition.type || '1',
-              narrative: {
-                [condition.narrativeLang || 'en']: condition.narrative
+            conditions: parsedActivity.conditions.conditions.map((condition: any) => {
+              // Convert narratives array to object with language keys
+              const narrativeObj: Record<string, string> = {};
+              if (condition.narratives && condition.narratives.length > 0) {
+                condition.narratives.forEach((narr: any) => {
+                  const lang = narr.lang || 'en';
+                  narrativeObj[lang] = narr.text;
+                });
+              } else if (condition.narrative) {
+                // Fallback for backward compatibility
+                narrativeObj[condition.narrativeLang || 'en'] = condition.narrative;
               }
-            }))
+
+              return {
+                type: condition.type || '1',
+                narrative: narrativeObj
+              };
+            })
           },
         });
       }
@@ -5214,14 +5270,26 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
           case 'Planned Start Date':
             updateData.planned_start_date = field.importValue;
             break;
+          case 'Planned Start Date Description':
+            updateData.planned_start_description = field.importValue;
+            break;
           case 'Planned End Date':
             updateData.planned_end_date = field.importValue;
+            break;
+          case 'Planned End Date Description':
+            updateData.planned_end_description = field.importValue;
             break;
           case 'Actual Start Date':
             updateData.actual_start_date = field.importValue;
             break;
+          case 'Actual Start Date Description':
+            updateData.actual_start_description = field.importValue;
+            break;
           case 'Actual End Date':
             updateData.actual_end_date = field.importValue;
+            break;
+          case 'Actual End Date Description':
+            updateData.actual_end_description = field.importValue;
             break;
           case 'Activity Status':
             updateData.activity_status = typeof field.importValue === 'object' ? field.importValue.code : field.importValue;
@@ -5234,9 +5302,6 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
             break;
           case 'Activity Scope':
             updateData.activity_scope = typeof field.importValue === 'object' ? field.importValue.code : field.importValue;
-            break;
-          case 'Narrative Language':
-            updateData.language = typeof field.importValue === 'object' ? field.importValue.code : field.importValue;
             break;
           case 'Default Currency':
             updateData.default_currency = field.importValue;
@@ -8334,9 +8399,6 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
             case 'Activity Scope':
               saveKey = 'activityScope';
               break;
-            case 'Narrative Language':
-              saveKey = 'language';
-              break;
             case 'Default Currency':
               saveKey = 'defaultCurrency';
               break;
@@ -8359,17 +8421,29 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
               saveKey = 'plannedStartDate';
               console.log(`[IATI Import] Date field mapping: ${field.fieldName} -> ${saveKey} with value: ${field.importValue}`);
               break;
+            case 'Planned Start Date Description':
+              saveKey = 'plannedStartDescription';
+              break;
             case 'Planned End Date':
               saveKey = 'plannedEndDate';
               console.log(`[IATI Import] Date field mapping: ${field.fieldName} -> ${saveKey} with value: ${field.importValue}`);
+              break;
+            case 'Planned End Date Description':
+              saveKey = 'plannedEndDescription';
               break;
             case 'Actual Start Date':
               saveKey = 'actualStartDate';
               console.log(`[IATI Import] Date field mapping: ${field.fieldName} -> ${saveKey} with value: ${field.importValue}`);
               break;
+            case 'Actual Start Date Description':
+              saveKey = 'actualStartDescription';
+              break;
             case 'Actual End Date':
               saveKey = 'actualEndDate';
               console.log(`[IATI Import] Date field mapping: ${field.fieldName} -> ${saveKey} with value: ${field.importValue}`);
+              break;
+            case 'Actual End Date Description':
+              saveKey = 'actualEndDescription';
               break;
             case 'Recipient Countries':
               saveKey = 'recipient_countries';
