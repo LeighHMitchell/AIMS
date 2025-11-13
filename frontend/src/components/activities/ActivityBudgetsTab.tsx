@@ -19,7 +19,7 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import { FinancialSummaryCards } from '@/components/FinancialSummaryCards';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
-import { fixedCurrencyConverter } from '@/lib/currency-converter-fixed';
+import { convertToUSD } from '@/lib/currency-conversion-api';
 import { Tooltip as UITooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useUser } from '@/hooks/useUser';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -386,38 +386,20 @@ export default function ActivityBudgetsTab({
     }
   }, [budgets, onBudgetsChange, loading]);
 
-  // Convert only paginated budgets to USD when they change
+  // Read stored USD values from database (no conversion needed)
   useEffect(() => {
-    let cancelled = false;
-    async function convertAll() {
-      const newUsdValues: Record<string, { usd: number|null, rate: number|null, date: string, loading: boolean, error?: string }> = {};
-      for (const budget of paginatedBudgets) {
-        if (budget.value === null || budget.value === undefined || isNaN(budget.value) || !budget.currency || !budget.value_date) {
-          newUsdValues[budget.id || `${budget.period_start}-${budget.period_end}`] = { usd: null, rate: null, date: budget.value_date, loading: false, error: 'Missing data' };
-          continue;
-        }
-        newUsdValues[budget.id || `${budget.period_start}-${budget.period_end}`] = { usd: null, rate: null, date: budget.value_date, loading: true };
-        try {
-          const result = await fixedCurrencyConverter.convertToUSD(budget.value, budget.currency, new Date(budget.value_date));
-          if (!cancelled) {
-            newUsdValues[budget.id || `${budget.period_start}-${budget.period_end}`] = {
-              usd: result.usd_amount,
-              rate: result.exchange_rate,
-              date: result.conversion_date || budget.value_date,
-              loading: false,
-              error: result.success ? undefined : result.error || 'Conversion failed'
-            };
-          }
-        } catch (err) {
-          if (!cancelled) {
-            newUsdValues[budget.id || `${budget.period_start}-${budget.period_end}`] = { usd: null, rate: null, date: budget.value_date, loading: false, error: 'Conversion error' };
-          }
-        }
-      }
-      if (!cancelled) setUsdValues(newUsdValues);
+    const newUsdValues: Record<string, { usd: number|null, rate: number|null, date: string, loading: boolean, error?: string }> = {};
+    for (const budget of paginatedBudgets) {
+      const key = budget.id || `${budget.period_start}-${budget.period_end}`;
+      newUsdValues[key] = {
+        usd: budget.usd_value ?? null,
+        rate: null,
+        date: budget.value_date,
+        loading: false,
+        error: budget.usd_value === null && budget.currency !== 'USD' ? 'Not converted' : undefined
+      };
     }
-    if (paginatedBudgets.length > 0) convertAll();
-    return () => { cancelled = true; };
+    setUsdValues(newUsdValues);
   }, [paginatedBudgets]);
 
   // Calculate budget totals for optional tooltip display
@@ -1187,7 +1169,7 @@ export default function ActivityBudgetsTab({
         if (modalBudget.currency === 'USD') {
           setModalBudget(prev => prev ? { ...prev, usd_value: modalBudget.value } : null);
         } else {
-          const result = await fixedCurrencyConverter.convertToUSD(
+          const result = await convertToUSD(
             modalBudget.value,
             modalBudget.currency,
             new Date(modalBudget.value_date)
@@ -1291,48 +1273,26 @@ export default function ActivityBudgetsTab({
     console.log('[BulkInsert] Starting bulk insert of', budgets.length, 'budgets:', budgets);
     
     try {
-      // Calculate usd_value for each budget
-      console.log('[BulkInsert] Converting currencies for all budgets...');
-      const budgetsWithUsd = await Promise.all(budgets.map(async (b, index) => {
-        console.log(`[BulkInsert] Converting budget ${index + 1}/${budgets.length}:`, b);
-        try {
-          const result = await fixedCurrencyConverter.convertToUSD(b.value, b.currency, new Date(b.value_date));
-          const converted = { 
-            activity_id: b.activity_id,
-            type: b.type,
-            status: b.status,
-            period_start: b.period_start,
-            period_end: b.period_end,
-            value: b.value,
-            currency: b.currency,
-            value_date: b.value_date,
-            usd_value: result.usd_amount !== undefined && result.usd_amount !== null ? result.usd_amount : null
-          };
-          console.log(`[BulkInsert] Budget ${index + 1} converted:`, converted);
-          return converted;
-        } catch (conversionError) {
-          console.warn(`[BulkInsert] Currency conversion failed for budget ${index + 1}:`, b, conversionError);
-          const fallback = { 
-            activity_id: b.activity_id,
-            type: b.type,
-            status: b.status,
-            period_start: b.period_start,
-            period_end: b.period_end,
-            value: b.value,
-            currency: b.currency,
-            value_date: b.value_date,
-            usd_value: null
-          };
-          console.log(`[BulkInsert] Budget ${index + 1} fallback:`, fallback);
-          return fallback;
-        }
+      // API will handle USD conversion, just prepare the budget data
+      console.log('[BulkInsert] Preparing', budgets.length, 'budgets for insert:', budgets);
+      
+      const budgetData = budgets.map(b => ({
+        activity_id: b.activity_id,
+        type: b.type,
+        status: b.status,
+        period_start: b.period_start,
+        period_end: b.period_end,
+        value: b.value,
+        currency: b.currency,
+        value_date: b.value_date
+        // usd_value will be calculated by the API
       }));
       
-      console.log('[BulkInsert] All conversions complete. Inserting', budgetsWithUsd.length, 'budgets with USD values:', budgetsWithUsd);
+      console.log('[BulkInsert] Inserting', budgetData.length, 'budgets:', budgetData);
       
-      const { data, error } = await supabase
+      const { data, error} = await supabase
         .from('activity_budgets')
-        .insert(budgetsWithUsd)
+        .insert(budgetData)
         .select();
         
       if (error) {
@@ -2189,6 +2149,25 @@ export default function ActivityBudgetsTab({
                     </React.Fragment>
                     );
                   })
+                )}
+                {/* Total Row */}
+                {sortedBudgets.length > 0 && (
+                  <TableRow className="bg-slate-50 border-t-2 border-slate-300 font-semibold">
+                    <TableCell colSpan={readOnly ? 6 : 7} className="py-3 px-4 text-right">
+                      Total:
+                    </TableCell>
+                    <TableCell className="py-3 px-4 text-right whitespace-nowrap">
+                      <span className="font-semibold">
+                        <span className="text-muted-foreground">USD</span>{' '}
+                        {Object.values(usdValues)
+                          .reduce((sum, val) => sum + (val.usd || 0), 0)
+                          .toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                      </span>
+                    </TableCell>
+                    {!readOnly && (
+                      <TableCell className="py-3 px-4"></TableCell>
+                    )}
+                  </TableRow>
                 )}
               </TableBody>
             </Table>

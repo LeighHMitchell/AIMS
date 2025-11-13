@@ -129,13 +129,13 @@ interface ParsedActivity {
     narratives?: Array<{ lang: string; text: string }>;
   }>;
   
-  // Other Identifiers
+  // Other Identifiers (IATI v2.03 compliant)
   otherIdentifiers?: Array<{
-    ref?: string;
-    type?: string;
+    ref?: string;        // other-identifier/@ref (required)
+    type?: string;       // other-identifier/@type (required)
     ownerOrg?: {
-      ref?: string;
-      narrative?: string;
+      ref?: string;      // other-identifier/owner-org/@ref (optional)
+      narrative?: string; // other-identifier/owner-org/narrative (optional)
     };
   }>;
   
@@ -996,7 +996,7 @@ export class IATIXMLParser {
           type: otherIdElement.getAttribute('type') || undefined,
         };
         
-        // Parse owner-org if present
+        // Parse owner-org if present (IATI v2.03 compliant)
         if (ownerOrg) {
           otherIdentifierData.ownerOrg = {
             ref: ownerOrg.getAttribute('ref') || undefined,

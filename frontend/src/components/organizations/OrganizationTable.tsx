@@ -1,5 +1,6 @@
 import React from "react";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import {
   ArrowUp,
   ArrowDown,
@@ -10,6 +11,7 @@ import {
   MoreVertical,
   Building2,
   DollarSign,
+  Copy,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -48,6 +50,7 @@ type Organization = {
   totalDisbursed?: number;
   logo?: string;
   tags?: string[];
+  created_at: string;
 };
 
 type OrganizationType = {
@@ -58,7 +61,7 @@ type OrganizationType = {
   sort_order: number;
 };
 
-type SortField = 'name' | 'acronym' | 'type' | 'location' | 'activities' | 'funding';
+type SortField = 'name' | 'acronym' | 'type' | 'location' | 'activities' | 'funding' | 'created_at';
 type SortOrder = 'asc' | 'desc';
 
 interface OrganizationTableProps {
@@ -71,15 +74,39 @@ interface OrganizationTableProps {
   onDelete: (org: Organization) => void;
 }
 
-// Format currency helper
-const formatCurrency = (amount: number | null | undefined): string => {
+// Format currency helper - returns JSX with gray currency code
+const formatCurrency = (amount: number | null | undefined): React.ReactNode => {
   if (amount == null || isNaN(amount)) return '-';
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
+  const formattedValue = new Intl.NumberFormat('en-US', {
     minimumFractionDigits: 0,
     maximumFractionDigits: 0,
   }).format(amount);
+
+  return (
+    <>
+      <span className="text-muted-foreground">USD</span> {formattedValue}
+    </>
+  );
+};
+
+// Format date helper
+const formatDate = (dateString: string): string => {
+  if (!dateString) return '-';
+  const date = new Date(dateString);
+  return new Intl.DateTimeFormat('en-US', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+  }).format(date);
+};
+
+// Copy to clipboard helper
+const copyToClipboard = (text: string, label: string) => {
+  navigator.clipboard.writeText(text).then(() => {
+    toast.success(`${label} copied to clipboard`);
+  }).catch(() => {
+    toast.error('Failed to copy to clipboard');
+  });
 };
 
 // Get organization type label
@@ -151,7 +178,7 @@ export const OrganizationTable: React.FC<OrganizationTableProps> = ({
           <TableHeader className="bg-muted/50 border-b border-border">
             <TableRow>
               <TableHead
-                className="h-12 px-4 py-3 text-left align-middle text-sm font-medium text-muted-foreground cursor-pointer hover:bg-muted/80 transition-colors w-[35%]"
+                className="h-12 px-4 py-3 text-left align-middle text-sm font-medium text-muted-foreground cursor-pointer hover:bg-muted/80 transition-colors w-[28%]"
                 onClick={() => onSort('name')}
               >
                 <div className="flex items-center gap-1">
@@ -160,7 +187,7 @@ export const OrganizationTable: React.FC<OrganizationTableProps> = ({
                 </div>
               </TableHead>
               <TableHead
-                className="h-12 px-4 py-3 text-left align-middle text-sm font-medium text-muted-foreground cursor-pointer hover:bg-muted/80 transition-colors w-[15%]"
+                className="h-12 px-4 py-3 text-left align-middle text-sm font-medium text-muted-foreground cursor-pointer hover:bg-muted/80 transition-colors w-[13%]"
                 onClick={() => onSort('type')}
               >
                 <div className="flex items-center gap-1">
@@ -169,7 +196,7 @@ export const OrganizationTable: React.FC<OrganizationTableProps> = ({
                 </div>
               </TableHead>
               <TableHead
-                className="h-12 px-4 py-3 text-left align-middle text-sm font-medium text-muted-foreground cursor-pointer hover:bg-muted/80 transition-colors w-[14%]"
+                className="h-12 px-4 py-3 text-left align-middle text-sm font-medium text-muted-foreground cursor-pointer hover:bg-muted/80 transition-colors w-[12%]"
                 onClick={() => onSort('location')}
               >
                 <div className="flex items-center gap-1">
@@ -178,7 +205,7 @@ export const OrganizationTable: React.FC<OrganizationTableProps> = ({
                 </div>
               </TableHead>
               <TableHead
-                className="h-12 px-4 py-3 text-center align-middle text-sm font-medium text-muted-foreground cursor-pointer hover:bg-muted/80 transition-colors w-[10%]"
+                className="h-12 px-4 py-3 text-center align-middle text-sm font-medium text-muted-foreground cursor-pointer hover:bg-muted/80 transition-colors w-[9%]"
                 onClick={() => onSort('activities')}
               >
                 <div className="flex items-center justify-center gap-1">
@@ -187,7 +214,7 @@ export const OrganizationTable: React.FC<OrganizationTableProps> = ({
                 </div>
               </TableHead>
               <TableHead
-                className="h-12 px-4 py-3 text-right align-middle text-sm font-medium text-muted-foreground cursor-pointer hover:bg-muted/80 transition-colors w-[14%]"
+                className="h-12 px-4 py-3 text-right align-middle text-sm font-medium text-muted-foreground cursor-pointer hover:bg-muted/80 transition-colors w-[13%]"
                 onClick={() => onSort('funding')}
               >
                 <div className="flex items-center justify-end gap-1">
@@ -195,7 +222,16 @@ export const OrganizationTable: React.FC<OrganizationTableProps> = ({
                   {getSortIcon('funding')}
                 </div>
               </TableHead>
-              <TableHead className="h-12 px-4 py-3 text-right align-middle text-sm font-medium text-muted-foreground w-[12%]">
+              <TableHead
+                className="h-12 px-4 py-3 text-left align-middle text-sm font-medium text-muted-foreground cursor-pointer hover:bg-muted/80 transition-colors w-[12%]"
+                onClick={() => onSort('created_at')}
+              >
+                <div className="flex items-center gap-1">
+                  <span>Date Created</span>
+                  {getSortIcon('created_at')}
+                </div>
+              </TableHead>
+              <TableHead className="h-12 px-4 py-3 text-right align-middle text-sm font-medium text-muted-foreground w-[13%]">
                 Actions
               </TableHead>
             </TableRow>
@@ -235,13 +271,25 @@ export const OrganizationTable: React.FC<OrganizationTableProps> = ({
                         <TooltipProvider>
                           <Tooltip>
                             <TooltipTrigger asChild>
-                              <div className="font-medium line-clamp-2">
-                                {org.name}
-                                {org.acronym && (
-                                  <span className="text-muted-foreground font-normal">
-                                    {' '}({org.acronym})
-                                  </span>
-                                )}
+                              <div className="font-medium line-clamp-2 flex items-start gap-1.5">
+                                <span className="flex-1">
+                                  {org.name}
+                                  {org.acronym && (
+                                    <span className="text-muted-foreground font-normal">
+                                      {' '}({org.acronym})
+                                    </span>
+                                  )}
+                                </span>
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    copyToClipboard(org.name, 'Organization name');
+                                  }}
+                                  className="flex-shrink-0 p-1 hover:bg-gray-100 rounded transition-colors"
+                                  title="Copy organization name"
+                                >
+                                  <Copy className="h-3.5 w-3.5 text-gray-400 hover:text-gray-600" />
+                                </button>
                               </div>
                             </TooltipTrigger>
                             {org.description && (
@@ -252,10 +300,20 @@ export const OrganizationTable: React.FC<OrganizationTableProps> = ({
                           </Tooltip>
                         </TooltipProvider>
                         {org.iati_org_id && (
-                          <div className="mt-1">
+                          <div className="mt-1 flex items-center gap-1.5">
                             <span className="text-xs font-mono bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded">
                               {org.iati_org_id}
                             </span>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                copyToClipboard(org.iati_org_id!, 'IATI ID');
+                              }}
+                              className="flex-shrink-0 p-0.5 hover:bg-gray-100 rounded transition-colors"
+                              title="Copy IATI ID"
+                            >
+                              <Copy className="h-3 w-3 text-gray-400 hover:text-gray-600" />
+                            </button>
                           </div>
                         )}
                       </div>
@@ -283,7 +341,6 @@ export const OrganizationTable: React.FC<OrganizationTableProps> = ({
                       <Tooltip>
                         <TooltipTrigger asChild>
                           <div className="flex items-center justify-end gap-1">
-                            <DollarSign className="h-4 w-4 text-muted-foreground" />
                             <span>
                               {formatCurrency(org.totalBudgeted)}
                             </span>
@@ -294,6 +351,11 @@ export const OrganizationTable: React.FC<OrganizationTableProps> = ({
                         </TooltipContent>
                       </Tooltip>
                     </TooltipProvider>
+                  </TableCell>
+                  <TableCell className="px-4 py-3 text-sm text-foreground">
+                    <span className="text-muted-foreground">
+                      {formatDate(org.created_at)}
+                    </span>
                   </TableCell>
                   <TableCell className="px-4 py-3 text-sm text-foreground text-right">
                     <div className="flex items-center justify-end">

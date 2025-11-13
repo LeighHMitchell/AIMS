@@ -19,6 +19,7 @@
     "sync-users": "tsx src/scripts/sync-auth-users.ts",
     "create-test-user": "tsx src/scripts/create-test-user.ts",
     "create-auth-user": "tsx src/scripts/create-auth-user.ts",
+    "backfill:usd": "tsx scripts/backfill-usd-values.ts",
     "generate-dummy-data": "tsx src/scripts/generate-dummy-activities.ts",
     "generate-myanmar-data": "tsx src/scripts/generate-myanmar-activities.ts",
     "import-myanmar-data": "tsx src/scripts/import-myanmar-data.ts",
@@ -129,6 +130,7 @@
     "tailwindcss-animate": "^1.0.7",
     "uuid": "^11.1.0",
     "xml2js": "^0.6.2",
+    "xmldom": "^0.6.0",
     "zod": "^3.25.76"
   },
   "devDependencies": {

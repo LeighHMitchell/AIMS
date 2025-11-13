@@ -347,8 +347,21 @@ export async function GET(
     });
   } catch (error) {
     console.error('[AIMS API] Error fetching basic activity:', error);
+
+    // Log detailed error information
+    if (error instanceof Error) {
+      console.error('[AIMS API] Error name:', error.name);
+      console.error('[AIMS API] Error message:', error.message);
+      console.error('[AIMS API] Error stack:', error.stack);
+    } else {
+      console.error('[AIMS API] Non-Error object thrown:', JSON.stringify(error, null, 2));
+    }
+
     return NextResponse.json(
-      { error: 'Internal server error' },
+      {
+        error: 'Internal server error',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      },
       { status: 500 }
     );
   }

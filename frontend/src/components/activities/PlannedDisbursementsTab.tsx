@@ -17,7 +17,7 @@ import { cn } from '@/lib/utils';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, BarChart, Bar } from 'recharts';
 import { Badge } from '@/components/ui/badge';
 import { FinancialSummaryCards } from '@/components/FinancialSummaryCards';
-import { fixedCurrencyConverter } from '@/lib/currency-converter-fixed';
+import { convertToUSD } from '@/lib/currency-conversion-api';
 import {
   Table,
   TableBody,
@@ -360,7 +360,7 @@ export default function PlannedDisbursementsTab({
           if (modalDisbursement.currency === 'USD') {
             setModalDisbursement(prev => prev ? { ...prev, usdAmount: modalDisbursement.amount } : null);
           } else {
-            const result = await fixedCurrencyConverter.convertToUSD(
+            const result = await convertToUSD(
               modalDisbursement.amount,
               modalDisbursement.currency,
               new Date(modalDisbursement.value_date)
@@ -586,60 +586,36 @@ export default function PlannedDisbursementsTab({
             }
           }
 
-          // Use real-time USD conversion (same logic as FinancialSummaryCards)
-          const disbursementsWithUSD = await Promise.all(
-            data.map(async (disbursement: any) => {
-              let usdAmount = 0;
+          // Read stored USD values from database (no conversion needed)
+          const disbursementsWithOrgs = data.map((disbursement: any) => {
+            // Include organization logos from fetched data
+            const providerOrg = disbursement.provider_org_id ? orgData[disbursement.provider_org_id] : null;
+            const receiverOrg = disbursement.receiver_org_id ? orgData[disbursement.receiver_org_id] : null;
 
-              if (disbursement.amount && disbursement.currency) {
-                if (disbursement.currency === 'USD') {
-                  usdAmount = disbursement.amount;
-                } else {
-                  try {
-                    const conversionDate = disbursement.value_date ? new Date(disbursement.value_date) : new Date();
-                    const result = await fixedCurrencyConverter.convertToUSD(
-                      disbursement.amount,
-                      disbursement.currency,
-                      conversionDate
-                    );
-                    usdAmount = result.usd_amount || 0;
-                    console.log(`[PlannedDisbursementsTab] ✅ Real-time conversion: ${disbursement.amount} ${disbursement.currency} → $${usdAmount} USD`);
-                  } catch (err) {
-                    console.error('Currency conversion error:', err);
-                    usdAmount = 0;
-                  }
-                }
-              }
+            const result = {
+              ...disbursement,
+              usdAmount: disbursement.usd_amount ?? null, // Use stored value from database
+              provider_organization: providerOrg,
+              receiver_organization: receiverOrg,
+              provider_org_logo: providerOrg?.logo,
+              receiver_org_logo: receiverOrg?.logo,
+            };
 
-              // Include organization logos from fetched data
-              const providerOrg = disbursement.provider_org_id ? orgData[disbursement.provider_org_id] : null;
-              const receiverOrg = disbursement.receiver_org_id ? orgData[disbursement.receiver_org_id] : null;
+            // Debug logging
+            if (disbursement.provider_org_name || disbursement.receiver_org_name) {
+              console.log('[PlannedDisbursementsTab] Organization logos:', {
+                provider: disbursement.provider_org_name,
+                provider_logo: providerOrg?.logo ? 'HAS LOGO' : 'NO LOGO',
+                receiver: disbursement.receiver_org_name,
+                receiver_logo: receiverOrg?.logo ? 'HAS LOGO' : 'NO LOGO',
+                provider_org_data: providerOrg,
+                receiver_org_data: receiverOrg
+              });
+            }
 
-              const result = {
-                ...disbursement,
-                usdAmount,
-                provider_organization: providerOrg,
-                receiver_organization: receiverOrg,
-                provider_org_logo: providerOrg?.logo,
-                receiver_org_logo: receiverOrg?.logo,
-              };
-
-              // Debug logging
-              if (disbursement.provider_org_name || disbursement.receiver_org_name) {
-                console.log('[PlannedDisbursementsTab] Organization logos:', {
-                  provider: disbursement.provider_org_name,
-                  provider_logo: providerOrg?.logo ? 'HAS LOGO' : 'NO LOGO',
-                  receiver: disbursement.receiver_org_name,
-                  receiver_logo: receiverOrg?.logo ? 'HAS LOGO' : 'NO LOGO',
-                  provider_org_data: providerOrg,
-                  receiver_org_data: receiverOrg
-                });
-              }
-
-              return result;
-            })
-          );
-          setDisbursements(disbursementsWithUSD);
+            return result;
+          });
+          setDisbursements(disbursementsWithOrgs);
         }
       } catch (err) {
         console.error('Error fetching planned disbursements:', err);
@@ -673,59 +649,20 @@ export default function PlannedDisbursementsTab({
     }
   }, [disbursements, onDisbursementsChange, loading]);
 
-  // Convert all disbursements to USD when they change
+  // Read stored USD values from database (no conversion needed)
   useEffect(() => {
-    let cancelled = false;
-    async function convertAll() {
-      const newUsdValues: Record<string, { usd: number|null, rate: number|null, date: string, loading: boolean, error?: string }> = {};
-      for (const disbursement of disbursements) {
-        if (disbursement.amount === null || disbursement.amount === undefined || isNaN(disbursement.amount) || !disbursement.currency || !disbursement.value_date) {
-          newUsdValues[disbursement.id || `${disbursement.period_start}-${disbursement.period_end}`] = { 
-            usd: null, 
-            rate: null, 
-            date: disbursement.value_date, 
-            loading: false, 
-            error: 'Missing data' 
-          };
-          continue;
-        }
-        newUsdValues[disbursement.id || `${disbursement.period_start}-${disbursement.period_end}`] = { 
-          usd: null, 
-          rate: null, 
-          date: disbursement.value_date, 
-          loading: true 
-        };
-        try {
-          const result = await fixedCurrencyConverter.convertToUSD(
-            disbursement.amount, 
-            disbursement.currency, 
-            new Date(disbursement.value_date)
-          );
-          if (!cancelled) {
-            newUsdValues[disbursement.id || `${disbursement.period_start}-${disbursement.period_end}`] = {
-              usd: result.usd_amount,
-              rate: result.exchange_rate,
-              date: result.conversion_date || disbursement.value_date,
-              loading: false,
-              error: result.success ? undefined : result.error || 'Conversion failed'
-            };
-          }
-        } catch (err) {
-          if (!cancelled) {
-            newUsdValues[disbursement.id || `${disbursement.period_start}-${disbursement.period_end}`] = { 
-              usd: null, 
-              rate: null, 
-              date: disbursement.value_date, 
-              loading: false, 
-              error: 'Conversion error' 
-            };
-          }
-        }
-      }
-      if (!cancelled) setUsdValues(newUsdValues);
+    const newUsdValues: Record<string, { usd: number|null, rate: number|null, date: string, loading: boolean, error?: string }> = {};
+    for (const disbursement of disbursements) {
+      const key = disbursement.id || `${disbursement.period_start}-${disbursement.period_end}`;
+      newUsdValues[key] = {
+        usd: disbursement.usd_amount ?? null,
+        rate: null,
+        date: disbursement.value_date || '',
+        loading: false,
+        error: disbursement.usd_amount === null && disbursement.currency !== 'USD' ? 'Not converted' : undefined
+      };
     }
-    if (disbursements.length > 0) convertAll();
-    return () => { cancelled = true; };
+    setUsdValues(newUsdValues);
   }, [disbursements]);
 
   // Filter disbursements by status
@@ -904,29 +841,12 @@ export default function PlannedDisbursementsTab({
         throw new Error('Duplicate period for this activity');
       }
 
-      // Convert to USD
-      let usdAmount = 0;
-      if (disbursement.amount && disbursement.currency && disbursement.currency !== 'USD') {
-        try {
-          const conversionDate = disbursement.value_date ? new Date(disbursement.value_date) : new Date();
-          const result = await fixedCurrencyConverter.convertToUSD(
-            disbursement.amount,
-            disbursement.currency,
-            conversionDate
-          );
-          usdAmount = result.usd_amount || 0;
-        } catch (err) {
-          console.error('Currency conversion error:', err);
-        }
-      } else if (disbursement.currency === 'USD') {
-        usdAmount = disbursement.amount;
-      }
-
+      // API will handle USD conversion
       const disbursementData = {
         activity_id: activityId,
         amount: disbursement.amount,
         currency: disbursement.currency,
-        usd_amount: usdAmount, // Save the USD conversion
+        // usd_amount will be calculated by the API
         period_start: periodStart,
         period_end: periodEnd,
         provider_org_id: disbursement.provider_org_id || null,
@@ -964,7 +884,7 @@ export default function PlannedDisbursementsTab({
 
         const { data } = await response.json();
         setDisbursements(prev => prev.map(d => 
-          d.id === disbursement.id ? { ...data, usdAmount } : d
+          d.id === disbursement.id ? { ...data, usdAmount: data.usd_amount } : d
         ));
         savedId = disbursement.id;
       } else {
@@ -983,7 +903,7 @@ export default function PlannedDisbursementsTab({
         }
 
         const { data } = await response.json();
-        setDisbursements(prev => [...prev.filter(d => d.id !== undefined), { ...data, usdAmount }]);
+        setDisbursements(prev => [...prev.filter(d => d.id !== undefined), { ...data, usdAmount: data.usd_amount }]);
         savedId = data.id;
       }
 
@@ -1261,32 +1181,16 @@ export default function PlannedDisbursementsTab({
     // Try to find organization by ID to get acronym
     if (orgId) {
       const org = organizations.find(o => o.id === orgId);
-      if (org && org.acronym) {
-        return org.acronym;
+      if (org) {
+        // Prefer acronym, but fall back to name if no acronym
+        return org.acronym || org.name || orgName || '-';
       }
     }
     
-    // If no acronym found but we have an orgName, extract potential acronym
+    // If no org found by ID, just use the name directly
+    // Don't generate acronyms - show the full name
     if (orgName) {
-      // Check if orgName contains parentheses with potential acronym
-      const match = orgName.match(/\(([A-Z]+)\)$/);
-      if (match) {
-        return match[1];
-      }
-      
-      // If no parentheses, check if it's already an acronym (short and uppercase)
-      if (orgName.length <= 6 && orgName === orgName.toUpperCase()) {
-        return orgName;
-      }
-      
-      // As fallback, create acronym from first letters of words
-      const words = orgName.split(' ').filter(word => word.length > 0);
-      if (words.length > 1) {
-        return words.map(word => word.charAt(0).toUpperCase()).join('');
-      }
-      
-      // If single word, return first 3-4 characters
-      return orgName.substring(0, Math.min(4, orgName.length)).toUpperCase();
+      return orgName;
     }
     
     return '-';
@@ -1309,29 +1213,12 @@ export default function PlannedDisbursementsTab({
       const periodStart = new Date(modalDisbursement.period_start).toISOString().slice(0, 10);
       const periodEnd = new Date(modalDisbursement.period_end).toISOString().slice(0, 10);
 
-      // Convert to USD before saving
-      let usdAmount = 0;
-      if (modalDisbursement.amount && modalDisbursement.currency && modalDisbursement.currency !== 'USD') {
-        try {
-          const conversionDate = modalDisbursement.value_date ? new Date(modalDisbursement.value_date) : new Date();
-          const result = await fixedCurrencyConverter.convertToUSD(
-            modalDisbursement.amount,
-            modalDisbursement.currency,
-            conversionDate
-          );
-          usdAmount = result.usd_amount || 0;
-        } catch (err) {
-          console.error('Currency conversion error:', err);
-        }
-      } else if (modalDisbursement.currency === 'USD') {
-        usdAmount = modalDisbursement.amount;
-      }
-
+      // API will handle USD conversion
       const disbursementData = {
         activity_id: activityId,
         amount: modalDisbursement.amount,
         currency: modalDisbursement.currency,
-        usd_amount: usdAmount, // Save the USD conversion
+        // usd_amount will be calculated by the API
         period_start: periodStart,
         period_end: periodEnd,
         type: modalDisbursement.type || '1',
@@ -1376,7 +1263,7 @@ export default function PlannedDisbursementsTab({
 
         const { data } = await response.json();
         setDisbursements(prev => prev.map((disbursement: PlannedDisbursement) => 
-          disbursement.id === modalDisbursement.id ? { ...data, usdAmount } : disbursement
+          disbursement.id === modalDisbursement.id ? { ...data, usdAmount: data.usd_amount } : disbursement
         ));
         toast.success('Planned disbursement updated successfully');
       } else {
@@ -1395,7 +1282,7 @@ export default function PlannedDisbursementsTab({
         }
 
         const { data } = await response.json();
-        setDisbursements(prev => [...prev.filter(d => d.id !== undefined), { ...data, usdAmount }]);
+        setDisbursements(prev => [...prev.filter(d => d.id !== undefined), { ...data, usdAmount: data.usd_amount }]);
         toast.success('Planned disbursement added successfully');
       }
 
@@ -2162,6 +2049,22 @@ export default function PlannedDisbursementsTab({
                         </React.Fragment>
                       );
                     })}
+                    {/* Total Row */}
+                    {sortedFilteredDisbursements.length > 0 && (
+                      <TableRow className="bg-slate-50 border-t-2 border-slate-300 font-semibold">
+                        <TableCell colSpan={readOnly ? 6 : 7} className="py-3 px-4 text-right">
+                          Total:
+                        </TableCell>
+                        <TableCell className="py-3 px-4 text-right whitespace-nowrap">
+                          <span className="font-semibold">
+                            <span className="text-muted-foreground">USD</span>{' '}
+                            {Object.values(usdValues)
+                              .reduce((sum, val) => sum + (val.usd || 0), 0)
+                              .toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                          </span>
+                        </TableCell>
+                      </TableRow>
+                    )}
                   </TableBody>
                 </Table>
               </div>

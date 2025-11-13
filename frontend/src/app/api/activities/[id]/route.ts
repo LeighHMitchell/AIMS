@@ -77,35 +77,9 @@ export async function PATCH(
         reportingOrgAcronym = matchingOrg.acronym;
         console.log(`[AIMS API] Found existing organization: ${matchingOrg.name} (ID: ${reportingOrgId})`);
       } else {
-        // Create the reporting organization (name is required, ref is optional)
-        console.log(`[AIMS API] Creating new organization: ${reportingOrgName}${reportingOrgRef ? ` with ref ${reportingOrgRef}` : ' (no ref)'}`);
-
-        const { data: newOrg, error: orgError } = await getSupabaseAdmin()
-          .from('organizations')
-          .insert({
-            name: reportingOrgName,
-            iati_org_id: reportingOrgRef || null,
-            type: reportingOrgType, // Use the IATI organization type code
-            country: 'MM',
-            alias_refs: reportingOrgRef ? [reportingOrgRef] : []
-          })
-          .select('id, name, acronym')
-          .single();
-
-        if (!orgError && newOrg) {
-          reportingOrgId = newOrg.id;
-          reportingOrgAcronym = newOrg.acronym;
-          console.log(`[AIMS API] Created new organization: ${newOrg.name} (ID: ${reportingOrgId})`);
-        } else if (orgError) {
-          console.error(`[AIMS API] Error creating organization:`, {
-            error: orgError,
-            message: orgError.message,
-            code: orgError.code,
-            details: orgError.details,
-            hint: orgError.hint
-          });
-          // Continue anyway - we'll use name fields even without org ID
-        }
+        // Don't create organization for reporting-org - it should be created via transactions/participating orgs
+        console.log(`[AIMS API] Reporting organization not found: ${reportingOrgName}${reportingOrgRef ? ` (${reportingOrgRef})` : ' (no ref)'} - will be created via transactions or participating orgs`);
+        // Store the ref and name for later use, but don't create the org here
       }
     }
 

@@ -1468,6 +1468,23 @@ export default function FinancialAnalyticsTab({
         value = parseFloat(String(transaction.value)) || 0
       }
 
+      // Debug logging to identify currency issues
+      try {
+        if (value && transaction.currency !== 'USD') {
+          console.warn('[Financial Overview] Non-USD transaction being used:', {
+            id: transaction.id,
+            type: transaction.transaction_type,
+            originalValue: transaction.value,
+            currency: transaction.currency,
+            usd_value: transaction.usd_value,
+            value_usd: transaction.value_usd,
+            computedValue: value
+          })
+        }
+      } catch (e) {
+        // Ignore logging errors
+      }
+
       // Skip transactions without valid USD values
       if (!value) return
       
@@ -1509,14 +1526,22 @@ export default function FinancialAnalyticsTab({
     // Process planned disbursements
     plannedDisbursements?.forEach((pd: any) => {
       if (!pd.period_start) return
-      
+
       const date = new Date(pd.period_start)
       if (isNaN(date.getTime())) return
-      
+
       const dateKey = date.toISOString().split('T')[0]
-      // Try usd_amount first, then amount as fallback
-      const value = parseFloat(String(pd.usd_amount || pd.amount)) || 0
-      
+      // ONLY use USD values - try usd_amount first
+      let value = parseFloat(String(pd.usd_amount)) || 0
+
+      // Only use raw amount if currency is explicitly USD and no USD conversion exists
+      if (!value && pd.currency === 'USD' && pd.amount) {
+        value = parseFloat(String(pd.amount)) || 0
+      }
+
+      // Skip planned disbursements without valid USD values
+      if (!value) return
+
       if (!dateMap.has(dateKey)) {
         dateMap.set(dateKey, {
           date,
@@ -1538,14 +1563,37 @@ export default function FinancialAnalyticsTab({
     // Process budgets
     budgets?.forEach((budget: any) => {
       if (!budget.period_start) return
-      
+
       const date = new Date(budget.period_start)
       if (isNaN(date.getTime())) return
-      
+
       const dateKey = date.toISOString().split('T')[0]
-      // Try usd_value first, then value as fallback
-      const value = parseFloat(String(budget.usd_value || budget.value)) || 0
-      
+      // ONLY use USD values - try usd_value first
+      let value = parseFloat(String(budget.usd_value)) || 0
+
+      // Only use raw value if currency is explicitly USD and no USD conversion exists
+      if (!value && budget.currency === 'USD' && budget.value) {
+        value = parseFloat(String(budget.value)) || 0
+      }
+
+      // Debug logging to identify currency issues
+      try {
+        if (value && budget.currency !== 'USD') {
+          console.warn('[Financial Overview] Non-USD budget being used:', {
+            id: budget.id,
+            originalValue: budget.value,
+            currency: budget.currency,
+            usd_value: budget.usd_value,
+            computedValue: value
+          })
+        }
+      } catch (e) {
+        // Ignore logging errors
+      }
+
+      // Skip budgets without valid USD values
+      if (!value) return
+
       if (!dateMap.has(dateKey)) {
         dateMap.set(dateKey, {
           date,
@@ -1856,7 +1904,12 @@ export default function FinancialAnalyticsTab({
       plannedDisbursements?.forEach((pd: any) => {
         const provider = pd.provider_org_name || pd.provider_org_ref || 'Unknown Provider'
         const receiver = pd.receiver_org_name || pd.receiver_org_ref || 'Unknown Receiver'
-        const amount = parseFloat(pd.usd_amount) || (pd.currency === 'USD' ? parseFloat(pd.amount) : 0) || 0
+
+        // ONLY use USD values
+        let amount = parseFloat(pd.usd_amount) || 0
+        if (!amount && pd.currency === 'USD' && pd.amount) {
+          amount = parseFloat(pd.amount) || 0
+        }
 
         if (amount > 0) {
           byOrg[provider] = (byOrg[provider] || 0) + amount
@@ -1888,7 +1941,12 @@ export default function FinancialAnalyticsTab({
 
         const provider = t.provider_org_name || t.provider_org_ref || 'Unknown Provider'
         const receiver = t.receiver_org_name || t.receiver_org_ref || 'Unknown Receiver'
-        const amount = parseFloat(t.usd_value || t.value_usd) || (t.currency === 'USD' ? parseFloat(t.value) : 0) || 0
+
+        // ONLY use USD values
+        let amount = parseFloat(t.usd_value || t.value_usd) || 0
+        if (!amount && t.currency === 'USD' && t.value) {
+          amount = parseFloat(t.value) || 0
+        }
 
         if (amount > 0) {
           byOrg[provider] = (byOrg[provider] || 0) + amount

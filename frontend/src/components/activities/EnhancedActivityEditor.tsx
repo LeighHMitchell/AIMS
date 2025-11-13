@@ -36,6 +36,8 @@ import {
   Link2,
   FileCode,
   Eye,
+  Plus,
+  Trash2,
 } from 'lucide-react';
 
 // Initialize Supabase client
@@ -82,6 +84,14 @@ interface EnhancedActivityEditorProps {
     iati_identifier?: string;
     other_identifier_type?: string;
     other_identifier_code?: string;
+    other_identifiers?: Array<{
+      code: string;
+      type?: string;
+      ownerOrg?: {
+        narrative?: string;
+        ref?: string;
+      };
+    }>;
     mou_documents?: Array<{
       name: string;
       url: string;
@@ -139,6 +149,16 @@ export default function EnhancedActivityEditor({ activityId, initialData = {} }:
     other_identifier_type: initialData.other_identifier_type || '',
     other_identifier_code: initialData.other_identifier_code || '',
   });
+
+  // State for other identifiers array (separate from legacy fields)
+  const [otherIdentifiers, setOtherIdentifiers] = useState<Array<{
+    code: string;
+    type?: string;
+    ownerOrg?: {
+      narrative?: string;
+      ref?: string;
+    };
+  }>>(initialData.other_identifiers || []);
 
   // File upload state
   const [mouDocuments, setMouDocuments] = useState(initialData.mou_documents || []);
@@ -350,6 +370,86 @@ export default function EnhancedActivityEditor({ activityId, initialData = {} }:
         await updateOtherIdentifierCode(value);
         break;
     }
+  };
+
+  // Other Identifiers handlers
+  const addOtherIdentifier = () => {
+    setOtherIdentifiers(prev => [...prev, {
+      code: '',
+      type: '',
+      ownerOrg: {
+        narrative: '',
+        ref: ''
+      }
+    }]);
+  };
+
+  const removeOtherIdentifier = async (index: number) => {
+    const newIdentifiers = otherIdentifiers.filter((_, i) => i !== index);
+    setOtherIdentifiers(newIdentifiers);
+    await saveOtherIdentifiers(newIdentifiers);
+  };
+
+  const updateOtherIdentifierField = (index: number, field: string, value: string) => {
+    setOtherIdentifiers(prev => {
+      const updated = [...prev];
+      if (field.startsWith('ownerOrg.')) {
+        const ownerOrgField = field.split('.')[1];
+        updated[index] = {
+          ...updated[index],
+          ownerOrg: {
+            ...updated[index].ownerOrg,
+            [ownerOrgField]: value
+          }
+        };
+      } else {
+        updated[index] = {
+          ...updated[index],
+          [field]: value
+        };
+      }
+      return updated;
+    });
+  };
+
+  const saveOtherIdentifiers = async (identifiers: typeof otherIdentifiers) => {
+    setSaving(prev => ({ ...prev, other_identifiers: true }));
+
+    try {
+      const response = await fetch(`/api/activities/field`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          activityId: activityId,
+          field: 'otherIdentifiers',
+          value: identifiers
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to save other identifiers');
+      }
+
+      setLastSaved(prev => ({ ...prev, other_identifiers: new Date() }));
+      toast.success('Other identifiers saved successfully', {
+        position: 'top-right',
+        duration: 2000
+      });
+    } catch (error) {
+      console.error('Error saving other identifiers:', error);
+      toast.error('Failed to save other identifiers', {
+        position: 'top-right',
+        duration: 3000
+      });
+    } finally {
+      setSaving(prev => ({ ...prev, other_identifiers: false }));
+    }
+  };
+
+  const handleOtherIdentifierBlur = async (index: number) => {
+    await saveOtherIdentifiers(otherIdentifiers);
   };
 
   // Context-aware commenting helper
@@ -791,43 +891,129 @@ export default function EnhancedActivityEditor({ activityId, initialData = {} }:
                   </FieldWrapper>
                 </div>
 
-                {/* Other Identifier Types Section */}
+                {/* Other Identifiers Section (IATI-compliant) */}
                 <div className="mt-8 pt-6 border-t border-gray-200">
-                  <h4 className="text-sm font-semibold text-gray-900 mb-4">Other Identifier Types</h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {/* Other Identifier Type */}
-                    <FieldWrapper section="dates" field="other_identifier_type" label="Other Identifier Type">
-                      <div className="space-y-1">
-                        <OtherIdentifierTypeSelect
-                          value={formData.other_identifier_type || ''}
-                          onValueChange={(value) => {
-                            handleFieldChange('other_identifier_type', value || '');
-                            handleFieldBlur('other_identifier_type', value || '');
-                          }}
-                          placeholder="Select identifier type..."
-                          disabled={saving.other_identifier_type}
-                        />
-                        <SaveIndicator fieldName="other_identifier_type" />
-                      </div>
-                    </FieldWrapper>
-
-                    {/* Other Identifier Code */}
-                    <FieldWrapper section="dates" field="other_identifier_code" label="Identifier Code">
-                      <div className="space-y-1">
-                        <Input
-                          type="text"
-                          value={formData.other_identifier_code || ''}
-                          onChange={(e) => {
-                            handleFieldChange('other_identifier_code', e.target.value);
-                            handleFieldBlur('other_identifier_code', e.target.value);
-                          }}
-                          placeholder="Enter identifier code..."
-                          disabled={saving.other_identifier_code}
-                        />
-                        <SaveIndicator fieldName="other_identifier_code" />
-                      </div>
-                    </FieldWrapper>
+                  <div className="flex items-center justify-between mb-4">
+                    <div>
+                      <h4 className="text-sm font-semibold text-gray-900">Other Identifiers</h4>
+                      <p className="text-xs text-gray-500 mt-1">Alternative identifiers for this activity (e.g., CRS codes, internal project IDs)</p>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={addOtherIdentifier}
+                      disabled={saving.other_identifiers}
+                    >
+                      <Plus className="h-4 w-4 mr-1" />
+                      Add Identifier
+                    </Button>
                   </div>
+
+                  {otherIdentifiers.length === 0 ? (
+                    <div className="text-sm text-gray-500 italic p-4 bg-gray-50 rounded-lg text-center">
+                      No other identifiers defined. Click "Add Identifier" to add one.
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {otherIdentifiers.map((identifier, index) => (
+                        <Card key={index} className="border-gray-200">
+                          <CardContent className="pt-6">
+                            <div className="space-y-4">
+                              <div className="flex items-center justify-between mb-2">
+                                <h5 className="text-sm font-medium text-gray-700">Identifier {index + 1}</h5>
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => removeOtherIdentifier(index)}
+                                  disabled={saving.other_identifiers}
+                                  className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </div>
+
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                {/* Identifier Code (Required) */}
+                                <div className="space-y-1">
+                                  <label className="text-sm font-medium text-gray-700">
+                                    Identifier Code <span className="text-red-500">*</span>
+                                  </label>
+                                  <Input
+                                    type="text"
+                                    value={identifier.code || ''}
+                                    onChange={(e) => updateOtherIdentifierField(index, 'code', e.target.value)}
+                                    onBlur={() => handleOtherIdentifierBlur(index)}
+                                    placeholder="e.g., 2023000168"
+                                    disabled={saving.other_identifiers}
+                                  />
+                                </div>
+
+                                {/* Identifier Type */}
+                                <div className="space-y-1">
+                                  <label className="text-sm font-medium text-gray-700">
+                                    Identifier Type
+                                  </label>
+                                  <OtherIdentifierTypeSelect
+                                    value={identifier.type || ''}
+                                    onValueChange={(value) => {
+                                      updateOtherIdentifierField(index, 'type', value || '');
+                                      handleOtherIdentifierBlur(index);
+                                    }}
+                                    placeholder="Select type..."
+                                    disabled={saving.other_identifiers}
+                                  />
+                                </div>
+
+                                {/* Owner Organisation Name (Required) */}
+                                <div className="space-y-1">
+                                  <label className="text-sm font-medium text-gray-700">
+                                    Owner Organisation Name <span className="text-red-500">*</span>
+                                  </label>
+                                  <Input
+                                    type="text"
+                                    value={identifier.ownerOrg?.narrative || ''}
+                                    onChange={(e) => updateOtherIdentifierField(index, 'ownerOrg.narrative', e.target.value)}
+                                    onBlur={() => handleOtherIdentifierBlur(index)}
+                                    placeholder="e.g., OECD/DAC"
+                                    disabled={saving.other_identifiers}
+                                  />
+                                </div>
+
+                                {/* Owner Organisation Ref (Optional) */}
+                                <div className="space-y-1">
+                                  <label className="text-sm font-medium text-gray-700">
+                                    Owner Organisation Ref <span className="text-gray-400">(Optional)</span>
+                                  </label>
+                                  <Input
+                                    type="text"
+                                    value={identifier.ownerOrg?.ref || ''}
+                                    onChange={(e) => updateOtherIdentifierField(index, 'ownerOrg.ref', e.target.value)}
+                                    onBlur={() => handleOtherIdentifierBlur(index)}
+                                    placeholder="e.g., XM-DAC-5-1"
+                                    disabled={saving.other_identifiers}
+                                  />
+                                </div>
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                      {saving.other_identifiers && (
+                        <div className="flex items-center gap-2 text-blue-600 text-sm">
+                          <Clock className="h-4 w-4 animate-spin" />
+                          Saving identifiers...
+                        </div>
+                      )}
+                      {lastSaved.other_identifiers && !saving.other_identifiers && (
+                        <div className="flex items-center gap-2 text-green-600 text-sm">
+                          <CheckCircle className="h-4 w-4" />
+                          Saved {lastSaved.other_identifiers.toLocaleTimeString()}
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>

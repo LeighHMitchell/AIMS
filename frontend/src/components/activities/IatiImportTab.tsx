@@ -2588,21 +2588,8 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
         });
       }
 
-      if (parsedActivity.otherIdentifier) {
-        const currentValue = currentActivityData['other_identifier' as keyof typeof currentActivityData] || null;
-        
-        const otherIdShouldSelect = shouldSelectField(currentValue, parsedActivity.otherIdentifier);
-        fields.push({
-          fieldName: 'Activity ID',
-          iatiPath: 'iati-activity/other-identifier',
-          currentValue: currentValue,
-          importValue: parsedActivity.otherIdentifier,
-          selected: getDefaultSelectedFromPreferences('iati-activity/other-identifier', otherIdShouldSelect),
-          hasConflict: hasConflict(currentValue, parsedActivity.otherIdentifier),
-          tab: 'identifiers_ids',
-          description: 'Other identifier for this activity (e.g., internal project ID)'
-        });
-      }
+      // Note: Activity ID is a local AIMS-specific field and should never be imported from IATI.
+      // Other identifiers are handled below in the otherIdentifiers array.
 
       // Skip wrapper title if this is a snippet import
       if (parsedActivity.title && (!isSnippetImport || parsedActivity.title !== 'Snippet')) {
@@ -5830,14 +5817,95 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
         });
       } else {
         // Regular import flow - update existing activity (merge/fork/reference)
-        console.log('[IATI Import] API URL:', `/api/activities/${activityId}`);
+        console.log('[IATI Import] API URL:', `/api/activities/${activityId}/import-iati`);
 
-        response = await fetch(`/api/activities/${activityId}`, {
-          method: 'PATCH',
+        // Prepare the request body with fields and iati_data
+        const importRequestBody = {
+          fields: {
+            // Set flags for which sections to import based on updateData
+            transactions: updateData._importTransactions || false,
+            budgets: updateData._importBudgets || false,
+            planned_disbursements: updateData._importPlannedDisbursements || false,
+            sectors: updateData._importSectors || false,
+            policy_markers: updateData._importPolicyMarkers || false,
+            tags: updateData._importTags || false,
+            locations: updateData._importLocations || false,
+            contacts: updateData.importedContacts?.length > 0,
+            participating_orgs: updateData.importedParticipatingOrgs?.length > 0,
+            humanitarian_scopes: updateData._importHumanitarianScopes || false,
+            results: updateData._importResults || false,
+            document_links: updateData._importDocumentLinks || false,
+            conditions: updateData.importedConditions?.length > 0,
+            related_activities: updateData.importedRelatedActivities?.length > 0,
+            // Add simple field flags
+            title_narrative: !!updateData.title_narrative,
+            description_narrative: !!updateData.description_narrative,
+            description_objectives: !!updateData.description_objectives,
+            description_target_groups: !!updateData.description_target_groups,
+            description_other: !!updateData.description_other,
+            activity_status: !!updateData.activity_status,
+            activity_date_start_planned: !!updateData.planned_start_date,
+            activity_date_start_actual: !!updateData.actual_start_date,
+            activity_date_end_planned: !!updateData.planned_end_date,
+            activity_date_end_actual: !!updateData.actual_end_date,
+            default_aid_type: !!updateData.default_aid_type,
+            flow_type: !!updateData.default_flow_type,
+            collaboration_type: !!updateData.collaboration_type,
+            default_finance_type: !!updateData.default_finance_type,
+            capital_spend_percentage: updateData.capital_spend_percentage !== undefined,
+            recipient_countries: !!updateData.recipient_countries,
+            recipient_regions: !!updateData.recipient_regions,
+            custom_geographies: !!updateData.custom_geographies,
+          },
+          iati_data: {
+            // Simple fields - use server-expected field names
+            title_narrative: updateData.title_narrative,
+            description_narrative: updateData.description_narrative,
+            description_objectives: updateData.description_objectives,
+            description_target_groups: updateData.description_target_groups,
+            description_other: updateData.description_other,
+            activity_status: updateData.activity_status,
+            activity_date_start_planned: updateData.planned_start_date,
+            activity_date_start_actual: updateData.actual_start_date,
+            activity_date_end_planned: updateData.planned_end_date,
+            activity_date_end_actual: updateData.actual_end_date,
+            default_aid_type: updateData.default_aid_type,
+            flow_type: updateData.default_flow_type,
+            collaboration_type: updateData.collaboration_type,
+            default_finance_type: updateData.default_finance_type,
+            capital_spend_percentage: updateData.capital_spend_percentage,
+            // Financial data
+            transactions: updateData.importedTransactions || parsedActivity?.transactions,
+            budgets: updateData.importedBudgets || parsedActivity?.budgets,
+            plannedDisbursements: updateData.importedPlannedDisbursements || parsedActivity?.plannedDisbursements,
+            // Other data
+            sectors: updateData.importedSectors || parsedActivity?.sectors,
+            policyMarkers: parsedActivity?.policyMarkers,
+            tags: parsedActivity?.tags,
+            locations: updateData.locationsData || parsedActivity?.locations,
+            contactInfo: updateData.importedContacts || parsedActivity?.contactInfo,
+            participating_orgs: updateData.importedParticipatingOrgs || parsedActivity?.participating_orgs,
+            humanitarianScopes: updateData.humanitarianScopesData || parsedActivity?.humanitarianScopes,
+            results: parsedActivity?.results,
+            document_links: updateData.documentLinksData || parsedActivity?.document_links,
+            conditions: updateData.importedConditions || parsedActivity?.conditions,
+            relatedActivities: updateData.importedRelatedActivities || parsedActivity?.relatedActivities,
+            recipient_countries: updateData.recipient_countries || parsedActivity?.recipient_countries,
+            recipient_regions: updateData.recipient_regions || parsedActivity?.recipient_regions,
+            custom_geographies: updateData.custom_geographies || parsedActivity?.custom_geographies,
+          }
+        };
+
+        console.log('[IATI Import] Sending import request with fields:', importRequestBody.fields);
+        console.log('[IATI Import] Transaction count:', importRequestBody.iati_data.transactions?.length);
+        console.log('[IATI Import] Budget count:', importRequestBody.iati_data.budgets?.length);
+
+        response = await fetch(`/api/activities/${activityId}/import-iati`, {
+          method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify(updateData),
+          body: JSON.stringify(importRequestBody),
         });
       }
 
@@ -6714,11 +6782,27 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
                 ? pdOrgRefToIdMap.get(disbursement.receiverOrg.ref) 
                 : undefined;
               
+              // Handle same-date periods (IATI allows point-in-time disbursements)
+              // If period_start === period_end, add one day to period_end to satisfy database constraint
+              let periodStart = disbursement.period?.start;
+              let periodEnd = disbursement.period?.end;
+
+              if (periodStart && periodEnd && periodStart === periodEnd) {
+                console.log('[IATI Import] Same-date period detected, adjusting period_end by +1 day:', {
+                  original: periodStart,
+                  adjusted: periodEnd
+                });
+                // Add one day to period_end
+                const endDate = new Date(periodEnd);
+                endDate.setDate(endDate.getDate() + 1);
+                periodEnd = endDate.toISOString().split('T')[0];
+              }
+
               const disbursementData = {
                 amount: disbursement.value,
                 currency: disbursement.currency || freshActivityData?.default_currency || 'USD',
-                period_start: disbursement.period?.start,
-                period_end: disbursement.period?.end,
+                period_start: periodStart,
+                period_end: periodEnd,
                 provider_org_id: providerOrgId || null,
                 provider_org_ref: disbursement.providerOrg?.ref || null,
                 provider_org_name: disbursement.providerOrg?.name || null,
@@ -10041,6 +10125,7 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
                 onFieldToggle={handleFieldToggle}
                 onSelectAll={() => handleSelectAllInTab(parsedFields)}
                 onDeselectAll={() => handleDeselectAllInTab(parsedFields)}
+                xmlContent={xmlContent}
               />
             </CardContent>
           </Card>

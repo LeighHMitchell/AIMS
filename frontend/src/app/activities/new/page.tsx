@@ -1556,38 +1556,34 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
         
         {/* Existing Identifiers */}
         {(general.otherIdentifiers || []).map((identifier: any, index: number) => (
-          <div key={index} className="grid grid-cols-1 md:grid-cols-2 gap-6 p-4 border border-gray-200 rounded-lg bg-gray-50">
-            {/* Other Identifier Type */}
-            <div className="space-y-2">
-              <LabelSaveIndicator
-                isSaving={otherIdentifiersAutosave.state.isSaving}
-                isSaved={otherIdentifiersAutosave.state.isPersistentlySaved}
-                className="text-gray-700"
-              >
-                Other Identifier Type
-              </LabelSaveIndicator>
-              <OtherIdentifierTypeSelect
-                value={identifier.type || ''}
-                onValueChange={(value) => {
-                  const updatedIdentifiers = [...(general.otherIdentifiers || [])];
-                  updatedIdentifiers[index] = { ...updatedIdentifiers[index], type: value };
+          <div key={index} className="space-y-4 p-4 rounded-lg bg-white">
+            <div className="flex items-center justify-between">
+              <h4 className="text-sm font-medium text-gray-700">Other Identifier {index + 1}</h4>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  const updatedIdentifiers = (general.otherIdentifiers || []).filter((_: any, i: number) => i !== index);
                   setGeneral((g: any) => ({ ...g, otherIdentifiers: updatedIdentifiers }));
                   otherIdentifiersAutosave.triggerFieldSave(updatedIdentifiers);
                 }}
-                placeholder="Select identifier type..."
-              />
+                className="text-red-600 hover:text-red-700 hover:bg-red-50"
+              >
+                <X className="w-4 h-4" />
+              </Button>
             </div>
 
-            {/* Other Identifier Code */}
-            <div className="space-y-2">
-              <LabelSaveIndicator
-                isSaving={otherIdentifiersAutosave.state.isSaving}
-                isSaved={otherIdentifiersAutosave.state.isPersistentlySaved}
-                className="text-gray-700"
-              >
-                Identifier Code
-              </LabelSaveIndicator>
-              <div className="flex gap-2">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Identifier Code */}
+              <div className="space-y-2">
+                <LabelSaveIndicator
+                  isSaving={otherIdentifiersAutosave.state.isSaving}
+                  isSaved={otherIdentifiersAutosave.state.isPersistentlySaved}
+                  className="text-gray-700"
+                >
+                  Identifier Code
+                </LabelSaveIndicator>
                 <Input
                   type="text"
                   value={identifier.code || ''}
@@ -1597,22 +1593,82 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
                     setGeneral((g: any) => ({ ...g, otherIdentifiers: updatedIdentifiers }));
                     otherIdentifiersAutosave.triggerFieldSave(updatedIdentifiers);
                   }}
-                  placeholder="Enter identifier code..."
-                  className="flex-1"
+                  placeholder="e.g., 2023000168"
                 />
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    const updatedIdentifiers = (general.otherIdentifiers || []).filter((_: any, i: number) => i !== index);
+              </div>
+
+              {/* Identifier Type */}
+              <div className="space-y-2">
+                <LabelSaveIndicator
+                  isSaving={otherIdentifiersAutosave.state.isSaving}
+                  isSaved={otherIdentifiersAutosave.state.isPersistentlySaved}
+                  className="text-gray-700"
+                >
+                  Identifier Type
+                </LabelSaveIndicator>
+                <OtherIdentifierTypeSelect
+                  value={identifier.type || ''}
+                  onValueChange={(value) => {
+                    const updatedIdentifiers = [...(general.otherIdentifiers || [])];
+                    updatedIdentifiers[index] = { ...updatedIdentifiers[index], type: value };
                     setGeneral((g: any) => ({ ...g, otherIdentifiers: updatedIdentifiers }));
                     otherIdentifiersAutosave.triggerFieldSave(updatedIdentifiers);
                   }}
-                  className="px-3"
+                  placeholder="Select identifier type..."
+                />
+              </div>
+
+              {/* Owner Organisation Name */}
+              <div className="space-y-2">
+                <LabelSaveIndicator
+                  isSaving={otherIdentifiersAutosave.state.isSaving}
+                  isSaved={otherIdentifiersAutosave.state.isPersistentlySaved}
+                  className="text-gray-700"
                 >
-                  <X className="w-4 h-4" />
-                </Button>
+                  Owner Organisation Name
+                </LabelSaveIndicator>
+                <Input
+                  type="text"
+                  value={identifier.ownerOrg?.narrative || ''}
+                  onChange={(e) => {
+                    const updatedIdentifiers = [...(general.otherIdentifiers || [])];
+                    updatedIdentifiers[index] = {
+                      ...updatedIdentifiers[index],
+                      ownerOrg: { ...updatedIdentifiers[index].ownerOrg, narrative: e.target.value }
+                    };
+                    setGeneral((g: any) => ({ ...g, otherIdentifiers: updatedIdentifiers }));
+                    otherIdentifiersAutosave.triggerFieldSave(updatedIdentifiers);
+                  }}
+                  placeholder="e.g., OECD/DAC"
+                />
+              </div>
+
+              {/* Owner Organisation Ref (Optional) */}
+              <div className="space-y-2">
+                <LabelSaveIndicator
+                  isSaving={otherIdentifiersAutosave.state.isSaving}
+                  isSaved={otherIdentifiersAutosave.state.isPersistentlySaved}
+                  className="text-gray-700"
+                >
+                  Owner Organisation Ref <span className="text-gray-400">(Optional)</span>
+                </LabelSaveIndicator>
+                <Input
+                  type="text"
+                  value={identifier.ownerOrg?.ref || ''}
+                  onChange={(e) => {
+                    const updatedIdentifiers = [...(general.otherIdentifiers || [])];
+                    updatedIdentifiers[index] = {
+                      ...updatedIdentifiers[index],
+                      ownerOrg: {
+                        ...updatedIdentifiers[index].ownerOrg,
+                        ref: e.target.value
+                      }
+                    };
+                    setGeneral((g: any) => ({ ...g, otherIdentifiers: updatedIdentifiers }));
+                    otherIdentifiersAutosave.triggerFieldSave(updatedIdentifiers);
+                  }}
+                  placeholder="e.g., XM-DAC-5-1"
+                />
               </div>
             </div>
           </div>
@@ -1624,7 +1680,14 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
           variant="outline"
           size="sm"
           onClick={() => {
-            const newIdentifiers = [...(general.otherIdentifiers || []), { type: '', code: '' }];
+            const newIdentifiers = [...(general.otherIdentifiers || []), {
+              code: '',
+              type: '',
+              ownerOrg: {
+                narrative: '',
+                ref: ''
+              }
+            }];
             setGeneral((g: any) => ({ ...g, otherIdentifiers: newIdentifiers }));
             otherIdentifiersAutosave.triggerFieldSave(newIdentifiers);
           }}

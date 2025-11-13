@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase';
 import { resolveCurrency, resolveValueDate } from '@/lib/currency-helpers';
+import { getOrCreateOrganization } from '@/lib/organization-helpers';
 
 export async function GET(
   request: NextRequest,
@@ -74,6 +75,26 @@ export async function POST(
       return NextResponse.json({ error: 'Period start must be before period end' }, { status: 400 });
     }
 
+    // Check/create provider organization if name is provided (ref is optional)
+    let providerOrgId = body.provider_org_id || null;
+    if (!providerOrgId && body.provider_org_name) {
+      providerOrgId = await getOrCreateOrganization(supabase, {
+        ref: body.provider_org_ref,
+        name: body.provider_org_name,
+        type: body.provider_org_type
+      });
+    }
+
+    // Check/create receiver organization if name is provided (ref is optional)
+    let receiverOrgId = body.receiver_org_id || null;
+    if (!receiverOrgId && body.receiver_org_name) {
+      receiverOrgId = await getOrCreateOrganization(supabase, {
+        ref: body.receiver_org_ref,
+        name: body.receiver_org_name,
+        type: body.receiver_org_type
+      });
+    }
+
     // Resolve currency using helper (checks activity → USD)
     const resolvedCurrency = await resolveCurrency(
       body.currency,
@@ -92,9 +113,9 @@ export async function POST(
       currency: resolvedCurrency,
       period_start: body.period_start,
       period_end: body.period_end,
-      provider_org_id: body.provider_org_id || null,
+      provider_org_id: providerOrgId,
       provider_org_name: body.provider_org_name || null,
-      receiver_org_id: body.receiver_org_id || null,
+      receiver_org_id: receiverOrgId,
       receiver_org_name: body.receiver_org_name || null,
       status: body.status || 'original',
       value_date: resolvedValueDate,
@@ -102,6 +123,7 @@ export async function POST(
     };
 
     console.log(`[PlannedDisbursementsAPI] Resolved currency: ${resolvedCurrency} (from ${body.currency || 'missing'}), value_date: ${resolvedValueDate}`);
+    console.log(`[PlannedDisbursementsAPI] Resolved provider_org_id: ${providerOrgId}, receiver_org_id: ${receiverOrgId}`);
 
     const { data: disbursement, error } = await supabase
       .from('planned_disbursements')

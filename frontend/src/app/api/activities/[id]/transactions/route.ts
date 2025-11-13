@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase';
 import { convertTransactionToUSD, addUSDFieldsToTransaction } from '@/lib/transaction-usd-helper';
 import { resolveCurrency, resolveValueDate } from '@/lib/currency-helpers';
+import { getOrCreateOrganization } from '@/lib/organization-helpers';
 
 export const dynamic = 'force-dynamic';
 
@@ -192,113 +193,21 @@ export async function POST(
     // Check/create provider organization if name is provided (ref is optional)
     let providerOrgId = body.provider_org_id || null;
     if (!providerOrgId && body.provider_org_name) {
-      console.log(`[AIMS] Checking for provider org: ${body.provider_org_name}${body.provider_org_ref ? ` (${body.provider_org_ref})` : ' (no ref)'}`);
-
-      // Build query - if we have a ref, search by ref/name, otherwise just by name
-      let query = getSupabaseAdmin()
-        .from('organizations')
-        .select('id, name, iati_org_id, alias_refs');
-
-      if (body.provider_org_ref) {
-        query = query.or(`iati_org_id.eq.${body.provider_org_ref},name.ilike.${body.provider_org_name},alias_refs.cs.{${body.provider_org_ref}}`);
-      } else {
-        query = query.ilike('name', body.provider_org_name);
-      }
-
-      const { data: existingOrgs } = await query;
-
-      const matchingOrg = existingOrgs?.find(org => {
-        // If we have a ref, match by ref first
-        if (body.provider_org_ref) {
-          return org.iati_org_id === body.provider_org_ref ||
-                 org.alias_refs?.includes(body.provider_org_ref) ||
-                 org.name?.toLowerCase() === body.provider_org_name?.toLowerCase();
-        }
-        // Otherwise just match by name
-        return org.name?.toLowerCase() === body.provider_org_name?.toLowerCase();
+      providerOrgId = await getOrCreateOrganization(getSupabaseAdmin(), {
+        ref: body.provider_org_ref,
+        name: body.provider_org_name,
+        type: body.provider_org_type
       });
-
-      if (matchingOrg) {
-        providerOrgId = matchingOrg.id;
-        console.log(`[AIMS] Found existing provider org: ${matchingOrg.name} (ID: ${providerOrgId})`);
-      } else {
-        // Create the provider organization (name is required, ref is optional)
-        console.log(`[AIMS] Creating new provider org: ${body.provider_org_name}${body.provider_org_ref ? ` with ref ${body.provider_org_ref}` : ' (no ref)'}`);
-        const { data: newOrg, error: orgError } = await getSupabaseAdmin()
-          .from('organizations')
-          .insert({
-            name: body.provider_org_name,
-            iati_org_id: body.provider_org_ref || null,
-            type: body.provider_org_type || '10',
-            country: 'MM',
-            alias_refs: body.provider_org_ref ? [body.provider_org_ref] : []
-          })
-          .select('id')
-          .single();
-
-        if (!orgError && newOrg) {
-          providerOrgId = newOrg.id;
-          console.log(`[AIMS] Created new provider org: ${body.provider_org_name} (ID: ${providerOrgId})`);
-        } else if (orgError) {
-          console.error(`[AIMS] Error creating provider org:`, orgError);
-        }
-      }
     }
 
     // Check/create receiver organization if name is provided (ref is optional)
     let receiverOrgId = body.receiver_org_id || null;
     if (!receiverOrgId && body.receiver_org_name) {
-      console.log(`[AIMS] Checking for receiver org: ${body.receiver_org_name}${body.receiver_org_ref ? ` (${body.receiver_org_ref})` : ' (no ref)'}`);
-
-      // Build query - if we have a ref, search by ref/name, otherwise just by name
-      let query = getSupabaseAdmin()
-        .from('organizations')
-        .select('id, name, iati_org_id, alias_refs');
-
-      if (body.receiver_org_ref) {
-        query = query.or(`iati_org_id.eq.${body.receiver_org_ref},name.ilike.${body.receiver_org_name},alias_refs.cs.{${body.receiver_org_ref}}`);
-      } else {
-        query = query.ilike('name', body.receiver_org_name);
-      }
-
-      const { data: existingOrgs } = await query;
-
-      const matchingOrg = existingOrgs?.find(org => {
-        // If we have a ref, match by ref first
-        if (body.receiver_org_ref) {
-          return org.iati_org_id === body.receiver_org_ref ||
-                 org.alias_refs?.includes(body.receiver_org_ref) ||
-                 org.name?.toLowerCase() === body.receiver_org_name?.toLowerCase();
-        }
-        // Otherwise just match by name
-        return org.name?.toLowerCase() === body.receiver_org_name?.toLowerCase();
+      receiverOrgId = await getOrCreateOrganization(getSupabaseAdmin(), {
+        ref: body.receiver_org_ref,
+        name: body.receiver_org_name,
+        type: body.receiver_org_type
       });
-
-      if (matchingOrg) {
-        receiverOrgId = matchingOrg.id;
-        console.log(`[AIMS] Found existing receiver org: ${matchingOrg.name} (ID: ${receiverOrgId})`);
-      } else {
-        // Create the receiver organization (name is required, ref is optional)
-        console.log(`[AIMS] Creating new receiver org: ${body.receiver_org_name}${body.receiver_org_ref ? ` with ref ${body.receiver_org_ref}` : ' (no ref)'}`);
-        const { data: newOrg, error: orgError } = await getSupabaseAdmin()
-          .from('organizations')
-          .insert({
-            name: body.receiver_org_name,
-            iati_org_id: body.receiver_org_ref || null,
-            type: body.receiver_org_type || '10',
-            country: 'MM',
-            alias_refs: body.receiver_org_ref ? [body.receiver_org_ref] : []
-          })
-          .select('id')
-          .single();
-
-        if (!orgError && newOrg) {
-          receiverOrgId = newOrg.id;
-          console.log(`[AIMS] Created new receiver org: ${body.receiver_org_name} (ID: ${receiverOrgId})`);
-        } else if (orgError) {
-          console.error(`[AIMS] Error creating receiver org:`, orgError);
-        }
-      }
     }
 
     // Resolve currency using helper (checks activity → org → USD)

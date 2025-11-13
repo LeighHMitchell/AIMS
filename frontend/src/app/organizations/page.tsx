@@ -1317,7 +1317,7 @@ function OrganizationsPageContent() {
   const [selectedGroup, setSelectedGroup] = useState<any>(null)
   
   // Sorting state for table view
-  const [sortField, setSortField] = useState<'name' | 'acronym' | 'type' | 'location' | 'activities' | 'funding'>('name')
+  const [sortField, setSortField] = useState<'name' | 'acronym' | 'type' | 'location' | 'activities' | 'funding' | 'created_at'>('name')
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc')
   
   // AbortController refs for race condition prevention
@@ -1383,6 +1383,10 @@ function OrganizationsPageContent() {
         case 'funding':
           aValue = a.totalBudgeted || 0
           bValue = b.totalBudgeted || 0
+          break
+        case 'created_at':
+          aValue = new Date(a.created_at).getTime()
+          bValue = new Date(b.created_at).getTime()
           break
         default:
           return 0
@@ -1733,7 +1737,7 @@ function OrganizationsPageContent() {
   }
 
   // Handle table sorting
-  const handleSort = (field: 'name' | 'acronym' | 'type' | 'location' | 'activities' | 'funding') => {
+  const handleSort = (field: 'name' | 'acronym' | 'type' | 'location' | 'activities' | 'funding' | 'created_at') => {
     if (sortField === field) {
       setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')
     } else {

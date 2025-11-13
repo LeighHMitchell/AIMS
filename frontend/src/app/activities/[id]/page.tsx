@@ -2747,20 +2747,21 @@ export default function ActivityDetailPage() {
                   {/* Transactions */}
                   <div className="border rounded-lg">
                     <div className="px-4 py-3 border-b border-slate-200">
-                      <div className="flex items-center justify-between gap-4">
+                      <div className="flex items-start justify-between gap-4">
                         <button
                           onClick={() => setIsTransactionsOpen(!isTransactionsOpen)}
-                          className="flex items-center gap-2 text-left hover:text-slate-900 transition-colors flex-1"
+                          className="flex items-center gap-2 text-left hover:text-slate-900 transition-colors"
                           aria-label={isTransactionsOpen ? 'Collapse Transactions' : 'Expand Transactions'}
                         >
                           {isTransactionsOpen ? <ChevronUp className="h-4 w-4 text-slate-600 flex-shrink-0" /> : <ChevronDown className="h-4 w-4 text-slate-600 flex-shrink-0" />}
-                          <div className="flex-1">
+                          <div>
                             <p className="text-lg font-bold text-slate-900">Transactions</p>
-                            {isTransactionsOpen && (
-                              <p className="text-xs text-slate-500 mt-1">Commitments, disbursements, and expenditures</p>
-                            )}
+                            <p className="text-xs text-slate-500 mt-1">Commitments, disbursements, and expenditures</p>
                           </div>
                         </button>
+                        {isTransactionsOpen && (
+                          <div id="transaction-filters-container" />
+                        )}
                       </div>
                     </div>
                     {isTransactionsOpen && (
@@ -2774,6 +2775,13 @@ export default function ActivityDetailPage() {
                           defaultTiedStatus={activity.defaultTiedStatus}
                           defaultFlowType={activity.defaultFlowType}
                           hideSummaryCards={true}
+                          renderFilters={(filters) => {
+                            const container = document.getElementById('transaction-filters-container');
+                            if (container) {
+                              return ReactDOM.createPortal(filters, container);
+                            }
+                            return null;
+                          }}
                         />
                       </div>
                     )}

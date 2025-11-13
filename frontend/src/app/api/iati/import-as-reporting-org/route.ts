@@ -4,6 +4,7 @@ import { extractIatiMeta, IatiParseError } from '@/lib/iati/parseMeta';
 import { XMLParser } from 'fast-xml-parser';
 import { iatiAnalytics } from '@/lib/analytics';
 import { USER_ROLES } from '@/types/user';
+import { getOrCreateOrganization } from '@/lib/organization-helpers';
 
 export const dynamic = 'force-dynamic';
 
@@ -733,13 +734,61 @@ export async function POST(request: NextRequest) {
               .delete()
               .eq('activity_id', finalActivityId);
             
-            // Insert new planned disbursements
-            // Note: Not including 'disbursement_type' as the error suggests it doesn't exist
+            // Process organizations for planned disbursements
+            const pdOrgMap = new Map<string, string>();
+            
+            for (const pd of parsedActivity.plannedDisbursements) {
+              // Process provider organization
+              if (pd.providerOrg?.ref || pd.providerOrg?.name) {
+                const key = pd.providerOrg.ref || pd.providerOrg.name!;
+                if (!pdOrgMap.has(key)) {
+                  const orgId = await getOrCreateOrganization(supabase, {
+                    ref: pd.providerOrg.ref,
+                    name: pd.providerOrg.name,
+                    type: pd.providerOrg.type
+                  });
+                  if (orgId) {
+                    pdOrgMap.set(key, orgId);
+                    if (pd.providerOrg.ref) pdOrgMap.set(pd.providerOrg.ref, orgId);
+                    if (pd.providerOrg.name) pdOrgMap.set(pd.providerOrg.name, orgId);
+                  }
+                }
+              }
+              
+              // Process receiver organization
+              if (pd.receiverOrg?.ref || pd.receiverOrg?.name) {
+                const key = pd.receiverOrg.ref || pd.receiverOrg.name!;
+                if (!pdOrgMap.has(key)) {
+                  const orgId = await getOrCreateOrganization(supabase, {
+                    ref: pd.receiverOrg.ref,
+                    name: pd.receiverOrg.name,
+                    type: pd.receiverOrg.type
+                  });
+                  if (orgId) {
+                    pdOrgMap.set(key, orgId);
+                    if (pd.receiverOrg.ref) pdOrgMap.set(pd.receiverOrg.ref, orgId);
+                    if (pd.receiverOrg.name) pdOrgMap.set(pd.receiverOrg.name, orgId);
+                  }
+                }
+              }
+            }
+            
+            // Insert new planned disbursements with resolved organization IDs
             const validPDs = parsedActivity.plannedDisbursements
               .filter((pd: any) => pd && pd.value !== undefined)
               .map((pd: any) => {
                 // Resolve currency - use PD currency, fallback to activity default, then USD
                 const resolvedCurrency = pd.currency || parsedActivity.defaultCurrency || 'USD';
+                
+                // Look up organization IDs
+                const providerOrgId = pd.providerOrg?.ref ?
+                  pdOrgMap.get(pd.providerOrg.ref) :
+                  (pd.providerOrg?.name ? pdOrgMap.get(pd.providerOrg.name) : null);
+                
+                const receiverOrgId = pd.receiverOrg?.ref ?
+                  pdOrgMap.get(pd.receiverOrg.ref) :
+                  (pd.receiverOrg?.name ? pdOrgMap.get(pd.receiverOrg.name) : null);
+                
                 return {
                   activity_id: finalActivityId,
                   period_start: pd.period?.start || null,
@@ -747,9 +796,11 @@ export async function POST(request: NextRequest) {
                   amount: pd.value,
                   currency: resolvedCurrency,
                   value_date: pd.valueDate || null,
+                  provider_org_id: providerOrgId || null,
                   provider_org_ref: pd.providerOrg?.ref || null,
                   provider_org_name: pd.providerOrg?.name || null,
                   provider_org_activity_id: pd.providerOrg?.providerActivityId || null,
+                  receiver_org_id: receiverOrgId || null,
                   receiver_org_ref: pd.receiverOrg?.ref || null,
                   receiver_org_name: pd.receiverOrg?.name || null,
                   receiver_org_activity_id: pd.receiverOrg?.receiverActivityId || null

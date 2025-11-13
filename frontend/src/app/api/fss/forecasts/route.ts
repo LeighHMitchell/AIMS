@@ -40,12 +40,12 @@ export async function POST(request: NextRequest) {
     let usdAmount = null;
     if (body.currency !== 'USD' && body.value_date) {
       try {
-        usdAmount = await fixedCurrencyConverter.convert(
+        const result = await fixedCurrencyConverter.convertToUSD(
           amount,
           body.currency,
-          'USD',
-          body.value_date
+          new Date(body.value_date)
         );
+        usdAmount = result.usd_amount;
         console.log('[Forecasts API] Converted', amount, body.currency, 'to', usdAmount, 'USD');
       } catch (conversionError) {
         console.error('[Forecasts API] Currency conversion failed:', conversionError);
@@ -118,12 +118,12 @@ export async function PUT(request: NextRequest) {
     let usdAmount = body.usd_amount;
     if (body.amount !== undefined && body.currency && body.currency !== 'USD' && body.value_date) {
       try {
-        usdAmount = await fixedCurrencyConverter.convert(
+        const result = await fixedCurrencyConverter.convertToUSD(
           parseFloat(body.amount),
           body.currency,
-          'USD',
-          body.value_date
+          new Date(body.value_date)
         );
+        usdAmount = result.usd_amount;
         console.log('[Forecasts API] Converted', body.amount, body.currency, 'to', usdAmount, 'USD');
       } catch (conversionError) {
         console.error('[Forecasts API] Currency conversion failed:', conversionError);

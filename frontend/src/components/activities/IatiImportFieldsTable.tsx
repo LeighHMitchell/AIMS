@@ -57,12 +57,13 @@ interface IatiImportFieldsTableProps {
   onFieldToggle: (field: ParsedField) => void;
   onSelectAll?: () => void;
   onDeselectAll?: () => void;
+  xmlContent?: string;
 }
 
 type SortColumn = 'fieldName' | 'category' | 'fieldType' | 'iatiPath' | 'currentValue' | 'importValue' | 'conflict';
 type SortDirection = 'asc' | 'desc';
 
-export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelectAll, onDeselectAll }: IatiImportFieldsTableProps) {
+export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelectAll, onDeselectAll, xmlContent }: IatiImportFieldsTableProps) {
   // Use sections if provided, otherwise use fields (backward compatibility)
   const allFields = sections ? sections.flatMap(s => s.fields) : (fields || []);
   const hasSections = sections && sections.length > 0;
@@ -73,6 +74,72 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
   const [copiedValues, setCopiedValues] = useState<Set<string>>(new Set());
   const [expandedTexts, setExpandedTexts] = useState<Set<string>>(new Set());
+
+  // Extract raw XML snippet for a given IATI path - preserves exact original formatting including comments
+  const extractXmlSnippet = (iatiPath: string, index?: number): string | null => {
+    if (!xmlContent) return null;
+
+    try {
+      // Remove array indices from path for searching
+      const cleanPath = iatiPath.replace('iati-activity/', '').replace(/\[\d+\]/g, '');
+      const pathParts = cleanPath.split('/');
+      let elementName = pathParts[pathParts.length - 1];
+
+      // Special handling: if the path ends with 'narrative', we want the parent element instead
+      // because narrative is just a child element and we want to show the whole parent structure
+      // (e.g., for title/narrative, show the full <title> block; for description/narrative, show <description>)
+      if (elementName === 'narrative' && pathParts.length > 1) {
+        elementName = pathParts[pathParts.length - 2];
+      }
+
+      // Pattern to match:
+      // 1. Optional comment like <!--element-name starts-->
+      // 2. The actual element (self-closing or with content)
+      // 3. Optional comment like <!--element-name ends-->
+      const pattern = new RegExp(
+        `(?:<!--\\s*${elementName}[^>]*starts[^>]*-->\\s*)?` +  // Optional start comment
+        `(<${elementName}[^>]*>.*?<\\/${elementName}>|<${elementName}[^>]*\\s*\\/>)` +  // The element itself
+        `(?:\\s*<!--\\s*${elementName}[^>]*ends[^>]*-->)?`,  // Optional end comment
+        'gs'
+      );
+
+      const matches = Array.from(xmlContent.matchAll(pattern));
+
+      if (matches.length === 0) return null;
+
+      // Determine which match to use (based on index if multiple)
+      const targetIndex = index !== undefined ? index : 0;
+      const match = matches[targetIndex] || matches[0];
+
+      if (!match) return null;
+
+      let xmlString = match[0];
+
+      // Extract just this element's content, trim leading/trailing whitespace but preserve internal formatting
+      xmlString = xmlString.trim();
+
+      // If it's a multi-line element, try to normalize indentation
+      if (xmlString.includes('\n')) {
+        const lines = xmlString.split('\n');
+        // Find minimum indentation (excluding empty lines)
+        const minIndent = Math.min(
+          ...lines
+            .filter(line => line.trim().length > 0)
+            .map(line => line.match(/^\s*/)?.[0].length || 0)
+        );
+        // Remove that minimum indentation from all lines
+        xmlString = lines
+          .map(line => line.substring(minIndent))
+          .join('\n')
+          .trim();
+      }
+
+      return xmlString;
+    } catch (error) {
+      console.error('Error extracting XML snippet:', error);
+      return null;
+    }
+  };
 
   // Derive field type from field properties
   const getFieldType = (field: ParsedField): string => {
@@ -1236,8 +1303,19 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
             placeholder="Search fields by name, path, or description..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10"
+            className="pl-10 pr-10"
           />
+          {searchQuery && (
+            <button
+              onClick={() => setSearchQuery('')}
+              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+              aria-label="Clear search"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+              </svg>
+            </button>
+          )}
         </div>
         <div className="flex items-center gap-2">
           <Switch
@@ -1456,116 +1534,166 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                       {isExpanded && (
                         <TableRow>
                           <TableCell colSpan={6} className="bg-gray-50 p-4">
-                            {/* Side-by-side comparison for conflicts */}
-                            {field.hasConflict && (
-                              <div className="mb-6 border-b border-gray-200 pb-6">
-                                <div className="text-sm font-semibold mb-3 text-orange-700">Value Comparison</div>
-                                <div className="grid grid-cols-2 gap-4">
-                                  <div className="bg-white rounded-md p-3 border border-gray-200">
-                                    <div className="font-medium text-xs text-gray-600 mb-2 uppercase tracking-wide">Current Value</div>
-                                    <div className="text-sm text-gray-900 break-words">
-                                      {renderValue(field.currentValue, `${rowId}-compare`, 'current', field.fieldName, field)}
-                                    </div>
-                                  </div>
-                                  <div className="bg-blue-50/30 rounded-md p-3 border border-blue-200">
-                                    <div className="font-medium text-xs text-blue-700 mb-2 uppercase tracking-wide">Import Value</div>
-                                    <div className="text-sm text-gray-900 break-words">
-                                      {renderValue(field.importValue, `${rowId}-compare`, 'import', field.fieldName, field)}
-                                    </div>
-                                  </div>
-                                </div>
-                              </div>
-                            )}
-                            
                             {/* Detailed Data Display */}
                             {(() => {
                               // Participating Org fields - show all details in expanded view
                               if ((field.fieldName && field.fieldName.includes('Participating Organization')) || field?.tab === 'participating_orgs') {
-                                const orgData = typeof field.importValue === 'object' && field.importValue !== null && !Array.isArray(field.importValue) 
-                                  ? field.importValue 
+                                const orgData = typeof field.importValue === 'object' && field.importValue !== null && !Array.isArray(field.importValue)
+                                  ? field.importValue
                                   : null;
-                                
+
                                 if (orgData) {
+                                  // Generate XML snippet for display
+                                  const xmlSnippet = `<participating-org${orgData.ref ? ` ref="${orgData.ref}"` : ''}${orgData.role ? ` role="${orgData.role}"` : ''}${orgData.type ? ` type="${orgData.type}"` : ''}${orgData.activityId ? ` activity-id="${orgData.activityId}"` : ''}${orgData.crsChannelCode ? ` crs-channel-code="${orgData.crsChannelCode}"` : ''}>
+  ${orgData.narrative || orgData.name ? `<narrative>${orgData.narrative || orgData.name}</narrative>` : ''}
+</participating-org>`;
+
                                   return (
                                     <div className="mb-6 border-b border-gray-200 pb-6">
                                       <div className="text-sm font-semibold mb-3 text-gray-900 flex items-center gap-2">
                                         <Building2 className="h-4 w-4" />
                                         Participating Organization Details
                                       </div>
-                                      <div className="bg-white rounded-md p-3 border border-gray-200">
-                                        <div className="grid grid-cols-2 gap-3 text-xs">
-                                          {orgData.name && (
-                                            <div className="col-span-2">
-                                              <span className="text-gray-600 font-medium">Name:</span>
-                                              <div className="mt-1 text-gray-900">{orgData.name}</div>
-                                            </div>
-                                          )}
-                                          {orgData.ref && (
-                                            <div>
-                                              <span className="text-gray-600 font-medium">Ref:</span>
-                                              <div className="mt-1">
-                                                <code className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
-                                                  {orgData.ref}
-                                                </code>
-                                              </div>
-                                            </div>
-                                          )}
-                                          {orgData.validated_ref && orgData.validated_ref !== orgData.ref && (
-                                            <div>
-                                              <span className="text-gray-600 font-medium">Validated Ref:</span>
-                                              <div className="mt-1">
-                                                <code className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
-                                                  {orgData.validated_ref}
-                                                </code>
-                                              </div>
-                                            </div>
-                                          )}
-                                          {orgData.role && (
-                                            <div>
-                                              <span className="text-gray-600 font-medium">Role:</span>
-                                              <div className="mt-1">
-                                                <code className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
-                                                  {orgData.role}
-                                                </code>
-                                                <span className="ml-2 text-gray-900">{getOrganizationRoleName(orgData.role)}</span>
-                                              </div>
-                                            </div>
-                                          )}
-                                          {orgData.type && (
-                                            <div>
-                                              <span className="text-gray-600 font-medium">Type:</span>
-                                              <div className="mt-1">
-                                                <code className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
-                                                  {orgData.type}
-                                                </code>
-                                              </div>
-                                            </div>
-                                          )}
-                                          {orgData.activityId && (
-                                            <div>
-                                              <span className="text-gray-600 font-medium">Activity ID:</span>
-                                              <div className="mt-1">
-                                                <code className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
-                                                  {orgData.activityId}
-                                                </code>
-                                              </div>
-                                            </div>
-                                          )}
-                                          {orgData.crsChannelCode && (
-                                            <div>
-                                              <span className="text-gray-600 font-medium">CRS Channel Code:</span>
-                                              <div className="mt-1">
-                                                <code className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
-                                                  {orgData.crsChannelCode}
-                                                </code>
-                                              </div>
-                                            </div>
-                                          )}
-                                          {orgData.narrative && orgData.narrative !== orgData.name && (
-                                            <div className="col-span-2">
-                                              <span className="text-gray-600 font-medium">Narrative:</span>
-                                              <div className="mt-1 text-gray-900">{orgData.narrative}</div>
-                                            </div>
+
+                                      {/* 3-column layout */}
+                                      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                                        {/* Column 1: Raw XML */}
+                                        <div className="bg-gray-50 rounded-md p-3 border border-gray-200">
+                                          <div className="text-xs font-semibold text-gray-700 mb-2">Raw XML</div>
+                                          <pre className="text-xs font-mono text-gray-800 overflow-x-auto whitespace-pre-wrap break-all">
+{xmlSnippet}
+                                          </pre>
+                                        </div>
+
+                                        {/* Column 2: Import Value */}
+                                        <div className="bg-gray-50 rounded-md p-3 border border-gray-200">
+                                          <div className="text-xs font-semibold text-gray-700 mb-2">Import Value</div>
+                                          <table className="w-full text-xs">
+                                            <tbody>
+                                              {orgData.name && (
+                                                <tr className="border-b border-gray-100 align-top">
+                                                  <td className="py-1.5 pr-2 font-medium text-gray-600">Name:</td>
+                                                  <td className="py-1.5 text-gray-900">{orgData.name}</td>
+                                                </tr>
+                                              )}
+                                              {orgData.ref && (
+                                                <tr className="border-b border-gray-100 align-top">
+                                                  <td className="py-1.5 pr-2 font-medium text-gray-600">Ref:</td>
+                                                  <td className="py-1.5 text-gray-900">
+                                                    <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                      {orgData.ref}
+                                                    </code>
+                                                  </td>
+                                                </tr>
+                                              )}
+                                              {orgData.validated_ref && orgData.validated_ref !== orgData.ref && (
+                                                <tr className="border-b border-gray-100 align-top">
+                                                  <td className="py-1.5 pr-2 font-medium text-gray-600">Validated Ref:</td>
+                                                  <td className="py-1.5 text-gray-900">
+                                                    <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                      {orgData.validated_ref}
+                                                    </code>
+                                                  </td>
+                                                </tr>
+                                              )}
+                                              {orgData.role && (
+                                                <tr className="border-b border-gray-100 align-top">
+                                                  <td className="py-1.5 pr-2 font-medium text-gray-600">Role:</td>
+                                                  <td className="py-1.5 text-gray-900">
+                                                    <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                      {orgData.role}
+                                                    </code>
+                                                    <span className="ml-2">{getOrganizationRoleName(orgData.role)}</span>
+                                                  </td>
+                                                </tr>
+                                              )}
+                                              {orgData.type && (
+                                                <tr className="border-b border-gray-100 align-top">
+                                                  <td className="py-1.5 pr-2 font-medium text-gray-600">Type:</td>
+                                                  <td className="py-1.5 text-gray-900">
+                                                    <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                      {orgData.type}
+                                                    </code>
+                                                  </td>
+                                                </tr>
+                                              )}
+                                              {orgData.activityId && (
+                                                <tr className="border-b border-gray-100 align-top">
+                                                  <td className="py-1.5 pr-2 font-medium text-gray-600">Activity ID:</td>
+                                                  <td className="py-1.5 text-gray-900">
+                                                    <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                      {orgData.activityId}
+                                                    </code>
+                                                  </td>
+                                                </tr>
+                                              )}
+                                              {orgData.crsChannelCode && (
+                                                <tr className="border-b border-gray-100 align-top">
+                                                  <td className="py-1.5 pr-2 font-medium text-gray-600">CRS Channel Code:</td>
+                                                  <td className="py-1.5 text-gray-900">
+                                                    <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                      {orgData.crsChannelCode}
+                                                    </code>
+                                                  </td>
+                                                </tr>
+                                              )}
+                                              {orgData.narrative && orgData.narrative !== orgData.name && (
+                                                <tr className="align-top">
+                                                  <td className="py-1.5 pr-2 font-medium text-gray-600">Narrative:</td>
+                                                  <td className="py-1.5 text-gray-900">{orgData.narrative}</td>
+                                                </tr>
+                                              )}
+                                            </tbody>
+                                          </table>
+                                        </div>
+
+                                        {/* Column 3: Current Value */}
+                                        <div className="bg-gray-50 rounded-md p-3 border border-gray-200">
+                                          <div className="text-xs font-semibold text-gray-700 mb-2">Current Value</div>
+                                          {field.currentValue ? (
+                                            <table className="w-full text-xs">
+                                              <tbody>
+                                                {field.currentValue.name && (
+                                                  <tr className="border-b border-gray-100 align-top">
+                                                    <td className="py-1.5 pr-2 font-medium text-gray-600">Name:</td>
+                                                    <td className="py-1.5 text-gray-900">{field.currentValue.name}</td>
+                                                  </tr>
+                                                )}
+                                                {field.currentValue.ref && (
+                                                  <tr className="border-b border-gray-100 align-top">
+                                                    <td className="py-1.5 pr-2 font-medium text-gray-600">Ref:</td>
+                                                    <td className="py-1.5 text-gray-900">
+                                                      <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                        {field.currentValue.ref}
+                                                      </code>
+                                                    </td>
+                                                  </tr>
+                                                )}
+                                                {field.currentValue.role && (
+                                                  <tr className="border-b border-gray-100 align-top">
+                                                    <td className="py-1.5 pr-2 font-medium text-gray-600">Role:</td>
+                                                    <td className="py-1.5 text-gray-900">
+                                                      <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                        {field.currentValue.role}
+                                                      </code>
+                                                      <span className="ml-2">{getOrganizationRoleName(field.currentValue.role)}</span>
+                                                    </td>
+                                                  </tr>
+                                                )}
+                                                {field.currentValue.type && (
+                                                  <tr className="border-b border-gray-100 align-top">
+                                                    <td className="py-1.5 pr-2 font-medium text-gray-600">Type:</td>
+                                                    <td className="py-1.5 text-gray-900">
+                                                      <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                        {field.currentValue.type}
+                                                      </code>
+                                                    </td>
+                                                  </tr>
+                                                )}
+                                              </tbody>
+                                            </table>
+                                          ) : (
+                                            <div className="text-xs text-gray-500 italic">No existing value</div>
                                           )}
                                         </div>
                                       </div>
@@ -1576,44 +1704,102 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                               
                               // Related Activity fields - show all details in expanded view
                               if ((field.fieldName && field.fieldName.includes('Related Activity')) || field?.tab === 'linked_activities') {
-                                const relatedActivityData = typeof field.importValue === 'object' && field.importValue !== null && !Array.isArray(field.importValue) 
-                                  ? field.importValue 
+                                const relatedActivityData = typeof field.importValue === 'object' && field.importValue !== null && !Array.isArray(field.importValue)
+                                  ? field.importValue
                                   : null;
-                                
+
                                 if (relatedActivityData) {
+                                  // Generate XML snippet for display
+                                  const xmlSnippet = `<related-activity ref="${relatedActivityData.ref || ''}" type="${relatedActivityData.type || ''}" />`;
+
                                   return (
                                     <div className="mb-6 border-b border-gray-200 pb-6">
                                       <div className="text-sm font-semibold mb-3 text-gray-900 flex items-center gap-2">
                                         <ExternalLink className="h-4 w-4" />
                                         Related Activity Details
                                       </div>
-                                      <div className="bg-white rounded-md p-3 border border-gray-200">
-                                        <div className="grid grid-cols-2 gap-3 text-xs">
-                                          {relatedActivityData.ref && (
-                                            <div>
-                                              <span className="text-gray-600 font-medium">ref:</span>
-                                              <div className="mt-1">
-                                                <code className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
-                                                  {relatedActivityData.ref}
-                                                </code>
-                                              </div>
-                                            </div>
-                                          )}
-                                          {relatedActivityData.type && (
-                                            <div>
-                                              <span className="text-gray-600 font-medium">type:</span>
-                                              <div className="mt-1">
-                                                <code className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
-                                                  {relatedActivityData.type}
-                                                </code>
-                                              </div>
-                                            </div>
-                                          )}
-                                          {relatedActivityData.relationshipTypeLabel && (
-                                            <div className="col-span-2">
-                                              <span className="text-gray-600 font-medium">relationshipTypeLabel:</span>
-                                              <div className="mt-1 text-gray-900">{relatedActivityData.relationshipTypeLabel}</div>
-                                            </div>
+
+                                      {/* 3-column layout */}
+                                      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                                        {/* Column 1: Raw XML */}
+                                        <div className="bg-gray-50 rounded-md p-3 border border-gray-200">
+                                          <div className="text-xs font-semibold text-gray-700 mb-2">Raw XML</div>
+                                          <pre className="text-xs font-mono text-gray-800 overflow-x-auto whitespace-pre-wrap break-all">
+{xmlSnippet}
+                                          </pre>
+                                        </div>
+
+                                        {/* Column 2: Import Value */}
+                                        <div className="bg-gray-50 rounded-md p-3 border border-gray-200">
+                                          <div className="text-xs font-semibold text-gray-700 mb-2">Import Value</div>
+                                          <table className="w-full text-xs">
+                                            <tbody>
+                                              {relatedActivityData.ref && (
+                                                <tr className="border-b border-gray-100 align-top">
+                                                  <td className="py-1.5 pr-2 font-medium text-gray-600">Ref:</td>
+                                                  <td className="py-1.5 text-gray-900">
+                                                    <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                      {relatedActivityData.ref}
+                                                    </code>
+                                                  </td>
+                                                </tr>
+                                              )}
+                                              {relatedActivityData.type && (
+                                                <tr className="border-b border-gray-100 align-top">
+                                                  <td className="py-1.5 pr-2 font-medium text-gray-600">Type:</td>
+                                                  <td className="py-1.5 text-gray-900">
+                                                    <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                      {relatedActivityData.type}
+                                                    </code>
+                                                  </td>
+                                                </tr>
+                                              )}
+                                              {relatedActivityData.relationshipTypeLabel && (
+                                                <tr className="align-top">
+                                                  <td className="py-1.5 pr-2 font-medium text-gray-600">Relationship:</td>
+                                                  <td className="py-1.5 text-gray-900">{relatedActivityData.relationshipTypeLabel}</td>
+                                                </tr>
+                                              )}
+                                            </tbody>
+                                          </table>
+                                        </div>
+
+                                        {/* Column 3: Current Value */}
+                                        <div className="bg-gray-50 rounded-md p-3 border border-gray-200">
+                                          <div className="text-xs font-semibold text-gray-700 mb-2">Current Value</div>
+                                          {field.currentValue ? (
+                                            <table className="w-full text-xs">
+                                              <tbody>
+                                                {field.currentValue.ref && (
+                                                  <tr className="border-b border-gray-100 align-top">
+                                                    <td className="py-1.5 pr-2 font-medium text-gray-600">Ref:</td>
+                                                    <td className="py-1.5 text-gray-900">
+                                                      <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                        {field.currentValue.ref}
+                                                      </code>
+                                                    </td>
+                                                  </tr>
+                                                )}
+                                                {field.currentValue.type && (
+                                                  <tr className="border-b border-gray-100 align-top">
+                                                    <td className="py-1.5 pr-2 font-medium text-gray-600">Type:</td>
+                                                    <td className="py-1.5 text-gray-900">
+                                                      <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                        {field.currentValue.type}
+                                                      </code>
+                                                    </td>
+                                                  </tr>
+                                                )}
+                                                {field.currentValue.relationshipTypeLabel && (
+                                                  <tr className="align-top">
+                                                    <td className="py-1.5 pr-2 font-medium text-gray-600">Relationship:</td>
+                                                    <td className="py-1.5 text-gray-900">{field.currentValue.relationshipTypeLabel}</td>
+                                                  </tr>
+                                                )}
+                                              </tbody>
+                                            </table>
+                                          ) : (
+                                            <div className="text-xs text-gray-500 italic">No existing value</div>
                                           )}
                                         </div>
                                       </div>
@@ -1624,80 +1810,171 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                               
                               // Contact fields - show all contact details in expanded view
                               if ((field.fieldName && field.fieldName.includes('Contact')) || field?.tab === 'contacts') {
-                                const contactData = typeof field.importValue === 'object' && field.importValue !== null && !Array.isArray(field.importValue) 
-                                  ? field.importValue 
+                                const contactData = typeof field.importValue === 'object' && field.importValue !== null && !Array.isArray(field.importValue)
+                                  ? field.importValue
                                   : null;
-                                
+
                                 if (contactData) {
+                                  // Generate XML snippet for display
+                                  const xmlSnippet = `<contact-info${contactData.type ? ` type="${contactData.type}"` : ''}>
+  ${contactData.organization ? `<organisation>
+    <narrative>${contactData.organization}</narrative>
+  </organisation>` : ''}
+  ${contactData.personName ? `<person-name>
+    <narrative>${contactData.personName}</narrative>
+  </person-name>` : ''}
+  ${contactData.jobTitle ? `<job-title>
+    <narrative>${contactData.jobTitle}</narrative>
+  </job-title>` : ''}
+  ${contactData.department ? `<department>
+    <narrative>${contactData.department}</narrative>
+  </department>` : ''}
+  ${contactData.email ? `<email>${contactData.email}</email>` : ''}
+  ${contactData.telephone ? `<telephone>${contactData.telephone}</telephone>` : ''}
+  ${contactData.website ? `<website>${contactData.website}</website>` : ''}
+  ${contactData.mailingAddress ? `<mailing-address>
+    <narrative>${contactData.mailingAddress}</narrative>
+  </mailing-address>` : ''}
+</contact-info>`;
+
                                   return (
                                     <div className="mb-6 border-b border-gray-200 pb-6">
                                       <div className="text-sm font-semibold mb-3 text-gray-900 flex items-center gap-2">
                                         <Building2 className="h-4 w-4" />
                                         Contact Details
                                       </div>
-                                      <div className="bg-white rounded-md p-3 border border-gray-200">
-                                        <div className="grid grid-cols-2 gap-3 text-xs">
-                                          {contactData.type && (
-                                            <div>
-                                              <span className="text-gray-600 font-medium">Type:</span>
-                                              <div className="mt-1">
-                                                <code className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
-                                                  {contactData.type}
-                                                </code>
-                                              </div>
-                                            </div>
-                                          )}
-                                          {contactData.organization && (
-                                            <div>
-                                              <span className="text-gray-600 font-medium">Organization:</span>
-                                              <div className="mt-1 text-gray-900">{contactData.organization}</div>
-                                            </div>
-                                          )}
-                                          {contactData.personName && (
-                                            <div>
-                                              <span className="text-gray-600 font-medium">Person Name:</span>
-                                              <div className="mt-1 text-gray-900">{contactData.personName}</div>
-                                            </div>
-                                          )}
-                                          {contactData.jobTitle && (
-                                            <div>
-                                              <span className="text-gray-600 font-medium">Job Title:</span>
-                                              <div className="mt-1 text-gray-900">{contactData.jobTitle}</div>
-                                            </div>
-                                          )}
-                                          {contactData.department && (
-                                            <div>
-                                              <span className="text-gray-600 font-medium">Department:</span>
-                                              <div className="mt-1 text-gray-900">{contactData.department}</div>
-                                            </div>
-                                          )}
-                                          {contactData.email && (
-                                            <div>
-                                              <span className="text-gray-600 font-medium">Email:</span>
-                                              <div className="mt-1 text-gray-900">{contactData.email}</div>
-                                            </div>
-                                          )}
-                                          {contactData.telephone && (
-                                            <div>
-                                              <span className="text-gray-600 font-medium">Telephone:</span>
-                                              <div className="mt-1 text-gray-900">{contactData.telephone}</div>
-                                            </div>
-                                          )}
-                                          {contactData.website && (
-                                            <div>
-                                              <span className="text-gray-600 font-medium">Website:</span>
-                                              <div className="mt-1">
-                                                <a href={contactData.website} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-800 hover:underline break-all">
-                                                  {contactData.website}
-                                                </a>
-                                              </div>
-                                            </div>
-                                          )}
-                                          {contactData.mailingAddress && (
-                                            <div className="col-span-2">
-                                              <span className="text-gray-600 font-medium">Mailing Address:</span>
-                                              <div className="mt-1 text-gray-900">{contactData.mailingAddress}</div>
-                                            </div>
+
+                                      {/* 3-column layout */}
+                                      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                                        {/* Column 1: Raw XML */}
+                                        <div className="bg-gray-50 rounded-md p-3 border border-gray-200">
+                                          <div className="text-xs font-semibold text-gray-700 mb-2">Raw XML</div>
+                                          <pre className="text-xs font-mono text-gray-800 overflow-x-auto whitespace-pre-wrap break-all">
+{xmlSnippet}
+                                          </pre>
+                                        </div>
+
+                                        {/* Column 2: Import Value */}
+                                        <div className="bg-gray-50 rounded-md p-3 border border-gray-200">
+                                          <div className="text-xs font-semibold text-gray-700 mb-2">Import Value</div>
+                                          <table className="w-full text-xs">
+                                            <tbody>
+                                              {contactData.type && (
+                                                <tr className="border-b border-gray-100 align-top">
+                                                  <td className="py-1.5 pr-2 font-medium text-gray-600">Type:</td>
+                                                  <td className="py-1.5 text-gray-900">
+                                                    <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                      {contactData.type}
+                                                    </code>
+                                                  </td>
+                                                </tr>
+                                              )}
+                                              {contactData.organization && (
+                                                <tr className="border-b border-gray-100 align-top">
+                                                  <td className="py-1.5 pr-2 font-medium text-gray-600">Organization:</td>
+                                                  <td className="py-1.5 text-gray-900">{contactData.organization}</td>
+                                                </tr>
+                                              )}
+                                              {contactData.personName && (
+                                                <tr className="border-b border-gray-100 align-top">
+                                                  <td className="py-1.5 pr-2 font-medium text-gray-600">Person Name:</td>
+                                                  <td className="py-1.5 text-gray-900">{contactData.personName}</td>
+                                                </tr>
+                                              )}
+                                              {contactData.jobTitle && (
+                                                <tr className="border-b border-gray-100 align-top">
+                                                  <td className="py-1.5 pr-2 font-medium text-gray-600">Job Title:</td>
+                                                  <td className="py-1.5 text-gray-900">{contactData.jobTitle}</td>
+                                                </tr>
+                                              )}
+                                              {contactData.department && (
+                                                <tr className="border-b border-gray-100 align-top">
+                                                  <td className="py-1.5 pr-2 font-medium text-gray-600">Department:</td>
+                                                  <td className="py-1.5 text-gray-900">{contactData.department}</td>
+                                                </tr>
+                                              )}
+                                              {contactData.email && (
+                                                <tr className="border-b border-gray-100 align-top">
+                                                  <td className="py-1.5 pr-2 font-medium text-gray-600">Email:</td>
+                                                  <td className="py-1.5 text-gray-900">{contactData.email}</td>
+                                                </tr>
+                                              )}
+                                              {contactData.telephone && (
+                                                <tr className="border-b border-gray-100 align-top">
+                                                  <td className="py-1.5 pr-2 font-medium text-gray-600">Telephone:</td>
+                                                  <td className="py-1.5 text-gray-900">{contactData.telephone}</td>
+                                                </tr>
+                                              )}
+                                              {contactData.website && (
+                                                <tr className="border-b border-gray-100 align-top">
+                                                  <td className="py-1.5 pr-2 font-medium text-gray-600">Website:</td>
+                                                  <td className="py-1.5 text-gray-900">
+                                                    <a href={contactData.website} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-800 hover:underline break-all">
+                                                      {contactData.website}
+                                                    </a>
+                                                  </td>
+                                                </tr>
+                                              )}
+                                              {contactData.mailingAddress && (
+                                                <tr className="align-top">
+                                                  <td className="py-1.5 pr-2 font-medium text-gray-600">Mailing Address:</td>
+                                                  <td className="py-1.5 text-gray-900">{contactData.mailingAddress}</td>
+                                                </tr>
+                                              )}
+                                            </tbody>
+                                          </table>
+                                        </div>
+
+                                        {/* Column 3: Current Value */}
+                                        <div className="bg-gray-50 rounded-md p-3 border border-gray-200">
+                                          <div className="text-xs font-semibold text-gray-700 mb-2">Current Value</div>
+                                          {field.currentValue ? (
+                                            <table className="w-full text-xs">
+                                              <tbody>
+                                                {field.currentValue.type && (
+                                                  <tr className="border-b border-gray-100 align-top">
+                                                    <td className="py-1.5 pr-2 font-medium text-gray-600">Type:</td>
+                                                    <td className="py-1.5 text-gray-900">
+                                                      <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                        {field.currentValue.type}
+                                                      </code>
+                                                    </td>
+                                                  </tr>
+                                                )}
+                                                {field.currentValue.organization && (
+                                                  <tr className="border-b border-gray-100 align-top">
+                                                    <td className="py-1.5 pr-2 font-medium text-gray-600">Organization:</td>
+                                                    <td className="py-1.5 text-gray-900">{field.currentValue.organization}</td>
+                                                  </tr>
+                                                )}
+                                                {field.currentValue.personName && (
+                                                  <tr className="border-b border-gray-100 align-top">
+                                                    <td className="py-1.5 pr-2 font-medium text-gray-600">Person Name:</td>
+                                                    <td className="py-1.5 text-gray-900">{field.currentValue.personName}</td>
+                                                  </tr>
+                                                )}
+                                                {field.currentValue.jobTitle && (
+                                                  <tr className="border-b border-gray-100 align-top">
+                                                    <td className="py-1.5 pr-2 font-medium text-gray-600">Job Title:</td>
+                                                    <td className="py-1.5 text-gray-900">{field.currentValue.jobTitle}</td>
+                                                  </tr>
+                                                )}
+                                                {field.currentValue.email && (
+                                                  <tr className="border-b border-gray-100 align-top">
+                                                    <td className="py-1.5 pr-2 font-medium text-gray-600">Email:</td>
+                                                    <td className="py-1.5 text-gray-900">{field.currentValue.email}</td>
+                                                  </tr>
+                                                )}
+                                                {field.currentValue.telephone && (
+                                                  <tr className="align-top">
+                                                    <td className="py-1.5 pr-2 font-medium text-gray-600">Telephone:</td>
+                                                    <td className="py-1.5 text-gray-900">{field.currentValue.telephone}</td>
+                                                  </tr>
+                                                )}
+                                              </tbody>
+                                            </table>
+                                          ) : (
+                                            <div className="text-xs text-gray-500 italic">No existing value</div>
                                           )}
                                         </div>
                                       </div>
@@ -1708,76 +1985,101 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                               
                               // Documents
                               if (field.fieldName.includes('Document') && field.documentData && Array.isArray(field.documentData)) {
+                                // Generate XML snippet for first document (representative)
+                                const firstDoc = field.documentData[0];
+                                const xmlSnippet = `<document-link url="${firstDoc?.url || ''}" format="${firstDoc?.format || ''}">
+  ${firstDoc?.title ? `<title>
+    <narrative>${firstDoc.title}</narrative>
+  </title>` : ''}
+  ${firstDoc?.category_code ? `<category code="${firstDoc.category_code}" />` : ''}
+  ${firstDoc?.language_code ? `<language code="${firstDoc.language_code}" />` : ''}
+  ${firstDoc?.document_date ? `<document-date iso-date="${firstDoc.document_date}" />` : ''}
+</document-link>${field.documentData.length > 1 ? `\n... and ${field.documentData.length - 1} more document${field.documentData.length - 1 !== 1 ? 's' : ''}` : ''}`;
+
                                 return (
                                   <div className="mb-6 border-b border-gray-200 pb-6">
                                     <div className="text-sm font-semibold mb-3 text-gray-900 flex items-center gap-2">
                                       <FileText className="h-4 w-4" />
                                       Document Details ({field.documentData.length} document{field.documentData.length !== 1 ? 's' : ''})
                                     </div>
-                                    <div className="space-y-3">
-                                      {field.documentData.map((doc: any, docIndex: number) => (
-                                        <div key={docIndex} className="bg-white rounded-md p-3 border border-gray-200">
-                                          <div className="grid grid-cols-2 gap-3 text-xs">
-                                            <div>
-                                              <span className="text-gray-600 font-medium">Title:</span>
-                                              <div className="mt-1 text-gray-900">{doc.title || doc.title?.[0]?.text || 'Untitled'}</div>
+
+                                    {/* 3-column layout */}
+                                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                                      {/* Column 1: Raw XML */}
+                                      <div className="bg-gray-50 rounded-md p-3 border border-gray-200">
+                                        <div className="text-xs font-semibold text-gray-700 mb-2">Raw XML</div>
+                                        <pre className="text-xs font-mono text-gray-800 overflow-x-auto whitespace-pre-wrap break-all">
+{xmlSnippet}
+                                        </pre>
+                                      </div>
+
+                                      {/* Column 2: Import Value */}
+                                      <div className="bg-gray-50 rounded-md p-3 border border-gray-200">
+                                        <div className="text-xs font-semibold text-gray-700 mb-2">Import Value ({field.documentData.length})</div>
+                                        <div className="space-y-3">
+                                          {field.documentData.map((doc: any, docIndex: number) => (
+                                            <div key={docIndex} className="border-b border-gray-100 pb-2 last:border-b-0">
+                                              <table className="w-full text-xs">
+                                                <tbody>
+                                                  <tr className="align-top">
+                                                    <td className="py-1 pr-2 font-medium text-gray-600">Title:</td>
+                                                    <td className="py-1 text-gray-900">{doc.title || doc.title?.[0]?.text || 'Untitled'}</td>
+                                                  </tr>
+                                                  {doc.category_code && (
+                                                    <tr className="align-top">
+                                                      <td className="py-1 pr-2 font-medium text-gray-600">Category:</td>
+                                                      <td className="py-1 text-gray-900">
+                                                        <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                          {doc.category_code}
+                                                        </code>
+                                                      </td>
+                                                    </tr>
+                                                  )}
+                                                  {doc.url && (
+                                                    <tr className="align-top">
+                                                      <td className="py-1 pr-2 font-medium text-gray-600">URL:</td>
+                                                      <td className="py-1 text-gray-900">
+                                                        <a href={doc.url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-800 hover:underline break-all text-xs">
+                                                          {doc.url.substring(0, 30)}...
+                                                        </a>
+                                                      </td>
+                                                    </tr>
+                                                  )}
+                                                  {doc.format && (
+                                                    <tr className="align-top">
+                                                      <td className="py-1 pr-2 font-medium text-gray-600">Format:</td>
+                                                      <td className="py-1 text-gray-900">
+                                                        <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                          {doc.format}
+                                                        </code>
+                                                      </td>
+                                                    </tr>
+                                                  )}
+                                                </tbody>
+                                              </table>
                                             </div>
-                                            {doc.category_code && (
-                                              <div>
-                                                <span className="text-gray-600 font-medium">Category:</span>
-                                                <div className="mt-1">
-                                                  <code className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
-                                                    {doc.category_code}
-                                                  </code>
-                                                </div>
-                                              </div>
-                                            )}
-                                            {doc.url && (
-                                              <div className="col-span-2">
-                                                <span className="text-gray-600 font-medium">URL:</span>
-                                                <div className="mt-1 flex items-center gap-2">
-                                                  <code className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded break-all flex-1">
-                                                    {doc.url}
-                                                  </code>
-                                                  <a href={doc.url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-800">
-                                                    <ExternalLink className="h-3 w-3" />
-                                                  </a>
-                                                </div>
-                                              </div>
-                                            )}
-                                            {doc.format && (
-                                              <div>
-                                                <span className="text-gray-600 font-medium">Format:</span>
-                                                <div className="mt-1">
-                                                  <code className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
-                                                    {doc.format}
-                                                  </code>
-                                                </div>
-                                              </div>
-                                            )}
-                                            {doc.language_code && (
-                                              <div>
-                                                <span className="text-gray-600 font-medium">Language:</span>
-                                                <div className="mt-1">
-                                                  <code className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
-                                                    {doc.language_code}
-                                                  </code>
-                                                </div>
-                                              </div>
-                                            )}
-                                            {doc.document_date && (
-                                              <div>
-                                                <span className="text-gray-600 font-medium">Date:</span>
-                                                <div className="mt-1">
-                                                  <code className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
-                                                    {doc.document_date}
-                                                  </code>
-                                                </div>
-                                              </div>
-                                            )}
-                                          </div>
+                                          ))}
                                         </div>
-                                      ))}
+                                      </div>
+
+                                      {/* Column 3: Current Value */}
+                                      <div className="bg-gray-50 rounded-md p-3 border border-gray-200">
+                                        <div className="text-xs font-semibold text-gray-700 mb-2">Current Value</div>
+                                        {field.currentValue && Array.isArray(field.currentValue) && field.currentValue.length > 0 ? (
+                                          <div className="space-y-2">
+                                            {field.currentValue.map((doc: any, idx: number) => (
+                                              <div key={idx} className="border-b border-gray-100 pb-2 last:border-b-0">
+                                                <div className="text-xs font-medium text-gray-900 mb-1">{doc.title || 'Untitled'}</div>
+                                                {doc.category_code && (
+                                                  <div className="text-xs text-gray-600">Category: <code className="bg-gray-100 px-1 py-0.5 rounded">{doc.category_code}</code></div>
+                                                )}
+                                              </div>
+                                            ))}
+                                          </div>
+                                        ) : (
+                                          <div className="text-xs text-gray-500 italic">No existing documents</div>
+                                        )}
+                                      </div>
                                     </div>
                                   </div>
                                 );
@@ -1787,20 +2089,20 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                               if (field.isTagField) {
                                 const existingTags = field.existingTags || [];
                                 const importTags = field.tagData || [];
-                                
+
                                 // Helper to format vocabulary label
                                 const getVocabLabel = (vocab: string) => {
                                   if (vocab === '1') return 'Standard';
                                   if (vocab === '99') return 'Custom';
                                   return vocab ? `Vocab ${vocab}` : '';
                                 };
-                                
+
                                 // Helper to get badge color variant based on vocabulary or code
                                 // All tags use shades of IATI color #135667
                                 const getTagBadgeColor = (tag: any, index: number) => {
                                   const vocab = String(tag.vocabulary || '');
                                   const code = String(tag.code || '');
-                                  
+
                                   // IATI color shades palette based on #135667
                                   const iatiShades = [
                                     'bg-[#e6f0f2] text-[#0f4552] border-[#99c3cb]',
@@ -1818,60 +2120,49 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                     'bg-[#e6f0f2] text-[#135667] border-[#99c3cb]',
                                     'bg-[#cce1e5] text-[#135667] border-[#66a5b1]'
                                   ];
-                                  
+
                                   // Color based on hash of code for consistency
                                   if (code) {
                                     const hash = code.split('').reduce((acc: number, char: string) => acc + char.charCodeAt(0), 0);
                                     return iatiShades[hash % iatiShades.length];
                                   }
-                                  
+
                                   // Fallback based on index
                                   return iatiShades[index % iatiShades.length];
                                 };
-                                
+
+                                // Generate XML snippet for first tag (representative)
+                                const firstTag = importTags[0];
+                                const xmlSnippet = firstTag ? `<tag vocabulary="${firstTag.vocabulary || ''}"${firstTag.vocabularyUri ? ` vocabulary-uri="${firstTag.vocabularyUri}"` : ''}${firstTag.code ? ` code="${firstTag.code}"` : ''}>
+  ${firstTag.narrative ? `<narrative>${firstTag.narrative}</narrative>` : ''}
+</tag>${importTags.length > 1 ? `\n... and ${importTags.length - 1} more tag${importTags.length - 1 !== 1 ? 's' : ''}` : ''}` : '<tag />';
+
                                 return (
                                   <div className="mb-6 border-b border-gray-200 pb-6">
-                                    <div className="text-sm font-semibold mb-4 text-gray-900 flex items-center gap-2">
+                                    <div className="text-sm font-semibold mb-3 text-gray-900 flex items-center gap-2">
                                       <Tag className="h-4 w-4" />
                                       Tag Details
                                     </div>
-                                    <div className="grid grid-cols-2 gap-4">
-                                      {/* Current Tags */}
-                                      <div className="bg-white rounded-md p-3 border border-gray-200">
-                                        <div className="font-medium text-xs text-gray-600 mb-3 uppercase tracking-wide">Current Tags</div>
-                                        {existingTags.length > 0 ? (
-                                          <div className="flex flex-wrap gap-2">
-                                            {existingTags.map((tag: any, idx: number) => (
-                                              <Badge 
-                                                key={idx} 
-                                                variant="outline" 
-                                                className={`${getTagBadgeColor(tag, idx)} border px-2.5 py-1 rounded-md text-xs font-medium`}
-                                              >
-                                                {tag.name || tag.narrative || 'Unnamed tag'}
-                                                {tag.vocabulary && (
-                                                  <span className="ml-1.5 text-xs opacity-75">
-                                                    ({getVocabLabel(String(tag.vocabulary))})
-                                                  </span>
-                                                )}
-                                              </Badge>
-                                            ))}
-                                          </div>
-                                        ) : (
-                                          <div className="text-sm text-gray-400 italic">No tags currently</div>
-                                        )}
+
+                                    {/* 3-column layout */}
+                                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                                      {/* Column 1: Raw XML */}
+                                      <div className="bg-gray-50 rounded-md p-3 border border-gray-200">
+                                        <div className="text-xs font-semibold text-gray-700 mb-2">Raw XML</div>
+                                        <pre className="text-xs font-mono text-gray-800 overflow-x-auto whitespace-pre-wrap break-all">
+{xmlSnippet}
+                                        </pre>
                                       </div>
-                                      
-                                      {/* Import Tags */}
-                                      <div className="bg-blue-50/30 rounded-md p-3 border border-blue-200">
-                                        <div className="font-medium text-xs text-blue-700 mb-3 uppercase tracking-wide">
-                                          Import Tags ({importTags.length})
-                                        </div>
+
+                                      {/* Column 2: Import Value */}
+                                      <div className="bg-gray-50 rounded-md p-3 border border-gray-200">
+                                        <div className="text-xs font-semibold text-gray-700 mb-2">Import Tags ({importTags.length})</div>
                                         {importTags.length > 0 ? (
                                           <div className="flex flex-wrap gap-2">
                                             {importTags.map((tag: any, idx: number) => (
-                                              <Badge 
-                                                key={idx} 
-                                                variant="outline" 
+                                              <Badge
+                                                key={idx}
+                                                variant="outline"
                                                 className={`${getTagBadgeColor(tag, idx)} border px-2.5 py-1 rounded-md text-xs font-medium`}
                                               >
                                                 {tag.narrative || 'Unnamed tag'}
@@ -1884,7 +2175,32 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                             ))}
                                           </div>
                                         ) : (
-                                          <div className="text-sm text-gray-400 italic">No tags to import</div>
+                                          <div className="text-xs text-gray-500 italic">No tags to import</div>
+                                        )}
+                                      </div>
+
+                                      {/* Column 3: Current Value */}
+                                      <div className="bg-gray-50 rounded-md p-3 border border-gray-200">
+                                        <div className="text-xs font-semibold text-gray-700 mb-2">Current Tags</div>
+                                        {existingTags.length > 0 ? (
+                                          <div className="flex flex-wrap gap-2">
+                                            {existingTags.map((tag: any, idx: number) => (
+                                              <Badge
+                                                key={idx}
+                                                variant="outline"
+                                                className={`${getTagBadgeColor(tag, idx)} border px-2.5 py-1 rounded-md text-xs font-medium`}
+                                              >
+                                                {tag.name || tag.narrative || 'Unnamed tag'}
+                                                {tag.vocabulary && (
+                                                  <span className="ml-1.5 text-xs opacity-75">
+                                                    ({getVocabLabel(String(tag.vocabulary))})
+                                                  </span>
+                                                )}
+                                              </Badge>
+                                            ))}
+                                          </div>
+                                        ) : (
+                                          <div className="text-xs text-gray-500 italic">No existing tags</div>
                                         )}
                                       </div>
                                     </div>
@@ -1895,65 +2211,143 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                               // Locations
                               if (field.isLocationItem && field.locationData) {
                                 const loc = field.locationData;
+
+                                // Generate XML snippet for display
+                                const xmlSnippet = `<location>
+  ${loc.name ? `<name>
+    <narrative>${loc.name}</narrative>
+  </name>` : ''}
+  ${loc.latitude && loc.longitude ? `<point srsName="http://www.opengis.net/def/crs/EPSG/0/4326">
+    <pos>${loc.latitude} ${loc.longitude}</pos>
+  </point>` : ''}
+  ${loc.country_code ? `<location-reach code="${loc.country_code}" />` : ''}
+  ${loc.location_type_code ? `<location-class code="${loc.location_type_code}" />` : ''}
+</location>`;
+
                                 return (
                                   <div className="mb-6 border-b border-gray-200 pb-6">
                                     <div className="text-sm font-semibold mb-3 text-gray-900 flex items-center gap-2">
                                       <MapPin className="h-4 w-4" />
                                       Location Details
                                     </div>
-                                    <div className="bg-white rounded-md p-3 border border-gray-200">
-                                      <div className="grid grid-cols-2 gap-3 text-xs">
-                                        {loc.name && (
-                                          <div className="col-span-2">
-                                            <span className="text-gray-600 font-medium">Name:</span>
-                                            <div className="mt-1 text-gray-900">{loc.name}</div>
-                                          </div>
-                                        )}
-                                        {(loc.latitude && loc.longitude) && (
-                                          <>
-                                            <div>
-                                              <span className="text-gray-600 font-medium">Latitude:</span>
-                                              <div className="mt-1">
-                                                <code className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
-                                                  {loc.latitude}
-                                                </code>
-                                              </div>
-                                            </div>
-                                            <div>
-                                              <span className="text-gray-600 font-medium">Longitude:</span>
-                                              <div className="mt-1">
-                                                <code className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
-                                                  {loc.longitude}
-                                                </code>
-                                              </div>
-                                            </div>
-                                          </>
-                                        )}
-                                        {loc.country_code && (
-                                          <div>
-                                            <span className="text-gray-600 font-medium">Country:</span>
-                                            <div className="mt-1">
-                                              <code className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
-                                                {loc.country_code}
-                                              </code>
-                                            </div>
-                                          </div>
-                                        )}
-                                        {loc.location_type_code && (
-                                          <div>
-                                            <span className="text-gray-600 font-medium">Type:</span>
-                                            <div className="mt-1">
-                                              <code className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
-                                                {loc.location_type_code}
-                                              </code>
-                                            </div>
-                                          </div>
-                                        )}
-                                        {loc.address && (
-                                          <div className="col-span-2">
-                                            <span className="text-gray-600 font-medium">Address:</span>
-                                            <div className="mt-1 text-gray-900">{loc.address}</div>
-                                          </div>
+
+                                    {/* 3-column layout */}
+                                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                                      {/* Column 1: Raw XML */}
+                                      <div className="bg-gray-50 rounded-md p-3 border border-gray-200">
+                                        <div className="text-xs font-semibold text-gray-700 mb-2">Raw XML</div>
+                                        <pre className="text-xs font-mono text-gray-800 overflow-x-auto whitespace-pre-wrap break-all">
+{xmlSnippet}
+                                        </pre>
+                                      </div>
+
+                                      {/* Column 2: Import Value */}
+                                      <div className="bg-gray-50 rounded-md p-3 border border-gray-200">
+                                        <div className="text-xs font-semibold text-gray-700 mb-2">Import Value</div>
+                                        <table className="w-full text-xs">
+                                          <tbody>
+                                            {loc.name && (
+                                              <tr className="border-b border-gray-100 align-top">
+                                                <td className="py-1.5 pr-2 font-medium text-gray-600">Name:</td>
+                                                <td className="py-1.5 text-gray-900">{loc.name}</td>
+                                              </tr>
+                                            )}
+                                            {loc.latitude && (
+                                              <tr className="border-b border-gray-100 align-top">
+                                                <td className="py-1.5 pr-2 font-medium text-gray-600">Latitude:</td>
+                                                <td className="py-1.5 text-gray-900">
+                                                  <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                    {loc.latitude}
+                                                  </code>
+                                                </td>
+                                              </tr>
+                                            )}
+                                            {loc.longitude && (
+                                              <tr className="border-b border-gray-100 align-top">
+                                                <td className="py-1.5 pr-2 font-medium text-gray-600">Longitude:</td>
+                                                <td className="py-1.5 text-gray-900">
+                                                  <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                    {loc.longitude}
+                                                  </code>
+                                                </td>
+                                              </tr>
+                                            )}
+                                            {loc.country_code && (
+                                              <tr className="border-b border-gray-100 align-top">
+                                                <td className="py-1.5 pr-2 font-medium text-gray-600">Country:</td>
+                                                <td className="py-1.5 text-gray-900">
+                                                  <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                    {loc.country_code}
+                                                  </code>
+                                                </td>
+                                              </tr>
+                                            )}
+                                            {loc.location_type_code && (
+                                              <tr className="border-b border-gray-100 align-top">
+                                                <td className="py-1.5 pr-2 font-medium text-gray-600">Type:</td>
+                                                <td className="py-1.5 text-gray-900">
+                                                  <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                    {loc.location_type_code}
+                                                  </code>
+                                                </td>
+                                              </tr>
+                                            )}
+                                            {loc.address && (
+                                              <tr className="align-top">
+                                                <td className="py-1.5 pr-2 font-medium text-gray-600">Address:</td>
+                                                <td className="py-1.5 text-gray-900">{loc.address}</td>
+                                              </tr>
+                                            )}
+                                          </tbody>
+                                        </table>
+                                      </div>
+
+                                      {/* Column 3: Current Value */}
+                                      <div className="bg-gray-50 rounded-md p-3 border border-gray-200">
+                                        <div className="text-xs font-semibold text-gray-700 mb-2">Current Value</div>
+                                        {field.currentValue ? (
+                                          <table className="w-full text-xs">
+                                            <tbody>
+                                              {field.currentValue.name && (
+                                                <tr className="border-b border-gray-100 align-top">
+                                                  <td className="py-1.5 pr-2 font-medium text-gray-600">Name:</td>
+                                                  <td className="py-1.5 text-gray-900">{field.currentValue.name}</td>
+                                                </tr>
+                                              )}
+                                              {field.currentValue.latitude && (
+                                                <tr className="border-b border-gray-100 align-top">
+                                                  <td className="py-1.5 pr-2 font-medium text-gray-600">Latitude:</td>
+                                                  <td className="py-1.5 text-gray-900">
+                                                    <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                      {field.currentValue.latitude}
+                                                    </code>
+                                                  </td>
+                                                </tr>
+                                              )}
+                                              {field.currentValue.longitude && (
+                                                <tr className="border-b border-gray-100 align-top">
+                                                  <td className="py-1.5 pr-2 font-medium text-gray-600">Longitude:</td>
+                                                  <td className="py-1.5 text-gray-900">
+                                                    <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                      {field.currentValue.longitude}
+                                                    </code>
+                                                  </td>
+                                                </tr>
+                                              )}
+                                              {field.currentValue.country_code && (
+                                                <tr className="align-top">
+                                                  <td className="py-1.5 pr-2 font-medium text-gray-600">Country:</td>
+                                                  <td className="py-1.5 text-gray-900">
+                                                    <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                      {field.currentValue.country_code}
+                                                    </code>
+                                                  </td>
+                                                </tr>
+                                              )}
+                                            </tbody>
+                                          </table>
+                                        ) : (
+                                          <div className="text-xs text-gray-500 italic">No existing value</div>
                                         )}
                                       </div>
                                     </div>
@@ -1964,75 +2358,152 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                               // Financial Items (Budgets, Transactions, Planned Disbursements)
                               if (field.itemData && field.isFinancialItem) {
                                 const item = field.itemData;
+                                const itemLabel = field.itemType === 'budget' ? 'Budget' : field.itemType === 'transaction' ? 'Transaction' : field.itemType === 'plannedDisbursement' ? 'Planned Disbursement' : 'Financial Item';
+
+                                // Generate XML snippet based on item type
+                                let xmlSnippet = '';
+                                if (field.itemType === 'budget') {
+                                  xmlSnippet = `<budget type="${item.type || ''}" status="${item.status || ''}">
+  <period-start iso-date="${item.period?.start || item.start || ''}" />
+  <period-end iso-date="${item.period?.end || item.end || ''}" />
+  <value currency="${item.currency || ''}" value-date="${item.value_date || ''}">${item.value || ''}</value>
+</budget>`;
+                                } else if (field.itemType === 'transaction') {
+                                  xmlSnippet = `<transaction>
+  <transaction-type code="${item.transaction_type || item.type || ''}" />
+  <transaction-date iso-date="${item.value_date || ''}" />
+  <value currency="${item.currency || ''}" value-date="${item.value_date || ''}">${item.value || ''}</value>
+</transaction>`;
+                                } else if (field.itemType === 'plannedDisbursement') {
+                                  xmlSnippet = `<planned-disbursement type="${item.type || ''}">
+  <period-start iso-date="${item.period?.start || item.start || ''}" />
+  <period-end iso-date="${item.period?.end || item.end || ''}" />
+  <value currency="${item.currency || ''}" value-date="${item.value_date || ''}">${item.value || ''}</value>
+</planned-disbursement>`;
+                                }
+
                                 return (
                                   <div className="mb-6 border-b border-gray-200 pb-6">
                                     <div className="text-sm font-semibold mb-3 text-gray-900 flex items-center gap-2">
                                       <DollarSign className="h-4 w-4" />
-                                      {field.itemType === 'budget' ? 'Budget' : field.itemType === 'transaction' ? 'Transaction' : field.itemType === 'plannedDisbursement' ? 'Planned Disbursement' : 'Financial Item'} Details
+                                      {itemLabel} Details
                                     </div>
-                                    <div className="bg-white rounded-md p-3 border border-gray-200">
-                                      <div className="grid grid-cols-2 gap-3 text-xs">
-                                        {item.value !== undefined && item.currency && (
-                                          <div className="col-span-2">
-                                            <span className="text-gray-600 font-medium">Amount:</span>
-                                            <div className="mt-1">
-                                              <span className="text-muted-foreground">{item.currency}</span> {item.value?.toLocaleString()}
-                                            </div>
-                                          </div>
-                                        )}
-                                        {(item.period?.start || item.start) && (
-                                          <div>
-                                            <span className="text-gray-600 font-medium">Start:</span>
-                                            <div className="mt-1 text-sm text-gray-900">
-                                              {formatDateDisplay(item.period?.start || item.start)}
-                                            </div>
-                                          </div>
-                                        )}
-                                        {(item.period?.end || item.end) && (
-                                          <div>
-                                            <span className="text-gray-600 font-medium">End:</span>
-                                            <div className="mt-1 text-sm text-gray-900">
-                                              {formatDateDisplay(item.period?.end || item.end)}
-                                            </div>
-                                          </div>
-                                        )}
-                                        {item.value_date && (
-                                          <div>
-                                            <span className="text-gray-600 font-medium">Value Date:</span>
-                                            <div className="mt-1 text-sm text-gray-900">
-                                              {formatDateDisplay(item.value_date)}
-                                            </div>
-                                          </div>
-                                        )}
-                                        {item.status && (
-                                          <div>
-                                            <span className="text-gray-600 font-medium">Status:</span>
-                                            <div className="mt-1">
-                                              <code className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
-                                                {item.status}
-                                              </code>
-                                            </div>
-                                          </div>
-                                        )}
-                                        {item.type && (
-                                          <div>
-                                            <span className="text-gray-600 font-medium">Type:</span>
-                                            <div className="mt-1">
-                                              <code className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
-                                                {item.type}
-                                              </code>
-                                            </div>
-                                          </div>
-                                        )}
-                                        {item.transaction_type && (
-                                          <div>
-                                            <span className="text-gray-600 font-medium">Transaction Type:</span>
-                                            <div className="mt-1">
-                                              <code className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
-                                                {item.transaction_type}
-                                              </code>
-                                            </div>
-                                          </div>
+
+                                    {/* 3-column layout */}
+                                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                                      {/* Column 1: Raw XML */}
+                                      <div className="bg-gray-50 rounded-md p-3 border border-gray-200">
+                                        <div className="text-xs font-semibold text-gray-700 mb-2">Raw XML</div>
+                                        <pre className="text-xs font-mono text-gray-800 overflow-x-auto whitespace-pre-wrap break-all">
+{xmlSnippet}
+                                        </pre>
+                                      </div>
+
+                                      {/* Column 2: Import Value */}
+                                      <div className="bg-gray-50 rounded-md p-3 border border-gray-200">
+                                        <div className="text-xs font-semibold text-gray-700 mb-2">Import Value</div>
+                                        <table className="w-full text-xs">
+                                          <tbody>
+                                            {item.value !== undefined && item.currency && (
+                                              <tr className="border-b border-gray-100 align-top">
+                                                <td className="py-1.5 pr-2 font-medium text-gray-600">Amount:</td>
+                                                <td className="py-1.5 text-gray-900">
+                                                  <span className="font-mono">{item.currency} {item.value?.toLocaleString()}</span>
+                                                </td>
+                                              </tr>
+                                            )}
+                                            {(item.period?.start || item.start) && (
+                                              <tr className="border-b border-gray-100 align-top">
+                                                <td className="py-1.5 pr-2 font-medium text-gray-600">Start:</td>
+                                                <td className="py-1.5 text-gray-900">{formatDateDisplay(item.period?.start || item.start)}</td>
+                                              </tr>
+                                            )}
+                                            {(item.period?.end || item.end) && (
+                                              <tr className="border-b border-gray-100 align-top">
+                                                <td className="py-1.5 pr-2 font-medium text-gray-600">End:</td>
+                                                <td className="py-1.5 text-gray-900">{formatDateDisplay(item.period?.end || item.end)}</td>
+                                              </tr>
+                                            )}
+                                            {item.value_date && (
+                                              <tr className="border-b border-gray-100 align-top">
+                                                <td className="py-1.5 pr-2 font-medium text-gray-600">Value Date:</td>
+                                                <td className="py-1.5 text-gray-900">{formatDateDisplay(item.value_date)}</td>
+                                              </tr>
+                                            )}
+                                            {item.status && (
+                                              <tr className="border-b border-gray-100 align-top">
+                                                <td className="py-1.5 pr-2 font-medium text-gray-600">Status:</td>
+                                                <td className="py-1.5 text-gray-900">
+                                                  <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                    {item.status}
+                                                  </code>
+                                                </td>
+                                              </tr>
+                                            )}
+                                            {item.type && (
+                                              <tr className="border-b border-gray-100 align-top">
+                                                <td className="py-1.5 pr-2 font-medium text-gray-600">Type:</td>
+                                                <td className="py-1.5 text-gray-900">
+                                                  <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                    {item.type}
+                                                  </code>
+                                                </td>
+                                              </tr>
+                                            )}
+                                            {item.transaction_type && (
+                                              <tr className="align-top">
+                                                <td className="py-1.5 pr-2 font-medium text-gray-600">Transaction Type:</td>
+                                                <td className="py-1.5 text-gray-900">
+                                                  <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                    {item.transaction_type}
+                                                  </code>
+                                                </td>
+                                              </tr>
+                                            )}
+                                          </tbody>
+                                        </table>
+                                      </div>
+
+                                      {/* Column 3: Current Value */}
+                                      <div className="bg-gray-50 rounded-md p-3 border border-gray-200">
+                                        <div className="text-xs font-semibold text-gray-700 mb-2">Current Value</div>
+                                        {field.currentValue ? (
+                                          <table className="w-full text-xs">
+                                            <tbody>
+                                              {field.currentValue.value !== undefined && field.currentValue.currency && (
+                                                <tr className="border-b border-gray-100 align-top">
+                                                  <td className="py-1.5 pr-2 font-medium text-gray-600">Amount:</td>
+                                                  <td className="py-1.5 text-gray-900">
+                                                    <span className="font-mono">{field.currentValue.currency} {field.currentValue.value?.toLocaleString()}</span>
+                                                  </td>
+                                                </tr>
+                                              )}
+                                              {(field.currentValue.period?.start || field.currentValue.start) && (
+                                                <tr className="border-b border-gray-100 align-top">
+                                                  <td className="py-1.5 pr-2 font-medium text-gray-600">Start:</td>
+                                                  <td className="py-1.5 text-gray-900">{formatDateDisplay(field.currentValue.period?.start || field.currentValue.start)}</td>
+                                                </tr>
+                                              )}
+                                              {(field.currentValue.period?.end || field.currentValue.end) && (
+                                                <tr className="border-b border-gray-100 align-top">
+                                                  <td className="py-1.5 pr-2 font-medium text-gray-600">End:</td>
+                                                  <td className="py-1.5 text-gray-900">{formatDateDisplay(field.currentValue.period?.end || field.currentValue.end)}</td>
+                                                </tr>
+                                              )}
+                                              {field.currentValue.type && (
+                                                <tr className="align-top">
+                                                  <td className="py-1.5 pr-2 font-medium text-gray-600">Type:</td>
+                                                  <td className="py-1.5 text-gray-900">
+                                                    <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                      {field.currentValue.type}
+                                                    </code>
+                                                  </td>
+                                                </tr>
+                                              )}
+                                            </tbody>
+                                          </table>
+                                        ) : (
+                                          <div className="text-xs text-gray-500 italic">No existing value</div>
                                         )}
                                       </div>
                                     </div>
@@ -2043,43 +2514,106 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                               // Policy Markers
                               if (field.isPolicyMarker && field.policyMarkerData) {
                                 const pm = field.policyMarkerData;
+
+                                // Generate XML snippet for display
+                                const xmlSnippet = `<policy-marker vocabulary="${pm.vocabulary || '1'}" code="${pm.code || ''}" significance="${pm.significance || ''}" />`;
+
                                 return (
                                   <div className="mb-6 border-b border-gray-200 pb-6">
                                     <div className="text-sm font-semibold mb-3 text-gray-900 flex items-center gap-2">
                                       <Tag className="h-4 w-4" />
                                       Policy Marker Details
                                     </div>
-                                    <div className="bg-white rounded-md p-3 border border-gray-200">
-                                      <div className="grid grid-cols-2 gap-3 text-xs">
-                                        {pm.code && (
-                                          <div>
-                                            <span className="text-gray-600 font-medium">Code:</span>
-                                            <div className="mt-1">
-                                              <code className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
-                                                {pm.code}
-                                              </code>
-                                            </div>
-                                          </div>
-                                        )}
-                                        {pm.significance && (
-                                          <div>
-                                            <span className="text-gray-600 font-medium">Significance:</span>
-                                            <div className="mt-1">
-                                              <code className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
-                                                {pm.significance}
-                                              </code>
-                                            </div>
-                                          </div>
-                                        )}
-                                        {pm.vocabulary && (
-                                          <div>
-                                            <span className="text-gray-600 font-medium">Vocabulary:</span>
-                                            <div className="mt-1">
-                                              <code className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
-                                                {pm.vocabulary}
-                                              </code>
-                                            </div>
-                                          </div>
+
+                                    {/* 3-column layout */}
+                                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                                      {/* Column 1: Raw XML */}
+                                      <div className="bg-gray-50 rounded-md p-3 border border-gray-200">
+                                        <div className="text-xs font-semibold text-gray-700 mb-2">Raw XML</div>
+                                        <pre className="text-xs font-mono text-gray-800 overflow-x-auto whitespace-pre-wrap break-all">
+{xmlSnippet}
+                                        </pre>
+                                      </div>
+
+                                      {/* Column 2: Import Value */}
+                                      <div className="bg-gray-50 rounded-md p-3 border border-gray-200">
+                                        <div className="text-xs font-semibold text-gray-700 mb-2">Import Value</div>
+                                        <table className="w-full text-xs">
+                                          <tbody>
+                                            {pm.code && (
+                                              <tr className="border-b border-gray-100 align-top">
+                                                <td className="py-1.5 pr-2 font-medium text-gray-600">Code:</td>
+                                                <td className="py-1.5 text-gray-900">
+                                                  <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                    {pm.code}
+                                                  </code>
+                                                </td>
+                                              </tr>
+                                            )}
+                                            {pm.significance && (
+                                              <tr className="border-b border-gray-100 align-top">
+                                                <td className="py-1.5 pr-2 font-medium text-gray-600">Significance:</td>
+                                                <td className="py-1.5 text-gray-900">
+                                                  <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                    {pm.significance}
+                                                  </code>
+                                                </td>
+                                              </tr>
+                                            )}
+                                            {pm.vocabulary && (
+                                              <tr className="align-top">
+                                                <td className="py-1.5 pr-2 font-medium text-gray-600">Vocabulary:</td>
+                                                <td className="py-1.5 text-gray-900">
+                                                  <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                    {pm.vocabulary}
+                                                  </code>
+                                                </td>
+                                              </tr>
+                                            )}
+                                          </tbody>
+                                        </table>
+                                      </div>
+
+                                      {/* Column 3: Current Value */}
+                                      <div className="bg-gray-50 rounded-md p-3 border border-gray-200">
+                                        <div className="text-xs font-semibold text-gray-700 mb-2">Current Value</div>
+                                        {field.currentValue ? (
+                                          <table className="w-full text-xs">
+                                            <tbody>
+                                              {field.currentValue.code && (
+                                                <tr className="border-b border-gray-100 align-top">
+                                                  <td className="py-1.5 pr-2 font-medium text-gray-600">Code:</td>
+                                                  <td className="py-1.5 text-gray-900">
+                                                    <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                      {field.currentValue.code}
+                                                    </code>
+                                                  </td>
+                                                </tr>
+                                              )}
+                                              {field.currentValue.significance && (
+                                                <tr className="border-b border-gray-100 align-top">
+                                                  <td className="py-1.5 pr-2 font-medium text-gray-600">Significance:</td>
+                                                  <td className="py-1.5 text-gray-900">
+                                                    <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                      {field.currentValue.significance}
+                                                    </code>
+                                                  </td>
+                                                </tr>
+                                              )}
+                                              {field.currentValue.vocabulary && (
+                                                <tr className="align-top">
+                                                  <td className="py-1.5 pr-2 font-medium text-gray-600">Vocabulary:</td>
+                                                  <td className="py-1.5 text-gray-900">
+                                                    <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                      {field.currentValue.vocabulary}
+                                                    </code>
+                                                  </td>
+                                                </tr>
+                                              )}
+                                            </tbody>
+                                          </table>
+                                        ) : (
+                                          <div className="text-xs text-gray-500 italic">No existing value</div>
                                         )}
                                       </div>
                                     </div>
@@ -2087,8 +2621,8 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                 );
                               }
                               
-                              // Conditions - only show if there's no conflict (conflicts are handled in Value Comparison)
-                              if (field.isConditionsField && field.conditionsData && !field.hasConflict) {
+                              // Conditions
+                              if (field.isConditionsField && field.conditionsData) {
                                 const cond = field.conditionsData;
                                 const conditionCount = cond.conditions && Array.isArray(cond.conditions) ? cond.conditions.length : 0;
                                 
@@ -2159,34 +2693,61 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                               // Other Identifier - show detailed table
                               if (field.fieldName && field.fieldName.startsWith('Other Identifier') && typeof field.importValue === 'object' && field.importValue !== null && !Array.isArray(field.importValue)) {
                                 const identifier = field.importValue;
+
+                                // Extract raw XML snippet from the imported XML
+                                const xmlSnippet = extractXmlSnippet(field.iatiPath, field.itemIndex);
+
                                 return (
                                   <div className="mb-6 border-b border-gray-200 pb-6">
                                     <div className="text-sm font-semibold mb-3 text-gray-900 flex items-center gap-2">
                                       <Tag className="h-4 w-4" />
                                       Other Identifier Details
                                     </div>
-                                    <div className="bg-white rounded-md p-3 border border-gray-200">
-                                      <div className="overflow-x-auto">
+
+                                    {/* 3-column layout */}
+                                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                                      {/* Column 1: Raw XML */}
+                                      <div className="bg-gray-50 rounded-md p-3 border border-gray-200">
+                                        <div className="text-xs font-semibold text-gray-700 mb-2">Raw XML</div>
+                                        <pre className="text-xs font-mono text-gray-800 overflow-x-auto whitespace-pre-wrap break-all">
+{xmlSnippet}
+                                        </pre>
+                                      </div>
+
+                                      {/* Column 2: Import Value */}
+                                      <div className="bg-gray-50 rounded-md p-3 border border-gray-200">
+                                        <div className="text-xs font-semibold text-gray-700 mb-2">Import Value</div>
                                         <table className="w-full text-xs">
-                                          <thead>
-                                            <tr className="border-b border-gray-200">
-                                              <th className="text-left py-2 px-3 font-medium text-gray-700">Reference Identifier</th>
-                                              <th className="text-left py-2 px-3 font-medium text-gray-700">Owner Org Identifier</th>
-                                              <th className="text-left py-2 px-3 font-medium text-gray-700">Type</th>
-                                              <th className="text-left py-2 px-3 font-medium text-gray-700">Description</th>
-                                              <th className="text-left py-2 px-3 font-medium text-gray-700">Code</th>
-                                            </tr>
-                                          </thead>
                                           <tbody>
-                                            <tr>
-                                              <td className="py-2 px-3 text-gray-900">{identifier.code || '—'}</td>
-                                              <td className="py-2 px-3 text-gray-900">{identifier.ownerOrg || '—'}</td>
-                                              <td className="py-2 px-3 text-gray-900">{identifier.name || '—'}</td>
-                                              <td className="py-2 px-3 text-gray-900">{field.description || 'No description provided'}</td>
-                                              <td className="py-2 px-3">
-                                                {identifier.type ? (
-                                                  <code className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
-                                                    {identifier.type}
+                                            <tr className="border-b border-gray-100 align-top">
+                                              <td className="py-1.5 pr-2 font-medium text-gray-600">Identifier Code:</td>
+                                              <td className="py-1.5 text-gray-900">
+                                                <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                  {identifier.code || '—'}
+                                                </code>
+                                              </td>
+                                            </tr>
+                                            <tr className="border-b border-gray-100 align-top">
+                                              <td className="py-1.5 pr-2 font-medium text-gray-600">Identifier Type:</td>
+                                              <td className="py-1.5 text-gray-900">
+                                                <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                  {identifier.type || '—'}
+                                                </code>
+                                                {identifier.name && (
+                                                  <span className="text-xs text-gray-500 ml-2">{identifier.name}</span>
+                                                )}
+                                              </td>
+                                            </tr>
+                                            <tr className="border-b border-gray-100 align-top">
+                                              <td className="py-1.5 pr-2 font-medium text-gray-600">Owner Org Name:</td>
+                                              <td className="py-1.5 text-gray-900">{identifier.ownerOrg?.narrative || '—'}</td>
+                                            </tr>
+                                            <tr className="align-top">
+                                              <td className="py-1.5 pr-2 font-medium text-gray-600">Owner Org Ref:</td>
+                                              <td className="py-1.5 text-gray-900">
+                                                {identifier.ownerOrg?.ref ? (
+                                                  <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                    {identifier.ownerOrg.ref}
                                                   </code>
                                                 ) : (
                                                   '—'
@@ -2196,6 +2757,54 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                           </tbody>
                                         </table>
                                       </div>
+
+                                      {/* Column 3: Current Value */}
+                                      <div className="bg-gray-50 rounded-md p-3 border border-gray-200">
+                                        <div className="text-xs font-semibold text-gray-700 mb-2">Current Value</div>
+                                        {field.currentValue ? (
+                                          <table className="w-full text-xs">
+                                            <tbody>
+                                              <tr className="border-b border-gray-100 align-top">
+                                                <td className="py-1.5 pr-2 font-medium text-gray-600">Identifier Code:</td>
+                                                <td className="py-1.5 text-gray-900">
+                                                  <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                    {field.currentValue.code || '—'}
+                                                  </code>
+                                                </td>
+                                              </tr>
+                                              <tr className="border-b border-gray-100 align-top">
+                                                <td className="py-1.5 pr-2 font-medium text-gray-600">Identifier Type:</td>
+                                                <td className="py-1.5 text-gray-900">
+                                                  <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                    {field.currentValue.type || '—'}
+                                                  </code>
+                                                  {field.currentValue.name && (
+                                                    <span className="text-xs text-gray-500 ml-2">{field.currentValue.name}</span>
+                                                  )}
+                                                </td>
+                                              </tr>
+                                              <tr className="border-b border-gray-100 align-top">
+                                                <td className="py-1.5 pr-2 font-medium text-gray-600">Owner Org Name:</td>
+                                                <td className="py-1.5 text-gray-900">{field.currentValue.ownerOrg?.narrative || '—'}</td>
+                                              </tr>
+                                              <tr className="align-top">
+                                                <td className="py-1.5 pr-2 font-medium text-gray-600">Owner Org Ref:</td>
+                                                <td className="py-1.5 text-gray-900">
+                                                  {field.currentValue.ownerOrg?.ref ? (
+                                                    <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                      {field.currentValue.ownerOrg.ref}
+                                                    </code>
+                                                  ) : (
+                                                    '—'
+                                                  )}
+                                                </td>
+                                              </tr>
+                                            </tbody>
+                                          </table>
+                                        ) : (
+                                          <div className="text-xs text-gray-500 italic">No existing value</div>
+                                        )}
+                                      </div>
                                     </div>
                                   </div>
                                 );
@@ -2203,67 +2812,448 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                               
                               // Non-DAC Sectors
                               if (field.hasNonDacSectors && field.nonDacSectors && Array.isArray(field.nonDacSectors) && field.nonDacSectors.length > 0) {
+                                // Generate XML snippet for first sector (representative)
+                                const firstSector = field.nonDacSectors[0];
+                                const xmlSnippet = `<sector vocabulary="${firstSector.vocabulary || ''}" code="${firstSector.code || ''}">
+  ${firstSector.name ? `<narrative>${firstSector.name}</narrative>` : ''}
+</sector>${field.nonDacSectors.length > 1 ? `\n... and ${field.nonDacSectors.length - 1} more sector${field.nonDacSectors.length - 1 !== 1 ? 's' : ''}` : ''}`;
+
                                 return (
                                   <div className="mb-6 border-b border-gray-200 pb-6">
                                     <div className="text-sm font-semibold mb-3 text-gray-900 flex items-center gap-2">
                                       <Tag className="h-4 w-4" />
                                       Non-DAC Sectors ({field.nonDacSectors.length})
                                     </div>
-                                    <div className="space-y-2">
-                                      {field.nonDacSectors.map((sector: any, idx: number) => (
-                                        <div key={idx} className="bg-white rounded-md p-2 border border-gray-200">
-                                          <div className="flex items-center gap-2">
-                                            {sector.code && (
-                                              <code className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
-                                                {sector.code}
-                                              </code>
-                                            )}
-                                            {sector.name && (
-                                              <span className="text-xs text-gray-900">{sector.name}</span>
-                                            )}
-                                            {sector.vocabulary && (
-                                              <Badge variant="outline" className="text-xs">
-                                                {sector.vocabulary}
-                                              </Badge>
-                                            )}
-                                          </div>
+
+                                    {/* 3-column layout */}
+                                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                                      {/* Column 1: Raw XML */}
+                                      <div className="bg-gray-50 rounded-md p-3 border border-gray-200">
+                                        <div className="text-xs font-semibold text-gray-700 mb-2">Raw XML</div>
+                                        <pre className="text-xs font-mono text-gray-800 overflow-x-auto whitespace-pre-wrap break-all">
+{xmlSnippet}
+                                        </pre>
+                                      </div>
+
+                                      {/* Column 2: Import Value */}
+                                      <div className="bg-gray-50 rounded-md p-3 border border-gray-200">
+                                        <div className="text-xs font-semibold text-gray-700 mb-2">Import Value ({field.nonDacSectors.length})</div>
+                                        <div className="space-y-2">
+                                          {field.nonDacSectors.map((sector: any, idx: number) => (
+                                            <div key={idx} className="border-b border-gray-100 pb-2 last:border-b-0">
+                                              <div className="flex items-center gap-2 flex-wrap">
+                                                {sector.code && (
+                                                  <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                    {sector.code}
+                                                  </code>
+                                                )}
+                                                {sector.name && (
+                                                  <span className="text-xs text-gray-900">{sector.name}</span>
+                                                )}
+                                                {sector.vocabulary && (
+                                                  <Badge variant="outline" className="text-xs">
+                                                    {sector.vocabulary}
+                                                  </Badge>
+                                                )}
+                                              </div>
+                                            </div>
+                                          ))}
                                         </div>
-                                      ))}
+                                      </div>
+
+                                      {/* Column 3: Current Value */}
+                                      <div className="bg-gray-50 rounded-md p-3 border border-gray-200">
+                                        <div className="text-xs font-semibold text-gray-700 mb-2">Current Value</div>
+                                        {field.currentValue && Array.isArray(field.currentValue) && field.currentValue.length > 0 ? (
+                                          <div className="space-y-2">
+                                            {field.currentValue.map((sector: any, idx: number) => (
+                                              <div key={idx} className="border-b border-gray-100 pb-2 last:border-b-0">
+                                                <div className="flex items-center gap-2">
+                                                  {sector.code && (
+                                                    <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                      {sector.code}
+                                                    </code>
+                                                  )}
+                                                  {sector.name && (
+                                                    <span className="text-xs text-gray-900">{sector.name}</span>
+                                                  )}
+                                                </div>
+                                              </div>
+                                            ))}
+                                          </div>
+                                        ) : (
+                                          <div className="text-xs text-gray-500 italic">No existing sectors</div>
+                                        )}
+                                      </div>
                                     </div>
                                   </div>
                                 );
                               }
-                              
-                              return null;
-                            })()}
-                            
-                            {/* Field metadata */}
-                            <div className="grid grid-cols-4 gap-4 text-sm">
-                              <div>
-                                <div className="font-semibold mb-2">IATI Path</div>
-                                <a 
-                                  href={`https://iatistandard.org/en/iati-standard/203/activity-standard/iati-activities/iati-activity/${field.iatiPath.replace('iati-activity/', '')}`}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="text-xs font-mono text-blue-600 hover:text-blue-800 hover:underline break-all"
-                                >
-                                  {field.iatiPath}
-                                </a>
-                              </div>
-                              <div>
-                                <div className="font-semibold mb-2">Category</div>
-                                <Badge variant="outline">{getCategory(field)}</Badge>
-                              </div>
-                              <div>
-                                <div className="font-semibold mb-2">Field Type</div>
-                                <Badge variant="secondary">{getFieldType(field)}</Badge>
-                              </div>
-                              {field.description && (
-                                <div>
-                                  <div className="font-semibold mb-2">Description</div>
-                                  <div className="text-gray-600 text-xs">{field.description}</div>
+
+                              // Activity Scope - show code and name in table format
+                              if (field.fieldName === 'Activity Scope' && (typeof field.importValue === 'string' || typeof field.importValue === 'object')) {
+                                const xmlSnippet = extractXmlSnippet(field.iatiPath, field.itemIndex);
+
+                                // Extract code and name from import value
+                                let importCode = '';
+                                let importName = '';
+                                if (typeof field.importValue === 'string') {
+                                  importCode = field.importValue;
+                                } else if (field.importValue && typeof field.importValue === 'object') {
+                                  importCode = (field.importValue as any).code || '';
+                                  importName = (field.importValue as any).name || '';
+                                }
+
+                                // Extract code and name from current value
+                                let currentCode = '';
+                                let currentName = '';
+                                if (typeof field.currentValue === 'string') {
+                                  currentCode = field.currentValue;
+                                } else if (field.currentValue && typeof field.currentValue === 'object') {
+                                  currentCode = (field.currentValue as any).code || '';
+                                  currentName = (field.currentValue as any).name || '';
+                                }
+
+                                return (
+                                  <div className="mb-6 border-b border-gray-200 pb-6">
+                                    <div className="text-sm font-semibold mb-3 text-gray-900">
+                                      Activity Scope Details
+                                    </div>
+
+                                    {/* 3-column layout */}
+                                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                                      {/* Column 1: Raw XML */}
+                                      <div className="bg-gray-50 rounded-md p-3 border border-gray-200">
+                                        <div className="text-xs font-semibold text-gray-700 mb-2">Raw XML</div>
+                                        {xmlSnippet ? (
+                                          <pre className="text-xs font-mono text-gray-800 overflow-x-auto whitespace-pre-wrap break-all">
+{xmlSnippet}
+                                          </pre>
+                                        ) : (
+                                          <div className="text-xs text-gray-500 italic">
+                                            See IATI Path below for XML structure
+                                          </div>
+                                        )}
+                                      </div>
+
+                                      {/* Column 2: Import Value */}
+                                      <div className="bg-gray-50 rounded-md p-3 border border-gray-200">
+                                        <div className="text-xs font-semibold text-gray-700 mb-2">Import Value</div>
+                                        {importCode ? (
+                                          <table className="w-full text-xs">
+                                            <tbody>
+                                              <tr className="border-b border-gray-100 align-top">
+                                                <td className="py-1.5 pr-2 font-medium text-gray-600">Code:</td>
+                                                <td className="py-1.5 text-gray-900">
+                                                  <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                    {importCode}
+                                                  </code>
+                                                </td>
+                                              </tr>
+                                              {importName && (
+                                                <tr className="align-top">
+                                                  <td className="py-1.5 pr-2 font-medium text-gray-600">Name:</td>
+                                                  <td className="py-1.5 text-gray-900">{importName}</td>
+                                                </tr>
+                                              )}
+                                            </tbody>
+                                          </table>
+                                        ) : (
+                                          <div className="text-xs text-gray-500 italic">No import value</div>
+                                        )}
+                                      </div>
+
+                                      {/* Column 3: Current Value */}
+                                      <div className="bg-gray-50 rounded-md p-3 border border-gray-200">
+                                        <div className="text-xs font-semibold text-gray-700 mb-2">Current Value</div>
+                                        {currentCode ? (
+                                          <table className="w-full text-xs">
+                                            <tbody>
+                                              <tr className="border-b border-gray-100 align-top">
+                                                <td className="py-1.5 pr-2 font-medium text-gray-600">Code:</td>
+                                                <td className="py-1.5 text-gray-900">
+                                                  <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                    {currentCode}
+                                                  </code>
+                                                </td>
+                                              </tr>
+                                              {currentName && (
+                                                <tr className="align-top">
+                                                  <td className="py-1.5 pr-2 font-medium text-gray-600">Name:</td>
+                                                  <td className="py-1.5 text-gray-900">{currentName}</td>
+                                                </tr>
+                                              )}
+                                            </tbody>
+                                          </table>
+                                        ) : (
+                                          <div className="text-xs text-gray-500 italic">No existing value</div>
+                                        )}
+                                      </div>
+                                    </div>
+                                  </div>
+                                );
+                              }
+
+                              // Activity Title and Description - show narratives in table format
+                              if ((field.fieldName === 'Activity Title' || field.fieldName?.includes('Description')) &&
+                                  (Array.isArray(field.importValue) || typeof field.importValue === 'string')) {
+
+                                const xmlSnippet = extractXmlSnippet(field.iatiPath, field.itemIndex);
+
+                                // Extract ALL narratives from the raw XML to show what's available
+                                let allXmlNarratives: Array<{ text: string; lang?: string; isImported: boolean }> = [];
+                                if (xmlContent && field.iatiPath) {
+                                  try {
+                                    const parser = new DOMParser();
+                                    const xmlDoc = parser.parseFromString(xmlContent, 'text/xml');
+                                    const cleanPath = field.iatiPath.replace('iati-activity/', '').replace(/\[\d+\]/g, '').split('/');
+                                    const parentElement = cleanPath.length > 1 ? cleanPath[cleanPath.length - 2] : null;
+
+                                    if (parentElement) {
+                                      const elements = xmlDoc.querySelectorAll(parentElement);
+                                      const targetElement = elements[field.itemIndex || 0] || elements[0];
+
+                                      if (targetElement) {
+                                        const narratives = targetElement.querySelectorAll('narrative');
+                                        narratives.forEach((narrative, idx) => {
+                                          const lang = narrative.getAttribute('xml:lang');
+                                          const text = narrative.textContent?.trim() || '';
+                                          // First narrative (usually English/default) is imported, others are not
+                                          const isImported = idx === 0 || (!lang || lang === 'en');
+                                          allXmlNarratives.push({ text, lang, isImported });
+                                        });
+                                      }
+                                    }
+                                  } catch (error) {
+                                    console.error('Error parsing narratives from XML:', error);
+                                  }
+                                }
+
+                                // Convert import value to array of narratives (what's actually being imported)
+                                let importNarratives: Array<{ text: string; lang?: string }> = [];
+                                if (Array.isArray(field.importValue)) {
+                                  importNarratives = field.importValue.map(v => ({
+                                    text: typeof v === 'string' ? v : (v.text || v.narrative || ''),
+                                    lang: v.lang || v['xml:lang']
+                                  }));
+                                } else if (typeof field.importValue === 'string') {
+                                  importNarratives = [{ text: field.importValue }];
+                                }
+
+                                // If we found narratives in XML, use those for display (they show what's available)
+                                // Otherwise fall back to import value
+                                const displayNarratives = allXmlNarratives.length > 0 ? allXmlNarratives : importNarratives.map(n => ({ ...n, isImported: true }));
+
+                                // Convert current value to array of narratives
+                                let currentNarratives: Array<{ text: string; lang?: string }> = [];
+                                if (field.currentValue) {
+                                  if (Array.isArray(field.currentValue)) {
+                                    currentNarratives = field.currentValue.map(v => ({
+                                      text: typeof v === 'string' ? v : (v.text || v.narrative || ''),
+                                      lang: v.lang || v['xml:lang']
+                                    }));
+                                  } else if (typeof field.currentValue === 'string') {
+                                    currentNarratives = [{ text: field.currentValue }];
+                                  }
+                                }
+
+                                return (
+                                  <div className="mb-6 border-b border-gray-200 pb-6">
+                                    <div className="text-sm font-semibold mb-3 text-gray-900">
+                                      {field.fieldName} Details
+                                    </div>
+
+                                    {/* 3-column layout */}
+                                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                                      {/* Column 1: Raw XML */}
+                                      <div className="bg-gray-50 rounded-md p-3 border border-gray-200">
+                                        <div className="text-xs font-semibold text-gray-700 mb-2">Raw XML</div>
+                                        {xmlSnippet ? (
+                                          <pre className="text-xs font-mono text-gray-800 overflow-x-auto whitespace-pre-wrap break-all">
+{xmlSnippet}
+                                          </pre>
+                                        ) : (
+                                          <div className="text-xs text-gray-500 italic">
+                                            See IATI Path below for XML structure
+                                          </div>
+                                        )}
+                                      </div>
+
+                                      {/* Column 2: Import Value */}
+                                      <div className="bg-gray-50 rounded-md p-3 border border-gray-200">
+                                        <div className="text-xs font-semibold text-gray-700 mb-2">Import Value</div>
+                                        {displayNarratives.length > 0 ? (
+                                          <div className="space-y-2">
+                                            <table className="w-full text-xs">
+                                              <tbody>
+                                                {displayNarratives.map((narrative, idx) => (
+                                                  <tr key={idx} className={`border-b border-gray-100 align-top last:border-b-0 ${!narrative.isImported ? 'opacity-50' : ''}`}>
+                                                    <td className="py-1.5 pr-2 font-medium text-gray-600 whitespace-nowrap">
+                                                      {narrative.lang ? `Language (${narrative.lang}):` : 'Default:'}
+                                                    </td>
+                                                    <td className="py-1.5 text-gray-900">{narrative.text}</td>
+                                                  </tr>
+                                                ))}
+                                              </tbody>
+                                            </table>
+                                            {displayNarratives.some(n => !n.isImported) && (
+                                              <div className="text-xs text-gray-500 italic mt-2 pt-2 border-t border-gray-200">
+                                                Note: Grayed-out languages are recognized but not currently imported by the system
+                                              </div>
+                                            )}
+                                          </div>
+                                        ) : (
+                                          <div className="text-xs text-gray-500 italic">No import value</div>
+                                        )}
+                                      </div>
+
+                                      {/* Column 3: Current Value */}
+                                      <div className="bg-gray-50 rounded-md p-3 border border-gray-200">
+                                        <div className="text-xs font-semibold text-gray-700 mb-2">Current Value</div>
+                                        {currentNarratives.length > 0 ? (
+                                          <table className="w-full text-xs">
+                                            <tbody>
+                                              {currentNarratives.map((narrative, idx) => (
+                                                <tr key={idx} className="border-b border-gray-100 align-top last:border-b-0">
+                                                  <td className="py-1.5 pr-2 font-medium text-gray-600 whitespace-nowrap">
+                                                    {narrative.lang ? `Language (${narrative.lang}):` : 'Default:'}
+                                                  </td>
+                                                  <td className="py-1.5 text-gray-900">{narrative.text}</td>
+                                                </tr>
+                                              ))}
+                                            </tbody>
+                                          </table>
+                                        ) : (
+                                          <div className="text-xs text-gray-500 italic">No existing value</div>
+                                        )}
+                                      </div>
+                                    </div>
+                                  </div>
+                                );
+                              }
+
+                              // Default: Show 3-column layout for all other fields
+                              // This ensures ALL fields have consistent expanded view
+
+                              // Extract raw XML snippet from the imported XML
+                              const xmlSnippet = extractXmlSnippet(field.iatiPath, field.itemIndex);
+
+                              // Helper function to render a value in table format
+                              const renderValueInTable = (value: any, fieldName: string) => {
+                                if (value === undefined || value === null || value === '') {
+                                  return <div className="text-xs text-gray-500 italic">No value</div>;
+                                }
+
+                                // If it's a simple string or number, show as single row
+                                if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
+                                  return (
+                                    <table className="w-full text-xs">
+                                      <tbody>
+                                        <tr className="align-top">
+                                          <td className="py-1.5 pr-2 font-medium text-gray-600">Value:</td>
+                                          <td className="py-1.5 text-gray-900">
+                                            {typeof value === 'string' && value.length > 100 ? (
+                                              <div className="break-words">{value}</div>
+                                            ) : (
+                                              <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                {String(value)}
+                                              </code>
+                                            )}
+                                          </td>
+                                        </tr>
+                                      </tbody>
+                                    </table>
+                                  );
+                                }
+
+                                // If it's an object, show key-value pairs
+                                if (typeof value === 'object' && !Array.isArray(value)) {
+                                  const entries = Object.entries(value).filter(([k, v]) => v !== null && v !== undefined && v !== '');
+                                  if (entries.length === 0) {
+                                    return <div className="text-xs text-gray-500 italic">No value</div>;
+                                  }
+
+                                  return (
+                                    <table className="w-full text-xs">
+                                      <tbody>
+                                        {entries.map(([key, val], idx) => (
+                                          <tr key={idx} className={`align-top ${idx < entries.length - 1 ? 'border-b border-gray-100' : ''}`}>
+                                            <td className="py-1.5 pr-2 font-medium text-gray-600 capitalize whitespace-nowrap">
+                                              {key.replace(/_/g, ' ')}:
+                                            </td>
+                                            <td className="py-1.5 text-gray-900">
+                                              {typeof val === 'string' && val.length > 100 ? (
+                                                <div className="break-words">{val}</div>
+                                              ) : (
+                                                <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                  {String(val)}
+                                                </code>
+                                              )}
+                                            </td>
+                                          </tr>
+                                        ))}
+                                      </tbody>
+                                    </table>
+                                  );
+                                }
+
+                                // For arrays or other complex types, fall back to renderValue
+                                return (
+                                  <div className="text-sm text-gray-900 break-words">
+                                    {renderValue(value, `${rowId}-default-fallback`, 'import', fieldName, field)}
+                                  </div>
+                                );
+                              };
+
+                              return (
+                                <div className="mb-6 border-b border-gray-200 pb-6">
+                                  <div className="text-sm font-semibold mb-3 text-gray-900">
+                                    Field Details
+                                  </div>
+
+                                  {/* 3-column layout */}
+                                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                                    {/* Column 1: Raw XML */}
+                                    <div className="bg-gray-50 rounded-md p-3 border border-gray-200">
+                                      <div className="text-xs font-semibold text-gray-700 mb-2">Raw XML</div>
+                                      {xmlSnippet ? (
+                                        <pre className="text-xs font-mono text-gray-800 overflow-x-auto whitespace-pre-wrap break-all">
+{xmlSnippet}
+                                        </pre>
+                                      ) : (
+                                        <div className="text-xs text-gray-500 italic">
+                                          See IATI Path below for XML structure
+                                        </div>
+                                      )}
+                                    </div>
+
+                                    {/* Column 2: Import Value */}
+                                    <div className="bg-gray-50 rounded-md p-3 border border-gray-200">
+                                      <div className="text-xs font-semibold text-gray-700 mb-2">Import Value</div>
+                                      {renderValueInTable(field.importValue, field.fieldName)}
+                                    </div>
+
+                                    {/* Column 3: Current Value */}
+                                    <div className="bg-gray-50 rounded-md p-3 border border-gray-200">
+                                      <div className="text-xs font-semibold text-gray-700 mb-2">Current Value</div>
+                                      {renderValueInTable(field.currentValue, field.fieldName)}
+                                    </div>
+                                  </div>
                                 </div>
-                              )}
+                              );
+                            })()}
+
+                            {/* Field metadata */}
+                            <div className="mt-4 text-sm flex items-center gap-2">
+                              <span className="font-semibold">IATI Path:</span>
+                              <a
+                                href={`https://iatistandard.org/en/iati-standard/203/activity-standard/iati-activities/iati-activity/${field.iatiPath.replace('iati-activity/', '').replace(/\[\d+\]/g, '')}/`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-xs font-mono text-blue-600 hover:text-blue-800 hover:underline"
+                              >
+                                {field.iatiPath.replace(/\[\d+\]/g, '')}
+                              </a>
                             </div>
                           </TableCell>
                         </TableRow>
@@ -2341,49 +3331,12 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                     {isExpanded && (
                       <TableRow>
                         <TableCell colSpan={6} className="bg-gray-50 p-4">
-                          {/* Side-by-side comparison for conflicts */}
-                          {field.hasConflict && (
-                            <div className="mb-6 border-b border-gray-200 pb-6">
-                              <div className="text-sm font-semibold mb-3 text-orange-700">Value Comparison</div>
-                              <div className="grid grid-cols-2 gap-4">
-                                <div className="bg-white rounded-md p-3 border border-gray-200">
-                                  <div className="font-medium text-xs text-gray-600 mb-2 uppercase tracking-wide">Current Value</div>
-                                  <div className="text-sm text-gray-900 break-words">
-                                    {renderValue(field.currentValue, `${rowId}-compare`, 'current', field.fieldName, field)}
-                                    </div>
-                                  </div>
-                                  <div className="bg-blue-50/30 rounded-md p-3 border border-blue-200">
-                                    <div className="font-medium text-xs text-blue-700 mb-2 uppercase tracking-wide">Import Value</div>
-                                    <div className="text-sm text-gray-900 break-words">
-                                      {renderValue(field.importValue, `${rowId}-compare`, 'import', field.fieldName, field)}
-                                    </div>
-                                </div>
-                              </div>
-                            </div>
-                          )}
-                          
                           {/* Field metadata */}
-                          <div className="grid grid-cols-3 gap-4 text-sm">
-                            <div>
-                              <div className="font-semibold mb-2">IATI Path</div>
-                              <code className="text-xs font-mono text-gray-700 bg-white px-2 py-1 rounded border">
-                                {field.iatiPath}
-                              </code>
-                            </div>
-                            <div>
-                              <div className="font-semibold mb-2">Category</div>
-                              <Badge variant="outline">{getCategory(field)}</Badge>
-                            </div>
-                            <div>
-                              <div className="font-semibold mb-2">Field Type</div>
-                              <Badge variant="secondary">{getFieldType(field)}</Badge>
-                            </div>
-                            {field.description && (
-                              <div className="col-span-3">
-                                <div className="font-semibold mb-2">Description</div>
-                                <div className="text-gray-600">{field.description}</div>
-                              </div>
-                            )}
+                          <div className="mt-4 text-sm flex items-center gap-2">
+                            <span className="font-semibold">IATI Path:</span>
+                            <code className="text-xs font-mono text-gray-700 bg-white px-2 py-1 rounded border">
+                              {field.iatiPath}
+                            </code>
                           </div>
                         </TableCell>
                       </TableRow>

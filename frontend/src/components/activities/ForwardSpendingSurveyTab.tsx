@@ -14,7 +14,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { getAllCurrenciesWithPinned, type Currency } from '@/data/currencies';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
-import { fixedCurrencyConverter } from '@/lib/currency-converter-fixed';
+import { convertToUSD } from '@/lib/currency-conversion-api';
 import {
   Table,
   TableBody,
@@ -129,59 +129,20 @@ export default function ForwardSpendingSurveyTab({
     }
   }, [forecasts, onFssChange, loading]);
 
-  // Convert all forecasts to USD when they change
+  // Read stored USD values from database (no conversion needed)
   useEffect(() => {
-    let cancelled = false;
-    async function convertAll() {
-      const newUsdValues: Record<string, { usd: number|null, rate: number|null, date: string, loading: boolean, error?: string }> = {};
-      for (const forecast of forecasts) {
-        if (!forecast.amount || !forecast.currency || !forecast.value_date) {
-          newUsdValues[forecast.id || ''] = { 
-            usd: null, 
-            rate: null, 
-            date: forecast.value_date || '', 
-            loading: false, 
-            error: 'Missing data' 
-          };
-          continue;
-        }
-        newUsdValues[forecast.id || ''] = { 
-          usd: null, 
-          rate: null, 
-          date: forecast.value_date, 
-          loading: true 
-        };
-        try {
-          const result = await fixedCurrencyConverter.convertToUSD(
-            forecast.amount, 
-            forecast.currency, 
-            new Date(forecast.value_date)
-          );
-          if (!cancelled) {
-            newUsdValues[forecast.id || ''] = {
-              usd: result.usd_amount,
-              rate: result.exchange_rate,
-              date: result.conversion_date || forecast.value_date,
-              loading: false,
-              error: result.success ? undefined : result.error || 'Conversion failed'
-            };
-          }
-        } catch (err) {
-          if (!cancelled) {
-            newUsdValues[forecast.id || ''] = { 
-              usd: null, 
-              rate: null, 
-              date: forecast.value_date, 
-              loading: false, 
-              error: 'Conversion error' 
-            };
-          }
-        }
-      }
-      if (!cancelled) setUsdValues(newUsdValues);
+    const newUsdValues: Record<string, { usd: number|null, rate: number|null, date: string, loading: boolean, error?: string }> = {};
+    for (const forecast of forecasts) {
+      const key = forecast.id || '';
+      newUsdValues[key] = {
+        usd: forecast.usd_amount ?? null,
+        rate: null,
+        date: forecast.value_date || '',
+        loading: false,
+        error: forecast.usd_amount === null && forecast.currency !== 'USD' ? 'Not converted' : undefined
+      };
     }
-    if (forecasts.length > 0) convertAll();
-    return () => { cancelled = true; };
+    setUsdValues(newUsdValues);
   }, [forecasts]);
 
   // Save FSS (extraction date, priority, phaseout year)
@@ -360,7 +321,7 @@ export default function ForwardSpendingSurveyTab({
           if (modalForecast.currency === 'USD') {
             setModalForecast(prev => prev ? { ...prev, usd_amount: modalForecast.amount } : null);
           } else {
-            const result = await fixedCurrencyConverter.convertToUSD(
+            const result = await convertToUSD(
               modalForecast.amount,
               modalForecast.currency,
               new Date(modalForecast.value_date)

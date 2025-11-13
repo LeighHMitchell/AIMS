@@ -126,7 +126,7 @@ export function FinanceTypeFlowChart({
         // Fetch all transactions with finance_type and flow_type
         let query = supabase
           .from('transactions')
-          .select('transaction_date, finance_type, flow_type, value, transaction_type')
+          .select('transaction_date, finance_type, flow_type, value, value_usd, currency, transaction_type')
           .eq('status', 'actual')
           .not('finance_type', 'is', null)
           .not('flow_type', 'is', null)
@@ -146,13 +146,29 @@ export function FinanceTypeFlowChart({
 
         const { data: transactions, error: transactionsError } = await query
 
+        console.log('[FinanceTypeFlowChart] === FETCHING TRANSACTIONS ===')
+        console.log('[FinanceTypeFlowChart] Query filters:', {
+          selectedTransactionTypes,
+          dateRange: dateRange ? { from: dateRange.from.toISOString(), to: dateRange.to.toISOString() } : 'none'
+        })
+
         if (transactionsError) {
           console.error('[FinanceTypeFlowChart] Error fetching transactions:', transactionsError)
           setError('Failed to fetch transaction data')
           return
         }
 
+        console.log('[FinanceTypeFlowChart] Transactions fetched:', transactions?.length || 0)
+        if (transactions && transactions.length > 0) {
+          console.log('[FinanceTypeFlowChart] Sample transaction:', transactions[0])
+        }
+
         if (!transactions || transactions.length === 0) {
+          console.warn('[FinanceTypeFlowChart] No transactions found with finance_type and flow_type')
+          console.warn('[FinanceTypeFlowChart] This could mean:')
+          console.warn('  1. No transactions match the transaction type filter (currently:', selectedTransactionTypes, ')')
+          console.warn('  2. No transactions have both finance_type and flow_type populated')
+          console.warn('  3. Transactions are outside the date range filter')
           setRawData([])
           setAllFlowTypes([])
           setAllFinanceTypes([])
@@ -160,11 +176,28 @@ export function FinanceTypeFlowChart({
           return
         }
 
-        // Process data - keep actual finance type codes
+        // Process data - keep actual finance type codes and use USD values
         const processedData = transactions.map((t: any) => {
           const date = new Date(t.transaction_date)
           const year = date.getFullYear()
-          const value = parseFloat(String(t.value)) || 0
+
+          // ONLY use USD values - try value_usd first
+          let value = parseFloat(String(t.value_usd)) || 0
+
+          // Only use raw value if currency is explicitly USD and no USD conversion exists
+          if (!value && t.currency === 'USD' && t.value) {
+            value = parseFloat(String(t.value)) || 0
+          }
+
+          // Skip transactions without valid USD values
+          if (!value) {
+            console.warn('[FinanceTypeFlowChart] Skipping transaction without USD value:', {
+              date: t.transaction_date,
+              currency: t.currency,
+              value: t.value,
+              value_usd: t.value_usd
+            })
+          }
 
           // Use actual finance_type code from database
           const financeType = t.finance_type || 'Unknown'
@@ -177,7 +210,7 @@ export function FinanceTypeFlowChart({
             value,
             date: t.transaction_date
           }
-        })
+        }).filter((d: any) => d.value > 0) // Remove entries with zero values
 
         // Get unique flow type codes from data
         const uniqueFlowTypeCodes = Array.from(new Set(processedData.map((d: any) => d.flowType)))

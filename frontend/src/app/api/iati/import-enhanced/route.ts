@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase';
 import { convertTransactionToUSD, addUSDFieldsToTransaction } from '@/lib/transaction-usd-helper';
+import { getOrCreateOrganization } from '@/lib/organization-helpers';
 
 interface ImportData {
   activities: any[];
@@ -344,7 +345,7 @@ export async function POST(request: NextRequest) {
           continue;
         }
 
-        // Apply organization assignments from UI if provided
+        // Apply organization assignments from UI if provided, or create/find organizations
         let providerOrgId = null;
         let receiverOrgId = null;
         
@@ -358,48 +359,44 @@ export async function POST(request: NextRequest) {
           }
         }
         
-        // If no assignment from UI, try to resolve provider from database
+        // If no assignment from UI, try to resolve/create provider organization
         if (!providerOrgId) {
           const providerOrgRef = transaction.provider_org_ref || transaction.providerOrgRef;
-          if (providerOrgRef) {
-            const { data: providerOrg } = await getSupabaseAdmin()
-              .from('organizations')
-              .select('id')
-              .eq('organization_ref', providerOrgRef)
-              .single();
-            
-            if (providerOrg) {
-              providerOrgId = providerOrg.id;
-            }
+          const providerOrgType = transaction.provider_org_type || transaction.providerOrgType;
+          
+          if (providerOrgRef || providerOrgName) {
+            providerOrgId = await getOrCreateOrganization(getSupabaseAdmin(), {
+              ref: providerOrgRef,
+              name: providerOrgName,
+              type: providerOrgType
+            });
           }
         }
 
-        // If no assignment from UI, try to resolve receiver from database
+        // If no assignment from UI, try to resolve/create receiver organization
         if (!receiverOrgId) {
           const receiverOrgRef = transaction.receiver_org_ref || transaction.receiverOrgRef;
-          if (receiverOrgRef) {
-            const { data: receiverOrg } = await getSupabaseAdmin()
-              .from('organizations')
-              .select('id')
-              .eq('organization_ref', receiverOrgRef)
-              .single();
-            
-            if (receiverOrg) {
-              receiverOrgId = receiverOrg.id;
-            }
+          const receiverOrgType = transaction.receiver_org_type || transaction.receiverOrgType;
+          
+          if (receiverOrgRef || receiverOrgName) {
+            receiverOrgId = await getOrCreateOrganization(getSupabaseAdmin(), {
+              ref: receiverOrgRef,
+              name: receiverOrgName,
+              type: receiverOrgType
+            });
           }
         }
 
         // Validate organization IDs
         const organizationId = providerOrgId || receiverOrgId;
         if (!organizationId) {
-          console.warn('[IATI Import Enhanced] No organization ID found for transaction:', {
+          console.warn('[IATI Import Enhanced] No organization ID found or created for transaction:', {
             providerOrgName,
             receiverOrgName,
             providerOrgRef: transaction.provider_org_ref,
             receiverOrgRef: transaction.receiver_org_ref
           });
-          results.errors.push(`Transaction #${i + 1}: Missing organization ID. Provider: ${providerOrgName}, Receiver: ${receiverOrgName}`);
+          results.errors.push(`Transaction #${i + 1}: Missing organization. Provide either ref or name. Provider: ${providerOrgName || 'none'}, Receiver: ${receiverOrgName || 'none'}`);
           continue; // Skip this transaction
         }
 

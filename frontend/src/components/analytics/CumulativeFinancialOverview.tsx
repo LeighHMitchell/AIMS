@@ -59,7 +59,7 @@ export function CumulativeFinancialOverview({
         // Fetch all transactions
         let transactionsQuery = supabase
           .from('transactions')
-          .select('transaction_date, transaction_type, value, activity_id, provider_org_id')
+          .select('transaction_date, transaction_type, value, value_usd, currency, activity_id, provider_org_id')
           .eq('status', 'actual')
           .order('transaction_date', { ascending: true })
 
@@ -86,7 +86,7 @@ export function CumulativeFinancialOverview({
         // Fetch planned disbursements
         let plannedDisbursementsQuery = supabase
           .from('planned_disbursements')
-          .select('period_start, amount, usd_amount, activity_id')
+          .select('period_start, amount, usd_amount, currency, activity_id')
           .order('period_start', { ascending: true })
 
         if (dateRange) {
@@ -104,7 +104,7 @@ export function CumulativeFinancialOverview({
         // Fetch budgets
         let budgetsQuery = supabase
           .from('activity_budgets')
-          .select('period_start, value, activity_id')
+          .select('period_start, value, usd_value, currency, activity_id')
           .order('period_start', { ascending: true })
 
         if (dateRange) {
@@ -130,7 +130,17 @@ export function CumulativeFinancialOverview({
           if (isNaN(date.getTime())) return
 
           const dateKey = date.toISOString().split('T')[0]
-          const value = parseFloat(String(transaction.value)) || 0
+
+          // ONLY use USD values - use value_usd
+          let value = parseFloat(String(transaction.value_usd)) || 0
+
+          // Only use raw value if currency is explicitly USD and no USD conversion exists
+          if (!value && transaction.currency === 'USD' && transaction.value) {
+            value = parseFloat(String(transaction.value)) || 0
+          }
+
+          // Skip transactions without valid USD values
+          if (!value) return
 
           if (!dateMap.has(dateKey)) {
             dateMap.set(dateKey, {
@@ -167,7 +177,17 @@ export function CumulativeFinancialOverview({
           if (isNaN(date.getTime())) return
 
           const dateKey = date.toISOString().split('T')[0]
-          const value = parseFloat(String(pd.usd_amount || pd.amount)) || 0
+
+          // ONLY use USD values - try usd_amount first
+          let value = parseFloat(String(pd.usd_amount)) || 0
+
+          // Only use raw amount if currency is explicitly USD and no USD conversion exists
+          if (!value && pd.currency === 'USD' && pd.amount) {
+            value = parseFloat(String(pd.amount)) || 0
+          }
+
+          // Skip planned disbursements without valid USD values
+          if (!value) return
 
           if (!dateMap.has(dateKey)) {
             dateMap.set(dateKey, {
@@ -193,7 +213,17 @@ export function CumulativeFinancialOverview({
           if (isNaN(date.getTime())) return
 
           const dateKey = date.toISOString().split('T')[0]
-          const value = parseFloat(String(budget.value)) || 0
+
+          // ONLY use USD values - try usd_value first
+          let value = parseFloat(String(budget.usd_value)) || 0
+
+          // Only use raw value if currency is explicitly USD and no USD conversion exists
+          if (!value && budget.currency === 'USD' && budget.value) {
+            value = parseFloat(String(budget.value)) || 0
+          }
+
+          // Skip budgets without valid USD values
+          if (!value) return
 
           if (!dateMap.has(dateKey)) {
             dateMap.set(dateKey, {
@@ -248,7 +278,7 @@ export function CumulativeFinancialOverview({
             'Disbursements': cumulativeDisbursements,
             'Expenditures': cumulativeExpenditures,
             'Planned Disbursements': cumulativePlannedDisbursements,
-            'Planned Budgets': cumulativePlannedBudgets
+            'Budgets': cumulativePlannedBudgets
           })
         })
 
@@ -293,7 +323,7 @@ export function CumulativeFinancialOverview({
               disbursements: existingData['Disbursements'],
               expenditures: existingData['Expenditures'],
               plannedDisbursements: existingData['Planned Disbursements'],
-              plannedBudgets: existingData['Planned Budgets']
+              plannedBudgets: existingData['Budgets']
             }
           } else {
             // Fill missing year with last cumulative values (carry forward)
@@ -309,7 +339,7 @@ export function CumulativeFinancialOverview({
               'Disbursements': lastCumulativeValues.disbursements,
               'Expenditures': lastCumulativeValues.expenditures,
               'Planned Disbursements': lastCumulativeValues.plannedDisbursements,
-              'Planned Budgets': lastCumulativeValues.plannedBudgets
+              'Budgets': lastCumulativeValues.plannedBudgets
             })
           }
         }
@@ -345,7 +375,7 @@ export function CumulativeFinancialOverview({
           'Disbursements': item['Disbursements'],
           'Expenditures': item['Expenditures'],
           'Planned Disbursements': item['Planned Disbursements'],
-          'Planned Budgets': item['Planned Budgets']
+          'Budgets': item['Budgets']
         }
       }
 
@@ -357,7 +387,7 @@ export function CumulativeFinancialOverview({
         'Disbursements': item['Disbursements'] - prevItem['Disbursements'],
         'Expenditures': item['Expenditures'] - prevItem['Expenditures'],
         'Planned Disbursements': item['Planned Disbursements'] - prevItem['Planned Disbursements'],
-        'Planned Budgets': item['Planned Budgets'] - prevItem['Planned Budgets']
+        'Budgets': item['Budgets'] - prevItem['Budgets']
       }
     })
   }, [filteredData])
@@ -373,7 +403,7 @@ export function CumulativeFinancialOverview({
       'Disbursements': lastItem['Disbursements'],
       'Expenditures': lastItem['Expenditures'],
       'Planned Disbursements': lastItem['Planned Disbursements'],
-      'Planned Budgets': lastItem['Planned Budgets']
+      'Budgets': lastItem['Budgets']
     }
   }, [filteredData])
 
@@ -388,7 +418,7 @@ export function CumulativeFinancialOverview({
     if (displayData.length === 0) return new Set()
 
     const series = new Set<string>()
-    const seriesKeys = ['Incoming Funds', 'Commitments', 'Disbursements', 'Expenditures', 'Planned Disbursements', 'Planned Budgets']
+    const seriesKeys = ['Incoming Funds', 'Commitments', 'Disbursements', 'Expenditures', 'Planned Disbursements', 'Budgets']
 
     seriesKeys.forEach(key => {
       const hasData = displayData.some(d => d[key] && d[key] > 0)
@@ -538,7 +568,7 @@ export function CumulativeFinancialOverview({
       'Disbursements': d['Disbursements']?.toFixed(2) || '0.00',
       'Expenditures': d['Expenditures']?.toFixed(2) || '0.00',
       'Planned Disbursements': d['Planned Disbursements']?.toFixed(2) || '0.00',
-      'Planned Budgets': d['Planned Budgets']?.toFixed(2) || '0.00'
+      'Budgets': d['Budgets']?.toFixed(2) || '0.00'
     }))
 
     const csv = [
@@ -732,7 +762,7 @@ export function CumulativeFinancialOverview({
                       <TableHead className="text-right">Disbursements</TableHead>
                       <TableHead className="text-right">Expenditures</TableHead>
                       <TableHead className="text-right">Planned Disbursements</TableHead>
-                      <TableHead className="text-right">Planned Budgets</TableHead>
+                      <TableHead className="text-right">Budgets</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -744,7 +774,7 @@ export function CumulativeFinancialOverview({
                         <TableCell className="text-right">{formatTooltipValue(item['Disbursements'] || 0)}</TableCell>
                         <TableCell className="text-right">{formatTooltipValue(item['Expenditures'] || 0)}</TableCell>
                         <TableCell className="text-right">{formatTooltipValue(item['Planned Disbursements'] || 0)}</TableCell>
-                        <TableCell className="text-right">{formatTooltipValue(item['Planned Budgets'] || 0)}</TableCell>
+                        <TableCell className="text-right">{formatTooltipValue(item['Budgets'] || 0)}</TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
@@ -765,7 +795,7 @@ export function CumulativeFinancialOverview({
                             key === 'Disbursements' ? '#475569' :
                             key === 'Expenditures' ? '#64748b' :
                             key === 'Planned Disbursements' ? '#1e3a8a' :
-                            key === 'Planned Budgets' ? '#334155' : '#1e40af'
+                            key === 'Budgets' ? '#334155' : '#1e40af'
                     }))
                     .sort((a, b) => b.value - a.value)
                   }
@@ -805,7 +835,7 @@ export function CumulativeFinancialOverview({
                           key === 'Disbursements' ? '#475569' :
                           key === 'Expenditures' ? '#64748b' :
                           key === 'Planned Disbursements' ? '#1e3a8a' :
-                          key === 'Planned Budgets' ? '#334155' : '#1e40af'
+                          key === 'Budgets' ? '#334155' : '#1e40af'
                         }
                       />
                     ))}
@@ -866,11 +896,11 @@ export function CumulativeFinancialOverview({
                       opacity={hiddenSeries.has('Planned Disbursements') ? 0.3 : 1}
                     />
                   )}
-                  {activeSeries.has('Planned Budgets') && (
+                  {activeSeries.has('Budgets') && (
                     <Bar
-                      dataKey="Planned Budgets"
-                      fill={hiddenSeries.has('Planned Budgets') ? '#cbd5e1' : '#334155'}
-                      opacity={hiddenSeries.has('Planned Budgets') ? 0.3 : 1}
+                      dataKey="Budgets"
+                      fill={hiddenSeries.has('Budgets') ? '#cbd5e1' : '#334155'}
+                      opacity={hiddenSeries.has('Budgets') ? 0.3 : 1}
                     />
                   )}
                 </BarChart>
@@ -950,16 +980,16 @@ export function CumulativeFinancialOverview({
                       opacity={hiddenSeries.has('Planned Disbursements') ? 0.3 : 1}
                     />
                   )}
-                  {activeSeries.has('Planned Budgets') && (
+                  {activeSeries.has('Budgets') && (
                     <Line
                       type="monotone"
-                      dataKey="Planned Budgets"
-                      stroke={hiddenSeries.has('Planned Budgets') ? '#cbd5e1' : '#334155'}
-                      strokeWidth={hiddenSeries.has('Planned Budgets') ? 1 : 2}
+                      dataKey="Budgets"
+                      stroke={hiddenSeries.has('Budgets') ? '#cbd5e1' : '#334155'}
+                      strokeWidth={hiddenSeries.has('Budgets') ? 1 : 2}
                       strokeDasharray="5 5"
-                      dot={{ fill: hiddenSeries.has('Planned Budgets') ? '#cbd5e1' : '#334155', r: 3 }}
+                      dot={{ fill: hiddenSeries.has('Budgets') ? '#cbd5e1' : '#334155', r: 3 }}
                       animationDuration={300}
-                      opacity={hiddenSeries.has('Planned Budgets') ? 0.3 : 1}
+                      opacity={hiddenSeries.has('Budgets') ? 0.3 : 1}
                     />
                   )}
                 </LineChart>

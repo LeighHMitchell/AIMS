@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase';
 import { fixedCurrencyConverter } from '@/lib/currency-converter-fixed';
+import { getOrCreateOrganization } from '@/lib/organization-helpers';
 
 interface ImportRequest {
   fields: Record<string, boolean>;
@@ -85,10 +86,13 @@ function resolveCurrency(
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: { id: string } | Promise<{ id: string }> }
 ) {
   try {
-    const activityId = params.id;
+    // Handle both sync and async params (Next.js 14/15 compatibility)
+    const resolvedParams = await Promise.resolve(params);
+    const activityId = resolvedParams.id;
+
     const body: ImportRequest = await request.json();
     const { fields, iati_data } = body;
     
@@ -146,16 +150,17 @@ export async function POST(
     const updateData: Record<string, any> = {};
     
     // Simple field mappings
+    // Maps from IATI field name (key) to database column name (value)
     const fieldMappings: Record<string, string> = {
-      title_narrative: 'title',
-      description_narrative: 'description',
+      title_narrative: 'title_narrative',
+      description_narrative: 'description_narrative',
       activity_status: 'activity_status',
       activity_date_start_planned: 'planned_start_date',
       activity_date_start_actual: 'actual_start_date',
       activity_date_end_planned: 'planned_end_date',
       activity_date_end_actual: 'actual_end_date',
       default_aid_type: 'default_aid_type',
-      flow_type: 'flow_type',
+      flow_type: 'default_flow_type',
       collaboration_type: 'collaboration_type',
       default_finance_type: 'default_finance_type',
       capital_spend_percentage: 'capital_spend_percentage'
@@ -546,16 +551,18 @@ export async function POST(
 
     // Handle transactions if selected
     let newTransactionsCount = 0;
-    
+    // Initialize organization stats at function level scope
+    let orgStats = { created: 0, linked: 0 };
+
     if (fields.transactions && iati_data.transactions) {
       console.log('[IATI Import] Processing transactions');
-      
+
       // Get existing transactions to check for duplicates
       const { data: existingTransactions } = await supabase
         .from('transactions')
         .select('transaction_type, transaction_date, value, currency')
         .eq('activity_id', activityId);
-      
+
       // Define transaction type for existing transactions
       interface ExistingTransaction {
         transaction_type: string;
@@ -563,25 +570,22 @@ export async function POST(
         value: number;
         currency: string;
       }
-      
+
       // Create a set of existing transaction signatures
       const existingSignatures = new Set(
-        (existingTransactions || []).map((t: ExistingTransaction) => 
+        (existingTransactions || []).map((t: ExistingTransaction) =>
           `${t.transaction_type}-${t.transaction_date}-${t.value}-${t.currency}`
         )
       );
-      
+
       // Filter out duplicate transactions
       const newTransactions = (iati_data.transactions || []).filter((t: IATITransaction) => {
         const signature = `${t.type}-${t.date}-${t.value}-${t.currency || 'USD'}`;
         return !existingSignatures.has(signature);
       });
-      
+
       newTransactionsCount = newTransactions.length;
       console.log(`[IATI Import] Found ${newTransactionsCount} new transactions out of ${iati_data.transactions.length} total`);
-      
-      // Initialize organization stats
-      let orgStats = { created: 0, linked: 0 };
       
       if (newTransactions.length > 0) {
         // Map organization names to IDs if needed
@@ -623,100 +627,63 @@ export async function POST(
           return null;
         };
         
-        // AUTO-CREATE MISSING ORGANIZATIONS
+        // AUTO-CREATE MISSING ORGANIZATIONS using shared helper
         const createMissingOrganizations = async (transactions: IATITransaction[]) => {
-          const orgRefsToCheck = new Set<string>();
-          const orgData = new Map<string, { name: string, ref: string }>();
-          
-          // Collect all unique organization references from transactions
-          transactions.forEach(t => {
-            if (t.providerOrg?.ref) {
-              orgRefsToCheck.add(t.providerOrg.ref);
-              orgData.set(t.providerOrg.ref, {
-                name: t.providerOrg.name || t.providerOrg.ref,
-                ref: t.providerOrg.ref
-              });
-            }
-            if (t.receiverOrg?.ref) {
-              orgRefsToCheck.add(t.receiverOrg.ref);
-              orgData.set(t.receiverOrg.ref, {
-                name: t.receiverOrg.name || t.receiverOrg.ref,
-                ref: t.receiverOrg.ref
-              });
-            }
-          });
-
-          if (orgRefsToCheck.size === 0) return { created: 0, linked: 0 };
-
-          // Check which organizations already exist in database
-          const { data: existingOrgs, error: fetchError } = await supabase
-            .from('organizations')
-            .select('id, name, iati_org_id')
-            .in('iati_org_id', Array.from(orgRefsToCheck));
-
-          if (fetchError) {
-            console.error('Error fetching existing organizations:', fetchError);
-            throw new Error(`Failed to check existing organizations: ${fetchError.message}`);
-          }
-
-          const existingOrgRefs = new Set(existingOrgs?.map(o => o.iati_org_id) || []);
+          let createdCount = 0;
           let linkedCount = 0;
           
-          // Update orgNameMap with existing organizations
-          existingOrgs?.forEach(org => {
-            if (org.iati_org_id) {
-              orgNameMap.set(org.iati_org_id, org.id);
-              linkedCount++;
-            }
-          });
-
-          // Determine which organizations need to be created
-          const orgsToCreate = Array.from(orgRefsToCheck)
-            .filter(ref => !existingOrgRefs.has(ref))
-            .map(ref => {
-              const data = orgData.get(ref)!;
-              return {
-                name: data.name,
-                iati_org_id: ref,
-                organization_type: 'other', // Default type for auto-created orgs
-                created_at: new Date().toISOString(),
-                updated_at: new Date().toISOString()
-              };
-            });
-
-          let createdCount = 0;
-
-          // Create missing organizations
-          if (orgsToCreate.length > 0) {
-            console.log(`[IATI Import] Creating ${orgsToCreate.length} missing organizations:`, orgsToCreate);
-            
-            const { data: newOrgs, error: createError } = await supabase
-              .from('organizations')
-              .insert(orgsToCreate)
-              .select('id, name, iati_org_id');
-
-            if (createError) {
-              console.error('[IATI Import] Error creating organizations:', createError);
-              throw new Error(`Failed to create organizations: ${createError.message}`);
-            }
-
-            createdCount = newOrgs?.length || 0;
-            
-            // Update orgNameMap with newly created organizations
-            newOrgs?.forEach(org => {
-              if (org.iati_org_id) {
-                orgNameMap.set(org.iati_org_id, org.id);
+          console.log('[IATI Import] Processing organizations for', transactions.length, 'transactions...');
+          
+          for (const t of transactions) {
+            // Process provider organization
+            if (t.providerOrg?.ref || t.providerOrg?.name) {
+              const key = t.providerOrg.ref || t.providerOrg.name!;
+              
+              // Skip if already processed
+              if (!orgNameMap.has(key)) {
+                const orgId = await getOrCreateOrganization(supabase, {
+                  ref: t.providerOrg.ref,
+                  name: t.providerOrg.name,
+                  type: t.providerOrg.type
+                });
+                
+                if (orgId) {
+                  orgNameMap.set(key, orgId);
+                  // Also map by ref and name separately for flexible lookup
+                  if (t.providerOrg.ref) orgNameMap.set(t.providerOrg.ref, orgId);
+                  if (t.providerOrg.name) orgNameMap.set(t.providerOrg.name, orgId);
+                  linkedCount++;
+                }
               }
-            });
-
-            console.log(`[IATI Import] Successfully created ${createdCount} organizations`);
+            }
+            
+            // Process receiver organization
+            if (t.receiverOrg?.ref || t.receiverOrg?.name) {
+              const key = t.receiverOrg.ref || t.receiverOrg.name!;
+              
+              // Skip if already processed
+              if (!orgNameMap.has(key)) {
+                const orgId = await getOrCreateOrganization(supabase, {
+                  ref: t.receiverOrg.ref,
+                  name: t.receiverOrg.name,
+                  type: t.receiverOrg.type
+                });
+                
+                if (orgId) {
+                  orgNameMap.set(key, orgId);
+                  // Also map by ref and name separately for flexible lookup
+                  if (t.receiverOrg.ref) orgNameMap.set(t.receiverOrg.ref, orgId);
+                  if (t.receiverOrg.name) orgNameMap.set(t.receiverOrg.name, orgId);
+                  linkedCount++;
+                }
+              }
+            }
           }
-
+          
           return { created: createdCount, linked: linkedCount };
         };
         
         // Auto-create missing organizations and get creation stats
-        console.log('[IATI Import] Processing organizations for', newTransactions.length, 'transactions...');
         orgStats = await createMissingOrganizations(newTransactions);
         console.log('[IATI Import] Organization stats:', orgStats);
         
@@ -996,6 +963,14 @@ export async function POST(
     }
     
     // Handle planned disbursements if selected
+    console.log('[IATI Import] Checking planned disbursements:', {
+      flag: fields.planned_disbursements,
+      hasData: !!iati_data.plannedDisbursements,
+      dataLength: iati_data.plannedDisbursements?.length,
+      dataType: typeof iati_data.plannedDisbursements,
+      isArray: Array.isArray(iati_data.plannedDisbursements)
+    });
+
     if (fields.planned_disbursements && iati_data.plannedDisbursements) {
       console.log('[IATI Import] Updating planned disbursements');
 
@@ -1007,153 +982,50 @@ export async function POST(
 
       // Insert new planned disbursements with IATI-compliant currency resolution
       if (Array.isArray(iati_data.plannedDisbursements) && iati_data.plannedDisbursements.length > 0) {
-        // First, collect all unique organizations from planned disbursements and create/link them
-        const pdOrgRefs = new Set<string>();
-        const pdOrgData = new Map<string, { name: string, ref: string }>();
-
-        iati_data.plannedDisbursements.forEach((pd: any, index: number) => {
-          console.log(`[IATI Import] Processing planned disbursement ${index + 1}:`, {
-            providerOrg: pd.providerOrg,
-            receiverOrg: pd.receiverOrg
-          });
-
-          if (pd.providerOrg?.ref) {
-            pdOrgRefs.add(pd.providerOrg.ref);
-            pdOrgData.set(pd.providerOrg.ref, {
-              name: pd.providerOrg.name || pd.providerOrg.ref,
-              ref: pd.providerOrg.ref
-            });
-          } else if (pd.providerOrg?.name) {
-            // Use name as fallback if no ref provided
-            const cleanName = pd.providerOrg.name.trim();
-            pdOrgData.set(cleanName, {
-              name: cleanName,
-              ref: cleanName // Use name as ref
-            });
-            console.log(`[IATI Import] Provider org (name-only): "${cleanName}" (length: ${cleanName.length})`);
-          }
-
-          if (pd.receiverOrg?.ref) {
-            pdOrgRefs.add(pd.receiverOrg.ref);
-            pdOrgData.set(pd.receiverOrg.ref, {
-              name: pd.receiverOrg.name || pd.receiverOrg.ref,
-              ref: pd.receiverOrg.ref
-            });
-          } else if (pd.receiverOrg?.name) {
-            // Use name as fallback if no ref provided
-            const cleanName = pd.receiverOrg.name.trim();
-            pdOrgData.set(cleanName, {
-              name: cleanName,
-              ref: cleanName // Use name as ref
-            });
-            console.log(`[IATI Import] Receiver org (name-only): "${cleanName}" (length: ${cleanName.length})`);
-          }
-        });
-
-        // Build org name map for planned disbursements
+        // Process organizations for planned disbursements using shared helper
         const pdOrgNameMap = new Map<string, string>();
-
-        if (pdOrgRefs.size > 0 || pdOrgData.size > 0) {
-          // Check which organizations already exist
-          // Separate refs and names for proper querying
-          const refsToLookup = Array.from(pdOrgRefs);
-          const namesToLookup = Array.from(pdOrgData.keys()).filter(key => !pdOrgRefs.has(key));
-
-          console.log('[IATI Import] Looking up planned disbursement organizations:', {
-            refs: refsToLookup,
-            names: namesToLookup,
-            totalToLookup: refsToLookup.length + namesToLookup.length
-          });
-
-          let existingPDOrgs: any[] = [];
-
-          if (refsToLookup.length > 0 || namesToLookup.length > 0) {
-            // Query by refs
-            if (refsToLookup.length > 0) {
-              const { data: orgsByRef } = await supabase
-                .from('organizations')
-                .select('id, name, iati_org_id, acronym')
-                .in('iati_org_id', refsToLookup);
-
-              if (orgsByRef) {
-                existingPDOrgs.push(...orgsByRef);
-              }
-            }
-
-            // Query by names
-            if (namesToLookup.length > 0) {
-              console.log('[IATI Import] Querying organizations by names:', namesToLookup);
-
-              const { data: orgsByName, error: nameQueryError } = await supabase
-                .from('organizations')
-                .select('id, name, iati_org_id, acronym')
-                .in('name', namesToLookup);
-
-              console.log('[IATI Import] Query by name result:', {
-                found: orgsByName?.length || 0,
-                orgs: orgsByName,
-                error: nameQueryError
+        
+        console.log(`[IATI Import] Processing organizations for ${iati_data.plannedDisbursements.length} planned disbursements...`);
+        
+        for (const pd of iati_data.plannedDisbursements) {
+          // Process provider organization
+          if (pd.providerOrg?.ref || pd.providerOrg?.name) {
+            const key = pd.providerOrg.ref || pd.providerOrg.name!;
+            
+            // Skip if already processed
+            if (!pdOrgNameMap.has(key)) {
+              const orgId = await getOrCreateOrganization(supabase, {
+                ref: pd.providerOrg.ref,
+                name: pd.providerOrg.name,
+                type: pd.providerOrg.type
               });
-
-              if (orgsByName) {
-                existingPDOrgs.push(...orgsByName);
+              
+              if (orgId) {
+                pdOrgNameMap.set(key, orgId);
+                // Also map by ref and name separately for flexible lookup
+                if (pd.providerOrg.ref) pdOrgNameMap.set(pd.providerOrg.ref, orgId);
+                if (pd.providerOrg.name) pdOrgNameMap.set(pd.providerOrg.name, orgId);
               }
             }
-
-            console.log('[IATI Import] Found existing organizations for planned disbursements:', {
-              count: existingPDOrgs.length,
-              orgs: existingPDOrgs.map(o => ({ name: o.name, acronym: o.acronym, iati_org_id: o.iati_org_id }))
-            });
-
-            const existingPDOrgRefs = new Set((existingPDOrgs || []).map((o: any) => o.iati_org_id).filter(Boolean));
-            const existingPDOrgNames = new Set((existingPDOrgs || []).map((o: any) => o.name).filter(Boolean));
-
-            // Update pdOrgNameMap with existing organizations
-            (existingPDOrgs || []).forEach((org: any) => {
-              if (org.iati_org_id) {
-                pdOrgNameMap.set(org.iati_org_id, org.id);
-              }
-              if (org.name) {
-                pdOrgNameMap.set(org.name, org.id);
-              }
-            });
-
-            // Determine which organizations need to be created
-            const pdOrgsToCreate = Array.from(pdOrgData.entries())
-              .filter(([key, data]) => {
-                return !existingPDOrgRefs.has(data.ref) && !existingPDOrgNames.has(data.name);
-              })
-              .map(([key, data]) => ({
-                name: data.name,
-                iati_org_id: data.ref !== data.name ? data.ref : null, // Only set iati_org_id if we have a proper ref
-                organization_type: 'other',
-                created_at: new Date().toISOString(),
-                updated_at: new Date().toISOString()
-              }));
-
-            // Create missing organizations for planned disbursements
-            if (pdOrgsToCreate.length > 0) {
-              console.log(`[IATI Import] Creating ${pdOrgsToCreate.length} missing organizations for planned disbursements:`, pdOrgsToCreate);
-
-              const { data: newPDOrgs, error: createPDOrgsError } = await supabase
-                .from('organizations')
-                .insert(pdOrgsToCreate)
-                .select('id, name, iati_org_id');
-
-              if (createPDOrgsError) {
-                console.error('[IATI Import] Error creating organizations for planned disbursements:', createPDOrgsError);
-              } else {
-                console.log(`[IATI Import] Successfully created ${newPDOrgs?.length || 0} organizations for planned disbursements`);
-
-                // Update pdOrgNameMap with newly created organizations
-                (newPDOrgs || []).forEach((org: any) => {
-                  if (org.iati_org_id) {
-                    pdOrgNameMap.set(org.iati_org_id, org.id);
-                  }
-                  if (org.name) {
-                    pdOrgNameMap.set(org.name, org.id);
-                  }
-                });
+          }
+          
+          // Process receiver organization
+          if (pd.receiverOrg?.ref || pd.receiverOrg?.name) {
+            const key = pd.receiverOrg.ref || pd.receiverOrg.name!;
+            
+            // Skip if already processed
+            if (!pdOrgNameMap.has(key)) {
+              const orgId = await getOrCreateOrganization(supabase, {
+                ref: pd.receiverOrg.ref,
+                name: pd.receiverOrg.name,
+                type: pd.receiverOrg.type
+              });
+              
+              if (orgId) {
+                pdOrgNameMap.set(key, orgId);
+                // Also map by ref and name separately for flexible lookup
+                if (pd.receiverOrg.ref) pdOrgNameMap.set(pd.receiverOrg.ref, orgId);
+                if (pd.receiverOrg.name) pdOrgNameMap.set(pd.receiverOrg.name, orgId);
               }
             }
           }
@@ -1163,12 +1035,27 @@ export async function POST(
         const skippedPDs: any[] = [];
 
         for (const pd of iati_data.plannedDisbursements) {
+          console.log('[IATI Import] Processing planned disbursement:', {
+            value: pd.value,
+            currency: pd.currency,
+            period: pd.period,
+            hasProviderOrg: !!pd.providerOrg,
+            hasReceiverOrg: !!pd.receiverOrg
+          });
+
           // Resolve currency following IATI Standard §4.2
           const resolvedCurrency = resolveCurrency(
             pd.currency,
             currentActivity?.default_currency,
             organizationDefaultCurrency
           );
+
+          console.log('[IATI Import] Currency resolution result:', {
+            pdCurrency: pd.currency,
+            activityDefaultCurrency: currentActivity?.default_currency,
+            organizationDefaultCurrency,
+            resolvedCurrency
+          });
 
           if (!resolvedCurrency) {
             // Skip this planned disbursement and log validation error
@@ -1232,7 +1119,11 @@ export async function POST(
         }
 
         // Insert only valid planned disbursements
+        console.log(`[IATI Import] Prepared ${validPDs.length} valid planned disbursements out of ${iati_data.plannedDisbursements.length} total`);
+
         if (validPDs.length > 0) {
+          console.log('[IATI Import] Sample planned disbursement to insert:', validPDs[0]);
+
           const { error: pdError } = await supabase
             .from('planned_disbursements')
             .insert(validPDs);
@@ -1242,7 +1133,10 @@ export async function POST(
             console.log(`[IATI Import] ✓ Imported ${validPDs.length} planned disbursements`);
           } else {
             console.error('[IATI Import] Error inserting planned disbursements:', pdError);
+            console.error('[IATI Import] Error details:', JSON.stringify(pdError, null, 2));
           }
+        } else {
+          console.warn('[IATI Import] No valid planned disbursements to insert');
         }
 
         // Add skipped planned disbursements to warnings
@@ -1540,28 +1434,48 @@ export async function POST(
     
   } catch (error) {
     console.error('[IATI Import] Error:', error);
-    
-    // Try to log the error
-    try {
-      await getSupabaseAdmin()
-        .from('iati_import_log')
-        .insert({
-          activity_id: params.id,
-          import_type: 'manual',
-          result_status: 'failed',
-          result_summary: { error: error instanceof Error ? error.message : 'Unknown error' },
-          fields_updated: [],
-          error_details: error instanceof Error ? error.stack : String(error),
-          imported_by: null // TODO: Implement user tracking
-        });
-    } catch (logError) {
-      console.error('[IATI Import] Failed to log error:', logError);
+
+    // Log detailed error information
+    if (error instanceof Error) {
+      console.error('[IATI Import] Error name:', error.name);
+      console.error('[IATI Import] Error message:', error.message);
+      console.error('[IATI Import] Error stack:', error.stack);
+    } else {
+      console.error('[IATI Import] Non-Error object thrown:', JSON.stringify(error, null, 2));
     }
-    
+
+    // Get activityId for logging (it may not be available if params resolution failed)
+    let activityId: string | undefined;
+    try {
+      const resolvedParams = await Promise.resolve(params);
+      activityId = resolvedParams.id;
+    } catch (e) {
+      console.error('[IATI Import] Failed to resolve params:', e);
+    }
+
+    // Try to log the error
+    if (activityId) {
+      try {
+        await getSupabaseAdmin()
+          .from('iati_import_log')
+          .insert({
+            activity_id: activityId,
+            import_type: 'manual',
+            result_status: 'failed',
+            result_summary: { error: error instanceof Error ? error.message : 'Unknown error' },
+            fields_updated: [],
+            error_details: error instanceof Error ? error.stack : String(error),
+            imported_by: null // TODO: Implement user tracking
+          });
+      } catch (logError) {
+        console.error('[IATI Import] Failed to log error:', logError);
+      }
+    }
+
     return NextResponse.json(
-      { 
-        error: 'Failed to import IATI data', 
-        details: error instanceof Error ? error.message : 'Unknown error' 
+      {
+        error: 'Failed to import IATI data',
+        details: error instanceof Error ? error.message : 'Unknown error'
       },
       { status: 500 }
     );

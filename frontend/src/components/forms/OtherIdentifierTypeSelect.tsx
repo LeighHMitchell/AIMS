@@ -21,7 +21,7 @@ export function OtherIdentifierTypeSelect({
 }: OtherIdentifierTypeSelectProps) {
   // Convert the flat array to grouped format for EnhancedSearchableSelect
   const groups = [{
-    label: "Identifier Types",
+    label: "",
     options: OTHER_IDENTIFIER_TYPES
   }];
 

@@ -14,6 +14,8 @@ import {
 } from "@/components/ui/table";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import { FinancialSummaryCards } from '@/components/FinancialSummaryCards';
 import { 
   DropdownMenu, 
@@ -103,6 +105,7 @@ interface TransactionListProps {
   defaultTiedStatus?: string;
   defaultFlowType?: string;
   hideSummaryCards?: boolean;
+  renderFilters?: (filters: React.ReactNode) => React.ReactPortal | null;
 }
 
 type SortField = 'transaction_date' | 'transaction_type' | 'value' | 'provider_org_name' | 'receiver_org_name' | 'value_date' | 'value_usd' | 'finance_type';
@@ -209,7 +212,8 @@ export default function TransactionList({
   defaultAidType,
   defaultTiedStatus,
   defaultFlowType,
-  hideSummaryCards = false
+  hideSummaryCards = false,
+  renderFilters
 }: TransactionListProps) {
   const [showForm, setShowForm] = useState(false);
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
@@ -221,6 +225,16 @@ export default function TransactionList({
   // Filter state
   const [transactionTypeFilter, setTransactionTypeFilter] = useState<string>('all');
   const [financeTypeFilter, setFinanceTypeFilter] = useState<string>('all');
+  
+  // Grouped view state
+  const [groupedView, setGroupedView] = useState(false);
+  
+  // Track if component is mounted for portal rendering
+  const [isMounted, setIsMounted] = useState(false);
+  
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   // Reset to page 1 when filters change
   useEffect(() => {
@@ -392,6 +406,32 @@ export default function TransactionList({
     const endIndex = startIndex + itemsPerPage;
     return sortedTransactions.slice(startIndex, endIndex);
   }, [sortedTransactions, currentPage, itemsPerPage]);
+
+  // Group transactions by type for grouped view
+  const groupedTransactions = React.useMemo(() => {
+    const groups: Record<string, Transaction[]> = {};
+    sortedTransactions.forEach(transaction => {
+      const type = transaction.transaction_type || 'Unspecified';
+      if (!groups[type]) {
+        groups[type] = [];
+      }
+      groups[type].push(transaction);
+    });
+    return groups;
+  }, [sortedTransactions]);
+
+  // Calculate totals per group
+  const groupTotals = React.useMemo(() => {
+    return Object.entries(groupedTransactions).map(([type, txs]) => ({
+      type,
+      total: txs.reduce((sum, t) => {
+        const transactionId = t.uuid || t.id;
+        const usdValue = usdValues[transactionId]?.usd;
+        return sum + (usdValue || 0);
+      }, 0),
+      count: txs.length
+    }));
+  }, [groupedTransactions, usdValues]);
 
   // Toggle row expansion
   const toggleRowExpansion = (transactionId: string, transactionUuid?: string) => {
@@ -973,9 +1013,10 @@ export default function TransactionList({
     <>
       <Card className="border-0">
         <CardHeader>
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between gap-4">
+            {/* Left side: Title and Description */}
             {!hideSummaryCards && (
-              <div>
+              <div className="flex-shrink-0">
                 <CardTitle>Transactions</CardTitle>
                 <CardDescription>
                   Commitments, disbursements, and expenditures
@@ -983,84 +1024,11 @@ export default function TransactionList({
               </div>
             )}
             {hideSummaryCards && <div />}
-            <div className={`flex items-center gap-2 ${hideSummaryCards ? 'hidden' : ''}`}>
-              {!readOnly && (
-                <Button onClick={() => setShowForm(true)} size="sm">
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Transaction
-                </Button>
-              )}
+            
+            {/* Right side: Filters and Actions - All on same row */}
+            <div className={`flex items-center gap-2 flex-wrap ${hideSummaryCards ? 'hidden' : ''}`}>
+              {/* Transaction Type Filter */}
               {!hideSummaryCards && transactions.length > 0 && (
-                <>
-                  <div className="flex items-center gap-2">
-                    <Select value={transactionTypeFilter} onValueChange={setTransactionTypeFilter}>
-                      <SelectTrigger className="w-[180px] h-9">
-                        <SelectValue placeholder="Transaction Type" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">All Transaction Types</SelectItem>
-                        {uniqueTransactionTypes.map(type => (
-                          <SelectItem key={type} value={type}>
-                            <span className="flex items-center gap-2">
-                              <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{type}</span>
-                              <span>{TRANSACTION_TYPE_LABELS[type as keyof typeof TRANSACTION_TYPE_LABELS] || type}</span>
-                            </span>
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <Select value={financeTypeFilter} onValueChange={setFinanceTypeFilter}>
-                      <SelectTrigger className="w-[180px] h-9">
-                        <SelectValue placeholder="Finance Type" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">All Finance Types</SelectItem>
-                        {uniqueFinanceTypes.map(type => (
-                          <SelectItem key={type} value={type}>
-                            <span className="flex items-center gap-2">
-                              <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{type}</span>
-                              <span>{FINANCE_TYPE_LABELS[type] || type}</span>
-                            </span>
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  {expandedRows.size > 0 ? (
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      onClick={collapseAllRows}
-                      title="Collapse all expanded rows"
-                    >
-                      <ChevronUp className="h-4 w-4 mr-1" />
-                      Collapse All
-                    </Button>
-                  ) : (
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      onClick={expandAllRows}
-                      title="Expand all rows"
-                    >
-                      <ChevronDown className="h-4 w-4 mr-1" />
-                      Expand All
-                    </Button>
-                  )}
-                  <Button variant="outline" size="sm" onClick={handleExport}>
-                    <Download className="h-4 w-4 mr-1" />
-                    Export
-                  </Button>
-                </>
-              )}
-            </div>
-          </div>
-        </CardHeader>
-        {/* Filters for when hideSummaryCards is true - shown between title and buttons */}
-        {hideSummaryCards && transactions.length > 0 && (
-          <div className="px-6 pb-4 border-b" data-transactions-tab>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
                 <Select value={transactionTypeFilter} onValueChange={setTransactionTypeFilter}>
                   <SelectTrigger className="w-[180px] h-9">
                     <SelectValue placeholder="Transaction Type" />
@@ -1077,6 +1045,10 @@ export default function TransactionList({
                     ))}
                   </SelectContent>
                 </Select>
+              )}
+              
+              {/* Finance Type Filter */}
+              {!hideSummaryCards && transactions.length > 0 && (
                 <Select value={financeTypeFilter} onValueChange={setFinanceTypeFilter}>
                   <SelectTrigger className="w-[180px] h-9">
                     <SelectValue placeholder="Finance Type" />
@@ -1093,37 +1065,233 @@ export default function TransactionList({
                     ))}
                   </SelectContent>
                 </Select>
-              </div>
-              <div className="flex items-center gap-2">
-                {expandedRows.size > 0 ? (
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    onClick={collapseAllRows}
-                    title="Collapse all expanded rows"
-                    data-expand-all
-                  >
-                    <ChevronUp className="h-4 w-4 mr-1" />
-                    Collapse All
-                  </Button>
-                ) : (
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    onClick={expandAllRows}
-                    title="Expand all rows"
-                    data-expand-all
-                  >
-                    <ChevronDown className="h-4 w-4 mr-1" />
-                    Expand All
-                  </Button>
-                )}
-                <Button variant="outline" size="sm" onClick={handleExport} data-export>
+              )}
+              
+              {/* Grouped View Toggle */}
+              {!hideSummaryCards && transactions.length > 0 && (
+                <div className="flex items-center gap-2 px-3 py-1.5 border rounded-md bg-background">
+                  <Switch
+                    id="grouped-view"
+                    checked={groupedView}
+                    onCheckedChange={setGroupedView}
+                  />
+                  <Label htmlFor="grouped-view" className="text-sm cursor-pointer whitespace-nowrap">
+                    Grouped View
+                  </Label>
+                </div>
+              )}
+              
+              {/* Expand/Collapse All */}
+              {!hideSummaryCards && transactions.length > 0 && !groupedView && expandedRows.size > 0 ? (
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={collapseAllRows}
+                  title="Collapse all expanded rows"
+                >
+                  <ChevronUp className="h-4 w-4 mr-1" />
+                  Collapse All
+                </Button>
+              ) : !hideSummaryCards && transactions.length > 0 && !groupedView ? (
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={expandAllRows}
+                  title="Expand all rows"
+                >
+                  <ChevronDown className="h-4 w-4 mr-1" />
+                  Expand All
+                </Button>
+              ) : null}
+              
+              {/* Export Button */}
+              {!hideSummaryCards && transactions.length > 0 && (
+                <Button variant="outline" size="sm" onClick={handleExport}>
                   <Download className="h-4 w-4 mr-1" />
                   Export
                 </Button>
-              </div>
+              )}
+              
+              {/* Add Transaction Button */}
+              {!readOnly && (
+                <Button onClick={() => setShowForm(true)} size="sm">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Transaction
+                </Button>
+              )}
             </div>
+          </div>
+        </CardHeader>
+        
+        {/* Filters shown inline when hideSummaryCards is false (regular view) */}
+        {!hideSummaryCards && transactions.length > 0 && (
+          <div className="px-6 pb-4 border-b">
+            <div className="flex items-center gap-2 flex-wrap">
+              {/* Transaction Type Filter */}
+              <Select value={transactionTypeFilter} onValueChange={setTransactionTypeFilter}>
+                <SelectTrigger className="w-[140px] h-9">
+                  <SelectValue placeholder="Transaction Type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Transaction Types</SelectItem>
+                  {uniqueTransactionTypes.map(type => (
+                    <SelectItem key={type} value={type}>
+                      <span className="flex items-center gap-2">
+                        <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{type}</span>
+                        <span>{TRANSACTION_TYPE_LABELS[type as keyof typeof TRANSACTION_TYPE_LABELS] || type}</span>
+                      </span>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              
+              {/* Finance Type Filter */}
+              <Select value={financeTypeFilter} onValueChange={setFinanceTypeFilter}>
+                <SelectTrigger className="w-[140px] h-9">
+                  <SelectValue placeholder="Finance Type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Finance Types</SelectItem>
+                  {uniqueFinanceTypes.map(type => (
+                    <SelectItem key={type} value={type}>
+                      <span className="flex items-center gap-2">
+                        <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{type}</span>
+                        <span>{FINANCE_TYPE_LABELS[type] || type}</span>
+                      </span>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              
+              {/* Grouped View Toggle */}
+              <div className="flex items-center gap-2 px-3 py-1.5 border rounded-md bg-background">
+                <Switch
+                  id="grouped-view-inline"
+                  checked={groupedView}
+                  onCheckedChange={setGroupedView}
+                />
+                <Label htmlFor="grouped-view-inline" className="text-sm cursor-pointer whitespace-nowrap">
+                  Grouped View
+                </Label>
+              </div>
+              
+              {/* Expand/Collapse All - Always visible, disabled in grouped view */}
+              {expandedRows.size > 0 ? (
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={collapseAllRows}
+                  title={groupedView ? "Not available in grouped view" : "Collapse all expanded rows"}
+                  disabled={groupedView}
+                >
+                  <ChevronUp className="h-4 w-4 mr-1" />
+                  Collapse All
+                </Button>
+              ) : (
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={expandAllRows}
+                  title={groupedView ? "Not available in grouped view" : "Expand all rows"}
+                  disabled={groupedView}
+                >
+                  <ChevronDown className="h-4 w-4 mr-1" />
+                  Expand All
+                </Button>
+              )}
+              
+              {/* Export Button */}
+              <Button variant="outline" size="sm" onClick={handleExport}>
+                <Download className="h-4 w-4 mr-1" />
+                Export
+              </Button>
+            </div>
+          </div>
+        )}
+        
+        {/* Filters for when hideSummaryCards is true - portaled to Activity Profile Page */}
+        {isMounted && hideSummaryCards && transactions.length > 0 && renderFilters?.(
+          <div className="flex items-center gap-2 flex-wrap">
+            {/* Transaction Type Filter */}
+            <Select value={transactionTypeFilter} onValueChange={setTransactionTypeFilter}>
+              <SelectTrigger className="w-[140px] h-9">
+                <SelectValue placeholder="Transaction Type" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Transaction Types</SelectItem>
+                {uniqueTransactionTypes.map(type => (
+                  <SelectItem key={type} value={type}>
+                    <span className="flex items-center gap-2">
+                      <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{type}</span>
+                      <span>{TRANSACTION_TYPE_LABELS[type as keyof typeof TRANSACTION_TYPE_LABELS] || type}</span>
+                    </span>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            
+            {/* Finance Type Filter */}
+            <Select value={financeTypeFilter} onValueChange={setFinanceTypeFilter}>
+              <SelectTrigger className="w-[140px] h-9">
+                <SelectValue placeholder="Finance Type" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Finance Types</SelectItem>
+                {uniqueFinanceTypes.map(type => (
+                  <SelectItem key={type} value={type}>
+                    <span className="flex items-center gap-2">
+                      <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{type}</span>
+                      <span>{FINANCE_TYPE_LABELS[type] || type}</span>
+                    </span>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            
+            {/* Grouped View Toggle */}
+            <div className="flex items-center gap-2 px-3 py-1.5 border rounded-md bg-background">
+              <Switch
+                id="grouped-view-portal"
+                checked={groupedView}
+                onCheckedChange={setGroupedView}
+              />
+              <Label htmlFor="grouped-view-portal" className="text-sm cursor-pointer whitespace-nowrap">
+                Grouped View
+              </Label>
+            </div>
+            
+            {/* Expand/Collapse All - Always visible, disabled in grouped view */}
+            {expandedRows.size > 0 ? (
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={collapseAllRows}
+                title={groupedView ? "Not available in grouped view" : "Collapse all expanded rows"}
+                disabled={groupedView}
+                data-expand-all
+              >
+                <ChevronUp className="h-4 w-4 mr-1" />
+                Collapse All
+              </Button>
+            ) : (
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={expandAllRows}
+                title={groupedView ? "Not available in grouped view" : "Expand all rows"}
+                disabled={groupedView}
+                data-expand-all
+              >
+                <ChevronDown className="h-4 w-4 mr-1" />
+                Expand All
+              </Button>
+            )}
+            
+            {/* Export Button */}
+            <Button variant="outline" size="sm" onClick={handleExport} data-export>
+              <Download className="h-4 w-4 mr-1" />
+              Export
+            </Button>
           </div>
         )}
         <CardContent>
@@ -1203,18 +1371,55 @@ export default function TransactionList({
                   </TableRow>
               </TableHeader>
               <TableBody>
-                {paginatedTransactions.filter(t => {
-                  const isValid = (t.uuid && t.uuid !== 'undefined') || (t.id && t.id !== 'undefined');
-                  if (!isValid) {
-                    console.warn('[TransactionList] Transaction without valid identifier found:', t);
-                  }
-                  return isValid;
-                }).map((transaction) => {
-                    const transactionId = transaction.uuid || transaction.id;
-                    const isExpanded = expandedRows.has(transactionId);
-                    
-                    return (
-                    <React.Fragment key={transactionId}>
+                {/* Smart approach: Use same rendering for both grouped and paginated views
+                    - Grouped view: iterate over actual groups with headers
+                    - Paginated view: treat as single "group" with null type (no header) */}
+                {(groupedView 
+                  ? Object.entries(groupedTransactions)
+                  : [[null, paginatedTransactions]] as Array<[string | null, Transaction[]]>
+                ).map(([type, txs]) => {
+                  const groupTotal = type ? groupTotals.find(g => g.type === type) : null;
+                  return (
+                    <React.Fragment key={type ? `group-${type}` : 'paginated'}>
+                      {/* Group Header Row - only show in grouped view */}
+                      {groupedView && type && (
+                        <TableRow className="bg-muted hover:bg-muted">
+                          <TableCell colSpan={8} className="py-3 px-3">
+                            <div className="flex justify-between items-center">
+                              <div className="flex items-center gap-3">
+                                <Badge variant="outline" className="font-mono text-xs">
+                                  {type}
+                                </Badge>
+                                <span className="font-semibold text-sm">
+                                  {TRANSACTION_TYPE_LABELS[type as keyof typeof TRANSACTION_TYPE_LABELS] || type}
+                                </span>
+                                <span className="text-xs text-muted-foreground">
+                                  ({groupTotal?.count || 0} {(groupTotal?.count || 0) === 1 ? 'transaction' : 'transactions'})
+                                </span>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <span className="text-xs text-muted-foreground">Total USD:</span>
+                                <span className="font-semibold text-sm">
+                                  {formatCurrency(groupTotal?.total || 0, 'USD')}
+                                </span>
+                              </div>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      )}
+                      {/* Transaction rows - same rendering for both views */}
+                      {txs.filter(t => {
+                        const isValid = (t.uuid && t.uuid !== 'undefined') || (t.id && t.id !== 'undefined');
+                        if (!isValid) {
+                          console.warn('[TransactionList] Transaction without valid identifier found:', t);
+                        }
+                        return isValid;
+                      }).map((transaction) => {
+                        const transactionId = transaction.uuid || transaction.id;
+                        const isExpanded = expandedRows.has(transactionId);
+                        
+                        return (
+                          <React.Fragment key={transactionId}>
                     <TableRow 
                       className="border-b border-border/40 hover:bg-muted/30 transition-colors"
                       onClick={(e) => {
@@ -1851,15 +2056,18 @@ export default function TransactionList({
                         </TableCell>
                       </TableRow>
                     )}
-                    </React.Fragment>
-                  );
+                            </React.Fragment>
+                          );
+                        })}
+                      </React.Fragment>
+                    );
                   })}
-                </TableBody>
+              </TableBody>
               </Table>
             </div>
             
-            {/* Pagination Controls */}
-            {transactions.length > itemsPerPage && (
+            {/* Pagination Controls - Hide in grouped view */}
+            {!groupedView && transactions.length > itemsPerPage && (
               <div className="flex items-center justify-between mt-4 px-2">
                 <div className="text-sm text-muted-foreground">
                   Showing {((currentPage - 1) * itemsPerPage) + 1} to {Math.min(currentPage * itemsPerPage, sortedTransactions.length)} of {sortedTransactions.length} transactions
