@@ -77,9 +77,13 @@ interface EnhancedActivityEditorProps {
     activity_scope?: string;
     activity_status?: string;
     planned_start_date?: string;
+    planned_start_description?: string;
     planned_end_date?: string;
+    planned_end_description?: string;
     actual_start_date?: string;
+    actual_start_description?: string;
     actual_end_date?: string;
+    actual_end_description?: string;
     effective_date?: string;
     iati_identifier?: string;
     other_identifier_type?: string;
@@ -141,9 +145,13 @@ export default function EnhancedActivityEditor({ activityId, initialData = {} }:
     activity_scope: initialData.activity_scope || '',
     activity_status: initialData.activity_status || '1',
     planned_start_date: initialData.planned_start_date || '',
+    planned_start_description: initialData.planned_start_description || '',
     planned_end_date: initialData.planned_end_date || '',
+    planned_end_description: initialData.planned_end_description || '',
     actual_start_date: initialData.actual_start_date || '',
+    actual_start_description: initialData.actual_start_description || '',
     actual_end_date: initialData.actual_end_date || '',
+    actual_end_description: initialData.actual_end_description || '',
     effective_date: initialData.effective_date || '',
     iati_identifier: initialData.iati_identifier || '',
     other_identifier_type: initialData.other_identifier_type || '',
@@ -260,6 +268,10 @@ export default function EnhancedActivityEditor({ activityId, initialData = {} }:
     await updateField(dateField, value, displayName);
   };
 
+  const updateDateDescription = async (descriptionField: string, value: string, displayName: string) => {
+    await updateField(descriptionField, value, displayName);
+  };
+
   const updateEffectiveDate = async (effectiveDate: string) => {
     await updateField('effective_date', effectiveDate, 'Activity Effective Date');
   };
@@ -351,14 +363,26 @@ export default function EnhancedActivityEditor({ activityId, initialData = {} }:
       case 'planned_start_date':
         await updateDate('planned_start_date', value, 'Planned Start Date');
         break;
+      case 'planned_start_description':
+        await updateDateDescription('planned_start_description', value, 'Planned Start Date Description');
+        break;
       case 'planned_end_date':
         await updateDate('planned_end_date', value, 'Planned End Date');
+        break;
+      case 'planned_end_description':
+        await updateDateDescription('planned_end_description', value, 'Planned End Date Description');
         break;
       case 'actual_start_date':
         await updateDate('actual_start_date', value, 'Actual Start Date');
         break;
+      case 'actual_start_description':
+        await updateDateDescription('actual_start_description', value, 'Actual Start Date Description');
+        break;
       case 'actual_end_date':
         await updateDate('actual_end_date', value, 'Actual End Date');
+        break;
+      case 'actual_end_description':
+        await updateDateDescription('actual_end_description', value, 'Actual End Date Description');
         break;
       case 'effective_date':
         await updateEffectiveDate(value);
@@ -828,65 +852,137 @@ export default function EnhancedActivityEditor({ activityId, initialData = {} }:
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {/* Planned Start Date */}
                   <FieldWrapper section="dates" field="planned_start" label="Planned Start Date">
-                    <div className="space-y-1">
-                      <Input
-                        type="date"
-                        value={formData.planned_start_date || ''}
-                        onChange={(e) => {
-                          handleFieldChange('planned_start_date', e.target.value);
-                          handleFieldBlur('planned_start_date', e.target.value);
-                        }}
-                        disabled={saving.planned_start_date}
-                      />
-                      <SaveIndicator fieldName="planned_start_date" />
+                    <div className="space-y-3">
+                      <div className="space-y-1">
+                        <Input
+                          type="date"
+                          value={formData.planned_start_date || ''}
+                          onChange={(e) => {
+                            handleFieldChange('planned_start_date', e.target.value);
+                            handleFieldBlur('planned_start_date', e.target.value);
+                          }}
+                          disabled={saving.planned_start_date}
+                        />
+                        <SaveIndicator fieldName="planned_start_date" />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-xs text-gray-600">Description/Context (optional)</label>
+                        <Textarea
+                          value={formData.planned_start_description || ''}
+                          onChange={(e) => {
+                            handleFieldChange('planned_start_description', e.target.value);
+                          }}
+                          onBlur={(e) => {
+                            handleFieldBlur('planned_start_description', e.target.value);
+                          }}
+                          placeholder="Add context about this date (e.g., 'Government approval received on this date')"
+                          disabled={saving.planned_start_description}
+                          className="min-h-[60px] text-sm"
+                        />
+                        <SaveIndicator fieldName="planned_start_description" />
+                      </div>
                     </div>
                   </FieldWrapper>
 
                   {/* Planned End Date */}
                   <FieldWrapper section="dates" field="planned_end" label="Planned End Date">
-                    <div className="space-y-1">
-                      <Input
-                        type="date"
-                        value={formData.planned_end_date || ''}
-                        onChange={(e) => {
-                          handleFieldChange('planned_end_date', e.target.value);
-                          handleFieldBlur('planned_end_date', e.target.value);
-                        }}
-                        disabled={saving.planned_end_date}
-                      />
-                      <SaveIndicator fieldName="planned_end_date" />
+                    <div className="space-y-3">
+                      <div className="space-y-1">
+                        <Input
+                          type="date"
+                          value={formData.planned_end_date || ''}
+                          onChange={(e) => {
+                            handleFieldChange('planned_end_date', e.target.value);
+                            handleFieldBlur('planned_end_date', e.target.value);
+                          }}
+                          disabled={saving.planned_end_date}
+                        />
+                        <SaveIndicator fieldName="planned_end_date" />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-xs text-gray-600">Description/Context (optional)</label>
+                        <Textarea
+                          value={formData.planned_end_description || ''}
+                          onChange={(e) => {
+                            handleFieldChange('planned_end_description', e.target.value);
+                          }}
+                          onBlur={(e) => {
+                            handleFieldBlur('planned_end_description', e.target.value);
+                          }}
+                          placeholder="Add context about this date"
+                          disabled={saving.planned_end_description}
+                          className="min-h-[60px] text-sm"
+                        />
+                        <SaveIndicator fieldName="planned_end_description" />
+                      </div>
                     </div>
                   </FieldWrapper>
 
                   {/* Actual Start Date */}
                   <FieldWrapper section="dates" field="actual_start" label="Actual Start Date">
-                    <div className="space-y-1">
-                      <Input
-                        type="date"
-                        value={formData.actual_start_date || ''}
-                        onChange={(e) => {
-                          handleFieldChange('actual_start_date', e.target.value);
-                          handleFieldBlur('actual_start_date', e.target.value);
-                        }}
-                        disabled={saving.actual_start_date}
-                      />
-                      <SaveIndicator fieldName="actual_start_date" />
+                    <div className="space-y-3">
+                      <div className="space-y-1">
+                        <Input
+                          type="date"
+                          value={formData.actual_start_date || ''}
+                          onChange={(e) => {
+                            handleFieldChange('actual_start_date', e.target.value);
+                            handleFieldBlur('actual_start_date', e.target.value);
+                          }}
+                          disabled={saving.actual_start_date}
+                        />
+                        <SaveIndicator fieldName="actual_start_date" />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-xs text-gray-600">Description/Context (optional)</label>
+                        <Textarea
+                          value={formData.actual_start_description || ''}
+                          onChange={(e) => {
+                            handleFieldChange('actual_start_description', e.target.value);
+                          }}
+                          onBlur={(e) => {
+                            handleFieldBlur('actual_start_description', e.target.value);
+                          }}
+                          placeholder="Add context about this date"
+                          disabled={saving.actual_start_description}
+                          className="min-h-[60px] text-sm"
+                        />
+                        <SaveIndicator fieldName="actual_start_description" />
+                      </div>
                     </div>
                   </FieldWrapper>
 
                   {/* Actual End Date */}
                   <FieldWrapper section="dates" field="actual_end" label="Actual End Date">
-                    <div className="space-y-1">
-                      <Input
-                        type="date"
-                        value={formData.actual_end_date || ''}
-                        onChange={(e) => {
-                          handleFieldChange('actual_end_date', e.target.value);
-                          handleFieldBlur('actual_end_date', e.target.value);
-                        }}
-                        disabled={saving.actual_end_date}
-                      />
-                      <SaveIndicator fieldName="actual_end_date" />
+                    <div className="space-y-3">
+                      <div className="space-y-1">
+                        <Input
+                          type="date"
+                          value={formData.actual_end_date || ''}
+                          onChange={(e) => {
+                            handleFieldChange('actual_end_date', e.target.value);
+                            handleFieldBlur('actual_end_date', e.target.value);
+                          }}
+                          disabled={saving.actual_end_date}
+                        />
+                        <SaveIndicator fieldName="actual_end_date" />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-xs text-gray-600">Description/Context (optional)</label>
+                        <Textarea
+                          value={formData.actual_end_description || ''}
+                          onChange={(e) => {
+                            handleFieldChange('actual_end_description', e.target.value);
+                          }}
+                          onBlur={(e) => {
+                            handleFieldBlur('actual_end_description', e.target.value);
+                          }}
+                          placeholder="Add context about this date"
+                          disabled={saving.actual_end_description}
+                          className="min-h-[60px] text-sm"
+                        />
+                        <SaveIndicator fieldName="actual_end_description" />
+                      </div>
                     </div>
                   </FieldWrapper>
                 </div>

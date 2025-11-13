@@ -70,9 +70,13 @@ export async function GET(
         activity_scope,
         activity_status,
         planned_start_date,
+        planned_start_description,
         planned_end_date,
+        planned_end_description,
         actual_start_date,
+        actual_start_description,
         actual_end_date,
+        actual_end_description,
         iati_identifier,
         other_identifier,
         other_identifiers,
@@ -116,7 +120,8 @@ export async function GET(
         activity_sdg_mappings (*),
         recipient_countries,
         recipient_regions,
-        custom_geographies
+        custom_geographies,
+        custom_dates
       `)
       .eq('id', id)
       .single();
@@ -145,9 +150,13 @@ export async function GET(
             activity_scope,
             activity_status,
             planned_start_date,
+            planned_start_description,
             planned_end_date,
+            planned_end_description,
             actual_start_date,
+            actual_start_description,
             actual_end_date,
+            actual_end_description,
             iati_identifier,
             other_identifier,
             default_aid_type,
@@ -190,7 +199,8 @@ export async function GET(
             activity_sdg_mappings (*),
             recipient_countries,
             recipient_regions,
-            custom_geographies
+            custom_geographies,
+            custom_dates
           `)
           .eq('id', id)
           .single();
@@ -263,12 +273,20 @@ export async function GET(
       reportingOrgId: activity.reporting_org_id,
       plannedStartDate: activity.planned_start_date,
       planned_start_date: activity.planned_start_date,
+      plannedStartDescription: activity.planned_start_description,
+      planned_start_description: activity.planned_start_description,
       plannedEndDate: activity.planned_end_date,
       planned_end_date: activity.planned_end_date,
+      plannedEndDescription: activity.planned_end_description,
+      planned_end_description: activity.planned_end_description,
       actualStartDate: activity.actual_start_date,
       actual_start_date: activity.actual_start_date,
+      actualStartDescription: activity.actual_start_description,
+      actual_start_description: activity.actual_start_description,
       actualEndDate: activity.actual_end_date,
       actual_end_date: activity.actual_end_date,
+      actualEndDescription: activity.actual_end_description,
+      actual_end_description: activity.actual_end_description,
       defaultAidType: activity.default_aid_type,
       defaultFinanceType: activity.default_finance_type,
       defaultCurrency: activity.default_currency,
@@ -332,7 +350,9 @@ export async function GET(
       })) || [],
       recipient_countries: activity.recipient_countries || [],
       recipient_regions: activity.recipient_regions || [],
-      custom_geographies: activity.custom_geographies || []
+      custom_geographies: activity.custom_geographies || [],
+      customDates: activity.custom_dates || [],
+      custom_dates: activity.custom_dates || []
     };
     
     console.log('[AIMS API] Basic activity transformed:', transformedActivity.title);

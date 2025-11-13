@@ -416,7 +416,15 @@ export async function POST(request: Request) {
         updateData.other_identifiers = Array.isArray(body.value) ? body.value : [];
         console.log('[Field API] Saving other identifiers:', JSON.stringify(updateData.other_identifiers));
         break;
-        
+
+      case 'customDates':
+        oldValue = existingActivity.custom_dates;
+        newValue = body.value;
+        // Store as JSONB array
+        updateData.custom_dates = Array.isArray(body.value) ? body.value : [];
+        console.log('[Field API] Saving custom dates:', JSON.stringify(updateData.custom_dates));
+        break;
+
       case 'contacts':
         // Handle contacts using the activity_contacts table instead of a direct column
         console.log('[Field API] 📧 Processing contacts update for activity:', body.activityId);
@@ -614,23 +622,47 @@ export async function POST(request: Request) {
         newValue = cleanDateValue(body.value);
         updateData.planned_start_date = newValue;
         break;
-        
+
+      case 'plannedStartDescription':
+        oldValue = existingActivity.planned_start_description;
+        newValue = body.value;
+        updateData.planned_start_description = body.value || null;
+        break;
+
       case 'plannedEndDate':
         oldValue = existingActivity.planned_end_date;
         newValue = cleanDateValue(body.value);
         updateData.planned_end_date = newValue;
         break;
-        
+
+      case 'plannedEndDescription':
+        oldValue = existingActivity.planned_end_description;
+        newValue = body.value;
+        updateData.planned_end_description = body.value || null;
+        break;
+
       case 'actualStartDate':
         oldValue = existingActivity.actual_start_date;
         newValue = cleanDateValue(body.value);
         updateData.actual_start_date = newValue;
         break;
-        
+
+      case 'actualStartDescription':
+        oldValue = existingActivity.actual_start_description;
+        newValue = body.value;
+        updateData.actual_start_description = body.value || null;
+        break;
+
       case 'actualEndDate':
         oldValue = existingActivity.actual_end_date;
         newValue = cleanDateValue(body.value);
         updateData.actual_end_date = newValue;
+        break;
+
+      case 'actualEndDescription':
+        oldValue = existingActivity.actual_end_description;
+        newValue = body.value;
+        updateData.actual_end_description = body.value || null;
         break;
         
       case 'collaborationType':
@@ -1183,14 +1215,20 @@ export async function POST(request: Request) {
       contacts: contactsData,
       governmentPartners: updatedActivity.government_partners,
       plannedStartDate: updatedActivity.planned_start_date,
+      plannedStartDescription: updatedActivity.planned_start_description,
       plannedEndDate: updatedActivity.planned_end_date,
+      plannedEndDescription: updatedActivity.planned_end_description,
       actualStartDate: updatedActivity.actual_start_date,
+      actualStartDescription: updatedActivity.actual_start_description,
       actualEndDate: updatedActivity.actual_end_date,
+      actualEndDescription: updatedActivity.actual_end_description,
       collaborationType: updatedActivity.collaboration_type,
       activityScope: updatedActivity.activity_scope,
       language: updatedActivity.language,
       otherIdentifier: updatedActivity.other_identifier,
+      otherIdentifiers: updatedActivity.other_identifiers,
       iatiIdentifier: updatedActivity.iati_identifier,
+      customDates: updatedActivity.custom_dates,
       updatedAt: updatedActivity.updated_at
     };
 
