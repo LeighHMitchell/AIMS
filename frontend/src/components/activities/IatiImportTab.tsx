@@ -10775,20 +10775,6 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
         </DialogContent>
       </Dialog>
 
-      {/* External Publisher Modal */}
-      {showExternalPublisherModal && externalPublisherMeta && (
-        <ExternalPublisherModal
-          isOpen={showExternalPublisherModal}
-          onClose={() => setShowExternalPublisherModal(false)}
-          meta={externalPublisherMeta}
-          userOrgName={user?.organization?.name || 'Your Organization'}
-          userPublisherRefs={userPublisherRefs}
-          onChoose={handleExternalPublisherChoice}
-          currentActivityId={activityId}
-          currentActivityIatiId={currentActivityData.iati_identifier}
-        />
-      )}
-
       {/* Multi-Activity Preview Modal */}
       {showActivityPreview && multiActivityData && (
         <Dialog open={showActivityPreview} onOpenChange={setShowActivityPreview}>
