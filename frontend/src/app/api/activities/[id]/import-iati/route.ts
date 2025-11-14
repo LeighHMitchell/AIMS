@@ -170,7 +170,14 @@ export async function POST(
     Object.entries(fieldMappings).forEach(([iatiField, dbField]) => {
       if (fields[iatiField] && iati_data[iatiField] !== undefined) {
         previousValues[dbField] = currentActivity[dbField];
-        updateData[dbField] = iati_data[iatiField];
+        
+        // Extract date string from date objects (IATI dates sometimes come as {date: "YYYY-MM-DD", narratives: []})
+        let value = iati_data[iatiField];
+        if (value && typeof value === 'object' && value.date) {
+          value = value.date;
+        }
+        
+        updateData[dbField] = value;
         updatedFields.push(iatiField);
       }
     });
@@ -1097,6 +1104,27 @@ export async function POST(
             }
           });
 
+          // Calculate USD amount using the same logic as budgets
+          let usdAmount = null;
+          const valueDate = pd.valueDate || pd.period?.start;
+
+          if (resolvedCurrency !== 'USD' && valueDate) {
+            try {
+              const result = await fixedCurrencyConverter.convertToUSD(
+                pd.value,
+                resolvedCurrency,
+                new Date(valueDate)
+              );
+              usdAmount = result.usd_amount;
+              console.log(`[IATI Import] Converted planned disbursement ${pd.value} ${resolvedCurrency} → $${usdAmount} USD`);
+            } catch (error) {
+              console.error('[IATI Import] Error converting planned disbursement to USD:', error);
+              // Continue without USD amount rather than failing
+            }
+          } else if (resolvedCurrency === 'USD') {
+            usdAmount = pd.value;
+          }
+
           validPDs.push({
             activity_id: activityId,
             disbursement_type: pd.type || '1',
@@ -1104,7 +1132,8 @@ export async function POST(
             period_end: pd.period?.end,
             amount: pd.value,
             currency: resolvedCurrency,
-            value_date: pd.valueDate,
+            value_date: valueDate,
+            usd_amount: usdAmount,
             // Organization FK references (new)
             provider_org_id: providerOrgId || null,
             receiver_org_id: receiverOrgId || null,
@@ -1433,7 +1462,7 @@ export async function POST(
     });
     
   } catch (error) {
-    console.error('[IATI Import] Error:', error);
+    console.error('[IATI Import] ❌ CRITICAL ERROR:', error);
 
     // Log detailed error information
     if (error instanceof Error) {
@@ -1472,10 +1501,17 @@ export async function POST(
       }
     }
 
+    // Return detailed error message
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    const errorDetails = error instanceof Error && error.stack ? error.stack : JSON.stringify(error, null, 2);
+    
+    console.error('[IATI Import] Returning error to client:', errorMessage);
+    
     return NextResponse.json(
       {
         error: 'Failed to import IATI data',
-        details: error instanceof Error ? error.message : 'Unknown error'
+        details: errorMessage,
+        debug: process.env.NODE_ENV === 'development' ? errorDetails : undefined
       },
       { status: 500 }
     );
