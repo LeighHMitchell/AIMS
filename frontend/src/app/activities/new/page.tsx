@@ -3107,7 +3107,7 @@ function NewActivityPageContent() {
     }, 2000); // 2 second debounce
     
     return () => clearTimeout(timeoutId);
-  }, [governmentInputs, general.id, user?.id, governmentInputsAutosave]);
+  }, [governmentInputs, general.id, user?.id]);
 
 
   // State for IATI Sync status
