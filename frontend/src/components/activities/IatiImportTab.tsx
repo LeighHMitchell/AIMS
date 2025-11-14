@@ -10306,7 +10306,24 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
           <AlertCircle className="h-4 w-4" />
           <div className="font-medium">Import Error</div>
           <AlertDescription>
-            {importStatus.message || 'An error occurred during import. Please try again.'}
+            <div className="space-y-3">
+              <div>{importStatus.message || 'An error occurred during import. Please try again.'}</div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setImportStatus({ stage: 'idle' });
+                  setParsedFields([]);
+                  setXmlContent('');
+                  setXmlMetadata(null);
+                  setSelectedFields({});
+                  setImportMethod('file');
+                }}
+                className="bg-white hover:bg-gray-50"
+              >
+                Cancel Import
+              </Button>
+            </div>
           </AlertDescription>
         </Alert>
       )}
