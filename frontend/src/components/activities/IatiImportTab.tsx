@@ -204,6 +204,8 @@ interface ParsedField {
   locationData?: any; // The actual location data object
   isFssItem?: boolean; // True for FSS import field
   fssData?: any; // The actual FSS data object
+  isCrsField?: boolean; // True for CRS/DAC reporting field
+  crsData?: any; // The actual CRS/financing terms data
   isInherited?: boolean; // True if value was inherited from activity defaults
   inheritedFrom?: string; // Description of where the value was inherited from
   category?: string; // Category for grouping fields
@@ -418,11 +420,16 @@ interface IatiSearchResultCardProps {
 
 const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: IatiSearchResultCardProps) => {
   const [isExpanded, setIsExpanded] = useState(false);
+  const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
   const [financialData, setFinancialData] = useState<{
     totalBudget?: number;
     totalPlannedDisbursement?: number;
     totalOutgoingCommitment?: number;
     totalDisbursement?: number;
+    budgetCount?: number;
+    plannedDisbursementCount?: number;
+    commitmentCount?: number;
+    disbursementCount?: number;
     currency?: string;
     currencies?: Set<string>; // Track multiple currencies
     loading?: boolean;
@@ -438,6 +445,26 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
   const extendingOrgs = getOrgsByRole('3');
   const implementingOrgs = getOrgsByRole('4');
 
+  // Helper to clean a currency value (handle arrays, Sets, comma-separated strings)
+  const cleanCurrencyValue = (value: any): string | null => {
+    if (!value) return null;
+
+    let cleaned: string;
+    if (Array.isArray(value)) {
+      cleaned = value[0] || '';
+    } else if (value instanceof Set) {
+      cleaned = Array.from(value)[0] as string || '';
+    } else if (typeof value === 'string') {
+      cleaned = value.includes(',') ? value.split(',')[0].trim() : value;
+    } else {
+      cleaned = String(value);
+      cleaned = cleaned.includes(',') ? cleaned.split(',')[0].trim() : cleaned;
+    }
+
+    // Validate it's a proper currency code
+    return /^[A-Z]{3}$/.test(cleaned) ? cleaned : null;
+  };
+
   // Helper to detect currencies used in the activity
   const detectCurrencies = () => {
     const currencies = new Set<string>();
@@ -445,34 +472,32 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
     // Check budgets
     if (activity.budgets && Array.isArray(activity.budgets)) {
       activity.budgets.forEach((budget: any) => {
-        if (budget.currency || budget['@_currency']) {
-          currencies.add(budget.currency || budget['@_currency']);
-        }
+        const curr = cleanCurrencyValue(budget.currency || budget['@_currency']);
+        if (curr) currencies.add(curr);
       });
     }
 
     // Check transactions
     if (activity.transactions && Array.isArray(activity.transactions)) {
       activity.transactions.forEach((transaction: any) => {
-        if (transaction.currency || transaction['@_currency']) {
-          currencies.add(transaction.currency || transaction['@_currency']);
-        }
+        const curr = cleanCurrencyValue(transaction.currency || transaction['@_currency']);
+        if (curr) currencies.add(curr);
       });
     }
 
     // Check planned disbursements
     if (activity.plannedDisbursements && Array.isArray(activity.plannedDisbursements)) {
       activity.plannedDisbursements.forEach((disbursement: any) => {
-        if (disbursement.currency || disbursement['@_currency']) {
-          currencies.add(disbursement.currency || disbursement['@_currency']);
-        }
+        const curr = cleanCurrencyValue(disbursement.currency || disbursement['@_currency']);
+        if (curr) currencies.add(curr);
       });
     }
 
     // Check default currency
-    if (activity.currency || activity.defaultCurrency || activity['@_default-currency']) {
-      currencies.add(activity.currency || activity.defaultCurrency || activity['@_default-currency']);
-    }
+    const defaultCurr = cleanCurrencyValue(
+      activity.currency || activity.defaultCurrency || activity['@_default-currency']
+    );
+    if (defaultCurr) currencies.add(defaultCurr);
 
     return currencies;
   };
@@ -481,6 +506,20 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
   const currencies = detectCurrencies();
   const hasMultipleCurrencies = currencies.size > 1;
   const singleCurrency = currencies.size === 1 ? Array.from(currencies)[0] : null;
+
+  // Debug logging to see what's happening with currencies
+  React.useEffect(() => {
+    if (currencies.size > 0) {
+      console.log('[Currency Debug]', {
+        iatiId: activity.iatiIdentifier,
+        currenciesSet: Array.from(currencies),
+        singleCurrency,
+        hasMultipleCurrencies,
+        activityCurrency: activity.currency,
+        financialDataCurrency: financialData.currency
+      });
+    }
+  }, [currencies, singleCurrency, hasMultipleCurrencies, activity.currency, financialData.currency]);
 
   // Helper to get code with full name
   const getCodeWithName = (code: string, name: string | undefined, lookupData: any[]) => {
@@ -491,37 +530,54 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
   };
 
   // Format currency with validation and multi-currency detection
-  const formatCurrency = (value: number, currency?: string) => {
-    // If multiple currencies detected, show warning
-    if (hasMultipleCurrencies) {
+  const formatCurrency = (value: number, currency?: string | any) => {
       const formattedValue = new Intl.NumberFormat('en-US', {
         minimumFractionDigits: 0,
         maximumFractionDigits: 0,
       }).format(value);
 
-      return (
-        <>
-          <span className="text-xs text-amber-600 font-medium">Mixed currencies</span> {formattedValue}
-        </>
-      );
+    // If multiple currencies detected, show warning
+    if (hasMultipleCurrencies) {
+      return `Mixed currencies ${formattedValue}`;
     }
 
-    // Use the single currency detected, or fall back to the provided currency
-    const isValidCurrency = (currency || singleCurrency) && /^[A-Z]{3}$/.test(currency || singleCurrency || '');
-    const currencyCode = isValidCurrency ? (singleCurrency || currency) : 'N/A';
+    // Clean up currency - handle various formats
+    let cleanCurrency: string | undefined = undefined;
 
-    // Format number with commas
-    const formattedValue = new Intl.NumberFormat('en-US', {
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(value);
+    if (currency) {
+      // If it's an array, get first element
+      if (Array.isArray(currency)) {
+        cleanCurrency = currency[0];
+      }
+      // If it's a Set, get first element
+      else if (currency instanceof Set) {
+        cleanCurrency = Array.from(currency)[0] as string;
+      }
+      // If it's a string
+      else if (typeof currency === 'string') {
+        // If it's an array-like string (e.g., "USD,USD,USD"), take just the first one
+        if (currency.includes(',')) {
+          cleanCurrency = currency.split(',')[0].trim();
+        } else {
+          cleanCurrency = currency;
+        }
+      }
+      // Convert to string as fallback
+      else {
+        cleanCurrency = String(currency);
+        if (cleanCurrency.includes(',')) {
+          cleanCurrency = cleanCurrency.split(',')[0].trim();
+        }
+      }
+    }
 
-    // Return JSX with grey, smaller currency code
-    return (
-      <>
-        <span className="text-xs text-muted-foreground">{currencyCode}</span> {formattedValue}
-      </>
-    );
+    // Use the single currency detected, or fall back to the cleaned currency
+    const currencyToUse = singleCurrency || cleanCurrency;
+    const isValidCurrency = currencyToUse && /^[A-Z]{3}$/.test(currencyToUse);
+    const currencyCode = isValidCurrency ? currencyToUse : 'USD';
+
+    // Return plain string with currency code and formatted value
+    return `${currencyCode} ${formattedValue}`;
   };
   
   // Format date
@@ -536,6 +592,26 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
     } catch {
       return dateStr;
     }
+  };
+
+  // Render currency with styled currency code
+  const renderCurrency = (value: number, currency?: string) => {
+    const formatted = formatCurrency(value, currency);
+    const parts = formatted.split(' ');
+
+    if (parts.length >= 2) {
+      const currencyCode = parts[0];
+      const amount = parts.slice(1).join(' ');
+
+      return (
+        <>
+          <span className="text-[10px] text-slate-500 mr-1">{currencyCode}</span>
+          <span>{amount}</span>
+        </>
+      );
+    }
+
+    return formatted;
   };
 
   // Helper to format code with name: code in monospace gray, name normal
@@ -641,15 +717,40 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
         const parser = new IATIXMLParser(data.xml);
         const parsedActivity = parser.parseActivity();
 
-        // Calculate totals
+        // Calculate totals and counts
         let totalBudget = 0;
         let totalPlannedDisbursement = 0;
         let totalOutgoingCommitment = 0;
         let totalDisbursement = 0;
-        let defaultCurrency = parsedActivity.defaultCurrency || activity.currency || 'USD';
+        let budgetCount = 0;
+        let plannedDisbursementCount = 0;
+        let commitmentCount = 0;
+        let disbursementCount = 0;
 
-        // Sum budgets
+        // Clean up the default currency
+        let defaultCurrency: string = 'USD';
+        const rawCurrency = parsedActivity.defaultCurrency || activity.currency;
+        if (rawCurrency) {
+          if (Array.isArray(rawCurrency)) {
+            defaultCurrency = rawCurrency[0] || 'USD';
+          } else if (typeof rawCurrency === 'string') {
+            // If it has commas, take the first one
+            defaultCurrency = rawCurrency.includes(',') ? rawCurrency.split(',')[0].trim() : rawCurrency;
+          } else {
+            defaultCurrency = String(rawCurrency);
+            if (defaultCurrency.includes(',')) {
+              defaultCurrency = defaultCurrency.split(',')[0].trim();
+            }
+          }
+          // Validate it's a 3-letter currency code
+          if (!/^[A-Z]{3}$/.test(defaultCurrency)) {
+            defaultCurrency = 'USD';
+          }
+        }
+
+        // Sum budgets and count
         if (parsedActivity.budgets && Array.isArray(parsedActivity.budgets)) {
+          budgetCount = parsedActivity.budgets.length;
           parsedActivity.budgets.forEach((budget: any) => {
             if (budget.value && typeof budget.value === 'number') {
               totalBudget += budget.value;
@@ -657,8 +758,9 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
           });
         }
 
-        // Sum planned disbursements
+        // Sum planned disbursements and count
         if (parsedActivity.plannedDisbursements && Array.isArray(parsedActivity.plannedDisbursements)) {
+          plannedDisbursementCount = parsedActivity.plannedDisbursements.length;
           parsedActivity.plannedDisbursements.forEach((pd: any) => {
             if (pd.value && typeof pd.value === 'number') {
               totalPlannedDisbursement += pd.value;
@@ -666,18 +768,21 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
           });
         }
 
-        // Sum transactions by type
+        // Sum transactions by type and count
         if (parsedActivity.transactions && Array.isArray(parsedActivity.transactions)) {
           parsedActivity.transactions.forEach((tx: any) => {
-            if (tx.value && typeof tx.value === 'number') {
               const txType = tx.transactionType || tx.type;
+
+            if (tx.value && typeof tx.value === 'number') {
               // Type 2 = Outgoing Commitment
               if (txType === '2' || txType === 2) {
                 totalOutgoingCommitment += tx.value;
+                commitmentCount++;
               }
               // Type 3 = Disbursement
               if (txType === '3' || txType === 3) {
                 totalDisbursement += tx.value;
+                disbursementCount++;
               }
             }
           });
@@ -688,6 +793,10 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
           totalPlannedDisbursement: totalPlannedDisbursement >= 0 ? totalPlannedDisbursement : undefined,
           totalOutgoingCommitment: totalOutgoingCommitment >= 0 ? totalOutgoingCommitment : undefined,
           totalDisbursement: totalDisbursement >= 0 ? totalDisbursement : undefined,
+          budgetCount,
+          plannedDisbursementCount,
+          commitmentCount,
+          disbursementCount,
           currency: defaultCurrency,
           loading: false
         });
@@ -730,38 +839,35 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
               </Button>
             </div>
             
-            {/* Essential Info - Three Column Layout */}
-            <div className="grid grid-cols-3 gap-x-6 gap-y-3 text-xs">
-              {/* Column 1: Reported by */}
+            {/* Essential Info - 2 Column Layout */}
+            <div className="grid grid-cols-2 gap-6">
+              {/* Column 1: Reported by and Implementing Org - Stacked */}
+              <div className="space-y-4">
               {activity.reportingOrg && (
                 <div>
-                  <span className="text-slate-600 font-medium">Reported by:</span>
-                  <div className="mt-0.5">
-                    <div className="text-slate-900">{activity.reportingOrg}</div>
+                    <div className="text-[10px] uppercase tracking-wide text-slate-500 font-semibold mb-1.5">Reported by</div>
+                    <div className="text-sm font-medium text-slate-900">{activity.reportingOrg}</div>
                     {activity.reportingOrgRef && (
-                      <code className="text-xs font-mono bg-slate-100 px-1.5 py-0.5 rounded text-slate-700 mt-0.5 inline-block">
+                      <code className="text-[10px] font-mono bg-slate-100 px-1.5 py-0.5 rounded text-slate-600 mt-1 inline-block">
                         {activity.reportingOrgRef}
                       </code>
                     )}
-                  </div>
                 </div>
               )}
               
-              {/* Column 2: Implementing Org */}
               {implementingOrgs.length > 0 && (
                 <div>
-                  <span className="text-slate-600 font-medium">Implementing Org:</span>
-                  <div className="mt-0.5">
+                    <div className="text-[10px] uppercase tracking-wide text-slate-500 font-semibold mb-1.5">Implementing Org</div>
                     {implementingOrgs[0] && (
                       <>
-                        <div className="text-slate-900">{implementingOrgs[0].name}</div>
+                        <div className="text-sm font-medium text-slate-900">{implementingOrgs[0].name}</div>
                         {(() => {
                           const refDisplay = getOrgRefDisplay(implementingOrgs[0].ref);
                           if (!refDisplay.normalized) return null;
                           
                           return (
-                            <span className="flex items-center gap-1 mt-0.5">
-                              <code className={`text-xs font-mono bg-slate-100 px-1.5 py-0.5 rounded text-slate-700 inline-block ${!refDisplay.isValid ? 'border border-red-300' : ''}`}>
+                            <span className="flex items-center gap-1 mt-1">
+                              <code className={`text-[10px] font-mono bg-slate-100 px-1.5 py-0.5 rounded text-slate-600 inline-block ${!refDisplay.isValid ? 'border border-red-300' : ''}`}>
                                 {refDisplay.normalized}
                               </code>
                               {!refDisplay.isValid && (
@@ -779,13 +885,34 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
                         })()}
                       </>
                     )}
-                  </div>
                 </div>
               )}
               
-              {/* Column 3: Financial Summary Table */}
+                {activity.recipientCountries && activity.recipientCountries.length > 0 && (
+                  <div>
+                    <div className="text-[10px] uppercase tracking-wide text-slate-500 font-semibold mb-1.5">Recipient Country</div>
               <div className="space-y-1">
-                <div className="text-slate-700 font-semibold text-sm mb-2">Financial Summary:</div>
+                      {activity.recipientCountries.slice(0, 2).map((country: string, idx: number) => {
+                        const countryName = getCountryName(country);
+                        return (
+                          <div key={idx} className="text-sm font-medium text-slate-900">
+                            {countryName || country}
+                          </div>
+                        );
+                      })}
+                      {activity.recipientCountries.length > 2 && (
+                        <div className="text-xs text-slate-500">
+                          +{activity.recipientCountries.length - 2} more
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Column 2: Financial Summary Table */}
+              <div>
+                <div className="text-[10px] uppercase tracking-wide text-slate-500 font-semibold mb-2">Financial Summary</div>
 
                 {/* Multi-currency warning - shown at top if applicable */}
                 {hasMultipleCurrencies && (
@@ -803,82 +930,88 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
                 )}
 
                 {/* Financial Summary Table */}
-                <div className="border border-slate-200 rounded-lg overflow-hidden">
-                  <table className="w-full text-sm">
-                    <thead className="bg-slate-50 border-b border-slate-200">
+                <div className="border border-slate-200 rounded-md overflow-hidden shadow-sm">
+                  <table className="w-full">
+                    <thead className="bg-slate-50/80 border-b border-slate-200">
                       <tr>
-                        <th className="text-left px-3 py-2 font-medium text-slate-700">Type</th>
-                        <th className="text-right px-3 py-2 font-medium text-slate-700">Count</th>
-                        <th className="text-right px-3 py-2 font-medium text-slate-700">Total Value</th>
+                        <th className="text-left px-3 py-2 text-[10px] uppercase tracking-wide font-semibold text-slate-600">Financial Element</th>
+                        <th className="text-right px-3 py-2 text-[10px] uppercase tracking-wide font-semibold text-slate-600">Entries</th>
+                        <th className="text-right px-3 py-2 text-[10px] uppercase tracking-wide font-semibold text-slate-600">Total Value</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">
                       {/* Budgets Row */}
-                      <tr className="hover:bg-slate-50">
-                        <td className="px-3 py-2 text-slate-700">Budgets</td>
-                        <td className="px-3 py-2 text-right text-slate-600">
-                          {activity.budgets?.length || 0}
-                        </td>
-                        <td className="px-3 py-2 text-right font-medium text-slate-900">
+                      <tr className="hover:bg-slate-50/50 transition-colors">
+                        <td className="px-3 py-2 text-xs text-slate-700">Budgets</td>
+                        <td className="px-3 py-2 text-right text-xs text-slate-600">
                           {financialData.loading ? (
-                            <span className="text-xs text-slate-500">Loading...</span>
+                            <span className="text-xs text-slate-500">...</span>
                           ) : (
-                            formatCurrency(financialData.totalBudget ?? activity.totalBudget ?? 0, financialData.currency ?? activity.currency)
+                            financialData.budgetCount ?? 0
+                          )}
+                        </td>
+                        <td className="px-3 py-2 text-right text-xs font-semibold text-slate-900">
+                          {financialData.loading ? (
+                            <span className="text-xs text-slate-400">Loading...</span>
+                          ) : (
+                            renderCurrency(financialData.totalBudget ?? 0, financialData.currency)
                           )}
                         </td>
                       </tr>
 
                       {/* Planned Disbursements Row */}
-                      <tr className="hover:bg-slate-50">
-                        <td className="px-3 py-2 text-slate-700">Planned Disbursements</td>
-                        <td className="px-3 py-2 text-right text-slate-600">
-                          {activity.plannedDisbursements?.length || 0}
-                        </td>
-                        <td className="px-3 py-2 text-right font-medium text-slate-900">
+                      <tr className="hover:bg-slate-50/50 transition-colors">
+                        <td className="px-3 py-2 text-xs text-slate-700">Planned Disbursements</td>
+                        <td className="px-3 py-2 text-right text-xs text-slate-600">
                           {financialData.loading ? (
-                            <span className="text-xs text-slate-500">Loading...</span>
+                            <span className="text-xs text-slate-500">...</span>
                           ) : (
-                            formatCurrency(financialData.totalPlannedDisbursement ?? activity.totalPlannedDisbursement ?? 0, financialData.currency ?? activity.currency)
+                            financialData.plannedDisbursementCount ?? 0
+                          )}
+                        </td>
+                        <td className="px-3 py-2 text-right text-xs font-semibold text-slate-900">
+                          {financialData.loading ? (
+                            <span className="text-xs text-slate-400">Loading...</span>
+                          ) : (
+                            renderCurrency(financialData.totalPlannedDisbursement ?? 0, financialData.currency)
                           )}
                         </td>
                       </tr>
 
                       {/* Outgoing Commitments Row */}
-                      <tr className="hover:bg-slate-50">
-                        <td className="px-3 py-2 text-slate-700">Outgoing Commitments</td>
-                        <td className="px-3 py-2 text-right text-slate-600">
-                          {(() => {
-                            const commitmentTransactions = activity.transactions?.filter((t: any) =>
-                              t.transactionType === '2' || t['transaction-type']?.['@_code'] === '2'
-                            ) || [];
-                            return commitmentTransactions.length;
-                          })()}
-                        </td>
-                        <td className="px-3 py-2 text-right font-medium text-slate-900">
+                      <tr className="hover:bg-slate-50/50 transition-colors">
+                        <td className="px-3 py-2 text-xs text-slate-700">Outgoing Commitments</td>
+                        <td className="px-3 py-2 text-right text-xs text-slate-600">
                           {financialData.loading ? (
-                            <span className="text-xs text-slate-500">Loading...</span>
+                            <span className="text-xs text-slate-500">...</span>
                           ) : (
-                            formatCurrency(financialData.totalOutgoingCommitment ?? activity.totalOutgoingCommitment ?? 0, financialData.currency ?? activity.currency)
+                            financialData.commitmentCount ?? 0
+                          )}
+                        </td>
+                        <td className="px-3 py-2 text-right text-xs font-semibold text-slate-900">
+                          {financialData.loading ? (
+                            <span className="text-xs text-slate-400">Loading...</span>
+                          ) : (
+                            renderCurrency(financialData.totalOutgoingCommitment ?? 0, financialData.currency)
                           )}
                         </td>
                       </tr>
 
                       {/* Disbursements Row */}
-                      <tr className="hover:bg-slate-50">
-                        <td className="px-3 py-2 text-slate-700">Disbursements</td>
-                        <td className="px-3 py-2 text-right text-slate-600">
-                          {(() => {
-                            const disbursementTransactions = activity.transactions?.filter((t: any) =>
-                              t.transactionType === '3' || t['transaction-type']?.['@_code'] === '3'
-                            ) || [];
-                            return disbursementTransactions.length;
-                          })()}
-                        </td>
-                        <td className="px-3 py-2 text-right font-medium text-slate-900">
+                      <tr className="hover:bg-slate-50/50 transition-colors">
+                        <td className="px-3 py-2 text-xs text-slate-700">Disbursements</td>
+                        <td className="px-3 py-2 text-right text-xs text-slate-600">
                           {financialData.loading ? (
-                            <span className="text-xs text-slate-500">Loading...</span>
+                            <span className="text-xs text-slate-500">...</span>
                           ) : (
-                            formatCurrency(financialData.totalDisbursement ?? activity.totalDisbursement ?? 0, financialData.currency ?? activity.currency)
+                            financialData.disbursementCount ?? 0
+                          )}
+                        </td>
+                        <td className="px-3 py-2 text-right text-xs font-semibold text-slate-900">
+                          {financialData.loading ? (
+                            <span className="text-xs text-slate-400">Loading...</span>
+                          ) : (
+                            renderCurrency(financialData.totalDisbursement ?? 0, financialData.currency)
                           )}
                         </td>
                       </tr>
@@ -896,13 +1029,13 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
                         }, 0);
 
                         return (
-                          <tr className="hover:bg-slate-50">
-                            <td className="px-3 py-2 text-slate-700">Expenditures</td>
-                            <td className="px-3 py-2 text-right text-slate-600">
+                          <tr className="hover:bg-slate-50/50 transition-colors">
+                            <td className="px-3 py-2 text-xs text-slate-700">Expenditures</td>
+                            <td className="px-3 py-2 text-right text-xs text-slate-600">
                               {expenditureTransactions.length}
                             </td>
-                            <td className="px-3 py-2 text-right font-medium text-slate-900">
-                              {formatCurrency(totalExpenditure, financialData.currency ?? activity.currency)}
+                            <td className="px-3 py-2 text-right text-xs font-semibold text-slate-900">
+                              {renderCurrency(totalExpenditure, financialData.currency ?? activity.currency)}
                             </td>
                           </tr>
                         );
@@ -937,23 +1070,42 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
         </button>
       </div>
       
-      {/* Expanded View - All data in 2 columns (first wider) */}
+      {/* Expanded View - 3 column grid layout */}
       {isExpanded && (
         <div className="mt-4 pt-4 border-t border-slate-200 bg-slate-50 rounded-b-lg px-4 pb-4 overflow-hidden">
-          <div className="space-y-4 text-sm min-w-0 w-full max-w-full">
-            {/* Description */}
-            {activity.description && (
-              <div className="min-w-0 max-w-full overflow-hidden pb-4 border-b border-slate-200">
-                <span className="text-slate-700 font-semibold block mb-2 text-sm">Description:</span>
+          <div className="grid grid-cols-3 gap-x-6 gap-y-3 text-xs min-w-0 w-full max-w-full">
+            {/* Description - spans all 3 columns */}
+            {activity.description && (() => {
+              const cleanDescription = activity.description.replace(/<[^>]*>/g, '');
+              const shouldTruncate = cleanDescription.length > 200;
+              const displayText = shouldTruncate && !isDescriptionExpanded
+                ? cleanDescription.substring(0, 200) + '...'
+                : cleanDescription;
+
+              return (
+                <div className="col-span-3 min-w-0 max-w-full overflow-hidden">
+                  <span className="text-slate-700 font-semibold block mb-2">Description:</span>
                 <div className="text-slate-900 whitespace-pre-wrap break-words max-w-full leading-relaxed" style={{ wordBreak: 'break-word', overflowWrap: 'break-word' }}>
-                  {activity.description.replace(/<[^>]*>/g, '')}
+                    {displayText}
+                    {shouldTruncate && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setIsDescriptionExpanded(!isDescriptionExpanded);
+                        }}
+                        className="ml-2 text-xs text-slate-600 hover:text-slate-900 transition-colors"
+                      >
+                        {isDescriptionExpanded ? 'show less' : 'show more'}
+                      </button>
+                    )}
                 </div>
               </div>
-            )}
+              );
+            })()}
 
             {activity.recipientCountries && activity.recipientCountries.length > 0 && (
-              <div className="min-w-0 max-w-full overflow-hidden pb-4 border-b border-slate-200">
-                <span className="text-slate-700 font-semibold block mb-2">Recipient Country:</span>
+              <div className="col-span-1 min-w-0 max-w-full overflow-hidden">
+                <span className="text-slate-700 font-semibold block mb-1">Recipient Country:</span>
                 <div className="space-y-2">
                   {activity.recipientCountries.map((country: string, idx: number) => {
                     const countryName = getCountryName(country);
@@ -973,32 +1125,33 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
             )}
 
             {activity.startDatePlanned && (
-              <div className="min-w-0 max-w-full overflow-hidden pb-4 border-b border-slate-200">
-                <span className="text-slate-700 font-semibold block mb-2">Planned Start:</span>
+              <div className="col-span-1">
+                <span className="text-slate-700 font-semibold block mb-1">Planned Start:</span>
                 <div className="text-slate-900 break-words">{formatDate(activity.startDatePlanned)}</div>
               </div>
             )}
 
             {activity.startDateActual && (
-              <div className="min-w-0 max-w-full overflow-hidden pb-4 border-b border-slate-200">
-                <span className="text-slate-700 font-semibold block mb-2">Actual Start:</span>
+              <div className="col-span-1">
+                <span className="text-slate-700 font-semibold block mb-1">Actual Start:</span>
                 <div className="text-slate-900 break-words">{formatDate(activity.startDateActual)}</div>
               </div>
             )}
 
             {activity.currency && (
-              <div className="min-w-0 max-w-full overflow-hidden pb-4 border-b border-slate-200">
-                <span className="text-slate-700 font-semibold block mb-2">Default Currency:</span>
+              <div className="col-span-1">
+                <span className="text-slate-700 font-semibold block mb-1">Default Currency:</span>
                 <div className="text-slate-900 break-words">
                   {(() => {
-                    const currencyInfo = getCurrencyByCode(activity.currency);
-                    const currencyName = currencyInfo?.name || activity.currency;
+                    const cleanedCurrency = cleanCurrencyValue(activity.currency);
+                    const currencyInfo = cleanedCurrency ? getCurrencyByCode(cleanedCurrency) : null;
+                    const currencyName = currencyInfo?.name || cleanedCurrency;
                     return (
                       <div className="flex items-center gap-1.5">
                         <code className="text-xs font-mono bg-slate-100 px-1.5 py-0.5 rounded text-slate-700">
-                          {activity.currency}
+                          {cleanedCurrency || 'N/A'}
                         </code>
-                        {currencyName && currencyName !== activity.currency && (
+                        {currencyName && currencyName !== cleanedCurrency && (
                           <span className="break-words">{currencyName}</span>
                         )}
                       </div>
@@ -1008,75 +1161,9 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
               </div>
             )}
 
-            {activity.activityScope && (
-              <div className="min-w-0 max-w-full overflow-hidden pb-4 border-b border-slate-200">
-                <span className="text-slate-700 font-semibold block mb-2">Activity Scope:</span>
-                <div className="break-words">
-                  {(() => {
-                    const scopeType = IATI_ACTIVITY_SCOPE[0]?.types.find(t => t.code === activity.activityScope);
-                    const scopeName = scopeType?.name || activity.activityScope;
-                    return formatCodeWithName(activity.activityScope, scopeName);
-                  })()}
-                </div>
-              </div>
-            )}
-
-            {activity.participatingOrgs && activity.participatingOrgs.length > 0 && (() => {
-              const roleGroups: Record<string, Array<{ name: string; ref?: string }>> = {};
-              activity.participatingOrgs!.forEach((org: any) => {
-                if (org.role) {
-                  if (!roleGroups[org.role]) {
-                    roleGroups[org.role] = [];
-                  }
-                  roleGroups[org.role].push({ name: org.name, ref: org.ref });
-                }
-              });
-              
-              return (
-                <div className="min-w-0 max-w-full overflow-hidden pb-4 border-b border-slate-200">
-                  <span className="text-slate-700 font-semibold block mb-2">Participating Organisations:</span>
-                  <div className="space-y-3">
-                    {Object.entries(roleGroups).map(([roleCode, orgs]) => {
-                      const roleName = getOrganizationRoleName(roleCode);
-                      return orgs.map((org, idx) => (
-                        <div key={`${roleCode}-${idx}`} className="text-slate-900">
-                          <span className="font-semibold text-slate-600">{roleName}:</span>
-                          {' '}
-                          <span>{org.name}</span>
-                          {(() => {
-                            const refDisplay = getOrgRefDisplay(org.ref);
-                            if (!refDisplay.normalized) return null;
-
-                            return (
-                              <>
-                                {' '}
-                                <code className={`text-xs font-mono bg-slate-100 px-1.5 py-0.5 rounded text-slate-700 ${!refDisplay.isValid ? 'border border-red-300' : ''}`}>
-                                  {refDisplay.normalized}
-                                </code>
-                                {!refDisplay.isValid && (
-                                  <Tooltip>
-                                    <TooltipTrigger asChild>
-                                      <span className="text-red-500 text-xs cursor-help ml-1">⚠</span>
-                                    </TooltipTrigger>
-                                    <TooltipContent>
-                                      <p className="text-xs">Invalid IATI organization identifier format</p>
-                                    </TooltipContent>
-                                  </Tooltip>
-                                )}
-                              </>
-                            );
-                          })()}
-                        </div>
-                      ));
-                    })}
-                  </div>
-                </div>
-              );
-            })()}
-
             {activity.sectors && activity.sectors.length > 0 && (
-              <div className="min-w-0 max-w-full overflow-hidden pb-4 border-b border-slate-200">
-                <span className="text-slate-700 font-semibold block mb-2">Sectors:</span>
+              <div className="col-span-1">
+                <span className="text-slate-700 font-semibold block mb-1">Sectors:</span>
                 <div className="space-y-2">
                   {(Array.isArray(activity.sectors) ? activity.sectors : []).slice(0, 5).map((sector: any, idx: number) => {
                     const sectorCode = typeof sector === 'string' ? sector : sector.code || sector;
@@ -1103,28 +1190,9 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
               </div>
             )}
 
-            {activity.hierarchy && activity.hierarchy !== '0' && (
-              <div className="min-w-0 max-w-full overflow-hidden pb-4 border-b border-slate-200">
-                <span className="text-slate-700 font-semibold block mb-2">Hierarchy:</span>
-                <div className="break-words">
-                  {(() => {
-                    const hierarchyLabels: Record<string, string> = {
-                      '1': 'Parent activity',
-                      '2': 'Child activity',
-                      '3': 'Grandchild activity'
-                    };
-                    const hierarchyName = hierarchyLabels[activity.hierarchy] || (activity.hierarchyName && activity.hierarchyName !== '0' && activity.hierarchyName.trim() !== '' ? activity.hierarchyName : undefined) || `Level ${activity.hierarchy}`;
-                    const result = formatCodeWithName(activity.hierarchy, hierarchyName);
-                    // Double-check: don't render if result would somehow show "0"
-                    return result;
-                  })()}
-                </div>
-              </div>
-            )}
-
             {activity.status && (
-              <div className="pb-4 border-b border-slate-200">
-                <span className="text-slate-700 font-semibold block mb-2">Status:</span>
+              <div className="col-span-1">
+                <span className="text-slate-700 font-semibold block mb-1">Status:</span>
                 <div>
                   {(() => {
                     const statusInfo = getActivityStatusByCode(activity.status);
@@ -1135,52 +1203,11 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
               </div>
             )}
 
-            {activity.endDatePlanned && (
-              <div className="pb-4 border-b border-slate-200">
-                <span className="text-slate-700 font-semibold block mb-2">Planned End:</span>
-                <div className="text-slate-900">{formatDate(activity.endDatePlanned)}</div>
-              </div>
-            )}
-
-            {activity.endDateActual && (
-              <div className="pb-4 border-b border-slate-200">
-                <span className="text-slate-700 font-semibold block mb-2">Actual End:</span>
-                <div className="text-slate-900">{formatDate(activity.endDateActual)}</div>
-              </div>
-            )}
-
-            {activity.collaborationType && (
-              <div className="pb-4 border-b border-slate-200">
-                <span className="text-slate-700 font-semibold block mb-2">Collaboration Type:</span>
-                <div>
-                  {(() => {
-                    const collabType = getCollaborationTypeByCode(activity.collaborationType);
-                    const collabName = collabType?.name || activity.collaborationTypeName;
-                    return formatCodeWithName(activity.collaborationType, collabName);
-                  })()}
-                </div>
-              </div>
-            )}
-
-            {(financialData.totalBudget ?? activity.totalBudget) && (
-              <div className="pb-4 border-b border-slate-200">
-                <span className="text-slate-700 font-semibold block mb-2">Total Value:</span>
-                <div className="text-slate-900 font-medium">
-                  {financialData.loading ? (
-                    <span className="text-xs text-slate-500">Loading...</span>
-                  ) : (
-                    formatCurrency(financialData.totalBudget ?? activity.totalBudget ?? 0, financialData.currency ?? activity.currency)
-                  )}
-                </div>
-              </div>
-            )}
-
             {(activity.aidType || activity.financeType || activity.flowType || activity.tiedStatus) && (
-              <div className="pb-4 border-b border-slate-200">
-                <span className="text-slate-700 font-semibold block mb-2">Classifications:</span>
+              <div className="col-span-1">
+                <span className="text-slate-700 font-semibold block mb-1">Classifications:</span>
                 <div className="space-y-2">
                   {activity.aidType && (() => {
-                    // Handle CC01 format - remove extra C
                     const aidTypeStr = String(activity.aidType);
                     const aidCode = aidTypeStr.startsWith('CC') ? aidTypeStr.substring(1) : (aidTypeStr.startsWith('C') ? aidTypeStr : `C${aidTypeStr}`);
                     const aidTypeName = getAidTypeName(aidCode) || activity.aidTypeName;
@@ -1216,7 +1243,6 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
                   {activity.flowType && (() => {
                     const flowTypeData = flowTypesData.find((item: any) => item.code === activity.flowType);
                     const flowTypeName = flowTypeData?.name || activity.flowTypeName;
-                    // For codes below 10, show text after the code
                     const flowCode = activity.flowType;
                     const isBelowTen = flowCode && /^\d+$/.test(flowCode) && parseInt(flowCode) < 10;
                     if (isBelowTen && flowTypeName) {
@@ -1249,17 +1275,121 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
                     return (
                       <div>
                         <span className="text-slate-600">Tied Status: </span>
-                        <code className="text-xs font-mono bg-slate-100 px-1.5 py-0.5 rounded text-slate-700">
-                          {tiedStatusCode}
-                        </code>
-                        {tiedStatusName && (
-                          <>
-                            {' '}
-                            <span className="text-slate-900">{tiedStatusName}</span>
-                          </>
-                        )}
+                        {formatCodeWithName(tiedStatusCode, tiedStatusName)}
                       </div>
                     );
+                  })()}
+                </div>
+              </div>
+            )}
+
+            {activity.activityScope && (
+              <div className="col-span-1">
+                <span className="text-slate-700 font-semibold block mb-1">Activity Scope:</span>
+                <div className="break-words">
+                  {(() => {
+                    const scopeType = IATI_ACTIVITY_SCOPE[0]?.types.find(t => t.code === activity.activityScope);
+                    const scopeName = scopeType?.name || activity.activityScope;
+                    return formatCodeWithName(activity.activityScope, scopeName);
+                  })()}
+                </div>
+              </div>
+            )}
+
+            {activity.participatingOrgs && activity.participatingOrgs.length > 0 && (() => {
+              const roleGroups: Record<string, Array<{ name: string; ref?: string }>> = {};
+              activity.participatingOrgs!.forEach((org: any) => {
+                if (org.role) {
+                  if (!roleGroups[org.role]) {
+                    roleGroups[org.role] = [];
+                  }
+                  roleGroups[org.role].push({ name: org.name, ref: org.ref });
+                }
+              });
+              
+              return (
+                <div className="col-span-1">
+                  <span className="text-slate-700 font-semibold block mb-1">Participating Organisations:</span>
+                  <div className="space-y-3">
+                    {Object.entries(roleGroups).map(([roleCode, orgs]) => {
+                      const roleName = getOrganizationRoleName(roleCode);
+                      return orgs.map((org, idx) => (
+                        <div key={`${roleCode}-${idx}`} className="text-slate-900">
+                          <span className="font-semibold text-slate-600">{roleName}:</span>
+                          {' '}
+                          <span>{org.name}</span>
+                          {(() => {
+                            const refDisplay = getOrgRefDisplay(org.ref);
+                            if (!refDisplay.normalized) return null;
+
+                            return (
+                          <>
+                            {' '}
+                                <code className={`text-xs font-mono bg-slate-100 px-1.5 py-0.5 rounded text-slate-700 ${!refDisplay.isValid ? 'border border-red-300' : ''}`}>
+                                  {refDisplay.normalized}
+                                </code>
+                                {!refDisplay.isValid && (
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <span className="text-red-500 text-xs cursor-help ml-1">⚠</span>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                      <p className="text-xs">Invalid IATI organization identifier format</p>
+                                    </TooltipContent>
+                                  </Tooltip>
+                                )}
+                              </>
+                            );
+                          })()}
+                        </div>
+                      ));
+                    })}
+                  </div>
+                      </div>
+                    );
+            })()}
+
+            {activity.hierarchy && activity.hierarchy !== '0' && (
+              <div className="col-span-1">
+                <span className="text-slate-700 font-semibold block mb-1">Hierarchy:</span>
+                <div className="break-words">
+                  {(() => {
+                    const hierarchyLabels: Record<string, string> = {
+                      '1': 'Parent activity',
+                      '2': 'Child activity',
+                      '3': 'Grandchild activity'
+                    };
+                    const hierarchyName = hierarchyLabels[activity.hierarchy] || (activity.hierarchyName && activity.hierarchyName !== '0' && activity.hierarchyName.trim() !== '' ? activity.hierarchyName : undefined) || `Level ${activity.hierarchy}`;
+                    const result = formatCodeWithName(activity.hierarchy, hierarchyName);
+                    // Double-check: don't render if result would somehow show "0"
+                    return result;
+                  })()}
+                </div>
+              </div>
+            )}
+
+            {activity.endDatePlanned && (
+              <div className="pb-4 border-b border-slate-200">
+                <span className="text-slate-700 font-semibold block mb-2">Planned End:</span>
+                <div className="text-slate-900">{formatDate(activity.endDatePlanned)}</div>
+          </div>
+            )}
+
+            {activity.endDateActual && (
+              <div className="pb-4 border-b border-slate-200">
+                <span className="text-slate-700 font-semibold block mb-2">Actual End:</span>
+                <div className="text-slate-900">{formatDate(activity.endDateActual)}</div>
+              </div>
+            )}
+
+            {activity.collaborationType && (
+              <div className="pb-4 border-b border-slate-200">
+                <span className="text-slate-700 font-semibold block mb-2">Collaboration Type:</span>
+                <div>
+                  {(() => {
+                    const collabType = getCollaborationTypeByCode(activity.collaborationType);
+                    const collabName = collabType?.name || activity.collaborationTypeName;
+                    return formatCodeWithName(activity.collaborationType, collabName);
                   })()}
                 </div>
               </div>
@@ -2562,14 +2692,16 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
       };
 
       // Create fields from parsed data organized by tabs
-      const fields: ParsedField[] = [];
+      console.log('[IATI Import Debug] Starting field creation process...');
+      let fields: ParsedField[] = [];
       
       // Check if this is a snippet import and what type
       const snippetType = (window as any).__snippetType;
       const isSnippetImport = importMethod === 'snippet' && snippetType;
       console.log('[IATI Import Debug] Is snippet import:', isSnippetImport, 'Type:', snippetType);
 
-      // === BASIC INFO TAB ===
+      try {
+        // === BASIC INFO TAB ===
       
       // Skip wrapper fields if this is a snippet import (these come from the wrapper, not the user's snippet)
       if (parsedActivity.iatiIdentifier && (!isSnippetImport || parsedActivity.iatiIdentifier !== 'SNIPPET-TEMP')) {
@@ -2866,16 +2998,18 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
         });
       }
 
-      if (parsedActivity.crsChannelCode) {
+      if (parsedActivity.crsChannelCode && parsedActivity.financingTerms) {
         fields.push({
-          fieldName: 'CRS Channel Code',
-          iatiPath: 'iati-activity/crs-add/channel-code',
+          fieldName: 'DAC CRS Reporting',
+          iatiPath: 'iati-activity/crs-add',
           currentValue: null, // This field is not stored in the current system
           importValue: parsedActivity.crsChannelCode,
           selected: false, // Don't auto-select as it's optional
           hasConflict: false,
           tab: 'finances',
-          description: 'CRS Channel Code (optional)'
+          description: 'DAC CRS Reporting (optional)',
+          isCrsField: true,
+          crsData: parsedActivity.financingTerms
         });
       }
 
@@ -3255,79 +3389,112 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
       // === COUNTRY BUDGET ITEMS TAB ===
       
       if (parsedActivity.countryBudgetItems && parsedActivity.countryBudgetItems.length > 0) {
+        // Track global budget item index across all country-budget-items elements
+        let globalBudgetItemIndex = 0;
+
         parsedActivity.countryBudgetItems.forEach((cbi, cbiIndex) => {
-          // Validation checks
-          const warnings = [];
           const vocabulary = cbi.vocabulary || '';
+
+          // Vocabulary labels
+          const vocabularyLabels: Record<string, string> = {
+            '1': 'IATI',
+            '2': 'COFOG',
+            '3': 'COFOG (2014)',
+            '4': 'COFOG',
+            '5': 'Other',
+            '99': 'Reporting Organisation'
+          };
+
+          const vocabularyLabel = vocabularyLabels[vocabulary] || `Vocabulary ${vocabulary}`;
           
           // Vocabulary validation
           const validVocabularies = ['1', '2', '3', '4', '5'];
-          if (!vocabulary) {
-            warnings.push('Missing vocabulary');
-          } else if (!validVocabularies.includes(vocabulary)) {
-            warnings.push(`Invalid vocabulary: ${vocabulary}`);
-          }
-          
-          // Budget items validation
-          if (!cbi.budgetItems || cbi.budgetItems.length === 0) {
-            warnings.push('No budget items');
-          } else {
-            cbi.budgetItems.forEach((item, itemIndex) => {
-              if (!item.code) {
-                warnings.push(`Item ${itemIndex + 1}: Missing code`);
-              }
-              if (item.percentage === undefined || item.percentage === null) {
-                warnings.push(`Item ${itemIndex + 1}: Missing percentage`);
-              } else {
-                if (item.percentage < 0 || item.percentage > 100) {
-                  warnings.push(`Item ${itemIndex + 1}: Invalid percentage (${item.percentage}%)`);
+          const hasValidVocabulary = vocabulary && validVocabularies.includes(vocabulary);
+
+          // Create a separate field for each budget-item
+          if (cbi.budgetItems && cbi.budgetItems.length > 0) {
+            cbi.budgetItems.forEach((budgetItem, itemIndex) => {
+              globalBudgetItemIndex++;
+
+              // Extract description text from multilingual object
+              let descriptionText = '';
+              if (budgetItem.description) {
+                if (typeof budgetItem.description === 'string') {
+                  descriptionText = budgetItem.description;
+                } else if (typeof budgetItem.description === 'object') {
+                  // Try to get English first, then fall back to first available language
+                  descriptionText = budgetItem.description['en'] ||
+                                   budgetItem.description[Object.keys(budgetItem.description)[0]] || '';
                 }
+              }
+
+              // Validation for this specific budget item
+              const itemWarnings = [];
+              if (!budgetItem.code) {
+                itemWarnings.push('Missing code');
+              }
+              if (budgetItem.percentage === undefined || budgetItem.percentage === null) {
+                itemWarnings.push('Missing percentage');
+              } else if (budgetItem.percentage < 0 || budgetItem.percentage > 100) {
+                itemWarnings.push(`Invalid percentage (${budgetItem.percentage}%)`);
+              }
+              if (!hasValidVocabulary) {
+                itemWarnings.push('Invalid vocabulary');
+              }
+
+              // Create summary for this budget item
+              const itemSummary = [
+                vocabularyLabel,
+                budgetItem.code,
+                budgetItem.percentage !== undefined && `${budgetItem.percentage}%`
+              ].filter(Boolean).join(' ');
+
+              const description = itemWarnings.length > 0
+                ? `Country Budget Mapping ${globalBudgetItemIndex} - ${itemWarnings.join(', ')}`
+                : `Country Budget Mapping ${globalBudgetItemIndex} - Valid ✓`;
+          
+          fields.push({
+                fieldName: `Country Budget Mapping ${globalBudgetItemIndex}`,
+                iatiPath: `iati-activity/country-budget-items[${cbiIndex + 1}]/budget-item[${itemIndex + 1}]`,
+            currentValue: null,
+                importValue: itemSummary,
+                selected: isFieldAllowedByPreferences('iati-activity/country-budget-items') && itemWarnings.length === 0,
+                hasConflict: itemWarnings.length > 0,
+            tab: 'country-budget',
+            description,
+                isFinancialItem: true,
+            itemType: 'countryBudgetItems',
+                itemIndex: globalBudgetItemIndex - 1,
+                itemData: {
+                  vocabulary: vocabulary,
+                  budget_items: [{
+                    ...budgetItem,
+                    description: descriptionText // Use extracted text instead of object
+                  }]
+                }
+              });
+            });
+          } else {
+            // No budget items - create a warning field
+            globalBudgetItemIndex++;
+            fields.push({
+              fieldName: `Country Budget Mapping ${globalBudgetItemIndex}`,
+              iatiPath: `iati-activity/country-budget-items[${cbiIndex + 1}]`,
+              currentValue: null,
+              importValue: `Vocabulary: ${vocabularyLabel} | No budget items`,
+              selected: false,
+              hasConflict: true,
+              tab: 'country-budget',
+              description: `Country Budget Mapping ${globalBudgetItemIndex} - No budget items`,
+              isFinancialItem: true,
+              itemType: 'countryBudgetItems',
+              itemIndex: globalBudgetItemIndex - 1,
+              itemData: {
+                vocabulary: vocabulary,
+                budget_items: []
               }
             });
           }
-          
-          // Vocabulary labels
-          const vocabularyLabels: Record<string, string> = {
-            '1': 'IATI (withdrawn)',
-            '2': 'Country Chart of Accounts',
-            '3': 'Other Country System',
-            '4': 'Reporting Organisation',
-            '5': 'Other'
-          };
-          
-          const vocabularyLabel = vocabularyLabels[vocabulary] || `Vocabulary ${vocabulary}`;
-          
-          // Create summary
-          const itemsCount = cbi.budgetItems?.length || 0;
-          const percentageSum = cbi.budgetItems?.reduce((sum, item) => sum + (item.percentage || 0), 0) || 0;
-          const itemsSummary = cbi.budgetItems?.map(item => 
-            `${item.code} (${item.percentage}%)`
-          ).join(', ') || '';
-          
-          const cbiSummary = [
-            `Vocabulary: ${vocabularyLabel}`,
-            `Items: ${itemsCount}`,
-            `Total: ${percentageSum.toFixed(2)}%`,
-            itemsSummary && `Codes: ${itemsSummary}`
-          ].filter(Boolean).join(' | ');
-          
-          const description = warnings.length > 0
-            ? `Budget Mapping ${cbiIndex + 1} - ${warnings.join(', ')}`
-            : `Budget Mapping ${cbiIndex + 1} - Valid ✓`;
-          
-          fields.push({
-            fieldName: `Budget Mapping ${cbiIndex + 1}`,
-            iatiPath: `iati-activity/country-budget-items[${cbiIndex + 1}]`,
-            currentValue: null,
-            importValue: cbiSummary,
-            selected: isFieldAllowedByPreferences('iati-activity/country-budget-items') && warnings.length === 0, // Auto-select if valid
-            hasConflict: warnings.length > 0,
-            tab: 'country-budget',
-            description,
-            itemType: 'countryBudgetItems',
-            itemIndex: cbiIndex,
-            itemData: cbi
-          });
         });
       }
 
@@ -4252,6 +4419,12 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
         });
       }
 
+      console.log('[IATI Import Debug] Field creation complete, total fields:', fields.length);
+      } catch (fieldCreationError) {
+        console.error('[IATI Import Debug] Error during field creation:', fieldCreationError);
+        throw new Error(`Failed to create import fields: ${fieldCreationError instanceof Error ? fieldCreationError.message : 'Unknown error'}`);
+      }
+
       if (fields.length === 0) {
         throw new Error('No importable fields found in the XML file. Please check that it contains valid IATI activity data.');
       }
@@ -4274,12 +4447,23 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
           hasImportValue: financingFields.map(f => ({ name: f.fieldName, hasValue: !!f.importValue }))
         });
       setParsedFields(fields);
+      console.log('[IATI Import Debug] Parsed fields set, count:', fields.length);
       
       // EXTERNAL PUBLISHER DETECTION - After parsing is complete
       console.log('[IATI Import] Checking for external publisher...');
       if (fileToCheck) {
         try {
-          const meta = await extractIatiMeta(fileToCheck);
+          console.log('[IATI Import] Starting metadata extraction...');
+          // Add timeout to prevent hanging
+          const metaPromise = extractIatiMeta(fileToCheck);
+          let timeoutId: NodeJS.Timeout | null = null;
+          const timeoutPromise = new Promise<never>((_, reject) => {
+            timeoutId = setTimeout(() => reject(new Error('Metadata extraction timed out after 10 seconds')), 10000);
+          });
+          
+          try {
+            const meta = await Promise.race([metaPromise, timeoutPromise]);
+            if (timeoutId) clearTimeout(timeoutId);
           console.log('[IATI Import] Extracted metadata:', meta);
           console.log('[IATI Import] User publisher refs:', userPublisherRefs);
           
@@ -4333,6 +4517,11 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
             return; // Exit here, modal is shown and preview is visible
           } else {
             console.log('[IATI Import] Activity is owned by user, proceeding with normal import');
+            }
+          } catch (timeoutError) {
+            if (timeoutId) clearTimeout(timeoutId);
+            console.warn('[IATI Import] Metadata extraction failed or timed out:', timeoutError);
+            // Continue with normal import if metadata extraction fails
           }
         } catch (metaError) {
           console.error('[IATI Import] Error extracting metadata:', metaError);
@@ -9671,6 +9860,22 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
                   <span className="text-sm text-gray-500">
                     {importStatus.progress || 0}%
                   </span>
+                  {(importStatus.stage === 'parsing' || importStatus.stage === 'uploading') && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        console.log('[IATI Import] Cancel requested during parsing/uploading');
+                        resetImport();
+                        toast.info('Import cancelled', {
+                          description: 'Returned to XML Import tab.'
+                        });
+                      }}
+                      className="text-red-600 border-red-200 hover:bg-red-50"
+                    >
+                      Cancel Import
+                    </Button>
+                  )}
                   {importStatus.stage === 'importing' && !importCancelRequested && (
                     <Button
                       variant="outline"
