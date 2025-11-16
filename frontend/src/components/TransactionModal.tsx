@@ -35,6 +35,7 @@ import { Command, CommandInput, CommandList, CommandEmpty, CommandGroup, Command
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { OrganizationSearchableSelect } from "@/components/ui/organization-searchable-select";
+import { OrganizationCombobox } from "@/components/ui/organization-combobox";
 import { ActivityCombobox } from "@/components/ui/activity-combobox";
 import { type Organization } from "@/components/ui/organization-combobox";
 import { usePartners } from "@/hooks/usePartners";
@@ -1597,7 +1598,7 @@ export default function TransactionModal({
               
               {/* Provider Organization */}
               <div className="space-y-2">
-                <LabelWithInfoAndSave 
+                <LabelWithInfoAndSave
                   helpText="The organization providing or disbursing the funds for this transaction"
                   isSaving={providerOrgAutosave.isSaving}
                   isSaved={providerOrgAutosave.isSaved}
@@ -1605,32 +1606,30 @@ export default function TransactionModal({
                 >
                   Provider Organization
                 </LabelWithInfoAndSave>
-                <OrganizationSearchableSelect
-                  organizations={organizations}
+                <OrganizationCombobox
                   value={formData.provider_org_id || ''}
-                  onValueChange={(v) => {
-                    if (v === 'none' || v === 'clear' || v === '') {
+                  onValueChange={(orgId) => {
+                    const org = organizations.find(o => o.id === orgId);
+                    if (org) {
                       setFormData({
-                        ...formData, 
+                        ...formData,
+                        provider_org_id: orgId,
+                        provider_org_name: org?.acronym || org?.name || '',
+                        provider_org_ref: org?.iati_identifier || ''
+                      });
+                      providerOrgAutosave.triggerFieldSave(orgId);
+                    } else {
+                      setFormData({
+                        ...formData,
                         provider_org_id: '',
                         provider_org_name: '',
                         provider_org_ref: ''
                       });
                       providerOrgAutosave.triggerFieldSave('');
-                    } else {
-                      const org = organizations.find(o => o.id === v);
-                      setFormData({
-                        ...formData, 
-                        provider_org_id: v,
-                        provider_org_name: org?.acronym || org?.name || '',
-                      });
-                      providerOrgAutosave.triggerFieldSave(v);
                     }
                   }}
-                  placeholder="Select provider organization"
-                  className="w-full"
-                  open={openDropdown === 'provider-org'}
-                  onOpenChange={(isOpen) => setOpenDropdown(isOpen ? 'provider-org' : null)}
+                  placeholder="Search for provider organization..."
+                  organizations={organizations}
                 />
               </div>
 
@@ -1800,7 +1799,7 @@ export default function TransactionModal({
 
               {/* Receiver Organization */}
               <div className="space-y-2">
-                <LabelWithInfoAndSave 
+                <LabelWithInfoAndSave
                   helpText="The organization receiving the funds from this transaction"
                   isSaving={receiverOrgAutosave.isSaving}
                   isSaved={receiverOrgAutosave.isSaved}
@@ -1808,33 +1807,30 @@ export default function TransactionModal({
                 >
                   Receiver Organization
                 </LabelWithInfoAndSave>
-                <OrganizationSearchableSelect
-                  organizations={organizations}
+                <OrganizationCombobox
                   value={formData.receiver_org_id || ''}
-                  onValueChange={(v) => {
-                    if (v === 'none' || v === 'clear' || v === '') {
+                  onValueChange={(orgId) => {
+                    const org = organizations.find(o => o.id === orgId);
+                    if (org) {
                       setFormData({
-                        ...formData, 
+                        ...formData,
+                        receiver_org_id: orgId,
+                        receiver_org_name: org?.acronym || org?.name || '',
+                        receiver_org_ref: org?.iati_identifier || ''
+                      });
+                      receiverOrgAutosave.triggerFieldSave(orgId);
+                    } else {
+                      setFormData({
+                        ...formData,
                         receiver_org_id: '',
                         receiver_org_name: '',
                         receiver_org_ref: ''
                       });
                       receiverOrgAutosave.triggerFieldSave('');
-                    } else {
-                      const org = organizations.find(o => o.id === v);
-                      setFormData({
-                        ...formData, 
-                        receiver_org_id: v,
-                        receiver_org_name: org?.acronym || org?.name || '',
-                        receiver_org_ref: org?.iati_org_id || ''
-                      });
-                      receiverOrgAutosave.triggerFieldSave(v);
                     }
                   }}
-                  placeholder="Select receiver organization"
-                  className="w-full"
-                  open={openDropdown === 'receiver-org'}
-                  onOpenChange={(isOpen) => setOpenDropdown(isOpen ? 'receiver-org' : null)}
+                  placeholder="Search for receiver organization..."
+                  organizations={organizations}
                 />
               </div>
 

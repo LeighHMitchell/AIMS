@@ -30,8 +30,8 @@ interface ParsedActivity {
   activityScope?: string;
   language?: string;
   defaultCurrency?: string;
-  crsChannelCode?: string; // CRS Channel Code
-  
+  crsChannelCode?: string; // DAC CRS Reporting
+
   // Humanitarian
   humanitarian?: boolean;
   humanitarianScopes?: Array<{
@@ -1690,7 +1690,13 @@ export class IATIXMLParser {
         const providerOrg = disbursement.querySelector('provider-org');
         const receiverOrg = disbursement.querySelector('receiver-org');
 
+        // Extract the raw XML fragment for this specific disbursement
+        const serializer = new XMLSerializer();
+        const rawXml = serializer.serializeToString(disbursement);
+
         const disbursementData: any = {
+          sequenceIndex: i, // Preserve XML order
+          rawXml: rawXml,   // Store exact XML fragment
           type: disbursement.getAttribute('type') || undefined,
           value: value?.textContent ? parseFloat(value.textContent) : undefined,
           currency: value?.getAttribute('currency') || undefined,

@@ -3,13 +3,13 @@
 import React from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { 
-  Home, 
-  Activity, 
-  Users, 
-  Building, 
-  BarChart3, 
-  Settings, 
+import {
+  Home,
+  Activity,
+  Users,
+  Building,
+  BarChart3,
+  Settings,
   UserCheck,
   Search,
   Calendar,
@@ -18,7 +18,9 @@ import {
   Briefcase,
   Database,
   Shield,
-  HelpCircle
+  HelpCircle,
+  CalendarClock,
+  Wallet
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
@@ -69,6 +71,18 @@ export function SidebarNav({ userRole, canManageUsers, isLoading, isCollapsed = 
       name: "Transactions",
       href: "/transactions",
       icon: FileText,
+      show: true
+    },
+    {
+      name: "Planned Disbursements",
+      href: "/planned-disbursements",
+      icon: CalendarClock,
+      show: true
+    },
+    {
+      name: "Budgets",
+      href: "/budgets",
+      icon: Wallet,
       show: true
     },
     {

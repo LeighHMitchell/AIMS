@@ -1,7 +1,5 @@
 "use client"
 
-export const dynamic = 'force-dynamic';
-
 import React, { useState, useCallback, useEffect, useMemo, Suspense, useRef } from "react";
 import Image from "next/image";
 import { MainLayout } from "@/components/layout/main-layout";
@@ -2585,6 +2583,25 @@ function NewActivityPageContent() {
   // Track sidebar collapse state to avoid covering the collapse button
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
+  // Track if any modal is open to blur footer buttons
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  // Detect when dialogs are open by observing DOM
+  useEffect(() => {
+    const observer = new MutationObserver(() => {
+      // Check if any dialog overlay is present
+      const hasDialog = document.querySelector('[role="dialog"]') !== null;
+      setIsModalOpen(hasDialog);
+    });
+
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true,
+    });
+
+    return () => observer.disconnect();
+  }, []);
+
   // Memoized callbacks to prevent infinite re-render loop
   const handlePlannedDisbursementsChange = useCallback((disb: any[]) => {
     console.log('[ActivityEditor] setPlannedDisbursements called with:', disb?.length || 0, 'disbursements');
@@ -2596,27 +2613,18 @@ function NewActivityPageContent() {
     setResultsCount(Array.isArray(results) ? results.length : 0);
   }, []);
 
-  // Debug the participatingOrgsCount changes
-  React.useEffect(() => {
-    console.log('[NewActivityPage] participatingOrgsCount changed to:', participatingOrgsCount);
-  }, [participatingOrgsCount]);
-
   // Fetch participating organizations count on page load for tab completion
   React.useEffect(() => {
     const fetchParticipatingOrgsCount = async () => {
       if (!general.id) return;
       
       try {
-        console.log('[NewActivityPage] Fetching participating orgs count for tab completion...');
         const response = await fetch(`/api/activities/${general.id}/participating-organizations`);
         
         if (response.ok) {
           const data = await response.json();
           const count = data.length || 0;
-          console.log('[NewActivityPage] Found', count, 'participating organizations for tab completion');
           setParticipatingOrgsCount(count);
-        } else {
-          console.log('[NewActivityPage] Failed to fetch participating orgs for tab completion');
         }
       } catch (error) {
         console.error('[NewActivityPage] Error fetching participating orgs for tab completion:', error);
@@ -2946,6 +2954,24 @@ function NewActivityPageContent() {
   const [savingAndNext, setSavingAndNext] = useState(false);
   const [publishing, setPublishing] = useState(false);
   const [loading, setLoading] = useState(true);
+  
+  // Set loading to false once user is loaded (for new activities or when user finishes loading)
+  useEffect(() => {
+    if (!userLoading) {
+      // If there's no activity ID, we're creating a new activity - set loading to false immediately
+      if (!searchParams?.get("id")) {
+        setLoading(false);
+      } else {
+        // For existing activities, set a timeout to ensure loading is set to false
+        // even if the loadActivity effect hasn't completed yet
+        const timeoutId = setTimeout(() => {
+          setLoading(false);
+        }, 5000); // 5 second timeout as fallback
+        
+        return () => clearTimeout(timeoutId);
+      }
+    }
+  }, [userLoading, searchParams]);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   
   // Navigation guard removed - all fields auto-save so no data loss on refresh
@@ -3135,6 +3161,11 @@ function NewActivityPageContent() {
   
   // Load activity data if editing
   useEffect(() => {
+    // Don't run if user is still loading
+    if (userLoading) {
+      return;
+    }
+    
     const loadActivity = async () => {
       try {
         const activityId = searchParams?.get("id");
@@ -3495,7 +3526,7 @@ function NewActivityPageContent() {
     };
     
     loadActivity();
-  }, [searchParams, user]);
+  }, [searchParams, user, userLoading]);
 
 
   // REMOVED: localStorage persistence for existing activities
@@ -3507,11 +3538,6 @@ function NewActivityPageContent() {
   // This was causing issues with stale localStorage data
   // All data should be loaded by the main useEffect on page load
 
-  // Debug logging for user role
-  console.log('[AIMS DEBUG] Current user:', user);
-  console.log('[AIMS DEBUG] User role:', user?.role);
-  console.log('[AIMS DEBUG] Role includes gov_partner:', user?.role?.includes('gov_partner'));
-  
   // Build sections array based on user role
   // Also allow super_user to see government inputs
   const showGovernmentInputs = user?.role?.includes('gov_partner') || user?.role === 'super_user';
@@ -3647,7 +3673,6 @@ function NewActivityPageContent() {
 
   // Tab completion status calculation
   const tabCompletionStatus = React.useMemo(() => {
-    console.log('[DEBUG] tabCompletionStatus memo running, sectors.length:', sectors.length);
     const generalCompletion = getTabCompletionStatus('general', general, getDateFieldStatus)
     // Sectors tab: compute completion based on actual sectors data
     const hasSectorsWithPercentage = sectors.some(sector => sector.percentage && sector.percentage > 0);
@@ -3659,16 +3684,6 @@ function NewActivityPageContent() {
       isComplete: isSectorsDataComplete,
       isInProgress: hasSectorsWithPercentage && !isSectorsProperlyAllocated
     };
-    
-    console.log('[TabCompletion] Sectors completion status:', {
-      sectorsCount: sectors.length,
-      hasSectorsWithPercentage,
-      totalSectorsPercentage,
-      isSectorsProperlyAllocated,
-      isSectorsDataComplete,
-      sectorsCompletion
-    });
-    
 
     // Defaults sub-tab under Finances: require all fields filled AND saved
     const financesDefaultsCompletion = getTabCompletionStatus('finances', {
@@ -3682,29 +3697,20 @@ function NewActivityPageContent() {
 
     // Finances tab: green check if at least one transaction
     const financesComplete = transactions && transactions.length > 0;
-    console.log('[TabCompletion] Transactions:', { count: transactions?.length || 0, complete: financesComplete });
 
     // Budgets tab: green check if at least one budget or budget not provided
     const budgetsComplete = (budgets && budgets.length > 0) || budgetNotProvided;
-    console.log('[TabCompletion] Budgets:', { count: budgets?.length || 0, complete: budgetsComplete, budgetNotProvided });
 
     // Planned Disbursements tab: green check if at least one planned disbursement
     const plannedDisbursementsComplete = plannedDisbursements && plannedDisbursements.length > 0;
-    console.log('[TabCompletion] Planned Disbursements:', { count: plannedDisbursements?.length || 0, complete: plannedDisbursementsComplete });
 
     // Forward Spend tab: green check if FSS exists with forecasts
     const forwardSpendComplete = forwardSpendCount > 0;
-    console.log('[TabCompletion] Forward Spend:', { count: forwardSpendCount, complete: forwardSpendComplete });
 
     // Humanitarian tab: green check if flag is true or scopes exist
     const humanitarianCompletion = getTabCompletionStatus('humanitarian', {
       humanitarian: humanitarian,
       humanitarianScopes: humanitarianScopes
-    });
-    console.log('[TabCompletion] Humanitarian:', { 
-      humanitarian, 
-      scopesCount: humanitarianScopes?.length || 0, 
-      complete: humanitarianCompletion?.isComplete 
     });
 
     // SDG tab: green check if at least one SDG goal is mapped
@@ -3721,14 +3727,6 @@ function NewActivityPageContent() {
       regions
     });
 
-    console.log('[TabCompletion] Locations completion status:', {
-      specificLocationsCount: specificLocations?.length || 0,
-      countriesCount: countries?.length || 0,
-      regionsCount: regions?.length || 0,
-      subnationalBreakdownsKeys: Object.keys(subnationalBreakdowns || {}).length,
-      locationsCompletion
-    });
-
     // Tags tab: use the comprehensive tags completion check
     const tagsCompletion = getTabCompletionStatus('tags', tags);
 
@@ -3740,17 +3738,14 @@ function NewActivityPageContent() {
 
     // Organizations tab: check if we have participating organizations
     // Use the actual participating organizations count from the OrganisationsSection
-    console.log('[TabCompletion] participatingOrgsCount:', participatingOrgsCount);
     
     // Also check the old partner arrays as a fallback for debugging
     const legacyOrgCount = (extendingPartners?.length || 0) + (implementingPartners?.length || 0) + (governmentPartners?.length || 0);
-    console.log('[TabCompletion] Legacy org count (extending + implementing + government):', legacyOrgCount);
     
     const organizationsCompletion = getTabCompletionStatus('organisations', 
       // Create a mock array with the actual count from the participating organizations
       Array(participatingOrgsCount).fill({})
     );
-    console.log('[TabCompletion] organizationsCompletion:', organizationsCompletion);
     
     // Contacts tab: check if we have contacts
     const contactsCompletion = getTabCompletionStatus('contacts', contacts);
@@ -3766,10 +3761,6 @@ function NewActivityPageContent() {
                                   capitalSpendPercentage !== undefined &&
                                   capitalSpendPercentage > 0 && 
                                   capitalSpendPercentage <= 100;
-    console.log('[TabCompletion] Capital Spend:', { 
-      percentage: capitalSpendPercentage, 
-      complete: capitalSpendComplete 
-    });
     
     // Documents & Images tab: green check if at least one document exists
     const documentsCompletion = getTabCompletionStatus('documents', documents);
@@ -4513,7 +4504,7 @@ function NewActivityPageContent() {
           </div>
           
           {/* Combined Footer with Navigation and Validation Actions */}
-          <footer className={`fixed bottom-0 right-0 bg-white border-t border-gray-200 py-4 px-8 z-[60] shadow-lg transition-all duration-400 ${sidebarCollapsed ? 'left-20' : 'left-72'}`}>
+          <footer className={`fixed bottom-0 right-0 bg-transparent py-4 px-8 transition-all duration-400 ${sidebarCollapsed ? 'left-20' : 'left-72'} ${isModalOpen ? 'z-[40]' : 'z-[60]'}`}>
             <div className="max-w-full flex items-center justify-between gap-4">
               {/* Left side: Validation Actions */}
               <div className="flex items-center gap-4">
@@ -4562,7 +4553,7 @@ function NewActivityPageContent() {
               <div className="flex-1"></div>
 
               {/* Right side: Comments + Back + Save + Save & Next Navigation Buttons */}
-              <div className="flex items-center gap-3">
+              <div className={`flex items-center gap-3 transition-all ${isModalOpen ? 'blur-sm pointer-events-none' : ''}`}>
                 {/* Comments Button */}
                 {general.id ? (
                   <Button
@@ -4638,7 +4629,7 @@ function NewActivityPageContent() {
                 {/* Save & Next Button */}
                 <Button
                   variant="default"
-                  className="px-6 py-3 text-base font-semibold"
+                  className="px-6 py-3 text-base font-semibold min-w-[160px]"
                   onClick={() => {
                     if (nextSection) {
                       saveActivity({ goToNext: true });
@@ -4647,17 +4638,14 @@ function NewActivityPageContent() {
                   disabled={!general.id || isLastSection || tabLoading || savingAndNext}
                   title={!general.id ? "Activity will be created automatically when you enter a title" : (savingAndNext ? "Saving activity..." : undefined)}
                 >
-                  {savingAndNext ? (
-                    <>
-                      Saving...
+                  <>
+                    Save & Next
+                    {savingAndNext ? (
                       <CircleDashed className="ml-2 h-5 w-5 animate-spin" />
-                    </>
-                  ) : (
-                    <>
-                      Save & Next
+                    ) : (
                       <ArrowRight className="ml-2 h-5 w-5" />
-                    </>
-                  )}
+                    )}
+                  </>
                 </Button>
               </div>
             </div>

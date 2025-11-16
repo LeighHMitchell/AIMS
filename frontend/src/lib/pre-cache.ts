@@ -54,13 +54,11 @@ class PreCacheManager {
 
     // Return cached data if available and not forced
     if (!force && apiCache.has(cacheKey)) {
-      console.log(`[PreCache] Cache hit for: ${url}`)
       return apiCache.get(cacheKey)
     }
 
     // Return pending request if already in progress
     if (this.pendingRequests.has(cacheKey)) {
-      console.log(`[PreCache] Waiting for pending request: ${url}`)
       return this.pendingRequests.get(cacheKey)
     }
 
@@ -97,8 +95,6 @@ class PreCacheManager {
    * Pre-cache activity editor dependencies
    */
   async preCacheActivityEditor(activityId?: string): Promise<void> {
-    console.log('[PreCache] Starting Activity Editor pre-cache...')
-
     const urls = [
       '/api/iati-reference-values',
       '/api/organizations',
@@ -112,15 +108,12 @@ class PreCacheManager {
     }
 
     await this.preloadResources(urls, { priority: 'high', background: true })
-    console.log('[PreCache] Activity Editor pre-cache completed')
   }
 
   /**
    * Pre-cache organization pages
    */
   async preCacheOrganizations(): Promise<void> {
-    console.log('[PreCache] Starting Organizations pre-cache...')
-
     const urls = [
       '/api/organizations',
       '/api/organizations/summary',
@@ -129,15 +122,12 @@ class PreCacheManager {
     ]
 
     await this.preloadResources(urls, { priority: 'high', background: true })
-    console.log('[PreCache] Organizations pre-cache completed')
   }
 
   /**
    * Pre-cache activity list
    */
   async preCacheActivityList(): Promise<void> {
-    console.log('[PreCache] Starting Activity List pre-cache...')
-
     const urls = [
       '/api/activities-simple?limit=100',
       '/api/organizations', // For organization lookup
@@ -145,15 +135,12 @@ class PreCacheManager {
     ]
 
     await this.preloadResources(urls, { priority: 'high', background: true })
-    console.log('[PreCache] Activity List pre-cache completed')
   }
 
   /**
    * Intelligent pre-caching based on user navigation patterns
    */
   async smartPreCache(currentPath: string): Promise<void> {
-    console.log(`[PreCache] Smart pre-cache for path: ${currentPath}`)
-
     // Pre-cache based on current path
     // Note: We don't need to pre-cache common resources separately as they're
     // already included in the specific page pre-cache functions
@@ -217,8 +204,6 @@ class PreCacheManager {
    */
   private async fetchAndCache(url: string, cacheKey: string, ttl: number): Promise<any> {
     try {
-      console.log(`[PreCache] Fetching: ${url}`)
-      
       const response = await fetch(url, {
         headers: {
           'Cache-Control': 'no-cache',
@@ -234,7 +219,6 @@ class PreCacheManager {
       
       // Cache the result
       apiCache.set(cacheKey, data, { ttl })
-      console.log(`[PreCache] Cached: ${url}`)
       
       return data
     } catch (error) {

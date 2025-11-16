@@ -126,7 +126,7 @@ export function FlowTypeSelect({
           <span className="truncate">
             {selectedOption ? (
               <span className="flex items-center gap-2">
-                <span className="text-xs font-mono text-foreground bg-gray-200 px-1.5 py-0.5 rounded">{selectedOption.code}</span>
+                <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{selectedOption.code}</span>
                 <span className="font-medium">{selectedOption.name}</span>
               </span>
             ) : (
@@ -206,7 +206,7 @@ export function FlowTypeSelect({
                       />
                       <div className="flex-1">
                         <div className="flex items-center gap-2">
-                          <span className="text-xs font-mono text-foreground bg-gray-200 px-1.5 py-0.5 rounded">{option.code}</span>
+                          <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{option.code}</span>
                           <span className="font-medium text-foreground">{option.name}</span>
                         </div>
                         <div className="text-sm text-muted-foreground mt-1.5 leading-relaxed">
@@ -240,7 +240,7 @@ export function FlowTypeSelect({
                       />
                       <div className="flex-1">
                         <div className="flex items-center gap-2">
-                          <span className="text-xs font-mono text-foreground bg-gray-200 px-1.5 py-0.5 rounded">{option.code}</span>
+                          <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{option.code}</span>
                           <span className="font-medium text-foreground">{option.name}</span>
                         </div>
                         <div className="text-sm text-muted-foreground mt-1.5 leading-relaxed">

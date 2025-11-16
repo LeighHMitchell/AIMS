@@ -117,6 +117,9 @@ export default function IatiSearchTab({ activityId }: IatiSearchTabProps) {
   
   // Track which activities are expanded
   const [expandedActivities, setExpandedActivities] = useState<Set<string>>(new Set())
+
+  // Track which activity descriptions are expanded (show full text)
+  const [expandedDescriptions, setExpandedDescriptions] = useState<Set<string>>(new Set())
   
   // Fetch user's organization IATI ID
   useEffect(() => {
@@ -544,8 +547,22 @@ export default function IatiSearchTab({ activityId }: IatiSearchTabProps) {
       return newSet
     })
   }
-  
+
   const isExpanded = (iatiId: string) => expandedActivities.has(iatiId)
+
+  const toggleDescriptionExpand = (iatiId: string) => {
+    setExpandedDescriptions(prev => {
+      const newSet = new Set(prev)
+      if (newSet.has(iatiId)) {
+        newSet.delete(iatiId)
+      } else {
+        newSet.add(iatiId)
+      }
+      return newSet
+    })
+  }
+
+  const isDescriptionExpanded = (iatiId: string) => expandedDescriptions.has(iatiId)
   
   // If showing import view, render the XML import interface
   if (showImportView && fetchedXml) {
@@ -880,12 +897,12 @@ export default function IatiSearchTab({ activityId }: IatiSearchTabProps) {
                             </Button>
                           </div>
                           
-                          {/* Essential Info Grid - 3 Columns: Reported by | Implementing Org | Total Value */}
+                          {/* Essential Info Grid - 3 Columns */}
                           <div className="grid grid-cols-3 gap-x-6 gap-y-3 text-xs" data-layout="three-column-updated-v2">
-                            {/* Column 1: Reported by */}
-                            <div className="col-span-1">
-                              {activity.reportingOrg ? (
-                                <>
+                            {/* Column 1: Reported by and Implementing Org stacked */}
+                            <div className="col-span-1 space-y-3">
+                              {activity.reportingOrg && (
+                                <div>
                                   <span className="text-slate-600 font-medium">Reported by:</span>
                                   <div className="mt-0.5">
                                     <div className="text-slate-900">{activity.reportingOrg}</div>
@@ -895,14 +912,10 @@ export default function IatiSearchTab({ activityId }: IatiSearchTabProps) {
                                       </code>
                                     )}
                                   </div>
-                                </>
-                              ) : null}
-                            </div>
-                            
-                            {/* Column 2: Implementing Org */}
-                            <div className="col-span-1">
-                              {implementingOrgs.length > 0 ? (
-                                <>
+                                </div>
+                              )}
+                              {implementingOrgs.length > 0 && (
+                                <div>
                                   <span className="text-slate-600 font-medium">Implementing Org:</span>
                                   <div className="mt-0.5">
                                     {implementingOrgs[0] && (
@@ -916,11 +929,11 @@ export default function IatiSearchTab({ activityId }: IatiSearchTabProps) {
                                       </>
                                     )}
                                   </div>
-                                </>
-                              ) : null}
+                                </div>
+                              )}
                             </div>
-                            
-                            {/* Column 3: Total Value */}
+
+                            {/* Column 2: Total Value */}
                             <div className="col-span-1">
                               {activity.totalBudget ? (
                                 <>
@@ -930,6 +943,10 @@ export default function IatiSearchTab({ activityId }: IatiSearchTabProps) {
                                   </div>
                                 </>
                               ) : null}
+                            </div>
+
+                            {/* Column 3: Empty for now, other fields will flow here */}
+                            <div className="col-span-1">
                             </div>
                             
                             {/* Funding Org */}
@@ -1018,19 +1035,39 @@ export default function IatiSearchTab({ activityId }: IatiSearchTabProps) {
                       </button>
                     </div>
                     
-                    {/* Expanded View - All data in 2 columns (first wider) */}
+                    {/* Expanded View - All data in 3 columns */}
                     {expanded && (
                       <div className="border-t border-slate-200 bg-white p-4">
-                        <div className="grid grid-cols-[2fr,1fr] gap-x-6 gap-y-3 text-xs">
-                          {/* Description spans across both columns */}
-                          {activity.description && (
-                            <div className="col-span-2">
-                              <span className="text-slate-600 font-medium">Description:</span>
-                              <div className="mt-0.5 text-slate-900 whitespace-pre-wrap">
-                                {activity.description.replace(/<[^>]*>/g, '')}
+                        <div className="grid grid-cols-3 gap-x-6 gap-y-3 text-xs">
+                          {/* Description spans across all 3 columns with truncation */}
+                          {activity.description && (() => {
+                            const cleanDescription = activity.description.replace(/<[^>]*>/g, '')
+                            const isExpanded = isDescriptionExpanded(activity.iatiIdentifier)
+                            const shouldTruncate = cleanDescription.length > 200
+                            const displayText = shouldTruncate && !isExpanded
+                              ? cleanDescription.substring(0, 200) + '...'
+                              : cleanDescription
+
+                            return (
+                              <div className="col-span-3">
+                                <span className="text-slate-600 font-medium">Description:</span>
+                                <div className="mt-0.5 text-slate-900 whitespace-pre-wrap">
+                                  {displayText}
+                                  {shouldTruncate && (
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation()
+                                        toggleDescriptionExpand(activity.iatiIdentifier)
+                                      }}
+                                      className="ml-2 text-blue-600 hover:text-blue-700 underline"
+                                    >
+                                      {isExpanded ? 'show less' : 'show more'}
+                                    </button>
+                                  )}
+                                </div>
                               </div>
-                            </div>
-                          )}
+                            )
+                          })()}
 
                           {activity.recipientCountries && activity.recipientCountries.length > 0 && (
                             <div className="col-span-1">
@@ -1096,7 +1133,6 @@ export default function IatiSearchTab({ activityId }: IatiSearchTabProps) {
                             </div>
                           )}
 
-                          {/* Column 1 (wider) */}
                           {activity.participatingOrgs && activity.participatingOrgs.length > 0 && (() => {
                             const roleGroups: Record<string, Array<{ name: string; ref?: string }>> = {}
                             activity.participatingOrgs!.forEach(org => {
@@ -1202,7 +1238,6 @@ export default function IatiSearchTab({ activityId }: IatiSearchTabProps) {
                             </div>
                           )}
 
-                          {/* Column 2 */}
                           {activity.totalBudget && (
                             <div className="col-span-1">
                               <span className="text-slate-600 font-medium">Total Value:</span>

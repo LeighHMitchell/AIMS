@@ -25,6 +25,9 @@ export async function GET(
       .select(`
         id,
         related_activity_id,
+        external_iati_identifier,
+        external_activity_title,
+        is_resolved,
         relationship_type,
         narrative,
         created_at,
@@ -45,7 +48,27 @@ export async function GET(
       console.error('Error fetching linked activities:', linkedError);
     } else if (linkedActivities) {
       linkedActivities.forEach((link: any) => {
-        if (link.activities) {
+        // Handle external (unresolved) links
+        if (link.external_iati_identifier && !link.is_resolved) {
+          relatedActivities.push({
+            id: link.id, // Use relationship ID for external links
+            title: link.external_activity_title || link.external_iati_identifier,
+            acronym: '',
+            iatiIdentifier: link.external_iati_identifier,
+            status: '',
+            organizationName: '',
+            organizationAcronym: '',
+            icon: '',
+            relationshipType: getRelationshipTypeName(link.relationship_type),
+            relationshipNarrative: link.narrative || '',
+            source: 'External Link',
+            direction: 'outgoing',
+            isExternal: true,
+            isResolved: false
+          });
+        }
+        // Handle internal (resolved) links
+        else if (link.activities) {
           relatedActivities.push({
             id: link.activities.id,
             title: link.activities.title_narrative || 'Untitled Activity',
@@ -58,7 +81,9 @@ export async function GET(
             relationshipType: getRelationshipTypeName(link.relationship_type),
             relationshipNarrative: link.narrative || '',
             source: 'Linked Activities',
-            direction: 'outgoing'
+            direction: 'outgoing',
+            isExternal: false,
+            isResolved: link.is_resolved || false
           });
         }
       });
@@ -235,6 +260,136 @@ export async function GET(
     );
   }
 }
+
+export async function POST(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  const activityId = params.id;
+  const supabase = getSupabaseAdmin();
+
+  if (!supabase) {
+    return NextResponse.json(
+      { error: 'Database not configured' },
+      { status: 503 }
+    );
+  }
+
+  try {
+    const body = await request.json();
+    const {
+      related_activity_id,
+      external_iati_identifier,
+      external_activity_title,
+      relationship_type,
+      narrative
+    } = body;
+
+    // Validation
+    if (!relationship_type) {
+      return NextResponse.json(
+        { error: 'Relationship type is required' },
+        { status: 400 }
+      );
+    }
+
+    if (!related_activity_id && !external_iati_identifier) {
+      return NextResponse.json(
+        { error: 'Either related_activity_id or external_iati_identifier is required' },
+        { status: 400 }
+      );
+    }
+
+    // Build the insert data
+    const insertData: any = {
+      activity_id: activityId,
+      relationship_type,
+      narrative: narrative || null,
+    };
+
+    if (related_activity_id) {
+      // Internal link
+      insertData.related_activity_id = related_activity_id;
+    } else {
+      // External link
+      insertData.external_iati_identifier = external_iati_identifier;
+      insertData.external_activity_title = external_activity_title || null;
+      insertData.is_resolved = false;
+    }
+
+    const { data, error } = await supabase
+      .from('activity_relationships')
+      .insert(insertData)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error creating relationship:', error);
+      return NextResponse.json(
+        { error: error.message || 'Failed to create relationship' },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json(data, { status: 201 });
+  } catch (error: any) {
+    console.error('Error in POST /related-activities:', error);
+    return NextResponse.json(
+      { error: 'Failed to create relationship' },
+      { status: 500 }
+    );
+  }
+}
+
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  const activityId = params.id;
+  const supabase = getSupabaseAdmin();
+
+  if (!supabase) {
+    return NextResponse.json(
+      { error: 'Database not configured' },
+      { status: 503 }
+    );
+  }
+
+  try {
+    const { searchParams } = new URL(request.url);
+    const relationshipId = searchParams.get('relationship_id');
+
+    if (!relationshipId) {
+      return NextResponse.json(
+        { error: 'Relationship ID is required' },
+        { status: 400 }
+      );
+    }
+
+    const { error } = await supabase
+      .from('activity_relationships')
+      .delete()
+      .eq('id', relationshipId)
+      .eq('activity_id', activityId); // Ensure it belongs to this activity
+
+    if (error) {
+      console.error('Error deleting relationship:', error);
+      return NextResponse.json(
+        { error: 'Failed to delete relationship' },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json({ success: true });
+  } catch (error: any) {
+    console.error('Error in DELETE /related-activities:', error);
+    return NextResponse.json(
+      { error: 'Failed to delete relationship' },
+      { status: 500 }
+    );
+  }
+}
+
 
 
 

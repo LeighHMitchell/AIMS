@@ -271,9 +271,9 @@ export function ParticipatingOrgModal({
           </div>
 
           {/* Advanced Fields Toggle */}
-          <div 
+          <div
             onClick={() => setShowAdvanced(!showAdvanced)}
-            className="flex items-center justify-center gap-2 cursor-pointer text-sm text-gray-600 hover:text-gray-800 transition-colors py-2"
+            className="flex items-center gap-2 cursor-pointer text-sm text-gray-600 hover:text-gray-800 transition-colors py-2"
           >
             <span>Advanced IATI Fields</span>
             {showAdvanced ? (
@@ -319,10 +319,10 @@ export function ParticipatingOrgModal({
                 />
               </div>
 
-              {/* CRS Channel Code */}
+              {/* DAC CRS Reporting */}
               <div className="space-y-2">
                 <Label htmlFor="crs_channel_code" className="flex items-center gap-2">
-                  CRS Channel Code
+                  DAC CRS Reporting
                   <HelpTextTooltip content="OECD-DAC CRS (Creditor Reporting System) channel code, used mainly by bilateral donors for reporting to the DAC. This corresponds to the @crs-channel-code attribute." />
                 </Label>
                 <EnhancedSearchableSelect

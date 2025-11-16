@@ -88,11 +88,23 @@ export function ContactDropdown({
         }));
         
         // Filter out contacts that are already added
-        const existingIds = existingContacts.map(c => c.email);
-        const availableContacts = transformedContacts.filter(
-          contact => contact.email && !existingIds.includes(contact.email)
-        );
-        
+        // Use email as primary identifier, fall back to ID for contacts without email
+        const existingEmails = existingContacts.map(c => c.email).filter(Boolean);
+        const existingContactIds = existingContacts.map(c => c.id).filter(Boolean);
+
+        const availableContacts = transformedContacts.filter(contact => {
+          // If contact has email, check if it's already in existingEmails
+          if (contact.email && existingEmails.includes(contact.email)) {
+            return false;
+          }
+          // If contact has ID, check if it's already in existingContactIds
+          if (contact.id && existingContactIds.includes(contact.id)) {
+            return false;
+          }
+          // Include contact if it's not already added
+          return true;
+        });
+
         setContacts(availableContacts);
       } else {
         console.error('Failed to fetch contacts');
@@ -212,10 +224,27 @@ export function ContactDropdown({
                 </div>
               )}
 
-              {/* No Results */}
+              {/* No Results - with search query */}
               {!loading && filteredContacts.length === 0 && searchQuery && (
-                <div className="py-6 text-center text-sm text-muted-foreground">
-                  No contacts found
+                <div className="py-6 text-center">
+                  <div className="text-sm text-muted-foreground">
+                    No contacts found matching "{searchQuery}"
+                  </div>
+                  <div className="text-xs text-muted-foreground mt-1">
+                    Try a different search or create a new contact
+                  </div>
+                </div>
+              )}
+
+              {/* No Contacts at all - no search query */}
+              {!loading && contacts.length === 0 && !searchQuery && hasInitiallyLoaded && (
+                <div className="py-6 text-center">
+                  <div className="text-sm text-muted-foreground">
+                    No contacts in the system yet
+                  </div>
+                  <div className="text-xs text-muted-foreground mt-1">
+                    Click "Create New Contact" to add your first contact
+                  </div>
                 </div>
               )}
 

@@ -192,9 +192,9 @@ export default function SectorSunburstVisualization({
     return () => resizeObserver.disconnect();
   }, []);
 
-  // Simple D3 sunburst implementation
+  // Render Sunburst Chart (3-level hierarchy)
   useEffect(() => {
-    if (!svgRef.current) return;
+    if (!svgRef.current || allocations.length === 0) return;
 
     console.log('Rendering sunburst with data:', hierarchyData);
 

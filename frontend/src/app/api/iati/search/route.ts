@@ -80,9 +80,9 @@ export async function POST(request: NextRequest) {
     // IATI identifiers can start with:
     // - 2+ letter country/org code (GB-GOV-1-123456, AU-5-INM438)
     // - Numeric org code (44000-P156634 for World Bank)
-    // Followed by hyphens and alphanumeric/underscore characters
-    // Examples: AU-5-INM438, XI-IATI-EC_INTPA-2022-PC-23131, GB-GOV-1-123456, DAC-1601-INV-083532, 44000-P156634
-    const isIatiId = /^[A-Z0-9]{2,}-[A-Z0-9_-]+$/i.test(trimmedTitle)
+    // Followed by hyphens and alphanumeric/underscore/period characters
+    // Examples: AU-5-INM438, XI-IATI-EC_INTPA-2022-PC-23131, GB-GOV-1-123456, DAC-1601-INV-083532, 44000-P156634, XM-DAC-928-CZ-2024-25-13.003.EU01.CZH02
+    const isIatiId = /^[A-Z0-9]{2,}-[A-Z0-9_.\-]+$/i.test(trimmedTitle)
 
     // Helper function to escape special Solr characters for wildcard searches
     const escapeSolrWildcard = (str: string) => {

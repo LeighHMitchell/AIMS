@@ -21,6 +21,7 @@ import { fetchBasicActivityWithCache } from '@/lib/activity-cache';
 import LinkedActivitiesGraph from './LinkedActivitiesGraph';
 import { cn } from '@/lib/utils';
 import { CreateRelationshipsTableGuide } from './CreateRelationshipsTableGuide';
+import { LinkExternalActivityModal } from '@/components/modals/LinkExternalActivityModal';
 
 interface LinkedActivity {
   id: string;
@@ -83,6 +84,7 @@ const LinkedActivitiesEditorTab: React.FC<LinkedActivitiesEditorTabProps> = ({
   const [saving, setSaving] = useState(false);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const debounceRef = useRef<NodeJS.Timeout | null>(null);
+  const [showExternalModal, setShowExternalModal] = useState(false);
 
   // Fetch current activity details
   const fetchCurrentActivity = useCallback(async () => {
@@ -342,33 +344,45 @@ const LinkedActivitiesEditorTab: React.FC<LinkedActivitiesEditorTabProps> = ({
       <div className="space-y-6">
         {/* Search & Link Activities - Full Width */}
         <div className="bg-white rounded-lg p-6 border border-gray-200">
-                  <div className="mb-4">
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">Search & Link Activities</h3>
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-            <Input
-              type="text"
-              placeholder="Search by title, acronym, Activity ID, IATI ID, or organisation..."
-              value={searchQuery}
-              onChange={(e) => handleSearch(e.target.value)}
-              className="pl-10 pr-10 border-gray-300 focus:border-gray-500 focus:ring-gray-500"
-              disabled={!canEdit}
-            />
-            {searchQuery && (
-              <button
-                type="button"
-                onClick={() => {
-                  setSearchQuery('');
-                  handleSearch('');
-                }}
-                className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 rounded-full hover:bg-gray-200 flex items-center justify-center transition-colors text-gray-400 hover:text-gray-600"
-                aria-label="Clear search"
-              >
-                <X className="h-3 w-3" />
-              </button>
-            )}
+          <div className="mb-4">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Search & Link Activities</h3>
+            <div className="flex gap-3">
+              <div className="flex-1 relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Input
+                  type="text"
+                  placeholder="Search by title, acronym, Activity ID, IATI ID, or organisation..."
+                  value={searchQuery}
+                  onChange={(e) => handleSearch(e.target.value)}
+                  className="pl-10 pr-10 border-gray-300 focus:border-gray-500 focus:ring-gray-500"
+                  disabled={!canEdit}
+                />
+                {searchQuery && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSearchQuery('');
+                      handleSearch('');
+                    }}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 rounded-full hover:bg-gray-200 flex items-center justify-center transition-colors text-gray-400 hover:text-gray-600"
+                    aria-label="Clear search"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                )}
+              </div>
+              {canEdit && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setShowExternalModal(true)}
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Link External Activity
+                </Button>
+              )}
             </div>
-        </div>
+          </div>
 
           {/* Search Results */}
           {searchQuery.trim() && (
@@ -774,6 +788,17 @@ const LinkedActivitiesEditorTab: React.FC<LinkedActivitiesEditorTabProps> = ({
           </DialogFooter>
         </DialogContent>
         </Dialog>
+
+        {/* Link External Activity Modal */}
+        <LinkExternalActivityModal
+          isOpen={showExternalModal}
+          onClose={() => setShowExternalModal(false)}
+          activityId={activityId}
+          onSuccess={() => {
+            fetchLinkedActivities();
+            setShowExternalModal(false);
+          }}
+        />
       </div>
     </div>
   );

@@ -32,6 +32,9 @@ export const IATI_RELATIONSHIP_TYPES: IATIRelationshipType[] = [
   }
 ];
 
+// Export alias for consistency
+export const RELATIONSHIP_TYPES = IATI_RELATIONSHIP_TYPES;
+
 // Helper function to get relationship type by code
 export function getRelationshipTypeName(code: string): string {
   const type = IATI_RELATIONSHIP_TYPES.find(t => t.code === code);

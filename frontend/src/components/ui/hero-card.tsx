@@ -169,7 +169,7 @@ export function HeroCard<T = any>({
       formatted = `${currencyPrefix}${amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
     } else if (currency === "" || currency === null || currency === undefined) {
       // No currency - format as whole number for counts
-      formatted = amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      formatted = amount.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
     } else {
       // Other currency - format full number with 2 decimal places
       const currencyPrefix = prefix || currency;

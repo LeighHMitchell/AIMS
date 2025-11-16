@@ -35,6 +35,10 @@ export default function FinancesSection({
   const [analyticsData, setAnalyticsData] = useState<any>(null);
   const [analyticsLoading, setAnalyticsLoading] = useState(false);
 
+  // State for budgets and planned disbursements
+  const [budgets, setBudgets] = useState<any[]>([]);
+  const [plannedDisbursements, setPlannedDisbursements] = useState<any[]>([]);
+
   // Fetch analytics data
   useEffect(() => {
     const fetchAnalyticsData = async () => {
@@ -57,6 +61,44 @@ export default function FinancesSection({
     fetchAnalyticsData();
   }, [activityId, transactions]); // Refetch when transactions change
 
+  // Fetch budgets
+  useEffect(() => {
+    const fetchBudgets = async () => {
+      if (!activityId) return;
+
+      try {
+        const response = await fetch(`/api/activities/${activityId}/budgets`);
+        if (response.ok) {
+          const data = await response.json();
+          setBudgets(data);
+        }
+      } catch (error) {
+        console.error('Error fetching budgets:', error);
+      }
+    };
+
+    fetchBudgets();
+  }, [activityId]);
+
+  // Fetch planned disbursements
+  useEffect(() => {
+    const fetchPlannedDisbursements = async () => {
+      if (!activityId) return;
+
+      try {
+        const response = await fetch(`/api/activities/${activityId}/planned-disbursements`);
+        if (response.ok) {
+          const data = await response.json();
+          setPlannedDisbursements(data);
+        }
+      } catch (error) {
+        console.error('Error fetching planned disbursements:', error);
+      }
+    };
+
+    fetchPlannedDisbursements();
+  }, [activityId]);
+
   // Check if all default fields are completed
   const allDefaultsCompleted = useMemo(() => {
     if (!defaults) return false;
@@ -70,24 +112,45 @@ export default function FinancesSection({
   // Calculate financial summary
   const financialSummary = useMemo(() => {
     const published = transactions.filter(t => t.status === 'published');
-    const committed = transactions.filter(t => t.transaction_type === '2'); // Outgoing Commitment
-    const disbursed = transactions.filter(t => t.transaction_type === '3'); // Disbursement
-    const received = transactions.filter(t => t.transaction_type === '12'); // Incoming Funds
 
-    const totalPublished = published.reduce((sum, t) => sum + (t.value || 0), 0);
-    const totalCommitted = committed.reduce((sum, t) => sum + (t.value || 0), 0);
-    const totalDisbursed = disbursed.reduce((sum, t) => sum + (t.value || 0), 0);
-    const totalReceived = received.reduce((sum, t) => sum + (t.value || 0), 0);
+    // Group by transaction type
+    const transactionsByType: Record<string, { count: number, total: number, totalUSD: number }> = {};
+
+    transactions.forEach(t => {
+      const type = t.transaction_type || 'unknown';
+      if (!transactionsByType[type]) {
+        transactionsByType[type] = { count: 0, total: 0, totalUSD: 0 };
+      }
+      transactionsByType[type].count += 1;
+      transactionsByType[type].total += (t.value || 0);
+      transactionsByType[type].totalUSD += (t.value_usd || t.value || 0);
+    });
+
+    const totalPublished = published.reduce((sum, t) => sum + (t.value_usd || t.value || 0), 0);
+    const totalCommitted = (transactionsByType['2']?.totalUSD || 0);
+    const totalDisbursed = (transactionsByType['3']?.totalUSD || 0);
+    const totalReceived = (transactionsByType['12']?.totalUSD || 0);
+
+    // Calculate budget totals
+    const totalBudgets = budgets.reduce((sum, b) => sum + (b.usd_value || b.value || 0), 0);
+
+    // Calculate planned disbursement totals
+    const totalPlannedDisbursements = plannedDisbursements.reduce((sum, pd) => sum + (pd.usd_value || pd.value || 0), 0);
 
     return {
       totalPublished,
       totalCommitted,
       totalDisbursed,
       totalReceived,
+      totalBudgets,
+      totalPlannedDisbursements,
       transactionCount: transactions.length,
-      publishedCount: published.length
+      publishedCount: published.length,
+      budgetCount: budgets.length,
+      plannedDisbursementCount: plannedDisbursements.length,
+      transactionsByType
     };
-  }, [transactions]);
+  }, [transactions, budgets, plannedDisbursements]);
 
   // Chart data calculation
   const chartDataMemo = useMemo(() => {
@@ -171,13 +234,33 @@ export default function FinancesSection({
 
   const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8', '#82CA9D'];
 
+  // Transaction type labels
+  const getTransactionTypeLabel = (code: string) => {
+    const labels: Record<string, string> = {
+      '1': 'Incoming Funds',
+      '2': 'Outgoing Commitment',
+      '3': 'Disbursement',
+      '4': 'Expenditure',
+      '5': 'Interest Payment',
+      '6': 'Loan Repayment',
+      '7': 'Reimbursement',
+      '8': 'Purchase of Equity',
+      '9': 'Sale of Equity',
+      '10': 'Credit Guarantee',
+      '11': 'Incoming Commitment',
+      '12': 'Outgoing Pledge',
+      '13': 'Incoming Pledge',
+    };
+    return labels[code] || `Type ${code}`;
+  };
+
   return (
     <div className="space-y-6">
       {/* Financial Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Total Published</CardTitle>
+            <CardTitle className="text-sm font-medium">Total Budgets</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
@@ -186,17 +269,17 @@ export default function FinancesSection({
                 currency: 'USD',
                 minimumFractionDigits: 0,
                 maximumFractionDigits: 0,
-              }).format(financialSummary.totalPublished)}
+              }).format(financialSummary.totalBudgets)}
             </div>
             <p className="text-xs text-muted-foreground">
-              {financialSummary.publishedCount} transactions
+              {financialSummary.budgetCount} budgets
             </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Total Committed</CardTitle>
+            <CardTitle className="text-sm font-medium">Total Planned Disbursements</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
@@ -205,17 +288,17 @@ export default function FinancesSection({
                 currency: 'USD',
                 minimumFractionDigits: 0,
                 maximumFractionDigits: 0,
-              }).format(financialSummary.totalCommitted)}
+              }).format(financialSummary.totalPlannedDisbursements)}
             </div>
             <p className="text-xs text-muted-foreground">
-              {financialSummary.transactionCount} transactions
+              {financialSummary.plannedDisbursementCount} planned disbursements
             </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Total Disbursed</CardTitle>
+            <CardTitle className="text-sm font-medium">Total Transactions</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
@@ -224,26 +307,7 @@ export default function FinancesSection({
                 currency: 'USD',
                 minimumFractionDigits: 0,
                 maximumFractionDigits: 0,
-              }).format(financialSummary.totalDisbursed)}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              {financialSummary.transactionCount} transactions
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Total Received</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {new Intl.NumberFormat('en-US', {
-                style: 'currency',
-                currency: 'USD',
-                minimumFractionDigits: 0,
-                maximumFractionDigits: 0,
-              }).format(financialSummary.totalReceived)}
+              }).format(Object.values(financialSummary.transactionsByType).reduce((sum, t) => sum + t.totalUSD, 0))}
             </div>
             <p className="text-xs text-muted-foreground">
               {financialSummary.transactionCount} transactions
@@ -251,6 +315,93 @@ export default function FinancesSection({
           </CardContent>
         </Card>
       </div>
+
+      {/* Detailed Financial Summary Table */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Financial Summary by Type</CardTitle>
+          <CardDescription>
+            Breakdown of all financial data including budgets, planned disbursements, and transactions
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b">
+                  <th className="text-left py-2 px-4 font-medium">Category</th>
+                  <th className="text-right py-2 px-4 font-medium">Count</th>
+                  <th className="text-right py-2 px-4 font-medium">Total (USD)</th>
+                </tr>
+              </thead>
+              <tbody>
+                {/* Budgets */}
+                <tr className="border-b hover:bg-gray-50">
+                  <td className="py-2 px-4">Budgets</td>
+                  <td className="text-right py-2 px-4">{financialSummary.budgetCount}</td>
+                  <td className="text-right py-2 px-4 font-medium">
+                    {new Intl.NumberFormat('en-US', {
+                      style: 'currency',
+                      currency: 'USD',
+                      minimumFractionDigits: 0,
+                      maximumFractionDigits: 0,
+                    }).format(financialSummary.totalBudgets)}
+                  </td>
+                </tr>
+
+                {/* Planned Disbursements */}
+                <tr className="border-b hover:bg-gray-50">
+                  <td className="py-2 px-4">Planned Disbursements</td>
+                  <td className="text-right py-2 px-4">{financialSummary.plannedDisbursementCount}</td>
+                  <td className="text-right py-2 px-4 font-medium">
+                    {new Intl.NumberFormat('en-US', {
+                      style: 'currency',
+                      currency: 'USD',
+                      minimumFractionDigits: 0,
+                      maximumFractionDigits: 0,
+                    }).format(financialSummary.totalPlannedDisbursements)}
+                  </td>
+                </tr>
+
+                {/* Transaction Types */}
+                {Object.entries(financialSummary.transactionsByType)
+                  .sort(([a], [b]) => Number(a) - Number(b))
+                  .map(([type, data]) => (
+                    <tr key={type} className="border-b hover:bg-gray-50">
+                      <td className="py-2 px-4">
+                        <span className="font-medium">{getTransactionTypeLabel(type)}</span>
+                        <span className="text-xs text-muted-foreground ml-2">(Type {type})</span>
+                      </td>
+                      <td className="text-right py-2 px-4">{data.count}</td>
+                      <td className="text-right py-2 px-4 font-medium">
+                        {new Intl.NumberFormat('en-US', {
+                          style: 'currency',
+                          currency: 'USD',
+                          minimumFractionDigits: 0,
+                          maximumFractionDigits: 0,
+                        }).format(data.totalUSD)}
+                      </td>
+                    </tr>
+                  ))}
+
+                {/* Total Row */}
+                <tr className="bg-gray-100 font-bold">
+                  <td className="py-3 px-4">TOTAL (All Transactions)</td>
+                  <td className="text-right py-3 px-4">{financialSummary.transactionCount}</td>
+                  <td className="text-right py-3 px-4">
+                    {new Intl.NumberFormat('en-US', {
+                      style: 'currency',
+                      currency: 'USD',
+                      minimumFractionDigits: 0,
+                      maximumFractionDigits: 0,
+                    }).format(Object.values(financialSummary.transactionsByType).reduce((sum, t) => sum + t.totalUSD, 0))}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Tabs */}
       <Tabs value={tab} onValueChange={setTab} className="mb-6">

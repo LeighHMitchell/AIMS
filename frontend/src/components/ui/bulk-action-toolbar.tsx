@@ -34,8 +34,8 @@ export function BulkActionToolbar({
   const isProcessing = isDeleting || isAccepting || isRejecting;
 
   return (
-    <div 
-      className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50"
+    <div
+      className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-[70]"
       style={{
         animation: 'slideUpFromBottom 0.3s ease-out'
       }}

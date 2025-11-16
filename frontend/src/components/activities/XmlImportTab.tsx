@@ -2488,16 +2488,18 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
         });
       }
 
-      if (parsedActivity.crsChannelCode) {
+      if (parsedActivity.crsChannelCode && parsedActivity.financingTerms) {
         fields.push({
-          fieldName: 'CRS Channel Code',
-          iatiPath: 'iati-activity/crs-add/channel-code',
+          fieldName: 'DAC CRS Reporting',
+          iatiPath: 'iati-activity/crs-add',
           currentValue: null, // This field is not stored in the current system
           importValue: parsedActivity.crsChannelCode,
           selected: false, // Don't auto-select as it's optional
           hasConflict: false,
           tab: 'finances',
-          description: 'CRS Channel Code (optional)'
+          description: 'DAC CRS Reporting (optional)',
+          isCrsField: true,
+          crsData: parsedActivity.financingTerms
         });
       }
 

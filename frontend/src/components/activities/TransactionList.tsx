@@ -16,7 +16,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { FinancialSummaryCards } from '@/components/FinancialSummaryCards';
+import { TransactionTypeSummaryCards } from './TransactionTypeSummaryCards';
 import { 
   DropdownMenu, 
   DropdownMenuContent, 
@@ -1295,10 +1295,10 @@ export default function TransactionList({
           </div>
         )}
         <CardContent>
-          {/* Financial Summary Cards - Unified component */}
-          {activityId && !hideSummaryCards && (
+          {/* Transaction Type Summary Cards */}
+          {!hideSummaryCards && transactions.length > 0 && (
             <div className="mb-6">
-              <FinancialSummaryCards activityId={activityId} />
+              <TransactionTypeSummaryCards transactions={transactions} />
             </div>
           )}
 

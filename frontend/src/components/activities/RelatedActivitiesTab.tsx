@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { ExternalLink, Loader2, Link2, ArrowRight, ArrowLeft, Network, List } from 'lucide-react';
+import { ExternalLink, Loader2, Link2, ArrowRight, ArrowLeft, Network, List, Plus, RefreshCw, Trash2, AlertCircle } from 'lucide-react';
 import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -16,6 +16,8 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import RelatedActivitiesNetworkGraph from './RelatedActivitiesNetworkGraph';
+import { AddLinkedActivityModal } from '@/components/modals/AddLinkedActivityModal';
+import { toast } from 'sonner';
 
 interface RelatedActivity {
   id: string;
@@ -30,6 +32,8 @@ interface RelatedActivity {
   relationshipNarrative?: string;
   source: string;
   direction: 'incoming' | 'outgoing';
+  isExternal?: boolean;
+  isResolved?: boolean;
 }
 
 interface RelatedActivitiesTabProps {
@@ -68,6 +72,8 @@ export function RelatedActivitiesTab({ activityId, activityTitle = 'Current Acti
   const [relatedActivities, setRelatedActivities] = useState<RelatedActivity[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'table' | 'graph'>('table');
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [syncing, setSyncing] = useState(false);
 
   useEffect(() => {
     const fetchRelatedActivities = async () => {
@@ -95,6 +101,57 @@ export function RelatedActivitiesTab({ activityId, activityTitle = 'Current Acti
       fetchRelatedActivities();
     }
   }, [activityId]);
+
+  const handleSync = async () => {
+    // TODO: Implement sync functionality to check if external IATI IDs now exist in database
+    setSyncing(true);
+    try {
+      const response = await fetch(`/api/activities/${activityId}/sync-external-links`, {
+        method: 'POST',
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        toast.success(`Synced ${data.resolvedCount || 0} external link(s)`);
+        // Refresh the list
+        const refreshResponse = await fetch(`/api/activities/${activityId}/related-activities`);
+        if (refreshResponse.ok) {
+          const refreshedData = await refreshResponse.json();
+          setRelatedActivities(refreshedData || []);
+        }
+      } else {
+        toast.error('Failed to sync external links');
+      }
+    } catch (error) {
+      console.error('Error syncing:', error);
+      toast.error('Failed to sync external links');
+    } finally {
+      setSyncing(false);
+    }
+  };
+
+  const handleDelete = async (relationshipId: string) => {
+    if (!confirm('Are you sure you want to remove this linked activity?')) {
+      return;
+    }
+
+    try {
+      const response = await fetch(
+        `/api/activities/${activityId}/related-activities?relationship_id=${relationshipId}`,
+        { method: 'DELETE' }
+      );
+
+      if (response.ok) {
+        toast.success('Link removed successfully');
+        setRelatedActivities(prev => prev.filter(a => a.id !== relationshipId));
+      } else {
+        toast.error('Failed to remove link');
+      }
+    } catch (error) {
+      console.error('Error deleting link:', error);
+      toast.error('Failed to remove link');
+    }
+  };
 
   // Transform data for network graph
   const networkGraphData = useMemo(() => {
@@ -152,29 +209,76 @@ export function RelatedActivitiesTab({ activityId, activityTitle = 'Current Acti
     );
   }
 
+  const hasExternalLinks = relatedActivities.some(a => a.isExternal && !a.isResolved);
+
   if (relatedActivities.length === 0) {
     return (
-      <Card>
-        <CardContent className="py-12">
-          <div className="text-center text-slate-500">
-            <Link2 className="h-12 w-12 mx-auto mb-3 text-slate-300" />
-            <p className="text-sm">No related activities found</p>
-            <p className="text-xs mt-1 text-slate-400">
-              Related activities can be linked through the Activity Editor or Transaction forms
-            </p>
-          </div>
-        </CardContent>
-      </Card>
+      <>
+        <Card>
+          <CardContent className="py-12">
+            <div className="text-center text-slate-500">
+              <Link2 className="h-12 w-12 mx-auto mb-3 text-slate-300" />
+              <p className="text-sm mb-4">No related activities found</p>
+              <Button onClick={() => setShowAddModal(true)}>
+                <Plus className="h-4 w-4 mr-2" />
+                Add Linked Activity
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+        <AddLinkedActivityModal
+          isOpen={showAddModal}
+          onClose={() => setShowAddModal(false)}
+          activityId={activityId}
+          onSuccess={() => {
+            const refresh = async () => {
+              const response = await fetch(`/api/activities/${activityId}/related-activities`);
+              if (response.ok) {
+                const data = await response.json();
+                setRelatedActivities(data || []);
+              }
+            };
+            refresh();
+          }}
+        />
+      </>
     );
   }
 
   return (
     <div className="space-y-4">
+      {hasExternalLinks && (
+        <Alert>
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            You have external activity links that haven't been resolved yet. Click "Sync External Links" to check if these activities now exist in your database.
+          </AlertDescription>
+        </Alert>
+      )}
+
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
             <CardTitle className="text-lg">Related Activities</CardTitle>
             <div className="flex gap-2">
+              <Button
+                onClick={() => setShowAddModal(true)}
+                size="sm"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Add Link
+              </Button>
+              {hasExternalLinks && (
+                <Button
+                  onClick={handleSync}
+                  variant="outline"
+                  size="sm"
+                  disabled={syncing}
+                >
+                  <RefreshCw className={`h-4 w-4 mr-2 ${syncing ? 'animate-spin' : ''}`} />
+                  Sync External Links
+                </Button>
+              )}
               <Button
                 variant={viewMode === 'table' ? 'default' : 'outline'}
                 size="sm"
@@ -264,19 +368,40 @@ export function RelatedActivitiesTab({ activityId, activityTitle = 'Current Acti
                           </div>
                         </TableCell>
                         <TableCell>
-                          <span className="text-xs text-slate-600">
-                            {activity.source}
-                          </span>
+                          <div className="flex flex-col gap-1">
+                            <span className="text-xs text-slate-600">
+                              {activity.source}
+                            </span>
+                            {activity.isExternal && (
+                              <Badge variant="outline" className="text-xs w-fit bg-yellow-50 text-yellow-700 border-yellow-200">
+                                External
+                              </Badge>
+                            )}
+                          </div>
                         </TableCell>
                         <TableCell>
-                          <Link
-                            href={`/activities/${activity.id}`}
-                            target="_blank"
-                            className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800 text-sm"
-                          >
-                            <ExternalLink className="h-3 w-3" />
-                            <span className="sr-only">View activity</span>
-                          </Link>
+                          <div className="flex items-center gap-2">
+                            {!activity.isExternal && (
+                              <Link
+                                href={`/activities/${activity.id}`}
+                                target="_blank"
+                                className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800 text-sm"
+                              >
+                                <ExternalLink className="h-3 w-3" />
+                                <span className="sr-only">View activity</span>
+                              </Link>
+                            )}
+                            {activity.source === 'Linked Activities' || activity.isExternal ? (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleDelete(activity.id)}
+                                className="text-red-600 hover:text-red-800 hover:bg-red-50"
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </Button>
+                            ) : null}
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))}
@@ -301,11 +426,28 @@ export function RelatedActivitiesTab({ activityId, activityTitle = 'Current Acti
           )}
         </CardContent>
       </Card>
+
+      <AddLinkedActivityModal
+        isOpen={showAddModal}
+        onClose={() => setShowAddModal(false)}
+        activityId={activityId}
+        onSuccess={() => {
+          const refresh = async () => {
+            const response = await fetch(`/api/activities/${activityId}/related-activities`);
+            if (response.ok) {
+              const data = await response.json();
+              setRelatedActivities(data || []);
+            }
+          };
+          refresh();
+        }}
+      />
     </div>
   );
 }
 
 export default RelatedActivitiesTab;
+
 
 
 

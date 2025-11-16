@@ -2095,10 +2095,7 @@ export default function OrganizationProfilePage() {
                   <CardContent>
                     {sectorAllocations.length > 0 ? (
                       <Tabs value={sectorVisualizationTab} onValueChange={(value) => setSectorVisualizationTab(value as 'sankey' | 'sunburst')}>
-                        <TabsList className="grid w-full grid-cols-2 mb-6">
-                          <TabsTrigger value="sankey">Sankey Flow</TabsTrigger>
-                          <TabsTrigger value="sunburst">Sunburst</TabsTrigger>
-                        </TabsList>
+                        {/* Tab headers removed per design; selection is controlled externally */}
                         
                         <TabsContent value="sankey" className="mt-4">
                           <div className="relative overflow-hidden h-[600px]">

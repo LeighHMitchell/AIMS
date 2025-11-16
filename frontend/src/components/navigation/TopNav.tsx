@@ -52,7 +52,7 @@ export function TopNav({ user, canCreateActivities, isInActivityEditor = false, 
   const router = useRouter();
   const [isFeedbackModalOpen, setIsFeedbackModalOpen] = useState(false);
   const [showQuickAddModal, setShowQuickAddModal] = useState(false);
-  const [showImportModal, setShowImportModal] = useState(false);
+  const [isImporting, setIsImporting] = useState(false);
 
   // Function to construct full name - only FirstName LastName
   const getFullName = (user: TopNavProps['user']) => {
@@ -107,7 +107,36 @@ export function TopNav({ user, canCreateActivities, isInActivityEditor = false, 
                     <span className="text-xs text-muted-foreground">Minimal activity creation</span>
                   </div>
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setShowImportModal(true)}>
+                <DropdownMenuItem
+                  onClick={async () => {
+                    if (!user?.id || isImporting) return;
+                    setIsImporting(true);
+                    try {
+                      const response = await fetch('/api/activities', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                          title: 'Imported Activity (Draft)',
+                          description: 'Activity created via IATI/XML import',
+                          status: '1',
+                          user_id: user.id,
+                          created_via: 'import',
+                        }),
+                      });
+                      if (!response.ok) {
+                        const err = await response.json();
+                        throw new Error(err.error || 'Failed to create draft activity');
+                      }
+                      const newActivity = await response.json();
+                      router.push(`/activities/new?id=${newActivity.id}&tab=xml-import`);
+                    } catch (e) {
+                      console.error('Failed to start import', e);
+                    } finally {
+                      setIsImporting(false);
+                    }
+                  }}
+                  disabled={isImporting}
+                >
                   <Upload className="mr-2 h-4 w-4" />
                   <div className="flex flex-col">
                     <span className="font-medium">Import from IATI/XML</span>
@@ -230,12 +259,7 @@ export function TopNav({ user, canCreateActivities, isInActivityEditor = false, 
         user={user}
       />
 
-      {/* Import Activity Modal */}
-      <ImportActivityModal
-        isOpen={showImportModal}
-        onClose={() => setShowImportModal(false)}
-        user={user}
-      />
+      {/* Import Activity Modal (unused: direct navigation implemented) */}
     </nav>
   )
 }

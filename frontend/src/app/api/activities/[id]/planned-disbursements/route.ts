@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase';
 import { resolveCurrency, resolveValueDate } from '@/lib/currency-helpers';
 import { getOrCreateOrganization } from '@/lib/organization-helpers';
+import { fixedCurrencyConverter } from '@/lib/currency-converter-fixed';
 
 export async function GET(
   request: NextRequest,
@@ -24,11 +25,13 @@ export async function GET(
     }
 
     // Fetch planned disbursements for the activity
+    // Order by sequence_index first (to preserve XML order), then by period_start as fallback
     console.log('[PlannedDisbursementsAPI] Querying planned_disbursements table...');
     const { data: disbursements, error } = await supabase
       .from('planned_disbursements')
       .select('*')
       .eq('activity_id', activityId)
+      .order('sequence_index', { ascending: true, nullsLast: true })
       .order('period_start', { ascending: true });
 
     console.log('[PlannedDisbursementsAPI] Query result:', { 
@@ -107,9 +110,26 @@ export async function POST(
       body.period_start
     );
 
+    // Perform USD conversion server-side (like Transactions)
+    let usdAmount: number | null = null;
+    const amount = Number(body.amount);
+
+    if (resolvedCurrency === 'USD') {
+      usdAmount = amount;
+    } else {
+      const conversionDate = new Date(resolvedValueDate);
+      const result = await fixedCurrencyConverter.convertToUSD(amount, resolvedCurrency, conversionDate);
+      if (result.success && result.usd_amount !== null) {
+        usdAmount = result.usd_amount;
+        console.log(`[PlannedDisbursementsAPI] Converted ${amount} ${resolvedCurrency} to $${usdAmount} USD`);
+      } else {
+        console.warn(`[PlannedDisbursementsAPI] Currency conversion failed: ${result.error}`);
+      }
+    }
+
     const disbursementData = {
       activity_id: activityId,
-      amount: Number(body.amount),
+      amount: amount,
       currency: resolvedCurrency,
       period_start: body.period_start,
       period_end: body.period_end,
@@ -119,11 +139,13 @@ export async function POST(
       receiver_org_name: body.receiver_org_name || null,
       status: body.status || 'original',
       value_date: resolvedValueDate,
-      notes: body.notes || null
+      notes: body.notes || null,
+      usd_amount: usdAmount
     };
 
     console.log(`[PlannedDisbursementsAPI] Resolved currency: ${resolvedCurrency} (from ${body.currency || 'missing'}), value_date: ${resolvedValueDate}`);
     console.log(`[PlannedDisbursementsAPI] Resolved provider_org_id: ${providerOrgId}, receiver_org_id: ${receiverOrgId}`);
+    console.log(`[PlannedDisbursementsAPI] USD conversion: ${amount} ${resolvedCurrency} = $${usdAmount} USD`);
 
     const { data: disbursement, error } = await supabase
       .from('planned_disbursements')

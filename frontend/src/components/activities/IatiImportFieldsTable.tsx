@@ -4,7 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
-import { AlertCircle, ArrowUpDown, ArrowUp, ArrowDown, Search, ChevronDown, ChevronRight, Copy, Check, ChevronUp, Calendar, DollarSign, Tag, FileText, ExternalLink, MapPin, Building2 } from 'lucide-react';
+import { AlertCircle, ArrowUpDown, ArrowUp, ArrowDown, Search, ChevronDown, ChevronRight, Copy, Check, CheckCircle2, ChevronUp, Calendar, DollarSign, Tag, FileText, ExternalLink, MapPin, Building2 } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { toast } from 'sonner';
 import { getOrganizationRoleName } from '@/data/iati-organization-roles';
@@ -40,6 +40,9 @@ interface ParsedField {
   locationData?: any;
   isFssItem?: boolean;
   fssData?: any;
+  isCrsField?: boolean;
+  crsData?: any;
+  currentCrsData?: any;
   isInherited?: boolean;
   inheritedFrom?: string;
   category?: string;
@@ -71,6 +74,7 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
   const [sortColumn, setSortColumn] = useState<SortColumn>('fieldName');
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
   const [showConflictsOnly, setShowConflictsOnly] = useState(false);
+  const [showMissingOnly, setShowMissingOnly] = useState(false);
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
   const [copiedValues, setCopiedValues] = useState<Set<string>>(new Set());
   const [expandedTexts, setExpandedTexts] = useState<Set<string>>(new Set());
@@ -238,10 +242,15 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
     if (value === null || value === undefined || value === '') {
       return { text: '', isEmpty: true };
     }
-    
+
     if (typeof value === 'object') {
       if (Array.isArray(value)) {
         return { text: `[${value.length} items]` };
+      }
+      // Handle financial item objects (budgets, transactions, planned disbursements) - show only currency and value
+      if (value.value !== undefined && value.currency) {
+        const formattedValue = typeof value.value === 'number' ? value.value.toLocaleString() : value.value;
+        return { text: `${value.currency} ${formattedValue}`, isCode: false };
       }
       // Handle structured date objects (date + narratives)
       if (value.date) {
@@ -936,13 +945,13 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
     // Special handling for Tags field - render as badges
     if (field?.isTagField && (field.tagData || field.existingTags)) {
       const tags = column === 'import' ? (field.tagData || []) : (field.existingTags || []);
-      
+
       // Helper to get badge color variant based on vocabulary or code
       // All tags use shades of IATI color #135667
       const getTagBadgeColor = (tag: any, index: number) => {
         const vocab = String(tag.vocabulary || '');
         const code = String(tag.code || '');
-        
+
         // IATI color shades palette based on #135667
         const iatiShades = [
           'bg-[#e6f0f2] text-[#0f4552] border-[#99c3cb]',
@@ -960,27 +969,27 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
           'bg-[#e6f0f2] text-[#135667] border-[#99c3cb]',
           'bg-[#cce1e5] text-[#135667] border-[#66a5b1]'
         ];
-        
+
         // Color based on hash of code for consistency
         if (code) {
           const hash = code.split('').reduce((acc: number, char: string) => acc + char.charCodeAt(0), 0);
           return iatiShades[hash % iatiShades.length];
         }
-        
+
         // Fallback based on index
         return iatiShades[index % iatiShades.length];
       };
-      
+
       if (tags.length === 0) {
         return <span className="text-gray-400 italic">—</span>;
       }
-      
+
       return (
         <div className="flex flex-wrap gap-1.5">
           {tags.map((tag: any, idx: number) => (
-            <Badge 
-              key={idx} 
-              variant="outline" 
+            <Badge
+              key={idx}
+              variant="outline"
               className={`${getTagBadgeColor(tag, idx)} border px-2 py-0.5 rounded-md text-xs font-medium`}
             >
               {column === 'import' ? (tag.narrative || 'Unnamed tag') : (tag.name || tag.narrative || 'Unnamed tag')}
@@ -989,7 +998,48 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
         </div>
       );
     }
-    
+
+    // Special handling for Country Budget Items - show code/percentage with vocabulary below
+    // TEMPORARILY DISABLED FOR DEBUGGING
+    if (false && field?.itemType === 'countryBudgetItems' && field?.itemData && column === 'import') {
+      const itemData = field.itemData;
+      const budgetItem = itemData.budget_items?.[0];
+
+      if (!budgetItem) {
+        return <span className="text-gray-400 italic">—</span>;
+      }
+
+      // Get vocabulary label
+      const vocabLabel = itemData.vocabulary === '1' ? 'IATI' :
+                        itemData.vocabulary === '2' ? 'COFOG' :
+                        itemData.vocabulary === '3' ? 'COFOG (2014)' :
+                        itemData.vocabulary === '4' ? 'COFOG' :
+                        itemData.vocabulary === '5' ? 'Other' :
+                        itemData.vocabulary === '99' ? 'Reporting Organisation' : '';
+
+      // Prefer narrative/description over code, display code in monospace with gray background if no narrative
+      const displayText = budgetItem.description || budgetItem.narrative;
+      const showCode = !displayText && budgetItem.code;
+
+      return (
+        <div className="flex flex-col">
+          <div className="flex items-center gap-2 text-sm">
+            {displayText ? (
+              <span className="text-gray-900">{displayText}</span>
+            ) : showCode ? (
+              <code className="font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
+                {budgetItem.code}
+              </code>
+            ) : null}
+            {budgetItem.percentage !== undefined && (
+              <span className="text-gray-900">{budgetItem.percentage}%</span>
+            )}
+          </div>
+          <span className="text-xs text-gray-500">{vocabLabel}</span>
+        </div>
+      );
+    }
+
     const formatted = formatValue(value, fieldName);
     const cellId = getValueCellId(rowId, column);
     
@@ -1020,17 +1070,18 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
     // Code with name
     if (formatted.code && formatted.name) {
       // Check if this is a description field
-      const isActivityDescription = fieldName === 'Activity Description' || 
+      const isActivityDescription = fieldName === 'Activity Description' ||
                                    fieldName === 'Activity Description - Objectives' ||
                                    fieldName === 'Activity Description - Target Groups' ||
                                    fieldName === 'Activity Description - Other' ||
                                    fieldName === 'Description';
-      
+
       // For descriptions, apply 75-word limit with "Show more"
-      const nameText = formatted.name;
+      // Ensure nameText is a string (it might be an object in some cases)
+      const nameText = typeof formatted.name === 'string' ? formatted.name : String(formatted.name);
       const words = nameText.trim().split(/\s+/);
       const needsTruncation = isActivityDescription && words.length > MAX_DESCRIPTION_WORDS;
-      
+
       return (
         <span>
           {needsTruncation ? renderExpandableText(nameText, cellId, true) : nameText}
@@ -1218,8 +1269,49 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
       result = result.filter(field => field.hasConflict && field.selected);
     }
 
+    // Apply missing current value filter
+    if (showMissingOnly) {
+      result = result.filter(field => {
+        // Check if current value is null, undefined, empty string, or empty array
+        const isEmpty = field.currentValue === null ||
+                       field.currentValue === undefined ||
+                       field.currentValue === '' ||
+                       (Array.isArray(field.currentValue) && field.currentValue.length === 0);
+        return isEmpty && field.selected;
+      });
+    }
+
     return result;
-  }, [allFields, searchQuery, showConflictsOnly]);
+  }, [allFields, searchQuery, showConflictsOnly, showMissingOnly]);
+
+  // Helper function to check if current and import values match
+  const valuesMatch = (field: ParsedField): boolean => {
+    const { currentValue, importValue } = field;
+
+    // If current value doesn't exist, it's not a match
+    if (!currentValue && currentValue !== 0) return false;
+
+    // If import value doesn't exist, it's not a match
+    if (!importValue && importValue !== 0) return false;
+
+    // Handle object comparison (e.g., for coded fields that return {code, name})
+    if (typeof currentValue === 'object' && typeof importValue === 'object') {
+      if (currentValue === null || importValue === null) {
+        return currentValue === importValue;
+      }
+
+      // For objects with code property (common in IATI fields)
+      if ('code' in currentValue && 'code' in importValue) {
+        return String(currentValue.code) === String(importValue.code);
+      }
+
+      // Deep comparison for other objects
+      return JSON.stringify(currentValue) === JSON.stringify(importValue);
+    }
+
+    // String comparison (normalize whitespace and case for flexibility)
+    return String(currentValue).trim() === String(importValue).trim();
+  };
 
   // Sort filtered fields
   const sortedFields = useMemo(() => {
@@ -1397,6 +1489,16 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
           </label>
         </div>
         <div className="flex items-center gap-2">
+          <Switch
+            id="missing-only"
+            checked={showMissingOnly}
+            onCheckedChange={setShowMissingOnly}
+          />
+          <label htmlFor="missing-only" className="text-sm font-medium cursor-pointer">
+            Missing only
+          </label>
+        </div>
+        <div className="flex items-center gap-2">
           <Button variant="outline" size="sm" onClick={onSelectAll}>
             Select All
           </Button>
@@ -1545,11 +1647,12 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                   
                   return (
                     <React.Fragment key={rowId}>
-                      <TableRow 
+                      <TableRow
                         className={`
                           group
                           ${field.hasConflict && field.selected ? 'bg-orange-50' : ''}
-                          ${field.selected ? 'bg-white' : ''}
+                          ${!field.hasConflict && valuesMatch(field) && field.selected ? 'bg-green-50' : ''}
+                          ${field.selected && !field.hasConflict && !valuesMatch(field) ? 'bg-white' : ''}
                           hover:bg-gray-100 transition-colors
                         `}
                       >
@@ -1592,6 +1695,18 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                 </TooltipTrigger>
                                 <TooltipContent>
                                   <p>This field has conflicting values</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          )}
+                          {!field.hasConflict && valuesMatch(field) && (
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger>
+                                  <CheckCircle2 className="h-4 w-4 text-green-600 mx-auto" />
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p>Current and import values match</p>
                                 </TooltipContent>
                               </Tooltip>
                             </TooltipProvider>
@@ -1698,7 +1813,7 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                               )}
                                               {orgData.crsChannelCode && (
                                                 <tr className="border-b border-gray-100 align-top">
-                                                  <td className="py-1.5 pr-2 font-medium text-gray-600">CRS Channel Code:</td>
+                                                  <td className="py-1.5 pr-2 font-medium text-gray-600">DAC CRS Reporting:</td>
                                                   <td className="py-1.5 text-gray-900">
                                                     <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
                                                       {orgData.crsChannelCode}
@@ -1814,19 +1929,16 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                                 </tr>
                                               )}
                                               {relatedActivityData.type && (
-                                                <tr className="border-b border-gray-100 align-top">
-                                                  <td className="py-1.5 pr-2 font-medium text-gray-600">Type:</td>
+                                                <tr className="align-top">
+                                                  <td className="py-1.5 pr-2 font-medium text-gray-600">Type & Relationship:</td>
                                                   <td className="py-1.5 text-gray-900">
                                                     <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
                                                       {relatedActivityData.type}
                                                     </code>
+                                                    {relatedActivityData.relationshipTypeLabel && (
+                                                      <span className="ml-2 text-gray-700">({relatedActivityData.relationshipTypeLabel})</span>
+                                                    )}
                                                   </td>
-                                                </tr>
-                                              )}
-                                              {relatedActivityData.relationshipTypeLabel && (
-                                                <tr className="align-top">
-                                                  <td className="py-1.5 pr-2 font-medium text-gray-600">Relationship:</td>
-                                                  <td className="py-1.5 text-gray-900">{relatedActivityData.relationshipTypeLabel}</td>
                                                 </tr>
                                               )}
                                             </tbody>
@@ -1850,19 +1962,16 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                                   </tr>
                                                 )}
                                                 {field.currentValue.type && (
-                                                  <tr className="border-b border-gray-100 align-top">
-                                                    <td className="py-1.5 pr-2 font-medium text-gray-600">Type:</td>
+                                                  <tr className="align-top">
+                                                    <td className="py-1.5 pr-2 font-medium text-gray-600">Type & Relationship:</td>
                                                     <td className="py-1.5 text-gray-900">
                                                       <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
                                                         {field.currentValue.type}
                                                       </code>
+                                                      {field.currentValue.relationshipTypeLabel && (
+                                                        <span className="ml-2 text-gray-700">({field.currentValue.relationshipTypeLabel})</span>
+                                                      )}
                                                     </td>
-                                                  </tr>
-                                                )}
-                                                {field.currentValue.relationshipTypeLabel && (
-                                                  <tr className="align-top">
-                                                    <td className="py-1.5 pr-2 font-medium text-gray-600">Relationship:</td>
-                                                    <td className="py-1.5 text-gray-900">{field.currentValue.relationshipTypeLabel}</td>
                                                   </tr>
                                                 )}
                                               </tbody>
@@ -2161,9 +2270,12 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
 
                                 // Helper to format vocabulary label
                                 const getVocabLabel = (vocab: string) => {
-                                  if (vocab === '1') return 'Standard';
-                                  if (vocab === '99') return 'Custom';
-                                  return vocab ? `Vocab ${vocab}` : '';
+                                  if (vocab === '1') return 'Agrovoc';
+                                  if (vocab === '2') return 'UN Sustainable Development Goals (SDG)';
+                                  if (vocab === '3') return 'UN Sustainable Development Goals (SDG) Targets';
+                                  if (vocab === '4') return 'Team Europe Initiatives';
+                                  if (vocab === '99') return 'Reporting Organisation';
+                                  return '';
                                 };
 
                                 // Helper to get badge color variant based on vocabulary or code
@@ -2233,45 +2345,50 @@ ${importTags.map((tag: any) => {
                                       <div className="bg-gray-50 rounded-md p-3 border border-gray-200">
                                         <div className="text-xs font-semibold text-gray-700 mb-2">Import Value</div>
                                         {importTags.length > 0 ? (
-                                          <table className="w-full text-xs">
-                                            <tbody>
-                                              {importTags.map((tag: any, idx: number) => (
-                                                <React.Fragment key={idx}>
-                                                  {tag.vocabulary && (
-                                                    <tr className="border-b border-gray-100 align-top">
-                                                      <td className="py-1.5 pr-2 font-medium text-gray-600">Vocabulary:</td>
-                                                      <td className="py-1.5 text-gray-900">
-                                                        <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
-                                                          {tag.vocabulary}
-                                                        </code>
-                                                        <span className="ml-2">{getVocabLabel(String(tag.vocabulary))}</span>
-                                                      </td>
+                                          <>
+                                            <table className="w-full text-xs">
+                                              <tbody>
+                                                {importTags.map((tag: any, idx: number) => (
+                                                  <React.Fragment key={idx}>
+                                                    {tag.vocabulary && (
+                                                      <tr className="border-b border-gray-100 align-top">
+                                                        <td className="py-1.5 pr-2 font-medium text-gray-400">Vocabulary:</td>
+                                                        <td className="py-1.5 text-gray-400">
+                                                          <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                            {tag.vocabulary}
+                                                          </code>
+                                                          <span className="ml-2">{getVocabLabel(String(tag.vocabulary))}</span>
+                                                        </td>
+                                                      </tr>
+                                                    )}
+                                                    {tag.vocabularyUri && (
+                                                      <tr className="border-b border-gray-100 align-top">
+                                                        <td className="py-1.5 pr-2 font-medium text-gray-600">Vocabulary URI:</td>
+                                                        <td className="py-1.5 text-gray-900 break-all">{tag.vocabularyUri}</td>
+                                                      </tr>
+                                                    )}
+                                                    {tag.code && (
+                                                      <tr className="border-b border-gray-100 align-top">
+                                                        <td className="py-1.5 pr-2 font-medium text-gray-400">Code:</td>
+                                                        <td className="py-1.5 text-gray-400">
+                                                          <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                            {tag.code}
+                                                          </code>
+                                                        </td>
+                                                      </tr>
+                                                    )}
+                                                    <tr className={idx < importTags.length - 1 ? "border-b-2 border-gray-300 align-top" : "align-top"}>
+                                                      <td className="py-1.5 pr-2 font-medium text-gray-600">Narrative:</td>
+                                                      <td className="py-1.5 text-gray-900">{tag.narrative || '—'}</td>
                                                     </tr>
-                                                  )}
-                                                  {tag.vocabularyUri && (
-                                                    <tr className="border-b border-gray-100 align-top">
-                                                      <td className="py-1.5 pr-2 font-medium text-gray-600">Vocabulary URI:</td>
-                                                      <td className="py-1.5 text-gray-900 break-all">{tag.vocabularyUri}</td>
-                                                    </tr>
-                                                  )}
-                                                  {tag.code && (
-                                                    <tr className="border-b border-gray-100 align-top">
-                                                      <td className="py-1.5 pr-2 font-medium text-gray-600">Code:</td>
-                                                      <td className="py-1.5 text-gray-900">
-                                                        <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
-                                                          {tag.code}
-                                                        </code>
-                                                      </td>
-                                                    </tr>
-                                                  )}
-                                                  <tr className={idx < importTags.length - 1 ? "border-b-2 border-gray-300 align-top" : "align-top"}>
-                                                    <td className="py-1.5 pr-2 font-medium text-gray-600">Narrative:</td>
-                                                    <td className="py-1.5 text-gray-900">{tag.narrative || '—'}</td>
-                                                  </tr>
-                                                </React.Fragment>
-                                              ))}
-                                            </tbody>
-                                          </table>
+                                                  </React.Fragment>
+                                                ))}
+                                              </tbody>
+                                            </table>
+                                            <div className="mt-2 text-xs text-gray-500 italic">
+                                              Note: Grayed-out fields are recognized but not currently imported by the system
+                                            </div>
+                                          </>
                                         ) : (
                                           <div className="text-xs text-gray-500 italic">No tags to import</div>
                                         )}
@@ -2463,8 +2580,13 @@ ${importTags.map((tag: any) => {
                                                  'Financial Item';
 
                                 // Generate XML snippet based on item type
+                                // Use stored rawXml if available (preserves exact XML fragment), otherwise generate
                                 let xmlSnippet = '';
-                                if (field.itemType === 'budget') {
+
+                                // Check if item has rawXml property (from parser)
+                                if (item.rawXml) {
+                                  xmlSnippet = item.rawXml;
+                                } else if (field.itemType === 'budget') {
                                   xmlSnippet = `<budget type="${item.type || ''}" status="${item.status || ''}">
   <period-start iso-date="${item.period?.start || item.start || ''}" />
   <period-end iso-date="${item.period?.end || item.end || ''}" />
@@ -2517,23 +2639,30 @@ ${budgetItems.map((bi: any) => `  <budget-item code="${bi.code || ''}"${bi.perce
                                       <div className="bg-gray-50 rounded-md p-3 border border-gray-200">
                                         <div className="text-xs font-semibold text-gray-700 mb-2">Import Value</div>
                                         {field.itemType === 'countryBudgetItems' ? (
-                                          // Special display for country budget items
+                                          // Special display for country budget items - show each mapping as a complete row
                                           <table className="w-full text-xs">
                                             <tbody>
-                                              {item.vocabulary && (
-                                                <tr className="border-b border-gray-100 align-top">
-                                                  <td className="py-1.5 pr-2 font-medium text-gray-600">Vocabulary:</td>
-                                                  <td className="py-1.5 text-gray-900">
-                                                    <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
-                                                      {item.vocabulary}
-                                                    </code>
-                                                  </td>
-                                                </tr>
-                                              )}
                                               {item.budget_items && item.budget_items.map((bi: any, biIdx: number) => (
                                                 <React.Fragment key={biIdx}>
+                                                  {item.vocabulary && (
+                                                    <tr className="border-b border-gray-100 align-top">
+                                                      <td className="py-1.5 pr-2 font-medium text-gray-600">Vocabulary:</td>
+                                                      <td className="py-1.5 text-gray-900">
+                                                        <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                          {item.vocabulary}
+                                                        </code>
+                                                        <span className="ml-2">
+                                                          {item.vocabulary === '1' ? 'IATI' :
+                                                           item.vocabulary === '2' ? 'COFOG' :
+                                                           item.vocabulary === '3' ? 'COFOG (2014)' :
+                                                           item.vocabulary === '4' ? 'COFOG' :
+                                                           item.vocabulary === '99' ? 'Reporting Organisation' : ''}
+                                                        </span>
+                                                      </td>
+                                                    </tr>
+                                                  )}
                                                   <tr className="border-b border-gray-100 align-top">
-                                                    <td className="py-1.5 pr-2 font-medium text-gray-600">Code:</td>
+                                                    <td className="py-1.5 pr-2 font-medium text-gray-600">Item Code:</td>
                                                     <td className="py-1.5 text-gray-900">
                                                       <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
                                                         {bi.code}
@@ -2542,7 +2671,7 @@ ${budgetItems.map((bi: any) => `  <budget-item code="${bi.code || ''}"${bi.perce
                                                   </tr>
                                                   {bi.percentage !== undefined && (
                                                     <tr className="border-b border-gray-100 align-top">
-                                                      <td className="py-1.5 pr-2 font-medium text-gray-600">Percentage:</td>
+                                                      <td className="py-1.5 pr-2 font-medium text-gray-600">% of Activity Budget:</td>
                                                       <td className="py-1.5 text-gray-900">{bi.percentage}%</td>
                                                     </tr>
                                                   )}
@@ -2626,7 +2755,7 @@ ${budgetItems.map((bi: any) => `  <budget-item code="${bi.code || ''}"${bi.perce
                                               </tr>
                                             )}
                                             {item.transaction_type && (
-                                              <tr className="align-top">
+                                              <tr className="border-b border-gray-100 align-top">
                                                 <td className="py-1.5 pr-2 font-medium text-gray-600">Transaction Type:</td>
                                                 <td className="py-1.5 text-gray-900">
                                                   <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
@@ -2635,6 +2764,32 @@ ${budgetItems.map((bi: any) => `  <budget-item code="${bi.code || ''}"${bi.perce
                                                   {item.transaction_type_name && (
                                                     <span className="ml-2">{item.transaction_type_name}</span>
                                                   )}
+                                                </td>
+                                              </tr>
+                                            )}
+                                            {(item.providerOrg?.ref || item.providerOrg?.name) && (
+                                              <tr className="border-b border-gray-100 align-top">
+                                                <td className="py-1.5 pr-2 font-medium text-gray-600">Provider Org:</td>
+                                                <td className="py-1.5 text-gray-900">
+                                                  {item.providerOrg?.ref && (
+                                                    <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded mr-2">
+                                                      {item.providerOrg.ref}
+                                                    </code>
+                                                  )}
+                                                  {item.providerOrg?.name}
+                                                </td>
+                                              </tr>
+                                            )}
+                                            {(item.receiverOrg?.ref || item.receiverOrg?.name) && (
+                                              <tr className="align-top">
+                                                <td className="py-1.5 pr-2 font-medium text-gray-600">Receiver Org:</td>
+                                                <td className="py-1.5 text-gray-900">
+                                                  {item.receiverOrg?.ref && (
+                                                    <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded mr-2">
+                                                      {item.receiverOrg.ref}
+                                                    </code>
+                                                  )}
+                                                  {item.receiverOrg?.name}
                                                 </td>
                                               </tr>
                                             )}
@@ -2669,13 +2824,49 @@ ${budgetItems.map((bi: any) => `  <budget-item code="${bi.code || ''}"${bi.perce
                                                   <td className="py-1.5 text-gray-900">{formatDateDisplay(field.currentValue.period?.end || field.currentValue.end)}</td>
                                                 </tr>
                                               )}
+                                              {field.currentValue.value_date && (
+                                                <tr className="border-b border-gray-100 align-top">
+                                                  <td className="py-1.5 pr-2 font-medium text-gray-600">Value Date:</td>
+                                                  <td className="py-1.5 text-gray-900">
+                                                    <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                      {field.currentValue.value_date}
+                                                    </code>
+                                                  </td>
+                                                </tr>
+                                              )}
                                               {field.currentValue.type && (
-                                                <tr className="align-top">
+                                                <tr className="border-b border-gray-100 align-top">
                                                   <td className="py-1.5 pr-2 font-medium text-gray-600">Type:</td>
                                                   <td className="py-1.5 text-gray-900">
                                                     <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
                                                       {field.currentValue.type}
                                                     </code>
+                                                  </td>
+                                                </tr>
+                                              )}
+                                              {(field.currentValue.provider_org_ref || field.currentValue.provider_org_name) && (
+                                                <tr className="border-b border-gray-100 align-top">
+                                                  <td className="py-1.5 pr-2 font-medium text-gray-600">Provider Org:</td>
+                                                  <td className="py-1.5 text-gray-900">
+                                                    {field.currentValue.provider_org_ref && (
+                                                      <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded mr-2">
+                                                        {field.currentValue.provider_org_ref}
+                                                      </code>
+                                                    )}
+                                                    {field.currentValue.provider_org_name}
+                                                  </td>
+                                                </tr>
+                                              )}
+                                              {(field.currentValue.receiver_org_ref || field.currentValue.receiver_org_name) && (
+                                                <tr className="border-b border-gray-100 align-top">
+                                                  <td className="py-1.5 pr-2 font-medium text-gray-600">Receiver Org:</td>
+                                                  <td className="py-1.5 text-gray-900">
+                                                    {field.currentValue.receiver_org_ref && (
+                                                      <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded mr-2">
+                                                        {field.currentValue.receiver_org_ref}
+                                                      </code>
+                                                    )}
+                                                    {field.currentValue.receiver_org_name}
                                                   </td>
                                                 </tr>
                                               )}
@@ -2932,7 +3123,260 @@ ${narrativeLines}
                                   </div>
                                 );
                               }
-                              
+
+                              // DAC CRS Reporting - show all CRS data in table
+                              if (field.isCrsField && field.crsData) {
+                                const crsData = field.crsData;
+                                const xmlSnippet = extractXmlSnippet(field.iatiPath);
+                                const sectionTitle = field.fieldName === 'Financing Terms' ? 'Financing Terms' : 'DAC CRS Reporting Details';
+
+                                return (
+                                  <div className="mb-6 border-b border-gray-200 pb-6">
+                                    <div className="text-sm font-semibold mb-3 text-gray-900 flex items-center gap-2">
+                                      <DollarSign className="h-4 w-4" />
+                                      {sectionTitle}
+                                    </div>
+
+                                    {/* 3-column layout */}
+                                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                                      {/* Column 1: Raw XML */}
+                                      <div className="bg-gray-50 rounded-md p-3 border border-gray-200">
+                                        <div className="text-xs font-semibold text-gray-700 mb-2">Raw XML</div>
+                                        <pre className="text-xs font-mono text-gray-800 overflow-x-auto whitespace-pre-wrap break-all">
+{xmlSnippet}
+                                        </pre>
+                                      </div>
+
+                                      {/* Column 2: Import Value */}
+                                      <div className="bg-gray-50 rounded-md p-3 border border-gray-200">
+                                        <div className="text-xs font-semibold text-gray-700 mb-2">Import Value</div>
+                                        <table className="w-full text-xs">
+                                          <tbody>
+                                            {crsData.channel_code && (
+                                              <tr className="border-b border-gray-100 align-top">
+                                                <td className="py-1.5 pr-2 font-medium text-gray-600">Channel Code:</td>
+                                                <td className="py-1.5 text-gray-900">
+                                                  <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                    {crsData.channel_code}
+                                                  </code>
+                                                </td>
+                                              </tr>
+                                            )}
+                                            {crsData.other_flags && crsData.other_flags.length > 0 && crsData.other_flags.map((flag: any, idx: number) => (
+                                              <React.Fragment key={idx}>
+                                                <tr className="border-b border-gray-100 align-top">
+                                                  <td className="py-1.5 pr-2 font-medium text-gray-600">Other Flags Code:</td>
+                                                  <td className="py-1.5 text-gray-900">
+                                                    <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                      {flag.code}
+                                                    </code>
+                                                  </td>
+                                                </tr>
+                                                <tr className="border-b border-gray-100 align-top">
+                                                  <td className="py-1.5 pr-2 font-medium text-gray-600">Significance:</td>
+                                                  <td className="py-1.5 text-gray-900">
+                                                    <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                      {flag.significance}
+                                                    </code>
+                                                  </td>
+                                                </tr>
+                                              </React.Fragment>
+                                            ))}
+                                            {crsData.loanTerms && (
+                                              <React.Fragment>
+                                                {crsData.loanTerms.rate_1 !== undefined && (
+                                                  <tr className="border-b border-gray-100 align-top">
+                                                    <td className="py-1.5 pr-2 font-medium text-gray-600">Rate 1:</td>
+                                                    <td className="py-1.5 text-gray-900">{crsData.loanTerms.rate_1}%</td>
+                                                  </tr>
+                                                )}
+                                                {crsData.loanTerms.rate_2 !== undefined && (
+                                                  <tr className="border-b border-gray-100 align-top">
+                                                    <td className="py-1.5 pr-2 font-medium text-gray-600">Rate 2:</td>
+                                                    <td className="py-1.5 text-gray-900">{crsData.loanTerms.rate_2}%</td>
+                                                  </tr>
+                                                )}
+                                                {crsData.loanTerms.repayment_type_code && (
+                                                  <tr className="border-b border-gray-100 align-top">
+                                                    <td className="py-1.5 pr-2 font-medium text-gray-600">Repayment Type:</td>
+                                                    <td className="py-1.5 text-gray-900">
+                                                      <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                        {crsData.loanTerms.repayment_type_code}
+                                                      </code>
+                                                    </td>
+                                                  </tr>
+                                                )}
+                                                {crsData.loanTerms.repayment_plan_code && (
+                                                  <tr className="border-b border-gray-100 align-top">
+                                                    <td className="py-1.5 pr-2 font-medium text-gray-600">Repayment Plan:</td>
+                                                    <td className="py-1.5 text-gray-900">
+                                                      <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                        {crsData.loanTerms.repayment_plan_code}
+                                                      </code>
+                                                    </td>
+                                                  </tr>
+                                                )}
+                                                {crsData.loanTerms.commitment_date && (
+                                                  <tr className="border-b border-gray-100 align-top">
+                                                    <td className="py-1.5 pr-2 font-medium text-gray-600">Commitment Date:</td>
+                                                    <td className="py-1.5 text-gray-900">
+                                                      <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                        {crsData.loanTerms.commitment_date}
+                                                      </code>
+                                                    </td>
+                                                  </tr>
+                                                )}
+                                                {crsData.loanTerms.repayment_first_date && (
+                                                  <tr className="border-b border-gray-100 align-top">
+                                                    <td className="py-1.5 pr-2 font-medium text-gray-600">Repayment First Date:</td>
+                                                    <td className="py-1.5 text-gray-900">
+                                                      <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                        {crsData.loanTerms.repayment_first_date}
+                                                      </code>
+                                                    </td>
+                                                  </tr>
+                                                )}
+                                                {crsData.loanTerms.repayment_final_date && (
+                                                  <tr className="border-b border-gray-100 align-top">
+                                                    <td className="py-1.5 pr-2 font-medium text-gray-600">Repayment Final Date:</td>
+                                                    <td className="py-1.5 text-gray-900">
+                                                      <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                        {crsData.loanTerms.repayment_final_date}
+                                                      </code>
+                                                    </td>
+                                                  </tr>
+                                                )}
+                                              </React.Fragment>
+                                            )}
+                                            {crsData.loanStatuses && crsData.loanStatuses.length > 0 && (
+                                              <React.Fragment>
+                                                {crsData.loanStatuses.map((status: any, idx: number) => (
+                                                  <React.Fragment key={idx}>
+                                                    <tr className="border-b border-gray-100 align-top">
+                                                      <td className="py-1.5 pr-2 font-medium text-gray-600">Year:</td>
+                                                      <td className="py-1.5 text-gray-900">{status.year}</td>
+                                                    </tr>
+                                                    {status.currency && (
+                                                      <tr className="border-b border-gray-100 align-top">
+                                                        <td className="py-1.5 pr-2 font-medium text-gray-600">Currency:</td>
+                                                        <td className="py-1.5 text-gray-900">
+                                                          <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                            {status.currency}
+                                                          </code>
+                                                        </td>
+                                                      </tr>
+                                                    )}
+                                                    {status.value_date && (
+                                                      <tr className="border-b border-gray-100 align-top">
+                                                        <td className="py-1.5 pr-2 font-medium text-gray-600">Value date:</td>
+                                                        <td className="py-1.5 text-gray-900">
+                                                          <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                            {status.value_date}
+                                                          </code>
+                                                        </td>
+                                                      </tr>
+                                                    )}
+                                                    {status.interest_received !== undefined && (
+                                                      <tr className="border-b border-gray-100 align-top">
+                                                        <td className="py-1.5 pr-2 font-medium text-gray-600">Interest received:</td>
+                                                        <td className="py-1.5 text-gray-900">{status.interest_received.toLocaleString()}</td>
+                                                      </tr>
+                                                    )}
+                                                    {status.principal_outstanding !== undefined && (
+                                                      <tr className="border-b border-gray-100 align-top">
+                                                        <td className="py-1.5 pr-2 font-medium text-gray-600">Principal outstanding:</td>
+                                                        <td className="py-1.5 text-gray-900">{status.principal_outstanding.toLocaleString()}</td>
+                                                      </tr>
+                                                    )}
+                                                    {status.principal_arrears !== undefined && (
+                                                      <tr className="border-b border-gray-100 align-top">
+                                                        <td className="py-1.5 pr-2 font-medium text-gray-600">Principal arrears:</td>
+                                                        <td className="py-1.5 text-gray-900">{status.principal_arrears.toLocaleString()}</td>
+                                                      </tr>
+                                                    )}
+                                                    {status.interest_arrears !== undefined && (
+                                                      <tr className="border-b border-gray-100 align-top">
+                                                        <td className="py-1.5 pr-2 font-medium text-gray-600">Interest arrears:</td>
+                                                        <td className="py-1.5 text-gray-900">{status.interest_arrears.toLocaleString()}</td>
+                                                      </tr>
+                                                    )}
+                                                  </React.Fragment>
+                                                ))}
+                                              </React.Fragment>
+                                            )}
+                                          </tbody>
+                                        </table>
+                                      </div>
+
+                                      {/* Column 3: Current Value */}
+                                      <div className="bg-gray-50 rounded-md p-3 border border-gray-200">
+                                        <div className="text-xs font-semibold text-gray-700 mb-2">Current Value</div>
+                                        {field.currentCrsData && field.currentCrsData.loanStatuses && field.currentCrsData.loanStatuses.length > 0 ? (
+                                          <table className="w-full text-xs">
+                                            <tbody>
+                                              {field.currentCrsData.loanStatuses.map((status: any, idx: number) => (
+                                                <React.Fragment key={idx}>
+                                                  <tr className="border-b border-gray-100 align-top">
+                                                    <td className="py-1.5 pr-2 font-medium text-gray-600">Year:</td>
+                                                    <td className="py-1.5 text-gray-900">{status.year}</td>
+                                                  </tr>
+                                                  {status.currency && (
+                                                    <tr className="border-b border-gray-100 align-top">
+                                                      <td className="py-1.5 pr-2 font-medium text-gray-600">Currency:</td>
+                                                      <td className="py-1.5 text-gray-900">
+                                                        <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                          {status.currency}
+                                                        </code>
+                                                      </td>
+                                                    </tr>
+                                                  )}
+                                                  {status.value_date && (
+                                                    <tr className="border-b border-gray-100 align-top">
+                                                      <td className="py-1.5 pr-2 font-medium text-gray-600">Value date:</td>
+                                                      <td className="py-1.5 text-gray-900">
+                                                        <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                          {status.value_date}
+                                                        </code>
+                                                      </td>
+                                                    </tr>
+                                                  )}
+                                                  {status.interest_received !== undefined && status.interest_received !== null && (
+                                                    <tr className="border-b border-gray-100 align-top">
+                                                      <td className="py-1.5 pr-2 font-medium text-gray-600">Interest received:</td>
+                                                      <td className="py-1.5 text-gray-900">{Number(status.interest_received).toLocaleString()}</td>
+                                                    </tr>
+                                                  )}
+                                                  {status.principal_outstanding !== undefined && status.principal_outstanding !== null && (
+                                                    <tr className="border-b border-gray-100 align-top">
+                                                      <td className="py-1.5 pr-2 font-medium text-gray-600">Principal outstanding:</td>
+                                                      <td className="py-1.5 text-gray-900">{Number(status.principal_outstanding).toLocaleString()}</td>
+                                                    </tr>
+                                                  )}
+                                                  {status.principal_arrears !== undefined && status.principal_arrears !== null && (
+                                                    <tr className="border-b border-gray-100 align-top">
+                                                      <td className="py-1.5 pr-2 font-medium text-gray-600">Principal arrears:</td>
+                                                      <td className="py-1.5 text-gray-900">{Number(status.principal_arrears).toLocaleString()}</td>
+                                                    </tr>
+                                                  )}
+                                                  {status.interest_arrears !== undefined && status.interest_arrears !== null && (
+                                                    <tr className="border-b border-gray-100 align-top">
+                                                      <td className="py-1.5 pr-2 font-medium text-gray-600">Interest arrears:</td>
+                                                      <td className="py-1.5 text-gray-900">{Number(status.interest_arrears).toLocaleString()}</td>
+                                                    </tr>
+                                                  )}
+                                                </React.Fragment>
+                                              ))}
+                                            </tbody>
+                                          </table>
+                                        ) : (
+                                          <div className="text-xs text-gray-500 italic">No loan status data saved</div>
+                                        )}
+                                      </div>
+                                    </div>
+                                  </div>
+                                );
+                              }
+
                               // Other Identifier - show detailed table
                               if (field.fieldName && field.fieldName.startsWith('Other Identifier') && typeof field.importValue === 'object' && field.importValue !== null && !Array.isArray(field.importValue)) {
                                 const identifier = field.importValue;

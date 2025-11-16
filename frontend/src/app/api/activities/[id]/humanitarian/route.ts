@@ -49,12 +49,25 @@ export async function GET(
       );
     }
 
-    // Transform data to match frontend interface
-    const humanitarianScopes = (scopes || []).map((scope: any) => ({
-      ...scope,
-      type: scope.scope_type, // Map scope_type to type for frontend compatibility
-      narratives: scope.narratives || []
-    }));
+    // Transform data to match frontend interface and normalize narratives to an array
+    const humanitarianScopes = (scopes || []).map((scope: any) => {
+      let narratives: any = scope.narratives;
+      if (typeof narratives === 'string') {
+        try {
+          narratives = JSON.parse(narratives);
+        } catch (e) {
+          narratives = [];
+        }
+      }
+      if (!Array.isArray(narratives)) {
+        narratives = [];
+      }
+      return {
+        ...scope,
+        type: scope.scope_type, // Map scope_type to type for frontend compatibility
+        narratives
+      };
+    });
 
     return NextResponse.json({
       humanitarian: activity.humanitarian || false,

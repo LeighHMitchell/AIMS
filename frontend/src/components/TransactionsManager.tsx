@@ -8,6 +8,8 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Plus, Trash2, Edit, Download, DollarSign, AlertCircle, FileText, ChevronLeft, ChevronRight, TrendingUp, TrendingDown, CheckCircle, Loader2 } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { usePartners } from "@/hooks/usePartners";
@@ -38,6 +40,7 @@ import {
   TIED_STATUS,
   TRANSACTION_STATUS
 } from "@/utils/transactionMigrationHelper";
+import { BulkActionToolbar } from "@/components/ui/bulk-action-toolbar";
 
 // Define FINANCE_TYPES locally since it's not exported from the helper
 const FINANCE_TYPES: Record<string, string> = {
@@ -134,9 +137,9 @@ export default function TransactionsManager({
   });
   const [submitting, setSubmitting] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState<string | null>(null);
-  const [quickFilter, setQuickFilter] = useState<"all" | "commitments" | "disbursements" | "expenditures">("all");
   const [hasFetchedTransactions, setHasFetchedTransactions] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [groupedView, setGroupedView] = useState(false);
   
   // Bulk selection state
   const [selectedTransactionIds, setSelectedTransactionIds] = useState<Set<string>>(new Set());
@@ -434,12 +437,10 @@ export default function TransactionsManager({
     }
   };
 
-  const handleBulkDelete = async () => {
+  const confirmBulkDelete = async () => {
     const selectedArray = Array.from(selectedTransactionIds);
     if (selectedArray.length === 0) return;
-    
-    if (!confirm(`Are you sure you want to delete ${selectedArray.length} transaction(s)?`)) return;
-    
+
     setIsBulkDeleting(true);
     
     try {
@@ -598,32 +599,37 @@ export default function TransactionsManager({
     }
   };
 
-  // Calculate summary statistics BEFORE filtering
-  const summaryStats = {
-    // Commitments (type 2 = Outgoing Commitment only, for activity-level reporting)
-    commitments: transactions.filter(t => t.transaction_type === '2').reduce((sum, t) => sum + (t.value || 0), 0),
-    commitmentsCount: transactions.filter(t => t.transaction_type === '2').length,
-    
-    // Disbursements (type 3 = Disbursement)
-    disbursements: transactions.filter(t => t.transaction_type === '3').reduce((sum, t) => sum + (t.value || 0), 0),
-    disbursementsCount: transactions.filter(t => t.transaction_type === '3').length,
-    
-    // Expenditures (type 4 = Expenditure)
-    expenditures: transactions.filter(t => t.transaction_type === '4').reduce((sum, t) => sum + (t.value || 0), 0),
-    expendituresCount: transactions.filter(t => t.transaction_type === '4').length,
-    
-    // Validation stats
-    validatedCount: transactions.filter(t => t.status === 'actual').length,
-    validatedPercent: transactions.length > 0 ? (transactions.filter(t => t.status === 'actual').length / transactions.length) * 100 : 0
-  };
+  // Calculate dynamic summary statistics by transaction type
+  // Group transactions by type and calculate totals
+  const transactionTypeSummaries = React.useMemo(() => {
+    const summaryMap = new Map<string, { type: string; typeName: string; count: number; totalUsd: number }>();
+
+    transactions.forEach(transaction => {
+      const type = transaction.transaction_type || '';
+      const baseTypeName = TRANSACTION_TYPES[type as keyof typeof TRANSACTION_TYPES] || 'Unknown';
+      const typeName = `Total ${baseTypeName}${baseTypeName.endsWith('s') ? '' : 's'}`;
+      const usdValue = transaction.value_usd || 0;
+
+      if (!summaryMap.has(type)) {
+        summaryMap.set(type, {
+          type,
+          typeName,
+          count: 0,
+          totalUsd: 0
+        });
+      }
+
+      const summary = summaryMap.get(type)!;
+      summary.count++;
+      summary.totalUsd += usdValue;
+    });
+
+    // Convert to array and sort by total USD value descending
+    return Array.from(summaryMap.values()).sort((a, b) => b.totalUsd - a.totalUsd);
+  }, [transactions]);
 
   // Filter transactions
   const filteredTransactions = transactions.filter(t => {
-    // Quick filter
-    if (quickFilter === 'commitments' && t.transaction_type !== '2') return false;
-    if (quickFilter === 'disbursements' && t.transaction_type !== '3') return false;
-    if (quickFilter === 'expenditures' && t.transaction_type !== '4') return false;
-    
     // Regular filters
     if (filters.type !== "all" && t.transaction_type !== filters.type) return false;
     if (filters.status !== "all" && t.status !== filters.status) return false;
@@ -707,6 +713,24 @@ export default function TransactionsManager({
     }).format(value);
   };
 
+  // Format currency with abbreviations (K, M, B)
+  const formatCurrencyAbbreviated = (value: number) => {
+    const absValue = Math.abs(value);
+    let formattedValue: string;
+
+    if (absValue >= 1_000_000_000) {
+      formattedValue = (value / 1_000_000_000).toFixed(1) + 'B';
+    } else if (absValue >= 1_000_000) {
+      formattedValue = (value / 1_000_000).toFixed(1) + 'M';
+    } else if (absValue >= 1_000) {
+      formattedValue = (value / 1_000).toFixed(1) + 'K';
+    } else {
+      formattedValue = value.toFixed(0);
+    }
+
+    return '$' + formattedValue;
+  };
+
   // Check if transaction was imported from IATI (no created_by field)
   const isImportedTransaction = (transaction: Transaction) => {
     return !('created_by' in transaction) || transaction.created_by === null;
@@ -726,33 +750,18 @@ export default function TransactionsManager({
   return (
     <TooltipProvider>
     <div className="space-y-4">
-      {/* Hero Cards Summary */}
-      {transactions.length > 0 && (
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <HeroCard
-            title="Total Commitments"
-            value={formatCurrency(summaryStats.commitments, defaultCurrency || 'USD')}
-            subtitle={`${summaryStats.commitmentsCount} transaction${summaryStats.commitmentsCount !== 1 ? 's' : ''}`}
-            icon={<TrendingUp className="h-5 w-5" />}
-          />
-          <HeroCard
-            title="Total Disbursements"
-            value={formatCurrency(summaryStats.disbursements, defaultCurrency || 'USD')}
-            subtitle={`${summaryStats.disbursementsCount} transaction${summaryStats.disbursementsCount !== 1 ? 's' : ''}`}
-            icon={<DollarSign className="h-5 w-5" />}
-          />
-          <HeroCard
-            title="Total Expenditures"
-            value={formatCurrency(summaryStats.expenditures, defaultCurrency || 'USD')}
-            subtitle={`${summaryStats.expendituresCount} transaction${summaryStats.expendituresCount !== 1 ? 's' : ''}`}
-            icon={<TrendingDown className="h-5 w-5" />}
-          />
-          <HeroCard
-            title="Validated"
-            value={`${summaryStats.validatedCount}/${transactions.length}`}
-            subtitle={`${Math.round(summaryStats.validatedPercent)}% validated`}
-            icon={<CheckCircle className="h-5 w-5" />}
-          />
+      {/* Transaction Type Summary Cards */}
+      {transactionTypeSummaries.length > 0 && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          {transactionTypeSummaries.map((summary) => (
+            <HeroCard
+              key={summary.type}
+              title={summary.typeName}
+              value={formatCurrencyAbbreviated(summary.totalUsd)}
+              subtitle={`${summary.count} transaction${summary.count !== 1 ? 's' : ''}`}
+              icon={<DollarSign className="h-5 w-5" />}
+            />
+          ))}
         </div>
       )}
 
@@ -766,74 +775,34 @@ export default function TransactionsManager({
               </p>
             </div>
             <div className="flex gap-2">
-              {selectedTransactionIds.size > 0 && (
-                <Button
-                  variant="destructive"
-                  size="sm"
-                  onClick={handleBulkDelete}
-                  disabled={isBulkDeleting}
-                >
-                  {isBulkDeleting ? (
-                    <>
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      Deleting...
-                    </>
-                  ) : (
-                    <>
-                      <Trash2 className="h-4 w-4 mr-2" />
-                      Delete Selected ({selectedTransactionIds.size})
-                    </>
-                  )}
-                </Button>
+              {transactions.length > 0 && (
+                <div className="flex items-center gap-2 px-3 py-1.5 border rounded-md bg-background">
+                  <Switch
+                    id="grouped-view"
+                    checked={groupedView}
+                    onCheckedChange={setGroupedView}
+                  />
+                  <Label htmlFor="grouped-view" className="text-sm cursor-pointer whitespace-nowrap">
+                    Grouped View
+                  </Label>
+                </div>
               )}
               <Button onClick={() => setShowAddDialog(true)}>
                 <Plus className="h-4 w-4 mr-1" />
                 Add Transaction
               </Button>
               {transactions.length > 0 && (
-                <Button variant="outline" onClick={handleExport}>
-                  <Download className="h-4 w-4 mr-1" />
-                  Export
-                </Button>
+                <>
+                  <Button variant="outline" onClick={handleExport}>
+                    <Download className="h-4 w-4 mr-1" />
+                    Export
+                  </Button>
+                </>
               )}
             </div>
           </div>
         </CardHeader>
         <CardContent>
-          {/* Quick Filter Buttons */}
-          {transactions.length > 0 && (
-            <div className="flex gap-2 mb-4">
-              <Button
-                variant={quickFilter === 'all' ? 'default' : 'outline'}
-                onClick={() => setQuickFilter('all')}
-                size="sm"
-              >
-                All Transactions
-              </Button>
-              <Button
-                variant={quickFilter === 'commitments' ? 'default' : 'outline'}
-                onClick={() => setQuickFilter('commitments')}
-                size="sm"
-              >
-                Commitments ({summaryStats.commitmentsCount})
-              </Button>
-              <Button
-                variant={quickFilter === 'disbursements' ? 'default' : 'outline'}
-                onClick={() => setQuickFilter('disbursements')}
-                size="sm"
-              >
-                Disbursements ({summaryStats.disbursementsCount})
-              </Button>
-              <Button
-                variant={quickFilter === 'expenditures' ? 'default' : 'outline'}
-                onClick={() => setQuickFilter('expenditures')}
-                size="sm"
-              >
-                Expenditures ({summaryStats.expendituresCount})
-              </Button>
-            </div>
-          )}
-
           {/* Transactions Table */}
           {isLoading ? (
             <div className="rounded-md border">
@@ -901,6 +870,8 @@ export default function TransactionsManager({
                 selectedIds={selectedTransactionIds}
                 onSelectAll={handleSelectAll}
                 onSelectTransaction={handleSelectTransaction}
+                groupedView={groupedView}
+                onGroupedViewChange={setGroupedView}
               />
 
               {/* Pagination Controls */}
@@ -1019,6 +990,15 @@ export default function TransactionsManager({
         defaultTiedStatus={defaultTiedStatus}
         defaultFlowType={defaultFlowType}
         isSubmitting={submitting}
+      />
+
+      {/* Bulk Action Toolbar - appears from bottom when items selected */}
+      <BulkActionToolbar
+        selectedCount={selectedTransactionIds.size}
+        itemType="transactions"
+        onDelete={confirmBulkDelete}
+        onCancel={() => setSelectedTransactionIds(new Set())}
+        isDeleting={isBulkDeleting}
       />
     </div>
     </TooltipProvider>

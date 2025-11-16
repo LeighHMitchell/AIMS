@@ -261,8 +261,7 @@ export default function ImprovedSectorAllocationForm({
   const sectorsAutosave = useSectorsAutosave(activityId, user?.id);
   const [sortField, setSortField] = useState<SortField>('subSector');
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
-  const [activeVisualizationTab, setActiveVisualizationTab] = useState<'sunburst' | 'sankey'>('sankey');
-  
+
   // User action tracking for toast notifications
   const userActionInProgressRef = useRef(false);
   const userActionTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -1327,38 +1326,21 @@ export default function ImprovedSectorAllocationForm({
             <CardHeader className="pb-3">
               <div className="flex items-center gap-2">
                 <CardTitle className="text-base">Sector Allocation Visualization</CardTitle>
-                <HelpTextTooltip content="Interactive charts showing sector allocation hierarchy and relationships in different formats">
+                <HelpTextTooltip content="Interactive Sankey diagram showing sector allocation hierarchy from categories to sectors to subsectors">
                   <HelpCircle className="w-4 h-4 text-gray-500 hover:text-gray-700 cursor-help" />
                 </HelpTextTooltip>
               </div>
             </CardHeader>
             <CardContent>
-              <Tabs value={activeVisualizationTab} onValueChange={(value) => setActiveVisualizationTab(value as 'sunburst' | 'sankey')}>
-                <TabsList className="grid w-full grid-cols-2">
-                  <TabsTrigger value="sankey">Sankey Flow</TabsTrigger>
-                  <TabsTrigger value="sunburst">Sunburst</TabsTrigger>
-                </TabsList>
-                
-                <TabsContent value="sunburst" className="mt-4">
-                  <div className="relative overflow-hidden">
-                    <SectorSunburstVisualization 
-                      allocations={allocations}
-                      onSegmentClick={handleSunburstSegmentClick}
-                    />
-                  </div>
-                </TabsContent>
-                
-
-                
-                <TabsContent value="sankey" className="mt-4">
-                  <div className="relative overflow-hidden">
-                    <SectorSankeyVisualization 
-                      allocations={allocations}
-                      onSegmentClick={handleSunburstSegmentClick}
-                    />
-                  </div>
-                </TabsContent>
-              </Tabs>
+              <div className="relative overflow-hidden w-full">
+                <SectorSankeyVisualization
+                  allocations={allocations}
+                  onSegmentClick={handleSunburstSegmentClick}
+                  showControls={false}
+                  defaultView="sankey"
+                  className="w-full"
+                />
+              </div>
             </CardContent>
           </Card>
         )}

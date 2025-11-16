@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { Check, ChevronsUpDown, Search } from 'lucide-react';
+import { Check, ChevronsUpDown, Search, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import {
@@ -50,7 +50,7 @@ export function ActivityCombobox({
   onOpenChange: externalOnOpenChange,
 }: ActivityComboboxProps) {
   const [internalOpen, setInternalOpen] = React.useState(false);
-  
+
   // Use external state if provided, otherwise use internal state
   const open = externalOpen !== undefined ? externalOpen : internalOpen;
   const setOpen = externalOnOpenChange || setInternalOpen;
@@ -58,6 +58,7 @@ export function ActivityCombobox({
   const [loading, setLoading] = React.useState(false);
   const [searchQuery, setSearchQuery] = React.useState('');
   const [selectedActivity, setSelectedActivity] = React.useState<Activity | null>(null);
+  const triggerRef = React.useRef<HTMLButtonElement>(null);
 
   // Fetch the selected activity when value changes
   React.useEffect(() => {
@@ -143,19 +144,21 @@ export function ActivityCombobox({
   };
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <Button
-          variant="outline"
-          role="combobox"
-          aria-expanded={open}
-          className={cn(
-            'w-full justify-between font-normal h-auto min-h-[60px]',
-            !value && 'text-muted-foreground',
-            className
-          )}
-          disabled={disabled}
-        >
+    <div className="w-full">
+      <Popover open={open} onOpenChange={setOpen}>
+        <PopoverTrigger asChild className="w-full">
+          <Button
+            ref={triggerRef}
+            variant="outline"
+            role="combobox"
+            aria-expanded={open}
+            className={cn(
+              'w-full justify-between font-normal h-auto px-4 py-2 text-base border-gray-300 hover:bg-gray-50 focus:outline-none focus:ring-1 focus:ring-gray-400 focus:border-gray-400',
+              !value && 'text-muted-foreground',
+              className
+            )}
+            disabled={disabled}
+          >
           <div className="flex items-start gap-2 overflow-hidden py-1 flex-1">
             {selectedActivity ? (
               <>
@@ -167,25 +170,19 @@ export function ActivityCombobox({
                   />
                 )}
                 <div className="flex-1 min-w-0 text-left">
-                  <div className="font-medium truncate">
+                  <span className="font-normal text-sm inline">
                     {getActivityTitle(selectedActivity)}
                     {selectedActivity.acronym && (
                       <span className="text-gray-500 ml-1">
                         ({selectedActivity.acronym})
                       </span>
                     )}
-                  </div>
-                  <div className="text-xs text-gray-500 truncate">
                     {selectedActivity.iati_identifier && (
-                      <span>{selectedActivity.iati_identifier}</span>
+                      <span className="text-xs font-mono text-gray-600 bg-gray-100 px-2 py-1 rounded hover:text-gray-600 ml-2">
+                        {selectedActivity.iati_identifier}
+                      </span>
                     )}
-                    {selectedActivity.iati_identifier && (selectedActivity.created_by_org_name || selectedActivity.created_by_org_acronym) && (
-                      <span> • </span>
-                    )}
-                    {(selectedActivity.created_by_org_name || selectedActivity.created_by_org_acronym) && (
-                      <span>{selectedActivity.created_by_org_name || selectedActivity.created_by_org_acronym}</span>
-                    )}
-                  </div>
+                  </span>
                 </div>
               </>
             ) : fallbackIatiId ? (
@@ -196,23 +193,29 @@ export function ActivityCombobox({
               placeholder
             )}
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 ml-2">
             {selectedActivity && (
               <button
                 type="button"
                 onClick={handleClear}
-                className="h-4 w-4 rounded-full hover:bg-muted-foreground/20 flex items-center justify-center transition-colors"
+                className="h-4 w-4 rounded-full hover:bg-gray-200 flex items-center justify-center transition-colors"
                 aria-label="Clear selection"
                 tabIndex={-1}
               >
-                <span className="text-xs">×</span>
+                <X className="h-3 w-3 text-gray-500" />
               </button>
             )}
-            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+            <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50" />
           </div>
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-[500px] p-0" align="start">
+      <PopoverContent
+        className="p-0 max-w-[600px]"
+        align="start"
+        style={{
+          width: triggerRef.current ? `${triggerRef.current.offsetWidth}px` : '500px',
+        }}
+      >
         <Command shouldFilter={false}>
           <div className="flex items-center border-b px-3">
             <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
@@ -223,9 +226,11 @@ export function ActivityCombobox({
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
-          <CommandEmpty>
-            {loading ? 'Searching...' : 'No activities found.'}
-          </CommandEmpty>
+          {searchQuery && (
+            <CommandEmpty>
+              {loading ? 'Searching...' : 'No activities found.'}
+            </CommandEmpty>
+          )}
           <CommandGroup className="max-h-[300px] overflow-auto">
             {activities.map((activity) => {
               const title = getActivityTitle(activity);
@@ -258,20 +263,19 @@ export function ActivityCombobox({
                         />
                       )}
                       <div className="flex-1 min-w-0">
-                        <div className="font-medium truncate">
+                        <span className="font-normal text-sm inline">
                           {title}
                           {activity.acronym && (
                             <span className="text-gray-500 ml-1">
                               ({activity.acronym})
                             </span>
                           )}
-                        </div>
-                        <div className="text-xs text-gray-500 truncate">
                           {activity.iati_identifier && (
-                            <span>{activity.iati_identifier} • </span>
+                            <span className="text-xs font-mono text-gray-600 bg-gray-100 px-2 py-1 rounded hover:text-gray-600 ml-2">
+                              {activity.iati_identifier}
+                            </span>
                           )}
-                          {orgName}
-                        </div>
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -282,6 +286,7 @@ export function ActivityCombobox({
         </Command>
       </PopoverContent>
     </Popover>
+    </div>
   );
 }
 

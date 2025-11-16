@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import Image from "next/image"
-import { Check, ChevronsUpDown, Building2 } from "lucide-react"
+import { Check, ChevronsUpDown, Building2, X } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import {
@@ -155,18 +155,19 @@ export function OrganizationCombobox({
   }
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger>
-        <Button
-          ref={triggerRef}
-          variant="outline"
-          role="combobox"
-          aria-expanded={open}
-          className={cn(
-            "w-full justify-between font-normal min-w-[320px] px-4 py-2 text-base h-auto border-gray-300 hover:bg-gray-50 focus:outline-none focus:ring-1 focus:ring-gray-400 focus:border-gray-400 hover:text-gray-900",
-            className
-          )}
-        >
+    <div className="w-full">
+      <Popover open={open} onOpenChange={setOpen}>
+        <PopoverTrigger asChild className="w-full">
+          <Button
+            ref={triggerRef}
+            variant="outline"
+            role="combobox"
+            aria-expanded={open}
+            className={cn(
+              "w-full justify-between font-normal px-4 py-2 text-base h-auto border-gray-300 hover:bg-gray-50 focus:outline-none focus:ring-1 focus:ring-gray-400 focus:border-gray-400 hover:text-gray-900",
+              className
+            )}
+          >
           {(() => {
             const selected = organizations.find((o) => o.id === value);
             if (selected) {
@@ -194,12 +195,30 @@ export function OrganizationCombobox({
                   )}
                   
                   <div className="flex flex-col min-w-0 flex-1">
-                    <span className="truncate font-medium text-base leading-relaxed text-gray-900 hover:text-gray-900">
-                      {getOrganizationDisplay(selected)}
-                    </span>
-                    <div className="hover:text-gray-900">
-                      {getOrgDetailsLineStyled(selected)}
+                    <div className="flex items-baseline gap-2">
+                      <span className="truncate font-normal text-sm leading-relaxed text-gray-900 hover:text-gray-900">
+                        {getOrganizationDisplay(selected)}
+                      </span>
+                      {(selected.iati_org_id || selected.iati_identifier) && (
+                        <span className="text-xs font-mono text-gray-600 bg-gray-100 px-2 py-1 rounded hover:text-gray-600">
+                          {selected.iati_org_id || selected.iati_identifier}
+                        </span>
+                      )}
                     </div>
+                    {(() => {
+                      const orgTypeText = selected.Organisation_Type_Name || selected.type;
+                      const parts = [];
+                      if (orgTypeText) parts.push(orgTypeText);
+                      if (selected.country) parts.push(selected.country);
+                      if (parts.length > 0) {
+                        return (
+                          <span className="text-xs text-gray-500 truncate">
+                            {parts.join(' · ')}
+                          </span>
+                        );
+                      }
+                      return null;
+                    })()}
                   </div>
                 </div>
               );
@@ -219,15 +238,30 @@ export function OrganizationCombobox({
             }
             return <span className="text-gray-400 text-base leading-relaxed">{placeholder}</span>;
           })()}
-          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+          <div className="flex items-center gap-1 ml-2">
+            {value && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onValueChange('');
+                }}
+                className="h-4 w-4 rounded-full hover:bg-gray-200 flex items-center justify-center transition-colors"
+                aria-label="Clear selection"
+              >
+                <X className="h-3 w-3 text-gray-500" />
+              </button>
+            )}
+            <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50" />
+          </div>
         </Button>
       </PopoverTrigger>
       <PopoverContent
         align="start"
         sideOffset={4}
-        className="p-0 min-w-[320px] max-w-[600px]"
+        className="p-0 max-w-[600px]"
         style={{
-          width: triggerRef.current ? `${triggerRef.current.offsetWidth}px` : undefined,
+          width: triggerRef.current ? `${triggerRef.current.offsetWidth}px` : '320px',
         }}
       >
         <Command>
@@ -277,10 +311,28 @@ export function OrganizationCombobox({
                         )}
                         
                         <div className="flex flex-col flex-1 min-w-0">
-                          <span className="font-medium text-gray-900 text-base truncate hover:text-gray-900">{org.name}{org.acronym ? ` (${org.acronym})` : ''}</span>
-                          <div className="mt-1">
-                            {getOrgDetailsLineStyled(org)}
+                          <div className="flex items-baseline gap-2">
+                            <span className="font-normal text-gray-900 text-sm truncate hover:text-gray-900">{org.name}{org.acronym ? ` (${org.acronym})` : ''}</span>
+                            {(org.iati_org_id || org.iati_identifier) && (
+                              <span className="text-xs font-mono text-gray-600 bg-gray-100 px-2 py-1 rounded hover:text-gray-600">
+                                {org.iati_org_id || org.iati_identifier}
+                              </span>
+                            )}
                           </div>
+                          {(() => {
+                            const orgTypeText = org.Organisation_Type_Name || org.type;
+                            const parts = [];
+                            if (orgTypeText) parts.push(orgTypeText);
+                            if (org.country) parts.push(org.country);
+                            if (parts.length > 0) {
+                              return (
+                                <span className="text-xs text-gray-500 truncate">
+                                  {parts.join(' · ')}
+                                </span>
+                              );
+                            }
+                            return null;
+                          })()}
                         </div>
                       </div>
                     </CommandItem>
@@ -292,5 +344,6 @@ export function OrganizationCombobox({
         </Command>
       </PopoverContent>
     </Popover>
+    </div>
   )
 } 

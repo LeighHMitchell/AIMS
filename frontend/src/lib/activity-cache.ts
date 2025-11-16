@@ -128,16 +128,33 @@ export async function fetchActivityWithCache(activityId: string, useBasic: boole
     return cached;
   }
 
-  // Fetch from API
+  // Fetch from API with retry (handles brief post-write consistency windows)
   const apiUrl = useBasic ? `/api/activities/${activityId}/basic` : `/api/activities/${activityId}`;
   console.log('[Activity Cache] Fetching activity from API:', apiUrl);
-  const response = await fetch(apiUrl);
-  
-  if (!response.ok) {
-    throw new Error(`Failed to fetch activity: ${response.status}`);
+  const maxRetries = 3;
+  let attempt = 0;
+  let lastError: any = null;
+  let data: any = null;
+  while (attempt < maxRetries) {
+    const response = await fetch(apiUrl);
+    if (response.ok) {
+      data = await response.json();
+      break;
+    }
+    lastError = new Error(`Failed to fetch activity: ${response.status}`);
+    // Only retry on 404/5xx which are likely transient right after writes
+    if (response.status === 404 || response.status >= 500) {
+      const backoff = 200 * Math.pow(2, attempt); // 200ms, 400ms, 800ms
+      await new Promise(res => setTimeout(res, backoff));
+      attempt++;
+      continue;
+    }
+    // Other statuses: do not retry
+    break;
   }
-  
-  const data = await response.json();
+  if (data == null) {
+    throw lastError || new Error('Failed to fetch activity');
+  }
   
   // Cache the result
   activityCache.set(cacheKey, data);

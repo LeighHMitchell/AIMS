@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { format, addMonths, addQuarters, addYears, startOfMonth, endOfMonth, startOfQuarter, endOfQuarter, startOfYear, endOfYear, differenceInMonths, parseISO, isValid, isBefore, isAfter, getQuarter, getYear } from 'date-fns';
 import { format as formatDateFns } from 'date-fns';
-import { Trash2, Copy, Loader2, CheckCircle, Lock, Unlock, FastForward, AlertCircle, Info, MoreVertical, Plus, Calendar, Download, Edit } from 'lucide-react';
+import { Trash2, Copy, Loader2, CheckCircle, Lock, Unlock, FastForward, AlertCircle, Info, MoreVertical, Plus, Calendar, Download, Edit, DollarSign } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -16,11 +16,11 @@ import { getAllCurrenciesWithPinned, type Currency } from '@/data/currencies';
 import { BudgetCurrencySelect } from '@/components/ui/budget-currency-select';
 import { cn } from '@/lib/utils';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
-import { FinancialSummaryCards } from '@/components/FinancialSummaryCards';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
-import { convertToUSD } from '@/lib/currency-conversion-api';
+// USD conversion now happens server-side - no client-side API needed
 import { Tooltip as UITooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+// Removed shared HeroCard import - using local simple version
 import { useUser } from '@/hooks/useUser';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Dialog, DialogContent, DialogTitle, DialogDescription, DialogFooter, DialogHeader } from '@/components/ui/dialog';
@@ -48,6 +48,48 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { ChevronsUpDown, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Trash2 as TrashIcon, ArrowUp, ArrowDown, ArrowUpDown } from 'lucide-react';
 import { toast } from 'sonner';
 import { exportToCSV } from '@/lib/csv-export';
+import { BulkActionToolbar } from '@/components/ui/bulk-action-toolbar';
+
+// Format currency with abbreviations (K, M, B)
+const formatCurrencyAbbreviated = (value: number) => {
+  const absValue = Math.abs(value);
+  let formattedValue: string;
+
+  if (absValue >= 1_000_000_000) {
+    formattedValue = (value / 1_000_000_000).toFixed(1) + 'B';
+  } else if (absValue >= 1_000_000) {
+    formattedValue = (value / 1_000_000).toFixed(1) + 'M';
+  } else if (absValue >= 1_000) {
+    formattedValue = (value / 1_000).toFixed(1) + 'K';
+  } else {
+    formattedValue = value.toFixed(0);
+  }
+
+  return '$' + formattedValue;
+};
+
+// Simple Hero Card Component (matching TransactionsManager style)
+interface SimpleHeroCardProps {
+  title: string;
+  value: string;
+  subtitle: string;
+  icon?: React.ReactNode;
+}
+
+function HeroCard({ title, value, subtitle, icon }: SimpleHeroCardProps) {
+  return (
+    <div className="p-4 border rounded-xl bg-white shadow-sm hover:shadow-md transition-shadow">
+      <div className="flex items-start justify-between">
+        <div>
+          <div className="text-sm text-muted-foreground">{title}</div>
+          <div className="text-2xl font-bold mt-1">{value}</div>
+          <div className="text-xs text-muted-foreground mt-1">{subtitle}</div>
+        </div>
+        {icon && <div className="text-muted-foreground">{icon}</div>}
+      </div>
+    </div>
+  );
+}
 
 // Types
 interface BudgetLine {
@@ -89,6 +131,24 @@ interface ActivityBudgetsTabProps {
 // Granularity types removed - users can now create any period length they want
 
 
+
+// Helper function to safely parse dates
+const safeParseDateOrNull = (dateStr: string | null | undefined): Date | null => {
+  if (!dateStr || dateStr === '') return null;
+  try {
+    const parsed = parseISO(dateStr);
+    return isValid(parsed) ? parsed : null;
+  } catch (e) {
+    console.error('[ActivityBudgetsTab] Invalid date string:', dateStr, e);
+    return null;
+  }
+};
+
+// Helper function to safely format dates for display
+const safeFormatDate = (dateStr: string | null | undefined, formatStr: string, fallback: string = 'Invalid Date'): string => {
+  const date = safeParseDateOrNull(dateStr);
+  return date ? format(date, formatStr) : fallback;
+};
 
 // Chart Components
 interface ChartData {
@@ -212,7 +272,7 @@ export default function ActivityBudgetsTab({
   const [modalBudget, setModalBudget] = useState<ActivityBudget | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [isFormDirty, setIsFormDirty] = useState(false);
-  const [isCalculatingUSD, setIsCalculatingUSD] = useState(false);
+  // isCalculatingUSD removed - USD conversion now happens server-side
   const [typePopoverOpen, setTypePopoverOpen] = useState(false);
   const [statusPopoverOpen, setStatusPopoverOpen] = useState(false);
   const [currencyPopoverOpen, setCurrencyPopoverOpen] = useState(false);
@@ -363,8 +423,27 @@ export default function ActivityBudgetsTab({
         const budgetsData = await response.json();
         console.log('[ActivityBudgetsTab] Fetched budgets:', budgetsData?.length || 0);
 
+        // Filter out budgets with invalid dates
+        const validBudgets = (budgetsData || []).filter((budget: ActivityBudget) => {
+          const hasValidDates =
+            safeParseDateOrNull(budget.period_start) !== null &&
+            safeParseDateOrNull(budget.period_end) !== null;
+
+          if (!hasValidDates) {
+            console.warn('[ActivityBudgetsTab] Filtering out budget with invalid dates:', budget);
+          }
+
+          return hasValidDates;
+        });
+
+        if (validBudgets.length < (budgetsData || []).length) {
+          const invalidCount = (budgetsData || []).length - validBudgets.length;
+          console.warn(`[ActivityBudgetsTab] Filtered out ${invalidCount} budget(s) with invalid dates`);
+          toast.error(`${invalidCount} budget(s) have invalid dates and cannot be displayed. Please check your data.`);
+        }
+
         // Just load existing budgets - no auto-generation
-        setBudgets(budgetsData || []);
+        setBudgets(validBudgets);
       } catch (err: any) {
         console.error('[ActivityBudgetsTab] Error fetching budget data:', err);
         setError(err.message || 'Failed to load budget data');
@@ -425,26 +504,28 @@ export default function ActivityBudgetsTab({
     };
   }, [budgets, usdValues, defaultCurrency]);
 
-  // Memoized budgets data for FinancialSummaryCards to prevent unnecessary re-renders
-  const memoizedBudgetsForSummary = useMemo(() => {
-    return budgets.map(b => ({
-      id: b.id,
-      usd_value: b.usd_value === null ? undefined : b.usd_value,
-      value: b.value
-    }));
-  }, [budgets, usdValues]);
 
   // Calculate chart data
   const chartData = useMemo(() => {
-    const sortedBudgets = [...budgets].sort((a, b) => 
-      parseISO(a.period_start).getTime() - parseISO(b.period_start).getTime()
-    );
+    // Filter out budgets with invalid dates first
+    const validBudgets = budgets.filter(b => {
+      const startDate = safeParseDateOrNull(b.period_start);
+      return startDate !== null;
+    });
+
+    const sortedBudgets = [...validBudgets].sort((a, b) => {
+      const aDate = safeParseDateOrNull(a.period_start);
+      const bDate = safeParseDateOrNull(b.period_start);
+      if (!aDate || !bDate) return 0;
+      return aDate.getTime() - bDate.getTime();
+    });
 
     // Group budgets by period for quarterly view
     const periodMap = new Map<string, number>();
-    
+
     sortedBudgets.forEach(budget => {
-      const startDate = parseISO(budget.period_start);
+      const startDate = safeParseDateOrNull(budget.period_start);
+      if (!startDate) return;
       let periodLabel: string;
       
       switch (aggregationMode) {
@@ -558,12 +639,10 @@ export default function ActivityBudgetsTab({
     }
   }, [sortedBudgets]);
 
-  const handleBulkDelete = useCallback(async () => {
+  const confirmBulkDelete = useCallback(async () => {
     const selectedArray = Array.from(selectedBudgetIds);
     if (selectedArray.length === 0) return;
-    
-    if (!confirm(`Are you sure you want to delete ${selectedArray.length} budget(s)?`)) return;
-    
+
     setIsBulkDeleting(true);
     
     try {
@@ -600,24 +679,31 @@ export default function ActivityBudgetsTab({
 
   // Helper function to find next non-overlapping period
   const findNextAvailablePeriod = useCallback((sourceStart: string, sourceEnd: string, existingBudgets: ActivityBudget[]) => {
-    const originalStart = parseISO(sourceStart);
-    const originalEnd = parseISO(sourceEnd);
+    const originalStart = safeParseDateOrNull(sourceStart);
+    const originalEnd = safeParseDateOrNull(sourceEnd);
+
+    if (!originalStart || !originalEnd) {
+      return null; // Invalid source dates
+    }
+
     const periodDuration = differenceInMonths(originalEnd, originalStart);
-    
+
     // Start with original period duration (or minimum 3 months)
     let incrementMonths = Math.max(periodDuration + 1, 3);
     let attempts = 0;
     const maxAttempts = 50; // Prevent infinite loop
-    
+
     while (attempts < maxAttempts) {
       const candidateStart = addMonths(originalStart, incrementMonths);
       const candidateEnd = addMonths(candidateStart, periodDuration);
-      
+
       // Check if this period overlaps with any existing budget
       const hasOverlap = existingBudgets.some(budget => {
-        const existingStart = parseISO(budget.period_start);
-        const existingEnd = parseISO(budget.period_end);
-        
+        const existingStart = safeParseDateOrNull(budget.period_start);
+        const existingEnd = safeParseDateOrNull(budget.period_end);
+
+        if (!existingStart || !existingEnd) return false; // Skip invalid budgets
+
         return (
           (candidateStart >= existingStart && candidateStart <= existingEnd) ||
           (candidateEnd >= existingStart && candidateEnd <= existingEnd) ||
@@ -730,12 +816,14 @@ export default function ActivityBudgetsTab({
       setCopyPeriodEnd(nextPeriod.period_end);
     } else {
       // If no period found, default to 1 year later
-      const sourceStart = parseISO(budget.period_start);
-      const sourceEnd = parseISO(budget.period_end);
-      const newStart = addYears(sourceStart, 1);
-      const newEnd = addYears(sourceEnd, 1);
-      setCopyPeriodStart(format(newStart, 'yyyy-MM-dd'));
-      setCopyPeriodEnd(format(newEnd, 'yyyy-MM-dd'));
+      const sourceStart = safeParseDateOrNull(budget.period_start);
+      const sourceEnd = safeParseDateOrNull(budget.period_end);
+      if (sourceStart && sourceEnd) {
+        const newStart = addYears(sourceStart, 1);
+        const newEnd = addYears(sourceEnd, 1);
+        setCopyPeriodStart(format(newStart, 'yyyy-MM-dd'));
+        setCopyPeriodEnd(format(newEnd, 'yyyy-MM-dd'));
+      }
     }
     setShowCopyDialog(true);
   }, [budgets, findNextAvailablePeriod]);
@@ -830,12 +918,16 @@ export default function ActivityBudgetsTab({
     const exportData = [];
 
     // Budget Details
+    const periodStart = safeParseDateOrNull(budget.period_start);
+    const periodEnd = safeParseDateOrNull(budget.period_end);
+    const valueDate = safeParseDateOrNull(budget.value_date);
+
     exportData.push(
       { label: 'Type', value: `${budget.type} - ${budget.type === 1 ? 'Original' : 'Revised'}` },
       { label: 'Status', value: `${budget.status} - ${budget.status === 1 ? 'Indicative' : 'Committed'}` },
-      { label: 'Period Start', value: format(parseISO(budget.period_start), 'MMM d, yyyy') },
-      { label: 'Period End', value: format(parseISO(budget.period_end), 'MMM d, yyyy') },
-      { label: 'Value Date', value: budget.value_date ? format(parseISO(budget.value_date), 'MMM d, yyyy') : '—' },
+      { label: 'Period Start', value: periodStart ? format(periodStart, 'MMM d, yyyy') : 'Invalid Date' },
+      { label: 'Period End', value: periodEnd ? format(periodEnd, 'MMM d, yyyy') : 'Invalid Date' },
+      { label: 'Value Date', value: valueDate ? format(valueDate, 'MMM d, yyyy') : '—' },
       { label: 'Original Value', value: `${budget.value?.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${budget.currency}` },
       { label: 'USD Value', value: usdValue?.usd != null ? `USD ${usdValue.usd.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}` : '—' },
     );
@@ -864,47 +956,58 @@ export default function ActivityBudgetsTab({
   // Duplicate Forward - creates next period based on current period length
   const duplicateForward = useCallback((index: number) => {
     console.log('[DuplicateForward] Starting duplicate forward for index:', index);
-    
+
     const budget = budgets[index];
     console.log('[DuplicateForward] Source budget:', budget);
-    
-    const currentStart = parseISO(budget.period_start);
-    const currentEnd = parseISO(budget.period_end);
+
+    const currentStart = safeParseDateOrNull(budget.period_start);
+    const currentEnd = safeParseDateOrNull(budget.period_end);
     console.log('[DuplicateForward] Current period:', {
       start: budget.period_start,
       end: budget.period_end,
       parsedStart: currentStart,
       parsedEnd: currentEnd,
-      isValidStart: isValid(currentStart),
-      isValidEnd: isValid(currentEnd)
+      isValidStart: currentStart ? isValid(currentStart) : false,
+      isValidEnd: currentEnd ? isValid(currentEnd) : false
     });
-    
-    if (!isValid(currentStart) || !isValid(currentEnd)) {
+
+    if (!currentStart || !currentEnd || !isValid(currentStart) || !isValid(currentEnd)) {
       console.log('[DuplicateForward] ERROR: Invalid dates in source budget');
       alert('Cannot duplicate - source budget has invalid dates');
       return;
     }
-    
+
     // Calculate period length in months from the current budget
     const periodLengthMonths = differenceInMonths(currentEnd, currentStart);
     console.log('[DuplicateForward] Detected period length:', periodLengthMonths, 'months');
-    
+
     // Calculate next period start (day after current period end)
     const dayAfterEnd = new Date(currentEnd);
     dayAfterEnd.setDate(dayAfterEnd.getDate() + 1);
-    const nextPeriodStart = parseISO(format(dayAfterEnd, 'yyyy-MM-dd'));
-    
+    const nextPeriodStart = safeParseDateOrNull(format(dayAfterEnd, 'yyyy-MM-dd'));
+
+    if (!nextPeriodStart) {
+      console.log('[DuplicateForward] ERROR: Failed to calculate next period start');
+      alert('Cannot duplicate - failed to calculate next period');
+      return;
+    }
+
     // Calculate period end based on detected length (use endOfMonth for proper month boundaries)
     const nextPeriodEnd = endOfMonth(addMonths(nextPeriodStart, Math.max(periodLengthMonths, 1) - 1));
-    
+
     console.log('[DuplicateForward] Calculated next period:', {
       nextStart: format(nextPeriodStart, 'yyyy-MM-dd'),
       nextEnd: format(nextPeriodEnd, 'yyyy-MM-dd'),
       periodLength: periodLengthMonths
     });
-    
+
     // Ensure period doesn't exceed project end date
-    const projectEnd = parseISO(endDate);
+    const projectEnd = safeParseDateOrNull(endDate);
+    if (!projectEnd) {
+      console.log('[DuplicateForward] ERROR: Invalid project end date');
+      alert('Cannot duplicate - invalid project end date');
+      return;
+    }
     let adjustedEnd = nextPeriodEnd;
     
     if (isAfter(adjustedEnd, projectEnd)) {
@@ -930,9 +1033,11 @@ export default function ActivityBudgetsTab({
     // Check for overlaps with existing budgets (just for logging, not blocking)
     const hasOverlap = budgets.some((b, i) => {
       if (i === index) return false; // Skip current budget
-      const existingStart = parseISO(b.period_start);
-      const existingEnd = parseISO(b.period_end);
-      
+      const existingStart = safeParseDateOrNull(b.period_start);
+      const existingEnd = safeParseDateOrNull(b.period_end);
+
+      if (!existingStart || !existingEnd) return false; // Skip invalid budgets
+
       const overlaps = (
         (nextPeriodStart >= existingStart && nextPeriodStart <= existingEnd) ||
         (adjustedEnd >= existingStart && adjustedEnd <= existingEnd) ||
@@ -1003,19 +1108,27 @@ export default function ActivityBudgetsTab({
   const openModalForNewBudget = useCallback((periodType: 'month' | 'quarter' | 'half-year' | 'year') => {
     const today = formatDateFns(new Date(), 'yyyy-MM-dd');
     const lastBudget = budgets[budgets.length - 1];
-    
+
     let periodStartDate: string;
     let periodEndDate: string;
-    
+
     if (lastBudget) {
       // Start from day AFTER last budget ends
-      const lastEnd = parseISO(lastBudget.period_end);
+      const lastEnd = safeParseDateOrNull(lastBudget.period_end);
+      if (!lastEnd) {
+        toast.error('Last budget has invalid end date');
+        return;
+      }
       const dayAfterLastEnd = new Date(lastEnd);
       dayAfterLastEnd.setDate(dayAfterLastEnd.getDate() + 1);
-      
+
       periodStartDate = format(dayAfterLastEnd, 'yyyy-MM-dd');
-      const start = parseISO(periodStartDate);
-      
+      const start = safeParseDateOrNull(periodStartDate);
+      if (!start) {
+        toast.error('Failed to calculate period start date');
+        return;
+      }
+
       // Calculate end date based on period type
       switch (periodType) {
         case 'month':
@@ -1034,7 +1147,11 @@ export default function ActivityBudgetsTab({
     } else {
       // First budget - use activity start date or today
       periodStartDate = startDate || today;
-      const start = parseISO(periodStartDate);
+      const start = safeParseDateOrNull(periodStartDate);
+      if (!start) {
+        toast.error('Invalid activity start date');
+        return;
+      }
       
       switch (periodType) {
         case 'month':
@@ -1053,8 +1170,13 @@ export default function ActivityBudgetsTab({
     }
     
     // Ensure end date doesn't exceed project end date
-    const projectEnd = parseISO(endDate);
-    if (isAfter(parseISO(periodEndDate), projectEnd)) {
+    const projectEnd = safeParseDateOrNull(endDate);
+    const periodEnd = safeParseDateOrNull(periodEndDate);
+    if (!projectEnd) {
+      toast.error('Invalid project end date');
+      return;
+    }
+    if (periodEnd && isAfter(periodEnd, projectEnd)) {
       periodEndDate = endDate;
     }
     
@@ -1156,35 +1278,6 @@ export default function ActivityBudgetsTab({
       return newErrors;
     });
   }, []);
-
-  // Real-time USD conversion
-  useEffect(() => {
-    if (!modalBudget || !modalBudget.value || !modalBudget.currency || !modalBudget.value_date) {
-      return;
-    }
-
-    const calculateUSD = async () => {
-      setIsCalculatingUSD(true);
-      try {
-        if (modalBudget.currency === 'USD') {
-          setModalBudget(prev => prev ? { ...prev, usd_value: modalBudget.value } : null);
-        } else {
-          const result = await convertToUSD(
-            modalBudget.value,
-            modalBudget.currency,
-            new Date(modalBudget.value_date)
-          );
-          setModalBudget(prev => prev ? { ...prev, usd_value: result.usd_amount } : null);
-        }
-      } catch (error) {
-        console.error('USD conversion error:', error);
-      } finally {
-        setIsCalculatingUSD(false);
-      }
-    };
-
-    calculateUSD();
-  }, [modalBudget?.value, modalBudget?.currency, modalBudget?.value_date]);
 
   // Validate and save budget
   const saveBudget = useCallback(async () => {
@@ -1428,18 +1521,21 @@ export default function ActivityBudgetsTab({
       )}
 
       <div className="space-y-4">
-          {/* Financial Summary Cards */}
-          {activityId && !hideSummaryCards && (
-            <FinancialSummaryCards 
-              activityId={activityId} 
-              className="mb-6" 
-              budgets={memoizedBudgetsForSummary}
-              showBudgetChart={false}
-            />
+          {/* Budget Summary Cards */}
+          {!hideSummaryCards && budgets.length > 0 && (
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 mb-6">
+              {/* Total Budget Value Card */}
+              <HeroCard
+                title="Total Budgets"
+                value={formatCurrencyAbbreviated(budgets.reduce((sum, budget) => sum + (budget.usd_value || 0), 0))}
+                subtitle={`${budgets.length} budget${budgets.length !== 1 ? 's' : ''}`}
+                icon={<DollarSign className="h-5 w-5" />}
+              />
+            </div>
           )}
           
           {/* Budgets Table */}
-          <Card data-budgets-tab className="border-0">
+          <Card data-budgets-tab>
         <CardHeader>
           <div className="flex items-center justify-between">
             {!hideSummaryCards && (
@@ -1451,36 +1547,29 @@ export default function ActivityBudgetsTab({
             {hideSummaryCards && <div />}
             <div className={`flex items-center gap-2 ${hideSummaryCards ? 'hidden' : ''}`}>
               {!readOnly && (
-                <>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => openModalForNewBudget('month')}
-                  >
-                    + Monthly
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => openModalForNewBudget('quarter')}
-                  >
-                    + Quarterly
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => openModalForNewBudget('half-year')}
-                  >
-                    + Semi-Annual
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => openModalForNewBudget('year')}
-                  >
-                    + Annual
-                  </Button>
-                </>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button className="bg-blue-600 hover:bg-blue-700 text-white">
+                      <Plus className="h-4 w-4 mr-1" />
+                      Add Budget
+                      <ChevronDown className="h-4 w-4 ml-1" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={() => openModalForNewBudget('month')}>
+                      Monthly Budget
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => openModalForNewBudget('quarter')}>
+                      Quarterly Budget
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => openModalForNewBudget('half-year')}>
+                      Semi-Annual Budget
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => openModalForNewBudget('year')}>
+                      Annual Budget
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               )}
               {!hideSummaryCards && budgets.length > 0 && !loading && (
                 <>
@@ -1527,9 +1616,8 @@ export default function ActivityBudgetsTab({
                     </Select>
                   </div>
                   {expandedRows.size > 0 ? (
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
+                    <Button
+                      variant="outline"
                       onClick={collapseAllRows}
                       title="Collapse all expanded rows"
                       data-collapse-all
@@ -1538,9 +1626,8 @@ export default function ActivityBudgetsTab({
                       Collapse All
                     </Button>
                   ) : (
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
+                    <Button
+                      variant="outline"
                       onClick={expandAllRows}
                       title="Expand all rows"
                       data-expand-all
@@ -1549,7 +1636,7 @@ export default function ActivityBudgetsTab({
                       Expand All
                     </Button>
                   )}
-                  <Button variant="outline" size="sm" onClick={handleExport} data-export>
+                  <Button variant="outline" onClick={handleExport} data-export>
                     <Download className="h-4 w-4 mr-1" />
                     Export
                   </Button>
@@ -1704,28 +1791,6 @@ export default function ActivityBudgetsTab({
               <Button variant="outline" size="sm" onClick={handleExport} data-export>
                 <Download className="h-4 w-4 mr-1" />
                 Export
-              </Button>
-            </div>
-          )}
-          {selectedBudgetIds.size > 0 && (
-            <div className="flex items-center justify-end mt-4">
-              <Button
-                variant="destructive"
-                size="sm"
-                onClick={handleBulkDelete}
-                disabled={isBulkDeleting}
-              >
-                {isBulkDeleting ? (
-                  <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Deleting...
-                  </>
-                ) : (
-                  <>
-                    <Trash2 className="h-4 w-4 mr-2" />
-                    Delete Selected ({selectedBudgetIds.size})
-                  </>
-                )}
               </Button>
             </div>
           )}
@@ -1927,7 +1992,7 @@ export default function ActivityBudgetsTab({
                       )}
                       <TableCell className="py-3 px-4 whitespace-nowrap" style={{ width: '200px' }}>
                         <span className="font-medium">
-                          {format(parseISO(budget.period_start), 'MMM yyyy')} - {format(parseISO(budget.period_end), 'MMM yyyy')}
+                          {safeFormatDate(budget.period_start, 'MMM yyyy')} - {safeFormatDate(budget.period_end, 'MMM yyyy')}
                         </span>
                       </TableCell>
                       <TableCell className="py-3 px-4 whitespace-nowrap" style={{ width: '120px' }}>
@@ -1947,7 +2012,7 @@ export default function ActivityBudgetsTab({
                       </TableCell>
                       <TableCell className="py-3 px-4 whitespace-nowrap" style={{ width: '140px' }}>
                         <span>
-                          {budget.value_date ? format(parseISO(budget.value_date), 'MMM d, yyyy') : '-'}
+                          {safeFormatDate(budget.value_date, 'MMM d, yyyy', '-')}
                         </span>
                       </TableCell>
                       <TableCell className="py-3 px-4 text-right whitespace-nowrap" style={{ width: '150px' }}>
@@ -2073,7 +2138,7 @@ export default function ActivityBudgetsTab({
                                   </div>
                                   <div className="flex items-start gap-2">
                                     <span className="text-muted-foreground min-w-[100px]">Period Start:</span>
-                                    <span className="font-medium">{format(parseISO(budget.period_start), 'MMM d, yyyy')}</span>
+                                    <span className="font-medium">{safeFormatDate(budget.period_start, 'MMM d, yyyy')}</span>
                                   </div>
                                   <div className="flex items-start gap-2">
                                     <span className="text-muted-foreground min-w-[100px]">Original Value:</span>
@@ -2081,12 +2146,12 @@ export default function ActivityBudgetsTab({
                                   </div>
                                   <div className="flex items-start gap-2">
                                     <span className="text-muted-foreground min-w-[100px]">Period End:</span>
-                                    <span className="font-medium">{format(parseISO(budget.period_end), 'MMM d, yyyy')}</span>
+                                    <span className="font-medium">{safeFormatDate(budget.period_end, 'MMM d, yyyy')}</span>
                                   </div>
                                   <div className="flex items-start gap-2">
                                     <span className="text-muted-foreground min-w-[100px]">Value Date:</span>
                                     <span className="font-medium">
-                                      {budget.value_date ? format(parseISO(budget.value_date), 'MMM d, yyyy') : '—'}
+                                      {safeFormatDate(budget.value_date, 'MMM d, yyyy', '—')}
                                     </span>
                                   </div>
                                 </div>
@@ -2562,18 +2627,6 @@ export default function ActivityBudgetsTab({
                 </div>
               </div>
 
-              {/* USD Value (read-only) */}
-              <div className="space-y-2">
-                <Label htmlFor="usd_value">USD Value</Label>
-                <Input
-                  id="usd_value"
-                  type="text"
-                  value={isCalculatingUSD ? 'Calculating...' : (modalBudget.usd_value !== null && modalBudget.usd_value !== undefined ? `USD ${modalBudget.usd_value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : 'N/A')}
-                  disabled
-                  className="bg-muted"
-                />
-              </div>
-
               {/* Advanced IATI Fields - Budget Lines */}
               <div 
                 onClick={() => setShowAdvancedFields(!showAdvancedFields)}
@@ -2735,6 +2788,15 @@ export default function ActivityBudgetsTab({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Bulk Action Toolbar - appears from bottom when items selected */}
+      <BulkActionToolbar
+        selectedCount={selectedBudgetIds.size}
+        itemType="transactions"
+        onDelete={confirmBulkDelete}
+        onCancel={() => setSelectedBudgetIds(new Set())}
+        isDeleting={isBulkDeleting}
+      />
     </div>
   );
 } 

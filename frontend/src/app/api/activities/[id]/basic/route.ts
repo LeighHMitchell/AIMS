@@ -27,8 +27,8 @@ export async function GET(
     
     console.log('[AIMS API] GET /api/activities/[id]/basic - Fetching basic activity:', id);
     
-    // Add a small delay to ensure database consistency
-    await new Promise(resolve => setTimeout(resolve, 100));
+    // Add a small delay to ensure database consistency after writes
+    await new Promise(resolve => setTimeout(resolve, 300));
     
     const supabase = getSupabaseAdmin();
     

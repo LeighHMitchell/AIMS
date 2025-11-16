@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { format, parseISO, isValid } from 'date-fns';
-import { Trash2, Plus, Loader2, Edit, Save, X, AlertCircle, CheckCircle } from 'lucide-react';
+import { Trash2, Plus, Loader2, Edit, Save, X, AlertCircle, CheckCircle, TrendingUp } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';

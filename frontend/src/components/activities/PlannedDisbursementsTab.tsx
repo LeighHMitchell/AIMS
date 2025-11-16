@@ -17,7 +17,8 @@ import { cn } from '@/lib/utils';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, BarChart, Bar } from 'recharts';
 import { Badge } from '@/components/ui/badge';
 import { FinancialSummaryCards } from '@/components/FinancialSummaryCards';
-import { convertToUSD } from '@/lib/currency-conversion-api';
+// USD conversion now happens server-side - no client-side API needed
+// Removed shared HeroCard import - using local simple version
 import {
   Table,
   TableBody,
@@ -58,12 +59,62 @@ import {
   DialogDescription,
   DialogFooter,
 } from '@/components/ui/dialog';
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+  SheetFooter,
+} from '@/components/ui/sheet';
 import { toast } from 'sonner';
 import { OrganizationCombobox } from '@/components/ui/organization-combobox';
 import { ActivityCombobox } from '@/components/ui/activity-combobox';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { ChevronsUpDown } from 'lucide-react';
 import { exportToCSV } from '@/lib/csv-export';
+import { BulkActionToolbar } from '@/components/ui/bulk-action-toolbar';
+
+// Format currency with abbreviations (K, M, B)
+const formatCurrencyAbbreviated = (value: number) => {
+  const absValue = Math.abs(value);
+  let formattedValue: string;
+
+  if (absValue >= 1_000_000_000) {
+    formattedValue = (value / 1_000_000_000).toFixed(1) + 'B';
+  } else if (absValue >= 1_000_000) {
+    formattedValue = (value / 1_000_000).toFixed(1) + 'M';
+  } else if (absValue >= 1_000) {
+    formattedValue = (value / 1_000).toFixed(1) + 'K';
+  } else {
+    formattedValue = value.toFixed(0);
+  }
+
+  return '$' + formattedValue;
+};
+
+// Simple Hero Card Component (matching TransactionsManager style)
+interface SimpleHeroCardProps {
+  title: string;
+  value: string;
+  subtitle: string;
+  icon?: React.ReactNode;
+}
+
+function HeroCard({ title, value, subtitle, icon }: SimpleHeroCardProps) {
+  return (
+    <div className="p-4 border rounded-xl bg-white shadow-sm hover:shadow-md transition-shadow">
+      <div className="flex items-start justify-between">
+        <div>
+          <div className="text-sm text-muted-foreground">{title}</div>
+          <div className="text-2xl font-bold mt-1">{value}</div>
+          <div className="text-xs text-muted-foreground mt-1">{subtitle}</div>
+        </div>
+        {icon && <div className="text-muted-foreground">{icon}</div>}
+      </div>
+    </div>
+  );
+}
 
 // Types
 interface PlannedDisbursement {
@@ -136,7 +187,7 @@ export default function PlannedDisbursementsTab({
   const [modalDisbursement, setModalDisbursement] = useState<PlannedDisbursement | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [isFormDirty, setIsFormDirty] = useState(false);
-  const [isCalculatingUSD, setIsCalculatingUSD] = useState(false);
+  // isCalculatingUSD removed - USD conversion now happens server-side
   const [typePopoverOpen, setTypePopoverOpen] = useState(false);
   const [currencyPopoverOpen, setCurrencyPopoverOpen] = useState(false);
   const [amountInputValue, setAmountInputValue] = useState<string>('');
@@ -351,33 +402,7 @@ export default function PlannedDisbursementsTab({
     return errors;
   };
 
-  // Auto-calculate USD value
-  useEffect(() => {
-    const calculateUSD = async () => {
-      if (modalDisbursement?.amount && modalDisbursement?.currency && modalDisbursement?.value_date) {
-        setIsCalculatingUSD(true);
-        try {
-          if (modalDisbursement.currency === 'USD') {
-            setModalDisbursement(prev => prev ? { ...prev, usdAmount: modalDisbursement.amount } : null);
-          } else {
-            const result = await convertToUSD(
-              modalDisbursement.amount,
-              modalDisbursement.currency,
-              new Date(modalDisbursement.value_date)
-            );
-            setModalDisbursement(prev => prev ? { ...prev, usdAmount: result.usd_amount || 0 } : null);
-          }
-        } catch (err) {
-          console.error('Currency conversion error:', err);
-          toast.error('Failed to convert currency. Please check your values.');
-        } finally {
-          setIsCalculatingUSD(false);
-        }
-      }
-    };
-    
-    calculateUSD();
-  }, [modalDisbursement?.amount, modalDisbursement?.currency, modalDisbursement?.value_date]);
+  // USD conversion now happens server-side - no client-side calculation needed!
 
   // Update form field with validation and dirty tracking
   const updateFormField = (field: string, value: any) => {
@@ -809,6 +834,15 @@ export default function PlannedDisbursementsTab({
     return cumulativeData;
   }, [filteredDisbursements, aggregationMode]);
 
+  // Calculate totals for hero cards
+  const totalPlannedDisbursementsUSD = useMemo(() => {
+    return filteredDisbursements.reduce((sum, d) => sum + (d.usdAmount || 0), 0);
+  }, [filteredDisbursements]);
+
+  const totalPlannedDisbursementsCount = useMemo(() => {
+    return filteredDisbursements.length;
+  }, [filteredDisbursements]);
+
   // Save disbursement
   const saveDisbursement = async (disbursement: PlannedDisbursement) => {
     if (isReadOnly) {
@@ -946,13 +980,17 @@ export default function PlannedDisbursementsTab({
     }
   };
 
+  // Delete confirmation state (only for individual delete via dropdown menu)
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+
   // Delete disbursement
-  const handleDelete = async (id: string) => {
-    if (isReadOnly) return;
+  const confirmDelete = async () => {
+    if (!deleteConfirmId || isReadOnly) return;
 
-    if (!confirm('Are you sure you want to delete this planned disbursement?')) return;
-
+    const id = deleteConfirmId;
+    setDeleteConfirmId(null);
     setDeleteLoading(id);
+
     try {
       const response = await fetch(`/api/planned-disbursements?id=${id}`, {
         method: 'DELETE',
@@ -1053,14 +1091,12 @@ export default function PlannedDisbursementsTab({
     }
   }, [sortedFilteredDisbursements]);
 
-  const handleBulkDelete = useCallback(async () => {
+  const confirmBulkDelete = useCallback(async () => {
     const selectedArray = Array.from(selectedDisbursementIds);
     if (selectedArray.length === 0) return;
-    
-    if (!confirm(`Are you sure you want to delete ${selectedArray.length} planned disbursement(s)?`)) return;
-    
+
     setIsBulkDeleting(true);
-    
+
     try {
       // Delete all selected disbursements
       await Promise.all(selectedArray.map(async (id) => {
@@ -1072,13 +1108,13 @@ export default function PlannedDisbursementsTab({
           throw new Error(errorData.error || 'Failed to delete planned disbursement');
         }
       }));
-      
+
       // Remove deleted disbursements from state
       setDisbursements(prev => prev.filter(d => !selectedDisbursementIds.has(d.id!)));
-      
+
       // Clear selection
       setSelectedDisbursementIds(new Set());
-      
+
       toast.success(`Successfully deleted ${selectedArray.length} planned disbursement(s)`);
     } catch (error: any) {
       console.error('Error deleting planned disbursements:', error);
@@ -1377,17 +1413,20 @@ export default function PlannedDisbursementsTab({
 
   return (
     <div className="space-y-4">
-          {/* Financial Summary Cards */}
-          {activityId && !hideSummaryCards && (
-            <FinancialSummaryCards 
-              activityId={activityId} 
-              className="mb-6" 
-              hideTotalBudgeted={true}
-            />
+          {/* Planned Disbursements Summary Cards */}
+          {!hideSummaryCards && disbursements.length > 0 && (
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 mb-6">
+              <HeroCard
+                title="Total Planned Disbursements"
+                value={formatCurrencyAbbreviated(totalPlannedDisbursementsUSD)}
+                subtitle={`${totalPlannedDisbursementsCount} disbursement${totalPlannedDisbursementsCount !== 1 ? 's' : ''}`}
+                icon={<DollarSign className="h-5 w-5" />}
+              />
+            </div>
           )}
-          
+
           {/* Planned Disbursements Table */}
-          <Card data-planned-tab className="border-0">
+          <Card data-planned-tab>
         <CardHeader>
           <div className="flex items-center justify-between">
             {!hideSummaryCards && (
@@ -1399,40 +1438,30 @@ export default function PlannedDisbursementsTab({
             {hideSummaryCards && <div />}
             <div className={`flex items-center gap-2 ${hideSummaryCards ? 'hidden' : ''}`}>
               {!readOnly && (
-                <>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => addPeriod('month')}
-                    disabled={isReadOnly}
-                  >
-                    + Monthly
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => addPeriod('quarter')}
-                    disabled={isReadOnly}
-                  >
-                    + Quarterly
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => addPeriod('half-year')}
-                    disabled={isReadOnly}
-                  >
-                    + Semi-Annual
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => addPeriod('year')}
-                    disabled={isReadOnly}
-                  >
-                    + Annual
-                  </Button>
-                </>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button disabled={isReadOnly} className="bg-blue-600 hover:bg-blue-700 text-white">
+                      <Plus className="h-4 w-4 mr-1" />
+                      Add Planned Disbursement
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-40">
+                    <DropdownMenuGroup>
+                      <DropdownMenuItem onClick={() => addPeriod('month')}>
+                        Monthly
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => addPeriod('quarter')}>
+                        Quarterly
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => addPeriod('half-year')}>
+                        Semi-Annual
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => addPeriod('year')}>
+                        Annual
+                      </DropdownMenuItem>
+                    </DropdownMenuGroup>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               )}
               {!hideSummaryCards && disbursements.length > 0 && !loading && (
                 <>
@@ -1457,9 +1486,8 @@ export default function PlannedDisbursementsTab({
                     </SelectContent>
                   </Select>
                   {expandedRows.size > 0 ? (
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
+                    <Button
+                      variant="outline"
                       onClick={collapseAllRows}
                       title="Collapse all expanded rows"
                       data-collapse-all
@@ -1468,9 +1496,8 @@ export default function PlannedDisbursementsTab({
                       Collapse All
                     </Button>
                   ) : (
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
+                    <Button
+                      variant="outline"
                       onClick={expandAllRows}
                       title="Expand all rows"
                       data-expand-all
@@ -1479,7 +1506,7 @@ export default function PlannedDisbursementsTab({
                       Expand All
                     </Button>
                   )}
-                  <Button variant="outline" size="sm" onClick={handleExport} data-export>
+                  <Button variant="outline" onClick={handleExport} data-export>
                     <Download className="h-4 w-4 mr-1" />
                     Export
                   </Button>
@@ -1597,28 +1624,6 @@ export default function PlannedDisbursementsTab({
               </Button>
             </div>
           )}
-          {selectedDisbursementIds.size > 0 && (
-            <div className="flex items-center justify-end mt-4">
-              <Button
-                variant="destructive"
-                size="sm"
-                onClick={handleBulkDelete}
-                disabled={isBulkDeleting}
-              >
-                {isBulkDeleting ? (
-                  <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Deleting...
-                  </>
-                ) : (
-                  <>
-                    <Trash2 className="h-4 w-4 mr-2" />
-                    Delete Selected ({selectedDisbursementIds.size})
-                  </>
-                )}
-              </Button>
-            </div>
-          )}
         </CardHeader>
         <CardContent>
 
@@ -1726,6 +1731,11 @@ export default function PlannedDisbursementsTab({
                           )}
                         </div>
                       </TableHead>
+                      {!readOnly && (
+                        <TableHead className="text-sm font-medium text-foreground/90 py-3 px-4 text-right" style={{ width: '80px' }}>
+                          Actions
+                        </TableHead>
+                      )}
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -1781,8 +1791,8 @@ export default function PlannedDisbursementsTab({
 
                           {/* Status */}
                           <TableCell className="py-3 px-4 whitespace-nowrap">
-                            <span className="rounded-md bg-muted/60 px-2 py-0.5 text-xs">
-                                {disbursement.status || 'Original'}
+                            <span className={`rounded-md px-2 py-0.5 text-xs ${(disbursement.status || 'original') !== 'original' ? 'bg-muted/60' : ''}`}>
+                                {(disbursement.status || 'original').charAt(0).toUpperCase() + (disbursement.status || 'original').slice(1)}
                               </span>
                           </TableCell>
 
@@ -1890,8 +1900,8 @@ export default function PlannedDisbursementsTab({
                                     <Copy className="mr-2 h-4 w-4" />
                                     Duplicate
                                   </DropdownMenuItem>
-                                  <DropdownMenuItem 
-                                    onClick={() => handleDelete(disbursement.id || '')} 
+                                  <DropdownMenuItem
+                                    onClick={() => setDeleteConfirmId(disbursement.id || '')}
                                     disabled={isReadOnly || deleteLoading === disbursement.id}
                                     className="text-red-600"
                                   >
@@ -2063,6 +2073,9 @@ export default function PlannedDisbursementsTab({
                               .toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                           </span>
                         </TableCell>
+                        {!readOnly && (
+                          <TableCell className="py-3 px-4"></TableCell>
+                        )}
                       </TableRow>
                     )}
                   </TableBody>
@@ -2163,11 +2176,11 @@ export default function PlannedDisbursementsTab({
 
       {/* Enhanced Modal for Add/Edit Planned Disbursement */}
       <Dialog open={showModal} onOpenChange={setShowModal}>
-        <DialogContent className="max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-4xl w-full max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{modalDisbursement?.id ? 'Edit Planned Disbursement' : 'Add Planned Disbursement'}</DialogTitle>
             <DialogDescription>
-              Fill in all required fields. USD Value is auto-calculated based on the value date.
+              Fill in all required fields for this planned disbursement.
             </DialogDescription>
           </DialogHeader>
           
@@ -2404,26 +2417,6 @@ export default function PlannedDisbursementsTab({
               </div>
             </div>
 
-            {/* USD Value */}
-            <div className="space-y-2">
-              <Label htmlFor="usd-value">USD Value</Label>
-              <div className="relative">
-                <Input
-                  id="usd-value"
-                  type="text"
-                  value={modalDisbursement?.usdAmount ? `$${modalDisbursement.usdAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : ''}
-                  className="h-10 pr-8 bg-gray-50 font-medium"
-                  disabled
-                />
-                {isCalculatingUSD && (
-                  <Loader2 className="absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-gray-400" />
-                )}
-              </div>
-              <p className="text-xs text-gray-500">Auto-calculated based on currency, amount, and value date</p>
-            </div>
-
-            <div className="border-t pt-4" />
-
             {/* Provider Organisation */}
             <div className="space-y-2">
               <Label htmlFor="provider-org">Provider Organisation</Label>
@@ -2479,11 +2472,6 @@ export default function PlannedDisbursementsTab({
                 fallbackIatiId={modalDisbursement?.provider_activity_id}
                 disabled={savingId === modalDisbursement?.id}
               />
-              {modalDisbursement?.provider_activity_id && (
-                <p className="text-xs text-gray-500">
-                  IATI ID: {modalDisbursement.provider_activity_id}
-                </p>
-              )}
             </div>
 
             {/* Receiver Organisation */}
@@ -2538,14 +2526,7 @@ export default function PlannedDisbursementsTab({
                 fallbackIatiId={modalDisbursement?.receiver_activity_id}
                 disabled={savingId === modalDisbursement?.id}
               />
-              {modalDisbursement?.receiver_activity_id && (
-                <p className="text-xs text-gray-500">
-                  IATI ID: {modalDisbursement.receiver_activity_id}
-                </p>
-              )}
             </div>
-
-            <div className="border-t pt-4" />
 
             {/* Notes */}
             <div className="space-y-2">
@@ -2581,6 +2562,39 @@ export default function PlannedDisbursementsTab({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Delete Confirmation Sheet */}
+      <Sheet open={!!deleteConfirmId} onOpenChange={() => setDeleteConfirmId(null)}>
+        <SheetContent side="bottom" className="max-w-md mx-auto">
+          <SheetHeader>
+            <SheetTitle>Delete Planned Disbursement</SheetTitle>
+            <SheetDescription>
+              Are you sure you want to delete this planned disbursement? This action cannot be undone.
+            </SheetDescription>
+          </SheetHeader>
+          <SheetFooter className="flex-row gap-2 mt-4">
+            <Button variant="outline" onClick={() => setDeleteConfirmId(null)} className="flex-1">
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={confirmDelete}
+              className="flex-1"
+            >
+              Delete Disbursement
+            </Button>
+          </SheetFooter>
+        </SheetContent>
+      </Sheet>
+
+      {/* Bulk Action Toolbar - appears from bottom when items selected */}
+      <BulkActionToolbar
+        selectedCount={selectedDisbursementIds.size}
+        itemType="transactions"
+        onDelete={confirmBulkDelete}
+        onCancel={() => setSelectedDisbursementIds(new Set())}
+        isDeleting={isBulkDeleting}
+      />
 
     </div>
   );

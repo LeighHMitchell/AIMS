@@ -162,21 +162,36 @@ export default function SectorSankeyVisualization({
   const containerRef = useRef<HTMLDivElement>(null);
   const [containerSize, setContainerSize] = useState({ width: 800, height: 600 });
   const [viewMode, setViewMode] = useState<ViewMode>(defaultView);
-  const [metricMode, setMetricMode] = useState<MetricMode>(defaultMetric);
+  const [metricMode, setMetricMode] = useState<MetricMode>('percentage');
 
   // Update view mode when defaultView prop changes
   useEffect(() => {
     setViewMode(defaultView);
   }, [defaultView]);
 
-  // Update metric mode when defaultMetric prop changes
-  useEffect(() => {
-    setMetricMode(defaultMetric);
-  }, [defaultMetric]);
+  // Metric mode is locked to percentage for activity editor sector reporting
 
   // Build hierarchy data for Sankey
   const sankeyData = useMemo(() => {
     console.log('Processing allocations for Sankey:', allocations);
+
+    // First, build a lookup map for unique sector names from the data
+    const sectorNameMap = new Map<string, string>();
+    const categoryNameMap = new Map<string, string>();
+
+    sectorGroupData.data.forEach((item: any) => {
+      const sectorCode = item['codeforiati:category-code'];
+      const sectorName = item['codeforiati:category-name'];
+      const categoryCode = item['codeforiati:group-code'];
+      const categoryName = item['codeforiati:group-name'];
+
+      if (sectorCode && sectorName && !sectorNameMap.has(sectorCode)) {
+        sectorNameMap.set(sectorCode, sectorName);
+      }
+      if (categoryCode && categoryName && !categoryNameMap.has(categoryCode)) {
+        categoryNameMap.set(categoryCode, categoryName);
+      }
+    });
 
     const categoryMap = new Map<string, {
       code: string;
@@ -193,16 +208,31 @@ export default function SectorSankeyVisualization({
     // Process each allocation
     allocations.forEach(allocation => {
       const sectorData = sectorGroupData.data.find((s: any) => s.code === allocation.code);
+      const codeLength = allocation.code?.length || 0;
 
-      if (!sectorData) {
-        console.warn(`Sector data not found for code: ${allocation.code}`);
-        return;
+      // Determine what level this allocation represents
+      // 3-digit codes are sectors, 5-digit codes are subsectors
+      const isSector = codeLength === 3;
+      const isSubsector = codeLength === 5;
+
+      // Derive codes
+      const derivedCategoryCode = allocation.code?.substring(0, 2) + '0';
+      const derivedSectorCode = allocation.code?.substring(0, 3);
+
+      const categoryCode = sectorData ? sectorData['codeforiati:group-code'] : derivedCategoryCode;
+      let sectorCode: string;
+
+      if (isSector) {
+        // For 3-digit codes, the code itself is the sector
+        sectorCode = allocation.code;
+      } else {
+        // For 5-digit codes, derive the 3-digit sector code
+        sectorCode = sectorData ? sectorData['codeforiati:category-code'] : derivedSectorCode;
       }
 
-      const categoryCode = sectorData['codeforiati:group-code'];
-      const categoryName = sectorData['codeforiati:group-name'];
-      const sectorCode = sectorData['codeforiati:category-code'];
-      const sectorName = sectorData['codeforiati:category-name'];
+      // Look up names from our maps (built from all sector data)
+      const categoryName = categoryNameMap.get(categoryCode) || `Category ${categoryCode}`;
+      const sectorName = sectorNameMap.get(sectorCode) || `Category ${sectorCode}`;
 
       // Initialize category if not exists
       if (!categoryMap.has(categoryCode)) {
@@ -229,7 +259,11 @@ export default function SectorSankeyVisualization({
 
       const sector = category.sectors.get(sectorCode)!;
       sector.percentage += allocation.percentage;
-      sector.subsectors.push(allocation);
+
+      // Only add to subsectors array if this is actually a 5-digit subsector
+      if (isSubsector) {
+        sector.subsectors.push(allocation);
+      }
     });
 
     // Convert to Sankey format
@@ -525,20 +559,18 @@ export default function SectorSankeyVisualization({
       const anchor = isLeftSide ? 'start' : 'end';
       const code = d.id.replace(/^(cat-|sec-|sub-)/, '');
 
-      // Combine code and name with wrapping
+      // Combine code and name - ensure code is always at the start
       const fullText = `${code} ${d.name}`;
       const words = fullText.split(/\s+/);
-      const maxCharsPerLine = 30;
+      const maxCharsPerLine = 35;
       const lines: string[] = [];
       let currentLine = '';
-      let isFirstWord = true;
 
       words.forEach((word: string) => {
         const testLine = currentLine ? currentLine + ' ' + word : word;
         if (testLine.length > maxCharsPerLine && currentLine) {
           lines.push(currentLine);
           currentLine = word;
-          isFirstWord = false;
         } else {
           currentLine = testLine;
         }
@@ -551,7 +583,7 @@ export default function SectorSankeyVisualization({
       // Limit to 2 lines
       const displayLines = lines.slice(0, 2);
       if (lines.length > 2) {
-        displayLines[1] = displayLines[1].substring(0, 27) + '...';
+        displayLines[1] = displayLines[1].substring(0, 32) + '...';
       }
 
       displayLines.forEach((line: string, i: number) => {
@@ -559,43 +591,31 @@ export default function SectorSankeyVisualization({
           .attr('x', x)
           .attr('y', y - (displayLines.length - 1) * 6 + (i * 12))
           .attr('text-anchor', anchor)
-          .attr('font-size', '11px')
+          .attr('font-size', '12px')
           .attr('font-weight', d.level === 'category' ? 'bold' : 'normal')
           .attr('fill', '#1e293b')
           .style('pointer-events', 'none');
 
-        // Check if this line starts with the code (first line, first word)
+        // First line should always start with the code
         if (i === 0) {
-          const codeMatch = line.match(new RegExp(`^${code}\\s`));
-          if (codeMatch) {
-            // Add code with background
-            const codeTspan = text.append('tspan')
-              .attr('font-family', 'monospace')
-              .attr('font-size', '10px')
-              .attr('fill', '#475569')
-              .text(code);
+          // Add code with styled background
+          const codeTspan = text.append('tspan')
+            .attr('font-family', 'monospace')
+            .attr('font-size', '11px')
+            .attr('font-weight', 'bold')
+            .attr('fill', '#1e293b')
+            .text(code);
 
-            // Add background for code
-            codeTspan.each(function() {
-              const bbox = (this as SVGTextElement).getBBox();
-              nodeGroup.insert('rect', 'text')
-                .attr('x', bbox.x - 2)
-                .attr('y', bbox.y - 1)
-                .attr('width', bbox.width + 4)
-                .attr('height', bbox.height + 2)
-                .attr('fill', '#e2e8f0')
-                .attr('rx', 2)
-                .style('pointer-events', 'none');
-            });
-
-            // Add the rest of the text
+          // Add the rest of the text after the code
+          const nameText = line.substring(code.length).trim();
+          if (nameText) {
             text.append('tspan')
-              .attr('dx', 3)
-              .text(line.substring(code.length));
-          } else {
-            text.text(line);
+              .attr('dx', 4)
+              .attr('font-weight', d.level === 'category' ? 'bold' : 'normal')
+              .text(nameText);
           }
         } else {
+          // Continuation lines
           text.text(line);
         }
       });
@@ -981,13 +1001,6 @@ export default function SectorSankeyVisualization({
   }, []);
 
   const renderTable = () => {
-    const formatCurrency = (v: number) => {
-      if (v === 0) return '$0';
-      if (v >= 1000000) return '$' + (v / 1000000).toFixed(1) + 'm';
-      if (v >= 1000) return '$' + (v / 1000).toFixed(1) + 'k';
-      return '$' + v.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
-    };
-
     const formatPercentage = (v: number) => v.toFixed(0) + '%';
 
     // Calculate total percentage
@@ -996,7 +1009,6 @@ export default function SectorSankeyVisualization({
     // Build table data with hierarchy information
     const tableData = allocations.map(allocation => {
       const sectorData = sectorGroupData.data.find((s: any) => s.code === allocation.code);
-      const financial = financialData.find(f => f.code === allocation.code);
 
       let category = '';
       let sector = '';
@@ -1019,8 +1031,7 @@ export default function SectorSankeyVisualization({
         category,
         sector,
         subsector,
-        allocation,
-        financial
+        allocation
       };
     });
 
@@ -1033,10 +1044,6 @@ export default function SectorSankeyVisualization({
               <TableHead>Sector</TableHead>
               <TableHead>Sub-sector</TableHead>
               <TableHead className="text-right w-[80px]">%</TableHead>
-              <TableHead className="text-right w-[100px]">Budget</TableHead>
-              <TableHead className="text-right w-[120px]">Commitment</TableHead>
-              <TableHead className="text-right w-[160px]">Planned Disbursement</TableHead>
-              <TableHead className="text-right w-[120px]">Actual Spending</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -1078,21 +1085,13 @@ export default function SectorSankeyVisualization({
                       <span className="font-mono text-xs bg-slate-100 px-1.5 py-0.5 rounded mr-2">{subsectorCode}</span>
                       <span className="font-medium">{subsectorName}</span>
                     </TableCell>
-                    <TableCell className="text-right font-medium">{formatPercentage(row.allocation.percentage)}</TableCell>
-                    <TableCell className="text-right">{formatCurrency(row.financial?.budget || 0)}</TableCell>
-                    <TableCell className="text-right">{formatCurrency(row.financial?.commitment || 0)}</TableCell>
-                    <TableCell className="text-right">{formatCurrency(row.financial?.plannedDisbursement || 0)}</TableCell>
-                    <TableCell className="text-right">{formatCurrency(row.financial?.actualDisbursement || 0)}</TableCell>
+                    <TableCell className="text-right font-semibold">{formatPercentage(row.allocation.percentage)}</TableCell>
                   </TableRow>
                 );
               })}
             <TableRow className="font-semibold bg-slate-50 border-t-2">
               <TableCell colSpan={3}>Total</TableCell>
               <TableCell className="text-right">{formatPercentage(totalPercentage)}</TableCell>
-              <TableCell className="text-right">{formatCurrency(financialTotals.budget)}</TableCell>
-              <TableCell className="text-right">{formatCurrency(financialTotals.commitment)}</TableCell>
-              <TableCell className="text-right">{formatCurrency(financialTotals.plannedDisbursement)}</TableCell>
-              <TableCell className="text-right">{formatCurrency(financialTotals.actualDisbursement)}</TableCell>
             </TableRow>
           </TableBody>
         </Table>
@@ -1132,86 +1131,67 @@ export default function SectorSankeyVisualization({
     <div ref={containerRef} className={`w-full ${className}`}>
       {/* Controls - only shown if showControls is true */}
       {showControls && (
-        <>
-          <div className="flex flex-wrap items-center justify-between gap-3 mb-4 pb-4 border-b">
-            <div className="flex flex-wrap items-center gap-4">
-              {/* View Mode Tabs */}
-              <Tabs value={viewMode} onValueChange={(value) => setViewMode(value as ViewMode)} className="w-auto">
-                <TabsList className="h-9">
-                  <TabsTrigger value="sankey" className="text-xs px-3">
-                    <GitBranch className="h-3.5 w-3.5 mr-1.5" />
-                    Flow
-                  </TabsTrigger>
-                  <TabsTrigger value="pie" className="text-xs px-3">
-                    <PieChart className="h-3.5 w-3.5 mr-1.5" />
-                    Pie
-                  </TabsTrigger>
-                  <TabsTrigger value="bar" className="text-xs px-3">
-                    <BarChart3 className="h-3.5 w-3.5 mr-1.5" />
-                    Bar
-                  </TabsTrigger>
-                  <TabsTrigger value="table" className="text-xs px-3">
-                    <TableIcon className="h-3.5 w-3.5 mr-1.5" />
-                    Table
-                  </TabsTrigger>
-                </TabsList>
-              </Tabs>
+        <div className="flex flex-wrap items-center justify-between gap-3 mb-4 pb-4 border-b">
+          <div className="flex flex-wrap items-center gap-4">
+            {/* View Mode Tabs */}
+            <Tabs value={viewMode} onValueChange={(value) => setViewMode(value as ViewMode)} className="w-auto">
+              <TabsList className="h-9">
+                <TabsTrigger value="sankey" className="text-xs px-3">
+                  <GitBranch className="h-3.5 w-3.5 mr-1.5" />
+                  Sankey
+                </TabsTrigger>
+                <TabsTrigger value="pie" className="text-xs px-3">
+                  <PieChart className="h-3.5 w-3.5 mr-1.5" />
+                  Sunburst
+                </TabsTrigger>
+                <TabsTrigger value="bar" className="text-xs px-3">
+                  <BarChart3 className="h-3.5 w-3.5 mr-1.5" />
+                  Bar
+                </TabsTrigger>
+                <TabsTrigger value="table" className="text-xs px-3">
+                  <TableIcon className="h-3.5 w-3.5 mr-1.5" />
+                  Table
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
 
-              {/* Metric Selector */}
-              <Select value={metricMode} onValueChange={(value: MetricMode) => setMetricMode(value)}>
-                <SelectTrigger className="w-[180px] h-9">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="percentage">Percentage</SelectItem>
-                  <SelectItem value="budget">Budget</SelectItem>
-                  <SelectItem value="planned">Planned Disbursement</SelectItem>
-                  <SelectItem value="actual">Actual Disbursement</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleExportCSV}
-              >
-                <Download className="h-4 w-4 mr-1" />
-                CSV
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleExportJPG}
-              >
-                <Download className="h-4 w-4 mr-1" />
-                JPG
-              </Button>
-            </div>
+            {/* Metric selector removed: percentage-only view */}
           </div>
 
-          {/* Total Display */}
-          <div className="flex items-center justify-between p-3 bg-slate-50 rounded-lg mb-4">
-            <span className="text-sm font-medium text-slate-600">{getMetricLabel()}:</span>
-            <span className={`text-lg font-bold ${metricMode === 'percentage' && currentTotal === 100 ? 'text-green-600' : 'text-slate-900'}`}>
-              {formatTotal(currentTotal)}
-            </span>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleExportCSV}
+            >
+              <Download className="h-4 w-4 mr-1" />
+              CSV
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleExportJPG}
+            >
+              <Download className="h-4 w-4 mr-1" />
+              JPG
+            </Button>
           </div>
-        </>
+        </div>
       )}
 
-      {/* View */}
+      {/* Total Display removed per design request */}
+
+      {/* View - always render based on viewMode */}
       {viewMode === 'sankey' ? (
-        <div className="w-full h-96">
+        <div className="w-full" style={{ height: '600px' }}>
           <svg ref={svgRef} className="w-full h-full" />
         </div>
       ) : viewMode === 'pie' ? (
-        <div className="w-full h-96">
+        <div className="w-full" style={{ height: '600px' }}>
           <svg ref={svgRef} className="w-full h-full" />
         </div>
       ) : viewMode === 'bar' ? (
-        <div className="w-full h-96">
+        <div className="w-full" style={{ height: '600px' }}>
           <svg ref={svgRef} className="w-full h-full" />
         </div>
       ) : (

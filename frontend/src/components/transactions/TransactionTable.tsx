@@ -58,7 +58,6 @@ import { format } from "date-fns";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import {
   Tooltip,
@@ -112,6 +111,26 @@ const TRANSACTION_TYPE_LABELS: Record<string, string> = {
   '11': 'Credit Guarantee',
   '12': 'Incoming Funds',
   '13': 'Commitment Cancellation'
+};
+
+// Pluralized labels for grouped headers
+const TRANSACTION_TYPE_PLURAL_LABELS: Record<string, string> = {
+  '1': 'Incoming Commitments',
+  '2': 'Outgoing Commitments',
+  '3': 'Disbursements',
+  '4': 'Expenditures',
+  '5': 'Interest Repayments',
+  '6': 'Loan Repayments',
+  '7': 'Reimbursements',
+  '8': 'Purchases of Equity',
+  '9': 'Sales of Equity',
+  '11': 'Credit Guarantees',
+  '12': 'Incoming Funds',
+  '13': 'Commitment Cancellations'
+};
+
+const getGroupedLabel = (type: string): string => {
+  return TRANSACTION_TYPE_PLURAL_LABELS[type] || `${TRANSACTION_TYPE_LABELS[type] || type}s`;
 };
 
 // Aid Type mappings
@@ -281,6 +300,8 @@ interface TransactionTableProps {
   selectedIds?: Set<string>;
   onSelectAll?: (checked: boolean) => void;
   onSelectTransaction?: (id: string, checked: boolean) => void;
+  groupedView?: boolean;
+  onGroupedViewChange?: (value: boolean) => void;
 }
 
 export function TransactionTable({
@@ -302,6 +323,8 @@ export function TransactionTable({
   selectedIds,
   onSelectAll,
   onSelectTransaction,
+  groupedView = false,
+  onGroupedViewChange,
 }: TransactionTableProps) {
   const router = useRouter();
   const [copiedId, setCopiedId] = useState<string | null>(null);
@@ -462,6 +485,32 @@ export function TransactionTable({
     return () => { cancelled = true; };
   }, [transactions]);
 
+  // Group transactions by type for grouped view
+  const groupedTransactions = React.useMemo(() => {
+    const groups: Record<string, TransactionData[]> = {};
+    transactions.forEach(transaction => {
+      const type = transaction.transaction_type || 'Unspecified';
+      if (!groups[type]) {
+        groups[type] = [];
+      }
+      groups[type].push(transaction);
+    });
+    return groups;
+  }, [transactions]);
+
+  // Calculate totals per group
+  const groupTotals = React.useMemo(() => {
+    return Object.entries(groupedTransactions).map(([type, txs]) => ({
+      type,
+      total: txs.reduce((sum, t) => {
+        const transactionId = t.uuid || t.id;
+        const usdValue = usdValues[transactionId]?.usd;
+        return sum + (usdValue || 0);
+      }, 0),
+      count: txs.length
+    }));
+  }, [groupedTransactions, usdValues]);
+
   const copyToClipboard = async (text: string, type: string, transactionId: string) => {
     try {
       await navigator.clipboard.writeText(text);
@@ -474,17 +523,17 @@ export function TransactionTable({
 
   const formatCurrency = (value: number, currency: string = "USD") => {
     // Ensure currency is a valid 3-letter code, fallback to USD
-    const safeCurrency = currency && currency.length === 3 && /^[A-Z]{3}$/.test(currency.toUpperCase()) 
-      ? currency.toUpperCase() 
+    const safeCurrency = currency && currency.length === 3 && /^[A-Z]{3}$/.test(currency.toUpperCase())
+      ? currency.toUpperCase()
       : "USD";
-    
+
     try {
       // Format number with commas
       const formattedValue = new Intl.NumberFormat("en-US", {
         minimumFractionDigits: 0,
         maximumFractionDigits: 0,
       }).format(value);
-      
+
       // Return as JSX with gray currency code
       return <><span className="text-muted-foreground">{safeCurrency}</span> {formattedValue}</>;
     } catch (error) {
@@ -495,6 +544,20 @@ export function TransactionTable({
       }).format(value);
       return <><span className="text-muted-foreground">USD</span> {formattedValue}</>;
     }
+  };
+
+  // String version of formatCurrency for group headers
+  const formatCurrencyString = (value: number, currency: string = "USD") => {
+    const safeCurrency = currency && currency.length === 3 && /^[A-Z]{3}$/.test(currency.toUpperCase())
+      ? currency.toUpperCase()
+      : "USD";
+
+    const formattedValue = new Intl.NumberFormat("en-US", {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(value);
+
+    return `${safeCurrency} ${formattedValue}`;
   };
 
   const getTransactionIcon = (type: string) => {
@@ -669,7 +732,41 @@ export function TransactionTable({
           </TableRow>
         </TableHeader>
         <TableBody>
-          {transactions.map((transaction, index) => {
+          {/* Smart approach: Use same rendering for both grouped and regular views */}
+          {(groupedView
+            ? Object.entries(groupedTransactions)
+            : [[null, transactions]] as Array<[string | null, TransactionData[]]>
+          ).map(([type, txs]) => {
+            const groupTotal = type ? groupTotals.find(g => g.type === type) : null;
+            return (
+              <React.Fragment key={type ? `group-${type}` : 'regular'}>
+                {/* Group Header Row - only show in grouped view */}
+                {groupedView && type && (
+                  <TableRow className="bg-muted hover:bg-muted">
+                    <TableCell className="py-3 px-4"></TableCell>
+                    {variant === "full" && <TableCell className="py-3 px-4"></TableCell>}
+                    <TableCell colSpan={variant === "full" ? 5 : 4} className="py-3 px-4">
+                      <div className="flex items-center gap-3">
+                        <span className="font-semibold text-sm">
+                          {getGroupedLabel(type)}
+                        </span>
+                        <span className="text-xs text-muted-foreground">
+                          ({groupTotal?.count || 0} {(groupTotal?.count || 0) === 1 ? 'transaction' : 'transactions'})
+                        </span>
+                      </div>
+                    </TableCell>
+                    <TableCell className="py-3 px-4"></TableCell>
+                    <TableCell className="py-3 px-4 text-right">
+                      <span className="font-semibold text-sm">
+                        {formatCurrencyString(groupTotal?.total || 0, 'USD')}
+                      </span>
+                    </TableCell>
+                    {variant === "full" && <TableCell className="py-3 px-4"></TableCell>}
+                    <TableCell className="py-3 px-4"></TableCell>
+                  </TableRow>
+                )}
+                {/* Transaction rows - same rendering for both views */}
+                {txs.map((transaction, index) => {
             // Resolve organization names/logos using alias resolution
             const resolveOrgDisplay = (orgId?: string, orgName?: string, orgRef?: string, orgAcronym?: string) => {
               // Try to find by org ID or ref (including aliases)
@@ -1679,6 +1776,9 @@ export function TransactionTable({
               </TableRow>
             )}
             </React.Fragment>
+            );
+          })}
+              </React.Fragment>
             );
           })}
         </TableBody>
