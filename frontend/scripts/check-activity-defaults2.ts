@@ -8,16 +8,24 @@ const supabase = createClient(supabaseUrl, supabaseKey)
 async function checkDefaults() {
   const { data, error } = await supabase
     .from('activities')
-    .select('id, title, default_finance_type, default_flow_type, default_aid_type, default_tied_status')
-    .limit(5)
+    .select('*')
+    .limit(1)
 
   if (error) {
     console.error('Error:', error)
     return
   }
 
-  console.log('Activity default fields:')
-  console.log(JSON.stringify(data, null, 2))
+  if (data && data.length > 0) {
+    console.log('Activity fields containing "default":')
+    const fields = Object.keys(data[0]).filter(key => key.includes('default'))
+    console.log(fields.sort())
+    
+    console.log('\nSample activity default values:')
+    fields.forEach(field => {
+      console.log(`  ${field}: ${data[0][field]}`)
+    })
+  }
 }
 
 checkDefaults()

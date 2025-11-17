@@ -400,22 +400,51 @@ export async function POST(request: NextRequest) {
           continue; // Skip this transaction
         }
 
-        // Check if finance type should be inherited from activity defaults
+        // Check if finance type, flow type, aid type, or tied status should be inherited from activity defaults
         let effectiveFinanceType = financeType;
         let financeTypeInherited = false;
-        
-        if (!financeType) {
-          // Fetch activity's default finance type
+        let effectiveFlowType = flowType;
+        let flowTypeInherited = false;
+        let effectiveAidType = aidType;
+        let aidTypeInherited = false;
+        let effectiveTiedStatus = tiedStatus;
+        let tiedStatusInherited = false;
+
+        // Only fetch activity defaults if any of the fields are missing
+        if (!financeType || !flowType || !aidType || !tiedStatus) {
+          // Fetch activity's default values
           const { data: activityData } = await getSupabaseAdmin()
             .from('activities')
-            .select('default_finance_type')
+            .select('default_finance_type, default_flow_type, default_aid_type, default_tied_status')
             .eq('id', activityId)
             .single();
-          
-          if (activityData?.default_finance_type) {
+
+          // Inherit finance type if missing
+          if (!financeType && activityData?.default_finance_type) {
             effectiveFinanceType = activityData.default_finance_type;
             financeTypeInherited = true;
             console.log(`[IATI Import Enhanced] Finance type inherited from activity default: ${effectiveFinanceType}`);
+          }
+
+          // Inherit flow type if missing
+          if (!flowType && activityData?.default_flow_type) {
+            effectiveFlowType = activityData.default_flow_type;
+            flowTypeInherited = true;
+            console.log(`[IATI Import Enhanced] Flow type inherited from activity default: ${effectiveFlowType}`);
+          }
+
+          // Inherit aid type if missing
+          if (!aidType && activityData?.default_aid_type) {
+            effectiveAidType = activityData.default_aid_type;
+            aidTypeInherited = true;
+            console.log(`[IATI Import Enhanced] Aid type inherited from activity default: ${effectiveAidType}`);
+          }
+
+          // Inherit tied status if missing
+          if (!tiedStatus && activityData?.default_tied_status) {
+            effectiveTiedStatus = activityData.default_tied_status;
+            tiedStatusInherited = true;
+            console.log(`[IATI Import Enhanced] Tied status inherited from activity default: ${effectiveTiedStatus}`);
           }
         }
 
@@ -440,12 +469,12 @@ export async function POST(request: NextRequest) {
           receiver_org_name: receiverOrgName,
           // IATI reference fields
           activity_iati_ref: transaction.activityRef,
-          // Classification fields
-          flow_type: flowType,
+          // Classification fields - use effective values (inherited from activity defaults if transaction doesn't specify)
+          flow_type: effectiveFlowType,
           finance_type: effectiveFinanceType,
           finance_type_inherited: financeTypeInherited,
-          aid_type: aidType,
-          tied_status: tiedStatus,
+          aid_type: effectiveAidType,
+          tied_status: effectiveTiedStatus,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
           // Note: Fields like disbursement_channel, sector_code, etc. 

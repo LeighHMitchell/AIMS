@@ -1891,31 +1891,68 @@ export default function TransactionList({
                               <div>
                                 <h4 className="font-semibold text-xs uppercase text-muted-foreground mb-3">Funding Modality & Aid Classification</h4>
                                 <div className="space-y-3 ml-4">
-                                {transaction.aid_type && (
+                                {/* Aid Type - with inheritance support */}
+                                {(transaction.aid_type || defaultAidType) && (
                                   <div className="flex items-start gap-2">
                                     <span className="text-muted-foreground min-w-[160px]">Aid Type:</span>
-                                    <div className="flex items-center gap-2">
-                                      <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded">{transaction.aid_type}</span>
-                                      <span className="text-xs">{AID_TYPE_LABELS[transaction.aid_type] || transaction.aid_type}</span>
-                                    </div>
+                                    <TooltipProvider>
+                                      <Tooltip>
+                                        <TooltipTrigger asChild>
+                                          <div className={`flex items-center gap-2 ${(transaction as any).aid_type_inherited || (!transaction.aid_type && defaultAidType) || (transaction.aid_type === defaultAidType && defaultAidType) ? 'text-gray-400 opacity-70 cursor-help' : ''}`}>
+                                            <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded">
+                                              {transaction.aid_type || defaultAidType}
+                                            </span>
+                                            <span className="text-xs">
+                                              {AID_TYPE_LABELS[transaction.aid_type || defaultAidType || ''] || (transaction.aid_type || defaultAidType)}
+                                            </span>
+                                          </div>
+                                        </TooltipTrigger>
+                                        {((transaction as any).aid_type_inherited || (!transaction.aid_type && defaultAidType) || (transaction.aid_type === defaultAidType && defaultAidType)) && (
+                                          <TooltipContent>
+                                            <p className="text-xs">
+                                              This aid type has been inherited from the activity's default aid type (code {defaultAidType || transaction.aid_type} – {AID_TYPE_LABELS[defaultAidType || transaction.aid_type || ''] || defaultAidType || transaction.aid_type})
+                                            </p>
+                                          </TooltipContent>
+                                        )}
+                                      </Tooltip>
+                                    </TooltipProvider>
                                   </div>
                                 )}
-                                {transaction.flow_type && (
+                                {/* Flow Type - with inheritance support */}
+                                {(transaction.flow_type || defaultFlowType) && (
                                   <div className="flex items-start gap-2">
                                     <span className="text-muted-foreground min-w-[160px]">Flow Type:</span>
-                                    <div className="flex items-center gap-2">
-                                      <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded">{transaction.flow_type}</span>
-                                      <span className="text-xs">{FLOW_TYPE_LABELS[transaction.flow_type] || transaction.flow_type}</span>
-                                    </div>
+                                    <TooltipProvider>
+                                      <Tooltip>
+                                        <TooltipTrigger asChild>
+                                          <div className={`flex items-center gap-2 ${(transaction as any).flow_type_inherited || (!transaction.flow_type && defaultFlowType) || (transaction.flow_type === defaultFlowType && defaultFlowType) ? 'text-gray-400 opacity-70 cursor-help' : ''}`}>
+                                            <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded">
+                                              {transaction.flow_type || defaultFlowType}
+                                            </span>
+                                            <span className="text-xs">
+                                              {FLOW_TYPE_LABELS[transaction.flow_type || defaultFlowType || ''] || (transaction.flow_type || defaultFlowType)}
+                                            </span>
+                                          </div>
+                                        </TooltipTrigger>
+                                        {((transaction as any).flow_type_inherited || (!transaction.flow_type && defaultFlowType) || (transaction.flow_type === defaultFlowType && defaultFlowType)) && (
+                                          <TooltipContent>
+                                            <p className="text-xs">
+                                              This flow type has been inherited from the activity's default flow type (code {defaultFlowType || transaction.flow_type} – {FLOW_TYPE_LABELS[defaultFlowType || transaction.flow_type || ''] || defaultFlowType || transaction.flow_type})
+                                            </p>
+                                          </TooltipContent>
+                                        )}
+                                      </Tooltip>
+                                    </TooltipProvider>
                                   </div>
                                 )}
+                                {/* Finance Type - with inheritance support */}
                                 {(transaction.finance_type || defaultFinanceType) && (
                                   <div className="flex items-start gap-2">
                                     <span className="text-muted-foreground min-w-[160px]">Finance Type:</span>
                                     <TooltipProvider>
                                       <Tooltip>
                                         <TooltipTrigger asChild>
-                                          <div className={`flex items-center gap-2 ${!transaction.finance_type && defaultFinanceType ? 'text-gray-400 opacity-70 cursor-help' : ''}`}>
+                                          <div className={`flex items-center gap-2 ${transaction.finance_type_inherited || (!transaction.finance_type && defaultFinanceType) || (transaction.finance_type === defaultFinanceType && defaultFinanceType) ? 'text-gray-400 opacity-70 cursor-help' : ''}`}>
                                             <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded">
                                               {transaction.finance_type || defaultFinanceType}
                                             </span>
@@ -1924,10 +1961,10 @@ export default function TransactionList({
                                             </span>
                                           </div>
                                         </TooltipTrigger>
-                                        {!transaction.finance_type && defaultFinanceType && (
+                                        {(transaction.finance_type_inherited || (!transaction.finance_type && defaultFinanceType) || (transaction.finance_type === defaultFinanceType && defaultFinanceType)) && (
                                           <TooltipContent>
                                             <p className="text-xs">
-                                              This finance type has been inferred from the activity's default finance type (code {defaultFinanceType} – {FINANCE_TYPE_LABELS[defaultFinanceType] || defaultFinanceType})
+                                              This finance type has been inherited from the activity's default finance type (code {defaultFinanceType || transaction.finance_type} – {FINANCE_TYPE_LABELS[defaultFinanceType || transaction.finance_type || ''] || defaultFinanceType || transaction.finance_type})
                                             </p>
                                           </TooltipContent>
                                         )}
@@ -1935,13 +1972,31 @@ export default function TransactionList({
                                     </TooltipProvider>
                                   </div>
                                 )}
-                                {transaction.tied_status && (
+                                {/* Tied Status - with inheritance support */}
+                                {(transaction.tied_status || defaultTiedStatus) && (
                                   <div className="flex items-start gap-2">
                                     <span className="text-muted-foreground min-w-[160px]">Tied Status:</span>
-                                    <div className="flex items-center gap-2">
-                                      <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded">{transaction.tied_status}</span>
-                                      <span className="text-xs">{TIED_STATUS_LABELS[transaction.tied_status] || transaction.tied_status}</span>
-                                    </div>
+                                    <TooltipProvider>
+                                      <Tooltip>
+                                        <TooltipTrigger asChild>
+                                          <div className={`flex items-center gap-2 ${(transaction as any).tied_status_inherited || (!transaction.tied_status && defaultTiedStatus) || (transaction.tied_status === defaultTiedStatus && defaultTiedStatus) ? 'text-gray-400 opacity-70 cursor-help' : ''}`}>
+                                            <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded">
+                                              {transaction.tied_status || defaultTiedStatus}
+                                            </span>
+                                            <span className="text-xs">
+                                              {TIED_STATUS_LABELS[transaction.tied_status || defaultTiedStatus || ''] || (transaction.tied_status || defaultTiedStatus)}
+                                            </span>
+                                          </div>
+                                        </TooltipTrigger>
+                                        {((transaction as any).tied_status_inherited || (!transaction.tied_status && defaultTiedStatus) || (transaction.tied_status === defaultTiedStatus && defaultTiedStatus)) && (
+                                          <TooltipContent>
+                                            <p className="text-xs">
+                                              This tied status has been inherited from the activity's default tied status (code {defaultTiedStatus || transaction.tied_status} – {TIED_STATUS_LABELS[defaultTiedStatus || transaction.tied_status || ''] || defaultTiedStatus || transaction.tied_status})
+                                            </p>
+                                          </TooltipContent>
+                                        )}
+                                      </Tooltip>
+                                    </TooltipProvider>
                                   </div>
                                 )}
                                 {transaction.disbursement_channel && (
