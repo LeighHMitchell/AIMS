@@ -61,11 +61,13 @@ export async function GET(request: NextRequest) {
       if (d?.receiver_activity_uuid) allActivityIds.add(d.receiver_activity_uuid);
     });
 
+    console.log('[Planned Disbursements List API] Looking up activity IDs:', Array.from(allActivityIds).slice(0, 3));
+
     let activitiesMap: Record<string, any> = {};
     if (allActivityIds.size > 0) {
       const { data: activitiesData, error: activitiesError } = await supabase
         .from('activities')
-        .select('id, title_narrative, title, iati_identifier')
+        .select('id, title_narrative, iati_identifier')
         .in('id', Array.from(allActivityIds));
 
       if (activitiesError) {
@@ -73,9 +75,13 @@ export async function GET(request: NextRequest) {
       }
 
       if (activitiesData) {
+        console.log('[Planned Disbursements List API] Found', activitiesData.length, 'activities out of', allActivityIds.size, 'requested');
+        console.log('[Planned Disbursements List API] Sample activity data:', activitiesData[0]);
         activitiesMap = Object.fromEntries(
           activitiesData.map(a => [a.id, a])
         );
+      } else {
+        console.log('[Planned Disbursements List API] No activities found!');
       }
     }
 
@@ -88,6 +94,7 @@ export async function GET(request: NextRequest) {
     }));
 
     console.log(`[Planned Disbursements List API] Successfully fetched ${data?.length || 0} disbursements, total: ${count}`);
+    console.log('[Planned Disbursements List API] Sample disbursement with activity:', data[0]);
 
     return NextResponse.json({
       disbursements: data || [],

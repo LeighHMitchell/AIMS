@@ -64,11 +64,10 @@ export function SidebarNav({ userRole, canManageUsers, isLoading, isCollapsed = 
       icon: Search,
       defaultOpen: true,
       items: [
-        { name: "Dashboard", href: "/dashboard", show: true },
+        { name: "Analytics", href: "/analytics-dashboard", show: true },
         { name: "Aid Map", href: "/aid-map", show: true },
         { name: "Aid Flow Map", href: "/aid-flow-map", show: true },
         { name: "Search", href: "/search", show: true },
-        { name: "Analytics", href: "/analytics-dashboard", show: true },
         { name: "Aid Effectiveness", href: "/aid-effectiveness-dashboard", show: true },
       ]
     },
@@ -87,7 +86,7 @@ export function SidebarNav({ userRole, canManageUsers, isLoading, isCollapsed = 
       icon: Activity,
       defaultOpen: true,
       items: [
-        { name: "Activities", href: "/activities", show: true },
+        { name: "Activity List", href: "/activities", show: true },
       ]
     },
     {
@@ -126,10 +125,72 @@ export function SidebarNav({ userRole, canManageUsers, isLoading, isCollapsed = 
     }))
   }
 
+  // Top-level navigation items (outside groups)
+  const topLevelItems = [
+    { name: "Dashboard", href: "/dashboard", icon: Home, show: true },
+  ]
+
   return (
     <TooltipProvider delayDuration={100} skipDelayDuration={0}>
       <nav className="px-4 py-6">
         <div className="space-y-4">
+          {/* Top Level Items */}
+          <div className="space-y-1">
+            {topLevelItems.filter(item => item.show).map((item) => {
+              const isActive = pathname === item.href || (item.href !== '/' && pathname?.startsWith(item.href))
+              const ItemIcon = item.icon
+
+              const linkContent = (
+                <Link
+                  href={item.href}
+                  className={cn(
+                    "group relative flex items-center gap-3 py-2 px-3 text-sm font-medium rounded-md",
+                    "transition-colors duration-200",
+                    "hover:bg-gray-100 dark:hover:bg-gray-800",
+                    isActive
+                      ? "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400"
+                      : "text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100"
+                  )}
+                >
+                  <ItemIcon className="h-5 w-5 flex-shrink-0" />
+                  <span
+                    className={cn(
+                      "whitespace-nowrap",
+                      isCollapsed
+                        ? "opacity-0 w-0 overflow-hidden"
+                        : "opacity-100 w-auto"
+                    )}
+                    style={{
+                      transitionProperty: isInitialLoad ? 'none' : 'opacity, width',
+                      transitionDuration: isCollapsed ? '200ms, 0ms' : '300ms, 0ms',
+                      transitionDelay: isCollapsed ? '0ms, 0ms' : '100ms, 0ms'
+                    }}
+                  >
+                    {item.name}
+                  </span>
+                </Link>
+              )
+
+              return (
+                <div key={item.name}>
+                  {isCollapsed ? (
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        {linkContent}
+                      </TooltipTrigger>
+                      <TooltipContent side="right" className="font-medium">
+                        {item.name}
+                      </TooltipContent>
+                    </Tooltip>
+                  ) : (
+                    linkContent
+                  )}
+                </div>
+              )
+            })}
+          </div>
+
+          {/* Grouped Navigation */}
           {navGroups.map((group) => {
             const filteredItems = group.items.filter(item => item.show)
             if (filteredItems.length === 0) return null

@@ -4,7 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
-import { AlertCircle, ArrowUpDown, ArrowUp, ArrowDown, Search, ChevronDown, ChevronRight, Copy, Check, CheckCircle2, ChevronUp, Calendar, DollarSign, Tag, FileText, ExternalLink, MapPin, Building2 } from 'lucide-react';
+import { AlertCircle, ArrowUpDown, ArrowUp, ArrowDown, Search, ChevronDown, ChevronRight, Copy, Check, CheckCircle2, ChevronUp, Calendar, DollarSign, Tag, FileText, ExternalLink, MapPin, Building2, Info } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { toast } from 'sonner';
 import { getOrganizationRoleName } from '@/data/iati-organization-roles';
@@ -308,8 +308,9 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
     
     // Check if it's in "code: name" format (e.g., "2: Implementation")
     // Only match if it's a single-line format (no pipes)
+    // Skip IATI identifiers which may contain colons (e.g., "NL-KVK-27108436-A-06801-02:KH")
     const codeNameMatch = strValue.match(/^([^:]+):\s*(.+)$/);
-    if (codeNameMatch && !strValue.includes('|')) {
+    if (codeNameMatch && !strValue.includes('|') && fieldName !== 'IATI Identifier') {
       return { code: codeNameMatch[1].trim(), name: codeNameMatch[2].trim(), isCode: true };
     }
     
@@ -345,9 +346,9 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
     });
   };
 
-  // Render expandable text - for descriptions, use 75 words, otherwise 100 chars
+  // Render expandable text - for descriptions, use ~1-2 lines (approximately 10-12 words), otherwise 100 chars
   const MAX_TEXT_LENGTH = 100;
-  const MAX_DESCRIPTION_WORDS = 75;
+  const MAX_DESCRIPTION_WORDS = 10;
   
   // Helper to get first N words from text
   const getFirstNWords = (text: string, n: number): string => {
@@ -358,18 +359,18 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
   
   const renderExpandableText = (text: string, cellId: string, isDescription: boolean = false) => {
     const isExpanded = expandedTexts.has(cellId);
-    
+
     if (isDescription) {
-      // For descriptions, use word count (75 words)
+      // For descriptions, use word count (10 words for 1-2 lines)
       const words = text.trim().split(/\s+/);
       const shouldTruncate = words.length > MAX_DESCRIPTION_WORDS;
-      
+
       if (!shouldTruncate) {
-        return <span>{text}</span>;
+        return <span className="whitespace-pre-wrap">{text}</span>;
       }
-      
+
       return (
-        <span>
+        <span className="whitespace-pre-wrap">
           {isExpanded ? (
             <>
               {text}
@@ -378,7 +379,7 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                   e.stopPropagation();
                   toggleTextExpansion(cellId);
                 }}
-                className="ml-2 text-xs flex items-center gap-1"
+                className="ml-2 text-xs inline-flex items-center gap-1"
                 style={{ color: '#135667' }}
                 onMouseEnter={(e) => e.currentTarget.style.color = '#0f4552'}
                 onMouseLeave={(e) => e.currentTarget.style.color = '#135667'}
@@ -395,7 +396,7 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                   e.stopPropagation();
                   toggleTextExpansion(cellId);
                 }}
-                className="ml-2 text-xs flex items-center gap-1"
+                className="ml-2 text-xs inline-flex items-center gap-1"
                 style={{ color: '#135667' }}
                 onMouseEnter={(e) => e.currentTarget.style.color = '#0f4552'}
                 onMouseLeave={(e) => e.currentTarget.style.color = '#135667'}
@@ -1236,14 +1237,14 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                 </span>
               </TooltipTrigger>
               <TooltipContent className="max-w-md">
-                <p className="break-words">{text}</p>
+                <p className="break-words whitespace-pre-wrap">{text}</p>
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
         );
       }
-      
-      return <span>{textContent}</span>;
+
+      return <span className={isDescription ? 'whitespace-pre-wrap' : ''}>{textContent}</span>;
     }
     
     return <span>{formatted.text || '—'}</span>;
@@ -1644,17 +1645,15 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                         {categoryFields.map((field, index) => {
                   const rowId = getRowId(field, index);
                   const isExpanded = expandedRows.has(rowId);
-                  
+                  const isMissing = field.currentValue === null ||
+                                   field.currentValue === undefined ||
+                                   field.currentValue === '' ||
+                                   (Array.isArray(field.currentValue) && field.currentValue.length === 0);
+
                   return (
                     <React.Fragment key={rowId}>
                       <TableRow
-                        className={`
-                          group
-                          ${field.hasConflict && field.selected ? 'bg-orange-50' : ''}
-                          ${!field.hasConflict && valuesMatch(field) && field.selected ? 'bg-green-50' : ''}
-                          ${field.selected && !field.hasConflict && !valuesMatch(field) ? 'bg-white' : ''}
-                          hover:bg-gray-100 transition-colors
-                        `}
+                        className="group hover:bg-gray-100 transition-colors"
                       >
                         <TableCell onClick={(e) => e.stopPropagation()}>
                           <Switch
@@ -1699,7 +1698,19 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                               </Tooltip>
                             </TooltipProvider>
                           )}
-                          {!field.hasConflict && valuesMatch(field) && (
+                          {!field.hasConflict && isMissing && (
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger>
+                                  <Info className="h-4 w-4 text-blue-500 mx-auto" />
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p>Current value is missing</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          )}
+                          {!field.hasConflict && !isMissing && valuesMatch(field) && (
                             <TooltipProvider>
                               <Tooltip>
                                 <TooltipTrigger>

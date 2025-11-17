@@ -9,7 +9,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { useRouter } from "next/navigation";
 import { format } from "date-fns";
 import { toast } from "sonner";
-import { Download, ChevronUp, ChevronDown, ChevronsUpDown, Grid3X3, TableIcon, Frown, ChevronLeft, ChevronRight } from "lucide-react";
+import { Download, ChevronUp, ChevronDown, ChevronsUpDown, Frown, ChevronLeft, ChevronRight } from "lucide-react";
 import { TransactionTable } from "@/components/transactions/TransactionTable";
 import { useTransactions } from "@/hooks/useTransactions";
 import { TRANSACTION_TYPE_LABELS, Transaction } from "@/types/transaction";
@@ -40,7 +40,6 @@ export default function TransactionsPage() {
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
   const [showTransactionModal, setShowTransactionModal] = useState(false);
   const [editingTransaction, setEditingTransaction] = useState<any>(null);
-  const [viewMode, setViewMode] = useState<'table' | 'card'>('table');
   const [organizations, setOrganizations] = useState<any[]>([]);
   const [financeTypes, setFinanceTypes] = useState<Array<{code: string, name: string}>>([]);
   const [activityPartnerId, setActivityPartnerId] = useState<string | null>(null);
@@ -689,32 +688,12 @@ export default function TransactionsPage() {
             </div>
           </div>
 
-          {/* Right Side: View Toggle + Results Count */}
+          {/* Right Side: Results Count */}
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-            {/* View Mode Toggle */}
-            <div className="flex items-center">
-              <Button
-                variant={viewMode === 'table' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setViewMode('table')}
-                className="rounded-r-none"
-              >
-                <TableIcon className="h-4 w-4" />
-              </Button>
-              <Button
-                variant={viewMode === 'card' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setViewMode('card')}
-                className="rounded-l-none"
-              >
-                <Grid3X3 className="h-4 w-4" />
-              </Button>
-            </div>
-            
             {/* Results Summary */}
             <p className="text-sm text-slate-600 whitespace-nowrap">
-              {(transactions?.total || 0) === 0 
-                ? "No transactions" 
+              {(transactions?.total || 0) === 0
+                ? "No transactions"
                 : `Showing ${(currentPage - 1) * pageLimit + 1}–${Math.min(currentPage * pageLimit, transactions?.total || 0)} of ${transactions?.total || 0} transactions`}
             </p>
           </div>
@@ -746,7 +725,7 @@ export default function TransactionsPage() {
           <div className="bg-white rounded-md shadow-sm border border-gray-200 p-8 text-center">
             <div className="text-slate-500">No matching transactions found</div>
           </div>
-        ) : viewMode === 'table' ? (
+        ) : (
           <div className="bg-white rounded-md shadow-sm border border-gray-200 overflow-hidden">
             <div className="overflow-x-auto">
               <TransactionTable
@@ -768,11 +747,6 @@ export default function TransactionsPage() {
                 onSelectTransaction={handleSelectTransaction}
               />
             </div>
-          </div>
-        ) : (
-          // Card View - Not implemented yet
-          <div className="bg-white rounded-md shadow-sm border border-gray-200 p-8 text-center">
-            <div className="text-slate-500">Card view not implemented yet</div>
           </div>
         )}
 

@@ -662,10 +662,10 @@ export async function PUT(request: NextRequest) {
     // Handle transaction reference - if empty, keep the existing reference to avoid unique constraint issues
     let transactionReference = body.transaction_reference?.trim() || '';
     
-    // Get the current transaction to check for reference changes
+    // Get the current transaction to check for reference changes and inherited flags
     const { data: currentTransaction, error: fetchError } = await getSupabaseAdmin()
       .from('transactions')
-      .select('transaction_reference, activity_id')
+      .select('transaction_reference, activity_id, finance_type, finance_type_inherited, flow_type, aid_type, tied_status')
       .eq('uuid', transactionId)
       .single();
     
@@ -737,17 +737,49 @@ export async function PUT(request: NextRequest) {
       cleanedData.value_date = result;
     }
 
-    // Smart logic for finance_type_inherited:
+    // Smart logic for inherited flags (finance_type, flow_type, aid_type, tied_status):
     // - If value unchanged and was inherited, keep as inherited
     // - If value changed or new transaction, mark as explicit (user confirmed)
+
+    // Finance Type
     if ('finance_type' in updateData) {
-      if (currentTransaction?.finance_type === updateData.finance_type && 
+      if (currentTransaction?.finance_type === updateData.finance_type &&
           currentTransaction?.finance_type_inherited === true) {
         // User didn't change the value and it was inherited - keep as inherited (GRAY)
         cleanedData.finance_type_inherited = true;
       } else {
         // User changed it or it's a new transaction - mark as explicit (BLACK)
         cleanedData.finance_type_inherited = false;
+      }
+    }
+
+    // Flow Type (if column exists - gracefully handle if not)
+    if ('flow_type' in updateData) {
+      if (currentTransaction?.flow_type === updateData.flow_type &&
+          (currentTransaction as any)?.flow_type_inherited === true) {
+        cleanedData.flow_type_inherited = true;
+      } else {
+        cleanedData.flow_type_inherited = false;
+      }
+    }
+
+    // Aid Type (if column exists - gracefully handle if not)
+    if ('aid_type' in updateData) {
+      if (currentTransaction?.aid_type === updateData.aid_type &&
+          (currentTransaction as any)?.aid_type_inherited === true) {
+        cleanedData.aid_type_inherited = true;
+      } else {
+        cleanedData.aid_type_inherited = false;
+      }
+    }
+
+    // Tied Status (if column exists - gracefully handle if not)
+    if ('tied_status' in updateData) {
+      if (currentTransaction?.tied_status === updateData.tied_status &&
+          (currentTransaction as any)?.tied_status_inherited === true) {
+        cleanedData.tied_status_inherited = true;
+      } else {
+        cleanedData.tied_status_inherited = false;
       }
     }
 

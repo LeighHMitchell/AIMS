@@ -73,6 +73,7 @@ export function DataClinicOrganizations() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedOrganizations, setSelectedOrganizations] = useState<Set<string>>(new Set());
   const [editingField, setEditingField] = useState<{ organizationId: string; field: string } | null>(null);
+  const [editingValue, setEditingValue] = useState<string>('');
   const [bulkEditField, setBulkEditField] = useState<string>('');
   const [bulkEditValue, setBulkEditValue] = useState<string>('');
   const [dataGaps, setDataGaps] = useState<DataGap[]>([]);
@@ -141,12 +142,40 @@ export function DataClinicOrganizations() {
   };
 
   const isValidIdentifier = (identifier: string): boolean => {
-    // IATI org identifier format: {RegistrationAgency}-{RegistrationNumber}
-    const pattern = /^[A-Z]{2,}-\w+$/;
-    return pattern.test(identifier);
+    if (!identifier || typeof identifier !== 'string') return false;
+
+    // IATI organization identifier rules:
+    // 1. Format: {RegistrationAgency}-{RegistrationNumber}
+    // 2. Must contain at least one hyphen
+    // 3. Registration Agency codes are defined in the IATI codelist
+    // 4. Common valid prefixes: XI-IATI-, GB-COH-, US-EIN-, NL-KVK-, etc.
+    // 5. Can also be IATI activity IDs (contains multiple hyphens)
+
+    // Must contain at least one hyphen
+    if (!identifier.includes('-')) return false;
+
+    // Split into parts
+    const parts = identifier.split('-');
+    if (parts.length < 2) return false;
+
+    // First part (registration agency) should be 2-7 uppercase letters/numbers
+    // Examples: XI, GB, US, NL, USAGOV
+    const registrationAgency = parts[0];
+    if (!/^[A-Z0-9]{2,7}$/.test(registrationAgency)) return false;
+
+    // Second part (registration number or secondary prefix) should not be empty
+    // and should contain valid characters (alphanumeric, hyphens, underscores)
+    const remainingParts = parts.slice(1).join('-');
+    if (!remainingParts || remainingParts.length === 0) return false;
+
+    // Registration number can contain letters, numbers, hyphens, underscores, dots, and slashes
+    // Examples: 123456, COH-12345, IATI-1234, 12.34.56, 12/34/56
+    if (!/^[A-Za-z0-9\-_.\/ ]+$/.test(remainingParts)) return false;
+
+    return true;
   };
 
-  const handleInlineEdit = async (organizationId: string, field: string, value: string) => {
+  const saveFieldValue = async (organizationId: string, field: string, value: string) => {
     try {
       const res = await fetch(`/api/data-clinic/organizations/${organizationId}`, {
         method: 'PATCH',
@@ -157,16 +186,38 @@ export function DataClinicOrganizations() {
       if (!res.ok) throw new Error('Failed to update organization');
 
       // Update local state
-      setOrganizations(prev => prev.map(organization => 
+      setOrganizations(prev => prev.map(organization =>
         organization.id === organizationId ? { ...organization, [field]: value } : organization
       ));
 
       toast.success('Organization updated successfully');
       setEditingField(null);
+      setEditingValue('');
     } catch (error) {
       console.error('Error updating organization:', error);
       toast.error('Failed to update organization');
     }
+  };
+
+  const handleInlineEditBlur = (organizationId: string, field: string) => {
+    if (editingValue !== undefined && editingValue !== null) {
+      saveFieldValue(organizationId, field, editingValue);
+    }
+  };
+
+  const handleInlineEditKeyDown = (e: React.KeyboardEvent, organizationId: string, field: string) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      saveFieldValue(organizationId, field, editingValue);
+    } else if (e.key === 'Escape') {
+      setEditingField(null);
+      setEditingValue('');
+    }
+  };
+
+  const startEditing = (organizationId: string, field: string, currentValue: string) => {
+    setEditingField({ organizationId, field });
+    setEditingValue(currentValue || '');
   };
 
   const handleBulkUpdate = async () => {
@@ -211,7 +262,7 @@ export function DataClinicOrganizations() {
             <div className="flex items-center gap-2">
               <Select
                 value={value || ''}
-                onValueChange={(newValue) => handleInlineEdit(organization.id, field, newValue)}
+                onValueChange={(newValue) => saveFieldValue(organization.id, field, newValue)}
               >
                 <SelectTrigger className="w-[200px]">
                   <SelectValue placeholder="Select type" />
@@ -227,7 +278,10 @@ export function DataClinicOrganizations() {
               <Button
                 size="sm"
                 variant="ghost"
-                onClick={() => setEditingField(null)}
+                onClick={() => {
+                  setEditingField(null);
+                  setEditingValue('');
+                }}
               >
                 <X className="h-4 w-4" />
               </Button>
@@ -238,7 +292,7 @@ export function DataClinicOrganizations() {
             <div className="flex items-center gap-2">
               <Select
                 value={value || ''}
-                onValueChange={(newValue) => handleInlineEdit(organization.id, field, newValue)}
+                onValueChange={(newValue) => saveFieldValue(organization.id, field, newValue)}
               >
                 <SelectTrigger className="w-[120px]">
                   <SelectValue placeholder="Currency" />
@@ -256,7 +310,10 @@ export function DataClinicOrganizations() {
               <Button
                 size="sm"
                 variant="ghost"
-                onClick={() => setEditingField(null)}
+                onClick={() => {
+                  setEditingField(null);
+                  setEditingValue('');
+                }}
               >
                 <X className="h-4 w-4" />
               </Button>
@@ -266,16 +323,25 @@ export function DataClinicOrganizations() {
           return (
             <div className="flex items-center gap-2">
               <Input
-                value={value || ''}
-                onChange={(e) => handleInlineEdit(organization.id, field, e.target.value)}
+                value={editingValue}
+                onChange={(e) => setEditingValue(e.target.value)}
+                onBlur={() => handleInlineEditBlur(organization.id, field)}
+                onKeyDown={(e) => handleInlineEditKeyDown(e, organization.id, field)}
                 className="w-48"
-                placeholder={field === 'iati_org_id' ? 'XX-123456' : 'Enter value'}
+                placeholder={
+                  field === 'iati_org_id' ? 'XX-123456' :
+                  field === 'country' ? 'e.g., United States, Africa' :
+                  'Enter value'
+                }
                 autoFocus
               />
               <Button
                 size="sm"
                 variant="ghost"
-                onClick={() => setEditingField(null)}
+                onClick={() => {
+                  setEditingField(null);
+                  setEditingValue('');
+                }}
               >
                 <X className="h-4 w-4" />
               </Button>
@@ -300,7 +366,14 @@ export function DataClinicOrganizations() {
                         <AlertCircle className="h-3 w-3 text-orange-500" />
                       </TooltipTrigger>
                       <TooltipContent>
-                        <p>Invalid format. Expected: XX-123456</p>
+                        <div className="text-xs space-y-1">
+                          <p className="font-semibold">Invalid IATI Organization Identifier</p>
+                          <p>Required format: AGENCY-REGISTRATION</p>
+                          <p className="text-gray-400">Examples:</p>
+                          <p className="text-gray-400">• XI-IATI-1234</p>
+                          <p className="text-gray-400">• GB-COH-123456</p>
+                          <p className="text-gray-400">• US-EIN-12-3456789</p>
+                        </div>
                       </TooltipContent>
                     </Tooltip>
                   </TooltipProvider>
@@ -319,7 +392,7 @@ export function DataClinicOrganizations() {
           <Button
             size="sm"
             variant="ghost"
-            onClick={() => setEditingField({ organizationId: organization.id, field })}
+            onClick={() => startEditing(organization.id, field, value || '')}
           >
             <Edit2 className="h-3 w-3" />
           </Button>
@@ -456,15 +529,14 @@ export function DataClinicOrganizations() {
                   <th className="p-4 text-left text-sm font-medium">Acronym</th>
                   <th className="p-4 text-left text-sm font-medium">Identifier</th>
                   <th className="p-4 text-left text-sm font-medium">Type</th>
-                  <th className="p-4 text-left text-sm font-medium">Country</th>
+                  <th className="p-4 text-left text-sm font-medium">Country/Region</th>
                   <th className="p-4 text-left text-sm font-medium">Currency</th>
-                  <th className="p-4 text-left text-sm font-medium">Budget</th>
                 </tr>
               </thead>
               <tbody>
                 {filteredOrganizations.length === 0 ? (
                   <tr>
-                    <td colSpan={isSuperUser ? 8 : 7} className="p-8 text-center text-muted-foreground">
+                    <td colSpan={isSuperUser ? 7 : 6} className="p-8 text-center text-muted-foreground">
                       No organizations found with data gaps
                     </td>
                   </tr>
@@ -514,30 +586,10 @@ export function DataClinicOrganizations() {
                         {renderFieldValue(organization, 'type')}
                       </td>
                       <td className="p-4">
-                        {organization.country || (
-                          <Badge variant="destructive" className="text-xs">
-                            <AlertCircle className="h-3 w-3 mr-1" />
-                            Missing
-                          </Badge>
-                        )}
+                        {renderFieldValue(organization, 'country')}
                       </td>
                       <td className="p-4">
                         {renderFieldValue(organization, 'default_currency')}
-                      </td>
-                      <td className="p-4">
-                        {organization.totalBudget || organization.recipientOrgBudget ? (
-                          <span className="text-sm">
-                            {organization.default_currency && new Intl.NumberFormat('en-US', {
-                              style: 'currency',
-                              currency: organization.default_currency
-                            }).format(organization.totalBudget || organization.recipientOrgBudget || 0)}
-                          </span>
-                        ) : (
-                          <Badge variant="destructive" className="text-xs">
-                            <AlertCircle className="h-3 w-3 mr-1" />
-                            Missing
-                          </Badge>
-                        )}
                       </td>
                     </tr>
                   ))

@@ -815,15 +815,35 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
           <div className="flex-1 min-w-0">
             {/* Activity Title and Import Button */}
             <div className="flex items-start justify-between gap-4 mb-3">
-              {/* Activity Title */}
+              {/* Activity Title and IATI ID */}
               <div className="flex-1 min-w-0">
-                <h3 className="text-base font-semibold text-slate-900 leading-tight">
-                  {activity.title || activity.title_narrative || 'Untitled Activity'}
-                </h3>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h3 className="text-lg font-semibold text-slate-900 leading-tight">
+                    {activity.title || activity.title_narrative || 'Untitled Activity'}
+                  </h3>
+                  {activity.iatiIdentifier && (
+                    <>
+                      <code className="text-[10px] font-mono bg-slate-100 px-1.5 py-0.5 rounded text-slate-600 inline-block">
+                        {activity.iatiIdentifier}
+                      </code>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigator.clipboard.writeText(activity.iatiIdentifier);
+                          toast.success("IATI ID copied to clipboard");
+                        }}
+                        className="p-1 hover:bg-slate-100 rounded transition-colors"
+                        title="Copy IATI ID"
+                      >
+                        <Copy className="h-3 w-3 text-slate-500" />
+                      </button>
+                    </>
+                  )}
+                </div>
               </div>
               {/* Import Button */}
-              <Button 
-                size="sm" 
+              <Button
+                size="sm"
                 variant="outline"
                 onClick={() => onSelect(activity)}
                 disabled={isLoading}
@@ -837,64 +857,103 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
               </Button>
             </div>
             
-            {/* Essential Info - 2 Column Layout */}
-            <div className="grid grid-cols-2 gap-6">
+            {/* Essential Info - 3 Column Layout */}
+            <div className="grid grid-cols-3 gap-4">
               {/* Column 1: Reported by and Implementing Org - Stacked */}
               <div className="space-y-4">
               {activity.reportingOrg && (
                 <div>
                     <div className="text-[10px] uppercase tracking-wide text-slate-500 font-semibold mb-1.5">Reported by</div>
-                    <div className="text-sm font-medium text-slate-900">{activity.reportingOrg}</div>
-                    {activity.reportingOrgRef && (
-                      <code className="text-[10px] font-mono bg-slate-100 px-1.5 py-0.5 rounded text-slate-600 mt-1 inline-block">
-                        {activity.reportingOrgRef}
-                      </code>
-                    )}
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <div className="text-sm font-medium text-slate-900">{activity.reportingOrg}</div>
+                      {activity.reportingOrgType && (() => {
+                        const typeLabel = getOrganizationTypeLabel(activity.reportingOrgType);
+                        return (
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-medium bg-blue-100 text-blue-700">
+                            {typeLabel?.name}
+                          </span>
+                        );
+                      })()}
+                      {activity.reportingOrgRef && (
+                        <code className="text-[10px] font-mono bg-slate-100 px-1.5 py-0.5 rounded text-slate-600 inline-block">
+                          {activity.reportingOrgRef}
+                        </code>
+                      )}
+                    </div>
                 </div>
               )}
               
               {implementingOrgs.length > 0 && (
                 <div>
-                    <div className="text-[10px] uppercase tracking-wide text-slate-500 font-semibold mb-1.5">Implementing Org</div>
-                    {implementingOrgs[0] && (
-                      <>
-                        <div className="text-sm font-medium text-slate-900">{implementingOrgs[0].name}</div>
-                        {(() => {
-                          const refDisplay = getOrgRefDisplay(implementingOrgs[0].ref);
-                          if (!refDisplay.normalized) return null;
-                          
-                          return (
-                            <span className="flex items-center gap-1 mt-1">
-                              <code className={`text-[10px] font-mono bg-slate-100 px-1.5 py-0.5 rounded text-slate-600 inline-block ${!refDisplay.isValid ? 'border border-red-300' : ''}`}>
-                                {refDisplay.normalized}
-                              </code>
-                              {!refDisplay.isValid && (
-                                <Tooltip>
-                                  <TooltipTrigger asChild>
-                                    <span className="text-red-500 text-xs cursor-help">⚠</span>
-                                  </TooltipTrigger>
-                                  <TooltipContent>
-                                    <p className="text-xs">Invalid IATI organization identifier format</p>
-                                  </TooltipContent>
-                                </Tooltip>
-                              )}
-                            </span>
-                          );
-                        })()}
-                      </>
-                    )}
+                    <div className="text-[10px] uppercase tracking-wide text-slate-500 font-semibold mb-1.5">Implementing Organisation</div>
+                    <div className="space-y-1.5">
+                      {implementingOrgs.slice(0, 3).map((org, idx) => (
+                        <div key={idx} className="flex items-center gap-2 flex-wrap">
+                          <div className="text-sm font-medium text-slate-900">{org.name}</div>
+                          {org.type && (() => {
+                            const typeLabel = getOrganizationTypeLabel(org.type);
+                            return (
+                              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-medium bg-green-100 text-green-700">
+                                {typeLabel?.name}
+                              </span>
+                            );
+                          })()}
+                          {(() => {
+                            const refDisplay = getOrgRefDisplay(org.ref);
+                            if (!refDisplay.normalized) return null;
+
+                            return (
+                              <span className="flex items-center gap-1">
+                                <code className={`text-[10px] font-mono bg-slate-100 px-1.5 py-0.5 rounded text-slate-600 inline-block ${!refDisplay.isValid ? 'border border-red-300' : ''}`}>
+                                  {refDisplay.normalized}
+                                </code>
+                                {!refDisplay.isValid && (
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <span className="text-red-500 text-xs cursor-help">⚠</span>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                      <p className="text-xs">Invalid IATI organization identifier format</p>
+                                    </TooltipContent>
+                                  </Tooltip>
+                                )}
+                              </span>
+                            );
+                          })()}
+                        </div>
+                      ))}
+                      {implementingOrgs.length > 3 && (
+                        <div className="text-xs text-slate-500">
+                          and {implementingOrgs.length - 3} more...
+                        </div>
+                      )}
+                    </div>
                 </div>
               )}
-              
+
                 {activity.recipientCountries && activity.recipientCountries.length > 0 && (
                   <div>
                     <div className="text-[10px] uppercase tracking-wide text-slate-500 font-semibold mb-1.5">Recipient Country</div>
               <div className="space-y-1">
                       {activity.recipientCountries.slice(0, 2).map((country: string, idx: number) => {
                         const countryName = getCountryName(country);
+                        const countryCode = country?.toUpperCase() || '';
+
+                        // Convert ISO country code to flag emoji
+                        const getCountryFlag = (code: string): string => {
+                          if (!code || code.length !== 2) return '';
+                          const codePoints = code
+                            .split('')
+                            .map(char => 127397 + char.charCodeAt(0));
+                          return String.fromCodePoint(...codePoints);
+                        };
+
+                        const flag = getCountryFlag(countryCode);
+
                         return (
-                          <div key={idx} className="text-sm font-medium text-slate-900">
-                            {countryName || country}
+                          <div key={idx} className="flex items-center gap-1.5 text-sm font-medium text-slate-900">
+                            {flag && <span className="text-lg leading-none">{flag}</span>}
+                            <span>{countryName || country}</span>
                           </div>
                         );
                       })}
@@ -908,18 +967,113 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
                 )}
               </div>
 
-              {/* Column 2: Financial Summary Table */}
+              {/* Column 2: Classifications */}
               <div>
-                <div className="text-[10px] uppercase tracking-wide text-slate-500 font-semibold mb-2">Financial Summary</div>
+                {(activity.defaultAidType || activity.flowType || activity.financeType || activity.tiedStatus || activity.activityScope || activity.collaborationType) && (
+                  <div>
+                    <div className="text-[10px] uppercase tracking-wide text-slate-500 font-semibold mb-1.5">Classifications</div>
+                    <div className="space-y-1 text-[10px]">
+                      {activity.defaultAidType && (() => {
+                        const label = getAidTypeLabel(activity.defaultAidType);
+                        return (
+                          <div className="flex items-start gap-1.5">
+                            <span className="text-slate-600 whitespace-nowrap">Default Aid Type:</span>
+                            <div className="flex items-center gap-1.5">
+                              <code className="text-[9px] font-mono bg-slate-100 px-1 py-0.5 rounded text-slate-700">
+                                {label?.code}
+                              </code>
+                              <span className="text-slate-900">{label?.name}</span>
+                            </div>
+                          </div>
+                        );
+                      })()}
+                      {activity.flowType && (() => {
+                        const label = getFlowTypeLabel(activity.flowType);
+                        return (
+                          <div className="flex items-start gap-1.5">
+                            <span className="text-slate-600 whitespace-nowrap">Default Flow Type:</span>
+                            <div className="flex items-center gap-1.5">
+                              <code className="text-[9px] font-mono bg-slate-100 px-1 py-0.5 rounded text-slate-700">
+                                {label?.code}
+                              </code>
+                              <span className="text-slate-900">{label?.name}</span>
+                            </div>
+                          </div>
+                        );
+                      })()}
+                      {activity.financeType && (() => {
+                        const label = getFinanceTypeLabel(activity.financeType);
+                        return (
+                          <div className="flex items-start gap-1.5">
+                            <span className="text-slate-600 whitespace-nowrap">Default Finance Type:</span>
+                            <div className="flex items-center gap-1.5">
+                              <code className="text-[9px] font-mono bg-slate-100 px-1 py-0.5 rounded text-slate-700">
+                                {label?.code}
+                              </code>
+                              <span className="text-slate-900">{label?.name}</span>
+                            </div>
+                          </div>
+                        );
+                      })()}
+                      {activity.tiedStatus && (() => {
+                        const label = getTiedStatusLabel(activity.tiedStatus);
+                        return (
+                          <div className="flex items-start gap-1.5">
+                            <span className="text-slate-600 whitespace-nowrap">Default Tied Status:</span>
+                            <div className="flex items-center gap-1.5">
+                              <code className="text-[9px] font-mono bg-slate-100 px-1 py-0.5 rounded text-slate-700">
+                                {label?.code}
+                              </code>
+                              <span className="text-slate-900">{label?.name}</span>
+                            </div>
+                          </div>
+                        );
+                      })()}
+                      {activity.activityScope && (() => {
+                        const scopeItem = IATI_ACTIVITY_SCOPE[0]?.types.find(t => t.code === activity.activityScope);
+                        return (
+                          <div className="flex items-start gap-1.5">
+                            <span className="text-slate-600 whitespace-nowrap">Scope:</span>
+                            <div className="flex items-center gap-1.5">
+                              <code className="text-[9px] font-mono bg-slate-100 px-1 py-0.5 rounded text-slate-700">
+                                {activity.activityScope}
+                              </code>
+                              <span className="text-slate-900">{scopeItem?.name || 'Unknown'}</span>
+                            </div>
+                          </div>
+                        );
+                      })()}
+                      {activity.collaborationType && (() => {
+                        const label = getCollaborationTypeLabel(activity.collaborationType);
+                        return (
+                          <div className="flex items-start gap-1.5">
+                            <span className="text-slate-600 whitespace-nowrap">Collaboration:</span>
+                            <div className="flex items-center gap-1.5">
+                              <code className="text-[9px] font-mono bg-slate-100 px-1 py-0.5 rounded text-slate-700">
+                                {label?.code}
+                              </code>
+                              <span className="text-slate-900">{label?.name}</span>
+                            </div>
+                          </div>
+                        );
+                      })()}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Column 3: Financial Summary */}
+              <div>
+                <div className="text-[10px] uppercase tracking-wide text-slate-500 font-semibold mb-1.5">Financial Summary</div>
 
                 {/* Multi-currency warning - shown at top if applicable */}
                 {hasMultipleCurrencies && (
-                  <div className="mb-2">
-                    <div className="flex items-start gap-1.5 text-xs text-amber-700 bg-amber-50 px-2 py-1.5 rounded border border-amber-200">
-                      <AlertCircle className="h-3.5 w-3.5 mt-0.5 flex-shrink-0" />
+                  <div className="mb-1.5">
+                    <div className="flex items-start gap-1.5 text-xs text-amber-700 bg-amber-50 px-2 py-1 rounded border border-amber-200">
+                      <AlertCircle className="h-3 w-3 mt-0.5 flex-shrink-0" />
                       <div>
-                        <p className="font-medium">Multiple currencies in use</p>
-                        <p className="text-amber-600 mt-0.5">
+                        <p className="font-medium text-[10px]">Multiple currencies</p>
+                        <p className="text-amber-600 text-[10px]">
                           {Array.from(currencies).join(', ')}
                         </p>
                       </div>
@@ -927,117 +1081,52 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
                   </div>
                 )}
 
-                {/* Financial Summary Table */}
-                <div className="border border-slate-200 rounded-md overflow-hidden shadow-sm">
-                  <table className="w-full">
+                <div className="border border-slate-200 rounded-md overflow-hidden">
+                  <table className="w-full text-[10px]">
                     <thead className="bg-slate-50/80 border-b border-slate-200">
                       <tr>
-                        <th className="text-left px-3 py-2 text-[10px] uppercase tracking-wide font-semibold text-slate-600">Financial Element</th>
-                        <th className="text-right px-3 py-2 text-[10px] uppercase tracking-wide font-semibold text-slate-600">Entries</th>
-                        <th className="text-right px-3 py-2 text-[10px] uppercase tracking-wide font-semibold text-slate-600">Total Value</th>
+                        <th className="text-left px-2 py-1 text-[9px] uppercase tracking-wide font-semibold text-slate-600">Element</th>
+                        <th className="text-right px-2 py-1 text-[9px] uppercase tracking-wide font-semibold text-slate-600">#</th>
+                        <th className="text-right px-2 py-1 text-[9px] uppercase tracking-wide font-semibold text-slate-600">Total</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">
-                      {/* Budgets Row */}
                       <tr className="hover:bg-slate-50/50 transition-colors">
-                        <td className="px-3 py-2 text-xs text-slate-700">Budgets</td>
-                        <td className="px-3 py-2 text-right text-xs text-slate-600">
-                          {financialData.loading ? (
-                            <span className="text-xs text-slate-500">...</span>
-                          ) : (
-                            financialData.budgetCount ?? 0
-                          )}
+                        <td className="px-2 py-1 text-slate-700">Budgets</td>
+                        <td className="px-2 py-1 text-right text-slate-600">
+                          {financialData.loading ? '...' : (financialData.budgetCount ?? 0)}
                         </td>
-                        <td className="px-3 py-2 text-right text-xs font-semibold text-slate-900">
-                          {financialData.loading ? (
-                            <span className="text-xs text-slate-400">Loading...</span>
-                          ) : (
-                            renderCurrency(financialData.totalBudget ?? 0, financialData.currency)
-                          )}
+                        <td className="px-2 py-1 text-right font-semibold text-slate-900">
+                          {financialData.loading ? 'Loading...' : renderCurrency(financialData.totalBudget ?? 0, financialData.currency)}
                         </td>
                       </tr>
-
-                      {/* Planned Disbursements Row */}
                       <tr className="hover:bg-slate-50/50 transition-colors">
-                        <td className="px-3 py-2 text-xs text-slate-700">Planned Disbursements</td>
-                        <td className="px-3 py-2 text-right text-xs text-slate-600">
-                          {financialData.loading ? (
-                            <span className="text-xs text-slate-500">...</span>
-                          ) : (
-                            financialData.plannedDisbursementCount ?? 0
-                          )}
+                        <td className="px-2 py-1 text-slate-700">Planned Disb.</td>
+                        <td className="px-2 py-1 text-right text-slate-600">
+                          {financialData.loading ? '...' : (financialData.plannedDisbursementCount ?? 0)}
                         </td>
-                        <td className="px-3 py-2 text-right text-xs font-semibold text-slate-900">
-                          {financialData.loading ? (
-                            <span className="text-xs text-slate-400">Loading...</span>
-                          ) : (
-                            renderCurrency(financialData.totalPlannedDisbursement ?? 0, financialData.currency)
-                          )}
+                        <td className="px-2 py-1 text-right font-semibold text-slate-900">
+                          {financialData.loading ? 'Loading...' : renderCurrency(financialData.totalPlannedDisbursement ?? 0, financialData.currency)}
                         </td>
                       </tr>
-
-                      {/* Outgoing Commitments Row */}
                       <tr className="hover:bg-slate-50/50 transition-colors">
-                        <td className="px-3 py-2 text-xs text-slate-700">Outgoing Commitments</td>
-                        <td className="px-3 py-2 text-right text-xs text-slate-600">
-                          {financialData.loading ? (
-                            <span className="text-xs text-slate-500">...</span>
-                          ) : (
-                            financialData.commitmentCount ?? 0
-                          )}
+                        <td className="px-2 py-1 text-slate-700">Commitments</td>
+                        <td className="px-2 py-1 text-right text-slate-600">
+                          {financialData.loading ? '...' : (financialData.commitmentCount ?? 0)}
                         </td>
-                        <td className="px-3 py-2 text-right text-xs font-semibold text-slate-900">
-                          {financialData.loading ? (
-                            <span className="text-xs text-slate-400">Loading...</span>
-                          ) : (
-                            renderCurrency(financialData.totalOutgoingCommitment ?? 0, financialData.currency)
-                          )}
+                        <td className="px-2 py-1 text-right font-semibold text-slate-900">
+                          {financialData.loading ? 'Loading...' : renderCurrency(financialData.totalOutgoingCommitment ?? 0, financialData.currency)}
                         </td>
                       </tr>
-
-                      {/* Disbursements Row */}
                       <tr className="hover:bg-slate-50/50 transition-colors">
-                        <td className="px-3 py-2 text-xs text-slate-700">Disbursements</td>
-                        <td className="px-3 py-2 text-right text-xs text-slate-600">
-                          {financialData.loading ? (
-                            <span className="text-xs text-slate-500">...</span>
-                          ) : (
-                            financialData.disbursementCount ?? 0
-                          )}
+                        <td className="px-2 py-1 text-slate-700">Disbursements</td>
+                        <td className="px-2 py-1 text-right text-slate-600">
+                          {financialData.loading ? '...' : (financialData.disbursementCount ?? 0)}
                         </td>
-                        <td className="px-3 py-2 text-right text-xs font-semibold text-slate-900">
-                          {financialData.loading ? (
-                            <span className="text-xs text-slate-400">Loading...</span>
-                          ) : (
-                            renderCurrency(financialData.totalDisbursement ?? 0, financialData.currency)
-                          )}
+                        <td className="px-2 py-1 text-right font-semibold text-slate-900">
+                          {financialData.loading ? 'Loading...' : renderCurrency(financialData.totalDisbursement ?? 0, financialData.currency)}
                         </td>
                       </tr>
-
-                      {/* Expenditures Row (if any) */}
-                      {(() => {
-                        const expenditureTransactions = activity.transactions?.filter((t: any) =>
-                          t.transactionType === '4' || t['transaction-type']?.['@_code'] === '4'
-                        ) || [];
-                        if (expenditureTransactions.length === 0) return null;
-
-                        const totalExpenditure = expenditureTransactions.reduce((sum: number, t: any) => {
-                          const value = parseFloat(t.value || t.value?.['#text'] || 0);
-                          return sum + value;
-                        }, 0);
-
-                        return (
-                          <tr className="hover:bg-slate-50/50 transition-colors">
-                            <td className="px-3 py-2 text-xs text-slate-700">Expenditures</td>
-                            <td className="px-3 py-2 text-right text-xs text-slate-600">
-                              {expenditureTransactions.length}
-                            </td>
-                            <td className="px-3 py-2 text-right text-xs font-semibold text-slate-900">
-                              {renderCurrency(totalExpenditure, financialData.currency ?? activity.currency)}
-                            </td>
-                          </tr>
-                        );
-                      })()}
                     </tbody>
                   </table>
                 </div>
@@ -10924,10 +11013,11 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
                   <AlertDescription>
                     <p className="font-medium mb-2">How IATI Search works:</p>
                     <ul className="list-disc list-inside space-y-1 text-sm">
-                      <li>Searches the global IATI Datastore with 40,000+ activities</li>
-                      <li>Fetches the full IATI XML directly from the registry</li>
-                      <li>Automatically parses and shows field toggle options</li>
-                      <li>You can review and select which fields to import</li>
+                      <li>Queries the global IATI Datastore, which contains approximately 890,000 activities and more than ten million transactions</li>
+                      <li>Retrieves structured activity data through the Datastore API</li>
+                      <li>Accesses the original publisher XML when required for detailed inspection</li>
+                      <li>Parses all fields and presents configurable import options</li>
+                      <li>Enables users to review and select the specific fields they wish to import</li>
                     </ul>
                   </AlertDescription>
                 </Alert>

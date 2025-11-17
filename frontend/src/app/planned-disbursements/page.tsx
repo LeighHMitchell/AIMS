@@ -79,6 +79,8 @@ export default function PlannedDisbursementsPage() {
       const response = await fetch(`/api/planned-disbursements/list?${params}`);
       if (response.ok) {
         const data = await response.json();
+        console.log('[Planned Disbursements Page] Sample disbursement from API:', data.disbursements?.[0]);
+        console.log('[Planned Disbursements Page] Sample activity:', data.disbursements?.[0]?.activity);
         setDisbursements(data.disbursements || []);
         setTotalDisbursements(data.total || 0);
       } else {
@@ -112,9 +114,9 @@ export default function PlannedDisbursementsPage() {
     const dataToExport = disbursements.map((disb) => ({
       "Activity": disb.activity?.title_narrative || disb.activity_id,
       "Provider Organisation": disb.provider_org_name || "",
-      "Provider Activity": disb.provider_activity?.title_narrative || disb.provider_activity?.title || "",
+      "Provider Activity": disb.provider_activity?.title_narrative || "",
       "Receiver Organisation": disb.receiver_org_name || "",
-      "Receiver Activity": disb.receiver_activity?.title_narrative || disb.receiver_activity?.title || "",
+      "Receiver Activity": disb.receiver_activity?.title_narrative || "",
       "Type": disb.type || "",
       "Period Start": disb.period_start ? format(new Date(disb.period_start), "yyyy-MM-dd") : "",
       "Period End": disb.period_end ? format(new Date(disb.period_end), "yyyy-MM-dd") : "",
@@ -291,7 +293,7 @@ export default function PlannedDisbursementsPage() {
                       onClick={() => handleRowClick(disb.id)}
                     >
                       <td className="px-4 py-3 text-sm text-slate-900">
-                        {disb.activity?.title_narrative || disb.activity?.title || 'Untitled Activity'}
+                        {disb.activity?.title_narrative || 'Untitled Activity'}
                       </td>
                       <td className="px-4 py-3 text-sm text-slate-900">
                         {disb.provider_org_name || '-'}

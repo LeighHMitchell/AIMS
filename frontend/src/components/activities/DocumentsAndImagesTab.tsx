@@ -61,6 +61,7 @@ export function DocumentsAndImagesTab({
   const [searchQuery, setSearchQuery] = React.useState('');
   const [filterCategory, setFilterCategory] = React.useState<string>('all');
   const [filterLanguage, setFilterLanguage] = React.useState<string>('all');
+  const [filterDateRange, setFilterDateRange] = React.useState<string>('all');
   const [isFormOpen, setIsFormOpen] = React.useState(false);
   const [editingDocument, setEditingDocument] = React.useState<IatiDocumentLink | null>(null);
   const [isBulkImportOpen, setIsBulkImportOpen] = React.useState(false);
@@ -76,32 +77,58 @@ export function DocumentsAndImagesTab({
       // Search filter
       if (searchQuery) {
         const query = searchQuery.toLowerCase();
-        const matchesTitle = doc.title.some(n => 
+        const matchesTitle = doc.title.some(n =>
           n.text.toLowerCase().includes(query)
         );
-        const matchesDescription = doc.description?.some(n => 
+        const matchesDescription = doc.description?.some(n =>
           n.text.toLowerCase().includes(query)
         );
         const matchesUrl = doc.url.toLowerCase().includes(query);
-        
+
         if (!matchesTitle && !matchesDescription && !matchesUrl) {
           return false;
         }
       }
-      
+
       // Category filter
       if (filterCategory !== 'all' && doc.categoryCode !== filterCategory) {
         return false;
       }
-      
+
       // Language filter
       if (filterLanguage !== 'all' && !doc.languageCodes?.includes(filterLanguage)) {
         return false;
       }
-      
+
+      // Date range filter
+      if (filterDateRange !== 'all' && doc.documentDate) {
+        const docDate = new Date(doc.documentDate);
+        const now = new Date();
+        const diffMs = now.getTime() - docDate.getTime();
+        const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+        switch (filterDateRange) {
+          case 'week':
+            if (diffDays > 7) return false;
+            break;
+          case 'month':
+            if (diffDays > 30) return false;
+            break;
+          case '3months':
+            if (diffDays > 90) return false;
+            break;
+          case '6months':
+            if (diffDays > 180) return false;
+            break;
+          case 'year':
+            if (diffDays > 365) return false;
+            break;
+        }
+      }
+
       return true;
     });
-  }, [documents, searchQuery, filterCategory, filterLanguage]);
+  }, [documents, searchQuery, filterCategory, filterLanguage, filterDateRange]);
   
   // Validation status
   const validationStatus = React.useMemo(() => {
@@ -282,6 +309,20 @@ export function DocumentsAndImagesTab({
                   {lang.code}
                 </SelectItem>
               ))}
+            </SelectContent>
+          </Select>
+
+          <Select value={filterDateRange} onValueChange={setFilterDateRange}>
+            <SelectTrigger className="w-40">
+              <SelectValue placeholder="Date Range" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Time</SelectItem>
+              <SelectItem value="week">Last Week</SelectItem>
+              <SelectItem value="month">Last Month</SelectItem>
+              <SelectItem value="3months">Last 3 Months</SelectItem>
+              <SelectItem value="6months">Last 6 Months</SelectItem>
+              <SelectItem value="year">Last Year</SelectItem>
             </SelectContent>
           </Select>
         </div>

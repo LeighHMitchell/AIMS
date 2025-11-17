@@ -863,29 +863,13 @@ export default function IatiSearchTab({ activityId }: IatiSearchTabProps) {
                     <div className="p-4">
                       <div className="flex items-start justify-between gap-4">
                         <div className="flex-1 min-w-0">
-                          {/* Title and IATI ID Row */}
+                          {/* Title and Import Button Row */}
                           <div className="flex items-start justify-between gap-3 mb-3">
                             <div className="flex-1 min-w-0">
-                              <h3 className="font-semibold text-slate-900 text-base leading-tight mb-1">{activity.title}</h3>
-                              <div className="flex items-center gap-2">
-                                <code className="text-xs font-mono bg-slate-100 px-1.5 py-0.5 rounded text-slate-700">
-                                  {activity.iatiIdentifier}
-                                </code>
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation()
-                                    navigator.clipboard.writeText(activity.iatiIdentifier)
-                                    toast.success("IATI ID copied to clipboard")
-                                  }}
-                                  className="p-1 hover:bg-slate-100 rounded transition-colors"
-                                  title="Copy IATI ID"
-                                >
-                                  <Copy className="h-3 w-3 text-slate-500" />
-                                </button>
-                              </div>
+                              <h3 className="font-semibold text-slate-900 text-lg leading-tight">{activity.title}</h3>
                             </div>
-                            <Button 
-                              size="sm" 
+                            <Button
+                              size="sm"
                               variant="outline"
                               onClick={(e) => {
                                 e.stopPropagation()
@@ -899,8 +883,27 @@ export default function IatiSearchTab({ activityId }: IatiSearchTabProps) {
                           
                           {/* Essential Info Grid - 3 Columns */}
                           <div className="grid grid-cols-3 gap-x-6 gap-y-3 text-xs" data-layout="three-column-updated-v2">
-                            {/* Column 1: Reported by and Implementing Org stacked */}
+                            {/* Column 1: Reported by, Implementing Org, and IATI ID */}
                             <div className="col-span-1 space-y-3">
+                              <div>
+                                <span className="text-slate-600 font-medium">IATI ID:</span>
+                                <div className="mt-0.5 flex items-center gap-2">
+                                  <code className="text-xs font-mono bg-slate-100 px-1.5 py-0.5 rounded text-slate-700">
+                                    {activity.iatiIdentifier}
+                                  </code>
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation()
+                                      navigator.clipboard.writeText(activity.iatiIdentifier)
+                                      toast.success("IATI ID copied to clipboard")
+                                    }}
+                                    className="p-1 hover:bg-slate-100 rounded transition-colors"
+                                    title="Copy IATI ID"
+                                  >
+                                    <Copy className="h-3 w-3 text-slate-500" />
+                                  </button>
+                                </div>
+                              </div>
                               {activity.reportingOrg && (
                                 <div>
                                   <span className="text-slate-600 font-medium">Reported by:</span>

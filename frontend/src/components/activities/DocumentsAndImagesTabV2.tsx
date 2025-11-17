@@ -24,6 +24,13 @@ import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
   Table,
   TableBody,
   TableCell,
@@ -81,6 +88,7 @@ export function DocumentsAndImagesTabV2({
 }: DocumentsAndImagesTabV2Props) {
   const [searchQuery, setSearchQuery] = React.useState('');
   const [filterCategory, setFilterCategory] = React.useState<string>('all');
+  const [filterDateRange, setFilterDateRange] = React.useState<string>('all');
   const [isFormOpen, setIsFormOpen] = React.useState(false);
   const [editingDocument, setEditingDocument] = React.useState<IatiDocumentLink | null>(null);
   const [draggedIndex, setDraggedIndex] = React.useState<number | null>(null);
@@ -156,9 +164,35 @@ export function DocumentsAndImagesTabV2({
         }
       }
 
+      // Date range filter
+      if (filterDateRange !== 'all' && doc.documentDate) {
+        const docDate = new Date(doc.documentDate);
+        const now = new Date();
+        const diffMs = now.getTime() - docDate.getTime();
+        const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+        switch (filterDateRange) {
+          case 'week':
+            if (diffDays > 7) return false;
+            break;
+          case 'month':
+            if (diffDays > 30) return false;
+            break;
+          case '3months':
+            if (diffDays > 90) return false;
+            break;
+          case '6months':
+            if (diffDays > 180) return false;
+            break;
+          case 'year':
+            if (diffDays > 365) return false;
+            break;
+        }
+      }
+
       return true;
     });
-  }, [documents, searchQuery, filterCategory]);
+  }, [documents, searchQuery, filterCategory, filterDateRange]);
 
   // Pagination logic
   const totalPages = React.useMemo(
@@ -537,6 +571,20 @@ export function DocumentsAndImagesTabV2({
                   className="pb-0"
                 />
               </div>
+
+              <Select value={filterDateRange} onValueChange={setFilterDateRange}>
+                <SelectTrigger className="w-40">
+                  <SelectValue placeholder="Date Range" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Time</SelectItem>
+                  <SelectItem value="week">Last Week</SelectItem>
+                  <SelectItem value="month">Last Month</SelectItem>
+                  <SelectItem value="3months">Last 3 Months</SelectItem>
+                  <SelectItem value="6months">Last 6 Months</SelectItem>
+                  <SelectItem value="year">Last Year</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
         </div>

@@ -10,6 +10,11 @@ import { useRouter } from "next/navigation";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { Download, ChevronLeft, ChevronRight } from "lucide-react";
+import { BudgetTable } from "@/components/budgets/BudgetTable";
+import { useBudgets } from "@/hooks/useBudgets";
+import { Budget, BudgetFilter } from "@/types/budget";
+import { BulkActionToolbar } from "@/components/ui/bulk-action-toolbar";
+import { BulkDeleteDialog } from "@/components/dialogs/bulk-delete-dialog";
 
 export default function BudgetsPage() {
   const router = useRouter();
@@ -19,14 +24,13 @@ export default function BudgetsPage() {
   const [sortField, setSortField] = useState<string>("period_start");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
   const [organizations, setOrganizations] = useState<any[]>([]);
-  const [budgets, setBudgets] = useState<any[]>([]);
-  const [totalBudgets, setTotalBudgets] = useState(0);
-  const [loading, setLoading] = useState(true);
-
+  
   // Bulk selection state
   const [selectedBudgetIds, setSelectedBudgetIds] = useState<Set<string>>(new Set());
+  const [isBulkDeleting, setIsBulkDeleting] = useState(false);
+  const [showBulkDeleteDialog, setShowBulkDeleteDialog] = useState(false);
 
-  const [filters, setFilters] = useState({
+  const [filters, setFilters] = useState<BudgetFilter>({
     type: "all",
     status: "all",
     organization: "all",
@@ -34,12 +38,20 @@ export default function BudgetsPage() {
     dateTo: "",
   });
 
-  // Load saved page limit preference
+  // Use the custom hook to fetch budgets
+  const { budgets, loading, error, refetch, deleteBudget, addBudget } = useBudgets({
+    searchQuery,
+    filters,
+    page: currentPage,
+    limit: pageLimit,
+  });
+
+  // Load saved page limit preference and fetch organizations on mount
   useEffect(() => {
     const saved = localStorage.getItem("budgets-page-limit");
     if (saved) {
       const savedLimit = Number(saved);
-      if (savedLimit > 0) {
+      if (savedLimit > 0 && savedLimit !== 9999) {
         setPageLimit(savedLimit);
       }
     }
@@ -47,7 +59,6 @@ export default function BudgetsPage() {
     fetchOrganizations();
   }, []);
 
-  // Fetch organizations for filter dropdown
   const fetchOrganizations = async () => {
     try {
       const response = await fetch('/api/organizations');
@@ -60,45 +71,65 @@ export default function BudgetsPage() {
     }
   };
 
-  // Fetch budgets
-  useEffect(() => {
-    fetchBudgets();
-  }, [currentPage, pageLimit, searchQuery, filters, sortField, sortOrder]);
-
-  const fetchBudgets = async () => {
-    setLoading(true);
-    try {
-      const params = new URLSearchParams({
-        page: currentPage.toString(),
-        limit: pageLimit.toString(),
-        search: searchQuery,
-        sortField,
-        sortOrder,
-        ...filters,
-      });
-
-      const response = await fetch(`/api/budgets/list?${params}`);
-      if (response.ok) {
-        const data = await response.json();
-        setBudgets(data.budgets || []);
-        setTotalBudgets(data.total || 0);
-      } else {
-        toast.error("Failed to load budgets");
-      }
-    } catch (error) {
-      console.error('Error fetching budgets:', error);
-      toast.error("Failed to load budgets");
-    } finally {
-      setLoading(false);
-    }
-  };
-
   // Reset to page 1 when filters change
   useEffect(() => {
     setCurrentPage(1);
   }, [searchQuery, filters]);
 
+  // Client-side sorting function
+  const handleSort = (field: string) => {
+    if (sortField === field) {
+      setSortOrder(sortOrder === "asc" ? "desc" : "asc");
+    } else {
+      setSortField(field);
+      setSortOrder("asc");
+    }
+  };
+
+  // Sort budgets client-side
+  const sortedBudgets = React.useMemo(() => {
+    if (!budgets.budgets?.length) return budgets.budgets || [];
+    
+    return [...budgets.budgets].sort((a, b) => {
+      let aValue: any;
+      let bValue: any;
+      
+      switch (sortField) {
+        case 'period_start':
+        case 'period_end':
+        case 'value_date':
+          aValue = new Date(a[sortField as keyof Budget] as string).getTime();
+          bValue = new Date(b[sortField as keyof Budget] as string).getTime();
+          break;
+        case 'type':
+        case 'status':
+          aValue = String(a[sortField as keyof Budget]);
+          bValue = String(b[sortField as keyof Budget]);
+          break;
+        case 'value':
+          aValue = a.value || 0;
+          bValue = b.value || 0;
+          break;
+        case 'value_usd':
+          aValue = a.value_usd || 0;
+          bValue = b.value_usd || 0;
+          break;
+        case 'activity':
+          aValue = (a.activity?.title_narrative || a.activity?.title || 'Untitled Activity').toLowerCase();
+          bValue = (b.activity?.title_narrative || b.activity?.title || 'Untitled Activity').toLowerCase();
+          break;
+        default:
+          return 0;
+      }
+      
+      if (aValue < bValue) return sortOrder === 'asc' ? -1 : 1;
+      if (aValue > bValue) return sortOrder === 'asc' ? 1 : -1;
+      return 0;
+    });
+  }, [budgets.budgets, sortField, sortOrder]);
+
   // Pagination logic
+  const totalBudgets = budgets.total || 0;
   const totalPages = Math.ceil(totalBudgets / pageLimit);
   const startIndex = (currentPage - 1) * pageLimit;
   const endIndex = Math.min(startIndex + pageLimit, totalBudgets);
@@ -110,10 +141,10 @@ export default function BudgetsPage() {
   };
 
   const exportBudgets = () => {
-    const dataToExport = budgets.map((budget) => ({
+    const dataToExport = sortedBudgets.map((budget) => ({
       "Activity": budget.activity?.title_narrative || budget.activity_id,
-      "Type": budget.type || "",
-      "Status": budget.status || "",
+      "Type": budget.type === 1 || budget.type === '1' ? 'Original' : budget.type === 2 || budget.type === '2' ? 'Revised' : budget.type,
+      "Status": budget.status === 1 || budget.status === '1' ? 'Indicative' : budget.status === 2 || budget.status === '2' ? 'Committed' : budget.status,
       "Period Start": budget.period_start ? format(new Date(budget.period_start), "yyyy-MM-dd") : "",
       "Period End": budget.period_end ? format(new Date(budget.period_end), "yyyy-MM-dd") : "",
       "Value": budget.value || "",
@@ -147,18 +178,121 @@ export default function BudgetsPage() {
   };
 
   const handleRowClick = (budgetId: string) => {
-    const budget = budgets.find(b => b.id === budgetId);
+    const budget = sortedBudgets.find(b => b.id === budgetId);
     if (budget && budget.activity_id) {
       router.push(`/activities/new?id=${budget.activity_id}&section=finances&tab=budgets`);
     }
   };
 
-  const handleSort = (field: string) => {
-    if (sortField === field) {
-      setSortOrder(sortOrder === "asc" ? "desc" : "asc");
+  const handleEdit = (budget: Budget) => {
+    if (budget && budget.activity_id) {
+      router.push(`/activities/new?id=${budget.activity_id}&section=finances&tab=budgets&budgetId=${budget.id}`);
+    }
+  };
+
+  const handleDelete = async (budgetId: string) => {
+    if (!budgetId || budgetId === 'undefined') {
+      toast.error("Invalid budget ID");
+      return;
+    }
+
+    if (!confirm("Are you sure you want to delete this budget?")) {
+      return;
+    }
+
+    // Find the budget to delete (for potential recovery)
+    const budgetToDelete = sortedBudgets.find(b => b.id === budgetId);
+    
+    // Optimistic update - remove from UI immediately
+    deleteBudget(budgetId);
+
+    try {
+      // Use bulk delete endpoint with single ID
+      const response = await fetch('/api/budgets/bulk-delete', {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          ids: [budgetId]
+        })
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to delete budget');
+      }
+
+      toast.success("Budget deleted successfully");
+    } catch (error: any) {
+      console.error('Error deleting budget:', error);
+      toast.error(error.message || "Failed to delete budget");
+      
+      // Revert the optimistic update on error
+      if (budgetToDelete) {
+        addBudget(budgetToDelete);
+      } else {
+        refetch(); // Fallback: refresh the entire list
+      }
+    }
+  };
+
+  // Bulk selection handlers
+  const handleSelectAll = (checked: boolean) => {
+    if (checked) {
+      const allIds = sortedBudgets.map(b => b.id).filter(Boolean);
+      setSelectedBudgetIds(new Set(allIds));
     } else {
-      setSortField(field);
-      setSortOrder("asc");
+      setSelectedBudgetIds(new Set());
+    }
+  };
+
+  const handleSelectBudget = (id: string, checked: boolean) => {
+    const newSelected = new Set(selectedBudgetIds);
+    if (checked) {
+      newSelected.add(id);
+    } else {
+      newSelected.delete(id);
+    }
+    setSelectedBudgetIds(newSelected);
+  };
+
+  const handleBulkDelete = async () => {
+    const selectedArray = Array.from(selectedBudgetIds);
+    if (selectedArray.length === 0) return;
+    
+    setShowBulkDeleteDialog(false);
+    setIsBulkDeleting(true);
+    
+    try {
+      // Optimistic update - remove from UI immediately
+      selectedArray.forEach(id => deleteBudget(id));
+      
+      const response = await fetch('/api/budgets/bulk-delete', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ids: selectedArray
+        })
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to delete budgets');
+      }
+      
+      const result = await response.json();
+      toast.success(`${result.deletedCount} ${result.deletedCount === 1 ? 'budget' : 'budgets'} deleted successfully`);
+      
+      // Clear selection
+      setSelectedBudgetIds(new Set());
+      
+    } catch (error) {
+      console.error('Bulk delete failed:', error);
+      toast.error('Failed to delete some budgets');
+      // Revert optimistic updates by refetching
+      refetch();
+    } finally {
+      setIsBulkDeleting(false);
     }
   };
 
@@ -172,7 +306,7 @@ export default function BudgetsPage() {
             <p className="text-slate-500">View and manage all activity budgets</p>
           </div>
           <div className="flex items-center space-x-4">
-            {budgets.length > 0 && (
+            {sortedBudgets.length > 0 && (
               <Button
                 variant="outline"
                 onClick={exportBudgets}
@@ -185,8 +319,9 @@ export default function BudgetsPage() {
           </div>
         </div>
 
-        {/* Search and Filters */}
+        {/* Search, Filters, and View Controls */}
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 py-4 bg-slate-50 rounded-lg px-4">
+          {/* Left Side: Search + Filters */}
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 flex-1">
             {/* Search Input */}
             <div className="w-full sm:w-auto sm:min-w-[240px] lg:min-w-[300px]">
@@ -197,7 +332,7 @@ export default function BudgetsPage() {
                 className="w-full"
               />
             </div>
-
+            
             {/* Filters */}
             <div className="flex flex-wrap items-center gap-3">
               <Select value={filters.type} onValueChange={(value) => setFilters({...filters, type: value})}>
@@ -221,7 +356,7 @@ export default function BudgetsPage() {
                 </SelectContent>
               </Select>
               <Select value={filters.organization} onValueChange={(value) => setFilters({...filters, organization: value})}>
-                <SelectTrigger className="w-[180px]">
+                <SelectTrigger className="w-[140px]">
                   <SelectValue placeholder="Organization" />
                 </SelectTrigger>
                 <SelectContent>
@@ -238,84 +373,55 @@ export default function BudgetsPage() {
             </div>
           </div>
 
-          {/* Results Summary */}
-          <p className="text-sm text-slate-600 whitespace-nowrap">
-            {totalBudgets === 0
-              ? "No budgets"
-              : `Showing ${startIndex + 1}–${endIndex} of ${totalBudgets} budgets`}
-          </p>
+          {/* Right Side: Results Count */}
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+            {/* Results Summary */}
+            <p className="text-sm text-slate-600 whitespace-nowrap">
+              {totalBudgets === 0
+                ? "No budgets"
+                : `Showing ${(currentPage - 1) * pageLimit + 1}–${Math.min(currentPage * pageLimit, totalBudgets)} of ${totalBudgets} budgets`}
+            </p>
+          </div>
         </div>
 
         {/* Budgets Table */}
-        {loading ? (
+        {loading && sortedBudgets.length === 0 && !searchQuery ? (
           <div className="bg-white rounded-md shadow-sm border border-gray-200 p-8 text-center">
             <p className="text-slate-500">Loading...</p>
           </div>
-        ) : budgets.length === 0 ? (
+        ) : error ? (
+          <div className="bg-white rounded-md shadow-sm border border-gray-200 p-8 text-center">
+            <div className="space-y-4">
+              <div>
+                <h3 className="text-lg font-medium text-slate-900 mb-2">Unable to Load Budgets</h3>
+                <p className="text-slate-500 mb-4">{error}</p>
+                <Button onClick={() => window.location.reload()} variant="outline">
+                  Try Again
+                </Button>
+              </div>
+            </div>
+          </div>
+        ) : sortedBudgets.length === 0 ? (
           <div className="bg-white rounded-md shadow-sm border border-gray-200 p-8 text-center">
             <p className="text-slate-500">No budgets found</p>
           </div>
         ) : (
           <div className="bg-white rounded-md shadow-sm border border-gray-200 overflow-hidden">
             <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-slate-50 border-b border-slate-200">
-                  <tr>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider cursor-pointer hover:bg-slate-100" onClick={() => handleSort('activity')}>
-                      Activity
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider cursor-pointer hover:bg-slate-100" onClick={() => handleSort('type')}>
-                      Type
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider cursor-pointer hover:bg-slate-100" onClick={() => handleSort('status')}>
-                      Status
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider cursor-pointer hover:bg-slate-100" onClick={() => handleSort('period_start')}>
-                      Period Start
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider cursor-pointer hover:bg-slate-100" onClick={() => handleSort('period_end')}>
-                      Period End
-                    </th>
-                    <th className="px-4 py-3 text-right text-xs font-medium text-slate-500 uppercase tracking-wider cursor-pointer hover:bg-slate-100" onClick={() => handleSort('value')}>
-                      Value
-                    </th>
-                    <th className="px-4 py-3 text-right text-xs font-medium text-slate-500 uppercase tracking-wider cursor-pointer hover:bg-slate-100" onClick={() => handleSort('value_usd')}>
-                      Value (USD)
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-slate-200">
-                  {budgets.map((budget) => (
-                    <tr
-                      key={budget.id}
-                      className="hover:bg-slate-50 cursor-pointer transition-colors"
-                      onClick={() => handleRowClick(budget.id)}
-                    >
-                      <td className="px-4 py-3 text-sm text-slate-900">
-                        {budget.activity?.title_narrative || budget.activity?.title || 'Untitled Activity'}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-slate-900">
-                        {budget.type === '1' ? 'Original' : budget.type === '2' ? 'Revised' : budget.type || '-'}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-slate-900">
-                        {budget.status === '1' ? 'Indicative' : budget.status === '2' ? 'Committed' : budget.status || '-'}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-slate-600">
-                        {budget.period_start ? format(new Date(budget.period_start), "MMM d, yyyy") : '-'}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-slate-600">
-                        {budget.period_end ? format(new Date(budget.period_end), "MMM d, yyyy") : '-'}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-slate-900 text-right font-mono">
-                        {budget.value ? `${budget.currency} ${Number(budget.value).toLocaleString()}` : '-'}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-slate-900 text-right font-mono">
-                        {budget.value_usd ? `$${Number(budget.value_usd).toLocaleString()}` : '-'}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+              <BudgetTable
+                budgets={sortedBudgets}
+                loading={loading}
+                error={null}
+                sortField={sortField}
+                sortOrder={sortOrder}
+                onSort={handleSort}
+                onRowClick={handleRowClick}
+                onEdit={handleEdit}
+                onDelete={handleDelete}
+                selectedIds={selectedBudgetIds}
+                onSelectAll={handleSelectAll}
+                onSelectBudget={handleSelectBudget}
+              />
             </div>
           </div>
         )}
@@ -328,7 +434,7 @@ export default function BudgetsPage() {
                 <div className="text-sm text-gray-600">
                   Showing {Math.min(startIndex + 1, totalBudgets)} to {Math.min(endIndex, totalBudgets)} of {totalBudgets} budgets
                 </div>
-
+                
                 <div className="flex items-center gap-2">
                   <Button
                     variant="outline"
@@ -342,13 +448,16 @@ export default function BudgetsPage() {
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                    onClick={() => {
+                      const newPage = Math.max(1, currentPage - 1);
+                      setCurrentPage(newPage);
+                    }}
                     disabled={currentPage === 1}
                   >
                     <ChevronLeft className="h-4 w-4" />
                     Previous
                   </Button>
-
+                  
                   <div className="flex items-center gap-1">
                     {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
                       let pageNum;
@@ -361,7 +470,7 @@ export default function BudgetsPage() {
                       } else {
                         pageNum = currentPage - 2 + i;
                       }
-
+                      
                       return (
                         <Button
                           key={pageNum}
@@ -375,11 +484,14 @@ export default function BudgetsPage() {
                       );
                     })}
                   </div>
-
+                  
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                    onClick={() => {
+                      const newPage = Math.min(totalPages, currentPage + 1);
+                      setCurrentPage(newPage);
+                    }}
                     disabled={currentPage === totalPages}
                   >
                     Next
@@ -395,11 +507,11 @@ export default function BudgetsPage() {
                     <ChevronRight className="h-4 w-4" />
                   </Button>
                 </div>
-
+                
                 <div className="flex items-center gap-2">
                   <label className="text-sm text-gray-600">Items per page:</label>
-                  <Select
-                    value={pageLimit.toString()}
+                  <Select 
+                    value={pageLimit.toString()} 
                     onValueChange={(value) => handlePageLimitChange(Number(value))}
                   >
                     <SelectTrigger className="w-20">
@@ -418,6 +530,25 @@ export default function BudgetsPage() {
             </CardContent>
           </Card>
         )}
+
+        {/* Bulk Action Toolbar */}
+        <BulkActionToolbar
+          selectedCount={selectedBudgetIds.size}
+          itemType="budgets"
+          onDelete={() => setShowBulkDeleteDialog(true)}
+          onCancel={() => setSelectedBudgetIds(new Set())}
+          isDeleting={isBulkDeleting}
+        />
+
+        {/* Bulk Delete Confirmation Dialog */}
+        <BulkDeleteDialog
+          isOpen={showBulkDeleteDialog}
+          itemCount={selectedBudgetIds.size}
+          itemType="budgets"
+          onConfirm={handleBulkDelete}
+          onCancel={() => setShowBulkDeleteDialog(false)}
+          isDeleting={isBulkDeleting}
+        />
       </div>
     </MainLayout>
   );

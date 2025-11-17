@@ -49,6 +49,39 @@ const FLOW_TYPE_BASE_COLORS: { [key: string]: string } = {
   '50': '#94a3b8'  // Other flows - Gray
 }
 
+// Define colors for each transaction type
+const TRANSACTION_TYPE_COLORS: { [key: string]: string } = {
+  '1': '#3b82f6',  // Incoming Commitment - Blue
+  '2': '#8b5cf6',  // Outgoing Commitment - Purple
+  '3': '#10b981',  // Disbursement - Green
+  '4': '#f59e0b',  // Expenditure - Amber
+  '5': '#ef4444',  // Interest Repayment - Red
+  '6': '#ec4899',  // Loan Repayment - Pink
+  '7': '#06b6d4',  // Reimbursement - Cyan
+  '8': '#14b8a6',  // Purchase of Equity - Teal
+  '9': '#a855f7',  // Sale of Equity - Purple
+  '11': '#6366f1', // Credit Guarantee - Indigo
+  '12': '#22c55e', // Incoming Funds - Light Green
+  '13': '#f97316'  // Commitment Cancellation - Orange
+}
+
+// Function to blend two colors together
+const blendColors = (color1: string, color2: string, ratio: number = 0.5): string => {
+  const r1 = parseInt(color1.slice(1, 3), 16)
+  const g1 = parseInt(color1.slice(3, 5), 16)
+  const b1 = parseInt(color1.slice(5, 7), 16)
+
+  const r2 = parseInt(color2.slice(1, 3), 16)
+  const g2 = parseInt(color2.slice(3, 5), 16)
+  const b2 = parseInt(color2.slice(5, 7), 16)
+
+  const r = Math.round(r1 * ratio + r2 * (1 - ratio))
+  const g = Math.round(g1 * ratio + g2 * (1 - ratio))
+  const b = Math.round(b1 * ratio + b2 * (1 - ratio))
+
+  return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`
+}
+
 // Function to generate shades for finance types within a flow type
 const generateFinanceTypeShades = (baseColor: string, financeType: string, index: number, total: number): string => {
   // Parse hex color
@@ -124,6 +157,7 @@ export function FinanceTypeFlowChart({
         const financeTypesData = await financeTypesResponse.json()
 
         // Fetch all transactions with finance_type and flow_type
+        // Don't filter by transaction type here - fetch all and filter client-side
         let query = supabase
           .from('transactions')
           .select('transaction_date, finance_type, flow_type, value, value_usd, currency, transaction_type')
@@ -131,11 +165,6 @@ export function FinanceTypeFlowChart({
           .not('finance_type', 'is', null)
           .not('flow_type', 'is', null)
           .order('transaction_date', { ascending: true })
-
-        // Apply transaction type filter
-        if (selectedTransactionTypes.length > 0 && !selectedTransactionTypes.includes('all')) {
-          query = query.in('transaction_type', selectedTransactionTypes)
-        }
 
         // Apply date range filter if provided
         if (dateRange) {
@@ -176,7 +205,7 @@ export function FinanceTypeFlowChart({
           return
         }
 
-        // Process data - keep actual finance type codes and use USD values
+        // Process data - keep actual finance type codes, transaction types, and use USD values
         const processedData = transactions.map((t: any) => {
           const date = new Date(t.transaction_date)
           const year = date.getFullYear()
@@ -202,11 +231,13 @@ export function FinanceTypeFlowChart({
           // Use actual finance_type code from database
           const financeType = t.finance_type || 'Unknown'
           const flowType = t.flow_type || 'Unknown'
+          const transactionType = t.transaction_type || 'Unknown'
 
           return {
             year,
             flowType,
             financeType,
+            transactionType,
             value,
             date: t.transaction_date
           }
@@ -258,7 +289,7 @@ export function FinanceTypeFlowChart({
     }
 
     fetchData()
-  }, [dateRange, refreshKey, selectedTransactionTypes])
+  }, [dateRange, refreshKey]) // Removed selectedTransactionTypes - filter client-side instead
 
   // Aggregate data - restructured to show flow types on X-axis
   const chartData = useMemo(() => {
@@ -266,6 +297,11 @@ export function FinanceTypeFlowChart({
 
     // Filter by selected flow types
     let filteredData = rawData.filter(d => selectedFlowTypes.includes(d.flowType))
+
+    // Filter by selected transaction types (client-side)
+    if (selectedTransactionTypes.length > 0) {
+      filteredData = filteredData.filter(d => selectedTransactionTypes.includes(d.transactionType))
+    }
 
     // If specific finance types are selected, filter by those
     if (selectedFinanceTypes.length > 0) {
@@ -291,21 +327,23 @@ export function FinanceTypeFlowChart({
         label: `${year}`, // Show only year on X-axis
       }
 
-      // For each flow type, add all finance type data
+      // For each flow type and transaction type, add all finance type data
       selectedFlowTypes.forEach(flowType => {
-        // Initialize all finance types with unique keys per flow type
-        financeTypesToShow.forEach(financeType => {
-          const uniqueKey = `${flowType}_${financeType.code}`
-          point[uniqueKey] = 0
-        })
-
-        // Aggregate values for this year-flowType combination
-        filteredData
-          .filter(d => d.year === year && d.flowType === flowType)
-          .forEach(item => {
-            const uniqueKey = `${flowType}_${item.financeType}`
-            point[uniqueKey] = (point[uniqueKey] || 0) + item.value
+        selectedTransactionTypes.forEach(transactionType => {
+          // Initialize all finance types with unique keys per flow type and transaction type
+          financeTypesToShow.forEach(financeType => {
+            const uniqueKey = `${flowType}_${transactionType}_${financeType.code}`
+            point[uniqueKey] = 0
           })
+
+          // Aggregate values for this year-flowType-transactionType combination
+          filteredData
+            .filter(d => d.year === year && d.flowType === flowType && d.transactionType === transactionType)
+            .forEach(item => {
+              const uniqueKey = `${flowType}_${item.transactionType}_${item.financeType}`
+              point[uniqueKey] = (point[uniqueKey] || 0) + item.value
+            })
+        })
       })
 
       dataPoints.push(point)
@@ -316,12 +354,14 @@ export function FinanceTypeFlowChart({
 
     // Apply cumulative transformation if needed
     if (timeMode === 'cumulative' && dataPoints.length > 0) {
-      // Apply cumulative calculation for each flow type across years
+      // Apply cumulative calculation for each flow type and transaction type across years
       for (let i = 1; i < dataPoints.length; i++) {
         selectedFlowTypes.forEach(flowType => {
-          financeTypesToShow.forEach(financeType => {
-            const uniqueKey = `${flowType}_${financeType.code}`
-            dataPoints[i][uniqueKey] = dataPoints[i][uniqueKey] + dataPoints[i - 1][uniqueKey]
+          selectedTransactionTypes.forEach(transactionType => {
+            financeTypesToShow.forEach(financeType => {
+              const uniqueKey = `${flowType}_${transactionType}_${financeType.code}`
+              dataPoints[i][uniqueKey] = dataPoints[i][uniqueKey] + dataPoints[i - 1][uniqueKey]
+            })
           })
         })
       }
@@ -330,7 +370,7 @@ export function FinanceTypeFlowChart({
     console.log('[FinanceTypeFlowChart] Chart data sample:', dataPoints.slice(0, 5))
 
     return dataPoints
-  }, [rawData, selectedFlowTypes, selectedFinanceTypes, allFinanceTypes, timeMode])
+  }, [rawData, selectedFlowTypes, selectedFinanceTypes, selectedTransactionTypes, allFinanceTypes, timeMode])
 
   // Notify parent component of data change in useEffect to avoid render-time state updates
   useEffect(() => {
@@ -439,15 +479,73 @@ export function FinanceTypeFlowChart({
     )
   }
 
+  // Custom legend formatter
+  const renderLegend = (props: any) => {
+    const { payload } = props
+    if (!payload || payload.length === 0) return null
+
+    return (
+      <div className="flex flex-wrap gap-x-4 gap-y-2 justify-center pt-4">
+        {payload.map((entry: any, index: number) => {
+          // Parse the name to extract parts: "Disbursement - ODA - 110 Standard grant"
+          const parts = entry.value.split(' - ')
+          const transactionTypeName = parts[0] || ''
+          const flowTypeName = parts[1] || ''
+          const financeTypePart = parts[2] || ''
+
+          // Extract transaction type code
+          const transactionType = selectedTransactionTypes.find(code => {
+            const name = transactionTypes.find(tt => tt.code === code)?.name
+            return name === transactionTypeName
+          })
+
+          // Extract flow type code
+          const flowType = allFlowTypes.find(ft => ft.name === flowTypeName)
+
+          // Extract finance type code from the finance type part
+          const financeTypeMatch = financeTypePart.match(/^(\d+)\s+(.+)$/)
+          const financeTypeCode = financeTypeMatch ? financeTypeMatch[1] : ''
+          const financeTypeName = financeTypeMatch ? financeTypeMatch[2] : financeTypePart
+
+          return (
+            <div key={`legend-${index}`} className="flex items-center gap-2 text-sm">
+              <div
+                className="w-3 h-3 rounded-sm flex-shrink-0"
+                style={{ backgroundColor: entry.color }}
+              />
+              <span className="text-slate-700">
+                <code className="bg-slate-200 px-1.5 py-0.5 rounded font-mono text-xs text-slate-700">
+                  {transactionType}
+                </code>
+                {' '}{transactionTypeName} -{' '}
+                <code className="bg-slate-200 px-1.5 py-0.5 rounded font-mono text-xs text-slate-700">
+                  {flowType?.code}
+                </code>
+                {' '}{flowTypeName} -{' '}
+                <code className="bg-slate-200 px-1.5 py-0.5 rounded font-mono text-xs text-slate-700">
+                  {financeTypeCode}
+                </code>
+                {' '}{financeTypeName}
+              </span>
+            </div>
+          )
+        })}
+      </div>
+    )
+  }
+
   // Export to CSV
   const handleExportCSV = () => {
     if (chartData.length === 0) return
 
-    // Build headers - one column per flow type + finance type combination
+    // Build headers - one column per transaction type + flow type + finance type combination
     const headers = ['Year']
     selectedFlowTypes.forEach(flowType => {
-      allFinanceTypes.forEach(ft => {
-        headers.push(`${flowType} - ${ft.code} ${ft.name}`)
+      selectedTransactionTypes.forEach(transactionType => {
+        const txTypeName = transactionTypes.find(tt => tt.code === transactionType)?.name || transactionType
+        allFinanceTypes.forEach(ft => {
+          headers.push(`${txTypeName} - ${flowType} - ${ft.code} ${ft.name}`)
+        })
       })
     })
 
@@ -455,9 +553,11 @@ export function FinanceTypeFlowChart({
     const rows = chartData.map(row => {
       const values = [row.year]
       selectedFlowTypes.forEach(flowType => {
-        allFinanceTypes.forEach(ft => {
-          const uniqueKey = `${flowType}_${ft.code}`
-          values.push((row[uniqueKey] || 0).toFixed(2))
+        selectedTransactionTypes.forEach(transactionType => {
+          allFinanceTypes.forEach(ft => {
+            const uniqueKey = `${flowType}_${transactionType}_${ft.code}`
+            values.push((row[uniqueKey] || 0).toFixed(2))
+          })
         })
       })
       return values.map(v => `"${v}"`).join(',')
@@ -770,30 +870,37 @@ export function FinanceTypeFlowChart({
                   />
                   <YAxis tickFormatter={formatCurrency} stroke="#64748B" fontSize={12} />
                   <Tooltip content={<CustomTooltip />} />
-                  <Legend wrapperStyle={{ paddingTop: '20px' }} />
+                  <Legend content={renderLegend} wrapperStyle={{ paddingTop: '20px' }} />
                   {selectedFlowTypes.map(flowType => {
-                    const baseColor = FLOW_TYPE_BASE_COLORS[flowType] || '#94a3b8'
                     // Determine which finance types to show
                     const financeTypesToShow = selectedFinanceTypes.length > 0
                       ? allFinanceTypes.filter(ft => selectedFinanceTypes.includes(ft.code))
                       : allFinanceTypes
 
-                    return financeTypesToShow.map((financeType, index) => {
-                      const color = generateFinanceTypeShades(baseColor, financeType.code, index, financeTypesToShow.length)
-                      const uniqueKey = `${flowType}_${financeType.code}`
-                      return (
-                        <Bar
-                          key={uniqueKey}
-                          dataKey={uniqueKey}
-                          name={`${getFlowTypeName(flowType)} - ${financeType.code} ${financeType.name}`}
-                          stackId={flowType}
-                          fill={color}
-                          isAnimationActive={true}
-                          animationDuration={800}
-                          animationEasing="ease-in-out"
-                        />
-                      )
-                    })
+                    return selectedTransactionTypes.map((transactionType, txIndex) => {
+                      const txTypeName = transactionTypes.find(tt => tt.code === transactionType)?.name || transactionType
+                      // Blend flow type and transaction type colors for unique visual distinction
+                      const flowTypeColor = FLOW_TYPE_BASE_COLORS[flowType] || '#94a3b8'
+                      const transactionTypeColor = TRANSACTION_TYPE_COLORS[transactionType] || '#94a3b8'
+                      const blendedBaseColor = blendColors(flowTypeColor, transactionTypeColor, 0.65) // 65% flow type, 35% transaction type
+
+                      return financeTypesToShow.map((financeType, index) => {
+                        const color = generateFinanceTypeShades(blendedBaseColor, financeType.code, index, financeTypesToShow.length)
+                        const uniqueKey = `${flowType}_${transactionType}_${financeType.code}`
+                        return (
+                          <Bar
+                            key={uniqueKey}
+                            dataKey={uniqueKey}
+                            name={`${txTypeName} - ${getFlowTypeName(flowType)} - ${financeType.code} ${financeType.name}`}
+                            stackId={`${flowType}_${transactionType}`}
+                            fill={color}
+                            isAnimationActive={true}
+                            animationDuration={800}
+                            animationEasing="ease-in-out"
+                          />
+                        )
+                      })
+                    }).flat()
                   }).flat()}
                 </BarChart>
               </ResponsiveContainer>
@@ -819,32 +926,39 @@ export function FinanceTypeFlowChart({
                   />
                   <YAxis tickFormatter={formatCurrency} stroke="#64748B" fontSize={12} />
                   <Tooltip content={<CustomTooltip />} />
-                  <Legend wrapperStyle={{ paddingTop: '20px' }} />
+                  <Legend content={renderLegend} wrapperStyle={{ paddingTop: '20px' }} />
                   {selectedFlowTypes.map(flowType => {
-                    const baseColor = FLOW_TYPE_BASE_COLORS[flowType] || '#94a3b8'
                     // Determine which finance types to show
                     const financeTypesToShow = selectedFinanceTypes.length > 0
                       ? allFinanceTypes.filter(ft => selectedFinanceTypes.includes(ft.code))
                       : allFinanceTypes
 
-                    return financeTypesToShow.map((financeType, index) => {
-                      const color = generateFinanceTypeShades(baseColor, financeType.code, index, financeTypesToShow.length)
-                      const uniqueKey = `${flowType}_${financeType.code}`
-                      return (
-                        <Line
-                          key={uniqueKey}
-                          type="monotone"
-                          dataKey={uniqueKey}
-                          name={`${getFlowTypeName(flowType)} - ${financeType.code} ${financeType.name}`}
-                          stroke={color}
-                          strokeWidth={2}
-                          dot={{ fill: color, r: 3 }}
-                          isAnimationActive={true}
-                          animationDuration={800}
-                          animationEasing="ease-in-out"
-                        />
-                      )
-                    })
+                    return selectedTransactionTypes.map((transactionType, txIndex) => {
+                      const txTypeName = transactionTypes.find(tt => tt.code === transactionType)?.name || transactionType
+                      // Blend flow type and transaction type colors for unique visual distinction
+                      const flowTypeColor = FLOW_TYPE_BASE_COLORS[flowType] || '#94a3b8'
+                      const transactionTypeColor = TRANSACTION_TYPE_COLORS[transactionType] || '#94a3b8'
+                      const blendedBaseColor = blendColors(flowTypeColor, transactionTypeColor, 0.65) // 65% flow type, 35% transaction type
+
+                      return financeTypesToShow.map((financeType, index) => {
+                        const color = generateFinanceTypeShades(blendedBaseColor, financeType.code, index, financeTypesToShow.length)
+                        const uniqueKey = `${flowType}_${transactionType}_${financeType.code}`
+                        return (
+                          <Line
+                            key={uniqueKey}
+                            type="monotone"
+                            dataKey={uniqueKey}
+                            name={`${txTypeName} - ${getFlowTypeName(flowType)} - ${financeType.code} ${financeType.name}`}
+                            stroke={color}
+                            strokeWidth={2}
+                            dot={{ fill: color, r: 3 }}
+                            isAnimationActive={true}
+                            animationDuration={800}
+                            animationEasing="ease-in-out"
+                          />
+                        )
+                      })
+                    }).flat()
                   }).flat()}
                 </LineChart>
               </ResponsiveContainer>
@@ -859,21 +973,31 @@ export function FinanceTypeFlowChart({
                       <TableHead className="sticky top-0 bg-white z-10">Year</TableHead>
                       {selectedFlowTypes.map(flowType => (
                         <React.Fragment key={flowType}>
-                          {allFinanceTypes.map(financeType => (
-                            <TableHead key={`${flowType}_${financeType.code}`} className="text-right sticky top-0 bg-white">
-                              <div className="flex flex-col items-end gap-1">
-                                <div className="flex items-center gap-1">
-                                  <code className="px-1.5 py-0.5 rounded bg-slate-100 text-slate-700 font-mono text-xs">
-                                    {flowType}
-                                  </code>
-                                  <code className="px-1.5 py-0.5 rounded bg-blue-100 text-blue-700 font-mono text-xs">
-                                    {financeType.code}
-                                  </code>
-                                </div>
-                                <span className="text-xs text-slate-600">{financeType.name}</span>
-                              </div>
-                            </TableHead>
-                          ))}
+                          {selectedTransactionTypes.map(transactionType => {
+                            const txTypeName = transactionTypes.find(tt => tt.code === transactionType)?.name || transactionType
+                            return (
+                              <React.Fragment key={`${flowType}_${transactionType}`}>
+                                {allFinanceTypes.map(financeType => (
+                                  <TableHead key={`${flowType}_${transactionType}_${financeType.code}`} className="text-right sticky top-0 bg-white">
+                                    <div className="flex flex-col items-end gap-1">
+                                      <div className="flex items-center gap-1">
+                                        <code className="px-1.5 py-0.5 rounded bg-slate-100 text-slate-700 font-mono text-xs">
+                                          {transactionType}
+                                        </code>
+                                        <code className="px-1.5 py-0.5 rounded bg-slate-100 text-slate-700 font-mono text-xs">
+                                          {flowType}
+                                        </code>
+                                        <code className="px-1.5 py-0.5 rounded bg-blue-100 text-blue-700 font-mono text-xs">
+                                          {financeType.code}
+                                        </code>
+                                      </div>
+                                      <span className="text-xs text-slate-600">{txTypeName} - {financeType.name}</span>
+                                    </div>
+                                  </TableHead>
+                                ))}
+                              </React.Fragment>
+                            )
+                          })}
                         </React.Fragment>
                       ))}
                     </TableRow>
@@ -884,14 +1008,18 @@ export function FinanceTypeFlowChart({
                         <TableCell className="font-medium">{row.year}</TableCell>
                         {selectedFlowTypes.map(flowType => (
                           <React.Fragment key={flowType}>
-                            {allFinanceTypes.map(financeType => {
-                              const uniqueKey = `${flowType}_${financeType.code}`
-                              return (
-                                <TableCell key={uniqueKey} className="text-right">
-                                  {formatTooltipValue(row[uniqueKey] || 0)}
-                                </TableCell>
-                              )
-                            })}
+                            {selectedTransactionTypes.map(transactionType => (
+                              <React.Fragment key={`${flowType}_${transactionType}`}>
+                                {allFinanceTypes.map(financeType => {
+                                  const uniqueKey = `${flowType}_${transactionType}_${financeType.code}`
+                                  return (
+                                    <TableCell key={uniqueKey} className="text-right">
+                                      {formatTooltipValue(row[uniqueKey] || 0)}
+                                    </TableCell>
+                                  )
+                                })}
+                              </React.Fragment>
+                            ))}
                           </React.Fragment>
                         ))}
                       </TableRow>
@@ -927,7 +1055,7 @@ export function FinanceTypeFlowChart({
             {selectedFlowTypes.length > 0 && (
               <div className="flex items-center gap-2 flex-wrap">
                 <span className="text-sm font-semibold text-slate-700 min-w-[140px]">
-                  Flow Types:
+                  {selectedFlowTypes.length} Flow Type{selectedFlowTypes.length !== 1 ? 's' : ''}:
                 </span>
                 <div className="flex gap-2 flex-wrap flex-1">
                   {selectedFlowTypes.map(code => (
@@ -959,7 +1087,7 @@ export function FinanceTypeFlowChart({
             {selectedFinanceTypes.length > 0 && (
               <div className="flex items-center gap-2 flex-wrap">
                 <span className="text-sm font-semibold text-slate-700 min-w-[140px]">
-                  Finance Types:
+                  {selectedFinanceTypes.length} Finance Type{selectedFinanceTypes.length !== 1 ? 's' : ''}:
                 </span>
                 <div className="flex gap-2 flex-wrap flex-1">
                   {selectedFinanceTypes.map(code => (
@@ -991,7 +1119,7 @@ export function FinanceTypeFlowChart({
             {selectedTransactionTypes.length > 0 && (
               <div className="flex items-center gap-2 flex-wrap">
                 <span className="text-sm font-semibold text-slate-700 min-w-[140px]">
-                  Transaction Types:
+                  {selectedTransactionTypes.length} Transaction Type{selectedTransactionTypes.length !== 1 ? 's' : ''}:
                 </span>
                 <div className="flex gap-2 flex-wrap flex-1">
                   {selectedTransactionTypes.map(code => {

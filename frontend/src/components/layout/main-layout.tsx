@@ -123,9 +123,9 @@ export function MainLayout({ children, requireAuth = true }: MainLayoutProps) {
         </div>
         
         {/* Hydration-safe Navigation - flex-1 to take remaining space */}
-        <div className="flex-1 overflow-hidden">
-          <SidebarNav 
-            userRole={user?.role} 
+        <div className="flex-1 overflow-y-auto overflow-x-hidden">
+          <SidebarNav
+            userRole={user?.role}
             canManageUsers={permissions.canManageUsers}
             isLoading={isLoading}
             isCollapsed={isCollapsed}

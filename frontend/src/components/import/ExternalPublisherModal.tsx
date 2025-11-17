@@ -1050,8 +1050,8 @@ export function ExternalPublisherModal({
             </DialogDescription>
           </DialogHeader>
 
-          {/* Summary Information - 3 Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+          {/* Summary Information - 2 Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
             {/* Your Organisation */}
             <Card className="p-4">
               <div className="space-y-2">
@@ -1117,38 +1117,6 @@ export function ExternalPublisherModal({
                 </div>
               </div>
             </Card>
-
-          {/* Source IATI Identifier */}
-          <Card className="p-4">
-            <div className="space-y-2">
-              <div className="flex items-center gap-2">
-                <h3 className="text-sm font-medium text-muted-foreground">
-                  {iatiImportStrings['summary.iatiId']}
-                </h3>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-4 w-4 p-0 rounded-full hover:bg-gray-100 focus:bg-gray-100"
-                      type="button"
-                      aria-label="Help"
-                      tabIndex={-1}
-                    >
-                      <HelpCircle className="h-3 w-3" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent side="top" align="center" className="max-w-xs">
-                    <p className="text-xs">
-                      The activity identifier<br />
-                      from the imported XML.
-                    </p>
-                  </TooltipContent>
-                </Tooltip>
-              </div>
-              <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded break-all">{meta.iatiId}</span>
-            </div>
-          </Card>
         </div>
 
         {/* Warnings */}
