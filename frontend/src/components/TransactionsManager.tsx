@@ -442,7 +442,7 @@ export default function TransactionsManager({
     if (selectedArray.length === 0) return;
 
     setIsBulkDeleting(true);
-    
+
     try {
       // Delete all selected transactions
       await Promise.all(selectedArray.map(async (id) => {
@@ -454,15 +454,15 @@ export default function TransactionsManager({
           throw new Error(error.error || 'Failed to delete transaction');
         }
       }));
-      
-      // Clear selection
-      setSelectedTransactionIds(new Set());
-      
-      // Refresh data
+
+      // Refresh data first
       if (onRefreshNeeded) {
         await onRefreshNeeded();
       }
-      
+
+      // Clear selection AFTER refresh completes to ensure proper state sync
+      setSelectedTransactionIds(new Set());
+
       toast.success(`Successfully deleted ${selectedArray.length} transaction(s)`);
     } catch (error: any) {
       console.error('[TransactionsManager] Error deleting transactions:', error);
@@ -850,6 +850,7 @@ export default function TransactionsManager({
           ) : (
             <>
               <TransactionTable
+                key={`transaction-table-${transactions.length}-${selectedTransactionIds.size}`}
                 transactions={paginatedTransactions}
                 organizations={organizations}
                 loading={false}

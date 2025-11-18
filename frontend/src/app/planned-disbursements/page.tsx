@@ -10,6 +10,9 @@ import { useRouter } from "next/navigation";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { Download, ChevronLeft, ChevronRight } from "lucide-react";
+import { PlannedDisbursementsTable } from "@/components/planned-disbursements/PlannedDisbursementsTable";
+import { BulkActionToolbar } from "@/components/ui/bulk-action-toolbar";
+import { BulkDeleteDialog } from "@/components/dialogs/bulk-delete-dialog";
 
 export default function PlannedDisbursementsPage() {
   const router = useRouter();
@@ -25,6 +28,8 @@ export default function PlannedDisbursementsPage() {
 
   // Bulk selection state
   const [selectedDisbursementIds, setSelectedDisbursementIds] = useState<Set<string>>(new Set());
+  const [isBulkDeleting, setIsBulkDeleting] = useState(false);
+  const [showBulkDeleteDialog, setShowBulkDeleteDialog] = useState(false);
 
   const [filters, setFilters] = useState({
     type: "all",
@@ -167,6 +172,95 @@ export default function PlannedDisbursementsPage() {
     }
   };
 
+  const handleEdit = (disbursement: any) => {
+    if (disbursement && disbursement.activity_id) {
+      router.push(`/activities/new?id=${disbursement.activity_id}&section=finances&tab=planned-disbursements&disbursementId=${disbursement.id}`);
+    }
+  };
+
+  const handleDelete = async (disbursementId: string) => {
+    if (!disbursementId || disbursementId === 'undefined') {
+      toast.error("Invalid disbursement ID");
+      return;
+    }
+
+    if (!confirm("Are you sure you want to delete this planned disbursement?")) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/planned-disbursements/${disbursementId}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to delete planned disbursement');
+      }
+
+      toast.success("Planned disbursement deleted successfully");
+      fetchDisbursements();
+    } catch (error: any) {
+      console.error('Error deleting planned disbursement:', error);
+      toast.error(error.message || "Failed to delete planned disbursement");
+    }
+  };
+
+  const handleSelectAll = (checked: boolean) => {
+    if (checked) {
+      const allIds = disbursements.map(d => d.id).filter(Boolean);
+      setSelectedDisbursementIds(new Set(allIds));
+    } else {
+      setSelectedDisbursementIds(new Set());
+    }
+  };
+
+  const handleSelectDisbursement = (id: string, checked: boolean) => {
+    const newSelected = new Set(selectedDisbursementIds);
+    if (checked) {
+      newSelected.add(id);
+    } else {
+      newSelected.delete(id);
+    }
+    setSelectedDisbursementIds(newSelected);
+  };
+
+  const handleBulkDelete = async () => {
+    const selectedArray = Array.from(selectedDisbursementIds);
+    if (selectedArray.length === 0) return;
+
+    setShowBulkDeleteDialog(false);
+    setIsBulkDeleting(true);
+
+    try {
+      const response = await fetch('/api/planned-disbursements/bulk-delete', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ids: selectedArray
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to delete planned disbursements');
+      }
+
+      const result = await response.json();
+      toast.success(`${result.deletedCount} ${result.deletedCount === 1 ? 'disbursement' : 'disbursements'} deleted successfully`);
+
+      // Refresh data first
+      await fetchDisbursements();
+
+      // Clear selection AFTER refresh completes to ensure proper state sync
+      setSelectedDisbursementIds(new Set());
+
+    } catch (error) {
+      console.error('Bulk delete failed:', error);
+      toast.error('Failed to delete some planned disbursements');
+    } finally {
+      setIsBulkDeleting(false);
+    }
+  };
+
   return (
     <MainLayout>
       <div className="max-w-screen-2xl mx-auto px-6 py-4 space-y-6">
@@ -242,7 +336,7 @@ export default function PlannedDisbursementsPage() {
         </div>
 
         {/* Planned Disbursements Table */}
-        {loading ? (
+        {loading && disbursements.length === 0 ? (
           <div className="bg-white rounded-md shadow-sm border border-gray-200 p-8 text-center">
             <p className="text-slate-500">Loading...</p>
           </div>
@@ -253,76 +347,21 @@ export default function PlannedDisbursementsPage() {
         ) : (
           <div className="bg-white rounded-md shadow-sm border border-gray-200 overflow-hidden">
             <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-slate-50 border-b border-slate-200">
-                  <tr>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider cursor-pointer hover:bg-slate-100" onClick={() => handleSort('activity')}>
-                      Activity
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider cursor-pointer hover:bg-slate-100" onClick={() => handleSort('provider_org_name')}>
-                      Provider Org
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider cursor-pointer hover:bg-slate-100" onClick={() => handleSort('provider_activity')}>
-                      Provider Activity
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider cursor-pointer hover:bg-slate-100" onClick={() => handleSort('receiver_org_name')}>
-                      Receiver Org
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider cursor-pointer hover:bg-slate-100" onClick={() => handleSort('receiver_activity')}>
-                      Receiver Activity
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider cursor-pointer hover:bg-slate-100" onClick={() => handleSort('period_start')}>
-                      Period Start
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider cursor-pointer hover:bg-slate-100" onClick={() => handleSort('period_end')}>
-                      Period End
-                    </th>
-                    <th className="px-4 py-3 text-right text-xs font-medium text-slate-500 uppercase tracking-wider cursor-pointer hover:bg-slate-100" onClick={() => handleSort('value')}>
-                      Value
-                    </th>
-                    <th className="px-4 py-3 text-right text-xs font-medium text-slate-500 uppercase tracking-wider cursor-pointer hover:bg-slate-100" onClick={() => handleSort('value_usd')}>
-                      Value (USD)
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-slate-200">
-                  {disbursements.map((disb) => (
-                    <tr
-                      key={disb.id}
-                      className="hover:bg-slate-50 cursor-pointer transition-colors"
-                      onClick={() => handleRowClick(disb.id)}
-                    >
-                      <td className="px-4 py-3 text-sm text-slate-900">
-                        {disb.activity?.title_narrative || 'Untitled Activity'}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-slate-900">
-                        {disb.provider_org_name || '-'}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-slate-900">
-                        {disb.provider_activity?.title_narrative || disb.provider_activity?.title || '-'}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-slate-900">
-                        {disb.receiver_org_name || '-'}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-slate-900">
-                        {disb.receiver_activity?.title_narrative || disb.receiver_activity?.title || '-'}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-slate-600">
-                        {disb.period_start ? format(new Date(disb.period_start), "MMM d, yyyy") : '-'}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-slate-600">
-                        {disb.period_end ? format(new Date(disb.period_end), "MMM d, yyyy") : '-'}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-slate-900 text-right font-mono">
-                        {disb.value ? `${disb.currency} ${Number(disb.value).toLocaleString()}` : '-'}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-slate-900 text-right font-mono">
-                        {disb.value_usd ? `$${Number(disb.value_usd).toLocaleString()}` : '-'}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+              <PlannedDisbursementsTable
+                key={`disbursements-table-${disbursements.length}-${selectedDisbursementIds.size}`}
+                disbursements={disbursements}
+                loading={loading}
+                error={null}
+                sortField={sortField}
+                sortOrder={sortOrder}
+                onSort={handleSort}
+                onRowClick={handleRowClick}
+                onEdit={handleEdit}
+                onDelete={handleDelete}
+                selectedIds={selectedDisbursementIds}
+                onSelectAll={handleSelectAll}
+                onSelectDisbursement={handleSelectDisbursement}
+              />
             </div>
           </div>
         )}
@@ -349,7 +388,10 @@ export default function PlannedDisbursementsPage() {
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                    onClick={() => {
+                      const newPage = Math.max(1, currentPage - 1);
+                      setCurrentPage(newPage);
+                    }}
                     disabled={currentPage === 1}
                   >
                     <ChevronLeft className="h-4 w-4" />
@@ -386,7 +428,10 @@ export default function PlannedDisbursementsPage() {
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                    onClick={() => {
+                      const newPage = Math.min(totalPages, currentPage + 1);
+                      setCurrentPage(newPage);
+                    }}
                     disabled={currentPage === totalPages}
                   >
                     Next
@@ -425,6 +470,25 @@ export default function PlannedDisbursementsPage() {
             </CardContent>
           </Card>
         )}
+
+        {/* Bulk Action Toolbar */}
+        <BulkActionToolbar
+          selectedCount={selectedDisbursementIds.size}
+          itemType="planned disbursements"
+          onDelete={() => setShowBulkDeleteDialog(true)}
+          onCancel={() => setSelectedDisbursementIds(new Set())}
+          isDeleting={isBulkDeleting}
+        />
+
+        {/* Bulk Delete Confirmation Dialog */}
+        <BulkDeleteDialog
+          isOpen={showBulkDeleteDialog}
+          itemCount={selectedDisbursementIds.size}
+          itemType="planned disbursements"
+          onConfirm={handleBulkDelete}
+          onCancel={() => setShowBulkDeleteDialog(false)}
+          isDeleting={isBulkDeleting}
+        />
       </div>
     </MainLayout>
   );

@@ -105,7 +105,7 @@ export function MultiSelect({
         >
           <div className="flex gap-1 flex-wrap truncate">
             {selected.length === 0 ? (
-              placeholder
+              <span className="text-sm text-muted-foreground">{placeholder}</span>
             ) : (
               <span className="text-sm text-muted-foreground">
                 {selected.length} {selectedLabel || 'selected'}

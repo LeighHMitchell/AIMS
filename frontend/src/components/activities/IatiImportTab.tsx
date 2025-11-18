@@ -80,6 +80,7 @@ import {
 
 interface IatiImportTabProps {
   activityId: string;
+  onNavigateToGeneral?: () => void;
 }
 
 interface ActivityData {
@@ -432,6 +433,8 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
     currency?: string;
     currencies?: Set<string>; // Track multiple currencies
     loading?: boolean;
+    // Track all transaction types dynamically
+    transactionTypes?: Record<string, { count: number; total: number; label: string }>;
   }>({});
 
   // Helper to get org by role
@@ -662,6 +665,17 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
     return country?.name || code;
   };
 
+  // Get country code from name (reverse lookup)
+  const getCountryCodeFromName = (name?: string): string | null => {
+    if (!name) return null;
+    // First try exact match
+    const country = countries.find(c => c.name.toLowerCase() === name.toLowerCase());
+    if (country) return country.code;
+    // If name is already a 2-character code, return it
+    if (name.length === 2 && /^[A-Z]{2}$/i.test(name)) return name.toUpperCase();
+    return null;
+  };
+
   // Helper to find aid type name from JSON structure
   const getAidTypeName = (code?: string): string | null => {
     if (!code) return null;
@@ -767,19 +781,52 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
           });
         }
 
+        // Transaction type labels mapping
+        const transactionTypeLabels: Record<string, string> = {
+          '1': 'Incoming Commitment',
+          '2': 'Outgoing Commitment',
+          '3': 'Disbursement',
+          '4': 'Expenditure',
+          '5': 'Interest Repayment',
+          '6': 'Loan Repayment',
+          '7': 'Reimbursement',
+          '8': 'Purchase of Equity',
+          '9': 'Sale of Equity',
+          '11': 'Credit Guarantee',
+          '12': 'Incoming Funds',
+          '13': 'Commitment Cancellation'
+        };
+
+        // Track all transaction types dynamically
+        const transactionTypes: Record<string, { count: number; total: number; label: string }> = {};
+
         // Sum transactions by type and count
         if (parsedActivity.transactions && Array.isArray(parsedActivity.transactions)) {
           parsedActivity.transactions.forEach((tx: any) => {
-              const txType = tx.transactionType || tx.type;
+            const txType = String(tx.transactionType || tx.type || '');
 
-            if (tx.value && typeof tx.value === 'number') {
+            if (tx.value && typeof tx.value === 'number' && txType) {
+              // Initialize transaction type if not exists
+              if (!transactionTypes[txType]) {
+                transactionTypes[txType] = {
+                  count: 0,
+                  total: 0,
+                  label: transactionTypeLabels[txType] || `Type ${txType}`
+                };
+              }
+
+              // Add to totals
+              transactionTypes[txType].count++;
+              transactionTypes[txType].total += tx.value;
+
+              // Keep backward compatibility for specific types
               // Type 2 = Outgoing Commitment
-              if (txType === '2' || txType === 2) {
+              if (txType === '2') {
                 totalOutgoingCommitment += tx.value;
                 commitmentCount++;
               }
               // Type 3 = Disbursement
-              if (txType === '3' || txType === 3) {
+              if (txType === '3') {
                 totalDisbursement += tx.value;
                 disbursementCount++;
               }
@@ -797,6 +844,7 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
           commitmentCount,
           disbursementCount,
           currency: defaultCurrency,
+          transactionTypes: Object.keys(transactionTypes).length > 0 ? transactionTypes : undefined,
           loading: false
         });
       } catch (error) {
@@ -935,25 +983,52 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
                   <div>
                     <div className="text-[10px] uppercase tracking-wide text-slate-500 font-semibold mb-1.5">Recipient Country</div>
               <div className="space-y-1">
-                      {activity.recipientCountries.slice(0, 2).map((country: string, idx: number) => {
-                        const countryName = getCountryName(country);
-                        const countryCode = country?.toUpperCase() || '';
+                      {activity.recipientCountries.slice(0, 2).map((country: any, idx: number) => {
+                        // Handle both string codes/names and objects with code property
+                        let countryCodeRaw: string = '';
+                        let countryName: string = '';
+                        
+                        if (typeof country === 'string') {
+                          // Could be a code (e.g., "KH") or a name (e.g., "Cambodia")
+                          countryCodeRaw = country;
+                          // Try to find if it's a code first
+                          const countryFromCode = countries.find(c => c.code === country.toUpperCase());
+                          if (countryFromCode) {
+                            // It's a code
+                            countryName = countryFromCode.name;
+                          } else {
+                            // It's likely a name, try to find the code
+                            const codeFromName = getCountryCodeFromName(country);
+                            if (codeFromName) {
+                              countryCodeRaw = codeFromName;
+                              countryName = country; // Use the original name
+                            } else {
+                              // Can't find code, just use the string as-is
+                              countryName = country;
+                            }
+                          }
+                        } else {
+                          // It's an object
+                          countryCodeRaw = country?.code || country?.iso2 || '';
+                          countryName = country?.name || getCountryName(countryCodeRaw) || countryCodeRaw;
+                        }
 
-                        // Convert ISO country code to flag emoji
-                        const getCountryFlag = (code: string): string => {
-                          if (!code || code.length !== 2) return '';
-                          const codePoints = code
-                            .split('')
-                            .map(char => 127397 + char.charCodeAt(0));
-                          return String.fromCodePoint(...codePoints);
-                        };
-
-                        const flag = getCountryFlag(countryCode);
+                        const countryCode = countryCodeRaw?.toUpperCase()?.trim() || '';
 
                         return (
                           <div key={idx} className="flex items-center gap-1.5 text-sm font-medium text-slate-900">
-                            {flag && <span className="text-lg leading-none">{flag}</span>}
-                            <span>{countryName || country}</span>
+                            {countryCode && countryCode.length === 2 && (
+                              <img
+                                src={`https://flagcdn.com/w20/${countryCode.toLowerCase()}.png`}
+                                alt={`${countryName || countryCode} flag`}
+                                className="w-4 h-3 object-cover rounded-sm shrink-0"
+                                onError={(e) => {
+                                  const target = e.target as HTMLImageElement;
+                                  target.style.display = 'none';
+                                }}
+                              />
+                            )}
+                            <span>{countryName || countryCodeRaw || country}</span>
                           </div>
                         );
                       })}
@@ -969,20 +1044,56 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
 
               {/* Column 2: Classifications */}
               <div>
-                {(activity.defaultAidType || activity.flowType || activity.financeType || activity.tiedStatus || activity.activityScope || activity.collaborationType) && (
+                {(activity.aidType || activity.defaultAidType || activity.flowType || activity.financeType || activity.tiedStatus || activity.activityScope || activity.collaborationType || activity.hierarchy || activity.currency || activity.defaultCurrency || activity.status) && (
                   <div>
                     <div className="text-[10px] uppercase tracking-wide text-slate-500 font-semibold mb-1.5">Classifications</div>
                     <div className="space-y-1 text-[10px]">
-                      {activity.defaultAidType && (() => {
-                        const label = getAidTypeLabel(activity.defaultAidType);
+                      {(activity.currency || activity.defaultCurrency) && (() => {
+                        const currencyCode = activity.currency || activity.defaultCurrency || '';
+                        const currency = getCurrencyByCode(currencyCode);
+                        const currencyName = currency?.name || '';
                         return (
                           <div className="flex items-start gap-1.5">
-                            <span className="text-slate-600 whitespace-nowrap">Default Aid Type:</span>
+                            <span className="text-slate-600 whitespace-nowrap">Default Currency:</span>
                             <div className="flex items-center gap-1.5">
                               <code className="text-[9px] font-mono bg-slate-100 px-1 py-0.5 rounded text-slate-700">
-                                {label?.code}
+                                {currencyCode}
                               </code>
-                              <span className="text-slate-900">{label?.name}</span>
+                              {currencyName && (
+                                <span className="text-slate-900">{currencyName}</span>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })()}
+                      {activity.status && (() => {
+                        const statusInfo = getActivityStatusByCode(activity.status);
+                        const statusName = statusInfo?.name || activity.statusNarrative || '';
+                        return (
+                          <div className="flex items-start gap-1.5">
+                            <span className="text-slate-600 whitespace-nowrap">Status:</span>
+                            <div className="flex items-center gap-1.5">
+                              <code className="text-[9px] font-mono bg-slate-100 px-1 py-0.5 rounded text-slate-700">
+                                {activity.status}
+                              </code>
+                              {statusName && (
+                                <span className="text-slate-900">{statusName}</span>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })()}
+                      {(activity.aidType || activity.defaultAidType) && (() => {
+                        const aidTypeCode = activity.aidType || activity.defaultAidType;
+                        const label = getAidTypeLabel(aidTypeCode);
+                        return (
+                          <div className="flex items-start gap-1.5">
+                            <span className="text-slate-600 whitespace-nowrap">Aid Type:</span>
+                            <div className="flex items-center gap-1.5">
+                              <code className="text-[9px] font-mono bg-slate-100 px-1 py-0.5 rounded text-slate-700">
+                                {label?.code || aidTypeCode}
+                              </code>
+                              <span className="text-slate-900">{label?.name || activity.aidTypeName || aidTypeCode}</span>
                             </div>
                           </div>
                         );
@@ -991,12 +1102,12 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
                         const label = getFlowTypeLabel(activity.flowType);
                         return (
                           <div className="flex items-start gap-1.5">
-                            <span className="text-slate-600 whitespace-nowrap">Default Flow Type:</span>
+                            <span className="text-slate-600 whitespace-nowrap">Flow Type:</span>
                             <div className="flex items-center gap-1.5">
                               <code className="text-[9px] font-mono bg-slate-100 px-1 py-0.5 rounded text-slate-700">
-                                {label?.code}
+                                {label?.code || activity.flowType}
                               </code>
-                              <span className="text-slate-900">{label?.name}</span>
+                              <span className="text-slate-900">{label?.name || activity.flowTypeName || activity.flowType}</span>
                             </div>
                           </div>
                         );
@@ -1005,12 +1116,12 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
                         const label = getFinanceTypeLabel(activity.financeType);
                         return (
                           <div className="flex items-start gap-1.5">
-                            <span className="text-slate-600 whitespace-nowrap">Default Finance Type:</span>
+                            <span className="text-slate-600 whitespace-nowrap">Finance Type:</span>
                             <div className="flex items-center gap-1.5">
                               <code className="text-[9px] font-mono bg-slate-100 px-1 py-0.5 rounded text-slate-700">
-                                {label?.code}
+                                {label?.code || activity.financeType}
                               </code>
-                              <span className="text-slate-900">{label?.name}</span>
+                              <span className="text-slate-900">{label?.name || activity.financeTypeName || activity.financeType}</span>
                             </div>
                           </div>
                         );
@@ -1019,40 +1130,66 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
                         const label = getTiedStatusLabel(activity.tiedStatus);
                         return (
                           <div className="flex items-start gap-1.5">
-                            <span className="text-slate-600 whitespace-nowrap">Default Tied Status:</span>
+                            <span className="text-slate-600 whitespace-nowrap">Tied Status:</span>
                             <div className="flex items-center gap-1.5">
                               <code className="text-[9px] font-mono bg-slate-100 px-1 py-0.5 rounded text-slate-700">
-                                {label?.code}
+                                {label?.code || activity.tiedStatus}
                               </code>
-                              <span className="text-slate-900">{label?.name}</span>
+                              <span className="text-slate-900">{label?.name || activity.tiedStatusName || activity.tiedStatus}</span>
                             </div>
                           </div>
                         );
                       })()}
                       {activity.activityScope && (() => {
-                        const scopeItem = IATI_ACTIVITY_SCOPE[0]?.types.find(t => t.code === activity.activityScope);
+                        // activityScope might be a code (e.g., "4") or a narrative (e.g., "National")
+                        // Try to find it as a code first, then as a name
+                        const scopeItem = IATI_ACTIVITY_SCOPE[0]?.types.find(t => 
+                          t.code === activity.activityScope || t.name.toLowerCase() === activity.activityScope.toLowerCase()
+                        );
                         return (
                           <div className="flex items-start gap-1.5">
                             <span className="text-slate-600 whitespace-nowrap">Scope:</span>
                             <div className="flex items-center gap-1.5">
                               <code className="text-[9px] font-mono bg-slate-100 px-1 py-0.5 rounded text-slate-700">
-                                {activity.activityScope}
+                                {scopeItem?.code || activity.activityScope}
                               </code>
-                              <span className="text-slate-900">{scopeItem?.name || 'Unknown'}</span>
+                              <span className="text-slate-900">{scopeItem?.name || activity.activityScope}</span>
                             </div>
                           </div>
                         );
                       })()}
                       {activity.collaborationType && (() => {
+                        // collaborationType might be a code (e.g., "2") or a narrative (e.g., "Multilateral (inflows)")
                         const label = getCollaborationTypeLabel(activity.collaborationType);
                         return (
                           <div className="flex items-start gap-1.5">
                             <span className="text-slate-600 whitespace-nowrap">Collaboration:</span>
                             <div className="flex items-center gap-1.5">
                               <code className="text-[9px] font-mono bg-slate-100 px-1 py-0.5 rounded text-slate-700">
-                                {label?.code}
+                                {label?.code || activity.collaborationType}
                               </code>
-                              <span className="text-slate-900">{label?.name}</span>
+                              <span className="text-slate-900">{label?.name || activity.collaborationType}</span>
+                            </div>
+                          </div>
+                        );
+                      })()}
+                      {activity.hierarchy && (() => {
+                        // Hierarchy values: 1 = Parent activity, 2 = Child activity
+                        const hierarchyLabels: Record<string, string> = {
+                          '1': 'Parent activity',
+                          '2': 'Child activity'
+                        };
+                        const hierarchyName = activity.hierarchyName || hierarchyLabels[String(activity.hierarchy)] || '';
+                        return (
+                          <div className="flex items-start gap-1.5">
+                            <span className="text-slate-600 whitespace-nowrap">Hierarchy:</span>
+                            <div className="flex items-center gap-1.5">
+                              <code className="text-[9px] font-mono bg-slate-100 px-1 py-0.5 rounded text-slate-700">
+                                {activity.hierarchy}
+                              </code>
+                              {hierarchyName && (
+                                <span className="text-slate-900">{hierarchyName}</span>
+                              )}
                             </div>
                           </div>
                         );
@@ -1109,24 +1246,54 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
                           {financialData.loading ? 'Loading...' : renderCurrency(financialData.totalPlannedDisbursement ?? 0, financialData.currency)}
                         </td>
                       </tr>
-                      <tr className="hover:bg-slate-50/50 transition-colors">
-                        <td className="px-2 py-1 text-slate-700">Commitments</td>
-                        <td className="px-2 py-1 text-right text-slate-600">
-                          {financialData.loading ? '...' : (financialData.commitmentCount ?? 0)}
-                        </td>
-                        <td className="px-2 py-1 text-right font-semibold text-slate-900">
-                          {financialData.loading ? 'Loading...' : renderCurrency(financialData.totalOutgoingCommitment ?? 0, financialData.currency)}
-                        </td>
-                      </tr>
-                      <tr className="hover:bg-slate-50/50 transition-colors">
-                        <td className="px-2 py-1 text-slate-700">Disbursements</td>
-                        <td className="px-2 py-1 text-right text-slate-600">
-                          {financialData.loading ? '...' : (financialData.disbursementCount ?? 0)}
-                        </td>
-                        <td className="px-2 py-1 text-right font-semibold text-slate-900">
-                          {financialData.loading ? 'Loading...' : renderCurrency(financialData.totalDisbursement ?? 0, financialData.currency)}
-                        </td>
-                      </tr>
+                      {/* Display all transaction types found in XML */}
+                      {financialData.transactionTypes && Object.keys(financialData.transactionTypes).length > 0 ? (
+                        // Sort transaction types by type code for consistent display
+                        Object.keys(financialData.transactionTypes)
+                          .sort((a, b) => {
+                            const numA = parseInt(a, 10);
+                            const numB = parseInt(b, 10);
+                            // Handle '11' coming after '9' correctly
+                            if (isNaN(numA) || isNaN(numB)) return a.localeCompare(b);
+                            return numA - numB;
+                          })
+                          .map((txType) => {
+                            const txData = financialData.transactionTypes![txType];
+                            return (
+                              <tr key={txType} className="hover:bg-slate-50/50 transition-colors">
+                                <td className="px-2 py-1 text-slate-700">{txData.label}</td>
+                                <td className="px-2 py-1 text-right text-slate-600">
+                                  {financialData.loading ? '...' : txData.count}
+                                </td>
+                                <td className="px-2 py-1 text-right font-semibold text-slate-900">
+                                  {financialData.loading ? 'Loading...' : renderCurrency(txData.total, financialData.currency)}
+                                </td>
+                              </tr>
+                            );
+                          })
+                      ) : (
+                        // Fallback to old display for backward compatibility
+                        <>
+                          <tr className="hover:bg-slate-50/50 transition-colors">
+                            <td className="px-2 py-1 text-slate-700">Commitments</td>
+                            <td className="px-2 py-1 text-right text-slate-600">
+                              {financialData.loading ? '...' : (financialData.commitmentCount ?? 0)}
+                            </td>
+                            <td className="px-2 py-1 text-right font-semibold text-slate-900">
+                              {financialData.loading ? 'Loading...' : renderCurrency(financialData.totalOutgoingCommitment ?? 0, financialData.currency)}
+                            </td>
+                          </tr>
+                          <tr className="hover:bg-slate-50/50 transition-colors">
+                            <td className="px-2 py-1 text-slate-700">Disbursements</td>
+                            <td className="px-2 py-1 text-right text-slate-600">
+                              {financialData.loading ? '...' : (financialData.disbursementCount ?? 0)}
+                            </td>
+                            <td className="px-2 py-1 text-right font-semibold text-slate-900">
+                              {financialData.loading ? 'Loading...' : renderCurrency(financialData.totalDisbursement ?? 0, financialData.currency)}
+                            </td>
+                          </tr>
+                        </>
+                      )}
                     </tbody>
                   </table>
                 </div>
@@ -1190,195 +1357,41 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
               );
             })()}
 
-            {activity.recipientCountries && activity.recipientCountries.length > 0 && (
-              <div className="col-span-1 min-w-0 max-w-full overflow-hidden">
-                <span className="text-slate-700 font-semibold block mb-1">Recipient Country:</span>
-                <div className="space-y-2">
-                  {activity.recipientCountries.map((country: string, idx: number) => {
-                    const countryName = getCountryName(country);
-                    return (
-                      <div key={idx} className="flex items-center gap-1.5 flex-wrap min-w-0">
-                        <code className="text-xs font-mono bg-slate-100 px-1.5 py-0.5 rounded text-slate-700 shrink-0">
-                          {country}
-                        </code>
-                        {countryName && (
-                          <span className="text-slate-900 text-xs break-words min-w-0">{countryName}</span>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-
-            {activity.startDatePlanned && (
-              <div className="col-span-1">
-                <span className="text-slate-700 font-semibold block mb-1">Planned Start:</span>
-                <div className="text-slate-900 break-words">{formatDate(activity.startDatePlanned)}</div>
-              </div>
-            )}
-
-            {activity.startDateActual && (
-              <div className="col-span-1">
-                <span className="text-slate-700 font-semibold block mb-1">Actual Start:</span>
-                <div className="text-slate-900 break-words">{formatDate(activity.startDateActual)}</div>
-              </div>
-            )}
-
-            {activity.currency && (
-              <div className="col-span-1">
-                <span className="text-slate-700 font-semibold block mb-1">Default Currency:</span>
-                <div className="text-slate-900 break-words">
-                  {(() => {
-                    const cleanedCurrency = cleanCurrencyValue(activity.currency);
-                    const currencyInfo = cleanedCurrency ? getCurrencyByCode(cleanedCurrency) : null;
-                    const currencyName = currencyInfo?.name || cleanedCurrency;
-                    return (
-                      <div className="flex items-center gap-1.5">
-                        <code className="text-xs font-mono bg-slate-100 px-1.5 py-0.5 rounded text-slate-700">
-                          {cleanedCurrency || 'N/A'}
-                        </code>
-                        {currencyName && currencyName !== cleanedCurrency && (
-                          <span className="break-words">{currencyName}</span>
-                        )}
-                      </div>
-                    );
-                  })()}
-                </div>
-              </div>
-            )}
-
             {activity.sectors && activity.sectors.length > 0 && (
               <div className="col-span-1">
-                <span className="text-slate-700 font-semibold block mb-1">Sectors:</span>
-                <div className="space-y-2">
-                  {(Array.isArray(activity.sectors) ? activity.sectors : []).slice(0, 5).map((sector: any, idx: number) => {
-                    const sectorCode = typeof sector === 'string' ? sector : sector.code || sector;
-                    const sectorName = typeof sector === 'object' && sector.name ? sector.name : null;
-                    const sectorPercentage = typeof sector === 'object' && sector.percentage !== undefined ? sector.percentage : null;
-                    return (
-                      <div key={idx} className="text-slate-900 text-xs break-words">
-                        <code className="text-xs font-mono bg-slate-100 px-1.5 py-0.5 rounded text-slate-700">
-                          {sectorCode}
-                        </code>
-                        {sectorName && sectorName !== sectorCode && (
-                          <span className="break-words"> {sectorName}</span>
-                        )}
-                        {sectorPercentage !== null && sectorPercentage !== undefined && (
-                          <span className="text-slate-600 font-medium"> ({sectorPercentage}%)</span>
-                        )}
-                      </div>
-                    );
-                  })}
-                  {activity.sectors.length > 5 && (
-                    <span className="text-slate-500">+{activity.sectors.length - 5} more</span>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {activity.status && (
-              <div className="col-span-1">
-                <span className="text-slate-700 font-semibold block mb-1">Status:</span>
-                <div>
-                  {(() => {
-                    const statusInfo = getActivityStatusByCode(activity.status);
-                    const statusName = statusInfo?.name || activity.statusNarrative || activity.status;
-                    return formatCodeWithName(activity.status, statusName);
-                  })()}
-                </div>
-              </div>
-            )}
-
-            {(activity.aidType || activity.financeType || activity.flowType || activity.tiedStatus) && (
-              <div className="col-span-1">
-                <span className="text-slate-700 font-semibold block mb-1">Classifications:</span>
-                <div className="space-y-2">
-                  {activity.aidType && (() => {
-                    const aidTypeStr = String(activity.aidType);
-                    const aidCode = aidTypeStr.startsWith('CC') ? aidTypeStr.substring(1) : (aidTypeStr.startsWith('C') ? aidTypeStr : `C${aidTypeStr}`);
-                    const aidTypeName = getAidTypeName(aidCode) || activity.aidTypeName;
-                    if (aidTypeName) {
-                      return (
-                        <div>
-                          <span className="text-slate-600">Aid Type: </span>
-                          <code className="text-xs font-mono bg-slate-100 px-1.5 py-0.5 rounded text-slate-700">
-                            {aidCode}
-                          </code>
-                          {' '}
-                          <span className="text-slate-900">{aidTypeName}</span>
-                        </div>
-                      );
-                    }
-                    return (
-                      <div>
-                        <span className="text-slate-600">Aid Type: </span>
-                        {formatCodeWithName(aidCode, activity.aidTypeName)}
-                      </div>
-                    );
-                  })()}
-                  {activity.financeType && (() => {
-                    const financeTypeData = financeTypesData.find((item: any) => item.code === activity.financeType);
-                    const financeTypeName = financeTypeData?.name || activity.financeTypeName;
-                    return (
-                      <div>
-                        <span className="text-slate-600">Finance Type: </span>
-                        {formatCodeWithName(activity.financeType, financeTypeName)}
-                      </div>
-                    );
-                  })()}
-                  {activity.flowType && (() => {
-                    const flowTypeData = flowTypesData.find((item: any) => item.code === activity.flowType);
-                    const flowTypeName = flowTypeData?.name || activity.flowTypeName;
-                    const flowCode = activity.flowType;
-                    const isBelowTen = flowCode && /^\d+$/.test(flowCode) && parseInt(flowCode) < 10;
-                    if (isBelowTen && flowTypeName) {
-                      return (
-                        <div>
-                          <span className="text-slate-600">Flow Type: </span>
-                          <code className="text-xs font-mono bg-slate-100 px-1.5 py-0.5 rounded text-slate-700">
-                            {flowCode}
-                          </code>
-                          {' '}
-                          <span className="text-slate-900">{flowTypeName}</span>
-                        </div>
-                      );
-                    }
-                    return (
-                      <div>
-                        <span className="text-slate-600">Flow Type: </span>
-                        {formatCodeWithName(activity.flowType, flowTypeName)}
-                      </div>
-                    );
-                  })()}
-                  {activity.tiedStatus && (() => {
-                    const tiedStatusCode = String(activity.tiedStatus);
-                    const tiedStatusLabels: Record<string, string> = {
-                      '3': 'Partially tied',
-                      '4': 'Tied',
-                      '5': 'Untied'
-                    };
-                    const tiedStatusName = tiedStatusLabels[tiedStatusCode] || activity.tiedStatusName;
-                    return (
-                      <div>
-                        <span className="text-slate-600">Tied Status: </span>
-                        {formatCodeWithName(tiedStatusCode, tiedStatusName)}
-                      </div>
-                    );
-                  })()}
-                </div>
-              </div>
-            )}
-
-            {activity.activityScope && (
-              <div className="col-span-1">
-                <span className="text-slate-700 font-semibold block mb-1">Activity Scope:</span>
-                <div className="break-words">
-                  {(() => {
-                    const scopeType = IATI_ACTIVITY_SCOPE[0]?.types.find(t => t.code === activity.activityScope);
-                    const scopeName = scopeType?.name || activity.activityScope;
-                    return formatCodeWithName(activity.activityScope, scopeName);
-                  })()}
+                <span className="text-slate-700 font-semibold block mb-2">Sectors:</span>
+                <div className="border border-slate-200 rounded-md overflow-hidden">
+                  <table className="w-full text-[10px]">
+                    <thead className="bg-slate-50/80 border-b border-slate-200">
+                      <tr>
+                        <th className="text-left px-2 py-1 text-[9px] uppercase tracking-wide font-semibold text-slate-600">Code</th>
+                        <th className="text-left px-2 py-1 text-[9px] uppercase tracking-wide font-semibold text-slate-600">Name</th>
+                        <th className="text-right px-2 py-1 text-[9px] uppercase tracking-wide font-semibold text-slate-600">%</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {(Array.isArray(activity.sectors) ? activity.sectors : []).map((sector: any, idx: number) => {
+                        const sectorCode = typeof sector === 'string' ? sector : sector.code || sector;
+                        const sectorName = typeof sector === 'object' && sector.name ? sector.name : (typeof sector === 'string' ? null : null);
+                        const sectorPercentage = typeof sector === 'object' && sector.percentage !== undefined ? sector.percentage : null;
+                        return (
+                          <tr key={idx} className="hover:bg-slate-50/50 transition-colors">
+                            <td className="px-2 py-1">
+                              <code className="text-[9px] font-mono bg-slate-100 px-1.5 py-0.5 rounded text-slate-700">
+                                {sectorCode}
+                              </code>
+                            </td>
+                            <td className="px-2 py-1 text-slate-900 break-words">
+                              {sectorName && sectorName !== sectorCode ? sectorName : '-'}
+                            </td>
+                            <td className="px-2 py-1 text-right text-slate-600 font-medium">
+                              {sectorPercentage !== null && sectorPercentage !== undefined ? `${sectorPercentage}%` : '-'}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
                 </div>
               </div>
             )}
@@ -1436,25 +1449,6 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
                     );
             })()}
 
-            {activity.hierarchy && activity.hierarchy !== '0' && (
-              <div className="col-span-1">
-                <span className="text-slate-700 font-semibold block mb-1">Hierarchy:</span>
-                <div className="break-words">
-                  {(() => {
-                    const hierarchyLabels: Record<string, string> = {
-                      '1': 'Parent activity',
-                      '2': 'Child activity',
-                      '3': 'Grandchild activity'
-                    };
-                    const hierarchyName = hierarchyLabels[activity.hierarchy] || (activity.hierarchyName && activity.hierarchyName !== '0' && activity.hierarchyName.trim() !== '' ? activity.hierarchyName : undefined) || `Level ${activity.hierarchy}`;
-                    const result = formatCodeWithName(activity.hierarchy, hierarchyName);
-                    // Double-check: don't render if result would somehow show "0"
-                    return result;
-                  })()}
-                </div>
-              </div>
-            )}
-
             {activity.endDatePlanned && (
               <div className="pb-4 border-b border-slate-200">
                 <span className="text-slate-700 font-semibold block mb-2">Planned End:</span>
@@ -1489,7 +1483,7 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
 });
 IatiSearchResultCard.displayName = 'IatiSearchResultCard';
 
-export default function IatiImportTab({ activityId }: IatiImportTabProps) {
+export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiImportTabProps) {
   // Get user data from useUser hook
   const { user } = useUser();
   
@@ -11182,10 +11176,14 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
                     <FileCode className="h-4 w-4 mr-2" />
                     Import Another File
                   </Button>
-                  <Button 
+                  <Button
                     variant="outline"
                     onClick={() => {
-                      window.location.reload();
+                      if (onNavigateToGeneral) {
+                        onNavigateToGeneral();
+                      } else {
+                        window.location.reload();
+                      }
                     }}
                   >
                     <RefreshCw className="h-4 w-4 mr-2" />

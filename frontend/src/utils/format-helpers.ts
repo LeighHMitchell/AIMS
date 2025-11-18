@@ -27,14 +27,14 @@ export const formatSubmittedBy = (user: User) => {
 export const formatNumberWithAbbreviation = (
   value: number,
   options: {
-    decimals?: number;           // Number of decimal places (default: 1)
+    decimals?: number;           // Number of decimal places (default: 2)
     showDecimalsForSmall?: boolean; // Show decimals for values < 1000 (default: false)
     currency?: string;           // Currency prefix (e.g., "US$", "$")
     suffix?: string;             // Suffix to append
   } = {}
 ): string => {
   const {
-    decimals = 1,
+    decimals = 2,
     showDecimalsForSmall = false,
     currency = "",
     suffix = ""

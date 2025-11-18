@@ -98,8 +98,8 @@ export default function BudgetsPage() {
         case 'period_start':
         case 'period_end':
         case 'value_date':
-          aValue = new Date(a[sortField as keyof Budget] as string).getTime();
-          bValue = new Date(b[sortField as keyof Budget] as string).getTime();
+          aValue = a[sortField as keyof Budget] ? new Date(a[sortField as keyof Budget] as string).getTime() : 0;
+          bValue = b[sortField as keyof Budget] ? new Date(b[sortField as keyof Budget] as string).getTime() : 0;
           break;
         case 'type':
         case 'status':
@@ -260,14 +260,11 @@ export default function BudgetsPage() {
   const handleBulkDelete = async () => {
     const selectedArray = Array.from(selectedBudgetIds);
     if (selectedArray.length === 0) return;
-    
+
     setShowBulkDeleteDialog(false);
     setIsBulkDeleting(true);
-    
+
     try {
-      // Optimistic update - remove from UI immediately
-      selectedArray.forEach(id => deleteBudget(id));
-      
       const response = await fetch('/api/budgets/bulk-delete', {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
@@ -275,17 +272,21 @@ export default function BudgetsPage() {
           ids: selectedArray
         })
       });
-      
+
       if (!response.ok) {
         throw new Error('Failed to delete budgets');
       }
-      
+
       const result = await response.json();
+
+      // Optimistic update - remove from UI after successful delete
+      selectedArray.forEach(id => deleteBudget(id));
+
       toast.success(`${result.deletedCount} ${result.deletedCount === 1 ? 'budget' : 'budgets'} deleted successfully`);
-      
-      // Clear selection
+
+      // Clear selection AFTER optimistic update completes to ensure proper state sync
       setSelectedBudgetIds(new Set());
-      
+
     } catch (error) {
       console.error('Bulk delete failed:', error);
       toast.error('Failed to delete some budgets');
@@ -409,6 +410,7 @@ export default function BudgetsPage() {
           <div className="bg-white rounded-md shadow-sm border border-gray-200 overflow-hidden">
             <div className="overflow-x-auto">
               <BudgetTable
+                key={`budget-table-${budgets.length}-${selectedBudgetIds.size}`}
                 budgets={sortedBudgets}
                 loading={loading}
                 error={null}

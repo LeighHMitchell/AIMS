@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
@@ -331,6 +331,7 @@ export function TransactionTable({
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
   const [activityDetails, setActivityDetails] = useState<Record<string, {title: string; iati_identifier: string; acronym?: string; reporting_org?: string} | null>>({});
   const [loadingActivities, setLoadingActivities] = useState<Set<string>>(new Set());
+  const fetchedActivitiesRef = useRef<Set<string>>(new Set());
 
   // USD conversion tracking
   const [usdValues, setUsdValues] = useState<Record<string, { 
@@ -354,11 +355,13 @@ export function TransactionTable({
   };
 
   // Fetch activity details by UUID
-  const fetchActivityDetails = async (activityId: string) => {
-    if (activityDetails[activityId] !== undefined || loadingActivities.has(activityId)) {
+  const fetchActivityDetails = useCallback(async (activityId: string) => {
+    // Check if already fetched or currently fetching using ref (avoids dependency issues)
+    if (fetchedActivitiesRef.current.has(activityId)) {
       return; // Already fetched or currently fetching
     }
 
+    fetchedActivitiesRef.current.add(activityId);
     setLoadingActivities(prev => new Set(prev).add(activityId));
     
     try {
@@ -376,10 +379,12 @@ export function TransactionTable({
         }));
       } else {
         setActivityDetails(prev => ({...prev, [activityId]: null}));
+        fetchedActivitiesRef.current.delete(activityId); // Allow retry on error
       }
     } catch (error) {
       console.error('Error fetching activity details:', error);
       setActivityDetails(prev => ({...prev, [activityId]: null}));
+      fetchedActivitiesRef.current.delete(activityId); // Allow retry on error
     } finally {
       setLoadingActivities(prev => {
         const newSet = new Set(prev);
@@ -387,22 +392,19 @@ export function TransactionTable({
         return newSet;
       });
     }
-  };
+  }, []);
 
-  // Fetch activities when rows are expanded
+  // Fetch activities for all transactions (not just when expanded)
   React.useEffect(() => {
     transactions.forEach(transaction => {
-      const transactionId = transaction.uuid || transaction.id;
-      if (expandedRows.has(transactionId)) {
-        if (transaction.provider_org_activity_id) {
-          fetchActivityDetails(transaction.provider_org_activity_id);
-        }
-        if (transaction.receiver_org_activity_id) {
-          fetchActivityDetails(transaction.receiver_org_activity_id);
-        }
+      if (transaction.provider_org_activity_id) {
+        fetchActivityDetails(transaction.provider_org_activity_id);
+      }
+      if (transaction.receiver_org_activity_id) {
+        fetchActivityDetails(transaction.receiver_org_activity_id);
       }
     });
-  }, [expandedRows, transactions]);
+  }, [transactions, fetchActivityDetails]);
 
   // Convert all transactions to USD when they change
   React.useEffect(() => {
@@ -641,11 +643,14 @@ export function TransactionTable({
           <TableRow>
             <TableHead className="text-sm font-medium text-foreground/90 py-3 px-4 w-10 text-center">
               {onSelectAll && selectedIds && (
-                <div className="flex items-center justify-center">
+                <div className="flex items-center justify-center" key={`select-all-wrapper-${transactions.length}`}>
                   <Checkbox
                     checked={selectedIds.size === transactions.length && transactions.length > 0}
                     indeterminate={selectedIds.size > 0 && selectedIds.size < transactions.length}
-                    onCheckedChange={onSelectAll}
+                    onCheckedChange={(checked) => {
+                      console.log('[TransactionTable] Select all clicked:', checked, 'transactions.length:', transactions.length);
+                      onSelectAll(!!checked);
+                    }}
                     aria-label="Select all transactions"
                   />
                 </div>
@@ -1048,79 +1053,101 @@ export function TransactionTable({
 
                 <td className="py-3 px-4">
                   <div className="text-sm font-medium text-foreground">
-                    <div className="flex items-center gap-2">
-                      <div className="flex items-center gap-1">
-                        <OrganizationLogo 
-                          logo={provider.logo || transaction.provider_org_logo}
-                          name={providerDisplay}
-                          size="sm"
-                        />
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              {provider.id ? (
-                                <Link 
-                                  href={`/organizations/${provider.id}`}
-                                  className="text-sm hover:text-gray-700 transition-colors"
-                                  onClick={(e) => e.stopPropagation()}
-                                >
-                                  {providerDisplay}
-                                </Link>
-                              ) : (
-                                <span className="text-sm">
-                                  {providerDisplay}
-                                </span>
+                    <div className="flex items-start gap-2">
+                      <div className="flex flex-col gap-0.5">
+                        <div className="flex items-center gap-1">
+                          <OrganizationLogo 
+                            logo={provider.logo || transaction.provider_org_logo}
+                            name={providerDisplay}
+                            size="sm"
+                          />
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                {provider.id ? (
+                                  <Link 
+                                    href={`/organizations/${provider.id}`}
+                                    className="text-sm hover:text-gray-700 transition-colors"
+                                    onClick={(e) => e.stopPropagation()}
+                                  >
+                                    {providerDisplay}
+                                  </Link>
+                                ) : (
+                                  <span className="text-sm">
+                                    {providerDisplay}
+                                  </span>
+                                )}
+                              </TooltipTrigger>
+                              {transaction.provider_org_ref && (
+                                <TooltipContent side="top">
+                                  <p className="text-xs">{transaction.provider_org_ref}</p>
+                                </TooltipContent>
                               )}
-                            </TooltipTrigger>
-                            {transaction.provider_org_ref && (
-                              <TooltipContent side="top">
-                                <p className="text-xs">{transaction.provider_org_ref}</p>
-                              </TooltipContent>
+                            </Tooltip>
+                        </div>
+                        {transaction.provider_org_activity_id && activityDetails[transaction.provider_org_activity_id] && (
+                          <div className="text-xs text-gray-500 ml-5">
+                            <span>{activityDetails[transaction.provider_org_activity_id]?.title || activityDetails[transaction.provider_org_activity_id]?.acronym}</span>
+                            {activityDetails[transaction.provider_org_activity_id]?.iati_identifier && (
+                              <span className="ml-1">({activityDetails[transaction.provider_org_activity_id]?.iati_identifier})</span>
                             )}
-                          </Tooltip>
+                          </div>
+                        )}
                       </div>
-                      <span className="text-muted-foreground">→</span>
-                      <div className="flex items-center gap-1">
-                        <OrganizationLogo 
-                          logo={receiver.logo || transaction.receiver_org_logo}
-                          name={receiverDisplay}
-                          size="sm"
-                        />
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              {receiver.id ? (
-                                <Link 
-                                  href={`/organizations/${receiver.id}`}
-                                  className="text-sm hover:text-gray-700 transition-colors"
-                                  onClick={(e) => e.stopPropagation()}
-                                >
-                                  {receiverDisplay}
-                                </Link>
-                              ) : (
-                                <span className="text-sm">
-                                  {receiverDisplay}
-                                </span>
+                      <span className="text-muted-foreground mt-1">→</span>
+                      <div className="flex flex-col gap-0.5">
+                        <div className="flex items-center gap-1">
+                          <OrganizationLogo 
+                            logo={receiver.logo || transaction.receiver_org_logo}
+                            name={receiverDisplay}
+                            size="sm"
+                          />
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                {receiver.id ? (
+                                  <Link 
+                                    href={`/organizations/${receiver.id}`}
+                                    className="text-sm hover:text-gray-700 transition-colors"
+                                    onClick={(e) => e.stopPropagation()}
+                                  >
+                                    {receiverDisplay}
+                                  </Link>
+                                ) : (
+                                  <span className="text-sm">
+                                    {receiverDisplay}
+                                  </span>
+                                )}
+                              </TooltipTrigger>
+                              {transaction.receiver_org_ref && (
+                                <TooltipContent side="top">
+                                  <p className="text-xs">{transaction.receiver_org_ref}</p>
+                                </TooltipContent>
                               )}
-                            </TooltipTrigger>
-                            {transaction.receiver_org_ref && (
-                              <TooltipContent side="top">
-                                <p className="text-xs">{transaction.receiver_org_ref}</p>
-                              </TooltipContent>
+                            </Tooltip>
+                        </div>
+                        {transaction.receiver_org_activity_id && activityDetails[transaction.receiver_org_activity_id] && (
+                          <div className="text-xs text-gray-500 ml-5">
+                            <span>{activityDetails[transaction.receiver_org_activity_id]?.title || activityDetails[transaction.receiver_org_activity_id]?.acronym}</span>
+                            {activityDetails[transaction.receiver_org_activity_id]?.iati_identifier && (
+                              <span className="ml-1">({activityDetails[transaction.receiver_org_activity_id]?.iati_identifier})</span>
                             )}
-                          </Tooltip>
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>
                 </td>
                 <td className="py-3 px-4 text-right whitespace-nowrap">
-                  <TransactionValueDisplay
-                    transaction={transaction}
-                    onConvert={onConvertCurrency}
-                    showConvertButton={!!onConvertCurrency}
-                    compact={true}
-                    variant="original-only"
-                    decimalPlaces={2}
-                    monotone={true}
-                  />
+                  {transaction.value != null && transaction.currency ? (
+                    <div className="font-medium">
+                      <span className="text-muted-foreground text-xs">{transaction.currency.toUpperCase()}</span>{' '}
+                      {new Intl.NumberFormat("en-US", {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
+                      }).format(transaction.value)}
+                    </div>
+                  ) : (
+                    <span className="text-muted-foreground">—</span>
+                  )}
                 </td>
                 <td className="py-3 px-4 whitespace-nowrap">
                   {formatTransactionDate(transaction.value_date || transaction.transaction_date)}

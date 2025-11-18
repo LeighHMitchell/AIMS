@@ -21,6 +21,12 @@ import { supabase } from '@/lib/supabase'
 import { Button } from '@/components/ui/button'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { exportToCSV } from '@/lib/csv-export'
+import { MultiSelect } from '@/components/ui/multi-select'
+import { HelpTextTooltip } from '@/components/ui/help-text-tooltip'
+import { Switch } from '@/components/ui/switch'
+import { Label } from '@/components/ui/label'
+import { allocateProportionally, generateMonthPeriods } from '@/utils/period-allocation'
+import { startOfMonth } from 'date-fns'
 
 type DataMode = 'cumulative' | 'periodic'
 type ChartType = 'line' | 'bar' | 'table' | 'total'
@@ -49,6 +55,30 @@ export function CumulativeFinancialOverview({
   const [dataMode, setDataMode] = useState<DataMode>('cumulative')
   const [chartType, setChartType] = useState<ChartType>('line')
   const [hiddenSeries, setHiddenSeries] = useState<Set<string>>(new Set())
+  const [selectedActivities, setSelectedActivities] = useState<string[]>([])
+  const [activities, setActivities] = useState<Array<{ id: string; title: string; iati_identifier?: string }>>([])
+  const [allocationMethod, setAllocationMethod] = useState<'proportional' | 'period-start'>('proportional')
+
+  // Fetch activities list for filter
+  useEffect(() => {
+    const fetchActivities = async () => {
+      try {
+        const response = await fetch('/api/activities?limit=1000')
+        if (response.ok) {
+          const data = await response.json()
+          const activitiesList = (data.activities || data).map((activity: any) => ({
+            id: activity.id,
+            title: activity.title_narrative || activity.title || 'Untitled Activity',
+            iati_identifier: activity.iati_identifier
+          }))
+          setActivities(activitiesList)
+        }
+      } catch (error) {
+        console.error('[CumulativeFinancialOverview] Error fetching activities:', error)
+      }
+    }
+    fetchActivities()
+  }, [])
 
   useEffect(() => {
     const fetchData = async () => {
@@ -75,6 +105,11 @@ export function CumulativeFinancialOverview({
           transactionsQuery = transactionsQuery.eq('provider_org_id', filters.donor)
         }
 
+        // Apply activity filter
+        if (selectedActivities.length > 0) {
+          transactionsQuery = transactionsQuery.in('activity_id', selectedActivities)
+        }
+
         const { data: transactions, error: transactionsError } = await transactionsQuery
 
         if (transactionsError) {
@@ -86,13 +121,18 @@ export function CumulativeFinancialOverview({
         // Fetch planned disbursements
         let plannedDisbursementsQuery = supabase
           .from('planned_disbursements')
-          .select('period_start, amount, usd_amount, currency, activity_id')
+          .select('period_start, period_end, amount, usd_amount, currency, activity_id')
           .order('period_start', { ascending: true })
 
         if (dateRange) {
           plannedDisbursementsQuery = plannedDisbursementsQuery
             .gte('period_start', dateRange.from.toISOString())
             .lte('period_start', dateRange.to.toISOString())
+        }
+
+        // Apply activity filter
+        if (selectedActivities.length > 0) {
+          plannedDisbursementsQuery = plannedDisbursementsQuery.in('activity_id', selectedActivities)
         }
 
         const { data: plannedDisbursements, error: plannedError } = await plannedDisbursementsQuery
@@ -104,13 +144,18 @@ export function CumulativeFinancialOverview({
         // Fetch budgets
         let budgetsQuery = supabase
           .from('activity_budgets')
-          .select('period_start, value, usd_value, currency, activity_id')
+          .select('period_start, period_end, value, usd_value, currency, activity_id')
           .order('period_start', { ascending: true })
 
         if (dateRange) {
           budgetsQuery = budgetsQuery
             .gte('period_start', dateRange.from.toISOString())
             .lte('period_start', dateRange.to.toISOString())
+        }
+
+        // Apply activity filter
+        if (selectedActivities.length > 0) {
+          budgetsQuery = budgetsQuery.in('activity_id', selectedActivities)
         }
 
         const { data: budgets, error: budgetsError } = await budgetsQuery
@@ -121,6 +166,42 @@ export function CumulativeFinancialOverview({
 
         // Process data to create cumulative overview
         const dateMap = new Map<string, any>()
+
+        // For proportional allocation, determine date range and generate month periods
+        const allDates: Date[] = []
+        transactions?.forEach((t: any) => {
+          if (t.transaction_date) {
+            const date = new Date(t.transaction_date)
+            if (!isNaN(date.getTime())) allDates.push(date)
+          }
+        })
+        plannedDisbursements?.forEach((pd: any) => {
+          if (pd.period_start) {
+            const date = new Date(pd.period_start)
+            if (!isNaN(date.getTime())) allDates.push(date)
+          }
+          if (pd.period_end) {
+            const date = new Date(pd.period_end)
+            if (!isNaN(date.getTime())) allDates.push(date)
+          }
+        })
+        budgets?.forEach((b: any) => {
+          if (b.period_start) {
+            const date = new Date(b.period_start)
+            if (!isNaN(date.getTime())) allDates.push(date)
+          }
+          if (b.period_end) {
+            const date = new Date(b.period_end)
+            if (!isNaN(date.getTime())) allDates.push(date)
+          }
+        })
+
+        let monthPeriods: Date[] = []
+        if (allDates.length > 0 && allocationMethod === 'proportional') {
+          const minDate = new Date(Math.min(...allDates.map(d => d.getTime())))
+          const maxDate = new Date(Math.max(...allDates.map(d => d.getTime())))
+          monthPeriods = generateMonthPeriods(startOfMonth(minDate), startOfMonth(maxDate))
+        }
 
         // Process transactions by type
         transactions?.forEach((transaction: any) => {
@@ -173,10 +254,8 @@ export function CumulativeFinancialOverview({
         plannedDisbursements?.forEach((pd: any) => {
           if (!pd.period_start) return
 
-          const date = new Date(pd.period_start)
-          if (isNaN(date.getTime())) return
-
-          const dateKey = date.toISOString().split('T')[0]
+          const startDate = new Date(pd.period_start)
+          if (isNaN(startDate.getTime())) return
 
           // ONLY use USD values - try usd_amount first
           let value = parseFloat(String(pd.usd_amount)) || 0
@@ -189,30 +268,60 @@ export function CumulativeFinancialOverview({
           // Skip planned disbursements without valid USD values
           if (!value) return
 
-          if (!dateMap.has(dateKey)) {
-            dateMap.set(dateKey, {
-              date,
-              timestamp: date.getTime(),
-              incomingFunds: 0,
-              commitments: 0,
-              disbursements: 0,
-              expenditures: 0,
-              plannedDisbursements: 0,
-              plannedBudgets: 0
-            })
-          }
+          if (allocationMethod === 'proportional' && pd.period_end) {
+            // Proportional allocation: distribute across months
+            const endDate = new Date(pd.period_end)
+            if (!isNaN(endDate.getTime())) {
+              const allocations = allocateProportionally(value, pd.period_start, pd.period_end, monthPeriods)
+              
+              allocations.forEach((allocatedValue, monthKey) => {
+                const [year, month] = monthKey.split('-').map(Number)
+                const monthStartDate = new Date(year, month - 1, 1)
+                const dateKey = monthStartDate.toISOString().split('T')[0]
+                
+                if (!dateMap.has(dateKey)) {
+                  dateMap.set(dateKey, {
+                    date: monthStartDate,
+                    timestamp: monthStartDate.getTime(),
+                    incomingFunds: 0,
+                    commitments: 0,
+                    disbursements: 0,
+                    expenditures: 0,
+                    plannedDisbursements: 0,
+                    plannedBudgets: 0
+                  })
+                }
+                
+                dateMap.get(dateKey)!.plannedDisbursements += allocatedValue
+              })
+            }
+          } else {
+            // Period start allocation: full amount at start date
+            const dateKey = startDate.toISOString().split('T')[0]
+            
+            if (!dateMap.has(dateKey)) {
+              dateMap.set(dateKey, {
+                date: startDate,
+                timestamp: startDate.getTime(),
+                incomingFunds: 0,
+                commitments: 0,
+                disbursements: 0,
+                expenditures: 0,
+                plannedDisbursements: 0,
+                plannedBudgets: 0
+              })
+            }
 
-          dateMap.get(dateKey)!.plannedDisbursements += value
+            dateMap.get(dateKey)!.plannedDisbursements += value
+          }
         })
 
         // Process budgets
         budgets?.forEach((budget: any) => {
           if (!budget.period_start) return
 
-          const date = new Date(budget.period_start)
-          if (isNaN(date.getTime())) return
-
-          const dateKey = date.toISOString().split('T')[0]
+          const startDate = new Date(budget.period_start)
+          if (isNaN(startDate.getTime())) return
 
           // ONLY use USD values - try usd_value first
           let value = parseFloat(String(budget.usd_value)) || 0
@@ -225,20 +334,52 @@ export function CumulativeFinancialOverview({
           // Skip budgets without valid USD values
           if (!value) return
 
-          if (!dateMap.has(dateKey)) {
-            dateMap.set(dateKey, {
-              date,
-              timestamp: date.getTime(),
-              incomingFunds: 0,
-              commitments: 0,
-              disbursements: 0,
-              expenditures: 0,
-              plannedDisbursements: 0,
-              plannedBudgets: 0
-            })
-          }
+          if (allocationMethod === 'proportional' && budget.period_end) {
+            // Proportional allocation: distribute across months
+            const endDate = new Date(budget.period_end)
+            if (!isNaN(endDate.getTime())) {
+              const allocations = allocateProportionally(value, budget.period_start, budget.period_end, monthPeriods)
+              
+              allocations.forEach((allocatedValue, monthKey) => {
+                const [year, month] = monthKey.split('-').map(Number)
+                const monthStartDate = new Date(year, month - 1, 1)
+                const dateKey = monthStartDate.toISOString().split('T')[0]
+                
+                if (!dateMap.has(dateKey)) {
+                  dateMap.set(dateKey, {
+                    date: monthStartDate,
+                    timestamp: monthStartDate.getTime(),
+                    incomingFunds: 0,
+                    commitments: 0,
+                    disbursements: 0,
+                    expenditures: 0,
+                    plannedDisbursements: 0,
+                    plannedBudgets: 0
+                  })
+                }
+                
+                dateMap.get(dateKey)!.plannedBudgets += allocatedValue
+              })
+            }
+          } else {
+            // Period start allocation: full amount at start date
+            const dateKey = startDate.toISOString().split('T')[0]
+            
+            if (!dateMap.has(dateKey)) {
+              dateMap.set(dateKey, {
+                date: startDate,
+                timestamp: startDate.getTime(),
+                incomingFunds: 0,
+                commitments: 0,
+                disbursements: 0,
+                expenditures: 0,
+                plannedDisbursements: 0,
+                plannedBudgets: 0
+              })
+            }
 
-          dateMap.get(dateKey)!.plannedBudgets += value
+            dateMap.get(dateKey)!.plannedBudgets += value
+          }
         })
 
         // Convert to array and sort by date
@@ -326,7 +467,8 @@ export function CumulativeFinancialOverview({
               plannedBudgets: existingData['Budgets']
             }
           } else {
-            // Fill missing year with last cumulative values (carry forward)
+            // Fill missing year with last cumulative values (carry forward) for transactions
+            // but set Budgets to null so only actual budget points are plotted
             const yearDate = new Date(year, 0, 1)
             filledData.push({
               date: yearDate.toISOString(),
@@ -339,7 +481,7 @@ export function CumulativeFinancialOverview({
               'Disbursements': lastCumulativeValues.disbursements,
               'Expenditures': lastCumulativeValues.expenditures,
               'Planned Disbursements': lastCumulativeValues.plannedDisbursements,
-              'Budgets': lastCumulativeValues.plannedBudgets
+              'Budgets': null  // null for years without budget data
             })
           }
         }
@@ -354,7 +496,7 @@ export function CumulativeFinancialOverview({
     }
 
     fetchData()
-  }, [dateRange, filters, refreshKey])
+  }, [dateRange, filters, refreshKey, selectedActivities, allocationMethod])
 
   // No filtering - use all available data
   const filteredData = useMemo(() => {
@@ -661,88 +803,132 @@ export function CumulativeFinancialOverview({
           </div>
 
           {/* Controls Row */}
-          <div className="flex items-center gap-2 flex-wrap">
-            {/* Periodic/Cumulative Toggle */}
-            <div className="flex gap-1 border rounded-lg p-1 bg-white">
-              <Button
-                variant={dataMode === 'periodic' ? 'default' : 'ghost'}
-                size="sm"
-                onClick={() => setDataMode('periodic')}
-                className="h-8"
-              >
-                Periodic
-              </Button>
-              <Button
-                variant={dataMode === 'cumulative' ? 'default' : 'ghost'}
-                size="sm"
-                onClick={() => setDataMode('cumulative')}
-                className="h-8"
-              >
-                Cumulative
-              </Button>
+          <div className="flex items-center justify-between gap-2 flex-wrap">
+            {/* Filters - Left Side */}
+            <div className="flex items-center gap-2 flex-wrap">
+              {/* Activity Multi-Select */}
+              <div className="w-[280px]">
+                <MultiSelect
+                  options={activities.map(activity => ({
+                    label: activity.iati_identifier 
+                      ? `${activity.title} (${activity.iati_identifier})`
+                      : activity.title,
+                    value: activity.id
+                  }))}
+                  selected={selectedActivities}
+                  onChange={setSelectedActivities}
+                  placeholder="Activities (All)"
+                  showSelectAll={true}
+                  selectedLabel="Activities selected"
+                />
+              </div>
             </div>
 
-            {/* Chart Type Toggle */}
-            <div className="flex gap-1 border rounded-lg p-1 bg-white">
-              <Button
-                variant={chartType === 'line' ? 'default' : 'ghost'}
-                size="sm"
-                onClick={() => setChartType('line')}
-                className="h-8"
-              >
-                <LineChartIcon className="h-4 w-4 mr-1.5" />
-                Line
-              </Button>
-              <Button
-                variant={chartType === 'bar' ? 'default' : 'ghost'}
-                size="sm"
-                onClick={() => setChartType('bar')}
-                className="h-8"
-              >
-                <BarChart3 className="h-4 w-4 mr-1.5" />
-                Bar
-              </Button>
-              <Button
-                variant={chartType === 'table' ? 'default' : 'ghost'}
-                size="sm"
-                onClick={() => setChartType('table')}
-                className="h-8"
-              >
-                <TableIcon className="h-4 w-4 mr-1.5" />
-                Table
-              </Button>
-              <Button
-                variant={chartType === 'total' ? 'default' : 'ghost'}
-                size="sm"
-                onClick={() => setChartType('total')}
-                className="h-8"
-              >
-                <BarChart3 className="h-4 w-4 mr-1.5" />
-                Total
-              </Button>
-            </div>
+            {/* View Controls and Export - Right Side */}
+            <div className="flex items-center gap-2 flex-wrap">
+              {/* Periodic/Cumulative Toggle */}
+              <div className="flex gap-1 border rounded-lg p-1 bg-white">
+                <Button
+                  variant={dataMode === 'periodic' ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => setDataMode('periodic')}
+                  className="h-8"
+                >
+                  Periodic
+                </Button>
+                <Button
+                  variant={dataMode === 'cumulative' ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => setDataMode('cumulative')}
+                  className="h-8"
+                >
+                  Cumulative
+                </Button>
+              </div>
 
-            {/* Export Buttons */}
-            <div className="flex gap-1">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleExportCSV}
-                className="h-8 px-2"
-                title="Export to CSV"
-              >
-                <Download className="h-4 w-4" />
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleExportJPG}
-                className="h-8 px-2"
-                title="Export to JPG"
-                disabled={chartType === 'table'}
-              >
-                <FileImage className="h-4 w-4" />
-              </Button>
+              {/* Allocation Method Toggle */}
+              <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 border rounded-lg px-3 py-1.5 bg-white">
+                  <Label htmlFor="allocation-toggle" className="text-sm text-slate-700 cursor-pointer">
+                    {allocationMethod === 'proportional' ? 'Proportional' : 'Period Start'}
+                  </Label>
+                  <Switch
+                    id="allocation-toggle"
+                    checked={allocationMethod === 'proportional'}
+                    onCheckedChange={(checked) => setAllocationMethod(checked ? 'proportional' : 'period-start')}
+                  />
+                </div>
+                <HelpTextTooltip 
+                  content={
+                    allocationMethod === 'proportional'
+                      ? "Allocates budget and planned disbursement amounts across their time periods. For example, a $100,000 budget from July 2024 to June 2025 will be split proportionally across those 12 months."
+                      : "Shows the full budget or planned disbursement amount at its start date. Useful for seeing when amounts were originally planned or committed."
+                  }
+                />
+              </div>
+
+              {/* Chart Type Toggle */}
+              <div className="flex gap-1 border rounded-lg p-1 bg-white">
+                <Button
+                  variant={chartType === 'line' ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => setChartType('line')}
+                  className="h-8"
+                >
+                  <LineChartIcon className="h-4 w-4 mr-1.5" />
+                  Line
+                </Button>
+                <Button
+                  variant={chartType === 'bar' ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => setChartType('bar')}
+                  className="h-8"
+                >
+                  <BarChart3 className="h-4 w-4 mr-1.5" />
+                  Bar
+                </Button>
+                <Button
+                  variant={chartType === 'table' ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => setChartType('table')}
+                  className="h-8"
+                >
+                  <TableIcon className="h-4 w-4 mr-1.5" />
+                  Table
+                </Button>
+                <Button
+                  variant={chartType === 'total' ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => setChartType('total')}
+                  className="h-8"
+                >
+                  <BarChart3 className="h-4 w-4 mr-1.5" />
+                  Total
+                </Button>
+              </div>
+
+              {/* Export Buttons */}
+              <div className="flex gap-1">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleExportCSV}
+                  className="h-8 px-2"
+                  title="Export to CSV"
+                >
+                  <Download className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleExportJPG}
+                  className="h-8 px-2"
+                  title="Export to JPG"
+                  disabled={chartType === 'table'}
+                >
+                  <FileImage className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
           </div>
         </div>
@@ -982,12 +1168,13 @@ export function CumulativeFinancialOverview({
                   )}
                   {activeSeries.has('Budgets') && (
                     <Line
-                      type="monotone"
+                      type="linear"
                       dataKey="Budgets"
                       stroke={hiddenSeries.has('Budgets') ? '#cbd5e1' : '#334155'}
                       strokeWidth={hiddenSeries.has('Budgets') ? 1 : 2}
                       strokeDasharray="5 5"
                       dot={{ fill: hiddenSeries.has('Budgets') ? '#cbd5e1' : '#334155', r: 3 }}
+                      connectNulls={true}
                       animationDuration={300}
                       opacity={hiddenSeries.has('Budgets') ? 0.3 : 1}
                     />

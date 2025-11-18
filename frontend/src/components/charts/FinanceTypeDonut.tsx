@@ -35,15 +35,15 @@ const COLOR_PALETTE = [
   "#94a3b8", // slate-400
 ];
 
-// Format currency in short form with one decimal
+// Format currency in short form with two decimals
 function formatCurrencyShort(value: number): string {
-  if (value === null || value === undefined || isNaN(value)) return '$0.0';
+  if (value === null || value === undefined || isNaN(value)) return '$0.00';
   const abs = Math.abs(value);
   const sign = value < 0 ? '-' : '';
-  if (abs >= 1_000_000_000) return `${sign}$${(abs / 1_000_000_000).toFixed(1)}B`;
-  if (abs >= 1_000_000) return `${sign}$${(abs / 1_000_000).toFixed(1)}M`;
-  if (abs >= 1_000) return `${sign}$${(abs / 1_000).toFixed(1)}k`;
-  return `${sign}$${abs.toFixed(1)}`;
+  if (abs >= 1_000_000_000) return `${sign}$${(abs / 1_000_000_000).toFixed(2)}B`;
+  if (abs >= 1_000_000) return `${sign}$${(abs / 1_000_000).toFixed(2)}M`;
+  if (abs >= 1_000) return `${sign}$${(abs / 1_000).toFixed(2)}k`;
+  return `${sign}$${abs.toFixed(2)}`;
 }
 
 export default function FinanceTypeDonut({
@@ -223,12 +223,21 @@ export default function FinanceTypeDonut({
                     const data = payload[0].payload;
                     return (
                       <div className="bg-white p-2 border border-gray-200 rounded shadow-lg">
-                        <p className="text-sm font-semibold text-slate-900 mb-1">
+                        <p className="text-xs font-semibold mb-2 text-slate-900">
                           {data.name}
                         </p>
-                        <p className="text-xs text-slate-600 font-medium mt-1">
-                          {formatCurrencyShort(data.value)} ({data.percentage}%)
-                        </p>
+                        <table className="text-xs">
+                          <tbody>
+                            <tr>
+                              <td className="pr-3 py-0.5 text-slate-600">Amount:</td>
+                              <td className="text-right py-0.5 font-medium text-slate-900">{formatCurrencyShort(data.value)}</td>
+                            </tr>
+                            <tr>
+                              <td className="pr-3 py-0.5 text-slate-600">Percentage:</td>
+                              <td className="text-right py-0.5 font-medium text-slate-900">{data.percentage}%</td>
+                            </tr>
+                          </tbody>
+                        </table>
                       </div>
                     );
                   }

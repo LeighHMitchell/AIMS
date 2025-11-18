@@ -589,24 +589,33 @@ export default function AnalyticsDashboardPage() {
             </TabsList>
 
             <TabsContent value="analytics">
-              {/* Cumulative Financial Overview - Full Width at Top */}
-              <div className="mb-6">
-                <CumulativeFinancialOverview
-                  dateRange={dateRange}
-                  refreshKey={refreshKey}
-                />
-              </div>
+              <Tabs defaultValue="main" className="space-y-6">
+                <TabsList className="grid w-full grid-cols-2 max-w-md">
+                  <TabsTrigger value="main">Main</TabsTrigger>
+                  <TabsTrigger value="under-development">Under Development</TabsTrigger>
+                </TabsList>
 
-              {/* Finance Type Flow Chart - Full Width Below Cumulative Overview */}
-              <div className="mb-6">
-                <FinanceTypeFlowChart
-                  dateRange={dateRange}
-                  refreshKey={refreshKey}
-                  onDataChange={setFinanceTypeFlowData}
-                />
-              </div>
+                <TabsContent value="main">
+                  {/* Cumulative Financial Overview - Full Width at Top */}
+                  <div className="mb-6">
+                    <CumulativeFinancialOverview
+                      dateRange={dateRange}
+                      refreshKey={refreshKey}
+                    />
+                  </div>
 
-              <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+                  {/* Finance Type Flow Chart - Full Width Below Cumulative Overview */}
+                  <div className="mb-6">
+                    <FinanceTypeFlowChart
+                      dateRange={dateRange}
+                      refreshKey={refreshKey}
+                      onDataChange={setFinanceTypeFlowData}
+                    />
+                  </div>
+                </TabsContent>
+
+                <TabsContent value="under-development">
+                  <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
               {/* All Donors Chart - Replaced Top 10 */}
               <ExpandableCard
                 className="bg-white border-slate-200"
@@ -943,7 +952,9 @@ export default function AnalyticsDashboardPage() {
                   onDataChange={setTop10SectorFocusedData}
                 />
               </ExpandableCard>
-              </div>
+                  </div>
+                </TabsContent>
+              </Tabs>
             </TabsContent>
 
             <TabsContent value="activities">

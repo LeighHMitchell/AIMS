@@ -172,28 +172,47 @@ export function BudgetTable({
             <TableRow>
               <TableHead className="text-sm font-medium text-foreground/90 py-3 px-4 w-10 text-center">
                 {onSelectAll && selectedIds && (
-                  <div className="flex items-center justify-center">
+                  <div className="flex items-center justify-center" key={`select-all-wrapper-${budgets.length}`}>
                     <Checkbox
                       checked={selectedIds.size === budgets.length && budgets.length > 0}
                       indeterminate={selectedIds.size > 0 && selectedIds.size < budgets.length}
-                      onCheckedChange={onSelectAll}
+                      onCheckedChange={(checked) => {
+                        console.log('[BudgetTable] Select all clicked:', checked, 'budgets.length:', budgets.length);
+                        onSelectAll(!!checked);
+                      }}
                       aria-label="Select all budgets"
                     />
                   </div>
                 )}
               </TableHead>
-              {variant === "full" && (
-                <TableHead 
-                  className="text-sm font-medium text-foreground/90 py-3 px-4 cursor-pointer hover:bg-muted/30 transition-colors"
-                  onClick={() => onSort("activity")}
-                >
-                  <div className="flex items-center gap-1">
-                    <span>Activity</span>
-                    {getSortIcon("activity")}
-                  </div>
-                </TableHead>
-              )}
-              <TableHead 
+              <TableHead
+                className="text-sm font-medium text-foreground/90 py-3 px-4 cursor-pointer hover:bg-muted/30 transition-colors max-w-[200px]"
+                onClick={() => onSort("activity")}
+              >
+                <div className="flex items-center gap-1">
+                  <span>Activity Title</span>
+                  {getSortIcon("activity")}
+                </div>
+              </TableHead>
+              <TableHead
+                className="text-sm font-medium text-foreground/90 py-3 px-4 cursor-pointer hover:bg-muted/30 transition-colors"
+                onClick={() => onSort("period_start")}
+              >
+                <div className="flex items-center gap-1">
+                  <span>Start Date</span>
+                  {getSortIcon("period_start")}
+                </div>
+              </TableHead>
+              <TableHead
+                className="text-sm font-medium text-foreground/90 py-3 px-4 cursor-pointer hover:bg-muted/30 transition-colors"
+                onClick={() => onSort("period_end")}
+              >
+                <div className="flex items-center gap-1">
+                  <span>End Date</span>
+                  {getSortIcon("period_end")}
+                </div>
+              </TableHead>
+              <TableHead
                 className="text-sm font-medium text-foreground/90 py-3 px-4 cursor-pointer hover:bg-muted/30 transition-colors"
                 onClick={() => onSort("type")}
               >
@@ -202,7 +221,7 @@ export function BudgetTable({
                   {getSortIcon("type")}
                 </div>
               </TableHead>
-              <TableHead 
+              <TableHead
                 className="text-sm font-medium text-foreground/90 py-3 px-4 cursor-pointer hover:bg-muted/30 transition-colors"
                 onClick={() => onSort("status")}
               >
@@ -211,31 +230,22 @@ export function BudgetTable({
                   {getSortIcon("status")}
                 </div>
               </TableHead>
-              <TableHead 
-                className="text-sm font-medium text-foreground/90 py-3 px-4 cursor-pointer hover:bg-muted/30 transition-colors"
-                onClick={() => onSort("period_start")}
-              >
-                <div className="flex items-center gap-1">
-                  <span>Period Start</span>
-                  {getSortIcon("period_start")}
-                </div>
-              </TableHead>
-              <TableHead 
-                className="text-sm font-medium text-foreground/90 py-3 px-4 cursor-pointer hover:bg-muted/30 transition-colors"
-                onClick={() => onSort("period_end")}
-              >
-                <div className="flex items-center gap-1">
-                  <span>Period End</span>
-                  {getSortIcon("period_end")}
-                </div>
-              </TableHead>
               <TableHead
                 className="text-sm font-medium text-foreground/90 py-3 px-4 text-right cursor-pointer hover:bg-muted/30 transition-colors"
                 onClick={() => onSort("value")}
               >
                 <div className="flex items-center justify-end gap-1">
-                  <span>Amount</span>
+                  <span>Currency Value</span>
                   {getSortIcon("value")}
+                </div>
+              </TableHead>
+              <TableHead
+                className="text-sm font-medium text-foreground/90 py-3 px-4 cursor-pointer hover:bg-muted/30 transition-colors"
+                onClick={() => onSort("value_date")}
+              >
+                <div className="flex items-center gap-1">
+                  <span>Value Date</span>
+                  {getSortIcon("value_date")}
                 </div>
               </TableHead>
               <TableHead
@@ -297,53 +307,63 @@ export function BudgetTable({
                       )}
                     </td>
 
-                    {variant === "full" && (
-                      <td className="py-3 px-4">
-                        <div 
-                          className="space-y-0.5 cursor-pointer hover:opacity-75 group"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            if (budget.activity_id) {
-                              window.location.href = `/activities/${budget.activity_id}`;
-                            }
-                          }}
-                        >
-                          <div className="text-sm font-medium text-foreground line-clamp-2">
-                            {activityTitle}
-                          </div>
-                          {budget.activity?.iati_identifier && (
-                            <div className="text-xs text-muted-foreground font-mono">
-                              {budget.activity.iati_identifier}
-                            </div>
-                          )}
+                    {/* Activity Title */}
+                    <td className="py-3 px-4 max-w-[200px]">
+                      <div
+                        className="space-y-0.5 cursor-pointer hover:opacity-75 group"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (budget.activity_id) {
+                            window.location.href = `/activities/${budget.activity_id}`;
+                          }
+                        }}
+                      >
+                        <div className="text-sm font-medium text-foreground line-clamp-2">
+                          {activityTitle}
                         </div>
-                      </td>
-                    )}
+                        {budget.activity?.iati_identifier && (
+                          <div className="text-xs text-muted-foreground font-mono truncate">
+                            {budget.activity.iati_identifier}
+                          </div>
+                        )}
+                      </div>
+                    </td>
 
+                    {/* Start Date */}
+                    <td className="py-3 px-4 whitespace-nowrap">
+                      {formatDate(budget.period_start)}
+                    </td>
+
+                    {/* End Date */}
+                    <td className="py-3 px-4 whitespace-nowrap">
+                      {formatDate(budget.period_end)}
+                    </td>
+
+                    {/* Type */}
                     <td className="py-3 px-4 whitespace-nowrap">
                       <Badge variant="outline" className="bg-muted/50">
                         {getBudgetTypeLabel(budget.type)}
                       </Badge>
                     </td>
 
+                    {/* Status */}
                     <td className="py-3 px-4 whitespace-nowrap">
                       <Badge variant="outline" className="bg-muted/50">
                         {getBudgetStatusLabel(budget.status)}
                       </Badge>
                     </td>
 
-                    <td className="py-3 px-4 whitespace-nowrap">
-                      {formatDate(budget.period_start)}
-                    </td>
-
-                    <td className="py-3 px-4 whitespace-nowrap">
-                      {formatDate(budget.period_end)}
-                    </td>
-
+                    {/* Currency Value */}
                     <td className="py-3 px-4 text-right whitespace-nowrap">
                       {budget.value != null ? formatCurrency(budget.value, budget.currency) : '—'}
                     </td>
 
+                    {/* Value Date */}
+                    <td className="py-3 px-4 whitespace-nowrap">
+                      {formatDate(budget.value_date)}
+                    </td>
+
+                    {/* USD Value */}
                     <td className="py-3 px-4 text-right whitespace-nowrap">
                       {budget.value_usd != null ? (
                         <span className="font-medium">
@@ -395,7 +415,7 @@ export function BudgetTable({
                   {/* Expanded Row Content */}
                   {isExpanded && (
                     <TableRow className="bg-slate-50/50">
-                      <td colSpan={variant === "full" ? 9 : 8} className="p-6">
+                      <td colSpan={11} className="p-6">
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                           {/* LEFT COLUMN */}
                           <div className="space-y-4">

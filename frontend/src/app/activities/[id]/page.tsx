@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { format } from "date-fns"
 import {
   ArrowLeft,
@@ -289,22 +290,22 @@ interface Activity {
 
 // Format large numbers into compact form: 500000000 -> 500m, 200000 -> 200k
 function formatCompactNumber(value: number): string {
-  if (value === null || value === undefined || isNaN(value)) return '0.0';
+  if (value === null || value === undefined || isNaN(value)) return '0.00';
   const abs = Math.abs(value);
-  if (abs >= 1_000_000_000) return `${(value / 1_000_000_000).toFixed(1)}b`;
-  if (abs >= 1_000_000) return `${(value / 1_000_000).toFixed(1)}m`;
-  if (abs >= 1_000) return `${(value / 1_000).toFixed(1)}k`;
-  return `${value.toFixed(1)}`;
+  if (abs >= 1_000_000_000) return `${(value / 1_000_000_000).toFixed(2)}b`;
+  if (abs >= 1_000_000) return `${(value / 1_000_000).toFixed(2)}m`;
+  if (abs >= 1_000) return `${(value / 1_000).toFixed(2)}k`;
+  return `${value.toFixed(2)}`;
 }
 
-// Format currency in short form with one decimal: 10308 -> $10.3k, 10308000 -> $10.3M
+// Format currency in short form with two decimals: 10308 -> $10.31k, 10308000 -> $10.31M
 function formatCurrencyShort(value: number): string {
-  if (value === null || value === undefined || isNaN(value)) return '$0.0';
+  if (value === null || value === undefined || isNaN(value)) return '$0.00';
   const abs = Math.abs(value);
   const sign = value < 0 ? '-' : '';
-  if (abs >= 1_000_000) return `${sign}$${(value / 1_000_000).toFixed(1)}M`;
-  if (abs >= 1_000) return `${sign}$${(value / 1_000).toFixed(1)}k`;
-  return `${sign}$${value.toFixed(1)}`;
+  if (abs >= 1_000_000) return `${sign}$${(value / 1_000_000).toFixed(2)}M`;
+  if (abs >= 1_000) return `${sign}$${(value / 1_000).toFixed(2)}k`;
+  return `${sign}$${value.toFixed(2)}`;
 }
 
 // Helper function to get activity scope label from code
@@ -363,11 +364,11 @@ export default function ActivityDetailPage() {
   const [hiddenRoles, setHiddenRoles] = useState<Set<number>>(new Set())
 
   // Copy to clipboard function
-  const copyToClipboard = (text: string, type: 'activityId' | 'iatiIdentifier') => {
+  const copyToClipboard = (text: string, type: 'activityId' | 'iatiIdentifier' | 'activityTitle') => {
     navigator.clipboard.writeText(text)
     setCopiedId(type)
     setTimeout(() => setCopiedId(null), 2000)
-    const message = type === 'activityId' ? 'Activity ID' : 'IATI Identifier'
+    const message = type === 'activityId' ? 'Activity ID' : type === 'activityTitle' ? 'Activity Title' : 'IATI Identifier'
     toast.success(`${message} copied to clipboard`)
   }
 
@@ -782,11 +783,12 @@ export default function ActivityDetailPage() {
   const handleBannerChange = async (newBanner: string | null) => {
     setBanner(newBanner)
     // Save banner to backend
+    if (!activity?.id) return
     try {
-      const res = await fetch("/api/activities", {
-        method: "POST",
+      const res = await fetch(`/api/activities/${activity.id}`, {
+        method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...activity, banner: newBanner }),
+        body: JSON.stringify({ banner: newBanner }),
       })
       if (!res.ok) throw new Error("Failed to save banner")
       toast.success("Banner updated successfully")
@@ -807,26 +809,26 @@ export default function ActivityDetailPage() {
     if (!currentActivity?.id) return
     // Save icon to backend
     try {
-      const res = await fetch("/api/activities", {
-        method: "POST",
+      const res = await fetch(`/api/activities/${currentActivity.id}`, {
+        method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...currentActivity, icon: newIcon }),
+        body: JSON.stringify({ icon: newIcon }),
       })
       if (!res.ok) throw new Error("Failed to save icon")
-      
+
       toast.success("Icon updated successfully")
-      
+
       // Update local icon state so button disappears and icon shows immediately
       // without touching the activity object (which could trigger TransactionTab re-renders)
       setLocalIcon(newIcon)
-      
+
       // Close dialog
       setShowEditIcon(false)
-      
+
       // Invalidate cache but DON'T update activity state immediately to avoid triggering
       // re-renders in TransactionTab/TransactionList that could cause infinite loops
       invalidateActivityCache(currentActivity.id)
-      
+
       // Note: Activity state will be updated on next page refresh or cache refresh
       // This prevents triggering infinite loops in child components
     } catch (error) {
@@ -1352,47 +1354,52 @@ export default function ActivityDetailPage() {
             </div>
           </div>
 
+          {/* Banner Upload Modal */}
+          <Dialog open={showEditBanner} onOpenChange={setShowEditBanner}>
+            <DialogContent className="max-w-2xl">
+              <DialogHeader>
+                <DialogTitle>Add Banner Image</DialogTitle>
+                <DialogDescription>
+                  Upload a banner image for this activity. Recommended size: 1200x400px
+                </DialogDescription>
+              </DialogHeader>
+              <BannerUpload
+                currentBanner={banner || undefined}
+                onBannerChange={handleBannerChange}
+                activityId={activity.id}
+              />
+            </DialogContent>
+          </Dialog>
+
+          {/* Icon Upload Modal */}
+          <Dialog open={showEditIcon} onOpenChange={setShowEditIcon}>
+            <DialogContent className="max-w-2xl">
+              <DialogHeader>
+                <DialogTitle>Add Icon/Logo</DialogTitle>
+                <DialogDescription>
+                  Upload an icon or logo for this activity. Recommended size: 512x512px
+                </DialogDescription>
+              </DialogHeader>
+              <IconUpload
+                currentIcon={activity?.icon || localIcon || undefined}
+                onIconChange={handleIconChange}
+                activityId={activity?.id || ""}
+              />
+            </DialogContent>
+          </Dialog>
+
           {/* Activity Header Card */}
           <Card className="mb-6 border-0 shadow-sm overflow-hidden">
             {/* Banner Image */}
-            {showEditBanner ? (
-              <div className="p-4">
-                <BannerUpload
-                  currentBanner={banner || undefined}
-                  onBannerChange={handleBannerChange}
-                  activityId={activity.id}
-                />
-                <div className="flex justify-end gap-2 mt-4">
-                  <Button variant="outline" onClick={() => setShowEditBanner(false)}>
-                    Cancel
-                  </Button>
-                </div>
-              </div>
-            ) : banner ? (
+            {banner ? (
               <div className="w-full h-48 overflow-hidden">
-                <img 
-                  src={banner} 
+                <img
+                  src={banner}
                   alt={`${activity.title} banner`}
                   className="w-full h-full object-cover"
                 />
               </div>
             ) : null}
-
-            {/* Icon Upload Section */}
-            {showEditIcon && (
-              <div className="p-4 border-b">
-                <IconUpload
-                  currentIcon={activity?.icon || localIcon || undefined}
-                  onIconChange={handleIconChange}
-                  activityId={activity?.id || ""}
-                />
-                <div className="flex justify-end gap-2 mt-4">
-                  <Button variant="outline" onClick={() => setShowEditIcon(false)}>
-                    Cancel
-                  </Button>
-                </div>
-              </div>
-            )}
             
             <CardContent className="p-8">
               <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
@@ -1450,11 +1457,11 @@ export default function ActivityDetailPage() {
                               {activity.hierarchy && (
                                 <div className="text-slate-600">
                                   <div className="text-slate-500 mb-1">Hierarchy:</div>
-                                  <div className="flex items-start gap-1.5">
-                                    <code className="text-xs px-1.5 py-0.5 bg-slate-100 text-slate-700 rounded font-mono whitespace-nowrap flex-shrink-0 mt-0.5">
+                                  <div className="flex items-center gap-1.5">
+                                    <code className="text-xs px-1.5 py-0.5 bg-slate-100 text-slate-700 rounded font-mono whitespace-nowrap flex-shrink-0">
                                       {activity.hierarchy}
                                     </code>
-                                    <span className="font-medium text-slate-900 break-words min-w-0 leading-tight">
+                                    <span className="font-medium text-slate-900 break-words min-w-0">
                                       {getHierarchyLabel(activity.hierarchy) || `Level ${activity.hierarchy}`}
                                     </span>
                                   </div>
@@ -1463,11 +1470,11 @@ export default function ActivityDetailPage() {
                               {activity.collaborationType && (
                                 <div className="text-slate-600">
                                   <div className="text-slate-500 mb-1">Collaboration Type:</div>
-                                  <div className="flex items-start gap-1.5">
-                                    <code className="text-xs px-1.5 py-0.5 bg-slate-100 text-slate-700 rounded font-mono whitespace-nowrap flex-shrink-0 mt-0.5">
+                                  <div className="flex items-center gap-1.5">
+                                    <code className="text-xs px-1.5 py-0.5 bg-slate-100 text-slate-700 rounded font-mono whitespace-nowrap flex-shrink-0">
                                       {activity.collaborationType}
                                     </code>
-                                    <span className="font-medium text-slate-900 break-words min-w-0 leading-tight">
+                                    <span className="font-medium text-slate-900 break-words min-w-0">
                                       {getCollaborationTypeLabel(activity.collaborationType) || activity.collaborationType}
                                     </span>
                                   </div>
@@ -1476,15 +1483,15 @@ export default function ActivityDetailPage() {
                               {activity.defaultFlowType && (
                                 <div className="text-slate-600">
                                   <div className="text-slate-500 mb-1">Default Flow Type:</div>
-                                  <div className="flex items-start gap-1.5">
+                                  <div className="flex items-center gap-1.5">
                                     {activity.defaultFlowType === '0' || activity.defaultFlowType === 0 ? (
                                       <span className="text-slate-400 italic text-sm">Blank</span>
                                     ) : (
                                       <>
-                                        <code className="text-xs px-1.5 py-0.5 bg-slate-100 text-slate-700 rounded font-mono whitespace-nowrap flex-shrink-0 mt-0.5">
+                                        <code className="text-xs px-1.5 py-0.5 bg-slate-100 text-slate-700 rounded font-mono whitespace-nowrap flex-shrink-0">
                                           {activity.defaultFlowType}
                                         </code>
-                                        <span className="font-medium text-slate-900 break-words min-w-0 leading-tight">
+                                        <span className="font-medium text-slate-900 break-words min-w-0">
                                           {FLOW_TYPE_LABELS[activity.defaultFlowType] || activity.defaultFlowType}
                                         </span>
                                       </>
@@ -1495,15 +1502,15 @@ export default function ActivityDetailPage() {
                               {activity.defaultFinanceType && (
                                 <div className="text-slate-600">
                                   <div className="text-slate-500 mb-1">Default Finance Type:</div>
-                                  <div className="flex items-start gap-1.5">
+                                  <div className="flex items-center gap-1.5">
                                     {activity.defaultFinanceType === '0' || activity.defaultFinanceType === 0 ? (
                                       <span className="text-slate-400 italic text-sm">Blank</span>
                                     ) : (
                                       <>
-                                        <code className="text-xs px-1.5 py-0.5 bg-slate-100 text-slate-700 rounded font-mono whitespace-nowrap flex-shrink-0 mt-0.5">
+                                        <code className="text-xs px-1.5 py-0.5 bg-slate-100 text-slate-700 rounded font-mono whitespace-nowrap flex-shrink-0">
                                           {activity.defaultFinanceType}
                                         </code>
-                                        <span className="font-medium text-slate-900 break-words min-w-0 leading-tight">
+                                        <span className="font-medium text-slate-900 break-words min-w-0">
                                           {FINANCE_TYPE_LABELS[activity.defaultFinanceType] || activity.defaultFinanceType}
                                         </span>
                                       </>
@@ -1514,15 +1521,15 @@ export default function ActivityDetailPage() {
                               {activity.defaultAidType && (
                                 <div className="text-slate-600">
                                   <div className="text-slate-500 mb-1">Default Aid Type:</div>
-                                  <div className="flex items-start gap-1.5">
+                                  <div className="flex items-center gap-1.5">
                                     {activity.defaultAidType === '0' || activity.defaultAidType === 0 ? (
                                       <span className="text-slate-400 italic text-sm">Blank</span>
                                     ) : (
                                       <>
-                                        <code className="text-xs px-1.5 py-0.5 bg-slate-100 text-slate-700 rounded font-mono whitespace-nowrap flex-shrink-0 mt-0.5">
+                                        <code className="text-xs px-1.5 py-0.5 bg-slate-100 text-slate-700 rounded font-mono whitespace-nowrap flex-shrink-0">
                                           {activity.defaultAidType}
                                         </code>
-                                        <span className="font-medium text-slate-900 break-words min-w-0 leading-tight">
+                                        <span className="font-medium text-slate-900 break-words min-w-0">
                                           {AID_TYPE_LABELS[activity.defaultAidType] || activity.defaultAidType}
                                         </span>
                                       </>
@@ -1533,15 +1540,15 @@ export default function ActivityDetailPage() {
                               {activity.defaultTiedStatus && (
                                 <div className="text-slate-600">
                                   <div className="text-slate-500 mb-1">Default Tied Status:</div>
-                                  <div className="flex items-start gap-1.5">
+                                  <div className="flex items-center gap-1.5">
                                     {activity.defaultTiedStatus === '0' || activity.defaultTiedStatus === 0 ? (
                                       <span className="text-slate-400 italic text-sm">Blank</span>
                                     ) : (
                                       <>
-                                        <code className="text-xs px-1.5 py-0.5 bg-slate-100 text-slate-700 rounded font-mono whitespace-nowrap flex-shrink-0 mt-0.5">
+                                        <code className="text-xs px-1.5 py-0.5 bg-slate-100 text-slate-700 rounded font-mono whitespace-nowrap flex-shrink-0">
                                           {activity.defaultTiedStatus}
                                         </code>
-                                        <span className="font-medium text-slate-900 break-words min-w-0 leading-tight">
+                                        <span className="font-medium text-slate-900 break-words min-w-0">
                                           {TIED_STATUS_LABELS[activity.defaultTiedStatus as keyof typeof TIED_STATUS_LABELS] || activity.defaultTiedStatus}
                                         </span>
                                       </>
@@ -1552,15 +1559,15 @@ export default function ActivityDetailPage() {
                               {activity.activityScope && (
                                 <div className="text-slate-600">
                                   <div className="text-slate-500 mb-1">Scope:</div>
-                                  <div className="flex items-start gap-1.5">
+                                  <div className="flex items-center gap-1.5">
                                     {activity.activityScope === '0' || activity.activityScope === 0 ? (
                                       <span className="text-slate-400 italic text-sm">Blank</span>
                                     ) : (
                                       <>
-                                        <code className="text-xs px-1.5 py-0.5 bg-slate-100 text-slate-700 rounded font-mono whitespace-nowrap flex-shrink-0 mt-0.5">
+                                        <code className="text-xs px-1.5 py-0.5 bg-slate-100 text-slate-700 rounded font-mono whitespace-nowrap flex-shrink-0">
                                           {activity.activityScope}
                                         </code>
-                                        <span className="font-medium text-slate-900 break-words min-w-0 leading-tight">
+                                        <span className="font-medium text-slate-900 break-words min-w-0">
                                           {getActivityScopeLabel(activity.activityScope) || activity.activityScope}
                                         </span>
                                       </>
@@ -1586,8 +1593,19 @@ export default function ActivityDetailPage() {
 
                     {/* Activity Info */}
                     <div className="flex-1">
-                      <h1 className="text-3xl font-bold text-slate-900 mb-3">
-                        {activity.title}{activity.acronym && ` (${activity.acronym})`}
+                      <h1 className="text-3xl font-bold text-slate-900 mb-3 group">
+                        {activity.title}{activity.acronym && ` (${activity.acronym})`}{' '}
+                        <button
+                          onClick={() => copyToClipboard(activity.title || '', 'activityTitle')}
+                          className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:text-slate-700 inline-flex items-center align-middle"
+                          title="Copy Activity Title"
+                        >
+                          {copiedId === 'activityTitle' ? (
+                            <Check className="w-5 h-5 text-green-600" />
+                          ) : (
+                            <Copy className="w-5 h-5 text-slate-400" />
+                          )}
+                        </button>
                       </h1>
                       
                       <div className="space-y-3">
@@ -2186,27 +2204,27 @@ export default function ActivityDetailPage() {
                 <div className="flex items-start justify-between">
                   <div className="space-y-2 w-full">
                   <div>
-                      <LabelWithHelp 
-                        label="Financial Delivery" 
-                        helpText="Percentage of committed funds that have been spent (Disbursed + Expended) ÷ Committed × 100. Shows how much of the committed funding has been utilized."
+                      <LabelWithHelp
+                        label="Percentage of Committed Funds Spent"
+                        helpText="This metric shows how much of the formal, committed funding for the activity has been utilized. The calculation compares actual spending against the committed funds: (Disbursed Funds + Expended Funds) / Committed Funds × 100"
                       />
                       <p className="text-lg font-bold text-slate-900">{financialDeliveryPercent}%</p>
                     </div>
-                    
+
                     {/* Progress Bar */}
                     <div className="w-full">
                       <div className="w-full bg-slate-200 rounded-full h-2">
-                        <div 
-                          className="bg-blue-600 h-2 rounded-full transition-all duration-300" 
+                        <div
+                          className="bg-blue-600 h-2 rounded-full transition-all duration-300"
                           style={{ width: `${Math.min(financialDeliveryPercent, 100)}%` }}
                         />
                       </div>
                     </div>
-                    
+
                     <div className="border-t border-slate-200 pt-2">
-                    <LabelWithHelp 
-                      label="Implementation vs Plan" 
-                      helpText="Percentage of budgeted funds that have been spent (Disbursed + Expended) ÷ Budgeted × 100. Compares actual spending against the planned budget."
+                    <LabelWithHelp
+                      label="Percentage of Budgeted Funds Spent"
+                      helpText="This figure shows what portion of the total planned budget has been converted into actual spending. The calculation compares actual spending against the planned budget: (Disbursed Funds + Expended Funds) / Budgeted Funds × 100"
                     />
                     <p className="text-lg font-bold text-slate-900">
                       {implementationVsPlanPercent}%
@@ -2239,7 +2257,7 @@ export default function ActivityDetailPage() {
                     onClick={() => setBudgetYearView(budgetYearView === 'chart' ? 'table' : 'chart')}
                     className="h-6 w-6 p-0"
                   >
-                    {budgetYearView === 'chart' ? <TableIcon className="h-3 w-3" /> : <BarChart3 className="h-3 w-3" />}
+                    {budgetYearView === 'chart' ? <TableIcon className="h-3 w-3" /> : <BarChart3Icon className="h-3 w-3" />}
                   </Button>
                   <Button
                     variant="ghost"
@@ -2340,25 +2358,30 @@ export default function ActivityDetailPage() {
                             axisLine={{ stroke: '#e5e7eb' }}
                             tickLine={false}
                           />
-                          <YAxis 
+                          <YAxis
                             tick={{ fontSize: 10, fill: '#64748b' }}
                             axisLine={{ stroke: '#e5e7eb' }}
                             tickLine={false}
                             tickFormatter={(value) => {
-                              const rounded = Math.round(value / 1000000);
-                              return `$${rounded}M`;
+                              const formatted = (value / 1000000).toFixed(2);
+                              return `$${formatted}M`;
                             }}
                           />
-                          <RechartsTooltip2 
+                          <RechartsTooltip2
                             cursor={false}
                             content={({ active, payload }) => {
                               if (active && payload && payload.length) {
                                 return (
                                   <div className="bg-white p-2 border border-gray-200 rounded shadow-lg">
-                                    <p className="text-sm font-semibold">{payload[0].payload.year}</p>
-                                    <p className="text-sm text-gray-600">
-                                      {formatCurrencyShort(payload[0].value as number)}
-                                    </p>
+                                    <p className="text-xs font-semibold mb-2 text-slate-900">{payload[0].payload.year}</p>
+                                    <table className="text-xs">
+                                      <tbody>
+                                        <tr>
+                                          <td className="pr-3 py-0.5 text-slate-600">Budget:</td>
+                                          <td className="text-right py-0.5 font-medium text-slate-900">{formatCurrencyShort(payload[0].value as number)}</td>
+                                        </tr>
+                                      </tbody>
+                                    </table>
                                   </div>
                                 )
                               }
@@ -2378,10 +2401,10 @@ export default function ActivityDetailPage() {
               </CardContent>
             </Card>
 
-            {/* Planned vs Actual Spending */}
+            {/* Budget vs. Spend */}
             <Card className="border-slate-200 bg-white">
               <CardHeader className="pb-2 pt-3 px-3 flex flex-row items-center justify-between">
-                <CardTitle className="text-xs font-semibold text-slate-900">Planned vs Actual</CardTitle>
+                <CardTitle className="text-xs font-semibold text-slate-900">Budget vs. Spend</CardTitle>
                 <div className="flex gap-1">
                   <Button
                     variant="ghost"
@@ -2389,21 +2412,21 @@ export default function ActivityDetailPage() {
                     onClick={() => setDisbursementProgressView(disbursementProgressView === 'chart' ? 'table' : 'chart')}
                     className="h-6 w-6 p-0"
                   >
-                    {disbursementProgressView === 'chart' ? <TableIcon className="h-3 w-3" /> : <BarChart3 className="h-3 w-3" />}
+                    {disbursementProgressView === 'chart' ? <TableIcon className="h-3 w-3" /> : <BarChart3Icon className="h-3 w-3" />}
                   </Button>
                   <Button
                     variant="ghost"
                     size="sm"
                     onClick={() => {
-                      const budgetsByYearMap = new Map<number, number>()
+                      const plannedDisbursementsByYearMap = new Map<number, number>()
                       const disbursementsByYearMap = new Map<number, number>()
                       const expendituresByYearMap = new Map<number, number>()
 
-                      budgets.forEach(budget => {
-                        if (budget.period_start) {
-                          const year = new Date(budget.period_start).getFullYear()
-                          const usdValue = budget.usd_value || (budget.currency === 'USD' ? budget.value : 0)
-                          budgetsByYearMap.set(year, (budgetsByYearMap.get(year) || 0) + (usdValue || 0))
+                      plannedDisbursements.forEach((pd: any) => {
+                        if (pd.period_start) {
+                          const year = new Date(pd.period_start).getFullYear()
+                          const usdValue = pd.usd_amount || (pd.currency === 'USD' ? pd.value : 0)
+                          plannedDisbursementsByYearMap.set(year, (plannedDisbursementsByYearMap.get(year) || 0) + (usdValue || 0))
                         }
                       })
 
@@ -2412,7 +2435,7 @@ export default function ActivityDetailPage() {
                         if (t.transaction_date) {
                           const year = new Date(t.transaction_date).getFullYear()
                           const value = parseFloat(t.value) || 0
-                          
+
                           if (t.transaction_type === '3') {
                             disbursementsByYearMap.set(year, (disbursementsByYearMap.get(year) || 0) + value)
                           } else if (t.transaction_type === '4') {
@@ -2422,28 +2445,28 @@ export default function ActivityDetailPage() {
                       })
 
                       const allYears = new Set([
-                        ...Array.from(budgetsByYearMap.keys()),
+                        ...Array.from(plannedDisbursementsByYearMap.keys()),
                         ...Array.from(disbursementsByYearMap.keys()),
                         ...Array.from(expendituresByYearMap.keys())
                       ])
 
                       const csvData = Array.from(allYears).sort().map(year => [
                         year,
-                        budgetsByYearMap.get(year) || 0,
+                        plannedDisbursementsByYearMap.get(year) || 0,
                         disbursementsByYearMap.get(year) || 0,
                         expendituresByYearMap.get(year) || 0
                       ])
-                      
+
                       const csvContent = [
-                        ['Year', 'Planned Budget', 'Disbursements', 'Expenditures'],
+                        ['Year', 'Planned Disbursements', 'Disbursements', 'Expenditures'],
                         ...csvData
                       ].map(row => row.join(',')).join('\n')
-                      
+
                       const blob = new Blob([csvContent], { type: 'text/csv' })
                       const url = window.URL.createObjectURL(blob)
                       const a = document.createElement('a')
                       a.href = url
-                      a.download = `planned-vs-actual-spending-${activity.id}.csv`
+                      a.download = `budget-vs-spend-${activity.id}.csv`
                       a.click()
                       window.URL.revokeObjectURL(url)
                     }}
@@ -2455,17 +2478,17 @@ export default function ActivityDetailPage() {
               </CardHeader>
               <CardContent className="p-3 pt-0">
                 {(() => {
-                  // Calculate budgets and actuals by year
-                  const budgetsByYearMap = new Map<number, number>()
+                  // Calculate planned disbursements and actuals by year
+                  const plannedDisbursementsByYearMap = new Map<number, number>()
                   const disbursementsByYearMap = new Map<number, number>()
                   const expendituresByYearMap = new Map<number, number>()
 
-                  // Process budgets
-                  budgets.forEach(budget => {
-                    if (budget.period_start) {
-                      const year = new Date(budget.period_start).getFullYear()
-                      const usdValue = budget.usd_value || (budget.currency === 'USD' ? budget.value : 0)
-                      budgetsByYearMap.set(year, (budgetsByYearMap.get(year) || 0) + (usdValue || 0))
+                  // Process planned disbursements
+                  plannedDisbursements.forEach((pd: any) => {
+                    if (pd.period_start) {
+                      const year = new Date(pd.period_start).getFullYear()
+                      const usdValue = pd.usd_amount || (pd.currency === 'USD' ? pd.value : 0)
+                      plannedDisbursementsByYearMap.set(year, (plannedDisbursementsByYearMap.get(year) || 0) + (usdValue || 0))
                     }
                   })
 
@@ -2475,7 +2498,7 @@ export default function ActivityDetailPage() {
                     if (t.transaction_date) {
                       const year = new Date(t.transaction_date).getFullYear()
                       const value = parseFloat(t.value) || 0
-                      
+
                       if (t.transaction_type === '3') { // Disbursement
                         disbursementsByYearMap.set(year, (disbursementsByYearMap.get(year) || 0) + value)
                       } else if (t.transaction_type === '4') { // Expenditure
@@ -2486,14 +2509,14 @@ export default function ActivityDetailPage() {
 
                   // Combine all years
                   const allYears = new Set([
-                    ...Array.from(budgetsByYearMap.keys()),
+                    ...Array.from(plannedDisbursementsByYearMap.keys()),
                     ...Array.from(disbursementsByYearMap.keys()),
                     ...Array.from(expendituresByYearMap.keys())
                   ])
 
                   const chartData = Array.from(allYears).sort().map(year => ({
                     year,
-                    plannedDisbursements: budgetsByYearMap.get(year) || 0,
+                    plannedDisbursements: plannedDisbursementsByYearMap.get(year) || 0,
                     disbursements: disbursementsByYearMap.get(year) || 0,
                     expenditures: expendituresByYearMap.get(year) || 0
                   }))
@@ -2555,16 +2578,16 @@ export default function ActivityDetailPage() {
                             axisLine={{ stroke: '#e5e7eb' }}
                             tickLine={false}
                           />
-                          <YAxis 
+                          <YAxis
                             tick={{ fontSize: 10, fill: '#64748b' }}
                             axisLine={{ stroke: '#e5e7eb' }}
                             tickLine={false}
                             tickFormatter={(value) => {
-                              const rounded = Math.round(value / 1000000);
-                              return `$${rounded}M`;
+                              const formatted = (value / 1000000).toFixed(2);
+                              return `$${formatted}M`;
                             }}
                           />
-                          <RechartsTooltip2 
+                          <RechartsTooltip2
                             position={{ y: 0 }}
                             offset={10}
                             cursor={false}
@@ -2572,21 +2595,23 @@ export default function ActivityDetailPage() {
                               if (active && payload && payload.length) {
                                 return (
                                   <div className="bg-white p-2 border border-gray-200 rounded shadow-lg">
-                                    <p className="text-sm font-semibold mb-1">{payload[0].payload.year}</p>
-                                    <div className="space-y-1 text-xs">
-                                      <div className="flex items-center gap-2">
-                                        <div className="w-3 h-3 rounded" style={{ backgroundColor: '#94a3b8' }}></div>
-                                        <p className="font-medium" style={{ color: '#64748b' }}>Planned: {formatCurrencyShort(payload[0].payload.plannedDisbursements)}</p>
-                                      </div>
-                                      <div className="flex items-center gap-2">
-                                        <div className="w-3 h-3 rounded" style={{ backgroundColor: '#1e40af' }}></div>
-                                        <p className="font-medium" style={{ color: '#1e40af' }}>Disbursements: {formatCurrencyShort(payload[0].payload.disbursements)}</p>
-                                      </div>
-                                      <div className="flex items-center gap-2">
-                                        <div className="w-3 h-3 rounded" style={{ backgroundColor: '#0f172a' }}></div>
-                                        <p className="font-medium" style={{ color: '#0f172a' }}>Expenditures: {formatCurrencyShort(payload[0].payload.expenditures)}</p>
-                                      </div>
-                                    </div>
+                                    <p className="text-xs font-semibold mb-2 text-slate-900">{payload[0].payload.year}</p>
+                                    <table className="text-xs">
+                                      <tbody>
+                                        <tr>
+                                          <td className="pr-3 py-0.5 text-slate-600">Planned Disbursements:</td>
+                                          <td className="text-right py-0.5 font-medium text-slate-900">{formatCurrencyShort(payload[0].payload.plannedDisbursements)}</td>
+                                        </tr>
+                                        <tr>
+                                          <td className="pr-3 py-0.5 text-slate-600">Disbursements:</td>
+                                          <td className="text-right py-0.5 font-medium text-slate-900">{formatCurrencyShort(payload[0].payload.disbursements)}</td>
+                                        </tr>
+                                        <tr>
+                                          <td className="pr-3 py-0.5 text-slate-600">Expenditures:</td>
+                                          <td className="text-right py-0.5 font-medium text-slate-900">{formatCurrencyShort(payload[0].payload.expenditures)}</td>
+                                        </tr>
+                                      </tbody>
+                                    </table>
                                   </div>
                                 )
                               }

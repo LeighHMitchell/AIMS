@@ -12,6 +12,7 @@ import { DataClinicTransactions } from "@/components/data-clinic/DataClinicTrans
 import { DataClinicOrganizations } from "@/components/data-clinic/DataClinicOrganizations";
 import { DataClinicTimeliness } from "@/components/data-clinic/DataClinicTimeliness";
 import { DataClinicFinancialDates } from "@/components/data-clinic/DataClinicFinancialDates";
+import { DataClinicBudgets } from "@/components/data-clinic/DataClinicBudgets";
 import { Stethoscope, Bug, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -104,6 +105,7 @@ export default function DataClinicPage() {
             <TabsList className="mb-6">
               <TabsTrigger value="activities">Activities</TabsTrigger>
               <TabsTrigger value="transactions">Transactions</TabsTrigger>
+              <TabsTrigger value="budgets">Budgets</TabsTrigger>
               <TabsTrigger value="organizations">Organizations</TabsTrigger>
               <TabsTrigger value="timeliness">Timeliness</TabsTrigger>
               <TabsTrigger value="financial-dates">Financial Dates</TabsTrigger>
@@ -115,6 +117,10 @@ export default function DataClinicPage() {
 
             <TabsContent value="transactions">
               <DataClinicTransactions />
+            </TabsContent>
+
+            <TabsContent value="budgets">
+              <DataClinicBudgets />
             </TabsContent>
 
             <TabsContent value="organizations">

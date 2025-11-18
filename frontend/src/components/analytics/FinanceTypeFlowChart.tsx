@@ -7,6 +7,8 @@ import {
   Bar,
   LineChart,
   Line,
+  AreaChart,
+  Area,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -19,9 +21,12 @@ import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Badge } from '@/components/ui/badge'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { AlertCircle, Download, BarChart3, LineChart as LineChartIcon, Table as TableIcon, X, Image } from 'lucide-react'
+import { AlertCircle, Download, BarChart3, LineChart as LineChartIcon, TrendingUp as TrendingUpIcon, Table as TableIcon, X, Image } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { MultiSelect } from '@/components/ui/multi-select'
+import { HelpTextTooltip } from '@/components/ui/help-text-tooltip'
+import { Switch } from '@/components/ui/switch'
+import { Label } from '@/components/ui/label'
 
 interface FinanceTypeFlowChartProps {
   dateRange?: {
@@ -32,7 +37,7 @@ interface FinanceTypeFlowChartProps {
   onDataChange?: (data: any[]) => void
 }
 
-type ViewMode = 'bar' | 'line' | 'table'
+type ViewMode = 'bar' | 'line' | 'area' | 'table'
 type TimeMode = 'periodic' | 'cumulative'
 
 // Define base colors for each flow type
@@ -125,6 +130,9 @@ export function FinanceTypeFlowChart({
   const [selectedTransactionTypes, setSelectedTransactionTypes] = useState<string[]>(['3']) // Default to Disbursement (code 3)
   const [viewMode, setViewMode] = useState<ViewMode>('bar')
   const [timeMode, setTimeMode] = useState<TimeMode>('periodic')
+  
+  // Allocation method toggle (for future use when budgets/disbursements are added)
+  const [allocationMethod, setAllocationMethod] = useState<'proportional' | 'period-start'>('proportional')
 
   // Transaction type options
   const transactionTypes = [
@@ -695,155 +703,193 @@ export function FinanceTypeFlowChart({
           </div>
 
           {/* Controls Row */}
-          <div className="flex items-center gap-2 flex-wrap">
-            {/* Flow Type Multi-Select */}
-            <div className="w-[240px]">
-              <MultiSelect
-                options={allFlowTypes.map(ft => ({
-                  label: `${ft.code} - ${ft.name}`,
-                  value: ft.code,
-                  code: ft.code,
-                  name: ft.name
-                } as any))}
-                selected={selectedFlowTypes}
-                onChange={setSelectedFlowTypes}
-                placeholder="Flow Types..."
-                showSelectAll={true}
-                selectedLabel="Flow Types selected"
-                renderOption={(option: any) => (
-                  <span className="flex items-center gap-2">
-                    <code className="px-1.5 py-0.5 rounded bg-slate-100 text-slate-700 font-mono text-xs">
-                      {option.code}
-                    </code>
-                    <span className="text-sm">{option.name}</span>
-                  </span>
-                )}
-              />
+          <div className="flex items-center justify-between gap-2 flex-wrap">
+            {/* Filters - Left Side */}
+            <div className="flex items-center gap-2 flex-wrap">
+              {/* Flow Type Multi-Select */}
+              <div className="w-[240px]">
+                <MultiSelect
+                  options={allFlowTypes.map(ft => ({
+                    label: `${ft.code} - ${ft.name}`,
+                    value: ft.code,
+                    code: ft.code,
+                    name: ft.name
+                  } as any))}
+                  selected={selectedFlowTypes}
+                  onChange={setSelectedFlowTypes}
+                  placeholder="Flow Types..."
+                  showSelectAll={true}
+                  selectedLabel="Flow Types selected"
+                  renderOption={(option: any) => (
+                    <span className="flex items-center gap-2">
+                      <code className="px-1.5 py-0.5 rounded bg-slate-100 text-slate-700 font-mono text-xs">
+                        {option.code}
+                      </code>
+                      <span className="text-sm">{option.name}</span>
+                    </span>
+                  )}
+                />
+              </div>
+
+              {/* Finance Type Multi-Select */}
+              <div className="w-[280px]">
+                <MultiSelect
+                  options={allFinanceTypes.map(ft => ({
+                    label: `${ft.code} - ${ft.name}`,
+                    value: ft.code,
+                    code: ft.code,
+                    name: ft.name
+                  } as any))}
+                  selected={selectedFinanceTypes}
+                  onChange={setSelectedFinanceTypes}
+                  placeholder="Finance Types (All)"
+                  showSelectAll={true}
+                  selectedLabel="Finance Types selected"
+                  renderOption={(option: any) => (
+                    <span className="flex items-center gap-2">
+                      <code className="px-1.5 py-0.5 rounded bg-slate-100 text-slate-700 font-mono text-xs">
+                        {option.code}
+                      </code>
+                      <span className="text-sm">{option.name}</span>
+                    </span>
+                  )}
+                />
+              </div>
+
+              {/* Transaction Type Multi-Select */}
+              <div className="w-[240px]">
+                <MultiSelect
+                  options={transactionTypes.map(tt => ({
+                    label: `${tt.code} - ${tt.name}`,
+                    value: tt.code,
+                    code: tt.code,
+                    name: tt.name
+                  } as any))}
+                  selected={selectedTransactionTypes}
+                  onChange={setSelectedTransactionTypes}
+                  placeholder="Transaction Types..."
+                  selectedLabel="Transaction Types selected"
+                  onClear={() => {
+                    // Keep at least one transaction type selected - default to Disbursement
+                    setSelectedTransactionTypes(['3'])
+                  }}
+                  renderOption={(option: any) => (
+                    <span className="flex items-center gap-2">
+                      <code className="px-1.5 py-0.5 rounded bg-slate-100 text-slate-700 font-mono text-xs">
+                        {option.code}
+                      </code>
+                      <span className="text-sm">{option.name}</span>
+                    </span>
+                  )}
+                />
+              </div>
             </div>
 
-            {/* Finance Type Multi-Select */}
-            <div className="w-[280px]">
-              <MultiSelect
-                options={allFinanceTypes.map(ft => ({
-                  label: `${ft.code} - ${ft.name}`,
-                  value: ft.code,
-                  code: ft.code,
-                  name: ft.name
-                } as any))}
-                selected={selectedFinanceTypes}
-                onChange={setSelectedFinanceTypes}
-                placeholder="Finance Types (All)"
-                showSelectAll={true}
-                selectedLabel="Finance Types selected"
-                renderOption={(option: any) => (
-                  <span className="flex items-center gap-2">
-                    <code className="px-1.5 py-0.5 rounded bg-slate-100 text-slate-700 font-mono text-xs">
-                      {option.code}
-                    </code>
-                    <span className="text-sm">{option.name}</span>
-                  </span>
-                )}
-              />
-            </div>
+            {/* View Controls and Export - Right Side */}
+            <div className="flex items-center gap-2 flex-wrap">
+              {/* Time Mode Toggle */}
+              <div className="flex gap-1 border rounded-lg p-1 bg-white">
+                <Button
+                  variant={timeMode === 'periodic' ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => setTimeMode('periodic')}
+                  className="h-8"
+                >
+                  Periodic
+                </Button>
+                <Button
+                  variant={timeMode === 'cumulative' ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => setTimeMode('cumulative')}
+                  className="h-8"
+                >
+                  Cumulative
+                </Button>
+              </div>
 
-            {/* Transaction Type Multi-Select */}
-            <div className="w-[240px]">
-              <MultiSelect
-                options={transactionTypes.map(tt => ({
-                  label: `${tt.code} - ${tt.name}`,
-                  value: tt.code,
-                  code: tt.code,
-                  name: tt.name
-                } as any))}
-                selected={selectedTransactionTypes}
-                onChange={setSelectedTransactionTypes}
-                placeholder="Transaction Types..."
-                selectedLabel="Transaction Types selected"
-                onClear={() => {
-                  // Keep at least one transaction type selected - default to Disbursement
-                  setSelectedTransactionTypes(['3'])
-                }}
-                renderOption={(option: any) => (
-                  <span className="flex items-center gap-2">
-                    <code className="px-1.5 py-0.5 rounded bg-slate-100 text-slate-700 font-mono text-xs">
-                      {option.code}
-                    </code>
-                    <span className="text-sm">{option.name}</span>
-                  </span>
-                )}
-              />
-            </div>
+              {/* Allocation Method Toggle */}
+              <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 border rounded-lg px-3 py-1.5 bg-white">
+                  <Label htmlFor="allocation-toggle-finance-type" className="text-sm text-slate-700 cursor-pointer">
+                    {allocationMethod === 'proportional' ? 'Proportional' : 'Period Start'}
+                  </Label>
+                  <Switch
+                    id="allocation-toggle-finance-type"
+                    checked={allocationMethod === 'proportional'}
+                    onCheckedChange={(checked) => setAllocationMethod(checked ? 'proportional' : 'period-start')}
+                  />
+                </div>
+                <HelpTextTooltip 
+                  content={
+                    allocationMethod === 'proportional'
+                      ? "Allocates budget and planned disbursement amounts across their time periods. For example, a $100,000 budget from July 2024 to June 2025 will be split proportionally across those 12 months."
+                      : "Shows the full budget or planned disbursement amount at its start date. Useful for seeing when amounts were originally planned or committed."
+                  }
+                />
+              </div>
 
-            {/* Time Mode Toggle */}
-            <div className="flex gap-1 border rounded-lg p-1 bg-white">
-              <Button
-                variant={timeMode === 'periodic' ? 'default' : 'ghost'}
-                size="sm"
-                onClick={() => setTimeMode('periodic')}
-                className="h-8"
-              >
-                Periodic
-              </Button>
-              <Button
-                variant={timeMode === 'cumulative' ? 'default' : 'ghost'}
-                size="sm"
-                onClick={() => setTimeMode('cumulative')}
-                className="h-8"
-              >
-                Cumulative
-              </Button>
-            </div>
+              {/* View Mode Toggle */}
+              <div className="flex gap-1 border rounded-lg p-1 bg-white">
+                <Button
+                  variant={viewMode === 'bar' ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => setViewMode('bar')}
+                  className="h-8"
+                >
+                  <BarChart3 className="h-4 w-4 mr-1.5" />
+                  Bar
+                </Button>
+                <Button
+                  variant={viewMode === 'line' ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => setViewMode('line')}
+                  className="h-8"
+                >
+                  <LineChartIcon className="h-4 w-4 mr-1.5" />
+                  Line
+                </Button>
+                <Button
+                  variant={viewMode === 'area' ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => setViewMode('area')}
+                  className="h-8"
+                >
+                  <TrendingUpIcon className="h-4 w-4 mr-1.5" />
+                  Area
+                </Button>
+                <Button
+                  variant={viewMode === 'table' ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => setViewMode('table')}
+                  className="h-8"
+                >
+                  <TableIcon className="h-4 w-4 mr-1.5" />
+                  Table
+                </Button>
+              </div>
 
-            {/* View Mode Toggle */}
-            <div className="flex gap-1 border rounded-lg p-1 bg-white">
-              <Button
-                variant={viewMode === 'bar' ? 'default' : 'ghost'}
-                size="sm"
-                onClick={() => setViewMode('bar')}
-                className="h-8"
-              >
-                <BarChart3 className="h-4 w-4 mr-1.5" />
-                Bar
-              </Button>
-              <Button
-                variant={viewMode === 'line' ? 'default' : 'ghost'}
-                size="sm"
-                onClick={() => setViewMode('line')}
-                className="h-8"
-              >
-                <LineChartIcon className="h-4 w-4 mr-1.5" />
-                Line
-              </Button>
-              <Button
-                variant={viewMode === 'table' ? 'default' : 'ghost'}
-                size="sm"
-                onClick={() => setViewMode('table')}
-                className="h-8"
-              >
-                <TableIcon className="h-4 w-4 mr-1.5" />
-                Table
-              </Button>
+              {/* Export Buttons */}
+              <div className="flex gap-1">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleExportCSV}
+                  className="h-8 w-8 p-0"
+                  title="Export to CSV"
+                >
+                  <Download className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleExportJPG}
+                  className="h-8 w-8 p-0"
+                  title="Export to JPG"
+                >
+                  <Image className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
-
-            {/* Export Buttons */}
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleExportCSV}
-              className="h-8 w-8 p-0"
-              title="Export to CSV"
-            >
-              <Download className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleExportJPG}
-              className="h-8 w-8 p-0"
-              title="Export to JPG"
-            >
-              <Image className="h-4 w-4" />
-            </Button>
           </div>
         </div>
       </CardHeader>
@@ -943,6 +989,9 @@ export function FinanceTypeFlowChart({
                       return financeTypesToShow.map((financeType, index) => {
                         const color = generateFinanceTypeShades(blendedBaseColor, financeType.code, index, financeTypesToShow.length)
                         const uniqueKey = `${flowType}_${transactionType}_${financeType.code}`
+                        // Alternate stroke patterns and widths for better differentiation
+                        const strokeWidth = 2.5 + (index % 3) * 0.5 // 2.5, 3, 3.5
+                        const dashArray = index % 3 === 0 ? undefined : index % 3 === 1 ? "8 4" : "12 6"
                         return (
                           <Line
                             key={uniqueKey}
@@ -950,8 +999,9 @@ export function FinanceTypeFlowChart({
                             dataKey={uniqueKey}
                             name={`${txTypeName} - ${getFlowTypeName(flowType)} - ${financeType.code} ${financeType.name}`}
                             stroke={color}
-                            strokeWidth={2}
-                            dot={{ fill: color, r: 3 }}
+                            strokeWidth={strokeWidth}
+                            strokeDasharray={dashArray}
+                            dot={{ fill: color, r: 4 }}
                             isAnimationActive={true}
                             animationDuration={800}
                             animationEasing="ease-in-out"
@@ -961,6 +1011,93 @@ export function FinanceTypeFlowChart({
                     }).flat()
                   }).flat()}
                 </LineChart>
+              </ResponsiveContainer>
+            )}
+
+            {/* Area Chart View */}
+            {viewMode === 'area' && (
+              <ResponsiveContainer width="100%" height={500}>
+                <AreaChart
+                  data={chartData}
+                  margin={{ top: 20, right: 30, left: 20, bottom: 60 }}
+                  key={`area-${selectedFlowTypes.join('-')}-${selectedFinanceTypes.join('-')}`}
+                >
+                  <defs>
+                    {selectedFlowTypes.map(flowType => {
+                      const financeTypesToShow = selectedFinanceTypes.length > 0
+                        ? allFinanceTypes.filter(ft => selectedFinanceTypes.includes(ft.code))
+                        : allFinanceTypes
+                      
+                      return selectedTransactionTypes.map((transactionType) => {
+                        const flowTypeColor = FLOW_TYPE_BASE_COLORS[flowType] || '#94a3b8'
+                        const transactionTypeColor = TRANSACTION_TYPE_COLORS[transactionType] || '#94a3b8'
+                        const blendedBaseColor = blendColors(flowTypeColor, transactionTypeColor, 0.65)
+                        
+                        return financeTypesToShow.map((financeType, index) => {
+                          const color = generateFinanceTypeShades(blendedBaseColor, financeType.code, index, financeTypesToShow.length)
+                          const uniqueKey = `${flowType}_${transactionType}_${financeType.code}`
+                          const gradientId = `gradient${uniqueKey.replace(/[^a-zA-Z0-9]/g, '')}`
+                          
+                          return (
+                            <linearGradient key={gradientId} id={gradientId} x1="0" y1="0" x2="0" y2="1">
+                              <stop offset="5%" stopColor={color} stopOpacity={0.8}/>
+                              <stop offset="95%" stopColor={color} stopOpacity={0.1}/>
+                            </linearGradient>
+                          )
+                        })
+                      }).flat()
+                    }).flat()}
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e1" opacity={0.5} />
+                  <XAxis
+                    dataKey="label"
+                    stroke="#64748B"
+                    fontSize={11}
+                    angle={0}
+                    textAnchor="middle"
+                    height={60}
+                    interval={0}
+                  />
+                  <YAxis tickFormatter={formatCurrency} stroke="#64748B" fontSize={12} />
+                  <Tooltip content={<CustomTooltip />} />
+                  <Legend content={renderLegend} wrapperStyle={{ paddingTop: '20px' }} />
+                  {selectedFlowTypes.map(flowType => {
+                    const financeTypesToShow = selectedFinanceTypes.length > 0
+                      ? allFinanceTypes.filter(ft => selectedFinanceTypes.includes(ft.code))
+                      : allFinanceTypes
+
+                    return selectedTransactionTypes.map((transactionType) => {
+                      const txTypeName = transactionTypes.find(tt => tt.code === transactionType)?.name || transactionType
+                      const flowTypeColor = FLOW_TYPE_BASE_COLORS[flowType] || '#94a3b8'
+                      const transactionTypeColor = TRANSACTION_TYPE_COLORS[transactionType] || '#94a3b8'
+                      const blendedBaseColor = blendColors(flowTypeColor, transactionTypeColor, 0.65)
+
+                      return financeTypesToShow.map((financeType, index) => {
+                        const color = generateFinanceTypeShades(blendedBaseColor, financeType.code, index, financeTypesToShow.length)
+                        const uniqueKey = `${flowType}_${transactionType}_${financeType.code}`
+                        const gradientId = `gradient${uniqueKey.replace(/[^a-zA-Z0-9]/g, '')}`
+                        const strokeWidth = 2 + (index % 3) * 0.5
+                        const dashArray = index % 3 === 0 ? undefined : index % 3 === 1 ? "8 4" : "12 6"
+                        
+                        return (
+                          <Area
+                            key={uniqueKey}
+                            type="monotone"
+                            dataKey={uniqueKey}
+                            name={`${txTypeName} - ${getFlowTypeName(flowType)} - ${financeType.code} ${financeType.name}`}
+                            stroke={color}
+                            strokeWidth={strokeWidth}
+                            strokeDasharray={dashArray}
+                            fill={`url(#${gradientId})`}
+                            isAnimationActive={true}
+                            animationDuration={800}
+                            animationEasing="ease-in-out"
+                          />
+                        )
+                      })
+                    }).flat()
+                  }).flat()}
+                </AreaChart>
               </ResponsiveContainer>
             )}
 

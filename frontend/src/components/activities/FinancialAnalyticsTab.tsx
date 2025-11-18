@@ -19,7 +19,7 @@ import {
   Tooltip,
   Legend,
 } from 'recharts'
-import { format, parseISO, getYear, getMonth } from 'date-fns'
+import { format, parseISO, getYear, getMonth, startOfMonth } from 'date-fns'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Loader2, AlertCircle, TrendingUp, DollarSign, BarChart3, TrendingUpIcon, LineChart as LineChartIcon, Table as TableIcon, ChevronDown, Download, FileImage, Camera } from 'lucide-react'
 import { toast } from 'sonner'
@@ -34,6 +34,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { HelpTextTooltip } from '@/components/ui/help-text-tooltip'
+import { Switch } from '@/components/ui/switch'
+import { Label } from '@/components/ui/label'
+import { allocateProportionally, generateMonthPeriods } from '@/utils/period-allocation'
 
 type TimePeriod = '1m' | '3m' | '6m' | '1y' | '5y' | 'all'
 type GroupBy = 'year' | 'month'
@@ -614,7 +618,7 @@ export default function FinancialAnalyticsTab({
   // Chart type toggles
   const [disbursementChartType, setDisbursementChartType] = useState<'line' | 'bar' | 'table'>('line')
   const [budgetChartType, setBudgetChartType] = useState<'line' | 'bar' | 'table' | 'total'>('bar')
-  const [overviewChartType, setOverviewChartType] = useState<'line' | 'bar' | 'table' | 'total'>('line')
+  const [overviewChartType, setOverviewChartType] = useState<'line' | 'bar' | 'area' | 'table' | 'total'>('line')
 
   // Cumulative toggles
   const [isDisbursementCumulative, setIsDisbursementCumulative] = useState(false)
@@ -624,10 +628,13 @@ export default function FinancialAnalyticsTab({
   const [hiddenBudgetSeries, setHiddenBudgetSeries] = useState<Set<string>>(new Set())
   const [hiddenDisbursementSeries, setHiddenDisbursementSeries] = useState<Set<string>>(new Set())
   const [isPending, startTransition] = useTransition()
+  
+  // Allocation method toggle
+  const [allocationMethod, setAllocationMethod] = useState<'proportional' | 'period-start'>('proportional')
 
   // Funding Source Breakdown controls
   const [fundingSourceType, setFundingSourceType] = useState<'transactions' | 'planned'>('transactions')
-  const [fundingTransactionType, setFundingTransactionType] = useState<'all' | '1' | '2' | '3' | '4'>('all')
+  const [fundingTransactionType, setFundingTransactionType] = useState<'1' | '2' | '3' | '4'>('1')
   const [fundingChartType, setFundingChartType] = useState<'chart' | 'table'>('chart')
 
   const fetchFinancialAnalytics = useCallback(async () => {
@@ -1452,6 +1459,47 @@ export default function FinancialAnalyticsTab({
       plannedBudgets: false
     }
 
+    // For proportional allocation, we need to determine the date range first
+    // Collect all dates to determine the range
+    const allDates: Date[] = []
+    
+    transactions?.forEach((t: any) => {
+      if (t.transaction_date) {
+        const date = new Date(t.transaction_date)
+        if (!isNaN(date.getTime())) allDates.push(date)
+      }
+    })
+    
+    plannedDisbursements?.forEach((pd: any) => {
+      if (pd.period_start) {
+        const date = new Date(pd.period_start)
+        if (!isNaN(date.getTime())) allDates.push(date)
+      }
+      if (pd.period_end) {
+        const date = new Date(pd.period_end)
+        if (!isNaN(date.getTime())) allDates.push(date)
+      }
+    })
+    
+    budgets?.forEach((b: any) => {
+      if (b.period_start) {
+        const date = new Date(b.period_start)
+        if (!isNaN(date.getTime())) allDates.push(date)
+      }
+      if (b.period_end) {
+        const date = new Date(b.period_end)
+        if (!isNaN(date.getTime())) allDates.push(date)
+      }
+    })
+
+    // Generate month periods for proportional allocation if needed
+    let monthPeriods: Date[] = []
+    if (allDates.length > 0 && allocationMethod === 'proportional') {
+      const minDate = new Date(Math.min(...allDates.map(d => d.getTime())))
+      const maxDate = new Date(Math.max(...allDates.map(d => d.getTime())))
+      monthPeriods = generateMonthPeriods(startOfMonth(minDate), startOfMonth(maxDate))
+    }
+
     // Process transactions by type
     transactions?.forEach((transaction: any) => {
       if (!transaction.transaction_date) return
@@ -1527,10 +1575,9 @@ export default function FinancialAnalyticsTab({
     plannedDisbursements?.forEach((pd: any) => {
       if (!pd.period_start) return
 
-      const date = new Date(pd.period_start)
-      if (isNaN(date.getTime())) return
+      const startDate = new Date(pd.period_start)
+      if (isNaN(startDate.getTime())) return
 
-      const dateKey = date.toISOString().split('T')[0]
       // ONLY use USD values - try usd_amount first
       let value = parseFloat(String(pd.usd_amount)) || 0
 
@@ -1542,32 +1589,69 @@ export default function FinancialAnalyticsTab({
       // Skip planned disbursements without valid USD values
       if (!value) return
 
-      if (!dateMap.has(dateKey)) {
-        dateMap.set(dateKey, {
-          date,
-          timestamp: date.getTime(),
-          incomingFunds: 0,
-          incomingCommitments: 0,
-          outgoingCommitments: 0,
-          disbursements: 0,
-          expenditures: 0,
-          plannedDisbursements: 0,
-          plannedBudgets: 0
-        })
-      }
+      if (allocationMethod === 'proportional' && pd.period_end) {
+        // Proportional allocation: distribute across months
+        const endDate = new Date(pd.period_end)
+        if (!isNaN(endDate.getTime())) {
+          const allocations = allocateProportionally(value, pd.period_start, pd.period_end, monthPeriods)
+          
+          allocations.forEach((allocatedValue, monthKey) => {
+            // Parse monthKey (YYYY-MM) to get the first day of that month
+            const [year, month] = monthKey.split('-').map(Number)
+            const monthStartDate = new Date(year, month - 1, 1)
+            const dateKey = monthStartDate.toISOString().split('T')[0]
+            
+            if (!dateMap.has(dateKey)) {
+              dateMap.set(dateKey, {
+                date: monthStartDate,
+                timestamp: monthStartDate.getTime(),
+                incomingFunds: 0,
+                incomingCommitments: 0,
+                outgoingCommitments: 0,
+                disbursements: 0,
+                expenditures: 0,
+                plannedDisbursements: 0,
+                plannedBudgets: 0
+              })
+            }
+            
+            dateMap.get(dateKey)!.plannedDisbursements += allocatedValue
+          })
+          
+          if (allocations.size > 0) {
+            hasSourceData.plannedDisbursements = true
+          }
+        }
+      } else {
+        // Period start allocation: full amount at start date
+        const dateKey = startDate.toISOString().split('T')[0]
+        
+        if (!dateMap.has(dateKey)) {
+          dateMap.set(dateKey, {
+            date: startDate,
+            timestamp: startDate.getTime(),
+            incomingFunds: 0,
+            incomingCommitments: 0,
+            outgoingCommitments: 0,
+            disbursements: 0,
+            expenditures: 0,
+            plannedDisbursements: 0,
+            plannedBudgets: 0
+          })
+        }
 
-      dateMap.get(dateKey)!.plannedDisbursements += value
-      hasSourceData.plannedDisbursements = true
+        dateMap.get(dateKey)!.plannedDisbursements += value
+        hasSourceData.plannedDisbursements = true
+      }
     })
 
     // Process budgets
     budgets?.forEach((budget: any) => {
       if (!budget.period_start) return
 
-      const date = new Date(budget.period_start)
-      if (isNaN(date.getTime())) return
+      const startDate = new Date(budget.period_start)
+      if (isNaN(startDate.getTime())) return
 
-      const dateKey = date.toISOString().split('T')[0]
       // ONLY use USD values - try usd_value first
       let value = parseFloat(String(budget.usd_value)) || 0
 
@@ -1594,22 +1678,60 @@ export default function FinancialAnalyticsTab({
       // Skip budgets without valid USD values
       if (!value) return
 
-      if (!dateMap.has(dateKey)) {
-        dateMap.set(dateKey, {
-          date,
-          timestamp: date.getTime(),
-          incomingFunds: 0,
-          incomingCommitments: 0,
-          outgoingCommitments: 0,
-          disbursements: 0,
-          expenditures: 0,
-          plannedDisbursements: 0,
-          plannedBudgets: 0
-        })
-      }
+      if (allocationMethod === 'proportional' && budget.period_end) {
+        // Proportional allocation: distribute across months
+        const endDate = new Date(budget.period_end)
+        if (!isNaN(endDate.getTime())) {
+          const allocations = allocateProportionally(value, budget.period_start, budget.period_end, monthPeriods)
+          
+          allocations.forEach((allocatedValue, monthKey) => {
+            // Parse monthKey (YYYY-MM) to get the first day of that month
+            const [year, month] = monthKey.split('-').map(Number)
+            const monthStartDate = new Date(year, month - 1, 1)
+            const dateKey = monthStartDate.toISOString().split('T')[0]
+            
+            if (!dateMap.has(dateKey)) {
+              dateMap.set(dateKey, {
+                date: monthStartDate,
+                timestamp: monthStartDate.getTime(),
+                incomingFunds: 0,
+                incomingCommitments: 0,
+                outgoingCommitments: 0,
+                disbursements: 0,
+                expenditures: 0,
+                plannedDisbursements: 0,
+                plannedBudgets: 0
+              })
+            }
+            
+            dateMap.get(dateKey)!.plannedBudgets += allocatedValue
+          })
+          
+          if (allocations.size > 0) {
+            hasSourceData.plannedBudgets = true
+          }
+        }
+      } else {
+        // Period start allocation: full amount at start date
+        const dateKey = startDate.toISOString().split('T')[0]
+        
+        if (!dateMap.has(dateKey)) {
+          dateMap.set(dateKey, {
+            date: startDate,
+            timestamp: startDate.getTime(),
+            incomingFunds: 0,
+            incomingCommitments: 0,
+            outgoingCommitments: 0,
+            disbursements: 0,
+            expenditures: 0,
+            plannedDisbursements: 0,
+            plannedBudgets: 0
+          })
+        }
 
-      dateMap.get(dateKey)!.plannedBudgets += value
-      hasSourceData.plannedBudgets = true
+        dateMap.get(dateKey)!.plannedBudgets += value
+        hasSourceData.plannedBudgets = true
+      }
     })
 
     // Convert to array and sort by date
@@ -1710,7 +1832,8 @@ export default function FinancialAnalyticsTab({
           plannedBudgets: existingData['Budgets']
         }
       } else {
-        // Fill missing month with last cumulative values (carry forward)
+        // Fill missing month with last cumulative values (carry forward) for transactions
+        // but set Budgets to null so only actual budget points are plotted
         filledData.push({
           date: currentDate.toISOString(),
           timestamp: currentDate.getTime(),
@@ -1723,7 +1846,7 @@ export default function FinancialAnalyticsTab({
           'Disbursements': lastCumulativeValues.disbursements,
           'Expenditures': lastCumulativeValues.expenditures,
           'Planned Disbursements': lastCumulativeValues.plannedDisbursements,
-          'Budgets': lastCumulativeValues.plannedBudgets
+          'Budgets': null  // null for months without budget data
         })
       }
 
@@ -1732,7 +1855,7 @@ export default function FinancialAnalyticsTab({
     }
 
     return { data: filledData, hasSourceData }
-  }, [transactions, plannedDisbursements, budgets])
+  }, [transactions, plannedDisbursements, budgets, allocationMethod])
 
   // Create non-cumulative (periodic) data from the cumulative data
   const periodicOverviewData = useMemo(() => {
@@ -1934,8 +2057,8 @@ export default function FinancialAnalyticsTab({
       const flows: Array<{ provider: string; receiver: string; value: number }> = []
 
       transactions?.forEach((t: any) => {
-        // Filter by transaction type if not 'all'
-        if (fundingTransactionType !== 'all' && t.transaction_type !== fundingTransactionType) {
+        // Filter by transaction type
+        if (t.transaction_type !== fundingTransactionType) {
           return
         }
 
@@ -1992,7 +2115,7 @@ export default function FinancialAnalyticsTab({
     const url = URL.createObjectURL(blob)
     link.setAttribute('href', url)
     const sourceLabel = fundingSourceType === 'planned' ? 'planned_disbursements' : 'transactions'
-    const typeLabel = fundingTransactionType === 'all' ? 'all' : `type_${fundingTransactionType}`
+    const typeLabel = `type_${fundingTransactionType}`
     link.setAttribute('download', `funding_source_${sourceLabel}_${typeLabel}_${new Date().toISOString().split('T')[0]}.csv`)
     link.style.visibility = 'hidden'
     document.body.appendChild(link)
@@ -2035,7 +2158,7 @@ export default function FinancialAnalyticsTab({
             const link = document.createElement('a')
             link.href = url
             const sourceLabel = fundingSourceType === 'planned' ? 'planned_disbursements' : 'transactions'
-            const typeLabel = fundingTransactionType === 'all' ? 'all' : `type_${fundingTransactionType}`
+            const typeLabel = `type_${fundingTransactionType}`
             link.download = `funding_source_${sourceLabel}_${typeLabel}_${new Date().toISOString().split('T')[0]}.jpg`
             link.click()
             URL.revokeObjectURL(url)
@@ -2099,12 +2222,32 @@ export default function FinancialAnalyticsTab({
                   Periodic
                 </Button>
               </div>
+              {/* Allocation Method Toggle */}
+              <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 border rounded-lg px-3 py-1.5 bg-white">
+                  <Label htmlFor="allocation-toggle-overview" className="text-sm text-slate-700 cursor-pointer">
+                    {allocationMethod === 'proportional' ? 'Proportional' : 'Period Start'}
+                  </Label>
+                  <Switch
+                    id="allocation-toggle-overview"
+                    checked={allocationMethod === 'proportional'}
+                    onCheckedChange={(checked) => setAllocationMethod(checked ? 'proportional' : 'period-start')}
+                  />
+                </div>
+                <HelpTextTooltip 
+                  content={
+                    allocationMethod === 'proportional'
+                      ? "Allocates budget and planned disbursement amounts across their time periods. For example, a $100,000 budget from July 2024 to June 2025 will be split proportionally across those 12 months."
+                      : "Shows the full budget or planned disbursement amount at its start date. Useful for seeing when amounts were originally planned or committed."
+                  }
+                />
+              </div>
               <div className="flex gap-1 border rounded-lg p-1 bg-white">
                 <Button
                   variant={overviewChartType === 'line' ? 'default' : 'ghost'}
                   size="sm"
                   onClick={() => setOverviewChartType('line')}
-                  className="h-8"
+                  className="h-8 flex-shrink-0"
                 >
                   <LineChartIcon className="h-4 w-4 mr-1.5" />
                   Line
@@ -2113,16 +2256,25 @@ export default function FinancialAnalyticsTab({
                   variant={overviewChartType === 'bar' ? 'default' : 'ghost'}
                   size="sm"
                   onClick={() => setOverviewChartType('bar')}
-                  className="h-8"
+                  className="h-8 flex-shrink-0"
                 >
                   <BarChart3 className="h-4 w-4 mr-1.5" />
                   Bar
                 </Button>
                 <Button
+                  variant={overviewChartType === 'area' ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => setOverviewChartType('area')}
+                  className="h-8 flex-shrink-0"
+                >
+                  <TrendingUpIcon className="h-4 w-4 mr-1.5" />
+                  Area
+                </Button>
+                <Button
                   variant={overviewChartType === 'table' ? 'default' : 'ghost'}
                   size="sm"
                   onClick={() => setOverviewChartType('table')}
-                  className="h-8"
+                  className="h-8 flex-shrink-0"
                 >
                   <TableIcon className="h-4 w-4 mr-1.5" />
                   Table
@@ -2131,7 +2283,7 @@ export default function FinancialAnalyticsTab({
                   variant={overviewChartType === 'total' ? 'default' : 'ghost'}
                   size="sm"
                   onClick={() => setOverviewChartType('total')}
-                  className="h-8"
+                  className="h-8 flex-shrink-0"
                 >
                   <BarChart3 className="h-4 w-4 mr-1.5" />
                   Total
@@ -2322,9 +2474,9 @@ export default function FinancialAnalyticsTab({
                         <Line
                           type="monotone"
                           dataKey="Incoming Funds"
-                          stroke={hiddenSeries.has('Incoming Funds') ? '#cbd5e1' : '#1e40af'}
-                          strokeWidth={hiddenSeries.has('Incoming Funds') ? 1 : 2.5}
-                          dot={{ fill: hiddenSeries.has('Incoming Funds') ? '#cbd5e1' : '#1e40af', r: 3 }}
+                          stroke={hiddenSeries.has('Incoming Funds') ? '#cbd5e1' : '#2563eb'}
+                          strokeWidth={hiddenSeries.has('Incoming Funds') ? 1 : 3}
+                          dot={{ fill: hiddenSeries.has('Incoming Funds') ? '#cbd5e1' : '#2563eb', r: 4 }}
                           animationDuration={300}
                           opacity={hiddenSeries.has('Incoming Funds') ? 0.3 : 1}
                         />
@@ -2333,9 +2485,10 @@ export default function FinancialAnalyticsTab({
                         <Line
                           type="monotone"
                           dataKey="Incoming Commitments"
-                          stroke={hiddenSeries.has('Incoming Commitments') ? '#cbd5e1' : '#3b82f6'}
-                          strokeWidth={hiddenSeries.has('Incoming Commitments') ? 1 : 2.5}
-                          dot={{ fill: hiddenSeries.has('Incoming Commitments') ? '#cbd5e1' : '#3b82f6', r: 3 }}
+                          stroke={hiddenSeries.has('Incoming Commitments') ? '#cbd5e1' : '#10b981'}
+                          strokeWidth={hiddenSeries.has('Incoming Commitments') ? 1 : 3}
+                          strokeDasharray="8 4"
+                          dot={{ fill: hiddenSeries.has('Incoming Commitments') ? '#cbd5e1' : '#10b981', r: 4 }}
                           animationDuration={300}
                           opacity={hiddenSeries.has('Incoming Commitments') ? 0.3 : 1}
                         />
@@ -2344,9 +2497,10 @@ export default function FinancialAnalyticsTab({
                         <Line
                           type="monotone"
                           dataKey="Outgoing Commitments"
-                          stroke={hiddenSeries.has('Outgoing Commitments') ? '#cbd5e1' : '#0f172a'}
-                          strokeWidth={hiddenSeries.has('Outgoing Commitments') ? 1 : 2.5}
-                          dot={{ fill: hiddenSeries.has('Outgoing Commitments') ? '#cbd5e1' : '#0f172a', r: 3 }}
+                          stroke={hiddenSeries.has('Outgoing Commitments') ? '#cbd5e1' : '#f59e0b'}
+                          strokeWidth={hiddenSeries.has('Outgoing Commitments') ? 1 : 3}
+                          strokeDasharray="12 6"
+                          dot={{ fill: hiddenSeries.has('Outgoing Commitments') ? '#cbd5e1' : '#f59e0b', r: 4 }}
                           animationDuration={300}
                           opacity={hiddenSeries.has('Outgoing Commitments') ? 0.3 : 1}
                         />
@@ -2355,9 +2509,9 @@ export default function FinancialAnalyticsTab({
                         <Line
                           type="monotone"
                           dataKey="Disbursements"
-                          stroke={hiddenSeries.has('Disbursements') ? '#cbd5e1' : '#475569'}
-                          strokeWidth={hiddenSeries.has('Disbursements') ? 1 : 2.5}
-                          dot={{ fill: hiddenSeries.has('Disbursements') ? '#cbd5e1' : '#475569', r: 3 }}
+                          stroke={hiddenSeries.has('Disbursements') ? '#cbd5e1' : '#ef4444'}
+                          strokeWidth={hiddenSeries.has('Disbursements') ? 1 : 3}
+                          dot={{ fill: hiddenSeries.has('Disbursements') ? '#cbd5e1' : '#ef4444', r: 4 }}
                           animationDuration={300}
                           opacity={hiddenSeries.has('Disbursements') ? 0.3 : 1}
                         />
@@ -2366,9 +2520,10 @@ export default function FinancialAnalyticsTab({
                         <Line
                           type="monotone"
                           dataKey="Expenditures"
-                          stroke={hiddenSeries.has('Expenditures') ? '#cbd5e1' : '#64748b'}
-                          strokeWidth={hiddenSeries.has('Expenditures') ? 1 : 2.5}
-                          dot={{ fill: hiddenSeries.has('Expenditures') ? '#cbd5e1' : '#64748b', r: 3 }}
+                          stroke={hiddenSeries.has('Expenditures') ? '#cbd5e1' : '#8b5cf6'}
+                          strokeWidth={hiddenSeries.has('Expenditures') ? 1 : 3}
+                          strokeDasharray="4 4"
+                          dot={{ fill: hiddenSeries.has('Expenditures') ? '#cbd5e1' : '#8b5cf6', r: 4 }}
                           animationDuration={300}
                           opacity={hiddenSeries.has('Expenditures') ? 0.3 : 1}
                         />
@@ -2377,27 +2532,158 @@ export default function FinancialAnalyticsTab({
                         <Line
                           type="monotone"
                           dataKey="Planned Disbursements"
-                          stroke={hiddenSeries.has('Planned Disbursements') ? '#cbd5e1' : '#1e3a8a'}
-                          strokeWidth={hiddenSeries.has('Planned Disbursements') ? 1 : 2}
+                          stroke={hiddenSeries.has('Planned Disbursements') ? '#cbd5e1' : '#06b6d4'}
+                          strokeWidth={hiddenSeries.has('Planned Disbursements') ? 1 : 2.5}
                           strokeDasharray="5 5"
-                          dot={{ fill: hiddenSeries.has('Planned Disbursements') ? '#cbd5e1' : '#1e3a8a', r: 3 }}
+                          dot={{ fill: hiddenSeries.has('Planned Disbursements') ? '#cbd5e1' : '#06b6d4', r: 3 }}
                           animationDuration={300}
                           opacity={hiddenSeries.has('Planned Disbursements') ? 0.3 : 1}
                         />
                       )}
                       {activeSeries.has('Budgets') && (
                         <Line
-                          type="monotone"
+                          type="linear"
                           dataKey="Budgets"
-                          stroke={hiddenSeries.has('Budgets') ? '#cbd5e1' : '#334155'}
-                          strokeWidth={hiddenSeries.has('Budgets') ? 1 : 2}
-                          strokeDasharray="5 5"
-                          dot={{ fill: hiddenSeries.has('Budgets') ? '#cbd5e1' : '#334155', r: 3 }}
+                          stroke={hiddenSeries.has('Budgets') ? '#cbd5e1' : '#64748b'}
+                          strokeWidth={hiddenSeries.has('Budgets') ? 1 : 2.5}
+                          strokeDasharray="3 3"
+                          dot={false}
+                          connectNulls={true}
                           animationDuration={300}
                           opacity={hiddenSeries.has('Budgets') ? 0.3 : 1}
                         />
                       )}
                     </LineChart>
+                  ) : overviewChartType === 'area' ? (
+                    <AreaChart data={processedCumulativeOverviewData} margin={{ top: 20, right: 30, left: 20, bottom: 40 }}>
+                      <defs>
+                        <linearGradient id="colorIncomingFunds" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#2563eb" stopOpacity={0.8}/>
+                          <stop offset="95%" stopColor="#2563eb" stopOpacity={0.1}/>
+                        </linearGradient>
+                        <linearGradient id="colorIncomingCommitments" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#10b981" stopOpacity={0.8}/>
+                          <stop offset="95%" stopColor="#10b981" stopOpacity={0.1}/>
+                        </linearGradient>
+                        <linearGradient id="colorOutgoingCommitments" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.8}/>
+                          <stop offset="95%" stopColor="#f59e0b" stopOpacity={0.1}/>
+                        </linearGradient>
+                        <linearGradient id="colorDisbursements" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#ef4444" stopOpacity={0.8}/>
+                          <stop offset="95%" stopColor="#ef4444" stopOpacity={0.1}/>
+                        </linearGradient>
+                        <linearGradient id="colorExpenditures" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.8}/>
+                          <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0.1}/>
+                        </linearGradient>
+                        <linearGradient id="colorPlannedDisbursements" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#06b6d4" stopOpacity={0.6}/>
+                          <stop offset="95%" stopColor="#06b6d4" stopOpacity={0.05}/>
+                        </linearGradient>
+                        <linearGradient id="colorBudgets" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#64748b" stopOpacity={0.6}/>
+                          <stop offset="95%" stopColor="#64748b" stopOpacity={0.05}/>
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e1" opacity={0.5} />
+                      <XAxis
+                        dataKey="timestamp"
+                        type="number"
+                        scale="time"
+                        domain={['dataMin', 'dataMax']}
+                        ticks={generateYearTicks(processedCumulativeOverviewData)}
+                        tickFormatter={(timestamp) => format(new Date(timestamp), 'yyyy')}
+                        stroke="#64748B"
+                        fontSize={12}
+                        angle={0}
+                        textAnchor="middle"
+                        height={40}
+                      />
+                      <YAxis tickFormatter={formatCurrency} stroke="#64748B" fontSize={12} />
+                      <Tooltip content={<CustomTooltip />} />
+                      <Legend content={<CustomInteractiveLegend hiddenSeries={hiddenSeries} onToggleSeries={handleToggleSeries} />} />
+                      {activeSeries.has('Incoming Funds') && (
+                        <Area
+                          type="monotone"
+                          dataKey="Incoming Funds"
+                          stroke={hiddenSeries.has('Incoming Funds') ? '#cbd5e1' : '#2563eb'}
+                          strokeWidth={hiddenSeries.has('Incoming Funds') ? 1 : 2}
+                          fill={hiddenSeries.has('Incoming Funds') ? 'transparent' : 'url(#colorIncomingFunds)'}
+                          animationDuration={300}
+                          opacity={hiddenSeries.has('Incoming Funds') ? 0.3 : 1}
+                        />
+                      )}
+                      {activeSeries.has('Incoming Commitments') && (
+                        <Area
+                          type="monotone"
+                          dataKey="Incoming Commitments"
+                          stroke={hiddenSeries.has('Incoming Commitments') ? '#cbd5e1' : '#10b981'}
+                          strokeWidth={hiddenSeries.has('Incoming Commitments') ? 1 : 2}
+                          fill={hiddenSeries.has('Incoming Commitments') ? 'transparent' : 'url(#colorIncomingCommitments)'}
+                          animationDuration={300}
+                          opacity={hiddenSeries.has('Incoming Commitments') ? 0.3 : 1}
+                        />
+                      )}
+                      {activeSeries.has('Outgoing Commitments') && (
+                        <Area
+                          type="monotone"
+                          dataKey="Outgoing Commitments"
+                          stroke={hiddenSeries.has('Outgoing Commitments') ? '#cbd5e1' : '#f59e0b'}
+                          strokeWidth={hiddenSeries.has('Outgoing Commitments') ? 1 : 2}
+                          fill={hiddenSeries.has('Outgoing Commitments') ? 'transparent' : 'url(#colorOutgoingCommitments)'}
+                          animationDuration={300}
+                          opacity={hiddenSeries.has('Outgoing Commitments') ? 0.3 : 1}
+                        />
+                      )}
+                      {activeSeries.has('Disbursements') && (
+                        <Area
+                          type="monotone"
+                          dataKey="Disbursements"
+                          stroke={hiddenSeries.has('Disbursements') ? '#cbd5e1' : '#ef4444'}
+                          strokeWidth={hiddenSeries.has('Disbursements') ? 1 : 2}
+                          fill={hiddenSeries.has('Disbursements') ? 'transparent' : 'url(#colorDisbursements)'}
+                          animationDuration={300}
+                          opacity={hiddenSeries.has('Disbursements') ? 0.3 : 1}
+                        />
+                      )}
+                      {activeSeries.has('Expenditures') && (
+                        <Area
+                          type="monotone"
+                          dataKey="Expenditures"
+                          stroke={hiddenSeries.has('Expenditures') ? '#cbd5e1' : '#8b5cf6'}
+                          strokeWidth={hiddenSeries.has('Expenditures') ? 1 : 2}
+                          fill={hiddenSeries.has('Expenditures') ? 'transparent' : 'url(#colorExpenditures)'}
+                          animationDuration={300}
+                          opacity={hiddenSeries.has('Expenditures') ? 0.3 : 1}
+                        />
+                      )}
+                      {activeSeries.has('Planned Disbursements') && (
+                        <Area
+                          type="monotone"
+                          dataKey="Planned Disbursements"
+                          stroke={hiddenSeries.has('Planned Disbursements') ? '#cbd5e1' : '#06b6d4'}
+                          strokeWidth={hiddenSeries.has('Planned Disbursements') ? 1 : 2}
+                          strokeDasharray="5 5"
+                          fill={hiddenSeries.has('Planned Disbursements') ? 'transparent' : 'url(#colorPlannedDisbursements)'}
+                          animationDuration={300}
+                          opacity={hiddenSeries.has('Planned Disbursements') ? 0.3 : 1}
+                        />
+                      )}
+                      {activeSeries.has('Budgets') && (
+                        <Area
+                          type="linear"
+                          dataKey="Budgets"
+                          stroke={hiddenSeries.has('Budgets') ? '#cbd5e1' : '#64748b'}
+                          strokeWidth={hiddenSeries.has('Budgets') ? 1 : 2}
+                          strokeDasharray="3 3"
+                          fill={hiddenSeries.has('Budgets') ? 'transparent' : 'url(#colorBudgets)'}
+                          connectNulls={true}
+                          animationDuration={300}
+                          opacity={hiddenSeries.has('Budgets') ? 0.3 : 1}
+                        />
+                      )}
+                    </AreaChart>
                   ) : (
                     <BarChart data={processedCumulativeOverviewData} margin={{ top: 20, right: 30, left: 20, bottom: 40 }}>
                       <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e1" opacity={0.5} />
@@ -2793,14 +3079,6 @@ export default function FinancialAnalyticsTab({
               {/* Transaction Type Filter (only show when viewing transactions) */}
               {fundingSourceType === 'transactions' && (
                 <div className="flex gap-1 border rounded-lg p-1 bg-white">
-                  <Button
-                    variant={fundingTransactionType === 'all' ? 'default' : 'ghost'}
-                    size="sm"
-                    onClick={() => setFundingTransactionType('all')}
-                    className="h-8 text-xs px-2"
-                  >
-                    All
-                  </Button>
                   <Button
                     variant={fundingTransactionType === '1' ? 'default' : 'ghost'}
                     size="sm"

@@ -2,6 +2,7 @@
 
 import React, { useState, useCallback, useEffect, useMemo, Suspense, useRef } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { MainLayout } from "@/components/layout/main-layout";
 import { useRouter, useSearchParams } from "next/navigation";
 import { EnhancedFinancesSection } from "@/components/activities/EnhancedFinancesSection";
@@ -2118,8 +2119,12 @@ function SectionContent({ section, general, setGeneral, sectors, setSectors, tra
       console.log('🔥 ACTIVITY EDITOR: Rendering IATI Import section for activityId:', general.id);
       return (
         <div className="bg-white rounded-lg p-8">
-          <IatiImportTab 
+          <IatiImportTab
             activityId={general.id || ''}
+            onNavigateToGeneral={async () => {
+              // Reload to refresh the data, then navigate to general tab
+              window.location.href = window.location.pathname + '?section=general';
+            }}
           />
         </div>
       );
@@ -4186,21 +4191,57 @@ function NewActivityPageContent() {
             <div className="bg-white border-b border-gray-200 p-4">
               <div className="space-y-2 text-sm">
                 <div className="mb-3">
-                  <div>
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1 text-left">
-                        <LinkedActivityTitle
-                          title={`${general.title || 'Untitled Activity'}${general.acronym ? ` (${general.acronym})` : ''}`}
-                          activityId={general.id}
-                          className="text-lg font-semibold text-gray-900 leading-tight break-words"
-                          fallbackElement="h3"
-                          showIcon={false}
-                        />
-                      </div>
+                  <div className="flex items-center gap-1">
+                    <Link
+                      href={`/activities/${general.id}`}
+                      className="text-lg font-semibold text-gray-900 leading-tight cursor-pointer transition-opacity duration-200 hover:opacity-80 whitespace-nowrap"
+                      title={`View activity profile: ${general.title || 'Untitled Activity'}${general.acronym ? ` (${general.acronym})` : ''}`}
+                    >
+                      {`${general.title || 'Untitled Activity'}${general.acronym ? ` (${general.acronym})` : ''}`}
+                    </Link>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        const titleText = `${general.title || 'Untitled Activity'}${general.acronym ? ` (${general.acronym})` : ''}`;
+                        navigator.clipboard.writeText(titleText);
+                        toast.success('Activity title copied to clipboard');
+                      }}
+                      className="flex-shrink-0 p-1 hover:bg-gray-100 rounded transition-colors inline-flex items-center"
+                      title="Copy activity title"
+                    >
+                      <Copy className="h-4 w-4 text-gray-600" />
+                    </button>
+                  </div>
+                    {/* Activity ID and IATI ID */}
+                    <div className="mt-2 space-y-1">
+                      {general.partner_id && (
+                        <div className="text-xs">
+                          <span className="text-gray-600">Activity ID: </span>
+                          <code className="px-1.5 py-0.5 bg-gray-100 text-gray-700 rounded font-mono">
+                            {general.partner_id}
+                          </code>
+                        </div>
+                      )}
+                      {general.iatiIdentifier && (
+                        <div className="text-xs inline-flex items-center">
+                          <code className="px-1.5 py-0.5 bg-gray-100 text-gray-700 rounded font-mono">
+                            {general.iatiIdentifier}
+                          </code>&nbsp;<button
+                            onClick={() => {
+                              navigator.clipboard.writeText(general.iatiIdentifier);
+                              toast.success('IATI ID copied to clipboard');
+                            }}
+                            className="flex-shrink-0 p-1 hover:bg-gray-100 rounded transition-colors inline-flex items-center"
+                            title="Copy IATI ID"
+                          >
+                            <Copy className="h-3 w-3 text-gray-600" />
+                          </button>
+                        </div>
+                      )}
                     </div>
                     <button
                       onClick={() => setShowActivityMetadata(!showActivityMetadata)}
-                      className="text-xs text-gray-600 hover:text-gray-900 mt-1"
+                      className="text-xs text-gray-600 hover:text-gray-900 mt-2"
                     >
                       {showActivityMetadata ? 'Show less' : 'Show more'}
                     </button>
@@ -4230,41 +4271,40 @@ function NewActivityPageContent() {
                       )}
                     </div>
                   )}
-                </div>
-                {showActivityMetadata && (
-                  <div className="space-y-3 text-sm">
-                    <div>
-                      <p className="font-semibold">
-                        Reported by {(() => {
-                          if (general.created_by_org_name && general.created_by_org_acronym) {
-                            return `${general.created_by_org_name} (${general.created_by_org_acronym})`;
-                          }
-                          return general.created_by_org_name || general.created_by_org_acronym || "Unknown Organization";
-                        })()}
-                      </p>
-                      <p className="text-gray-600">
-                        Submitted by {(() => {
-                          // Format user name with position/role
-                          if (general.createdBy?.name) {
-                            const name = general.createdBy.name;
-                            const position = (general.createdBy as any)?.jobTitle || (general.createdBy as any)?.title;
-                            return position ? `${name}, ${position}` : name;
-                          }
-                          // Fallback to current user info with position/role
-                          if (user?.name) {
-                            const name = user.name;
-                            const position = (user as any)?.jobTitle || (user as any)?.title;
-                            return position ? `${name}, ${position}` : name;
-                          }
-                          return "Unknown User";
-                        })()} on {general.createdAt ? format(new Date(general.createdAt), "d MMMM yyyy") : "Unknown date"}
-                      </p>
+                  {showActivityMetadata && (
+                    <div className="space-y-3 text-sm">
+                      <div>
+                        <p className="font-semibold">
+                          Reported by {(() => {
+                            if (general.created_by_org_name && general.created_by_org_acronym) {
+                              return `${general.created_by_org_name} (${general.created_by_org_acronym})`;
+                            }
+                            return general.created_by_org_name || general.created_by_org_acronym || "Unknown Organization";
+                          })()}
+                        </p>
+                        <p className="text-gray-600">
+                          Submitted by {(() => {
+                            // Format user name with position/role
+                            if (general.createdBy?.name) {
+                              const name = general.createdBy.name;
+                              const position = (general.createdBy as any)?.jobTitle || (general.createdBy as any)?.title;
+                              return position ? `${name}, ${position}` : name;
+                            }
+                            // Fallback to current user info with position/role
+                            if (user?.name) {
+                              const name = user.name;
+                              const position = (user as any)?.jobTitle || (user as any)?.title;
+                              return position ? `${name}, ${position}` : name;
+                            }
+                            return "Unknown User";
+                          })()} on {general.createdAt ? format(new Date(general.createdAt), "d MMMM yyyy") : "Unknown date"}
+                        </p>
+                      </div>
                     </div>
-                  </div>
-                )}
+                  )}
+                </div>
               </div>
-            </div>
-          )}
+            )}
           
           {/* Activity Editor Navigation */}
           <div>

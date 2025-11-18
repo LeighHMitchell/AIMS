@@ -395,6 +395,9 @@ export default function TransactionsPage() {
     setShowBulkDeleteDialog(false);
     setIsBulkDeleting(true);
     
+    // Clear selection immediately - ensures checkbox state is correct right away
+    setSelectedTransactionIds(new Set());
+    
     try {
       // Optimistic update - remove from UI immediately
       selectedArray.forEach(id => deleteTransaction(id));
@@ -414,8 +417,8 @@ export default function TransactionsPage() {
       const result = await response.json();
       toast.success(`${result.deletedCount} ${result.deletedCount === 1 ? 'transaction' : 'transactions'} deleted successfully`);
       
-      // Clear selection
-      setSelectedTransactionIds(new Set());
+      // Refetch to ensure data is in sync with the server
+      refetch();
       
     } catch (error) {
       console.error('Bulk delete failed:', error);

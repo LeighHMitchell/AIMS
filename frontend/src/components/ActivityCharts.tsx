@@ -138,11 +138,20 @@ export const CumulativeFinanceChart: React.FC<CumulativeFinanceChartProps> = ({
 
   const formatYAxis = (value: number) => {
     if (value >= 1000000) {
-      return `${(value / 1000000).toFixed(0)}M`;
+      return `${(value / 1000000).toFixed(2)}M`;
     } else if (value >= 1000) {
-      return `${(value / 1000).toFixed(0)}K`;
+      return `${(value / 1000).toFixed(2)}K`;
     }
-    return value.toString();
+    return value.toFixed(2);
+  };
+
+  const formatTooltipValue = (value: number) => {
+    if (value >= 1000000) {
+      return `$${(value / 1000000).toFixed(2)}M`;
+    } else if (value >= 1000) {
+      return `$${(value / 1000).toFixed(2)}K`;
+    }
+    return `$${value.toFixed(2)}`;
   };
 
   return (
@@ -171,7 +180,7 @@ export const CumulativeFinanceChart: React.FC<CumulativeFinanceChartProps> = ({
             <XAxis dataKey="date" stroke="#6B7280" fontSize={12} />
             <YAxis tickFormatter={formatYAxis} stroke="#6B7280" fontSize={12} />
             <Tooltip
-              formatter={(value: number) => `$${value.toLocaleString()}`}
+              formatter={(value: number) => formatTooltipValue(value)}
               labelFormatter={(label) => `Date: ${label}`}
               contentStyle={{ backgroundColor: '#fff', border: '1px solid #E5E7EB', borderRadius: '6px' }}
             />

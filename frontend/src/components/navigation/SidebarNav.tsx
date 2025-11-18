@@ -39,7 +39,7 @@ export function SidebarNav({ userRole, canManageUsers, isLoading, isCollapsed = 
   const pathname = usePathname()
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({
     "Explore": true,
-    "Finance": true,
+    "Finances": true,
     "Activities": true,
     "Actors": true,
     "Operations": true,
@@ -72,21 +72,21 @@ export function SidebarNav({ userRole, canManageUsers, isLoading, isCollapsed = 
       ]
     },
     {
-      label: "Finance",
+      label: "Activities",
+      icon: Activity,
+      defaultOpen: true,
+      items: [
+        { name: "Activity List", href: "/activities", show: true },
+      ]
+    },
+    {
+      label: "Finances",
       icon: Wallet,
       defaultOpen: true,
       items: [
         { name: "Transactions", href: "/transactions", show: true },
         { name: "Planned Disbursements", href: "/planned-disbursements", show: true },
         { name: "Budgets", href: "/budgets", show: true },
-      ]
-    },
-    {
-      label: "Activities",
-      icon: Activity,
-      defaultOpen: true,
-      items: [
-        { name: "Activity List", href: "/activities", show: true },
       ]
     },
     {
@@ -207,7 +207,21 @@ export function SidebarNav({ userRole, canManageUsers, isLoading, isCollapsed = 
               >
                 <div className="space-y-1">
                   {/* Group Label / Trigger */}
-                  {!isCollapsed && (
+                  {isCollapsed ? (
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <button
+                          onClick={() => toggleGroup(group.label)}
+                          className="flex w-full items-center justify-center px-3 py-2 text-sm font-medium text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 transition-colors rounded-md hover:bg-gray-50 dark:hover:bg-gray-800/50"
+                        >
+                          <GroupIcon className="h-5 w-5 flex-shrink-0" />
+                        </button>
+                      </TooltipTrigger>
+                      <TooltipContent side="right" className="font-medium">
+                        {group.label}
+                      </TooltipContent>
+                    </Tooltip>
+                  ) : (
                     <CollapsibleTrigger asChild>
                       <button className="flex w-full items-center justify-between px-3 py-2 text-sm font-medium text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 transition-colors rounded-md hover:bg-gray-50 dark:hover:bg-gray-800/50">
                         <div className="flex items-center gap-3">
