@@ -13,15 +13,29 @@ export interface OrganizationParams {
   type?: string; // IATI organization type code (e.g., "10", "80")
 }
 
+// Timeout for database operations in milliseconds
+const DB_TIMEOUT_MS = 5000;
+
+// Helper to wrap promises with timeout
+const withTimeout = <T>(promise: Promise<T>, timeoutMs: number, operationName: string): Promise<T> => {
+  return Promise.race([
+    promise,
+    new Promise<T>((_, reject) => 
+      setTimeout(() => reject(new Error(`Operation timed out: ${operationName}`)), timeoutMs)
+    )
+  ]);
+};
+
 /**
  * Find or create an organization by ref or name (case-insensitive).
  * 
  * Resolution order (IATI 2.03 compliant):
- * 1. Lookup by iati_org_id (ref) if provided - exact match
- * 2. Lookup by name if provided - case-insensitive match using ILIKE
- * 3. Create new organization if not found
+ * 1. Use /api/organizations/resolve for fuzzy matching (handles ref and name)
+ * 2. Create new organization via POST /api/organizations if not found
  * 
- * @param supabase - Supabase client (server-side or client-side)
+ * NOTE: Uses API endpoints instead of direct Supabase to avoid RLS/timeout issues
+ * 
+ * @param supabase - Supabase client (kept for backward compatibility, but not used)
  * @param params - Organization parameters (ref, name, type)
  * @returns Organization UUID or null if creation failed
  */
@@ -38,78 +52,73 @@ export async function getOrCreateOrganization(
   const orgName = name || ref || 'Unknown Organization';
   console.log(`[Org Helper] Resolving organization: "${orgName}" (ref: ${ref || 'none'}, type: ${type || 'none'})`);
 
-  // Step 1: Look up by IATI organization ID (ref) if provided
-  if (ref) {
-    const { data: existingByRef, error: refError } = await supabase
-      .from('organizations')
-      .select('id, name')
-      .eq('iati_org_id', ref)
-      .maybeSingle();
+  try {
+    // Step 1: Try to resolve using existing API endpoint (server-side, no RLS issues)
+    try {
+      const resolveResponse = await withTimeout(
+        fetch('/api/organizations/resolve', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ref, narrative: name })
+        }),
+        DB_TIMEOUT_MS,
+        `Resolve org ${orgName}`
+      );
 
-    if (refError) {
-      console.error('[Org Helper] Error looking up by ref:', refError);
-    } else if (existingByRef) {
-      console.log(`[Org Helper] ✓ Found by ref "${ref}": ${existingByRef.name} (ID: ${existingByRef.id})`);
-      return existingByRef.id;
+      if (resolveResponse.ok) {
+        const resolveData = await resolveResponse.json();
+        if (resolveData.matched && resolveData.organization) {
+          console.log(`[Org Helper] ✓ Resolved via API: ${resolveData.organization.name} (ID: ${resolveData.organization.id}, method: ${resolveData.method})`);
+          return resolveData.organization.id;
+        }
+      } else {
+        console.warn(`[Org Helper] Resolve API returned ${resolveResponse.status}, will try to create`);
+      }
+    } catch (resolveErr) {
+      console.error(`[Org Helper] Error resolving organization "${orgName}":`, resolveErr);
+      // Continue to creation step
     }
-  }
 
-  // Step 2: Look up by name (case-insensitive) if provided
-  if (name) {
-    const { data: existingByName, error: nameError } = await supabase
-      .from('organizations')
-      .select('id, name')
-      .ilike('name', name)
-      .limit(1);
+    // Step 2: Create new organization via API (handles duplicate checking)
+    console.log(`[Org Helper] Creating new organization via API: "${orgName}"`);
 
-    if (nameError) {
-      console.error('[Org Helper] Error looking up by name:', nameError);
-    } else if (existingByName && existingByName.length > 0) {
-      const org = existingByName[0];
-      console.log(`[Org Helper] ✓ Found by name "${name}": ${org.name} (ID: ${org.id})`);
-      return org.id;
+    const newOrgData: any = {
+      name: orgName,
+      iati_org_id: ref || null,
+      alias_refs: ref ? [ref] : [],
+      type: type || null,
+      Organisation_Type_Code: type || null,
+      country: null // Per user requirement
+    };
+
+    try {
+      const createResponse = await withTimeout(
+        fetch('/api/organizations', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(newOrgData)
+        }),
+        DB_TIMEOUT_MS,
+        `Create org ${orgName}`
+      );
+
+      if (createResponse.ok) {
+        const createdOrg = await createResponse.json();
+        console.log(`[Org Helper] ✓ Created organization via API: "${createdOrg.name}" (ID: ${createdOrg.id})`);
+        return createdOrg.id;
+      } else {
+        const errorText = await createResponse.text();
+        console.error(`[Org Helper] ✗ API error creating organization "${orgName}":`, errorText);
+        return null;
+      }
+    } catch (createErr) {
+      console.error(`[Org Helper] Timeout/error creating organization "${orgName}":`, createErr);
+      return null;
     }
-  }
-
-  // Step 3: Create new organization if not found
-  console.log(`[Org Helper] Creating new organization: "${orgName}" (ref: ${ref || 'none'}, type: ${type || 'none'})`);
-
-  const newOrgData: any = {
-    name: orgName,
-    iati_org_id: ref || null,
-    alias_refs: ref ? [ref] : [],
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString()
-  };
-
-  // Add type fields if provided
-  // Support both 'type' and 'Organisation_Type_Code' for compatibility
-  if (type) {
-    newOrgData.type = type;
-    newOrgData.Organisation_Type_Code = type;
-  }
-
-  // Country is explicitly set to null (per user requirement)
-  newOrgData.country = null;
-
-  const { data: newOrg, error: createError } = await supabase
-    .from('organizations')
-    .insert(newOrgData)
-    .select('id, name')
-    .single();
-
-  if (createError) {
-    console.error(`[Org Helper] ✗ Error creating organization "${orgName}":`, createError);
+  } catch (err) {
+    console.error(`[Org Helper] Unexpected error in getOrCreateOrganization for "${orgName}":`, err);
     return null;
   }
-
-  if (!newOrg) {
-    console.error(`[Org Helper] ✗ Failed to create organization "${orgName}": no data returned`);
-    return null;
-  }
-
-  console.log(`[Org Helper] ✓ Created organization "${newOrg.name}" (ID: ${newOrg.id})`);
-  return newOrg.id;
 }
 
 /**
@@ -137,4 +146,3 @@ export async function batchGetOrCreateOrganizations(
   
   return orgMap;
 }
-

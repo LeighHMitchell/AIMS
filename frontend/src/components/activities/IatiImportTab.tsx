@@ -437,9 +437,21 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
     transactionTypes?: Record<string, { count: number; total: number; label: string }>;
   }>({});
 
-  // Helper to get org by role
+  // Add state for parsed participating orgs from XML
+  const [parsedParticipatingOrgs, setParsedParticipatingOrgs] = useState<any[]>([]);
+
+  // Use parsed participating orgs from XML if available, otherwise fall back to search API data
+  const participatingOrgsToUse = parsedParticipatingOrgs.length > 0 
+    ? parsedParticipatingOrgs 
+    : (activity.participatingOrgs || []);
+
+  // Helper to get org by role - use the correct data source
   const getOrgsByRole = (role: string) => {
-    return activity.participatingOrgs?.filter((org: any) => org.role === role) || [];
+    return participatingOrgsToUse.filter((org: any) => {
+      // Handle both parsed XML format (role as string) and search API format
+      const orgRole = org.role || org.iati_role_code;
+      return String(orgRole) === String(role);
+    }) || [];
   };
 
   const fundingOrgs = getOrgsByRole('1');
@@ -730,6 +742,11 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
         const parser = new IATIXMLParser(data.xml);
         const parsedActivity = parser.parseActivity();
 
+        // Extract participating orgs from parsed XML (these are correctly aligned)
+        if (parsedActivity.participatingOrgs && parsedActivity.participatingOrgs.length > 0) {
+          setParsedParticipatingOrgs(parsedActivity.participatingOrgs);
+        }
+
         // Calculate totals and counts
         let totalBudget = 0;
         let totalPlannedDisbursement = 0;
@@ -802,10 +819,21 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
 
         // Sum transactions by type and count
         if (parsedActivity.transactions && Array.isArray(parsedActivity.transactions)) {
+          console.log('[IATI Search Card] 🔍 DIAGNOSTIC - Processing transactions:', {
+            totalTransactions: parsedActivity.transactions.length,
+            sampleTransactions: parsedActivity.transactions.slice(0, 3).map((tx: any) => ({
+              type: tx.transactionType || tx.type,
+              value: tx.value,
+              hasValue: !!tx.value,
+              valueType: typeof tx.value
+            }))
+          });
+          
           parsedActivity.transactions.forEach((tx: any) => {
             const txType = String(tx.transactionType || tx.type || '');
 
-            if (tx.value && typeof tx.value === 'number' && txType) {
+            // Count ALL transactions of this type, regardless of value
+            if (txType) {
               // Initialize transaction type if not exists
               if (!transactionTypes[txType]) {
                 transactionTypes[txType] = {
@@ -815,22 +843,46 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
                 };
               }
 
-              // Add to totals
+              // Always increment count for this transaction type
               transactionTypes[txType].count++;
-              transactionTypes[txType].total += tx.value;
 
-              // Keep backward compatibility for specific types
+              // Only add to totals if value exists and is numeric
+              if (tx.value && typeof tx.value === 'number') {
+                transactionTypes[txType].total += tx.value;
+
+                // Keep backward compatibility for specific types
+                // Type 2 = Outgoing Commitment
+                if (txType === '2') {
+                  totalOutgoingCommitment += tx.value;
+                }
+                // Type 3 = Disbursement
+                if (txType === '3') {
+                  totalDisbursement += tx.value;
+                }
+              }
+
+              // Count commitments and disbursements regardless of value
               // Type 2 = Outgoing Commitment
               if (txType === '2') {
-                totalOutgoingCommitment += tx.value;
                 commitmentCount++;
               }
               // Type 3 = Disbursement
               if (txType === '3') {
-                totalDisbursement += tx.value;
                 disbursementCount++;
               }
+            } else {
+              console.warn('[IATI Search Card] 🔍 DIAGNOSTIC - Transaction missing type:', tx);
             }
+          });
+          
+          console.log('[IATI Search Card] 🔍 DIAGNOSTIC - Transaction counts after processing:', {
+            commitmentCount,
+            disbursementCount,
+            transactionTypesSummary: Object.keys(transactionTypes).map(txType => ({
+              type: txType,
+              label: transactionTypes[txType].label,
+              count: transactionTypes[txType].count
+            }))
           });
         }
 
@@ -912,70 +964,100 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
               {activity.reportingOrg && (
                 <div>
                     <div className="text-[10px] uppercase tracking-wide text-slate-500 font-semibold mb-1.5">Reported by</div>
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <div className="text-sm font-medium text-slate-900">{activity.reportingOrg}</div>
-                      {activity.reportingOrgType && (() => {
-                        const typeLabel = getOrganizationTypeLabel(activity.reportingOrgType);
-                        return (
-                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-medium bg-blue-100 text-blue-700">
-                            {typeLabel?.name}
-                          </span>
-                        );
-                      })()}
-                      {activity.reportingOrgRef && (
-                        <code className="text-[10px] font-mono bg-slate-100 px-1.5 py-0.5 rounded text-slate-600 inline-block">
-                          {activity.reportingOrgRef}
-                        </code>
-                      )}
-                    </div>
+                    <table className="w-full text-[10px] border-collapse">
+                      <tbody>
+                        <tr>
+                          <td className="py-1 pr-2 text-slate-600 whitespace-nowrap align-top">Organization:</td>
+                          <td className="py-1 min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap min-w-0">
+                              <span className="text-sm font-medium text-slate-900 break-words min-w-0">{activity.reportingOrg}</span>
+                              {activity.reportingOrgRef && (
+                                <code className="text-[10px] font-mono bg-slate-100 px-1.5 py-0.5 rounded text-slate-600 inline-block shrink-0">
+                                  {activity.reportingOrgRef}
+                                </code>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                        {activity.reportingOrgType && (() => {
+                          const typeLabel = getOrganizationTypeLabel(activity.reportingOrgType);
+                          return (
+                            <tr key="reportingType">
+                              <td className="py-1 pr-2 text-slate-600 whitespace-nowrap align-top">Type:</td>
+                              <td className="py-1">
+                                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-medium bg-blue-100 text-blue-700">
+                                  {typeLabel?.name}
+                                </span>
+                              </td>
+                            </tr>
+                          );
+                        })()}
+                      </tbody>
+                    </table>
                 </div>
               )}
-              
+
               {implementingOrgs.length > 0 && (
                 <div>
                     <div className="text-[10px] uppercase tracking-wide text-slate-500 font-semibold mb-1.5">Implementing Organisation</div>
-                    <div className="space-y-1.5">
-                      {implementingOrgs.slice(0, 3).map((org, idx) => (
-                        <div key={idx} className="flex items-center gap-2 flex-wrap">
-                          <div className="text-sm font-medium text-slate-900">{org.name}</div>
-                          {org.type && (() => {
-                            const typeLabel = getOrganizationTypeLabel(org.type);
-                            return (
-                              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-medium bg-green-100 text-green-700">
-                                {typeLabel?.name}
-                              </span>
-                            );
-                          })()}
-                          {(() => {
-                            const refDisplay = getOrgRefDisplay(org.ref);
-                            if (!refDisplay.normalized) return null;
-
-                            return (
-                              <span className="flex items-center gap-1">
-                                <code className={`text-[10px] font-mono bg-slate-100 px-1.5 py-0.5 rounded text-slate-600 inline-block ${!refDisplay.isValid ? 'border border-red-300' : ''}`}>
-                                  {refDisplay.normalized}
-                                </code>
-                                {!refDisplay.isValid && (
-                                  <Tooltip>
-                                    <TooltipTrigger asChild>
-                                      <span className="text-red-500 text-xs cursor-help">⚠</span>
-                                    </TooltipTrigger>
-                                    <TooltipContent>
-                                      <p className="text-xs">Invalid IATI organization identifier format</p>
-                                    </TooltipContent>
-                                  </Tooltip>
-                                )}
-                              </span>
-                            );
-                          })()}
-                        </div>
-                      ))}
-                      {implementingOrgs.length > 3 && (
-                        <div className="text-xs text-slate-500">
-                          and {implementingOrgs.length - 3} more...
-                        </div>
-                      )}
-                    </div>
+                    <table className="w-full text-[10px] border-collapse">
+                      <tbody>
+                        {implementingOrgs.slice(0, 3).map((org, idx) => {
+                          const orgRef = org.validated_ref || org.ref;
+                          const refDisplay = getOrgRefDisplay(orgRef);
+                          
+                          return (
+                            <React.Fragment key={idx}>
+                              <tr className={idx > 0 ? "border-t border-slate-200" : ""}>
+                                <td className="py-1 pr-2 text-slate-600 whitespace-nowrap align-top">Name:</td>
+                                <td className="py-1 min-w-0">
+                                  <div className="flex items-center gap-2 flex-wrap min-w-0">
+                                    <span className="text-sm font-medium text-slate-900 break-words min-w-0">{org.name || org.narrative}</span>
+                                    {refDisplay.normalized && (
+                                      <>
+                                        <code className={`text-[10px] font-mono bg-slate-100 px-1.5 py-0.5 rounded text-slate-600 inline-block shrink-0 ${!refDisplay.isValid ? 'border border-red-300' : ''}`}>
+                                          {refDisplay.normalized}
+                                        </code>
+                                        {!refDisplay.isValid && (
+                                          <Tooltip>
+                                            <TooltipTrigger asChild>
+                                              <span className="text-red-500 text-xs cursor-help shrink-0">⚠</span>
+                                            </TooltipTrigger>
+                                            <TooltipContent>
+                                              <p className="text-xs">Invalid IATI organization identifier format</p>
+                                            </TooltipContent>
+                                          </Tooltip>
+                                        )}
+                                      </>
+                                    )}
+                                  </div>
+                                </td>
+                              </tr>
+                              {org.type && (() => {
+                                const typeLabel = getOrganizationTypeLabel(org.type);
+                                return (
+                                  <tr>
+                                    <td className="py-1 pr-2 text-slate-600 whitespace-nowrap align-top">Type:</td>
+                                    <td className="py-1">
+                                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-medium bg-green-100 text-green-700">
+                                        {typeLabel?.name}
+                                      </span>
+                                    </td>
+                                  </tr>
+                                );
+                              })()}
+                            </React.Fragment>
+                          );
+                        })}
+                        {implementingOrgs.length > 3 && (
+                          <tr>
+                            <td colSpan={2} className="py-1 text-xs text-slate-500">
+                              and {implementingOrgs.length - 3} more...
+                            </td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
                 </div>
               )}
 
@@ -1040,6 +1122,49 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
                     </div>
                   </div>
                 )}
+
+                {/* Dates Section */}
+                {(activity.startDatePlanned || activity.startDateActual || activity.endDatePlanned || activity.endDateActual) && (
+                  <div>
+                    <div className="text-[10px] uppercase tracking-wide text-slate-500 font-semibold mb-1.5">Dates</div>
+                    <table className="w-full text-[10px] border-collapse">
+                      <tbody>
+                        {activity.startDatePlanned && (
+                          <tr>
+                            <td className="py-1 pr-2 text-slate-600 whitespace-nowrap align-top">Planned Start:</td>
+                            <td className="py-1">
+                              <span className="text-slate-900">{formatDate(activity.startDatePlanned)}</span>
+                            </td>
+                          </tr>
+                        )}
+                        {activity.startDateActual && (
+                          <tr>
+                            <td className="py-1 pr-2 text-slate-600 whitespace-nowrap align-top">Actual Start:</td>
+                            <td className="py-1">
+                              <span className="text-slate-900">{formatDate(activity.startDateActual)}</span>
+                            </td>
+                          </tr>
+                        )}
+                        {activity.endDatePlanned && (
+                          <tr>
+                            <td className="py-1 pr-2 text-slate-600 whitespace-nowrap align-top">Planned End:</td>
+                            <td className="py-1">
+                              <span className="text-slate-900">{formatDate(activity.endDatePlanned)}</span>
+                            </td>
+                          </tr>
+                        )}
+                        {activity.endDateActual && (
+                          <tr>
+                            <td className="py-1 pr-2 text-slate-600 whitespace-nowrap align-top">Actual End:</td>
+                            <td className="py-1">
+                              <span className="text-slate-900">{formatDate(activity.endDateActual)}</span>
+                            </td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
               </div>
 
               {/* Column 2: Classifications */}
@@ -1047,154 +1172,174 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
                 {(activity.aidType || activity.defaultAidType || activity.flowType || activity.financeType || activity.tiedStatus || activity.activityScope || activity.collaborationType || activity.hierarchy || activity.currency || activity.defaultCurrency || activity.status) && (
                   <div>
                     <div className="text-[10px] uppercase tracking-wide text-slate-500 font-semibold mb-1.5">Classifications</div>
-                    <div className="space-y-1 text-[10px]">
-                      {(activity.currency || activity.defaultCurrency) && (() => {
-                        const currencyCode = activity.currency || activity.defaultCurrency || '';
-                        const currency = getCurrencyByCode(currencyCode);
-                        const currencyName = currency?.name || '';
-                        return (
-                          <div className="flex items-start gap-1.5">
-                            <span className="text-slate-600 whitespace-nowrap">Default Currency:</span>
-                            <div className="flex items-center gap-1.5">
-                              <code className="text-[9px] font-mono bg-slate-100 px-1 py-0.5 rounded text-slate-700">
-                                {currencyCode}
-                              </code>
-                              {currencyName && (
-                                <span className="text-slate-900">{currencyName}</span>
-                              )}
-                            </div>
-                          </div>
-                        );
-                      })()}
-                      {activity.status && (() => {
-                        const statusInfo = getActivityStatusByCode(activity.status);
-                        const statusName = statusInfo?.name || activity.statusNarrative || '';
-                        return (
-                          <div className="flex items-start gap-1.5">
-                            <span className="text-slate-600 whitespace-nowrap">Status:</span>
-                            <div className="flex items-center gap-1.5">
-                              <code className="text-[9px] font-mono bg-slate-100 px-1 py-0.5 rounded text-slate-700">
-                                {activity.status}
-                              </code>
-                              {statusName && (
-                                <span className="text-slate-900">{statusName}</span>
-                              )}
-                            </div>
-                          </div>
-                        );
-                      })()}
-                      {(activity.aidType || activity.defaultAidType) && (() => {
-                        const aidTypeCode = activity.aidType || activity.defaultAidType;
-                        const label = getAidTypeLabel(aidTypeCode);
-                        return (
-                          <div className="flex items-start gap-1.5">
-                            <span className="text-slate-600 whitespace-nowrap">Aid Type:</span>
-                            <div className="flex items-center gap-1.5">
-                              <code className="text-[9px] font-mono bg-slate-100 px-1 py-0.5 rounded text-slate-700">
-                                {label?.code || aidTypeCode}
-                              </code>
-                              <span className="text-slate-900">{label?.name || activity.aidTypeName || aidTypeCode}</span>
-                            </div>
-                          </div>
-                        );
-                      })()}
-                      {activity.flowType && (() => {
-                        const label = getFlowTypeLabel(activity.flowType);
-                        return (
-                          <div className="flex items-start gap-1.5">
-                            <span className="text-slate-600 whitespace-nowrap">Flow Type:</span>
-                            <div className="flex items-center gap-1.5">
-                              <code className="text-[9px] font-mono bg-slate-100 px-1 py-0.5 rounded text-slate-700">
-                                {label?.code || activity.flowType}
-                              </code>
-                              <span className="text-slate-900">{label?.name || activity.flowTypeName || activity.flowType}</span>
-                            </div>
-                          </div>
-                        );
-                      })()}
-                      {activity.financeType && (() => {
-                        const label = getFinanceTypeLabel(activity.financeType);
-                        return (
-                          <div className="flex items-start gap-1.5">
-                            <span className="text-slate-600 whitespace-nowrap">Finance Type:</span>
-                            <div className="flex items-center gap-1.5">
-                              <code className="text-[9px] font-mono bg-slate-100 px-1 py-0.5 rounded text-slate-700">
-                                {label?.code || activity.financeType}
-                              </code>
-                              <span className="text-slate-900">{label?.name || activity.financeTypeName || activity.financeType}</span>
-                            </div>
-                          </div>
-                        );
-                      })()}
-                      {activity.tiedStatus && (() => {
-                        const label = getTiedStatusLabel(activity.tiedStatus);
-                        return (
-                          <div className="flex items-start gap-1.5">
-                            <span className="text-slate-600 whitespace-nowrap">Tied Status:</span>
-                            <div className="flex items-center gap-1.5">
-                              <code className="text-[9px] font-mono bg-slate-100 px-1 py-0.5 rounded text-slate-700">
-                                {label?.code || activity.tiedStatus}
-                              </code>
-                              <span className="text-slate-900">{label?.name || activity.tiedStatusName || activity.tiedStatus}</span>
-                            </div>
-                          </div>
-                        );
-                      })()}
-                      {activity.activityScope && (() => {
-                        // activityScope might be a code (e.g., "4") or a narrative (e.g., "National")
-                        // Try to find it as a code first, then as a name
-                        const scopeItem = IATI_ACTIVITY_SCOPE[0]?.types.find(t => 
-                          t.code === activity.activityScope || t.name.toLowerCase() === activity.activityScope.toLowerCase()
-                        );
-                        return (
-                          <div className="flex items-start gap-1.5">
-                            <span className="text-slate-600 whitespace-nowrap">Scope:</span>
-                            <div className="flex items-center gap-1.5">
-                              <code className="text-[9px] font-mono bg-slate-100 px-1 py-0.5 rounded text-slate-700">
-                                {scopeItem?.code || activity.activityScope}
-                              </code>
-                              <span className="text-slate-900">{scopeItem?.name || activity.activityScope}</span>
-                            </div>
-                          </div>
-                        );
-                      })()}
-                      {activity.collaborationType && (() => {
-                        // collaborationType might be a code (e.g., "2") or a narrative (e.g., "Multilateral (inflows)")
-                        const label = getCollaborationTypeLabel(activity.collaborationType);
-                        return (
-                          <div className="flex items-start gap-1.5">
-                            <span className="text-slate-600 whitespace-nowrap">Collaboration:</span>
-                            <div className="flex items-center gap-1.5">
-                              <code className="text-[9px] font-mono bg-slate-100 px-1 py-0.5 rounded text-slate-700">
-                                {label?.code || activity.collaborationType}
-                              </code>
-                              <span className="text-slate-900">{label?.name || activity.collaborationType}</span>
-                            </div>
-                          </div>
-                        );
-                      })()}
-                      {activity.hierarchy && (() => {
-                        // Hierarchy values: 1 = Parent activity, 2 = Child activity
-                        const hierarchyLabels: Record<string, string> = {
-                          '1': 'Parent activity',
-                          '2': 'Child activity'
-                        };
-                        const hierarchyName = activity.hierarchyName || hierarchyLabels[String(activity.hierarchy)] || '';
-                        return (
-                          <div className="flex items-start gap-1.5">
-                            <span className="text-slate-600 whitespace-nowrap">Hierarchy:</span>
-                            <div className="flex items-center gap-1.5">
-                              <code className="text-[9px] font-mono bg-slate-100 px-1 py-0.5 rounded text-slate-700">
-                                {activity.hierarchy}
-                              </code>
-                              {hierarchyName && (
-                                <span className="text-slate-900">{hierarchyName}</span>
-                              )}
-                            </div>
-                          </div>
-                        );
-                      })()}
-                    </div>
+                    <table className="w-full text-[10px] border-collapse">
+                      <tbody>
+                        {(activity.currency || activity.defaultCurrency) && (() => {
+                          const currencyCode = activity.currency || activity.defaultCurrency || '';
+                          const currency = getCurrencyByCode(currencyCode);
+                          const currencyName = currency?.name || '';
+                          return (
+                            <tr key="currency" className="border-b border-slate-100">
+                              <td className="py-1 pr-2 text-slate-600 whitespace-nowrap align-top">Currency:</td>
+                              <td className="py-1">
+                                <div className="flex items-center gap-1.5">
+                                  <code className="text-[9px] font-mono bg-slate-100 px-1 py-0.5 rounded text-slate-700">
+                                    {currencyCode}
+                                  </code>
+                                  {currencyName && (
+                                    <span className="text-slate-900">{currencyName}</span>
+                                  )}
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        })()}
+                        {activity.status && (() => {
+                          const statusInfo = getActivityStatusByCode(activity.status);
+                          const statusName = statusInfo?.name || activity.statusNarrative || '';
+                          return (
+                            <tr key="status" className="border-b border-slate-100">
+                              <td className="py-1 pr-2 text-slate-600 whitespace-nowrap align-top">Status:</td>
+                              <td className="py-1">
+                                <div className="flex items-center gap-1.5">
+                                  <code className="text-[9px] font-mono bg-slate-100 px-1 py-0.5 rounded text-slate-700">
+                                    {activity.status}
+                                  </code>
+                                  {statusName && (
+                                    <span className="text-slate-900">{statusName}</span>
+                                  )}
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        })()}
+                        {(activity.aidType || activity.defaultAidType) && (() => {
+                          const aidTypeCode = activity.aidType || activity.defaultAidType;
+                          const label = getAidTypeLabel(aidTypeCode);
+                          return (
+                            <tr key="aidType" className="border-b border-slate-100">
+                              <td className="py-1 pr-2 text-slate-600 whitespace-nowrap align-top">Aid Type:</td>
+                              <td className="py-1">
+                                <div className="flex items-center gap-1.5">
+                                  <code className="text-[9px] font-mono bg-slate-100 px-1 py-0.5 rounded text-slate-700">
+                                    {label?.code || aidTypeCode}
+                                  </code>
+                                  <span className="text-slate-900">{label?.name || activity.aidTypeName || aidTypeCode}</span>
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        })()}
+                        {activity.flowType && (() => {
+                          const label = getFlowTypeLabel(activity.flowType);
+                          return (
+                            <tr key="flowType" className="border-b border-slate-100">
+                              <td className="py-1 pr-2 text-slate-600 whitespace-nowrap align-top">Flow Type:</td>
+                              <td className="py-1">
+                                <div className="flex items-center gap-1.5">
+                                  <code className="text-[9px] font-mono bg-slate-100 px-1 py-0.5 rounded text-slate-700">
+                                    {label?.code || activity.flowType}
+                                  </code>
+                                  <span className="text-slate-900">{label?.name || activity.flowTypeName || activity.flowType}</span>
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        })()}
+                        {activity.financeType && (() => {
+                          const label = getFinanceTypeLabel(activity.financeType);
+                          return (
+                            <tr key="financeType" className="border-b border-slate-100">
+                              <td className="py-1 pr-2 text-slate-600 whitespace-nowrap align-top">Finance Type:</td>
+                              <td className="py-1">
+                                <div className="flex items-center gap-1.5">
+                                  <code className="text-[9px] font-mono bg-slate-100 px-1 py-0.5 rounded text-slate-700">
+                                    {label?.code || activity.financeType}
+                                  </code>
+                                  <span className="text-slate-900">{label?.name || activity.financeTypeName || activity.financeType}</span>
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        })()}
+                        {activity.tiedStatus && (() => {
+                          const label = getTiedStatusLabel(activity.tiedStatus);
+                          return (
+                            <tr key="tiedStatus" className="border-b border-slate-100">
+                              <td className="py-1 pr-2 text-slate-600 whitespace-nowrap align-top">Tied Status:</td>
+                              <td className="py-1">
+                                <div className="flex items-center gap-1.5">
+                                  <code className="text-[9px] font-mono bg-slate-100 px-1 py-0.5 rounded text-slate-700">
+                                    {label?.code || activity.tiedStatus}
+                                  </code>
+                                  <span className="text-slate-900">{label?.name || activity.tiedStatusName || activity.tiedStatus}</span>
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        })()}
+                        {activity.activityScope && (() => {
+                          // activityScope might be a code (e.g., "4") or a narrative (e.g., "National")
+                          // Try to find it as a code first, then as a name
+                          const scopeItem = IATI_ACTIVITY_SCOPE[0]?.types.find(t =>
+                            t.code === activity.activityScope || t.name.toLowerCase() === activity.activityScope.toLowerCase()
+                          );
+                          return (
+                            <tr key="scope" className="border-b border-slate-100">
+                              <td className="py-1 pr-2 text-slate-600 whitespace-nowrap align-top">Scope:</td>
+                              <td className="py-1">
+                                <div className="flex items-center gap-1.5">
+                                  <code className="text-[9px] font-mono bg-slate-100 px-1 py-0.5 rounded text-slate-700">
+                                    {scopeItem?.code || activity.activityScope}
+                                  </code>
+                                  <span className="text-slate-900">{scopeItem?.name || activity.activityScope}</span>
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        })()}
+                        {activity.collaborationType && (() => {
+                          // collaborationType might be a code (e.g., "2") or a narrative (e.g., "Multilateral (inflows)")
+                          const label = getCollaborationTypeLabel(activity.collaborationType);
+                          return (
+                            <tr key="collaboration" className="border-b border-slate-100">
+                              <td className="py-1 pr-2 text-slate-600 whitespace-nowrap align-top">Collaboration:</td>
+                              <td className="py-1">
+                                <div className="flex items-center gap-1.5">
+                                  <code className="text-[9px] font-mono bg-slate-100 px-1 py-0.5 rounded text-slate-700">
+                                    {label?.code || activity.collaborationType}
+                                  </code>
+                                  <span className="text-slate-900">{label?.name || activity.collaborationType}</span>
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        })()}
+                        {activity.hierarchy && (() => {
+                          // Hierarchy values: 1 = Parent activity, 2 = Child activity
+                          const hierarchyLabels: Record<string, string> = {
+                            '1': 'Parent activity',
+                            '2': 'Child activity'
+                          };
+                          const hierarchyName = activity.hierarchyName || hierarchyLabels[String(activity.hierarchy)] || '';
+                          return (
+                            <tr key="hierarchy" className="border-b border-slate-100">
+                              <td className="py-1 pr-2 text-slate-600 whitespace-nowrap align-top">Hierarchy:</td>
+                              <td className="py-1">
+                                <div className="flex items-center gap-1.5">
+                                  <code className="text-[9px] font-mono bg-slate-100 px-1 py-0.5 rounded text-slate-700">
+                                    {activity.hierarchy}
+                                  </code>
+                                  {hierarchyName && (
+                                    <span className="text-slate-900">{hierarchyName}</span>
+                                  )}
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        })()}
+                      </tbody>
+                    </table>
                   </div>
                 )}
               </div>
@@ -1222,7 +1367,7 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
                   <table className="w-full text-[10px]">
                     <thead className="bg-slate-50/80 border-b border-slate-200">
                       <tr>
-                        <th className="text-left px-2 py-1 text-[9px] uppercase tracking-wide font-semibold text-slate-600">Element</th>
+                        <th className="text-left px-2 py-1 text-[9px] uppercase tracking-wide font-semibold text-slate-600">Item</th>
                         <th className="text-right px-2 py-1 text-[9px] uppercase tracking-wide font-semibold text-slate-600">#</th>
                         <th className="text-right px-2 py-1 text-[9px] uppercase tracking-wide font-semibold text-slate-600">Total</th>
                       </tr>
@@ -1331,16 +1476,14 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
             {/* Description - spans all 3 columns */}
             {activity.description && (() => {
               const cleanDescription = activity.description.replace(/<[^>]*>/g, '');
-              const shouldTruncate = cleanDescription.length > 200;
-              const displayText = shouldTruncate && !isDescriptionExpanded
-                ? cleanDescription.substring(0, 200) + '...'
-                : cleanDescription;
+              // Estimate if content is likely to exceed 6 lines (roughly 300-400 chars for 6 lines)
+              const shouldTruncate = cleanDescription.length > 300;
 
               return (
                 <div className="col-span-3 min-w-0 max-w-full overflow-hidden">
                   <span className="text-slate-700 font-semibold block mb-2">Description:</span>
-                <div className="text-slate-900 whitespace-pre-wrap break-words max-w-full leading-relaxed" style={{ wordBreak: 'break-word', overflowWrap: 'break-word' }}>
-                    {displayText}
+                <div className={`text-slate-900 whitespace-pre-wrap break-words max-w-full leading-relaxed ${shouldTruncate && !isDescriptionExpanded ? 'line-clamp-6' : ''}`} style={{ wordBreak: 'break-word', overflowWrap: 'break-word' }}>
+                    {cleanDescription}
                     {shouldTruncate && (
                       <button
                         onClick={(e) => {
@@ -1396,14 +1539,22 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
               </div>
             )}
 
-            {activity.participatingOrgs && activity.participatingOrgs.length > 0 && (() => {
+            {participatingOrgsToUse.length > 0 && (() => {
               const roleGroups: Record<string, Array<{ name: string; ref?: string }>> = {};
-              activity.participatingOrgs!.forEach((org: any) => {
-                if (org.role) {
-                  if (!roleGroups[org.role]) {
-                    roleGroups[org.role] = [];
+              participatingOrgsToUse.forEach((org: any) => {
+                // Handle both parsed XML format (role as string) and search API format
+                const role = org.role || org.iati_role_code;
+                
+                if (role) {
+                  const roleStr = String(role);
+                  if (!roleGroups[roleStr]) {
+                    roleGroups[roleStr] = [];
                   }
-                  roleGroups[org.role].push({ name: org.name, ref: org.ref });
+                  
+                  roleGroups[roleStr].push({ 
+                    name: org.name || org.narrative || 'Unknown', 
+                    ref: org.validated_ref || org.ref 
+                  });
                 }
               });
               
@@ -1449,17 +1600,36 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
                     );
             })()}
 
-            {activity.endDatePlanned && (
-              <div className="pb-4 border-b border-slate-200">
-                <span className="text-slate-700 font-semibold block mb-2">Planned End:</span>
-                <div className="text-slate-900">{formatDate(activity.endDatePlanned)}</div>
-          </div>
-            )}
-
-            {activity.endDateActual && (
-              <div className="pb-4 border-b border-slate-200">
-                <span className="text-slate-700 font-semibold block mb-2">Actual End:</span>
-                <div className="text-slate-900">{formatDate(activity.endDateActual)}</div>
+            {/* Dates Section - spans all 3 columns */}
+            {(activity.startDatePlanned || activity.startDateActual || activity.endDatePlanned || activity.endDateActual) && (
+              <div className="col-span-3">
+                <span className="text-slate-700 font-semibold block mb-2">Dates:</span>
+                <div className="grid grid-cols-2 gap-x-6 gap-y-2">
+                  {activity.startDatePlanned && (
+                    <div>
+                      <span className="text-slate-600 text-xs block mb-1">Planned Start:</span>
+                      <div className="text-slate-900">{formatDate(activity.startDatePlanned)}</div>
+                    </div>
+                  )}
+                  {activity.startDateActual && (
+                    <div>
+                      <span className="text-slate-600 text-xs block mb-1">Actual Start:</span>
+                      <div className="text-slate-900">{formatDate(activity.startDateActual)}</div>
+                    </div>
+                  )}
+                  {activity.endDatePlanned && (
+                    <div>
+                      <span className="text-slate-600 text-xs block mb-1">Planned End:</span>
+                      <div className="text-slate-900">{formatDate(activity.endDatePlanned)}</div>
+                    </div>
+                  )}
+                  {activity.endDateActual && (
+                    <div>
+                      <span className="text-slate-600 text-xs block mb-1">Actual End:</span>
+                      <div className="text-slate-900">{formatDate(activity.endDateActual)}</div>
+                    </div>
+                  )}
+                </div>
               </div>
             )}
 
@@ -2568,10 +2738,16 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
     // Mark parsing as in progress immediately
     isParsingRef.current = true;
     console.log('[IATI Import Debug] ✅ Set isParsingRef.current = true');
+    
+    // Set status immediately so progress bar shows right away
+    setImportStatus({ stage: 'parsing', progress: 5 });
+    setIsParsing(true);
 
     if (importMethod === 'file' && !selectedFile) {
       console.log('[IATI Import Debug] No selected file, returning');
       isParsingRef.current = false;
+      setImportStatus({ stage: 'idle', progress: 0 });
+      setIsParsing(false);
       return;
     }
 
@@ -2579,6 +2755,8 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
       console.log('[IATI Import Debug] No URL provided, returning');
       toast.error('Please enter a valid XML URL');
       isParsingRef.current = false;
+      setImportStatus({ stage: 'idle', progress: 0 });
+      setIsParsing(false);
       return;
     }
 
@@ -2586,6 +2764,8 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
       console.log('[IATI Import Debug] No snippet content, returning');
       toast.error('Please paste some XML content');
       isParsingRef.current = false;
+      setImportStatus({ stage: 'idle', progress: 0 });
+      setIsParsing(false);
       return;
     }
 
@@ -2605,6 +2785,7 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
 
     if (activityId) {
       console.log('[IATI Import Debug] Fetching latest activity data before parsing');
+      setImportStatus({ stage: 'parsing', progress: 10 });
       // Invalidate cache to ensure fresh data
       invalidateActivityCache(activityId);
       try {
@@ -2645,8 +2826,9 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
 
         // Fetch all current values for comparison IN PARALLEL for better performance
         console.log('[IATI Import Debug] Fetching current budgets, transactions, etc... (in parallel)');
-
-        await Promise.all([
+        
+        // Add timeout to prevent hanging
+        const fetchPromise = Promise.all([
           // Fetch budgets
           fetch(`/api/activities/${activityId}/budgets`)
             .then(async (res) => {
@@ -2779,20 +2961,44 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
             })
             .catch((error) => console.warn('[IATI Import Debug] Failed to fetch loan statuses:', error))
         ]);
+        
+        // Race against timeout to prevent hanging (5 second timeout)
+        const timeoutPromise = new Promise((resolve) => {
+          setTimeout(() => {
+            console.warn('[IATI Import Debug] Fetch timeout reached, continuing with available data');
+            // Do not change progress here; we'll advance to 20% after the race completes
+            resolve(null);
+          }, 5000); // 5 second timeout
+        });
+        
+        // Update progress after a short delay to show activity
+        setTimeout(() => {
+          setImportStatus(prev => {
+            if (prev.stage === 'parsing' && (prev.progress || 0) < 15) {
+              return { ...prev, progress: 15 };
+            }
+            return prev;
+          });
+        }, 1000);
+        
+        await Promise.race([fetchPromise, timeoutPromise]);
 
         console.log('[IATI Import Debug] ✅ All parallel fetches completed successfully');
+        setImportStatus({ stage: 'parsing', progress: 20 });
 
       } catch (error) {
         console.error('[IATI Import Debug] Failed to fetch activity data:', error);
+        // Still update progress even if there's an error
+        setImportStatus({ stage: 'parsing', progress: 20 });
       }
+    } else {
+      // No activityId, still update progress
+      setImportStatus({ stage: 'parsing', progress: 20 });
     }
 
     console.log('[IATI Import Debug] Current activity data:', currentActivityData);
     console.log('[IATI Import Debug] Setting status to uploading');
-    setImportStatus({ stage: 'uploading', progress: 10 });
-
-    console.log('[IATI Import Debug] Setting isParsing to true');
-    setIsParsing(true);
+    setImportStatus({ stage: 'uploading', progress: 30 });
     try {
       let content: string;
       let fileToCheck: File | null = null;
@@ -2822,7 +3028,7 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
       } else {
         // Use snippet content
         console.log('[IATI Import Debug] Using snippet content');
-        setImportStatus({ stage: 'uploading', progress: 30 });
+        setImportStatus({ stage: 'parsing', progress: 25 });
         
         // Detect snippet type BEFORE wrapping
         const snippetType = detectSnippetType(snippetContent.trim());
@@ -2859,7 +3065,7 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
       setXmlContent(content);
       
       console.log('[IATI Import Debug] Setting status to parsing');
-      setImportStatus({ stage: 'parsing', progress: 40 });
+      setImportStatus({ stage: 'parsing', progress: 35 });
       
       // Check if content is HTML instead of XML (common error response)
       if (content.trim().startsWith('<!DOCTYPE html') || content.trim().startsWith('<html')) {
@@ -2961,24 +3167,33 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
 
       // Helper function to determine if a field should be selected by default
       const shouldSelectField = (currentValue: any, importValue: any): boolean => {
-        // Select if current value is empty/null/undefined OR if values differ
-        if (!currentValue) return true;
-        
-        // Handle object comparison (e.g., for coded fields that return {code, name})
-        if (typeof currentValue === 'object' && typeof importValue === 'object') {
-          if (currentValue === null || importValue === null) {
-            return currentValue !== importValue;
+        // Normalization helper
+        const normalize = (val: any) => {
+          if (val === null || val === undefined) return '';
+          return String(val).trim();
+        };
+
+        // Get comparison value (prefer code if available)
+        const getValueToCompare = (val: any) => {
+          if (val && typeof val === 'object' && val.code !== undefined) {
+            return normalize(val.code);
           }
-          // Compare by code if both have code property, otherwise deep compare
-          if (currentValue.code !== undefined && importValue.code !== undefined) {
-            return currentValue.code !== importValue.code;
-          }
-          // For other objects, compare by JSON serialization
+          return normalize(val);
+        };
+
+        // Special handling for arrays (like sectors)
+        if (Array.isArray(currentValue) && Array.isArray(importValue)) {
           return JSON.stringify(currentValue) !== JSON.stringify(importValue);
         }
-        
-        // Handle primitive comparison
-        return currentValue !== importValue;
+
+        // Compare normalized values
+        const normCurrent = getValueToCompare(currentValue);
+        const normImport = getValueToCompare(importValue);
+
+        // If both are empty, they match
+        if (normCurrent === '' && normImport === '') return false;
+
+        return normCurrent !== normImport;
       };
 
       // Helper function to map iatiPath to registry field ID
@@ -3042,24 +3257,32 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
       };
 
       const hasConflict = (currentValue: any, importValue: any): boolean => {
+        // Normalization helper
+        const normalize = (val: any) => {
+          if (val === null || val === undefined) return '';
+          return String(val).trim();
+        };
+
+        // Get comparison value (prefer code if available)
+        const getValueToCompare = (val: any) => {
+          if (val && typeof val === 'object' && val.code !== undefined) {
+            return normalize(val.code);
+          }
+          return normalize(val);
+        };
+
         // Only show conflict if current value exists and differs from import value
-        if (!currentValue) return false;
+        const normCurrent = getValueToCompare(currentValue);
+        const normImport = getValueToCompare(importValue);
         
-        // Handle object comparison (e.g., for coded fields that return {code, name})
-        if (typeof currentValue === 'object' && typeof importValue === 'object') {
-          if (currentValue === null || importValue === null) {
-            return currentValue !== importValue;
-          }
-          // Compare by code if both have code property, otherwise deep compare
-          if (currentValue.code !== undefined && importValue.code !== undefined) {
-            return currentValue.code !== importValue.code;
-          }
-          // For other objects, compare by JSON serialization
-          return JSON.stringify(currentValue) !== JSON.stringify(importValue);
-        }
+        // If current is empty, no conflict
+        if (normCurrent === '') return false;
         
-        // Handle primitive comparison
-        return currentValue !== importValue;
+        // If both are empty, no conflict
+        if (normCurrent === '' && normImport === '') return false;
+        
+        // Conflict if values differ
+        return normCurrent !== normImport;
       };
 
       // Create fields from parsed data organized by tabs
@@ -3625,8 +3848,31 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
             : `Budget ${budgetIndex + 1} - IATI compliant ✓`;
 
           // Get current value from database if exists
-          const currentBudget = fetchedBudgets[budgetIndex];
+          // Enhanced matching: Priority 1: Match by composite key (Type + Period + Amount), Priority 2: Index fallback
+          let currentBudget = null;
           let currentBudgetValue = null;
+
+          // Try to find a matching budget in the fetched list
+          currentBudget = fetchedBudgets.find(b => {
+            // Match by type (allow string/number comparison)
+            const typeMatch = String(b.type) === String(type);
+            
+            // Match by period (dates are usually YYYY-MM-DD)
+            const startMatch = b.period_start === budget.period?.start;
+            const endMatch = b.period_end === budget.period?.end;
+            
+            // Match by amount (fuzzy float comparison)
+            const amountMatch = b.amount !== undefined && budget.value !== undefined && 
+              Math.abs(Number(b.amount) - Number(budget.value)) < 0.01;
+              
+            return typeMatch && startMatch && endMatch && amountMatch;
+          });
+
+          // Fallback to index if no semantic match found (and counts match)
+          if (!currentBudget && fetchedBudgets.length === parsedActivity.budgets.length) {
+            currentBudget = fetchedBudgets[budgetIndex];
+          }
+
           if (currentBudget) {
             const currentTypeLabel = currentBudget.type === 1 ? 'Original' : currentBudget.type === 2 ? 'Revised' : `Type ${currentBudget.type}`;
             const currentStatusLabel = currentBudget.status === 1 ? 'Indicative' : currentBudget.status === 2 ? 'Committed' : `Status ${currentBudget.status}`;
@@ -4026,18 +4272,55 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
           
           const transactionType = transactionTypes[transaction.type || ''] || transaction.type || 'Unknown';
           
+          // Get all sectors for this transaction (keep them together)
+          const sectors = (transaction as any).sectors || (transaction.sector ? [transaction.sector] : []);
+          const hasMultipleSectors = sectors.length > 1;
+          
+          // Build transaction summary showing sector info if present
+          const sectorInfo = sectors.length > 0 
+            ? (hasMultipleSectors 
+                ? `${sectors.length} sectors` 
+                : `Sector: ${sectors[0].code || sectors[0].sector_code || 'N/A'}`)
+            : null;
+          
           const transactionSummary = [
             `Type: ${transactionType}`,
             transaction.date && `Date: ${transaction.date}`,
             transaction.value && `Amount: ${transaction.value.toLocaleString()} ${transaction.currency || parsedActivity.defaultCurrency || ''}`,
+            sectorInfo,
             transaction.description && `Description: ${transaction.description}`,
             transaction.providerOrg?.name && `Provider: ${transaction.providerOrg.name}`,
             transaction.receiverOrg?.name && `Receiver: ${transaction.receiverOrg.name}`
           ].filter(Boolean).join(' | ');
 
           // Get current value from database if exists
-          const currentTransaction = fetchedTransactions[transIndex];
+          // Enhanced matching: Priority 1: Ref, Priority 2: Composite Key, Priority 3: Index (only if counts match)
+          let currentTransaction = null;
           let currentTransactionValue = null;
+
+          // 1. Match by Ref if available
+          if (transaction.ref) {
+            currentTransaction = fetchedTransactions.find(t => t.transaction_reference === transaction.ref);
+          }
+
+          // 2. Fuzzy match if no ref match
+          if (!currentTransaction) {
+            currentTransaction = fetchedTransactions.find(t => {
+              // Compare key fields
+              const typeMatch = String(t.transaction_type) === String(transaction.type);
+              const dateMatch = t.transaction_date === transaction.date;
+              const amountMatch = Number(t.amount) === Number(transaction.value);
+              const currencyMatch = (t.currency || 'USD') === (transaction.currency || parsedActivity.defaultCurrency || 'USD');
+              
+              return typeMatch && dateMatch && amountMatch && currencyMatch;
+            });
+          }
+
+          // 3. Fallback to index if counts match (risky but better than nothing for clean 1-to-1 lists)
+          if (!currentTransaction && fetchedTransactions.length === parsedActivity.transactions?.length) {
+            currentTransaction = fetchedTransactions[transIndex];
+          }
+
           if (currentTransaction) {
             const currentTransactionType = transactionTypes[currentTransaction.transaction_type?.toString() || ''] || currentTransaction.transaction_type || 'Unknown';
             currentTransactionValue = [
@@ -4050,6 +4333,13 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
             ].filter(Boolean).join(' | ');
           }
 
+          // Create ONE transaction field with ALL sectors included
+          const transactionData = {
+            ...transaction,
+            sectors: sectors, // Include ALL sectors in the transaction data
+            transaction_type_name: transactionType
+          };
+
           fields.push({
             fieldName: `Transaction ${transIndex + 1}`,
             iatiPath: `iati-activity/transaction[${transIndex + 1}]`,
@@ -4058,15 +4348,20 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
             selected: false,
             hasConflict: false,
             tab: 'transactions',
-            description: `${transactionType} - Click to configure individual fields`,
+            description: hasMultipleSectors 
+              ? `${transactionType} - ${sectors.length} sectors - Click to configure`
+              : `${transactionType} - Click to configure individual fields`,
             isFinancialItem: true,
             itemType: 'transaction',
             itemIndex: transIndex,
-            itemData: {
-              ...transaction,
-              transaction_type_name: transactionType
-            }
+            itemData: transactionData
           });
+        });
+        
+        console.log('[IATI Import] 🔍 DIAGNOSTIC - Transaction fields created:', {
+          totalTransactions: parsedActivity.transactions.length,
+          totalFields: parsedActivity.transactions.length,
+          transactionsWithMultipleSectors: parsedActivity.transactions.filter((t: any) => (t.sectors || []).length > 1).length
         });
       }
 
@@ -5557,6 +5852,12 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
       }
       
       console.log('[IATI Search] Fetched XML for:', activity.iatiIdentifier);
+      console.log('[IATI Search] 🔍 DIAGNOSTIC - XML Structure Analysis:', {
+        xmlLength: data.xml.length,
+        hasIatiActivities: data.xml.includes('<iati-activities'),
+        hasIatiActivity: data.xml.includes('<iati-activity'),
+        targetIdentifier: activity.iatiIdentifier
+      });
       
       // Extract single activity from multi-activity XML if needed
       let singleActivityXml = data.xml;
@@ -5572,13 +5873,34 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
           
           console.log('[IATI Search] Found', activities.length, 'activities in XML');
           
+          // DIAGNOSTIC: Log transaction count per activity
+          const activityTransactionCounts: Array<{identifier: string, transactionCount: number, index: number}> = [];
+          for (let i = 0; i < activities.length; i++) {
+            const identifierEl = activities[i].getElementsByTagName('iati-identifier')[0];
+            const identifier = identifierEl?.textContent?.trim() || `Unknown-${i}`;
+            const transactions = activities[i].getElementsByTagName('transaction');
+            activityTransactionCounts.push({
+              identifier,
+              transactionCount: transactions.length,
+              index: i
+            });
+          }
+          console.log('[IATI Search] 🔍 DIAGNOSTIC - Transaction counts per activity:', activityTransactionCounts);
+          
           // Find the activity with matching identifier
           let matchingActivity = null;
+          let matchingIndex = -1;
           for (let i = 0; i < activities.length; i++) {
             const identifierEl = activities[i].getElementsByTagName('iati-identifier')[0];
             if (identifierEl && identifierEl.textContent?.trim() === activity.iatiIdentifier) {
               matchingActivity = activities[i];
+              matchingIndex = i;
               console.log('[IATI Search] Found matching activity at index', i);
+              console.log('[IATI Search] 🔍 DIAGNOSTIC - Matching activity details:', {
+                index: i,
+                identifier: activity.iatiIdentifier,
+                transactionCount: activities[i].getElementsByTagName('transaction').length
+              });
               break;
             }
           }
@@ -5586,14 +5908,25 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
           if (matchingActivity) {
             // Serialize just this activity element back to XML
             const serializer = new XMLSerializer();
-            singleActivityXml = serializer.serializeToString(matchingActivity);
+            const activityXml = serializer.serializeToString(matchingActivity);
+            // Wrap in proper root element with XML declaration
+            singleActivityXml = `<?xml version="1.0" encoding="UTF-8"?><iati-activities>${activityXml}</iati-activities>`;
             console.log('[IATI Search] Extracted single activity, length:', singleActivityXml.length);
+            console.log('[IATI Search] 🔍 DIAGNOSTIC - XML Extraction:', {
+              originalLength: data.xml.length,
+              extractedLength: singleActivityXml.length,
+              properlyWrapped: singleActivityXml.includes('<iati-activities>'),
+              activityIndex: matchingIndex
+            });
           } else {
             console.warn('[IATI Search] Could not find matching activity, using first activity as fallback');
             if (activities.length > 0) {
               const serializer = new XMLSerializer();
-              singleActivityXml = serializer.serializeToString(activities[0]);
+              const activityXml = serializer.serializeToString(activities[0]);
+              // Wrap in proper root element with XML declaration
+              singleActivityXml = `<?xml version="1.0" encoding="UTF-8"?><iati-activities>${activityXml}</iati-activities>`;
               console.log('[IATI Search] Using first activity, length:', singleActivityXml.length);
+              console.warn('[IATI Search] 🔍 DIAGNOSTIC - Using fallback activity (first activity in XML)');
             }
           }
         } catch (extractError) {
@@ -5601,11 +5934,36 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
           console.log('[IATI Search] Falling back to original XML');
           // Fall back to using the original XML
         }
+      } else {
+        // Single activity XML - ensure it's properly wrapped
+        if (!singleActivityXml.includes('<iati-activities>') && singleActivityXml.includes('<iati-activity')) {
+          console.log('[IATI Search] 🔍 DIAGNOSTIC - Single activity XML detected, ensuring proper wrapper');
+          // Check if it needs wrapping
+          if (!singleActivityXml.trim().startsWith('<?xml')) {
+            singleActivityXml = `<?xml version="1.0" encoding="UTF-8"?><iati-activities>${singleActivityXml}</iati-activities>`;
+            console.log('[IATI Search] Wrapped single activity XML in iati-activities root');
+          }
+        }
       }
       
       // Parse the XML to check for external publisher
+      console.log('[IATI Search] 🔍 DIAGNOSTIC - About to parse XML, length:', singleActivityXml.length);
       const parser = new IATIXMLParser(singleActivityXml);
       const parsedActivity = parser.parseActivity();
+      
+      // DIAGNOSTIC: Log parser results
+      console.log('[IATI Search] 🔍 DIAGNOSTIC - Parser Results:', {
+        parsedIdentifier: parsedActivity.iatiIdentifier,
+        transactionCount: parsedActivity.transactions?.length || 0,
+        firstThreeTransactions: parsedActivity.transactions?.slice(0, 3).map((t: any, idx: number) => ({
+          index: idx,
+          type: t.type,
+          date: t.date,
+          value: t.value,
+          currency: t.currency,
+          ref: t.ref
+        })) || []
+      });
       
       // Get user's publisher refs
       const userPublisherRefs: string[] = [];
@@ -5671,6 +6029,8 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
   // Import selected fields
   const importSelectedFields = async () => {
     const importStartTime = Date.now();
+    // Track whether transactions have already been imported server-side via /import-iati
+    let didServerSideTransactionImport = false;
     
     // Helper function for fetch with timeout
     const fetchWithTimeout = async (url: string, options: RequestInit = {}, timeoutMs: number = 30000): Promise<Response> => {
@@ -5944,9 +6304,26 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
       
       // CRITICAL FIX: Bulk collection for comprehensive selections
       // When Enhanced Select All is used, collect bulk data BEFORE processing individual fields
+      console.log('[IATI Import] 🔍 DIAGNOSTIC - Pre-bulk collection state:', {
+        hasImportTransactionsFlag: updateData._importTransactions === true,
+        hasExistingTransactions: !!updateData.importedTransactions,
+        existingTransactionCount: updateData.importedTransactions?.length || 0,
+        parsedActivityTransactionCount: parsedActivity?.transactions?.length || 0
+      });
+      
       if (updateData._importTransactions === true && !updateData.importedTransactions) {
         updateData.importedTransactions = parsedActivity?.transactions || [];
         console.log(`[IATI Import] 🎯 BULK MODE: Collected ${updateData.importedTransactions.length} transactions from parsed activity for comprehensive import`);
+        console.log('[IATI Import] 🔍 DIAGNOSTIC - Post-bulk collection:', {
+          transactionCount: updateData.importedTransactions.length,
+          transactionRefs: updateData.importedTransactions.map((t: any) => t.ref || `no-ref-${t.type}-${t.date}`).slice(0, 10)
+        });
+      } else if (updateData._importTransactions === true && updateData.importedTransactions) {
+        console.warn('[IATI Import] 🔍 DIAGNOSTIC - WARNING: Transactions array already exists, skipping bulk collection to prevent duplication');
+        console.log('[IATI Import] 🔍 DIAGNOSTIC - Existing transactions:', {
+          count: updateData.importedTransactions.length,
+          refs: updateData.importedTransactions.map((t: any) => t.ref || `no-ref-${t.type}-${t.date}`).slice(0, 10)
+        });
       }
       
       if (updateData._importBudgets === true && !updateData.importedBudgets) {
@@ -6421,7 +6798,8 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
                   fieldName: field.fieldName,
                   comprehensiveMode: false,
                   hasItemData: !!field.itemData,
-                  hasFieldIndex: field.itemIndex !== undefined
+                  hasFieldIndex: field.itemIndex !== undefined,
+                  currentTransactionCount: updateData.importedTransactions?.length || 0
                 });
                 
                 if (!updateData.importedTransactions) updateData.importedTransactions = [];
@@ -6432,9 +6810,30 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
                 const txData = field.itemData;
                 
                 if (txData) {
-                  console.log('[XML Import DEBUG] Adding transaction to array:', txData);
-                  updateData.importedTransactions.push(txData);
-                  console.log('[XML Import DEBUG] Total transactions in array now:', updateData.importedTransactions.length);
+                  // Only check for duplicates if there's an actual ref attribute
+                  // Don't create synthetic refs that cause false positives
+                  if (txData.ref) {
+                    const isDuplicate = updateData.importedTransactions.some((existingTx: any) => {
+                      return existingTx.ref === txData.ref;
+                    });
+                    
+                    if (isDuplicate) {
+                      console.warn(`[IATI Import] 🔍 DIAGNOSTIC - Duplicate transaction detected and skipped:`, {
+                        fieldName: field.fieldName,
+                        ref: txData.ref,
+                        existingCount: updateData.importedTransactions.length
+                      });
+                    } else {
+                      console.log('[XML Import DEBUG] Adding transaction to array:', txData);
+                      updateData.importedTransactions.push(txData);
+                      console.log('[XML Import DEBUG] Total transactions in array now:', updateData.importedTransactions.length);
+                    }
+                  } else {
+                    // No ref attribute - import all transactions (they're unique by their position/index)
+                    console.log('[XML Import DEBUG] Adding transaction to array:', txData);
+                    updateData.importedTransactions.push(txData);
+                    console.log('[XML Import DEBUG] Total transactions in array now:', updateData.importedTransactions.length);
+                  }
                 } else {
                   console.warn('🔍 [IATI Import] DIAGNOSTIC - No transaction data found for:', field.fieldName);
                 }
@@ -6736,6 +7135,11 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
           },
           body: JSON.stringify(importRequestBody),
         });
+
+        // If the server-side /import-iati endpoint handled transactions, record that
+        if (importRequestBody.fields.transactions && response.ok) {
+          didServerSideTransactionImport = true;
+        }
       }
 
       console.log('[IATI Import] API Response status:', response.status);
@@ -8291,12 +8695,84 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
       console.log('[XML Import DEBUG] About to check transactions handler...', {
         hasImportedTransactions: !!updateData.importedTransactions,
         arrayLength: updateData.importedTransactions?.length || 0,
-        arrayContents: updateData.importedTransactions
+        arrayContents: updateData.importedTransactions,
+        wasImportedViaImportIati: didServerSideTransactionImport
       });
-      if (updateData.importedTransactions && updateData.importedTransactions.length > 0) {
-        console.log('[IATI Import] Processing transactions import...');
+
+      // CRITICAL GUARD:
+      // - When didServerSideTransactionImport is true, transactions were already imported in bulk
+      //   via /api/activities/[id]/import-iati (fields.transactions === true).
+      // - In that case, skip the individual transaction processing below to avoid duplicates.
+      if (updateData.importedTransactions && updateData.importedTransactions.length > 0 && !didServerSideTransactionImport) {
+        // Each XML transaction becomes exactly one database transaction
+        // Sectors are stored as metadata on each transaction, not consolidated
+        console.log('[IATI Import] Processing transactions import (client-side individual endpoint)...');
         console.log('[IATI Import] Transactions array:', updateData.importedTransactions);
         console.log('[IATI Import] Transaction count:', updateData.importedTransactions.length);
+        
+        // VALIDATION: Check transaction count against parsed activity
+        const parsedTransactionCount = parsedActivity?.transactions?.length || 0;
+        const importedTransactionCount = updateData.importedTransactions.length;
+        const countDifference = Math.abs(importedTransactionCount - parsedTransactionCount);
+        const significantDifference = countDifference > parsedTransactionCount * 0.1; // More than 10% difference
+        
+        console.log('[IATI Import] 🔍 DIAGNOSTIC - Transaction Count Validation:', {
+          parsedActivityCount: parsedTransactionCount,
+          importedCount: importedTransactionCount,
+          difference: countDifference,
+          significantDifference: significantDifference
+        });
+        
+        if (significantDifference && parsedTransactionCount > 0) {
+          console.warn('[IATI Import] 🔍 DIAGNOSTIC - WARNING: Transaction count mismatch detected!', {
+            expected: parsedTransactionCount,
+            actual: importedTransactionCount,
+            difference: countDifference
+          });
+          // Show warning to user but allow them to proceed
+          toast.warning(`Transaction count mismatch detected`, {
+            description: `Expected ${parsedTransactionCount} transactions but found ${importedTransactionCount}. Proceeding with import...`,
+            duration: 8000
+          });
+        }
+        
+        // VALIDATION: Final deduplication check before import
+        // Only deduplicate based on actual ref attributes, not synthetic keys
+        const uniqueTransactions: any[] = [];
+        const seenRefs = new Set<string>();
+        let duplicatesRemoved = 0;
+        
+        for (const tx of updateData.importedTransactions) {
+          // Only deduplicate if there's an actual ref attribute
+          if (tx.ref) {
+            if (seenRefs.has(tx.ref)) {
+              duplicatesRemoved++;
+              console.warn('[IATI Import] 🔍 DIAGNOSTIC - Final deduplication: Removing duplicate transaction:', {
+                ref: tx.ref,
+                type: tx.type,
+                date: tx.date,
+                value: tx.value
+              });
+              continue;
+            }
+            seenRefs.add(tx.ref);
+          }
+          // Transactions without refs are always included (they're unique by their position in XML)
+          uniqueTransactions.push(tx);
+        }
+        
+        if (duplicatesRemoved > 0) {
+          console.warn('[IATI Import] 🔍 DIAGNOSTIC - Final deduplication summary:', {
+            originalCount: updateData.importedTransactions.length,
+            duplicatesRemoved: duplicatesRemoved,
+            uniqueCount: uniqueTransactions.length
+          });
+          toast.warning(`${duplicatesRemoved} duplicate transaction(s) removed before import`, {
+            duration: 5000
+          });
+          // Update the array with deduplicated transactions
+          updateData.importedTransactions = uniqueTransactions;
+        }
         
         // Track transactions in summary
         importSummary.transactions.attempted = updateData.importedTransactions.length;
@@ -8430,6 +8906,8 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
                 flow_type: transaction.flowType,
                 disbursement_channel: transaction.disbursementChannel,
                 humanitarian: transaction.humanitarian,
+                // Include sectors as metadata (for multi-sector transactions)
+                sectors: transaction.sectors || (transaction.sector ? [transaction.sector] : []),
                 created_at: new Date().toISOString(),
                 updated_at: new Date().toISOString()
               };
@@ -11179,7 +11657,10 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
                   <Button
                     variant="outline"
                     onClick={() => {
-                      if (onNavigateToGeneral) {
+                      // Navigate to the activity page to see the imported changes
+                      if (activityId) {
+                        window.location.href = `/activities/${activityId}`;
+                      } else if (onNavigateToGeneral) {
                         onNavigateToGeneral();
                       } else {
                         window.location.reload();
