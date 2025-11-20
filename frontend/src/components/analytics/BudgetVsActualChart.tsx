@@ -16,6 +16,13 @@ import { supabase } from '@/lib/supabase'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Calendar, DollarSign, CalendarDays } from 'lucide-react'
+import { Switch } from '@/components/ui/switch'
+import { Label } from '@/components/ui/label'
+import { HelpTextTooltip } from '@/components/ui/help-text-tooltip'
+import { 
+  splitBudgetAcrossYears, 
+  splitTransactionAcrossYears 
+} from '@/utils/year-allocation'
 
 interface BudgetVsActualChartProps {
   dateRange: {
@@ -45,10 +52,11 @@ export function BudgetVsActualChart({ dateRange, filters, refreshKey, onDataChan
   const [data, setData] = useState<ChartData[]>([])
   const [loading, setLoading] = useState(true)
   const [groupBy, setGroupBy] = useState<GroupByMode>('calendar')
+  const [allocationMethod, setAllocationMethod] = useState<'proportional' | 'period-start'>('proportional')
 
   useEffect(() => {
     fetchData()
-  }, [dateRange, filters, refreshKey, groupBy])
+  }, [dateRange, filters, refreshKey, groupBy, allocationMethod])
 
   const getFiscalYear = (date: Date): string => {
     const year = getYear(date)
@@ -129,21 +137,51 @@ export function BudgetVsActualChart({ dateRange, filters, refreshKey, onDataChan
       }
 
       // Aggregate budgets by period
-      const budgetMap = aggregateByPeriod(budgetData || [], periodFn, 'period_start')
+      const budgetMap = new Map<string, number>()
+      
+      if (allocationMethod === 'proportional' && groupBy === 'calendar') {
+        budgetData?.forEach((item: any) => {
+          const allocations = splitBudgetAcrossYears(item)
+          allocations.forEach(alloc => {
+            const period = alloc.year.toString()
+            budgetMap.set(period, (budgetMap.get(period) || 0) + alloc.amount)
+          })
+        })
+      } else {
+        // Default behavior (period start / standard aggregation)
+        const map = aggregateByPeriod(budgetData || [], periodFn, 'period_start')
+        map.forEach((value, key) => budgetMap.set(key, value))
+      }
 
       // Aggregate transactions by period and type
       const disbursementMap = new Map<string, number>()
       const expenditureMap = new Map<string, number>()
       
       transactions?.forEach((t: any) => {
-        const date = new Date(t.transaction_date)
-        const period = periodFn(date)
-        const value = parseFloat(t.value) || 0
-        
-        if (t.transaction_type === '3') {
-          disbursementMap.set(period, (disbursementMap.get(period) || 0) + value)
-        } else if (t.transaction_type === '4') {
-          expenditureMap.set(period, (expenditureMap.get(period) || 0) + value)
+        // Check if proportional allocation applies
+        if (allocationMethod === 'proportional' && groupBy === 'calendar') {
+          const allocations = splitTransactionAcrossYears(t)
+          allocations.forEach(alloc => {
+            const period = alloc.year.toString()
+            const value = alloc.amount
+            
+            if (t.transaction_type === '3') {
+              disbursementMap.set(period, (disbursementMap.get(period) || 0) + value)
+            } else if (t.transaction_type === '4') {
+              expenditureMap.set(period, (expenditureMap.get(period) || 0) + value)
+            }
+          })
+        } else {
+          // Standard behavior
+          const date = new Date(t.transaction_date)
+          const period = periodFn(date)
+          const value = parseFloat(t.value) || 0
+          
+          if (t.transaction_type === '3') {
+            disbursementMap.set(period, (disbursementMap.get(period) || 0) + value)
+          } else if (t.transaction_type === '4') {
+            expenditureMap.set(period, (expenditureMap.get(period) || 0) + value)
+          }
         }
       })
 
@@ -218,32 +256,57 @@ export function BudgetVsActualChart({ dateRange, filters, refreshKey, onDataChan
   return (
     <div className="space-y-4">
       {/* Aggregation Mode Selector */}
-      <div className="flex items-center justify-between">
-        <Select value={groupBy} onValueChange={(value) => setGroupBy(value as GroupByMode)}>
-          <SelectTrigger className="w-48 h-9 bg-white border-slate-200">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="calendar">
-              <div className="flex items-center gap-2">
-                <Calendar className="h-3 w-3" />
-                Calendar Year
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <div className="flex items-center gap-4">
+          <Select value={groupBy} onValueChange={(value) => setGroupBy(value as GroupByMode)}>
+            <SelectTrigger className="w-48 h-9 bg-white border-slate-200">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="calendar">
+                <div className="flex items-center gap-2">
+                  <Calendar className="h-3 w-3" />
+                  Calendar Year
+                </div>
+              </SelectItem>
+              <SelectItem value="fiscal">
+                <div className="flex items-center gap-2">
+                  <DollarSign className="h-3 w-3" />
+                  Financial Year
+                </div>
+              </SelectItem>
+              <SelectItem value="quarter">
+                <div className="flex items-center gap-2">
+                  <CalendarDays className="h-3 w-3" />
+                  Quarterly
+                </div>
+              </SelectItem>
+            </SelectContent>
+          </Select>
+
+          {/* Allocation Method Toggle - Only show for Calendar Year mode */}
+          {groupBy === 'calendar' && (
+            <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 border rounded-lg px-3 py-1.5 bg-white border-slate-200 h-9">
+                <Label htmlFor="allocation-toggle-budget-vs-actual" className="text-sm text-slate-700 cursor-pointer whitespace-nowrap">
+                  {allocationMethod === 'proportional' ? 'Proportional' : 'Period Start'}
+                </Label>
+                <Switch
+                  id="allocation-toggle-budget-vs-actual"
+                  checked={allocationMethod === 'proportional'}
+                  onCheckedChange={(checked) => setAllocationMethod(checked ? 'proportional' : 'period-start')}
+                />
               </div>
-            </SelectItem>
-            <SelectItem value="fiscal">
-              <div className="flex items-center gap-2">
-                <DollarSign className="h-3 w-3" />
-                Financial Year
-              </div>
-            </SelectItem>
-            <SelectItem value="quarter">
-              <div className="flex items-center gap-2">
-                <CalendarDays className="h-3 w-3" />
-                Quarterly
-              </div>
-            </SelectItem>
-          </SelectContent>
-        </Select>
+              <HelpTextTooltip 
+                content={
+                  allocationMethod === 'proportional'
+                    ? "Allocates budget amounts proportionally across calendar years based on the number of days. For example, a budget spanning July 2024 to June 2025 will be split between 2024 and 2025."
+                    : "Allocates the full budget amount to the year of the start date."
+                }
+              />
+            </div>
+          )}
+        </div>
         
         {groupBy === 'fiscal' && (
           <div className="text-xs text-slate-500">
@@ -257,6 +320,7 @@ export function BudgetVsActualChart({ dateRange, filters, refreshKey, onDataChan
         <BarChart 
           data={data}
           margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+          key={`budget-vs-actual-${allocationMethod}-${groupBy}`}
         >
           <CartesianGrid 
             strokeDasharray="3 3" 
@@ -293,16 +357,25 @@ export function BudgetVsActualChart({ dateRange, filters, refreshKey, onDataChan
             dataKey="budget" 
             fill="#e2e8f0"
             name="Budget"
+            isAnimationActive={true}
+            animationDuration={600}
+            animationEasing="ease-in-out"
           />
           <Bar 
             dataKey="disbursed" 
             fill="#475569"
             name="Disbursed"
+            isAnimationActive={true}
+            animationDuration={600}
+            animationEasing="ease-in-out"
           />
           <Bar 
             dataKey="expenditure" 
             fill="#94a3b8"
             name="Expenditure"
+            isAnimationActive={true}
+            animationDuration={600}
+            animationEasing="ease-in-out"
           />
         </BarChart>
       </ResponsiveContainer>

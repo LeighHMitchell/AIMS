@@ -27,6 +27,7 @@ import { MultiSelect } from '@/components/ui/multi-select'
 import { HelpTextTooltip } from '@/components/ui/help-text-tooltip'
 import { Switch } from '@/components/ui/switch'
 import { Label } from '@/components/ui/label'
+import { splitTransactionAcrossYears } from '@/utils/year-allocation'
 
 interface FinanceTypeFlowChartProps {
   dateRange?: {
@@ -214,10 +215,9 @@ export function FinanceTypeFlowChart({
         }
 
         // Process data - keep actual finance type codes, transaction types, and use USD values
-        const processedData = transactions.map((t: any) => {
-          const date = new Date(t.transaction_date)
-          const year = date.getFullYear()
-
+        const processedData: any[] = []
+        
+        transactions.forEach((t: any) => {
           // ONLY use USD values - try value_usd first
           let value = parseFloat(String(t.value_usd)) || 0
 
@@ -234,22 +234,32 @@ export function FinanceTypeFlowChart({
               value: t.value,
               value_usd: t.value_usd
             })
+            return
           }
 
-          // Use actual finance_type code from database
-          const financeType = t.finance_type || 'Unknown'
-          const flowType = t.flow_type || 'Unknown'
-          const transactionType = t.transaction_type || 'Unknown'
+          // Apply proportional allocation if enabled
+          const txToProcess = allocationMethod === 'proportional' 
+            ? t 
+            : { ...t, period_start: null, period_end: null }
+            
+          const yearAllocations = splitTransactionAcrossYears(txToProcess)
+          
+          yearAllocations.forEach(({ year, amount }) => {
+            // Use actual finance_type code from database
+            const financeType = t.finance_type || 'Unknown'
+            const flowType = t.flow_type || 'Unknown'
+            const transactionType = t.transaction_type || 'Unknown'
 
-          return {
-            year,
-            flowType,
-            financeType,
-            transactionType,
-            value,
-            date: t.transaction_date
-          }
-        }).filter((d: any) => d.value > 0) // Remove entries with zero values
+            processedData.push({
+              year,
+              flowType,
+              financeType,
+              transactionType,
+              value: amount,
+              date: t.transaction_date
+            })
+          })
+        })
 
         // Get unique flow type codes from data
         const uniqueFlowTypeCodes = Array.from(new Set(processedData.map((d: any) => d.flowType)))
@@ -297,7 +307,7 @@ export function FinanceTypeFlowChart({
     }
 
     fetchData()
-  }, [dateRange, refreshKey]) // Removed selectedTransactionTypes - filter client-side instead
+  }, [dateRange, refreshKey, allocationMethod]) // Removed selectedTransactionTypes - filter client-side instead
 
   // Aggregate data - restructured to show flow types on X-axis
   const chartData = useMemo(() => {
@@ -416,7 +426,7 @@ export function FinanceTypeFlowChart({
     } else if (absValue >= 1000000) {
       formatted = `$${(absValue / 1000000).toFixed(2)}m`
     } else if (absValue >= 1000) {
-      formatted = `$${(absValue / 1000).toFixed(1)}k`
+      formatted = `$${(absValue / 1000).toFixed(2)}k`
     } else {
       formatted = `$${absValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
     }
@@ -902,7 +912,7 @@ export function FinanceTypeFlowChart({
                 <BarChart
                   data={chartData}
                   margin={{ top: 20, right: 30, left: 20, bottom: 60 }}
-                  key={`bar-${selectedFlowTypes.join('-')}-${selectedFinanceTypes.join('-')}`}
+                  key={`bar-${selectedFlowTypes.join('-')}-${selectedFinanceTypes.join('-')}-${allocationMethod}`}
                 >
                   <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e1" opacity={0.5} />
                   <XAxis
@@ -958,7 +968,7 @@ export function FinanceTypeFlowChart({
                 <LineChart
                   data={chartData}
                   margin={{ top: 20, right: 30, left: 20, bottom: 60 }}
-                  key={`line-${selectedFlowTypes.join('-')}-${selectedFinanceTypes.join('-')}`}
+                  key={`line-${selectedFlowTypes.join('-')}-${selectedFinanceTypes.join('-')}-${allocationMethod}`}
                 >
                   <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e1" opacity={0.5} />
                   <XAxis
@@ -1003,7 +1013,7 @@ export function FinanceTypeFlowChart({
                             strokeDasharray={dashArray}
                             dot={{ fill: color, r: 4 }}
                             isAnimationActive={true}
-                            animationDuration={800}
+                            animationDuration={600}
                             animationEasing="ease-in-out"
                           />
                         )
@@ -1020,7 +1030,7 @@ export function FinanceTypeFlowChart({
                 <AreaChart
                   data={chartData}
                   margin={{ top: 20, right: 30, left: 20, bottom: 60 }}
-                  key={`area-${selectedFlowTypes.join('-')}-${selectedFinanceTypes.join('-')}`}
+                  key={`area-${selectedFlowTypes.join('-')}-${selectedFinanceTypes.join('-')}-${allocationMethod}`}
                 >
                   <defs>
                     {selectedFlowTypes.map(flowType => {
@@ -1090,7 +1100,7 @@ export function FinanceTypeFlowChart({
                             strokeDasharray={dashArray}
                             fill={`url(#${gradientId})`}
                             isAnimationActive={true}
-                            animationDuration={800}
+                            animationDuration={600}
                             animationEasing="ease-in-out"
                           />
                         )

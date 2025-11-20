@@ -49,6 +49,29 @@ interface IatiActivity {
 // Read API key at runtime to ensure we get the latest value from Vercel environment
 const getIatiApiKey = () => process.env.IATI_API_KEY || process.env.NEXT_PUBLIC_IATI_API_KEY
 
+// Helper function to extract date from activity_date array by type
+// IATI date types: '1' = start-planned, '2' = start-actual, '3' = end-planned, '4' = end-actual
+const extractActivityDate = (activityDates: any, dateType: string): string | undefined => {
+  if (!activityDates) return undefined
+  
+  // Handle array format
+  if (Array.isArray(activityDates)) {
+    const dateObj = activityDates.find((d: any) => {
+      const type = d['@_type'] || d.type || d['@type'] || d['_type']
+      return type === dateType
+    })
+    return dateObj?.['@_iso-date'] || dateObj?.['iso-date'] || dateObj?.['iso_date'] || dateObj?.isoDate || undefined
+  }
+  
+  // Handle object format
+  if (typeof activityDates === 'object') {
+    const dateObj = activityDates[dateType] || activityDates[`type_${dateType}`]
+    return dateObj?.['@_iso-date'] || dateObj?.['iso-date'] || dateObj?.['iso_date'] || dateObj?.isoDate || dateObj || undefined
+  }
+  
+  return undefined
+}
+
 /**
  * POST /api/iati/search
  * Search the IATI Datastore using the correct API v3 format
@@ -224,6 +247,16 @@ export async function POST(request: NextRequest) {
         console.log("[IATI Search API] Total found:", data.response?.numFound || 0)
         console.log("[IATI Search API] First activity fields:", activitiesData[0] ? Object.keys(activitiesData[0]) : "No activities")
         console.log("[IATI Search API] First few activities:", activitiesData.slice(0, 3))
+        
+        // Log date-related fields from first activity for debugging
+        if (activitiesData[0]) {
+          console.log("[IATI Search API] Date-related fields in first activity:")
+          Object.keys(activitiesData[0]).forEach(key => {
+            if (key.toLowerCase().includes('date') || key.toLowerCase().includes('activity_date')) {
+              console.log(`  ${key}:`, activitiesData[0][key])
+            }
+          })
+        }
 
         // Log organization-related fields specifically
         if (activitiesData[0]) {
@@ -528,10 +561,34 @@ export async function POST(request: NextRequest) {
                 reportingOrgRef: activity.reporting_org_ref || activity.reporting_org_identifier || activity.reporting_org_id || undefined,
                 status: activity.activity_status_code || activity.activity_status || undefined,
                 statusNarrative: activity.activity_status_narrative || activity.activity_status_name || activity.activity_status_narrative_text || undefined,
-                startDatePlanned: activity.activity_date_start_planned || undefined,
-                endDatePlanned: activity.activity_date_end_planned || undefined,
-                startDateActual: activity.activity_date_start_actual || undefined,
-                endDateActual: activity.activity_date_end_actual || undefined,
+                startDatePlanned: 
+                  extractActivityDate(activity.activity_date, '1') ||
+                  activity.activity_date_start_planned || 
+                  activity.activity_date_start_planned_iso_date || 
+                  activity['activity-date-start-planned'] || 
+                  activity['activity-date-start-planned-iso-date'] || 
+                  undefined,
+                endDatePlanned: 
+                  extractActivityDate(activity.activity_date, '3') ||
+                  activity.activity_date_end_planned || 
+                  activity.activity_date_end_planned_iso_date || 
+                  activity['activity-date-end-planned'] || 
+                  activity['activity-date-end-planned-iso-date'] || 
+                  undefined,
+                startDateActual: 
+                  extractActivityDate(activity.activity_date, '2') ||
+                  activity.activity_date_start_actual || 
+                  activity.activity_date_start_actual_iso_date || 
+                  activity['activity-date-start-actual'] || 
+                  activity['activity-date-start-actual-iso-date'] || 
+                  undefined,
+                endDateActual: 
+                  extractActivityDate(activity.activity_date, '4') ||
+                  activity.activity_date_end_actual || 
+                  activity.activity_date_end_actual_iso_date || 
+                  activity['activity-date-end-actual'] || 
+                  activity['activity-date-end-actual-iso-date'] || 
+                  undefined,
                 totalBudget: activity.budget_value ? parseFloat(activity.budget_value) : undefined,
                 totalPlannedDisbursement: activity.planned_disbursement_value ? parseFloat(activity.planned_disbursement_value) : undefined,
                 totalOutgoingCommitment: activity.transaction_value ? (() => {

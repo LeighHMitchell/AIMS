@@ -4368,6 +4368,12 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
       }
       
       console.log('[IATI Search] Fetched XML for:', activity.iatiIdentifier);
+      console.log('[IATI Search] 🔍 DIAGNOSTIC - XML Structure Analysis:', {
+        xmlLength: data.xml.length,
+        hasIatiActivities: data.xml.includes('<iati-activities'),
+        hasIatiActivity: data.xml.includes('<iati-activity'),
+        targetIdentifier: activity.iatiIdentifier
+      });
       
       // Extract single activity from multi-activity XML if needed
       let singleActivityXml = data.xml;
@@ -4383,13 +4389,34 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
           
           console.log('[IATI Search] Found', activities.length, 'activities in XML');
           
+          // DIAGNOSTIC: Log transaction count per activity
+          const activityTransactionCounts: Array<{identifier: string, transactionCount: number, index: number}> = [];
+          for (let i = 0; i < activities.length; i++) {
+            const identifierEl = activities[i].getElementsByTagName('iati-identifier')[0];
+            const identifier = identifierEl?.textContent?.trim() || `Unknown-${i}`;
+            const transactions = activities[i].getElementsByTagName('transaction');
+            activityTransactionCounts.push({
+              identifier,
+              transactionCount: transactions.length,
+              index: i
+            });
+          }
+          console.log('[IATI Search] 🔍 DIAGNOSTIC - Transaction counts per activity:', activityTransactionCounts);
+          
           // Find the activity with matching identifier
           let matchingActivity = null;
+          let matchingIndex = -1;
           for (let i = 0; i < activities.length; i++) {
             const identifierEl = activities[i].getElementsByTagName('iati-identifier')[0];
             if (identifierEl && identifierEl.textContent?.trim() === activity.iatiIdentifier) {
               matchingActivity = activities[i];
+              matchingIndex = i;
               console.log('[IATI Search] Found matching activity at index', i);
+              console.log('[IATI Search] 🔍 DIAGNOSTIC - Matching activity details:', {
+                index: i,
+                identifier: activity.iatiIdentifier,
+                transactionCount: activities[i].getElementsByTagName('transaction').length
+              });
               break;
             }
           }
@@ -4397,14 +4424,25 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
           if (matchingActivity) {
             // Serialize just this activity element back to XML
             const serializer = new XMLSerializer();
-            singleActivityXml = serializer.serializeToString(matchingActivity);
+            const activityXml = serializer.serializeToString(matchingActivity);
+            // Wrap in proper root element with XML declaration
+            singleActivityXml = `<?xml version="1.0" encoding="UTF-8"?><iati-activities>${activityXml}</iati-activities>`;
             console.log('[IATI Search] Extracted single activity, length:', singleActivityXml.length);
+            console.log('[IATI Search] 🔍 DIAGNOSTIC - XML Extraction:', {
+              originalLength: data.xml.length,
+              extractedLength: singleActivityXml.length,
+              properlyWrapped: singleActivityXml.includes('<iati-activities>'),
+              activityIndex: matchingIndex
+            });
           } else {
             console.warn('[IATI Search] Could not find matching activity, using first activity as fallback');
             if (activities.length > 0) {
               const serializer = new XMLSerializer();
-              singleActivityXml = serializer.serializeToString(activities[0]);
+              const activityXml = serializer.serializeToString(activities[0]);
+              // Wrap in proper root element with XML declaration
+              singleActivityXml = `<?xml version="1.0" encoding="UTF-8"?><iati-activities>${activityXml}</iati-activities>`;
               console.log('[IATI Search] Using first activity, length:', singleActivityXml.length);
+              console.warn('[IATI Search] 🔍 DIAGNOSTIC - Using fallback activity (first activity in XML)');
             }
           }
         } catch (extractError) {
@@ -4412,11 +4450,36 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
           console.log('[IATI Search] Falling back to original XML');
           // Fall back to using the original XML
         }
+      } else {
+        // Single activity XML - ensure it's properly wrapped
+        if (!singleActivityXml.includes('<iati-activities>') && singleActivityXml.includes('<iati-activity')) {
+          console.log('[IATI Search] 🔍 DIAGNOSTIC - Single activity XML detected, ensuring proper wrapper');
+          // Check if it needs wrapping
+          if (!singleActivityXml.trim().startsWith('<?xml')) {
+            singleActivityXml = `<?xml version="1.0" encoding="UTF-8"?><iati-activities>${singleActivityXml}</iati-activities>`;
+            console.log('[IATI Search] Wrapped single activity XML in iati-activities root');
+          }
+        }
       }
       
       // Parse the XML to check for external publisher
+      console.log('[IATI Search] 🔍 DIAGNOSTIC - About to parse XML, length:', singleActivityXml.length);
       const parser = new IATIXMLParser(singleActivityXml);
       const parsedActivity = parser.parseActivity();
+      
+      // DIAGNOSTIC: Log parser results
+      console.log('[IATI Search] 🔍 DIAGNOSTIC - Parser Results:', {
+        parsedIdentifier: parsedActivity.iatiIdentifier,
+        transactionCount: parsedActivity.transactions?.length || 0,
+        firstThreeTransactions: parsedActivity.transactions?.slice(0, 3).map((t: any, idx: number) => ({
+          index: idx,
+          type: t.type,
+          date: t.date,
+          value: t.value,
+          currency: t.currency,
+          ref: t.ref
+        })) || []
+      });
       
       // Get user's publisher refs
       const userPublisherRefs: string[] = [];
@@ -9508,7 +9571,12 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
                   <Button 
                     variant="outline"
                     onClick={() => {
-                      window.location.reload();
+                      // Navigate to the activity page to see the imported changes
+                      if (activityId) {
+                        window.location.href = `/activities/${activityId}`;
+                      } else {
+                        window.location.reload();
+                      }
                     }}
                   >
                     <RefreshCw className="h-4 w-4 mr-2" />

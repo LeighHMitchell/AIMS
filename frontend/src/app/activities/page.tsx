@@ -1459,7 +1459,7 @@ function ActivitiesPageContent() {
                                 )}
 
                                 {activity.iatiIdentifier && (
-                                  <div className="flex items-center gap-1 flex-shrink min-w-0 ml-2">
+                                  <div className={`flex items-center gap-1 flex-shrink min-w-0 ${activity.partnerId ? 'ml-2' : ''}`}>
                                     <span className="text-slate-400 truncate">{activity.iatiIdentifier}</span>
                                     <button
                                       onClick={(e) => {

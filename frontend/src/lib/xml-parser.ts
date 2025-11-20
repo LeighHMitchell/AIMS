@@ -1041,6 +1041,7 @@ export class IATIXMLParser {
           role: org.role,
           activityId: org.activityId || undefined,
           crsChannelCode: org.crsChannelCode,
+          name: org.name || undefined, // Add name field for compatibility
           narrative: org.name || undefined,
           narrativeLang: org.narrativeLang,
           narratives: org.narratives,
@@ -1410,11 +1411,45 @@ export class IATIXMLParser {
 
     // === TRANSACTIONS ===
     
+    // Ensure we're querying transactions only from this specific activity element
+    // Verify the activity element is the direct parent or ancestor of transactions
     const transactions = activity.querySelectorAll('transaction');
+    
+    // DIAGNOSTIC: Log transaction extraction details
+    console.log('[XML Parser] 🔍 DIAGNOSTIC - Transaction Extraction:', {
+      activityIdentifier: result.iatiIdentifier || 'unknown',
+      transactionCount: transactions.length,
+      activityElementTag: activity.tagName,
+      activityHasParent: !!activity.parentElement
+    });
+    
     if (transactions.length > 0) {
       result.transactions = [];
+      const seenRefs = new Set<string>();
+      let duplicateCount = 0;
+      
       for (let i = 0; i < transactions.length; i++) {
         const transaction = transactions[i];
+        
+        // Verify transaction belongs to this activity (safety check)
+        let currentParent: Element | null = transaction.parentElement;
+        let belongsToActivity = false;
+        while (currentParent) {
+          if (currentParent === activity) {
+            belongsToActivity = true;
+            break;
+          }
+          currentParent = currentParent.parentElement;
+        }
+        
+        if (!belongsToActivity && transaction.parentElement !== activity) {
+          console.warn('[XML Parser] 🔍 DIAGNOSTIC - Transaction does not belong to activity, skipping:', {
+            transactionIndex: i,
+            parentTag: transaction.parentElement?.tagName,
+            activityTag: activity.tagName
+          });
+          continue;
+        }
         const transactionType = transaction.querySelector('transaction-type');
         const transactionDate = transaction.querySelector('transaction-date');
         const value = transaction.querySelector('value');
@@ -1544,8 +1579,61 @@ export class IATIXMLParser {
         transactionData.tied_status_vocabulary = tiedStatus?.getAttribute('vocabulary') || '1';
         transactionData.disbursement_channel_vocabulary = disbursementChannel?.getAttribute('vocabulary') || '1';
 
+        // Deduplication: Check for duplicate transaction refs
+        // Only deduplicate based on actual ref attributes, or create unique keys
+        // that include sector information to avoid false positives
+        let txRef: string;
+        if (transactionData.ref) {
+          // Use actual ref if provided
+          txRef = transactionData.ref;
+        } else {
+          // Create a unique key that includes sectors to distinguish transactions
+          // with same type/date/value but different sectors
+          const sectorCodes = transactionData.sectors 
+            ? transactionData.sectors.map(s => s.code).sort().join(',')
+            : (transactionData.sector?.code || '');
+          
+          // Include provider/receiver org refs if available for additional uniqueness
+          const providerRef = transactionData.providerOrg?.ref || '';
+          const receiverRef = transactionData.receiverOrg?.ref || '';
+          
+          // Create unique key: type-date-value-sectors-provider-receiver-index
+          // Using index as final fallback ensures uniqueness even if all else matches
+          txRef = `no-ref-${transactionData.type}-${transactionData.date}-${transactionData.value}-${sectorCodes}-${providerRef}-${receiverRef}-${i}`;
+        }
+
+        if (seenRefs.has(txRef)) {
+          duplicateCount++;
+          console.warn('[XML Parser] 🔍 DIAGNOSTIC - Duplicate transaction detected and skipped:', {
+            ref: txRef,
+            type: transactionData.type,
+            date: transactionData.date,
+            value: transactionData.value,
+            sectors: transactionData.sectors?.map(s => s.code) || transactionData.sector?.code,
+            index: i
+          });
+          continue;
+        }
+        seenRefs.add(txRef);
+
         result.transactions.push(transactionData);
       }
+      
+      // DIAGNOSTIC: Log final transaction count and duplicates
+      if (duplicateCount > 0) {
+        console.warn('[XML Parser] 🔍 DIAGNOSTIC - Transaction deduplication summary:', {
+          totalFound: transactions.length,
+          duplicatesSkipped: duplicateCount,
+          uniqueTransactions: result.transactions.length
+        });
+      } else {
+        console.log('[XML Parser] 🔍 DIAGNOSTIC - Transaction parsing complete:', {
+          totalTransactions: result.transactions.length,
+          duplicatesFound: 0
+        });
+      }
+    } else {
+      console.log('[XML Parser] 🔍 DIAGNOSTIC - No transactions found in activity');
     }
 
     // === POLICY MARKERS ===

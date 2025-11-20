@@ -138,6 +138,10 @@ import { IATI_ACTIVITY_SCOPE } from "@/data/iati-activity-scope"
 import { IATI_COLLABORATION_TYPES, getCollaborationTypeByCode } from "@/data/iati-collaboration-types"
 import { TIED_STATUS_LABELS } from "@/types/transaction"
 import { VALIDATION_STATUS_OPTIONS } from "@/types/government-endorsement"
+import { Switch } from "@/components/ui/switch"
+import { Label } from "@/components/ui/label"
+import { HelpTextTooltip } from "@/components/ui/help-text-tooltip"
+import { splitBudgetAcrossYears, splitPlannedDisbursementAcrossYears } from "@/utils/year-allocation"
 
 // Hierarchy levels mapping
 type HierarchyOption = {
@@ -407,6 +411,8 @@ export default function ActivityDetailPage() {
   const scrollLockRef = useRef(false)
   const scrollLockTimeout = useRef<NodeJS.Timeout | null>(null)
   const [budgetYearView, setBudgetYearView] = useState<'chart' | 'table'>('chart')
+  const [budgetAllocationMethod, setBudgetAllocationMethod] = useState<'proportional' | 'period-start'>('proportional')
+  const [budgetVsSpendAllocationMethod, setBudgetVsSpendAllocationMethod] = useState<'proportional' | 'period-start'>('proportional')
   
   // Force scroll to top after description collapses - runs synchronously before paint
   useLayoutEffect(() => {
@@ -2250,7 +2256,26 @@ export default function ActivityDetailPage() {
             <Card className="border-slate-200 bg-white">
               <CardHeader className="pb-2 pt-3 px-3 flex flex-row items-center justify-between">
                 <CardTitle className="text-xs font-semibold text-slate-900">Budget by Year</CardTitle>
-                <div className="flex gap-1">
+                <div className="flex items-center gap-2">
+                  {/* Allocation Method Toggle */}
+                  <div className="flex items-center gap-2 border rounded-lg px-2 py-1 bg-white">
+                    <Label htmlFor="budget-allocation-toggle" className="text-xs text-slate-700 cursor-pointer whitespace-nowrap">
+                      {budgetAllocationMethod === 'proportional' ? 'Proportional' : 'Period Start'}
+                    </Label>
+                    <Switch
+                      id="budget-allocation-toggle"
+                      checked={budgetAllocationMethod === 'proportional'}
+                      onCheckedChange={(checked) => setBudgetAllocationMethod(checked ? 'proportional' : 'period-start')}
+                    />
+                  </div>
+                  <HelpTextTooltip 
+                    content={
+                      budgetAllocationMethod === 'proportional'
+                        ? "Allocates budget amounts proportionally across calendar years based on the number of days. For example, a budget spanning July 2024 to June 2025 will be split between 2024 and 2025."
+                        : "Allocates the full budget amount to the year of the start date."
+                    }
+                  />
+                  <div className="flex gap-1">
                   <Button
                     variant="ghost"
                     size="sm"
@@ -2293,13 +2318,21 @@ export default function ActivityDetailPage() {
                     <Download className="h-3 w-3" />
                   </Button>
                   </div>
+                </div>
               </CardHeader>
               <CardContent className="p-3 pt-0">
                 {(() => {
                   // Calculate budgets by year
                   const budgetsByYear = new Map<number, number>()
                   budgets.forEach(budget => {
-                    if (budget.period_start) {
+                    if (budgetAllocationMethod === 'proportional' && budget.period_start && budget.period_end) {
+                      // Use proportional allocation
+                      const allocations = splitBudgetAcrossYears(budget)
+                      allocations.forEach(({ year, amount }) => {
+                        budgetsByYear.set(year, (budgetsByYear.get(year) || 0) + amount)
+                      })
+                    } else if (budget.period_start) {
+                      // Use period-start allocation (default behavior)
                       const year = new Date(budget.period_start).getFullYear()
                       const usdValue = budget.usd_value || (budget.currency === 'USD' ? budget.value : 0)
                       budgetsByYear.set(year, (budgetsByYear.get(year) || 0) + (usdValue || 0))
@@ -2388,7 +2421,14 @@ export default function ActivityDetailPage() {
                               return null
                             }}
                           />
-                          <Bar dataKey="amount" radius={[4, 4, 0, 0]}>
+                          <Bar 
+                            dataKey="amount" 
+                            radius={[4, 4, 0, 0]}
+                            isAnimationActive={true}
+                            animationDuration={600}
+                            animationEasing="ease-in-out"
+                            key={`budget-bar-${budgetAllocationMethod}`}
+                          >
                             {budgetData.map((entry, index) => (
                               <Cell key={`cell-${index}`} fill="#475569" />
                             ))}
@@ -2401,11 +2441,30 @@ export default function ActivityDetailPage() {
               </CardContent>
             </Card>
 
-            {/* Budget vs. Spend */}
+            {/* Planned vs Actual */}
             <Card className="border-slate-200 bg-white">
               <CardHeader className="pb-2 pt-3 px-3 flex flex-row items-center justify-between">
-                <CardTitle className="text-xs font-semibold text-slate-900">Budget vs. Spend</CardTitle>
-                <div className="flex gap-1">
+                <CardTitle className="text-xs font-semibold text-slate-900">Planned vs Actual</CardTitle>
+                <div className="flex items-center gap-2">
+                  {/* Allocation Method Toggle */}
+                  <div className="flex items-center gap-2 border rounded-lg px-2 py-1 bg-white">
+                    <Label htmlFor="budget-vs-spend-allocation-toggle" className="text-xs text-slate-700 cursor-pointer whitespace-nowrap">
+                      {budgetVsSpendAllocationMethod === 'proportional' ? 'Proportional' : 'Period Start'}
+                    </Label>
+                    <Switch
+                      id="budget-vs-spend-allocation-toggle"
+                      checked={budgetVsSpendAllocationMethod === 'proportional'}
+                      onCheckedChange={(checked) => setBudgetVsSpendAllocationMethod(checked ? 'proportional' : 'period-start')}
+                    />
+                  </div>
+                  <HelpTextTooltip 
+                    content={
+                      budgetVsSpendAllocationMethod === 'proportional'
+                        ? "Allocates budget and planned disbursement amounts proportionally across calendar years based on the number of days. For example, a budget spanning July 2024 to June 2025 will be split between 2024 and 2025."
+                        : "Allocates the full budget or planned disbursement amount to the year of the start date."
+                    }
+                  />
+                  <div className="flex gap-1">
                   <Button
                     variant="ghost"
                     size="sm"
@@ -2475,6 +2534,7 @@ export default function ActivityDetailPage() {
                     <Download className="h-3 w-3" />
                   </Button>
                   </div>
+                </div>
               </CardHeader>
               <CardContent className="p-3 pt-0">
                 {(() => {
@@ -2485,7 +2545,14 @@ export default function ActivityDetailPage() {
 
                   // Process planned disbursements
                   plannedDisbursements.forEach((pd: any) => {
-                    if (pd.period_start) {
+                    if (budgetVsSpendAllocationMethod === 'proportional' && pd.period_start && pd.period_end) {
+                      // Use proportional allocation
+                      const allocations = splitPlannedDisbursementAcrossYears(pd)
+                      allocations.forEach(({ year, amount }) => {
+                        plannedDisbursementsByYearMap.set(year, (plannedDisbursementsByYearMap.get(year) || 0) + amount)
+                      })
+                    } else if (pd.period_start) {
+                      // Use period-start allocation (default behavior)
                       const year = new Date(pd.period_start).getFullYear()
                       const usdValue = pd.usd_amount || (pd.currency === 'USD' ? pd.value : 0)
                       plannedDisbursementsByYearMap.set(year, (plannedDisbursementsByYearMap.get(year) || 0) + (usdValue || 0))
@@ -2571,7 +2638,13 @@ export default function ActivityDetailPage() {
                   return (
                     <div className="h-24 -mx-2">
                       <ResponsiveContainer width="100%" height="100%">
-                        <RechartsBarChart data={chartData} margin={{ top: 0, right: 5, left: 0, bottom: 5 }} barCategoryGap="5%" barGap={0}>
+                        <RechartsBarChart 
+                          data={chartData} 
+                          margin={{ top: 0, right: 5, left: 0, bottom: 5 }} 
+                          barCategoryGap="5%" 
+                          barGap={0}
+                          key={`budget-vs-spend-${budgetVsSpendAllocationMethod}`}
+                        >
                           <XAxis 
                             dataKey="year" 
                             tick={{ fontSize: 10, fill: '#64748b' }}
@@ -2618,9 +2691,34 @@ export default function ActivityDetailPage() {
                               return null
                             }}
                           />
-                          <Bar dataKey="plannedDisbursements" fill="#94a3b8" name="Planned" radius={[4, 4, 4, 4]} />
-                          <Bar dataKey="disbursements" fill="#1e40af" name="Disbursements" radius={[4, 4, 4, 4]} />
-                          <Bar dataKey="expenditures" fill="#0f172a" name="Expenditures" radius={[4, 4, 4, 4]} />
+                          <Bar 
+                            dataKey="plannedDisbursements" 
+                            fill="#94a3b8" 
+                            name="Planned" 
+                            radius={[4, 4, 4, 4]}
+                            isAnimationActive={true}
+                            animationDuration={600}
+                            animationEasing="ease-in-out"
+                            key={`planned-${budgetVsSpendAllocationMethod}`}
+                          />
+                          <Bar 
+                            dataKey="disbursements" 
+                            fill="#1e40af" 
+                            name="Disbursements" 
+                            radius={[4, 4, 4, 4]}
+                            isAnimationActive={true}
+                            animationDuration={600}
+                            animationEasing="ease-in-out"
+                          />
+                          <Bar 
+                            dataKey="expenditures" 
+                            fill="#0f172a" 
+                            name="Expenditures" 
+                            radius={[4, 4, 4, 4]}
+                            isAnimationActive={true}
+                            animationDuration={600}
+                            animationEasing="ease-in-out"
+                          />
                         </RechartsBarChart>
                       </ResponsiveContainer>
                     </div>

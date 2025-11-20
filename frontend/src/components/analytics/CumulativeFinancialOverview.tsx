@@ -7,6 +7,8 @@ import {
   Line,
   BarChart,
   Bar,
+  AreaChart,
+  Area,
   Cell,
   XAxis,
   YAxis,
@@ -16,7 +18,7 @@ import {
 } from 'recharts'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
-import { AlertCircle, Download, FileImage, LineChart as LineChartIcon, BarChart3, Table as TableIcon } from 'lucide-react'
+import { AlertCircle, Download, FileImage, LineChart as LineChartIcon, BarChart3, Table as TableIcon, TrendingUp as TrendingUpIcon } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { Button } from '@/components/ui/button'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
@@ -25,11 +27,14 @@ import { MultiSelect } from '@/components/ui/multi-select'
 import { HelpTextTooltip } from '@/components/ui/help-text-tooltip'
 import { Switch } from '@/components/ui/switch'
 import { Label } from '@/components/ui/label'
-import { allocateProportionally, generateMonthPeriods } from '@/utils/period-allocation'
-import { startOfMonth } from 'date-fns'
+import { 
+  splitBudgetAcrossYears, 
+  splitPlannedDisbursementAcrossYears, 
+  splitTransactionAcrossYears 
+} from '@/utils/year-allocation'
 
 type DataMode = 'cumulative' | 'periodic'
-type ChartType = 'line' | 'bar' | 'table' | 'total'
+type ChartType = 'line' | 'bar' | 'area' | 'table' | 'total'
 
 interface CumulativeFinancialOverviewProps {
   dateRange?: {
@@ -89,7 +94,7 @@ export function CumulativeFinancialOverview({
         // Fetch all transactions
         let transactionsQuery = supabase
           .from('transactions')
-          .select('transaction_date, transaction_type, value, value_usd, currency, activity_id, provider_org_id')
+          .select('transaction_date, transaction_type, value, value_usd, currency, activity_id, provider_org_id, period_start, period_end')
           .eq('status', 'actual')
           .order('transaction_date', { ascending: true })
 
@@ -116,6 +121,29 @@ export function CumulativeFinancialOverview({
           console.error('[CumulativeFinancialOverview] Error fetching transactions:', transactionsError)
           setError('Failed to fetch transaction data')
           return
+        }
+
+        // Debug: Log transaction type distribution
+        if (transactions && transactions.length > 0) {
+          const typeCounts = transactions.reduce((acc: Record<string, number>, tx: any) => {
+            const type = tx.transaction_type || 'unknown'
+            acc[type] = (acc[type] || 0) + 1
+            return acc
+          }, {})
+          console.log('[CumulativeFinancialOverview] Transaction type counts:', typeCounts)
+          console.log('[CumulativeFinancialOverview] Total transactions:', transactions.length)
+          
+          // Check for type '2' transactions specifically
+          const type2Transactions = transactions.filter((tx: any) => tx.transaction_type === '2')
+          console.log('[CumulativeFinancialOverview] Type 2 (Outgoing Commitment) transactions:', type2Transactions.length)
+          if (type2Transactions.length > 0) {
+            console.log('[CumulativeFinancialOverview] Sample type 2 transactions:', type2Transactions.slice(0, 3).map((tx: any) => ({
+              date: tx.transaction_date,
+              value: tx.value,
+              value_usd: tx.value_usd,
+              currency: tx.currency
+            })))
+          }
         }
 
         // Fetch planned disbursements
@@ -164,258 +192,195 @@ export function CumulativeFinancialOverview({
           console.error('[CumulativeFinancialOverview] Error fetching budgets:', budgetsError)
         }
 
-        // Process data to create cumulative overview
-        const dateMap = new Map<string, any>()
+        // Process data using year-based proportional allocation
+        // Aggregate directly into yearly buckets
+        const yearlyDataMap = new Map<number, {
+          incomingCommitment: number  // Type '1'
+          incomingFunds: number       // Type '12'
+          outgoingCommitment: number // Type '2'
+          creditGuarantee: number     // Type '11'
+          disbursements: number       // Type '3'
+          expenditures: number        // Type '4'
+          plannedDisbursements: number
+          plannedBudgets: number
+        }>()
 
-        // For proportional allocation, determine date range and generate month periods
-        const allDates: Date[] = []
-        transactions?.forEach((t: any) => {
-          if (t.transaction_date) {
-            const date = new Date(t.transaction_date)
-            if (!isNaN(date.getTime())) allDates.push(date)
-          }
-        })
-        plannedDisbursements?.forEach((pd: any) => {
-          if (pd.period_start) {
-            const date = new Date(pd.period_start)
-            if (!isNaN(date.getTime())) allDates.push(date)
-          }
-          if (pd.period_end) {
-            const date = new Date(pd.period_end)
-            if (!isNaN(date.getTime())) allDates.push(date)
-          }
-        })
-        budgets?.forEach((b: any) => {
-          if (b.period_start) {
-            const date = new Date(b.period_start)
-            if (!isNaN(date.getTime())) allDates.push(date)
-          }
-          if (b.period_end) {
-            const date = new Date(b.period_end)
-            if (!isNaN(date.getTime())) allDates.push(date)
-          }
-        })
-
-        let monthPeriods: Date[] = []
-        if (allDates.length > 0 && allocationMethod === 'proportional') {
-          const minDate = new Date(Math.min(...allDates.map(d => d.getTime())))
-          const maxDate = new Date(Math.max(...allDates.map(d => d.getTime())))
-          monthPeriods = generateMonthPeriods(startOfMonth(minDate), startOfMonth(maxDate))
-        }
-
-        // Process transactions by type
-        transactions?.forEach((transaction: any) => {
-          if (!transaction.transaction_date) return
-
-          const date = new Date(transaction.transaction_date)
-          if (isNaN(date.getTime())) return
-
-          const dateKey = date.toISOString().split('T')[0]
-
-          // ONLY use USD values - use value_usd
-          let value = parseFloat(String(transaction.value_usd)) || 0
-
-          // Only use raw value if currency is explicitly USD and no USD conversion exists
-          if (!value && transaction.currency === 'USD' && transaction.value) {
-            value = parseFloat(String(transaction.value)) || 0
-          }
-
-          // Skip transactions without valid USD values
-          if (!value) return
-
-          if (!dateMap.has(dateKey)) {
-            dateMap.set(dateKey, {
-              date,
-              timestamp: date.getTime(),
+        // Helper to initialize year entry if needed
+        const ensureYearEntry = (year: number) => {
+          if (!yearlyDataMap.has(year)) {
+            yearlyDataMap.set(year, {
+              incomingCommitment: 0,
               incomingFunds: 0,
-              commitments: 0,
+              outgoingCommitment: 0,
+              creditGuarantee: 0,
               disbursements: 0,
               expenditures: 0,
               plannedDisbursements: 0,
               plannedBudgets: 0
             })
           }
+        }
 
-          const point = dateMap.get(dateKey)!
-          const type = transaction.transaction_type
+        // Process transactions by type and year
+        let skippedTransactions = 0
+        let processedByType: Record<string, number> = {}
+        
+        transactions?.forEach((transaction: any) => {
+          // If allocation method is NOT proportional, we force single-date behavior
+          // even if the transaction has a period range.
+          // If it IS proportional, splitTransactionAcrossYears will handle period ranges if present.
+          const txToProcess = allocationMethod === 'proportional' 
+            ? transaction 
+            : { ...transaction, period_start: null, period_end: null }
 
-          if (type === '1' || type === '12') {
-            point.incomingFunds += value
-          } else if (type === '2' || type === '11') {
-            point.commitments += value
-          } else if (type === '3') {
-            point.disbursements += value
-          } else if (type === '4') {
-            point.expenditures += value
+          const yearAllocations = splitTransactionAcrossYears(txToProcess)
+          
+          // Track if transaction was skipped (no allocations returned)
+          if (yearAllocations.length === 0) {
+            skippedTransactions++
+            const type = transaction.transaction_type || 'unknown'
+            if (!processedByType[type]) processedByType[type] = 0
+            return
           }
+          
+          yearAllocations.forEach(({ year, amount }) => {
+            ensureYearEntry(year)
+            const yearData = yearlyDataMap.get(year)!
+            const type = transaction.transaction_type
+
+            // Track processed transactions by type
+            if (!processedByType[type]) processedByType[type] = 0
+            processedByType[type]++
+
+            if (type === '1') {
+              yearData.incomingCommitment += amount
+            } else if (type === '12') {
+              yearData.incomingFunds += amount
+            } else if (type === '2') {
+              yearData.outgoingCommitment += amount
+            } else if (type === '11') {
+              yearData.creditGuarantee += amount
+            } else if (type === '3') {
+              yearData.disbursements += amount
+            } else if (type === '4') {
+              yearData.expenditures += amount
+            } else {
+              // Log unhandled transaction types for debugging
+              console.warn('[CumulativeFinancialOverview] Unhandled transaction type:', type, transaction)
+            }
+          })
         })
+        
+        // Debug: Log processing summary
+        if (skippedTransactions > 0) {
+          console.warn('[CumulativeFinancialOverview] Skipped transactions (no value or invalid date):', skippedTransactions)
+        }
+        console.log('[CumulativeFinancialOverview] Processed transactions by type:', processedByType)
 
         // Process planned disbursements
         plannedDisbursements?.forEach((pd: any) => {
-          if (!pd.period_start) return
-
-          const startDate = new Date(pd.period_start)
-          if (isNaN(startDate.getTime())) return
-
-          // ONLY use USD values - try usd_amount first
-          let value = parseFloat(String(pd.usd_amount)) || 0
-
-          // Only use raw amount if currency is explicitly USD and no USD conversion exists
-          if (!value && pd.currency === 'USD' && pd.amount) {
-            value = parseFloat(String(pd.amount)) || 0
-          }
-
-          // Skip planned disbursements without valid USD values
-          if (!value) return
-
-          if (allocationMethod === 'proportional' && pd.period_end) {
-            // Proportional allocation: distribute across months
-            const endDate = new Date(pd.period_end)
-            if (!isNaN(endDate.getTime())) {
-              const allocations = allocateProportionally(value, pd.period_start, pd.period_end, monthPeriods)
-              
-              allocations.forEach((allocatedValue, monthKey) => {
-                const [year, month] = monthKey.split('-').map(Number)
-                const monthStartDate = new Date(year, month - 1, 1)
-                const dateKey = monthStartDate.toISOString().split('T')[0]
+          if (allocationMethod === 'proportional') {
+            // Use year-based proportional allocation
+            const yearAllocations = splitPlannedDisbursementAcrossYears(pd)
+            yearAllocations.forEach(({ year, amount }) => {
+              ensureYearEntry(year)
+              yearlyDataMap.get(year)!.plannedDisbursements += amount
+            })
+          } else {
+            // Period start allocation: full amount to start year
+            if (pd.period_start) {
+              const startDate = new Date(pd.period_start)
+              if (!isNaN(startDate.getTime())) {
+                const year = startDate.getFullYear()
+                ensureYearEntry(year)
                 
-                if (!dateMap.has(dateKey)) {
-                  dateMap.set(dateKey, {
-                    date: monthStartDate,
-                    timestamp: monthStartDate.getTime(),
-                    incomingFunds: 0,
-                    commitments: 0,
-                    disbursements: 0,
-                    expenditures: 0,
-                    plannedDisbursements: 0,
-                    plannedBudgets: 0
-                  })
+                // Get value (prefer USD)
+                let value = parseFloat(String(pd.usd_amount)) || 0
+                if (!value && pd.currency === 'USD' && pd.amount) {
+                  value = parseFloat(String(pd.amount)) || 0
                 }
                 
-                dateMap.get(dateKey)!.plannedDisbursements += allocatedValue
-              })
+                if (value) {
+                  yearlyDataMap.get(year)!.plannedDisbursements += value
+                }
+              }
             }
-          } else {
-            // Period start allocation: full amount at start date
-            const dateKey = startDate.toISOString().split('T')[0]
-            
-            if (!dateMap.has(dateKey)) {
-              dateMap.set(dateKey, {
-                date: startDate,
-                timestamp: startDate.getTime(),
-                incomingFunds: 0,
-                commitments: 0,
-                disbursements: 0,
-                expenditures: 0,
-                plannedDisbursements: 0,
-                plannedBudgets: 0
-              })
-            }
-
-            dateMap.get(dateKey)!.plannedDisbursements += value
           }
         })
 
         // Process budgets
         budgets?.forEach((budget: any) => {
-          if (!budget.period_start) return
-
-          const startDate = new Date(budget.period_start)
-          if (isNaN(startDate.getTime())) return
-
-          // ONLY use USD values - try usd_value first
-          let value = parseFloat(String(budget.usd_value)) || 0
-
-          // Only use raw value if currency is explicitly USD and no USD conversion exists
-          if (!value && budget.currency === 'USD' && budget.value) {
-            value = parseFloat(String(budget.value)) || 0
-          }
-
-          // Skip budgets without valid USD values
-          if (!value) return
-
-          if (allocationMethod === 'proportional' && budget.period_end) {
-            // Proportional allocation: distribute across months
-            const endDate = new Date(budget.period_end)
-            if (!isNaN(endDate.getTime())) {
-              const allocations = allocateProportionally(value, budget.period_start, budget.period_end, monthPeriods)
-              
-              allocations.forEach((allocatedValue, monthKey) => {
-                const [year, month] = monthKey.split('-').map(Number)
-                const monthStartDate = new Date(year, month - 1, 1)
-                const dateKey = monthStartDate.toISOString().split('T')[0]
+          if (allocationMethod === 'proportional') {
+            // Use year-based proportional allocation
+            const yearAllocations = splitBudgetAcrossYears(budget)
+            yearAllocations.forEach(({ year, amount }) => {
+              ensureYearEntry(year)
+              yearlyDataMap.get(year)!.plannedBudgets += amount
+            })
+          } else {
+            // Period start allocation: full amount to start year
+            if (budget.period_start) {
+              const startDate = new Date(budget.period_start)
+              if (!isNaN(startDate.getTime())) {
+                const year = startDate.getFullYear()
+                ensureYearEntry(year)
                 
-                if (!dateMap.has(dateKey)) {
-                  dateMap.set(dateKey, {
-                    date: monthStartDate,
-                    timestamp: monthStartDate.getTime(),
-                    incomingFunds: 0,
-                    commitments: 0,
-                    disbursements: 0,
-                    expenditures: 0,
-                    plannedDisbursements: 0,
-                    plannedBudgets: 0
-                  })
+                // Get value (prefer USD)
+                let value = parseFloat(String(budget.usd_value)) || 0
+                if (!value && budget.currency === 'USD' && budget.value) {
+                  value = parseFloat(String(budget.value)) || 0
                 }
                 
-                dateMap.get(dateKey)!.plannedBudgets += allocatedValue
-              })
+                if (value) {
+                  yearlyDataMap.get(year)!.plannedBudgets += value
+                }
+              }
             }
-          } else {
-            // Period start allocation: full amount at start date
-            const dateKey = startDate.toISOString().split('T')[0]
-            
-            if (!dateMap.has(dateKey)) {
-              dateMap.set(dateKey, {
-                date: startDate,
-                timestamp: startDate.getTime(),
-                incomingFunds: 0,
-                commitments: 0,
-                disbursements: 0,
-                expenditures: 0,
-                plannedDisbursements: 0,
-                plannedBudgets: 0
-              })
-            }
-
-            dateMap.get(dateKey)!.plannedBudgets += value
           }
         })
 
-        // Convert to array and sort by date
-        const sortedPoints = Array.from(dateMap.values()).sort((a, b) => a.timestamp - b.timestamp)
-
-        // Calculate cumulative values
+        // Convert yearly data to sorted array and calculate cumulative values
+        const sortedYears = Array.from(yearlyDataMap.keys()).sort((a, b) => a - b)
+        
+        let cumulativeIncomingCommitment = 0
         let cumulativeIncomingFunds = 0
-        let cumulativeCommitments = 0
+        let cumulativeOutgoingCommitment = 0
+        let cumulativeCreditGuarantee = 0
         let cumulativeDisbursements = 0
         let cumulativeExpenditures = 0
         let cumulativePlannedDisbursements = 0
         let cumulativePlannedBudgets = 0
 
-        // Aggregate into yearly buckets for cleaner visualization
+        // Aggregate into yearly buckets for visualization
         const yearlyMap = new Map<string, any>()
 
-        sortedPoints.forEach((point) => {
-          cumulativeIncomingFunds += point.incomingFunds
-          cumulativeCommitments += point.commitments
-          cumulativeDisbursements += point.disbursements
-          cumulativeExpenditures += point.expenditures
-          cumulativePlannedDisbursements += point.plannedDisbursements
-          cumulativePlannedBudgets += point.plannedBudgets
+        sortedYears.forEach((year) => {
+          const yearData = yearlyDataMap.get(year)!
+          
+          cumulativeIncomingCommitment += yearData.incomingCommitment
+          cumulativeIncomingFunds += yearData.incomingFunds
+          cumulativeOutgoingCommitment += yearData.outgoingCommitment
+          cumulativeCreditGuarantee += yearData.creditGuarantee
+          cumulativeDisbursements += yearData.disbursements
+          cumulativeExpenditures += yearData.expenditures
+          cumulativePlannedDisbursements += yearData.plannedDisbursements
+          cumulativePlannedBudgets += yearData.plannedBudgets
 
           // Use year as key for yearly aggregation
-          const yearKey = `${point.date.getFullYear()}`
+          const yearKey = `${year}`
+          const yearDate = new Date(year, 0, 1) // January 1st of the year
 
           // Keep the latest cumulative values for each year (end of year snapshot)
           yearlyMap.set(yearKey, {
-            date: point.date.toISOString(),
-            timestamp: point.timestamp,
+            date: yearDate.toISOString(),
+            timestamp: yearDate.getTime(),
             yearKey,
-            displayDate: `${point.date.getFullYear()}`,
-            fullDate: `${point.date.getFullYear()}`,
+            displayDate: `${year}`,
+            fullDate: `${year}`,
+            'Incoming Commitment': cumulativeIncomingCommitment,
             'Incoming Funds': cumulativeIncomingFunds,
-            'Commitments': cumulativeCommitments,
+            'Outgoing Commitment': cumulativeOutgoingCommitment,
+            'Credit Guarantee': cumulativeCreditGuarantee,
             'Disbursements': cumulativeDisbursements,
             'Expenditures': cumulativeExpenditures,
             'Planned Disbursements': cumulativePlannedDisbursements,
@@ -443,8 +408,10 @@ export function CumulativeFinancialOverview({
         const endYear = lastDate.getFullYear()
 
         let lastCumulativeValues = {
+          incomingCommitment: 0,
           incomingFunds: 0,
-          commitments: 0,
+          outgoingCommitment: 0,
+          creditGuarantee: 0,
           disbursements: 0,
           expenditures: 0,
           plannedDisbursements: 0,
@@ -459,8 +426,10 @@ export function CumulativeFinancialOverview({
             filledData.push(existingData)
             // Update last known cumulative values
             lastCumulativeValues = {
+              incomingCommitment: existingData['Incoming Commitment'],
               incomingFunds: existingData['Incoming Funds'],
-              commitments: existingData['Commitments'],
+              outgoingCommitment: existingData['Outgoing Commitment'],
+              creditGuarantee: existingData['Credit Guarantee'],
               disbursements: existingData['Disbursements'],
               expenditures: existingData['Expenditures'],
               plannedDisbursements: existingData['Planned Disbursements'],
@@ -476,8 +445,10 @@ export function CumulativeFinancialOverview({
               yearKey,
               displayDate: `${year}`,
               fullDate: `${year}`,
+              'Incoming Commitment': lastCumulativeValues.incomingCommitment,
               'Incoming Funds': lastCumulativeValues.incomingFunds,
-              'Commitments': lastCumulativeValues.commitments,
+              'Outgoing Commitment': lastCumulativeValues.outgoingCommitment,
+              'Credit Guarantee': lastCumulativeValues.creditGuarantee,
               'Disbursements': lastCumulativeValues.disbursements,
               'Expenditures': lastCumulativeValues.expenditures,
               'Planned Disbursements': lastCumulativeValues.plannedDisbursements,
@@ -512,8 +483,10 @@ export function CumulativeFinancialOverview({
         // First period shows the actual values (not differences)
         return {
           ...item,
+          'Incoming Commitment': item['Incoming Commitment'],
           'Incoming Funds': item['Incoming Funds'],
-          'Commitments': item['Commitments'],
+          'Outgoing Commitment': item['Outgoing Commitment'],
+          'Credit Guarantee': item['Credit Guarantee'],
           'Disbursements': item['Disbursements'],
           'Expenditures': item['Expenditures'],
           'Planned Disbursements': item['Planned Disbursements'],
@@ -524,8 +497,10 @@ export function CumulativeFinancialOverview({
       const prevItem = filteredData[index - 1]
       return {
         ...item,
+        'Incoming Commitment': item['Incoming Commitment'] - prevItem['Incoming Commitment'],
         'Incoming Funds': item['Incoming Funds'] - prevItem['Incoming Funds'],
-        'Commitments': item['Commitments'] - prevItem['Commitments'],
+        'Outgoing Commitment': item['Outgoing Commitment'] - prevItem['Outgoing Commitment'],
+        'Credit Guarantee': item['Credit Guarantee'] - prevItem['Credit Guarantee'],
         'Disbursements': item['Disbursements'] - prevItem['Disbursements'],
         'Expenditures': item['Expenditures'] - prevItem['Expenditures'],
         'Planned Disbursements': item['Planned Disbursements'] - prevItem['Planned Disbursements'],
@@ -540,8 +515,10 @@ export function CumulativeFinancialOverview({
 
     const lastItem = filteredData[filteredData.length - 1]
     return {
+      'Incoming Commitment': lastItem['Incoming Commitment'],
       'Incoming Funds': lastItem['Incoming Funds'],
-      'Commitments': lastItem['Commitments'],
+      'Outgoing Commitment': lastItem['Outgoing Commitment'],
+      'Credit Guarantee': lastItem['Credit Guarantee'],
       'Disbursements': lastItem['Disbursements'],
       'Expenditures': lastItem['Expenditures'],
       'Planned Disbursements': lastItem['Planned Disbursements'],
@@ -560,7 +537,7 @@ export function CumulativeFinancialOverview({
     if (displayData.length === 0) return new Set()
 
     const series = new Set<string>()
-    const seriesKeys = ['Incoming Funds', 'Commitments', 'Disbursements', 'Expenditures', 'Planned Disbursements', 'Budgets']
+    const seriesKeys = ['Incoming Commitment', 'Incoming Funds', 'Outgoing Commitment', 'Credit Guarantee', 'Disbursements', 'Expenditures', 'Planned Disbursements', 'Budgets']
 
     seriesKeys.forEach(key => {
       const hasData = displayData.some(d => d[key] && d[key] > 0)
@@ -602,16 +579,32 @@ export function CumulativeFinancialOverview({
 
     let formatted = ''
     if (absValue >= 1000000000) {
-      formatted = `$${(absValue / 1000000000).toFixed(1)}b`
+      formatted = `$${(absValue / 1000000000).toFixed(2)}b`
     } else if (absValue >= 1000000) {
-      formatted = `$${(absValue / 1000000).toFixed(1)}m`
+      formatted = `$${(absValue / 1000000).toFixed(2)}m`
     } else if (absValue >= 1000) {
-      formatted = `$${(absValue / 1000).toFixed(1)}k`
+      formatted = `$${(absValue / 1000).toFixed(2)}k`
     } else {
-      formatted = `$${absValue.toLocaleString()}`
+      formatted = `$${absValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
     }
 
     return isNegative ? `-${formatted}` : formatted
+  }
+
+  // Map series names to transaction type codes
+  const getTransactionTypeCode = (seriesName: string): string | null => {
+    const mapping: Record<string, string | null> = {
+      'Incoming Commitment': '1',
+      'Incoming Funds': '12',
+      'Outgoing Commitment': '2',
+      'Credit Guarantee': '11',
+      'Disbursements': '3',
+      'Expenditures': '4',
+      // Planned Disbursements and Budgets are not transaction types
+      'Planned Disbursements': null,
+      'Budgets': null
+    }
+    return mapping[seriesName] || null
   }
 
   const CustomTooltip = ({ active, payload, label }: any) => {
@@ -634,20 +627,30 @@ export function CumulativeFinancialOverview({
           <div className="p-2">
             <table className="w-full text-sm">
               <tbody>
-                {nonZeroPayload.map((entry: any, index: number) => (
-                  <tr key={index} className="border-b border-slate-100 last:border-b-0">
-                    <td className="py-1.5 pr-4 flex items-center gap-2">
-                      <div
-                        className="w-3 h-3 rounded-sm flex-shrink-0"
-                        style={{ backgroundColor: entry.color }}
-                      />
-                      <span className="text-slate-700 font-medium">{entry.name}</span>
-                    </td>
-                    <td className="py-1.5 text-right font-semibold text-slate-900">
-                      {formatTooltipValue(entry.value)}
-                    </td>
-                  </tr>
-                ))}
+                {nonZeroPayload.map((entry: any, index: number) => {
+                  const transactionTypeCode = getTransactionTypeCode(entry.name)
+                  return (
+                    <tr key={index} className="border-b border-slate-100 last:border-b-0">
+                      <td className="py-1.5 pr-4 flex items-center gap-2">
+                        <div
+                          className="w-3 h-3 rounded-sm flex-shrink-0"
+                          style={{ backgroundColor: entry.color }}
+                        />
+                        <span className="text-slate-700 font-medium flex items-center gap-2">
+                          {transactionTypeCode && (
+                            <code className="px-1.5 py-0.5 rounded bg-slate-100 text-slate-700 font-mono text-xs">
+                              {transactionTypeCode}
+                            </code>
+                          )}
+                          <span>{entry.name}</span>
+                        </span>
+                      </td>
+                      <td className="py-1.5 text-right font-semibold text-slate-900">
+                        {formatTooltipValue(entry.value)}
+                      </td>
+                    </tr>
+                  )
+                })}
               </tbody>
             </table>
           </div>
@@ -705,8 +708,10 @@ export function CumulativeFinancialOverview({
   const handleExportCSV = () => {
     const dataToExport = displayData.map(d => ({
       'Period': d.fullDate || d.displayDate,
+      'Incoming Commitment': d['Incoming Commitment']?.toFixed(2) || '0.00',
       'Incoming Funds': d['Incoming Funds']?.toFixed(2) || '0.00',
-      'Commitments': d['Commitments']?.toFixed(2) || '0.00',
+      'Outgoing Commitment': d['Outgoing Commitment']?.toFixed(2) || '0.00',
+      'Credit Guarantee': d['Credit Guarantee']?.toFixed(2) || '0.00',
       'Disbursements': d['Disbursements']?.toFixed(2) || '0.00',
       'Expenditures': d['Expenditures']?.toFixed(2) || '0.00',
       'Planned Disbursements': d['Planned Disbursements']?.toFixed(2) || '0.00',
@@ -888,6 +893,15 @@ export function CumulativeFinancialOverview({
                   Bar
                 </Button>
                 <Button
+                  variant={chartType === 'area' ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => setChartType('area')}
+                  className="h-8"
+                >
+                  <TrendingUpIcon className="h-4 w-4 mr-1.5" />
+                  Area
+                </Button>
+                <Button
                   variant={chartType === 'table' ? 'default' : 'ghost'}
                   size="sm"
                   onClick={() => setChartType('table')}
@@ -938,31 +952,137 @@ export function CumulativeFinancialOverview({
           <>
             {/* Table View */}
             {chartType === 'table' && (
-              <div className="rounded-md border">
+              <div className="rounded-md border overflow-auto h-[600px]">
                 <Table>
                   <TableHeader>
-                    <TableRow>
-                      <TableHead>Period</TableHead>
-                      <TableHead className="text-right">Incoming Funds</TableHead>
-                      <TableHead className="text-right">Commitments</TableHead>
-                      <TableHead className="text-right">Disbursements</TableHead>
-                      <TableHead className="text-right">Expenditures</TableHead>
-                      <TableHead className="text-right">Planned Disbursements</TableHead>
-                      <TableHead className="text-right">Budgets</TableHead>
+                    <TableRow className="sticky top-0 bg-white z-10">
+                      <TableHead className="bg-white">Period</TableHead>
+                      {activeSeries.has('Incoming Commitment') && (
+                        <TableHead className="text-right bg-white">Incoming Commitment</TableHead>
+                      )}
+                      {activeSeries.has('Incoming Funds') && (
+                        <TableHead className="text-right bg-white">Incoming Funds</TableHead>
+                      )}
+                      {activeSeries.has('Outgoing Commitment') && (
+                        <TableHead className="text-right bg-white">Outgoing Commitment</TableHead>
+                      )}
+                      {activeSeries.has('Credit Guarantee') && (
+                        <TableHead className="text-right bg-white">Credit Guarantee</TableHead>
+                      )}
+                      {activeSeries.has('Disbursements') && (
+                        <TableHead className="text-right bg-white">Disbursements</TableHead>
+                      )}
+                      {activeSeries.has('Expenditures') && (
+                        <TableHead className="text-right bg-white">Expenditures</TableHead>
+                      )}
+                      {activeSeries.has('Planned Disbursements') && (
+                        <TableHead className="text-right bg-white">Planned Disbursements</TableHead>
+                      )}
+                      {activeSeries.has('Budgets') && (
+                        <TableHead className="text-right bg-white">Budgets</TableHead>
+                      )}
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {displayData.map((item, index) => (
                       <TableRow key={index}>
                         <TableCell className="font-medium">{item.fullDate || item.displayDate}</TableCell>
-                        <TableCell className="text-right">{formatTooltipValue(item['Incoming Funds'] || 0)}</TableCell>
-                        <TableCell className="text-right">{formatTooltipValue(item['Commitments'] || 0)}</TableCell>
-                        <TableCell className="text-right">{formatTooltipValue(item['Disbursements'] || 0)}</TableCell>
-                        <TableCell className="text-right">{formatTooltipValue(item['Expenditures'] || 0)}</TableCell>
-                        <TableCell className="text-right">{formatTooltipValue(item['Planned Disbursements'] || 0)}</TableCell>
-                        <TableCell className="text-right">{formatTooltipValue(item['Budgets'] || 0)}</TableCell>
+                        {activeSeries.has('Incoming Commitment') && (
+                          <TableCell className="text-right">{formatTooltipValue(item['Incoming Commitment'] || 0)}</TableCell>
+                        )}
+                        {activeSeries.has('Incoming Funds') && (
+                          <TableCell className="text-right">{formatTooltipValue(item['Incoming Funds'] || 0)}</TableCell>
+                        )}
+                        {activeSeries.has('Outgoing Commitment') && (
+                          <TableCell className="text-right">{formatTooltipValue(item['Outgoing Commitment'] || 0)}</TableCell>
+                        )}
+                        {activeSeries.has('Credit Guarantee') && (
+                          <TableCell className="text-right">{formatTooltipValue(item['Credit Guarantee'] || 0)}</TableCell>
+                        )}
+                        {activeSeries.has('Disbursements') && (
+                          <TableCell className="text-right">{formatTooltipValue(item['Disbursements'] || 0)}</TableCell>
+                        )}
+                        {activeSeries.has('Expenditures') && (
+                          <TableCell className="text-right">{formatTooltipValue(item['Expenditures'] || 0)}</TableCell>
+                        )}
+                        {activeSeries.has('Planned Disbursements') && (
+                          <TableCell className="text-right">{formatTooltipValue(item['Planned Disbursements'] || 0)}</TableCell>
+                        )}
+                        {activeSeries.has('Budgets') && (
+                          <TableCell className="text-right">{formatTooltipValue(item['Budgets'] || 0)}</TableCell>
+                        )}
                       </TableRow>
                     ))}
+                    {/* Total Row */}
+                    {displayData.length > 0 && (
+                      <TableRow className="bg-slate-50 font-semibold border-t-2 border-slate-300 sticky bottom-0">
+                        <TableCell className="font-semibold">Total</TableCell>
+                        {activeSeries.has('Incoming Commitment') && (
+                          <TableCell className="text-right">
+                            {dataMode === 'cumulative'
+                              ? formatTooltipValue(displayData[displayData.length - 1]['Incoming Commitment'] || 0)
+                              : formatTooltipValue(displayData.reduce((sum, item) => sum + (item['Incoming Commitment'] || 0), 0))
+                            }
+                          </TableCell>
+                        )}
+                        {activeSeries.has('Incoming Funds') && (
+                          <TableCell className="text-right">
+                            {dataMode === 'cumulative'
+                              ? formatTooltipValue(displayData[displayData.length - 1]['Incoming Funds'] || 0)
+                              : formatTooltipValue(displayData.reduce((sum, item) => sum + (item['Incoming Funds'] || 0), 0))
+                            }
+                          </TableCell>
+                        )}
+                        {activeSeries.has('Outgoing Commitment') && (
+                          <TableCell className="text-right">
+                            {dataMode === 'cumulative'
+                              ? formatTooltipValue(displayData[displayData.length - 1]['Outgoing Commitment'] || 0)
+                              : formatTooltipValue(displayData.reduce((sum, item) => sum + (item['Outgoing Commitment'] || 0), 0))
+                            }
+                          </TableCell>
+                        )}
+                        {activeSeries.has('Credit Guarantee') && (
+                          <TableCell className="text-right">
+                            {dataMode === 'cumulative'
+                              ? formatTooltipValue(displayData[displayData.length - 1]['Credit Guarantee'] || 0)
+                              : formatTooltipValue(displayData.reduce((sum, item) => sum + (item['Credit Guarantee'] || 0), 0))
+                            }
+                          </TableCell>
+                        )}
+                        {activeSeries.has('Disbursements') && (
+                          <TableCell className="text-right">
+                            {dataMode === 'cumulative'
+                              ? formatTooltipValue(displayData[displayData.length - 1]['Disbursements'] || 0)
+                              : formatTooltipValue(displayData.reduce((sum, item) => sum + (item['Disbursements'] || 0), 0))
+                            }
+                          </TableCell>
+                        )}
+                        {activeSeries.has('Expenditures') && (
+                          <TableCell className="text-right">
+                            {dataMode === 'cumulative'
+                              ? formatTooltipValue(displayData[displayData.length - 1]['Expenditures'] || 0)
+                              : formatTooltipValue(displayData.reduce((sum, item) => sum + (item['Expenditures'] || 0), 0))
+                            }
+                          </TableCell>
+                        )}
+                        {activeSeries.has('Planned Disbursements') && (
+                          <TableCell className="text-right">
+                            {dataMode === 'cumulative'
+                              ? formatTooltipValue(displayData[displayData.length - 1]['Planned Disbursements'] || 0)
+                              : formatTooltipValue(displayData.reduce((sum, item) => sum + (item['Planned Disbursements'] || 0), 0))
+                            }
+                          </TableCell>
+                        )}
+                        {activeSeries.has('Budgets') && (
+                          <TableCell className="text-right">
+                            {dataMode === 'cumulative'
+                              ? formatTooltipValue(displayData[displayData.length - 1]['Budgets'] || 0)
+                              : formatTooltipValue(displayData.reduce((sum, item) => sum + (item['Budgets'] || 0), 0))
+                            }
+                          </TableCell>
+                        )}
+                      </TableRow>
+                    )}
                   </TableBody>
                 </Table>
               </div>
@@ -976,12 +1096,14 @@ export function CumulativeFinancialOverview({
                     .map(([key, value]) => ({
                       name: key,
                       value,
-                      fill: key === 'Incoming Funds' ? '#1e40af' :
-                            key === 'Commitments' ? '#0f172a' :
-                            key === 'Disbursements' ? '#475569' :
-                            key === 'Expenditures' ? '#64748b' :
-                            key === 'Planned Disbursements' ? '#1e3a8a' :
-                            key === 'Budgets' ? '#334155' : '#1e40af'
+                      fill: key === 'Incoming Commitment' ? '#3b82f6' :
+                            key === 'Incoming Funds' ? '#3b82f6' :
+                            key === 'Outgoing Commitment' ? '#8b5cf6' :
+                            key === 'Credit Guarantee' ? '#10b981' :
+                            key === 'Disbursements' ? '#10b981' :
+                            key === 'Expenditures' ? '#f59e0b' :
+                            key === 'Planned Disbursements' ? '#06b6d4' :
+                            key === 'Budgets' ? '#6366f1' : '#3b82f6'
                     }))
                     .sort((a, b) => b.value - a.value)
                   }
@@ -1016,12 +1138,14 @@ export function CumulativeFinancialOverview({
                       <Cell
                         key={`cell-${index}`}
                         fill={
-                          key === 'Incoming Funds' ? '#1e40af' :
-                          key === 'Commitments' ? '#0f172a' :
-                          key === 'Disbursements' ? '#475569' :
-                          key === 'Expenditures' ? '#64748b' :
-                          key === 'Planned Disbursements' ? '#1e3a8a' :
-                          key === 'Budgets' ? '#334155' : '#1e40af'
+                          key === 'Incoming Commitment' ? '#3b82f6' :
+                          key === 'Incoming Funds' ? '#3b82f6' :
+                          key === 'Outgoing Commitment' ? '#8b5cf6' :
+                          key === 'Credit Guarantee' ? '#10b981' :
+                          key === 'Disbursements' ? '#10b981' :
+                          key === 'Expenditures' ? '#f59e0b' :
+                          key === 'Planned Disbursements' ? '#06b6d4' :
+                          key === 'Budgets' ? '#6366f1' : '#3b82f6'
                         }
                       />
                     ))}
@@ -1033,7 +1157,11 @@ export function CumulativeFinancialOverview({
             {/* Bar Chart View */}
             {chartType === 'bar' && (
               <ResponsiveContainer width="100%" height={600}>
-                <BarChart data={displayData} margin={{ top: 20, right: 30, left: 20, bottom: 60 }}>
+                <BarChart 
+                  data={displayData} 
+                  margin={{ top: 20, right: 30, left: 20, bottom: 60 }}
+                  key={`bar-${allocationMethod}-${dataMode}`}
+                >
                   <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e1" opacity={0.5} />
                   <XAxis
                     dataKey="displayDate"
@@ -1047,46 +1175,84 @@ export function CumulativeFinancialOverview({
                   <YAxis tickFormatter={formatCurrency} stroke="#64748B" fontSize={12} />
                   <Tooltip content={<CustomTooltip />} />
                   <Legend content={renderLegend} />
+                  {activeSeries.has('Incoming Commitment') && (
+                    <Bar
+                      dataKey="Incoming Commitment"
+                      fill={hiddenSeries.has('Incoming Commitment') ? '#cbd5e1' : '#3b82f6'}
+                      opacity={hiddenSeries.has('Incoming Commitment') ? 0.3 : 1}
+                      isAnimationActive={true}
+                      animationDuration={600}
+                      animationEasing="ease-in-out"
+                    />
+                  )}
                   {activeSeries.has('Incoming Funds') && (
                     <Bar
                       dataKey="Incoming Funds"
-                      fill={hiddenSeries.has('Incoming Funds') ? '#cbd5e1' : '#1e40af'}
+                      fill={hiddenSeries.has('Incoming Funds') ? '#cbd5e1' : '#3b82f6'}
                       opacity={hiddenSeries.has('Incoming Funds') ? 0.3 : 1}
+                      isAnimationActive={true}
+                      animationDuration={600}
+                      animationEasing="ease-in-out"
                     />
                   )}
-                  {activeSeries.has('Commitments') && (
+                  {activeSeries.has('Outgoing Commitment') && (
                     <Bar
-                      dataKey="Commitments"
-                      fill={hiddenSeries.has('Commitments') ? '#cbd5e1' : '#0f172a'}
-                      opacity={hiddenSeries.has('Commitments') ? 0.3 : 1}
+                      dataKey="Outgoing Commitment"
+                      fill={hiddenSeries.has('Outgoing Commitment') ? '#cbd5e1' : '#8b5cf6'}
+                      opacity={hiddenSeries.has('Outgoing Commitment') ? 0.3 : 1}
+                      isAnimationActive={true}
+                      animationDuration={600}
+                      animationEasing="ease-in-out"
+                    />
+                  )}
+                  {activeSeries.has('Credit Guarantee') && (
+                    <Bar
+                      dataKey="Credit Guarantee"
+                      fill={hiddenSeries.has('Credit Guarantee') ? '#cbd5e1' : '#10b981'}
+                      opacity={hiddenSeries.has('Credit Guarantee') ? 0.3 : 1}
+                      isAnimationActive={true}
+                      animationDuration={600}
+                      animationEasing="ease-in-out"
                     />
                   )}
                   {activeSeries.has('Disbursements') && (
                     <Bar
                       dataKey="Disbursements"
-                      fill={hiddenSeries.has('Disbursements') ? '#cbd5e1' : '#475569'}
+                      fill={hiddenSeries.has('Disbursements') ? '#cbd5e1' : '#10b981'}
                       opacity={hiddenSeries.has('Disbursements') ? 0.3 : 1}
+                      isAnimationActive={true}
+                      animationDuration={600}
+                      animationEasing="ease-in-out"
                     />
                   )}
                   {activeSeries.has('Expenditures') && (
                     <Bar
                       dataKey="Expenditures"
-                      fill={hiddenSeries.has('Expenditures') ? '#cbd5e1' : '#64748b'}
+                      fill={hiddenSeries.has('Expenditures') ? '#cbd5e1' : '#f59e0b'}
                       opacity={hiddenSeries.has('Expenditures') ? 0.3 : 1}
+                      isAnimationActive={true}
+                      animationDuration={600}
+                      animationEasing="ease-in-out"
                     />
                   )}
                   {activeSeries.has('Planned Disbursements') && (
                     <Bar
                       dataKey="Planned Disbursements"
-                      fill={hiddenSeries.has('Planned Disbursements') ? '#cbd5e1' : '#1e3a8a'}
+                      fill={hiddenSeries.has('Planned Disbursements') ? '#cbd5e1' : '#06b6d4'}
                       opacity={hiddenSeries.has('Planned Disbursements') ? 0.3 : 1}
+                      isAnimationActive={true}
+                      animationDuration={600}
+                      animationEasing="ease-in-out"
                     />
                   )}
                   {activeSeries.has('Budgets') && (
                     <Bar
                       dataKey="Budgets"
-                      fill={hiddenSeries.has('Budgets') ? '#cbd5e1' : '#334155'}
+                      fill={hiddenSeries.has('Budgets') ? '#cbd5e1' : '#6366f1'}
                       opacity={hiddenSeries.has('Budgets') ? 0.3 : 1}
+                      isAnimationActive={true}
+                      animationDuration={600}
+                      animationEasing="ease-in-out"
                     />
                   )}
                 </BarChart>
@@ -1096,7 +1262,11 @@ export function CumulativeFinancialOverview({
             {/* Line Chart View */}
             {chartType === 'line' && (
               <ResponsiveContainer width="100%" height={600}>
-                <LineChart data={displayData} margin={{ top: 20, right: 30, left: 20, bottom: 60 }}>
+                <LineChart 
+                  data={displayData} 
+                  margin={{ top: 20, right: 30, left: 20, bottom: 60 }}
+                  key={`line-${allocationMethod}-${dataMode}`}
+                >
                   <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e1" opacity={0.5} />
                   <XAxis
                     dataKey="displayDate"
@@ -1110,36 +1280,68 @@ export function CumulativeFinancialOverview({
                   <YAxis tickFormatter={formatCurrency} stroke="#64748B" fontSize={12} />
                   <Tooltip content={<CustomTooltip />} />
                   <Legend content={renderLegend} />
+                  {activeSeries.has('Incoming Commitment') && (
+                    <Line
+                      type="monotone"
+                      dataKey="Incoming Commitment"
+                      stroke={hiddenSeries.has('Incoming Commitment') ? '#cbd5e1' : '#3b82f6'}
+                      strokeWidth={hiddenSeries.has('Incoming Commitment') ? 1 : 2.5}
+                      dot={{ fill: hiddenSeries.has('Incoming Commitment') ? '#cbd5e1' : '#3b82f6', r: 3 }}
+                      isAnimationActive={true}
+                      animationDuration={600}
+                      animationEasing="ease-in-out"
+                      opacity={hiddenSeries.has('Incoming Commitment') ? 0.3 : 1}
+                    />
+                  )}
                   {activeSeries.has('Incoming Funds') && (
                     <Line
                       type="monotone"
                       dataKey="Incoming Funds"
-                      stroke={hiddenSeries.has('Incoming Funds') ? '#cbd5e1' : '#1e40af'}
+                      stroke={hiddenSeries.has('Incoming Funds') ? '#cbd5e1' : '#3b82f6'}
                       strokeWidth={hiddenSeries.has('Incoming Funds') ? 1 : 2.5}
-                      dot={{ fill: hiddenSeries.has('Incoming Funds') ? '#cbd5e1' : '#1e40af', r: 3 }}
-                      animationDuration={300}
+                      dot={{ fill: hiddenSeries.has('Incoming Funds') ? '#cbd5e1' : '#3b82f6', r: 3 }}
+                      isAnimationActive={true}
+                      animationDuration={600}
+                      animationEasing="ease-in-out"
                       opacity={hiddenSeries.has('Incoming Funds') ? 0.3 : 1}
                     />
                   )}
-                  {activeSeries.has('Commitments') && (
+                  {activeSeries.has('Outgoing Commitment') && (
                     <Line
                       type="monotone"
-                      dataKey="Commitments"
-                      stroke={hiddenSeries.has('Commitments') ? '#cbd5e1' : '#0f172a'}
-                      strokeWidth={hiddenSeries.has('Commitments') ? 1 : 2.5}
-                      dot={{ fill: hiddenSeries.has('Commitments') ? '#cbd5e1' : '#0f172a', r: 3 }}
-                      animationDuration={300}
-                      opacity={hiddenSeries.has('Commitments') ? 0.3 : 1}
+                      dataKey="Outgoing Commitment"
+                      stroke={hiddenSeries.has('Outgoing Commitment') ? '#cbd5e1' : '#8b5cf6'}
+                      strokeWidth={hiddenSeries.has('Outgoing Commitment') ? 1 : 2.5}
+                      dot={{ fill: hiddenSeries.has('Outgoing Commitment') ? '#cbd5e1' : '#8b5cf6', r: 3 }}
+                      isAnimationActive={true}
+                      animationDuration={600}
+                      animationEasing="ease-in-out"
+                      opacity={hiddenSeries.has('Outgoing Commitment') ? 0.3 : 1}
+                    />
+                  )}
+                  {activeSeries.has('Credit Guarantee') && (
+                    <Line
+                      type="monotone"
+                      dataKey="Credit Guarantee"
+                      stroke={hiddenSeries.has('Credit Guarantee') ? '#cbd5e1' : '#10b981'}
+                      strokeWidth={hiddenSeries.has('Credit Guarantee') ? 1 : 2.5}
+                      dot={{ fill: hiddenSeries.has('Credit Guarantee') ? '#cbd5e1' : '#10b981', r: 3 }}
+                      isAnimationActive={true}
+                      animationDuration={600}
+                      animationEasing="ease-in-out"
+                      opacity={hiddenSeries.has('Credit Guarantee') ? 0.3 : 1}
                     />
                   )}
                   {activeSeries.has('Disbursements') && (
                     <Line
                       type="monotone"
                       dataKey="Disbursements"
-                      stroke={hiddenSeries.has('Disbursements') ? '#cbd5e1' : '#475569'}
+                      stroke={hiddenSeries.has('Disbursements') ? '#cbd5e1' : '#10b981'}
                       strokeWidth={hiddenSeries.has('Disbursements') ? 1 : 2.5}
-                      dot={{ fill: hiddenSeries.has('Disbursements') ? '#cbd5e1' : '#475569', r: 3 }}
-                      animationDuration={300}
+                      dot={{ fill: hiddenSeries.has('Disbursements') ? '#cbd5e1' : '#10b981', r: 3 }}
+                      isAnimationActive={true}
+                      animationDuration={600}
+                      animationEasing="ease-in-out"
                       opacity={hiddenSeries.has('Disbursements') ? 0.3 : 1}
                     />
                   )}
@@ -1147,10 +1349,12 @@ export function CumulativeFinancialOverview({
                     <Line
                       type="monotone"
                       dataKey="Expenditures"
-                      stroke={hiddenSeries.has('Expenditures') ? '#cbd5e1' : '#64748b'}
+                      stroke={hiddenSeries.has('Expenditures') ? '#cbd5e1' : '#f59e0b'}
                       strokeWidth={hiddenSeries.has('Expenditures') ? 1 : 2.5}
-                      dot={{ fill: hiddenSeries.has('Expenditures') ? '#cbd5e1' : '#64748b', r: 3 }}
-                      animationDuration={300}
+                      dot={{ fill: hiddenSeries.has('Expenditures') ? '#cbd5e1' : '#f59e0b', r: 3 }}
+                      isAnimationActive={true}
+                      animationDuration={600}
+                      animationEasing="ease-in-out"
                       opacity={hiddenSeries.has('Expenditures') ? 0.3 : 1}
                     />
                   )}
@@ -1158,11 +1362,13 @@ export function CumulativeFinancialOverview({
                     <Line
                       type="monotone"
                       dataKey="Planned Disbursements"
-                      stroke={hiddenSeries.has('Planned Disbursements') ? '#cbd5e1' : '#1e3a8a'}
+                      stroke={hiddenSeries.has('Planned Disbursements') ? '#cbd5e1' : '#06b6d4'}
                       strokeWidth={hiddenSeries.has('Planned Disbursements') ? 1 : 2}
                       strokeDasharray="5 5"
-                      dot={{ fill: hiddenSeries.has('Planned Disbursements') ? '#cbd5e1' : '#1e3a8a', r: 3 }}
-                      animationDuration={300}
+                      dot={{ fill: hiddenSeries.has('Planned Disbursements') ? '#cbd5e1' : '#06b6d4', r: 3 }}
+                      isAnimationActive={true}
+                      animationDuration={600}
+                      animationEasing="ease-in-out"
                       opacity={hiddenSeries.has('Planned Disbursements') ? 0.3 : 1}
                     />
                   )}
@@ -1170,16 +1376,200 @@ export function CumulativeFinancialOverview({
                     <Line
                       type="linear"
                       dataKey="Budgets"
-                      stroke={hiddenSeries.has('Budgets') ? '#cbd5e1' : '#334155'}
+                      stroke={hiddenSeries.has('Budgets') ? '#cbd5e1' : '#6366f1'}
                       strokeWidth={hiddenSeries.has('Budgets') ? 1 : 2}
                       strokeDasharray="5 5"
-                      dot={{ fill: hiddenSeries.has('Budgets') ? '#cbd5e1' : '#334155', r: 3 }}
+                      dot={{ fill: hiddenSeries.has('Budgets') ? '#cbd5e1' : '#6366f1', r: 3 }}
                       connectNulls={true}
-                      animationDuration={300}
+                      isAnimationActive={true}
+                      animationDuration={600}
+                      animationEasing="ease-in-out"
                       opacity={hiddenSeries.has('Budgets') ? 0.3 : 1}
                     />
                   )}
                 </LineChart>
+              </ResponsiveContainer>
+            )}
+
+            {/* Area Chart View */}
+            {chartType === 'area' && (
+              <ResponsiveContainer width="100%" height={600}>
+                <AreaChart 
+                  data={displayData} 
+                  margin={{ top: 20, right: 30, left: 20, bottom: 60 }}
+                  key={`area-${allocationMethod}-${dataMode}`}
+                >
+                  <defs>
+                    {activeSeries.has('Incoming Commitment') && (
+                      <linearGradient id="colorIncomingCommitment" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.8}/>
+                        <stop offset="95%" stopColor="#3b82f6" stopOpacity={0.1}/>
+                      </linearGradient>
+                    )}
+                    {activeSeries.has('Incoming Funds') && (
+                      <linearGradient id="colorIncomingFunds" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.8}/>
+                        <stop offset="95%" stopColor="#3b82f6" stopOpacity={0.1}/>
+                      </linearGradient>
+                    )}
+                    {activeSeries.has('Outgoing Commitment') && (
+                      <linearGradient id="colorOutgoingCommitment" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.8}/>
+                        <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0.1}/>
+                      </linearGradient>
+                    )}
+                    {activeSeries.has('Credit Guarantee') && (
+                      <linearGradient id="colorCreditGuarantee" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#10b981" stopOpacity={0.8}/>
+                        <stop offset="95%" stopColor="#10b981" stopOpacity={0.1}/>
+                      </linearGradient>
+                    )}
+                    {activeSeries.has('Disbursements') && (
+                      <linearGradient id="colorDisbursements" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#10b981" stopOpacity={0.8}/>
+                        <stop offset="95%" stopColor="#10b981" stopOpacity={0.1}/>
+                      </linearGradient>
+                    )}
+                    {activeSeries.has('Expenditures') && (
+                      <linearGradient id="colorExpenditures" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.8}/>
+                        <stop offset="95%" stopColor="#f59e0b" stopOpacity={0.1}/>
+                      </linearGradient>
+                    )}
+                    {activeSeries.has('Planned Disbursements') && (
+                      <linearGradient id="colorPlannedDisbursements" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#06b6d4" stopOpacity={0.8}/>
+                        <stop offset="95%" stopColor="#06b6d4" stopOpacity={0.1}/>
+                      </linearGradient>
+                    )}
+                    {activeSeries.has('Budgets') && (
+                      <linearGradient id="colorBudgets" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#6366f1" stopOpacity={0.8}/>
+                        <stop offset="95%" stopColor="#6366f1" stopOpacity={0.1}/>
+                      </linearGradient>
+                    )}
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e1" opacity={0.5} />
+                  <XAxis
+                    dataKey="displayDate"
+                    stroke="#64748B"
+                    fontSize={12}
+                    angle={0}
+                    textAnchor="middle"
+                    height={60}
+                    interval={0}
+                  />
+                  <YAxis tickFormatter={formatCurrency} stroke="#64748B" fontSize={12} />
+                  <Tooltip content={<CustomTooltip />} />
+                  <Legend content={renderLegend} />
+                  {activeSeries.has('Incoming Commitment') && (
+                    <Area
+                      type="monotone"
+                      dataKey="Incoming Commitment"
+                      stroke={hiddenSeries.has('Incoming Commitment') ? '#cbd5e1' : '#3b82f6'}
+                      strokeWidth={hiddenSeries.has('Incoming Commitment') ? 1 : 2.5}
+                      fill={hiddenSeries.has('Incoming Commitment') ? 'url(#colorIncomingCommitment)' : 'url(#colorIncomingCommitment)'}
+                      fillOpacity={hiddenSeries.has('Incoming Commitment') ? 0.1 : 0.6}
+                      isAnimationActive={true}
+                      animationDuration={600}
+                      animationEasing="ease-in-out"
+                    />
+                  )}
+                  {activeSeries.has('Incoming Funds') && (
+                    <Area
+                      type="monotone"
+                      dataKey="Incoming Funds"
+                      stroke={hiddenSeries.has('Incoming Funds') ? '#cbd5e1' : '#3b82f6'}
+                      strokeWidth={hiddenSeries.has('Incoming Funds') ? 1 : 2.5}
+                      fill={hiddenSeries.has('Incoming Funds') ? 'url(#colorIncomingFunds)' : 'url(#colorIncomingFunds)'}
+                      fillOpacity={hiddenSeries.has('Incoming Funds') ? 0.1 : 0.6}
+                      isAnimationActive={true}
+                      animationDuration={600}
+                      animationEasing="ease-in-out"
+                    />
+                  )}
+                  {activeSeries.has('Outgoing Commitment') && (
+                    <Area
+                      type="monotone"
+                      dataKey="Outgoing Commitment"
+                      stroke={hiddenSeries.has('Outgoing Commitment') ? '#cbd5e1' : '#8b5cf6'}
+                      strokeWidth={hiddenSeries.has('Outgoing Commitment') ? 1 : 2.5}
+                      fill={hiddenSeries.has('Outgoing Commitment') ? 'url(#colorOutgoingCommitment)' : 'url(#colorOutgoingCommitment)'}
+                      fillOpacity={hiddenSeries.has('Outgoing Commitment') ? 0.1 : 0.6}
+                      isAnimationActive={true}
+                      animationDuration={600}
+                      animationEasing="ease-in-out"
+                    />
+                  )}
+                  {activeSeries.has('Credit Guarantee') && (
+                    <Area
+                      type="monotone"
+                      dataKey="Credit Guarantee"
+                      stroke={hiddenSeries.has('Credit Guarantee') ? '#cbd5e1' : '#10b981'}
+                      strokeWidth={hiddenSeries.has('Credit Guarantee') ? 1 : 2.5}
+                      fill={hiddenSeries.has('Credit Guarantee') ? 'url(#colorCreditGuarantee)' : 'url(#colorCreditGuarantee)'}
+                      fillOpacity={hiddenSeries.has('Credit Guarantee') ? 0.1 : 0.6}
+                      isAnimationActive={true}
+                      animationDuration={600}
+                      animationEasing="ease-in-out"
+                    />
+                  )}
+                  {activeSeries.has('Disbursements') && (
+                    <Area
+                      type="monotone"
+                      dataKey="Disbursements"
+                      stroke={hiddenSeries.has('Disbursements') ? '#cbd5e1' : '#10b981'}
+                      strokeWidth={hiddenSeries.has('Disbursements') ? 1 : 2.5}
+                      fill={hiddenSeries.has('Disbursements') ? 'url(#colorDisbursements)' : 'url(#colorDisbursements)'}
+                      fillOpacity={hiddenSeries.has('Disbursements') ? 0.1 : 0.6}
+                      isAnimationActive={true}
+                      animationDuration={600}
+                      animationEasing="ease-in-out"
+                    />
+                  )}
+                  {activeSeries.has('Expenditures') && (
+                    <Area
+                      type="monotone"
+                      dataKey="Expenditures"
+                      stroke={hiddenSeries.has('Expenditures') ? '#cbd5e1' : '#f59e0b'}
+                      strokeWidth={hiddenSeries.has('Expenditures') ? 1 : 2.5}
+                      fill={hiddenSeries.has('Expenditures') ? 'url(#colorExpenditures)' : 'url(#colorExpenditures)'}
+                      fillOpacity={hiddenSeries.has('Expenditures') ? 0.1 : 0.6}
+                      isAnimationActive={true}
+                      animationDuration={600}
+                      animationEasing="ease-in-out"
+                    />
+                  )}
+                  {activeSeries.has('Planned Disbursements') && (
+                    <Area
+                      type="monotone"
+                      dataKey="Planned Disbursements"
+                      stroke={hiddenSeries.has('Planned Disbursements') ? '#cbd5e1' : '#06b6d4'}
+                      strokeWidth={hiddenSeries.has('Planned Disbursements') ? 1 : 2}
+                      strokeDasharray="5 5"
+                      fill={hiddenSeries.has('Planned Disbursements') ? 'url(#colorPlannedDisbursements)' : 'url(#colorPlannedDisbursements)'}
+                      fillOpacity={hiddenSeries.has('Planned Disbursements') ? 0.1 : 0.4}
+                      isAnimationActive={true}
+                      animationDuration={600}
+                      animationEasing="ease-in-out"
+                    />
+                  )}
+                  {activeSeries.has('Budgets') && (
+                    <Area
+                      type="linear"
+                      dataKey="Budgets"
+                      stroke={hiddenSeries.has('Budgets') ? '#cbd5e1' : '#6366f1'}
+                      strokeWidth={hiddenSeries.has('Budgets') ? 1 : 2}
+                      strokeDasharray="5 5"
+                      fill={hiddenSeries.has('Budgets') ? 'url(#colorBudgets)' : 'url(#colorBudgets)'}
+                      fillOpacity={hiddenSeries.has('Budgets') ? 0.1 : 0.4}
+                      connectNulls={true}
+                      isAnimationActive={true}
+                      animationDuration={600}
+                      animationEasing="ease-in-out"
+                    />
+                  )}
+                </AreaChart>
               </ResponsiveContainer>
             )}
           </>

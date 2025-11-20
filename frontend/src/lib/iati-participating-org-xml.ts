@@ -195,20 +195,22 @@ export function validateAndCorrectParticipatingOrgs(
   // Process each role group
   orgsByRole.forEach((roleOrgs, role) => {
     // For role 4 (implementing), check for mismatches and swap if needed
-    if (role === '4' && roleOrgs.length >= 2) {
+    // DISABLED: This automatic swapping causes more problems than it solves
+    // The IATI XML is typically correct as-is, so we should trust it
+    if (false && role === '4' && roleOrgs.length >= 2) {
       // Find potential mismatches
       const mismatches: Array<{ org: OrgValidationInput; index: number }> = [];
       const availableRefs: string[] = [];
-      
+
       roleOrgs.forEach((org, index) => {
         if (org.ref) {
           availableRefs.push(org.ref);
         }
-        
+
         const nameCountry = getNameCountry(org.name);
         const refPrefix = org.ref ? extractRegistryPrefix(org.ref) : null;
         const refCountry = refPrefix ? orgRegistryPrefixes[refPrefix]?.country : null;
-        
+
         // Check for mismatch
         if (nameCountry && refCountry && nameCountry !== refCountry) {
           mismatches.push({ org, index });

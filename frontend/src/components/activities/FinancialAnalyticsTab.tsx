@@ -37,7 +37,11 @@ import {
 import { HelpTextTooltip } from '@/components/ui/help-text-tooltip'
 import { Switch } from '@/components/ui/switch'
 import { Label } from '@/components/ui/label'
-import { allocateProportionally, generateMonthPeriods } from '@/utils/period-allocation'
+import { 
+  splitBudgetAcrossYears, 
+  splitPlannedDisbursementAcrossYears, 
+  splitTransactionAcrossYears 
+} from '@/utils/year-allocation'
 
 type TimePeriod = '1m' | '3m' | '6m' | '1y' | '5y' | 'all'
 type GroupBy = 'year' | 'month'
@@ -730,6 +734,145 @@ export default function FinancialAnalyticsTab({
 
   // Group budget data by year or month
   const groupedBudgetVsActualData = useMemo(() => {
+    // Helper to distribute a year's allocation across its months proportionally by days
+    const distributeYearToMonths = (year: number, amount: number): Map<string, number> => {
+      const monthMap = new Map<string, number>()
+      const isLeapYear = (year % 4 === 0 && year % 100 !== 0) || (year % 100 === 0 && year % 400 === 0)
+      const daysInYear = isLeapYear ? 366 : 365
+      
+      // Days in each month
+      const daysInMonth = [31, isLeapYear ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
+      
+      for (let month = 0; month < 12; month++) {
+        const monthKey = `${year}-${String(month + 1).padStart(2, '0')}`
+        const allocatedAmount = (amount * daysInMonth[month]) / daysInYear
+        monthMap.set(monthKey, allocatedAmount)
+      }
+      
+      return monthMap
+    }
+
+    // If we have raw props, use them to support proportional allocation
+    if (budgets.length > 0 || transactions.length > 0) {
+      const grouped: any = {}
+
+      // Process Budgets
+      budgets.forEach((budget: any) => {
+        // Determine allocations based on method
+        let allocations: { year: number; amount: number }[] = []
+        
+        if (allocationMethod === 'proportional') {
+          allocations = splitBudgetAcrossYears(budget)
+        } else {
+          // Period start allocation
+          if (budget.period_start) {
+            const startDate = new Date(budget.period_start)
+            if (!isNaN(startDate.getTime())) {
+              // Get value (prefer USD)
+              let value = parseFloat(String(budget.usd_value)) || 0
+              if (!value && budget.currency === 'USD' && budget.value) {
+                value = parseFloat(String(budget.value)) || 0
+              }
+              if (value) {
+                allocations = [{ year: startDate.getFullYear(), amount: value }]
+              }
+            }
+          }
+        }
+
+        allocations.forEach(({ year, amount }) => {
+          if (budgetGroupBy === 'year') {
+            const key = year.toString()
+            if (!grouped[key]) {
+              grouped[key] = { period: key, year: year, sortKey: key, budget: 0, actual: 0 }
+            }
+            grouped[key].budget += amount
+          } else {
+            // Monthly grouping
+            const monthAllocations = distributeYearToMonths(year, amount)
+            monthAllocations.forEach((monthAmount, monthKey) => {
+              // monthKey is "YYYY-MM"
+              const [y, m] = monthKey.split('-')
+              const dateObj = new Date(parseInt(y), parseInt(m) - 1, 1)
+              const period = dateObj.toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
+              
+              if (!grouped[monthKey]) {
+                grouped[monthKey] = { period, sortKey: monthKey, budget: 0, actual: 0 }
+              }
+              grouped[monthKey].budget += monthAmount
+            })
+          }
+        })
+      })
+
+      // Process Transactions (Actuals)
+      transactions.forEach((tx: any) => {
+        // Only include disbursements (3) and expenditures (4)
+        if (tx.transaction_type !== '3' && tx.transaction_type !== '4') return
+
+        // Determine allocations
+        let allocations: { year: number; amount: number }[] = []
+        
+        // For transactions, we check allocationMethod
+        const txToProcess = allocationMethod === 'proportional' 
+            ? tx 
+            : { ...tx, period_start: null, period_end: null }
+            
+        allocations = splitTransactionAcrossYears(txToProcess)
+
+        allocations.forEach(({ year, amount }) => {
+          if (budgetGroupBy === 'year') {
+            const key = year.toString()
+            if (!grouped[key]) {
+              grouped[key] = { period: key, year: year, sortKey: key, budget: 0, actual: 0 }
+            }
+            grouped[key].actual += amount
+          } else {
+            // Monthly grouping
+            const monthAllocations = distributeYearToMonths(year, amount)
+            monthAllocations.forEach((monthAmount, monthKey) => {
+              const [y, m] = monthKey.split('-')
+              const dateObj = new Date(parseInt(y), parseInt(m) - 1, 1)
+              const period = dateObj.toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
+              
+              if (!grouped[monthKey]) {
+                grouped[monthKey] = { period, sortKey: monthKey, budget: 0, actual: 0 }
+              }
+              grouped[monthKey].actual += monthAmount
+            })
+          }
+        })
+      })
+
+      const sortedData = Object.values(grouped).sort((a: any, b: any) => a.sortKey.localeCompare(b.sortKey))
+      
+      // Fill missing years/months if needed
+      if (budgetGroupBy === 'year' && sortedData.length > 0) {
+        const firstYear = parseInt(sortedData[0].year || sortedData[0].period)
+        const lastYear = parseInt(sortedData[sortedData.length - 1].year || sortedData[sortedData.length - 1].period)
+        const filledData: any[] = []
+
+        for (let year = firstYear; year <= lastYear; year++) {
+          const existing = sortedData.find((item: any) => (item.year || parseInt(item.period)) === year)
+          if (existing) {
+            filledData.push(existing)
+          } else {
+            filledData.push({
+              period: year.toString(),
+              year: year,
+              sortKey: year.toString(),
+              budget: 0,
+              actual: 0
+            })
+          }
+        }
+        return filledData
+      }
+
+      return sortedData
+    }
+
+    // Fallback to existing logic for rawBudgetVsActualData (from API)
     if (rawBudgetVsActualData.length === 0) return []
 
     const grouped: any = {}
@@ -791,7 +934,7 @@ export default function FinancialAnalyticsTab({
     }
 
     return sortedData
-  }, [rawBudgetVsActualData, budgetGroupBy])
+  }, [rawBudgetVsActualData, budgetGroupBy, budgets, transactions, allocationMethod])
 
   // Create cumulative budget data from grouped data
   const cumulativeBudgetData = useMemo(() => {
@@ -1459,146 +1602,94 @@ export default function FinancialAnalyticsTab({
       plannedBudgets: false
     }
 
-    // For proportional allocation, we need to determine the date range first
-    // Collect all dates to determine the range
-    const allDates: Date[] = []
-    
-    transactions?.forEach((t: any) => {
-      if (t.transaction_date) {
-        const date = new Date(t.transaction_date)
-        if (!isNaN(date.getTime())) allDates.push(date)
+    // Helper to distribute a year's allocation across its months proportionally by days
+    const distributeYearToMonths = (year: number, amount: number): Map<string, number> => {
+      const monthMap = new Map<string, number>()
+      const isLeapYear = (year % 4 === 0 && year % 100 !== 0) || (year % 100 === 0 && year % 400 === 0)
+      const daysInYear = isLeapYear ? 366 : 365
+      
+      // Days in each month
+      const daysInMonth = [31, isLeapYear ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
+      
+      for (let month = 0; month < 12; month++) {
+        const monthKey = `${year}-${String(month + 1).padStart(2, '0')}`
+        const allocatedAmount = (amount * daysInMonth[month]) / daysInYear
+        monthMap.set(monthKey, allocatedAmount)
       }
-    })
-    
-    plannedDisbursements?.forEach((pd: any) => {
-      if (pd.period_start) {
-        const date = new Date(pd.period_start)
-        if (!isNaN(date.getTime())) allDates.push(date)
-      }
-      if (pd.period_end) {
-        const date = new Date(pd.period_end)
-        if (!isNaN(date.getTime())) allDates.push(date)
-      }
-    })
-    
-    budgets?.forEach((b: any) => {
-      if (b.period_start) {
-        const date = new Date(b.period_start)
-        if (!isNaN(date.getTime())) allDates.push(date)
-      }
-      if (b.period_end) {
-        const date = new Date(b.period_end)
-        if (!isNaN(date.getTime())) allDates.push(date)
-      }
-    })
-
-    // Generate month periods for proportional allocation if needed
-    let monthPeriods: Date[] = []
-    if (allDates.length > 0 && allocationMethod === 'proportional') {
-      const minDate = new Date(Math.min(...allDates.map(d => d.getTime())))
-      const maxDate = new Date(Math.max(...allDates.map(d => d.getTime())))
-      monthPeriods = generateMonthPeriods(startOfMonth(minDate), startOfMonth(maxDate))
+      
+      return monthMap
     }
 
     // Process transactions by type
+    // For transactions, allocate to the specific month of the transaction date
     transactions?.forEach((transaction: any) => {
-      if (!transaction.transaction_date) return
+      // Apply proportional allocation if enabled
+      // If allocation method is NOT proportional, we force single-date behavior
+      const txToProcess = allocationMethod === 'proportional' 
+        ? transaction 
+        : { ...transaction, period_start: null, period_end: null }
 
-      const date = new Date(transaction.transaction_date)
-      if (isNaN(date.getTime())) return
+      const yearAllocations = splitTransactionAcrossYears(txToProcess)
 
-      const dateKey = date.toISOString().split('T')[0] // Use date as key
-      // ONLY use USD values - try usd_value first, then value_usd, then if currency is USD use value
-      let value = parseFloat(String(transaction.usd_value || transaction.value_usd)) || 0
+      yearAllocations.forEach(({ year, amount }) => {
+        // Distribute year allocation across months
+        const monthAllocations = distributeYearToMonths(year, amount)
+        
+        monthAllocations.forEach((monthAmount, monthKey) => {
+          const [yearNum, monthNum] = monthKey.split('-').map(Number)
+          const monthStartDate = new Date(yearNum, monthNum - 1, 1)
+          const dateKey = monthStartDate.toISOString().split('T')[0]
+          
+          if (!dateMap.has(dateKey)) {
+            dateMap.set(dateKey, {
+              date: monthStartDate,
+              timestamp: monthStartDate.getTime(),
+              incomingFunds: 0,
+              incomingCommitments: 0,
+              outgoingCommitments: 0,
+              disbursements: 0,
+              expenditures: 0,
+              plannedDisbursements: 0,
+              plannedBudgets: 0
+            })
+          }
 
-      // Only use raw value if currency is explicitly USD and no USD conversion exists
-      if (!value && transaction.currency === 'USD' && transaction.value) {
-        value = parseFloat(String(transaction.value)) || 0
-      }
+          const point = dateMap.get(dateKey)!
+          const type = transaction.transaction_type
 
-      // Debug logging to identify currency issues
-      try {
-        if (value && transaction.currency !== 'USD') {
-          console.warn('[Financial Overview] Non-USD transaction being used:', {
-            id: transaction.id,
-            type: transaction.transaction_type,
-            originalValue: transaction.value,
-            currency: transaction.currency,
-            usd_value: transaction.usd_value,
-            value_usd: transaction.value_usd,
-            computedValue: value
-          })
-        }
-      } catch (e) {
-        // Ignore logging errors
-      }
-
-      // Skip transactions without valid USD values
-      if (!value) return
-      
-      if (!dateMap.has(dateKey)) {
-        dateMap.set(dateKey, {
-          date,
-          timestamp: date.getTime(),
-          incomingFunds: 0,
-          incomingCommitments: 0,
-          outgoingCommitments: 0,
-          disbursements: 0,
-          expenditures: 0,
-          plannedDisbursements: 0,
-          plannedBudgets: 0
+          if (type === '1' || type === '12') {
+            point.incomingFunds += monthAmount
+            hasSourceData.incomingFunds = true
+          } else if (type === '11') {
+            point.incomingCommitments += monthAmount
+            hasSourceData.incomingCommitments = true
+          } else if (type === '2') {
+            point.outgoingCommitments += monthAmount
+            hasSourceData.outgoingCommitments = true
+          } else if (type === '3') {
+            point.disbursements += monthAmount
+            hasSourceData.disbursements = true
+          } else if (type === '4') {
+            point.expenditures += monthAmount
+            hasSourceData.expenditures = true
+          }
         })
-      }
-
-      const point = dateMap.get(dateKey)!
-      const type = transaction.transaction_type
-
-      if (type === '1' || type === '12') {
-        point.incomingFunds += value
-        hasSourceData.incomingFunds = true
-      } else if (type === '11') {
-        point.incomingCommitments += value
-        hasSourceData.incomingCommitments = true
-      } else if (type === '2') {
-        point.outgoingCommitments += value
-        hasSourceData.outgoingCommitments = true
-      } else if (type === '3') {
-        point.disbursements += value
-        hasSourceData.disbursements = true
-      } else if (type === '4') {
-        point.expenditures += value
-        hasSourceData.expenditures = true
-      }
+      })
     })
 
     // Process planned disbursements
     plannedDisbursements?.forEach((pd: any) => {
-      if (!pd.period_start) return
-
-      const startDate = new Date(pd.period_start)
-      if (isNaN(startDate.getTime())) return
-
-      // ONLY use USD values - try usd_amount first
-      let value = parseFloat(String(pd.usd_amount)) || 0
-
-      // Only use raw amount if currency is explicitly USD and no USD conversion exists
-      if (!value && pd.currency === 'USD' && pd.amount) {
-        value = parseFloat(String(pd.amount)) || 0
-      }
-
-      // Skip planned disbursements without valid USD values
-      if (!value) return
-
-      if (allocationMethod === 'proportional' && pd.period_end) {
-        // Proportional allocation: distribute across months
-        const endDate = new Date(pd.period_end)
-        if (!isNaN(endDate.getTime())) {
-          const allocations = allocateProportionally(value, pd.period_start, pd.period_end, monthPeriods)
+      if (allocationMethod === 'proportional') {
+        // Use year-based proportional allocation
+        const yearAllocations = splitPlannedDisbursementAcrossYears(pd)
+        
+        yearAllocations.forEach(({ year, amount }) => {
+          // Distribute year allocation across months
+          const monthAllocations = distributeYearToMonths(year, amount)
           
-          allocations.forEach((allocatedValue, monthKey) => {
-            // Parse monthKey (YYYY-MM) to get the first day of that month
-            const [year, month] = monthKey.split('-').map(Number)
-            const monthStartDate = new Date(year, month - 1, 1)
+          monthAllocations.forEach((monthAmount, monthKey) => {
+            const [yearNum, monthNum] = monthKey.split('-').map(Number)
+            const monthStartDate = new Date(yearNum, monthNum - 1, 1)
             const dateKey = monthStartDate.toISOString().split('T')[0]
             
             if (!dateMap.has(dateKey)) {
@@ -1615,79 +1706,59 @@ export default function FinancialAnalyticsTab({
               })
             }
             
-            dateMap.get(dateKey)!.plannedDisbursements += allocatedValue
-          })
-          
-          if (allocations.size > 0) {
+            dateMap.get(dateKey)!.plannedDisbursements += monthAmount
             hasSourceData.plannedDisbursements = true
-          }
-        }
+          })
+        })
       } else {
         // Period start allocation: full amount at start date
-        const dateKey = startDate.toISOString().split('T')[0]
-        
-        if (!dateMap.has(dateKey)) {
-          dateMap.set(dateKey, {
-            date: startDate,
-            timestamp: startDate.getTime(),
-            incomingFunds: 0,
-            incomingCommitments: 0,
-            outgoingCommitments: 0,
-            disbursements: 0,
-            expenditures: 0,
-            plannedDisbursements: 0,
-            plannedBudgets: 0
-          })
+        if (pd.period_start) {
+          const startDate = new Date(pd.period_start)
+          if (!isNaN(startDate.getTime())) {
+            const dateKey = startDate.toISOString().split('T')[0]
+            
+            if (!dateMap.has(dateKey)) {
+              dateMap.set(dateKey, {
+                date: startDate,
+                timestamp: startDate.getTime(),
+                incomingFunds: 0,
+                incomingCommitments: 0,
+                outgoingCommitments: 0,
+                disbursements: 0,
+                expenditures: 0,
+                plannedDisbursements: 0,
+                plannedBudgets: 0
+              })
+            }
+            
+            // Get value (prefer USD)
+            let value = parseFloat(String(pd.usd_amount)) || 0
+            if (!value && pd.currency === 'USD' && pd.amount) {
+              value = parseFloat(String(pd.amount)) || 0
+            }
+            
+            if (value) {
+              dateMap.get(dateKey)!.plannedDisbursements += value
+              hasSourceData.plannedDisbursements = true
+            }
+          }
         }
-
-        dateMap.get(dateKey)!.plannedDisbursements += value
-        hasSourceData.plannedDisbursements = true
       }
     })
 
     // Process budgets
     budgets?.forEach((budget: any) => {
-      if (!budget.period_start) return
-
-      const startDate = new Date(budget.period_start)
-      if (isNaN(startDate.getTime())) return
-
-      // ONLY use USD values - try usd_value first
-      let value = parseFloat(String(budget.usd_value)) || 0
-
-      // Only use raw value if currency is explicitly USD and no USD conversion exists
-      if (!value && budget.currency === 'USD' && budget.value) {
-        value = parseFloat(String(budget.value)) || 0
-      }
-
-      // Debug logging to identify currency issues
-      try {
-        if (value && budget.currency !== 'USD') {
-          console.warn('[Financial Overview] Non-USD budget being used:', {
-            id: budget.id,
-            originalValue: budget.value,
-            currency: budget.currency,
-            usd_value: budget.usd_value,
-            computedValue: value
-          })
-        }
-      } catch (e) {
-        // Ignore logging errors
-      }
-
-      // Skip budgets without valid USD values
-      if (!value) return
-
-      if (allocationMethod === 'proportional' && budget.period_end) {
-        // Proportional allocation: distribute across months
-        const endDate = new Date(budget.period_end)
-        if (!isNaN(endDate.getTime())) {
-          const allocations = allocateProportionally(value, budget.period_start, budget.period_end, monthPeriods)
+      if (allocationMethod === 'proportional') {
+        // Use year-based proportional allocation
+        const yearAllocations = splitBudgetAcrossYears(budget)
+        
+        yearAllocations.forEach(({ year, amount }) => {
+          // Distribute year allocation across months
+          const monthAllocations = distributeYearToMonths(year, amount)
           
-          allocations.forEach((allocatedValue, monthKey) => {
-            // Parse monthKey (YYYY-MM) to get the first day of that month
-            const [year, month] = monthKey.split('-').map(Number)
-            const monthStartDate = new Date(year, month - 1, 1)
+          monthAllocations.forEach((monthAmount, monthKey) => {
+            const [yearNum, monthNum] = monthKey.split('-').map(Number)
+            const monthStartDate = new Date(yearNum, monthNum - 1, 1)
             const dateKey = monthStartDate.toISOString().split('T')[0]
             
             if (!dateMap.has(dateKey)) {
@@ -1704,33 +1775,43 @@ export default function FinancialAnalyticsTab({
               })
             }
             
-            dateMap.get(dateKey)!.plannedBudgets += allocatedValue
-          })
-          
-          if (allocations.size > 0) {
+            dateMap.get(dateKey)!.plannedBudgets += monthAmount
             hasSourceData.plannedBudgets = true
-          }
-        }
+          })
+        })
       } else {
         // Period start allocation: full amount at start date
-        const dateKey = startDate.toISOString().split('T')[0]
-        
-        if (!dateMap.has(dateKey)) {
-          dateMap.set(dateKey, {
-            date: startDate,
-            timestamp: startDate.getTime(),
-            incomingFunds: 0,
-            incomingCommitments: 0,
-            outgoingCommitments: 0,
-            disbursements: 0,
-            expenditures: 0,
-            plannedDisbursements: 0,
-            plannedBudgets: 0
-          })
+        if (budget.period_start) {
+          const startDate = new Date(budget.period_start)
+          if (!isNaN(startDate.getTime())) {
+            const dateKey = startDate.toISOString().split('T')[0]
+            
+            if (!dateMap.has(dateKey)) {
+              dateMap.set(dateKey, {
+                date: startDate,
+                timestamp: startDate.getTime(),
+                incomingFunds: 0,
+                incomingCommitments: 0,
+                outgoingCommitments: 0,
+                disbursements: 0,
+                expenditures: 0,
+                plannedDisbursements: 0,
+                plannedBudgets: 0
+              })
+            }
+            
+            // Get value (prefer USD)
+            let value = parseFloat(String(budget.usd_value)) || 0
+            if (!value && budget.currency === 'USD' && budget.value) {
+              value = parseFloat(String(budget.value)) || 0
+            }
+            
+            if (value) {
+              dateMap.get(dateKey)!.plannedBudgets += value
+              hasSourceData.plannedBudgets = true
+            }
+          }
         }
-
-        dateMap.get(dateKey)!.plannedBudgets += value
-        hasSourceData.plannedBudgets = true
       }
     })
 
@@ -2452,7 +2533,11 @@ export default function FinancialAnalyticsTab({
                 <div className="cumulative-overview-chart">
                   <ResponsiveContainer width="100%" height={500}>
                     {overviewChartType === 'line' ? (
-                    <LineChart data={processedCumulativeOverviewData} margin={{ top: 20, right: 30, left: 20, bottom: 40 }}>
+                    <LineChart 
+                      data={processedCumulativeOverviewData} 
+                      margin={{ top: 20, right: 30, left: 20, bottom: 40 }}
+                      key={`overview-line-${allocationMethod}-${isCumulative}-${overviewChartType}`}
+                    >
                       <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e1" opacity={0.5} />
                       <XAxis
                         dataKey="timestamp"
@@ -2477,7 +2562,9 @@ export default function FinancialAnalyticsTab({
                           stroke={hiddenSeries.has('Incoming Funds') ? '#cbd5e1' : '#2563eb'}
                           strokeWidth={hiddenSeries.has('Incoming Funds') ? 1 : 3}
                           dot={{ fill: hiddenSeries.has('Incoming Funds') ? '#cbd5e1' : '#2563eb', r: 4 }}
-                          animationDuration={300}
+                          isAnimationActive={true}
+                          animationDuration={600}
+                          animationEasing="ease-in-out"
                           opacity={hiddenSeries.has('Incoming Funds') ? 0.3 : 1}
                         />
                       )}
@@ -2489,7 +2576,9 @@ export default function FinancialAnalyticsTab({
                           strokeWidth={hiddenSeries.has('Incoming Commitments') ? 1 : 3}
                           strokeDasharray="8 4"
                           dot={{ fill: hiddenSeries.has('Incoming Commitments') ? '#cbd5e1' : '#10b981', r: 4 }}
-                          animationDuration={300}
+                          isAnimationActive={true}
+                          animationDuration={600}
+                          animationEasing="ease-in-out"
                           opacity={hiddenSeries.has('Incoming Commitments') ? 0.3 : 1}
                         />
                       )}
@@ -2501,7 +2590,9 @@ export default function FinancialAnalyticsTab({
                           strokeWidth={hiddenSeries.has('Outgoing Commitments') ? 1 : 3}
                           strokeDasharray="12 6"
                           dot={{ fill: hiddenSeries.has('Outgoing Commitments') ? '#cbd5e1' : '#f59e0b', r: 4 }}
-                          animationDuration={300}
+                          isAnimationActive={true}
+                          animationDuration={600}
+                          animationEasing="ease-in-out"
                           opacity={hiddenSeries.has('Outgoing Commitments') ? 0.3 : 1}
                         />
                       )}
@@ -2512,7 +2603,9 @@ export default function FinancialAnalyticsTab({
                           stroke={hiddenSeries.has('Disbursements') ? '#cbd5e1' : '#ef4444'}
                           strokeWidth={hiddenSeries.has('Disbursements') ? 1 : 3}
                           dot={{ fill: hiddenSeries.has('Disbursements') ? '#cbd5e1' : '#ef4444', r: 4 }}
-                          animationDuration={300}
+                          isAnimationActive={true}
+                          animationDuration={600}
+                          animationEasing="ease-in-out"
                           opacity={hiddenSeries.has('Disbursements') ? 0.3 : 1}
                         />
                       )}
@@ -2524,7 +2617,9 @@ export default function FinancialAnalyticsTab({
                           strokeWidth={hiddenSeries.has('Expenditures') ? 1 : 3}
                           strokeDasharray="4 4"
                           dot={{ fill: hiddenSeries.has('Expenditures') ? '#cbd5e1' : '#8b5cf6', r: 4 }}
-                          animationDuration={300}
+                          isAnimationActive={true}
+                          animationDuration={600}
+                          animationEasing="ease-in-out"
                           opacity={hiddenSeries.has('Expenditures') ? 0.3 : 1}
                         />
                       )}
@@ -2536,7 +2631,9 @@ export default function FinancialAnalyticsTab({
                           strokeWidth={hiddenSeries.has('Planned Disbursements') ? 1 : 2.5}
                           strokeDasharray="5 5"
                           dot={{ fill: hiddenSeries.has('Planned Disbursements') ? '#cbd5e1' : '#06b6d4', r: 3 }}
-                          animationDuration={300}
+                          isAnimationActive={true}
+                          animationDuration={600}
+                          animationEasing="ease-in-out"
                           opacity={hiddenSeries.has('Planned Disbursements') ? 0.3 : 1}
                         />
                       )}
@@ -2549,13 +2646,19 @@ export default function FinancialAnalyticsTab({
                           strokeDasharray="3 3"
                           dot={false}
                           connectNulls={true}
-                          animationDuration={300}
+                          isAnimationActive={true}
+                          animationDuration={600}
+                          animationEasing="ease-in-out"
                           opacity={hiddenSeries.has('Budgets') ? 0.3 : 1}
                         />
                       )}
                     </LineChart>
                   ) : overviewChartType === 'area' ? (
-                    <AreaChart data={processedCumulativeOverviewData} margin={{ top: 20, right: 30, left: 20, bottom: 40 }}>
+                    <AreaChart 
+                      data={processedCumulativeOverviewData} 
+                      margin={{ top: 20, right: 30, left: 20, bottom: 40 }}
+                      key={`overview-area-${allocationMethod}-${isCumulative}-${overviewChartType}`}
+                    >
                       <defs>
                         <linearGradient id="colorIncomingFunds" x1="0" y1="0" x2="0" y2="1">
                           <stop offset="5%" stopColor="#2563eb" stopOpacity={0.8}/>
@@ -2610,7 +2713,9 @@ export default function FinancialAnalyticsTab({
                           stroke={hiddenSeries.has('Incoming Funds') ? '#cbd5e1' : '#2563eb'}
                           strokeWidth={hiddenSeries.has('Incoming Funds') ? 1 : 2}
                           fill={hiddenSeries.has('Incoming Funds') ? 'transparent' : 'url(#colorIncomingFunds)'}
-                          animationDuration={300}
+                          isAnimationActive={true}
+                          animationDuration={600}
+                          animationEasing="ease-in-out"
                           opacity={hiddenSeries.has('Incoming Funds') ? 0.3 : 1}
                         />
                       )}
@@ -2621,7 +2726,9 @@ export default function FinancialAnalyticsTab({
                           stroke={hiddenSeries.has('Incoming Commitments') ? '#cbd5e1' : '#10b981'}
                           strokeWidth={hiddenSeries.has('Incoming Commitments') ? 1 : 2}
                           fill={hiddenSeries.has('Incoming Commitments') ? 'transparent' : 'url(#colorIncomingCommitments)'}
-                          animationDuration={300}
+                          isAnimationActive={true}
+                          animationDuration={600}
+                          animationEasing="ease-in-out"
                           opacity={hiddenSeries.has('Incoming Commitments') ? 0.3 : 1}
                         />
                       )}
@@ -2632,7 +2739,9 @@ export default function FinancialAnalyticsTab({
                           stroke={hiddenSeries.has('Outgoing Commitments') ? '#cbd5e1' : '#f59e0b'}
                           strokeWidth={hiddenSeries.has('Outgoing Commitments') ? 1 : 2}
                           fill={hiddenSeries.has('Outgoing Commitments') ? 'transparent' : 'url(#colorOutgoingCommitments)'}
-                          animationDuration={300}
+                          isAnimationActive={true}
+                          animationDuration={600}
+                          animationEasing="ease-in-out"
                           opacity={hiddenSeries.has('Outgoing Commitments') ? 0.3 : 1}
                         />
                       )}
@@ -2643,7 +2752,9 @@ export default function FinancialAnalyticsTab({
                           stroke={hiddenSeries.has('Disbursements') ? '#cbd5e1' : '#ef4444'}
                           strokeWidth={hiddenSeries.has('Disbursements') ? 1 : 2}
                           fill={hiddenSeries.has('Disbursements') ? 'transparent' : 'url(#colorDisbursements)'}
-                          animationDuration={300}
+                          isAnimationActive={true}
+                          animationDuration={600}
+                          animationEasing="ease-in-out"
                           opacity={hiddenSeries.has('Disbursements') ? 0.3 : 1}
                         />
                       )}
@@ -2654,7 +2765,9 @@ export default function FinancialAnalyticsTab({
                           stroke={hiddenSeries.has('Expenditures') ? '#cbd5e1' : '#8b5cf6'}
                           strokeWidth={hiddenSeries.has('Expenditures') ? 1 : 2}
                           fill={hiddenSeries.has('Expenditures') ? 'transparent' : 'url(#colorExpenditures)'}
-                          animationDuration={300}
+                          isAnimationActive={true}
+                          animationDuration={600}
+                          animationEasing="ease-in-out"
                           opacity={hiddenSeries.has('Expenditures') ? 0.3 : 1}
                         />
                       )}
@@ -2666,7 +2779,9 @@ export default function FinancialAnalyticsTab({
                           strokeWidth={hiddenSeries.has('Planned Disbursements') ? 1 : 2}
                           strokeDasharray="5 5"
                           fill={hiddenSeries.has('Planned Disbursements') ? 'transparent' : 'url(#colorPlannedDisbursements)'}
-                          animationDuration={300}
+                          isAnimationActive={true}
+                          animationDuration={600}
+                          animationEasing="ease-in-out"
                           opacity={hiddenSeries.has('Planned Disbursements') ? 0.3 : 1}
                         />
                       )}
@@ -2679,13 +2794,19 @@ export default function FinancialAnalyticsTab({
                           strokeDasharray="3 3"
                           fill={hiddenSeries.has('Budgets') ? 'transparent' : 'url(#colorBudgets)'}
                           connectNulls={true}
-                          animationDuration={300}
+                          isAnimationActive={true}
+                          animationDuration={600}
+                          animationEasing="ease-in-out"
                           opacity={hiddenSeries.has('Budgets') ? 0.3 : 1}
                         />
                       )}
                     </AreaChart>
                   ) : (
-                    <BarChart data={processedCumulativeOverviewData} margin={{ top: 20, right: 30, left: 20, bottom: 40 }}>
+                    <BarChart 
+                      data={processedCumulativeOverviewData} 
+                      margin={{ top: 20, right: 30, left: 20, bottom: 40 }}
+                      key={`overview-bar-${allocationMethod}-${isCumulative}-${overviewChartType}`}
+                    >
                       <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e1" opacity={0.5} />
                       <XAxis
                         dataKey="timestamp"
@@ -2708,7 +2829,9 @@ export default function FinancialAnalyticsTab({
                           dataKey="Incoming Funds"
                           fill={hiddenSeries.has('Incoming Funds') ? '#cbd5e1' : '#1e40af'}
                           radius={[4, 4, 0, 0]}
-                          animationDuration={300}
+                          isAnimationActive={true}
+                          animationDuration={600}
+                          animationEasing="ease-in-out"
                           opacity={hiddenSeries.has('Incoming Funds') ? 0.3 : 1}
                         />
                       )}
@@ -2717,7 +2840,9 @@ export default function FinancialAnalyticsTab({
                           dataKey="Incoming Commitments"
                           fill={hiddenSeries.has('Incoming Commitments') ? '#cbd5e1' : '#3b82f6'}
                           radius={[4, 4, 0, 0]}
-                          animationDuration={300}
+                          isAnimationActive={true}
+                          animationDuration={600}
+                          animationEasing="ease-in-out"
                           opacity={hiddenSeries.has('Incoming Commitments') ? 0.3 : 1}
                         />
                       )}
@@ -2726,7 +2851,9 @@ export default function FinancialAnalyticsTab({
                           dataKey="Outgoing Commitments"
                           fill={hiddenSeries.has('Outgoing Commitments') ? '#cbd5e1' : '#0f172a'}
                           radius={[4, 4, 0, 0]}
-                          animationDuration={300}
+                          isAnimationActive={true}
+                          animationDuration={600}
+                          animationEasing="ease-in-out"
                           opacity={hiddenSeries.has('Outgoing Commitments') ? 0.3 : 1}
                         />
                       )}
@@ -2735,7 +2862,9 @@ export default function FinancialAnalyticsTab({
                           dataKey="Disbursements"
                           fill={hiddenSeries.has('Disbursements') ? '#cbd5e1' : '#475569'}
                           radius={[4, 4, 0, 0]}
-                          animationDuration={300}
+                          isAnimationActive={true}
+                          animationDuration={600}
+                          animationEasing="ease-in-out"
                           opacity={hiddenSeries.has('Disbursements') ? 0.3 : 1}
                         />
                       )}
@@ -2744,7 +2873,9 @@ export default function FinancialAnalyticsTab({
                           dataKey="Expenditures"
                           fill={hiddenSeries.has('Expenditures') ? '#cbd5e1' : '#64748b'}
                           radius={[4, 4, 0, 0]}
-                          animationDuration={300}
+                          isAnimationActive={true}
+                          animationDuration={600}
+                          animationEasing="ease-in-out"
                           opacity={hiddenSeries.has('Expenditures') ? 0.3 : 1}
                         />
                       )}
@@ -2753,7 +2884,9 @@ export default function FinancialAnalyticsTab({
                           dataKey="Planned Disbursements"
                           fill={hiddenSeries.has('Planned Disbursements') ? '#cbd5e1' : '#1e3a8a'}
                           radius={[4, 4, 0, 0]}
-                          animationDuration={300}
+                          isAnimationActive={true}
+                          animationDuration={600}
+                          animationEasing="ease-in-out"
                           opacity={hiddenSeries.has('Planned Disbursements') ? 0.3 : 1}
                         />
                       )}
@@ -2762,7 +2895,9 @@ export default function FinancialAnalyticsTab({
                           dataKey="Budgets"
                           fill={hiddenSeries.has('Budgets') ? '#cbd5e1' : '#334155'}
                           radius={[4, 4, 0, 0]}
-                          animationDuration={300}
+                          isAnimationActive={true}
+                          animationDuration={600}
+                          animationEasing="ease-in-out"
                           opacity={hiddenSeries.has('Budgets') ? 0.3 : 1}
                         />
                       )}
@@ -2954,9 +3089,13 @@ export default function FinancialAnalyticsTab({
               </div>
             ) : (
               <div className="budget-vs-actual-chart">
-                <ResponsiveContainer width="100%" height={500} key={`budget-${budgetGroupBy}-${budgetChartType}`}>
+                <ResponsiveContainer width="100%" height={500} key={`budget-${budgetGroupBy}-${budgetChartType}-${allocationMethod}`}>
                   {budgetChartType === 'line' ? (
-                    <LineChart data={processedBudgetVsActual} margin={{ top: 20, right: 30, left: 20, bottom: budgetGroupBy === 'month' ? 80 : 40 }}>
+                    <LineChart 
+                      data={processedBudgetVsActual} 
+                      margin={{ top: 20, right: 30, left: 20, bottom: budgetGroupBy === 'month' ? 80 : 40 }}
+                      key={`budget-line-${allocationMethod}-${budgetGroupBy}`}
+                    >
                     <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e1" opacity={0.5} />
                     <XAxis
                       dataKey="timestamp"
@@ -2981,7 +3120,9 @@ export default function FinancialAnalyticsTab({
                       stroke={hiddenBudgetSeries.has('Budget') ? '#cbd5e1' : '#3B82F6'}
                       strokeWidth={hiddenBudgetSeries.has('Budget') ? 1 : 2.5}
                       dot={{ fill: hiddenBudgetSeries.has('Budget') ? '#cbd5e1' : '#3B82F6', r: 3 }}
-                      animationDuration={300}
+                      isAnimationActive={true}
+                      animationDuration={600}
+                      animationEasing="ease-in-out"
                       opacity={hiddenBudgetSeries.has('Budget') ? 0.3 : 1}
                     />
                     <Line
@@ -2991,12 +3132,18 @@ export default function FinancialAnalyticsTab({
                       stroke={hiddenBudgetSeries.has('Actual Spending') ? '#cbd5e1' : '#64748B'}
                       strokeWidth={hiddenBudgetSeries.has('Actual Spending') ? 1 : 2.5}
                       dot={{ fill: hiddenBudgetSeries.has('Actual Spending') ? '#cbd5e1' : '#64748B', r: 3 }}
-                      animationDuration={300}
+                      isAnimationActive={true}
+                      animationDuration={600}
+                      animationEasing="ease-in-out"
                       opacity={hiddenBudgetSeries.has('Actual Spending') ? 0.3 : 1}
                     />
                   </LineChart>
                 ) : (
-                  <BarChart data={processedBudgetVsActual} margin={{ top: 20, right: 30, left: 20, bottom: budgetGroupBy === 'month' ? 80 : 40 }}>
+                  <BarChart 
+                    data={processedBudgetVsActual} 
+                    margin={{ top: 20, right: 30, left: 20, bottom: budgetGroupBy === 'month' ? 80 : 40 }}
+                    key={`budget-bar-${allocationMethod}-${budgetGroupBy}`}
+                  >
                     <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e1" opacity={0.5} />
                     <XAxis
                       dataKey="timestamp"
@@ -3019,7 +3166,9 @@ export default function FinancialAnalyticsTab({
                       name="Budget"
                       fill={hiddenBudgetSeries.has('Budget') ? '#cbd5e1' : '#3B82F6'}
                       radius={[4, 4, 0, 0]}
-                      animationDuration={300}
+                      isAnimationActive={true}
+                      animationDuration={600}
+                      animationEasing="ease-in-out"
                       opacity={hiddenBudgetSeries.has('Budget') ? 0.3 : 1}
                     />
                     <Bar
@@ -3027,7 +3176,9 @@ export default function FinancialAnalyticsTab({
                       name="Actual Spending"
                       fill={hiddenBudgetSeries.has('Actual Spending') ? '#cbd5e1' : '#64748B'}
                       radius={[4, 4, 0, 0]}
-                      animationDuration={300}
+                      isAnimationActive={true}
+                      animationDuration={600}
+                      animationEasing="ease-in-out"
                       opacity={hiddenBudgetSeries.has('Actual Spending') ? 0.3 : 1}
                     />
                   </BarChart>
