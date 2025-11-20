@@ -840,9 +840,23 @@ function ActivitiesPageContent() {
       // Clear selection
       setSelectedActivityIds(new Set());
       
+      // Force refresh to ensure list is up to date and remove any stale entries
+      if (usingOptimization) {
+        safeOptimizedData.refetch();
+      } else {
+        fetchActivities(currentPage, false);
+      }
+      
     } catch (error) {
       console.error('Bulk delete failed:', error);
-      toast.error('Failed to delete some activities');
+      
+      // Check if it's a 404 (route not found) vs other error
+      if (error instanceof Error && error.message.includes('Delete endpoint not found')) {
+        toast.error('Delete feature is temporarily unavailable. Please refresh the page.');
+      } else {
+        toast.error('Failed to delete some activities');
+      }
+      
       // Revert optimistic updates by refetching
       if (usingOptimization) {
         safeOptimizedData.refetch();
@@ -1411,7 +1425,32 @@ function ActivitiesPageContent() {
                       <td className="px-4 py-2 text-sm text-foreground whitespace-normal break-words leading-tight">
                         <div 
                           className="cursor-pointer"
-                          onClick={() => router.push(`/activities/${activity.id}`)}
+                          onClick={async () => {
+                            // Verify activity exists before navigating (lightweight check)
+                            try {
+                              const checkRes = await fetch(`/api/activities/${activity.id}?fields=id`, {
+                                method: 'GET'
+                              });
+                              
+                              if (checkRes.status === 404) {
+                                // Activity was deleted, remove from list
+                                toast.warning('This activity has been deleted');
+                                if (usingOptimization) {
+                                  safeOptimizedData.removeActivity(activity.id);
+                                } else {
+                                  setLegacyActivities(prev => prev.filter(a => a.id !== activity.id));
+                                }
+                                return;
+                              }
+                              
+                              // Activity exists, navigate to it
+                              router.push(`/activities/${activity.id}`);
+                            } catch (error) {
+                              // On error, still try to navigate (might be network issue)
+                              console.error('[Activities] Error checking activity:', error);
+                              router.push(`/activities/${activity.id}`);
+                            }
+                          }}
                         >
                           <div className="flex items-start gap-2">
                             {/* Activity Icon */}
