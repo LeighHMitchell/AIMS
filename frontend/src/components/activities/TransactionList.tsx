@@ -480,6 +480,15 @@ export default function TransactionList({
           ...prev,
           [docKey]: data.documents || []
         }));
+      } else if (response.status === 404) {
+        // Transaction was deleted, remove from expanded rows and clear documents
+        setExpandedRows(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(docKey);
+          return newSet;
+        });
+        // Transaction will be removed from list on next refresh
+        console.warn('[TransactionList] Transaction not found (404) when fetching documents:', transactionIdOrUuid);
       }
     } catch (error) {
       console.error('Error fetching transaction documents:', error);

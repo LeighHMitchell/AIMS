@@ -207,19 +207,41 @@ export default function TransactionTab({
       console.error('[TransactionTab] Attempted to delete transaction with invalid UUID:', uuid);
       return;
     }
+    
+    // Optimistically remove transaction from UI immediately
+    const deletedTransaction = transactions.find(t => (t.uuid || t.id) === uuid);
+    setTransactions(prev => prev.filter(t => (t.uuid || t.id) !== uuid));
+    
     try {
       const response = await fetch(`/api/activities/${activityId}/transactions/${uuid}`, {
         method: 'DELETE'
       });
-      if (!response.ok) throw new Error('Failed to delete transaction');
+      
+      if (!response.ok) {
+        // If delete failed, restore the transaction in the UI
+        if (deletedTransaction) {
+          setTransactions(prev => [...prev, deletedTransaction]);
+        }
+        
+        let errorMessage = 'Failed to delete transaction';
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.error || errorMessage;
+        } catch (e) {
+          // No JSON response
+        }
+        
+        throw new Error(errorMessage);
+      }
       
       // Refresh the entire transaction list to ensure we have the latest data
+      // This ensures consistency even if optimistic update was slightly off
       await fetchTransactions();
       
       toast.success("Transaction deleted successfully");
     } catch (error) {
       console.error('[TransactionTab] Error deleting transaction:', error);
-      toast.error("Failed to delete transaction");
+      toast.error(error instanceof Error ? error.message : "Failed to delete transaction");
       throw error;
     }
   };
