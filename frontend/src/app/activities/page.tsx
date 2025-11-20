@@ -677,14 +677,43 @@ function ActivitiesPageContent() {
       });
       
       if (!res.ok) {
-        const errorData = await res.json().catch(() => ({ error: 'Unknown error' }));
+        let errorData: any = { error: 'Unknown error' };
+        try {
+          errorData = await res.json();
+        } catch (e) {
+          console.error("[AIMS] Delete API error (no JSON response):", {
+            status: res.status,
+            statusText: res.statusText,
+            url: res.url
+          });
+        }
         
-        // If it's a 404, the activity is already gone - that's fine
+        console.error("[AIMS] Delete API error:", {
+          status: res.status,
+          statusText: res.statusText,
+          error: errorData,
+          activityId: id
+        });
+        
+        // If it's a 404, check if it's "Activity not found" (already deleted) or route not found
         if (res.status === 404) {
-          console.log("[AIMS] Activity already deleted:", id);
-          console.log('[AIMS] About to show success toast for already deleted activity:', activityTitle);
-          toast.success(`"${activityTitle}" was deleted successfully`);
-          return;
+          // If the error message indicates the activity wasn't found, treat as success
+          if (errorData.error === "Activity not found" || errorData.error === "No activities found") {
+            console.log("[AIMS] Activity already deleted:", id);
+            toast.success(`"${activityTitle}" was deleted successfully`);
+            return;
+          } else {
+            // Route not found - this is a deployment/build issue
+            console.error("[AIMS] DELETE route not found (404) - this is a deployment issue");
+            toast.error("Delete endpoint not found. Please contact support or try refreshing the page.");
+            // Revert optimistic update
+            if (usingOptimization) {
+              safeOptimizedData.refetch();
+            } else {
+              window.location.reload();
+            }
+            throw new Error("Delete endpoint not found");
+          }
         }
         
         // For other errors, we need to revert the optimistic update or refetch
@@ -787,7 +816,22 @@ function ActivitiesPageContent() {
       });
       
       if (!response.ok) {
-        throw new Error('Failed to delete activities');
+        let errorMessage = 'Failed to delete activities';
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.error || errorMessage;
+          console.error('[Activities] Delete API error:', {
+            status: response.status,
+            statusText: response.statusText,
+            error: errorData
+          });
+        } catch (e) {
+          console.error('[Activities] Delete API error (no JSON):', {
+            status: response.status,
+            statusText: response.statusText
+          });
+        }
+        throw new Error(errorMessage);
       }
       
       const result = await response.json();
