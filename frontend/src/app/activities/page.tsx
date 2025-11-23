@@ -166,6 +166,8 @@ type Activity = {
   transactions?: Transaction[];
   createdByOrg?: string; // Organization that created the activity (legacy)
   reportingOrgId?: string; // Organization that created/reports the activity
+  reportingOrgRef?: string; // IATI reporting organization reference (e.g., "AU-5")
+  reportingOrgName?: string; // Reporting organization name
   createdBy?: { id: string; name: string; role: string }; // User who created the activity
   contributors?: any[]; // Added for contributors
   
@@ -205,7 +207,7 @@ type Activity = {
   tied_status?: string; // Legacy field
 };
 
-type SortField = 'title' | 'partnerId' | 'createdBy' | 'commitments' | 'disbursements' | 'createdAt' | 'updatedAt' | 'activityStatus';
+type SortField = 'title' | 'partnerId' | 'createdBy' | 'commitments' | 'disbursements' | 'plannedDisbursements' | 'createdAt' | 'updatedAt' | 'activityStatus';
 type SortOrder = 'asc' | 'desc';
 
 
@@ -407,30 +409,6 @@ function ActivitiesPageContent() {
 
   // Debounced empty state display will be handled after totalActivities is computed
 
-  // Memoized helper functions - must be defined before use in other memos
-  const getCreatorOrganization = useCallback((activity: Activity): string => {
-    // First, check if we have a stored acronym
-    if (activity.created_by_org_acronym) {
-      return activity.created_by_org_acronym;
-    }
-    
-    // Look up by organization ID
-    if (activity.createdByOrg) {
-      const org = organizations.find(o => o.id === activity.createdByOrg);
-      if (org && org.acronym) return org.acronym;
-      if (org && org.name) return org.name;
-    }
-    
-    // Look up by organization name to find acronym
-    if (activity.created_by_org_name) {
-      const org = organizations.find(o => o.name === activity.created_by_org_name);
-      if (org && org.acronym) return org.acronym;
-      return activity.created_by_org_name;
-    }
-    
-    return "Unknown";
-  }, [organizations]);
-
   // Copy ID to clipboard
   const copyToClipboard = (text: string, type: 'partnerId' | 'iatiIdentifier' | 'acronym', activityId: string) => {
     navigator.clipboard.writeText(text);
@@ -461,42 +439,39 @@ function ActivitiesPageContent() {
     }
   };
 
-  const getOrganizationAcronyms = (activity: Activity): string[] => {
-    const orgIds = new Set<string>();
-    const acronyms: string[] = [];
+  // Organization lookup maps for O(1) access instead of O(n) array searches
+  const orgByIdMap = useMemo(() => {
+    const map = new Map<string, Organization>();
+    organizations.forEach(org => {
+      map.set(org.id, org);
+    });
+    return map;
+  }, [organizations]);
 
-    // Collect organization IDs from activity creator
-    if (activity.createdByOrg) {
-      orgIds.add(activity.createdByOrg);
-    }
-    
-    // Collect from activity contributors
-    if ((activity as any).activity_contributors) {
-      (activity as any).activity_contributors.forEach((contributor: any) => {
-        if (contributor.organization_id && (contributor.status === 'accepted' || contributor.status === 'active')) {
-          orgIds.add(contributor.organization_id);
-        }
-      });
-    }
-    
-    // Collect from transactions using organization_id
-    activity.transactions?.forEach(transaction => {
-      if ((transaction as any).organization_id) {
-        orgIds.add((transaction as any).organization_id);
+  const orgByNameMap = useMemo(() => {
+    const map = new Map<string, Organization>();
+    organizations.forEach(org => {
+      if (org.name) {
+        map.set(org.name.toLowerCase(), org);
+      }
+      if (org.acronym) {
+        map.set(org.acronym.toLowerCase(), org);
       }
     });
+    return map;
+  }, [organizations]);
 
-    // Convert IDs to acronyms using acronym field
-    Array.from(orgIds).forEach(id => {
-      const org = organizations.find(o => o.id === id);
-      if (org && org.acronym) {
-        acronyms.push(org.acronym);
+  const orgByIatiRefMap = useMemo(() => {
+    const map = new Map<string, Organization>();
+    organizations.forEach(org => {
+      // Some organizations might have iati_org_id field
+      const iatiRef = (org as any).iati_org_id;
+      if (iatiRef) {
+        map.set(iatiRef, org);
       }
     });
-
-    // Remove duplicates and sort alphabetically
-    return Array.from(new Set(acronyms)).sort();
-  };
+    return map;
+  }, [organizations]);
 
   const formatOrganizationAcronyms = (acronyms: string[]): string => {
     if (acronyms.length === 0) return "";
@@ -733,7 +708,16 @@ function ActivitiesPageContent() {
       
       console.log('[AIMS] About to show success toast for deletion:', activityTitle);
       toast.success(`"${activityTitle}" was deleted successfully`);
-      // Activity already removed optimistically, no need to do anything else
+      
+      // Refetch to ensure UI is in sync with backend (prevents reappearing activity)
+      // Use a small delay to ensure backend has processed the deletion
+      setTimeout(() => {
+        if (usingOptimization) {
+          safeOptimizedData.refetch();
+        } else {
+          fetchActivities(currentPage, false);
+        }
+      }, 100);
       
     } catch (error) {
       console.error(`[AIMS] Error deleting activity (attempt ${retryCount + 1}):`, error);
@@ -967,6 +951,114 @@ function ActivitiesPageContent() {
     });
   }, [usingOptimization, activities, filterStatus, filterValidation]);
 
+  // Pre-compute creator organization strings for all filtered activities
+  // This cache eliminates repeated lookups during rendering and sorting
+  const creatorOrgCache = useMemo(() => {
+    const cache = new Map<string, string>();
+    
+    filteredActivities.forEach(activity => {
+      let result: string;
+      
+      // First, check if we have a stored acronym
+      if (activity.created_by_org_acronym) {
+        result = activity.created_by_org_acronym;
+      }
+      // Second, check if we have a stored name (return it directly - this is the source of truth)
+      // IMPORTANT: If created_by_org_name is set, use it even if reportingOrgId points elsewhere
+      // This handles cases where activity was imported as "original publisher"
+      else if (activity.created_by_org_name && activity.created_by_org_name !== 'Unknown' && activity.created_by_org_name.trim() !== '') {
+        // Try to find org to get acronym, but return name if not found
+        const org = orgByNameMap.get(activity.created_by_org_name.toLowerCase());
+        result = org?.acronym || activity.created_by_org_name;
+      }
+      // Only fall back to ID lookups if created_by_org_name is not set
+      // Look up by reporting_org_id (new field)
+      else if (activity.reportingOrgId) {
+        const org = orgByIdMap.get(activity.reportingOrgId);
+        result = org?.acronym || org?.name || "Unknown";
+      }
+      // Look up by legacy createdByOrg field
+      else if (activity.createdByOrg) {
+        const org = orgByIdMap.get(activity.createdByOrg);
+        result = org?.acronym || org?.name || "Unknown";
+      }
+      // Fallback: Use reporting_org_ref if available (IATI identifier like "AU-5")
+      else if (activity.reportingOrgRef) {
+        // Try to find by IATI ref first
+        const orgByRef = orgByIatiRefMap.get(activity.reportingOrgRef);
+        if (orgByRef) {
+          result = orgByRef.acronym || orgByRef.name || activity.reportingOrgRef;
+        } else {
+          result = activity.reportingOrgRef;
+        }
+      }
+      else {
+        result = "Unknown";
+      }
+      
+      cache.set(activity.id, result);
+    });
+    
+    return cache;
+  }, [filteredActivities, orgByIdMap, orgByNameMap, orgByIatiRefMap]);
+
+  // Pre-compute organization acronyms for all filtered activities
+  // This cache eliminates repeated lookups during rendering
+  const organizationAcronymsCache = useMemo(() => {
+    const cache = new Map<string, string[]>();
+    
+    filteredActivities.forEach(activity => {
+      const orgIds = new Set<string>();
+      const acronyms: string[] = [];
+
+      // Collect organization IDs from activity creator
+      if (activity.createdByOrg) {
+        orgIds.add(activity.createdByOrg);
+      }
+      
+      // Collect from activity contributors
+      if ((activity as any).activity_contributors) {
+        (activity as any).activity_contributors.forEach((contributor: any) => {
+          if (contributor.organization_id && (contributor.status === 'accepted' || contributor.status === 'active')) {
+            orgIds.add(contributor.organization_id);
+          }
+        });
+      }
+      
+      // Collect from transactions using organization_id
+      activity.transactions?.forEach(transaction => {
+        if ((transaction as any).organization_id) {
+          orgIds.add((transaction as any).organization_id);
+        }
+      });
+
+      // Convert IDs to acronyms using lookup map (O(1) instead of O(n))
+      Array.from(orgIds).forEach(id => {
+        const org = orgByIdMap.get(id);
+        if (org && org.acronym) {
+          acronyms.push(org.acronym);
+        }
+      });
+
+      // Remove duplicates and sort alphabetically
+      cache.set(activity.id, Array.from(new Set(acronyms)).sort());
+    });
+    
+    return cache;
+  }, [filteredActivities, orgByIdMap]);
+
+  const getOrganizationAcronyms = useCallback((activity: Activity): string[] => {
+    // Use pre-computed cache for O(1) lookup
+    return organizationAcronymsCache.get(activity.id) || [];
+  }, [organizationAcronymsCache]);
+
+  // Memoized helper function - defined after cache creation
+  // Optimized to use pre-computed cache instead of performing lookups
+  const getCreatorOrganization = useCallback((activity: Activity): string => {
+    // Use pre-computed cache for O(1) lookup
+    return creatorOrgCache.get(activity.id) || "Unknown";
+  }, [creatorOrgCache]);
+
   // Client-side sorting for legacy implementation only
   const sortedActivities = useMemo(() => {
     if (usingOptimization) {
@@ -995,6 +1087,10 @@ function ActivitiesPageContent() {
           aValue = (a as any).totalDisbursed || 0;
           bValue = (b as any).totalDisbursed || 0;
           break;
+        case 'plannedDisbursements':
+          aValue = (a as any).totalPlannedDisbursementsUSD || 0;
+          bValue = (b as any).totalPlannedDisbursementsUSD || 0;
+          break;
         case 'createdAt':
           aValue = new Date(a.createdAt).getTime();
           bValue = new Date(b.createdAt).getTime();
@@ -1004,8 +1100,9 @@ function ActivitiesPageContent() {
           bValue = new Date(b.updatedAt).getTime();
           break;
         case 'createdBy':
-          aValue = getCreatorOrganization(a).toLowerCase();
-          bValue = getCreatorOrganization(b).toLowerCase();
+          // Use cached values directly instead of calling getCreatorOrganization
+          aValue = (creatorOrgCache.get(a.id) || "Unknown").toLowerCase();
+          bValue = (creatorOrgCache.get(b.id) || "Unknown").toLowerCase();
           break;
         case 'activityStatus':
           aValue = getActivityStatusLabel(a.activityStatus || a.status || '1').toLowerCase();
@@ -1019,7 +1116,7 @@ function ActivitiesPageContent() {
       if (aValue > bValue) return legacySortOrder === 'asc' ? 1 : -1;
       return 0;
     });
-  }, [filteredActivities, legacySortField, legacySortOrder, usingOptimization, getCreatorOrganization]);
+  }, [filteredActivities, legacySortField, legacySortOrder, usingOptimization, creatorOrgCache]);
 
   // Pagination logic - use server-side pagination for optimized, client-side for legacy
   const totalActivities = usingOptimization ? totalActivitiesCount : filteredActivities.length;
@@ -1359,10 +1456,10 @@ function ActivitiesPageContent() {
                   </th>
                   <th 
                     className="h-12 px-4 py-3 text-right align-middle text-sm font-medium text-muted-foreground cursor-pointer hover:bg-muted/80 transition-colors min-w-[100px]"
-                    onClick={() => handleSort('disbursements')}
+                    onClick={() => handleSort('plannedDisbursements')}
                   >
                     <div className="flex items-center justify-end gap-1">
-                      <span>Total Disbursed</span>
+                      <span>Total Planned Disbursements</span>
                       <TooltipProvider>
                         <Tooltip>
                           <TooltipTrigger asChild>
@@ -1370,12 +1467,12 @@ function ActivitiesPageContent() {
                           </TooltipTrigger>
                           <TooltipContent className="max-w-xs border border-gray-200 bg-white shadow-lg text-left">
                             <p className="text-sm text-gray-600 font-normal">
-                              Total value of all disbursement and expenditure transactions for this activity. All values are displayed in USD.
+                              Total value of all planned disbursements for this activity. All values are displayed in USD.
                             </p>
                           </TooltipContent>
                         </Tooltip>
                       </TooltipProvider>
-                      {getSortIcon('disbursements')}
+                      {getSortIcon('plannedDisbursements')}
                     </div>
                   </th>
 
@@ -1604,25 +1701,7 @@ function ActivitiesPageContent() {
                                 {/* Organization Logo */}
                                 {(() => {
                                   const orgId = activity.reportingOrgId || activity.createdByOrg;
-                                  const org = organizations.find(o => o.id === orgId);
-                                  
-                                  // Debug logging
-                                  if (!org && orgId) {
-                                    console.log('[Activities] Org not found:', { 
-                                      orgId, 
-                                      reportingOrgId: activity.reportingOrgId, 
-                                      createdByOrg: activity.createdByOrg,
-                                      availableOrgs: organizations.length,
-                                      activityTitle: activity.title
-                                    });
-                                  }
-                                  if (org && !org.logo) {
-                                    console.log('[Activities] Org found but no logo:', { 
-                                      orgId, 
-                                      orgName: org.name,
-                                      activityTitle: activity.title 
-                                    });
-                                  }
+                                  const org = orgByIdMap.get(orgId || '');
                                   
                                   if (org?.logo) {
                                     return (
@@ -1699,11 +1778,11 @@ function ActivitiesPageContent() {
                         <TooltipProvider>
                           <Tooltip>
                             <TooltipTrigger>
-                              <span className="text-muted-foreground">USD</span> {formatCurrency((activity as any).totalDisbursed || 0)}
+                              <span className="text-muted-foreground">USD</span> {formatCurrency((activity as any).totalPlannedDisbursementsUSD || 0)}
                             </TooltipTrigger>
                             <TooltipContent className="max-w-xs border border-gray-200 bg-white shadow-lg text-left">
                               <p className="text-sm text-gray-600 font-normal">
-                                Total value of all disbursement and expenditure transactions for this activity. All values are displayed in USD for consistency across different currencies.
+                                Total value of all planned disbursements for this activity. All values are displayed in USD for consistency across different currencies.
                               </p>
                             </TooltipContent>
                           </Tooltip>

@@ -9,8 +9,43 @@ import { getOrCreateOrganization } from '@/lib/organization-helpers';
 export const dynamic = 'force-dynamic';
 
 export async function POST(request: NextRequest) {
+  console.log('[Import as Reporting Org] 🚀 POST handler called');
   try {
-    const { xmlContent, userId, userRole, replaceActivityIds, fields, iati_data } = await request.json();
+    const { xmlContent, userId, userRole, replaceActivityIds, activityId, fields, iati_data, selectedReportingOrgId, acronyms } = await request.json();
+    console.log('[Import as Reporting Org] Request received:', { 
+      hasXmlContent: !!xmlContent, 
+      userId, 
+      userRole,
+      hasFields: !!fields,
+      hasIatiData: !!iati_data
+    });
+    
+    // CRITICAL: Get user's org info to ensure we NEVER use it
+    const supabase = getSupabaseAdmin();
+    let userOrgInfo = null;
+    if (userId) {
+      const { data: userData } = await supabase
+        .from('users')
+        .select('organization_id')
+        .eq('id', userId)
+        .single();
+      
+      if (userData?.organization_id) {
+        const { data: userOrg } = await supabase
+          .from('organizations')
+          .select('id, name, acronym')
+          .eq('id', userData.organization_id)
+          .single();
+        
+        userOrgInfo = userOrg;
+        console.log(`[Import as Reporting Org] ⚠️  LOGGED-IN USER'S ORG (MUST NOT USE):`, {
+          id: userOrg?.id,
+          name: userOrg?.name,
+          acronym: userOrg?.acronym,
+          note: 'This org MUST NOT be used - we use XML reporting org instead'
+        });
+      }
+    }
 
     if (!xmlContent || !userId) {
       return NextResponse.json(
@@ -29,8 +64,6 @@ export async function POST(request: NextRequest) {
         { status: 403 }
       );
     }
-
-    const supabase = getSupabaseAdmin();
 
     // Get user data to verify
     const { data: userData, error: userError } = await supabase
@@ -271,28 +304,179 @@ export async function POST(request: NextRequest) {
     // Check if reporting organization exists, create if it doesn't
     let reportingOrgId: string | null = null;
     let reportingOrgAcronym: string | null = null;
+    let reportingOrgNameFromDB: string | null = null; // Track the org name from database
     const reportingOrgName = meta.reportingOrgName || reportingOrgRef;
 
-    console.log(`[Import as Reporting Org] Checking for reporting organization: ${reportingOrgName} (${reportingOrgRef})`);
+    console.log(`[Import as Reporting Org] 🔍 CRITICAL: Checking for reporting organization:`, {
+      selectedReportingOrgId: selectedReportingOrgId || 'not provided',
+      reportingOrgName: meta.reportingOrgName,
+      reportingOrgRef: reportingOrgRef,
+      note: selectedReportingOrgId ? 'Using user-selected org ID' : 'Will auto-detect from XML'
+    });
 
-    // Try to find the org by IATI org ID, name, or alias
-    const { data: existingOrgs } = await supabase
-      .from('organizations')
-      .select('id, name, iati_org_id, alias_refs, acronym')
-      .or(`iati_org_id.eq.${reportingOrgRef},name.ilike.${reportingOrgName},alias_refs.cs.{${reportingOrgRef}}`);
+    // If user selected a reporting org in the modal, use it
+    if (selectedReportingOrgId) {
+      console.log(`[Import as Reporting Org] ✅ Using user-selected reporting org ID: ${selectedReportingOrgId}`);
+      const { data: selectedOrg, error: selectedOrgError } = await supabase
+        .from('organizations')
+        .select('id, name, acronym, iati_org_id')
+        .eq('id', selectedReportingOrgId)
+        .single();
 
-    // Check if any of the found orgs match
-    const matchingOrg = existingOrgs?.find(org =>
-      org.iati_org_id === reportingOrgRef ||
-      org.name?.toLowerCase() === reportingOrgName?.toLowerCase() ||
-      org.alias_refs?.includes(reportingOrgRef)
-    );
+      if (selectedOrgError || !selectedOrg) {
+        console.error(`[Import as Reporting Org] ⚠️  Selected org not found, falling back to auto-detection:`, selectedOrgError);
+        // Fall through to auto-detection logic below
+      } else {
+        reportingOrgId = selectedOrg.id;
+        reportingOrgAcronym = selectedOrg.acronym;
+        reportingOrgNameFromDB = selectedOrg.name;
+        console.log(`[Import as Reporting Org] ✅ Using selected organization: ${selectedOrg.name} (ID: ${reportingOrgId})`);
+        // Skip auto-detection and proceed with selected org
+      }
+    }
+
+    // Only run auto-detection if no org was selected or selected org wasn't found
+    if (!reportingOrgId) {
+
+    // Prioritize IATI org ID matching (most reliable)
+    // Step 1: Try exact match by iati_org_id first
+    let matchingOrg = null;
+    if (reportingOrgRef) {
+      console.log(`[Import as Reporting Org] Searching for org with iati_org_id = "${reportingOrgRef}"`);
+      const { data: orgByRef, error: orgByRefError } = await supabase
+        .from('organizations')
+        .select('id, name, iati_org_id, alias_refs, acronym')
+        .eq('iati_org_id', reportingOrgRef)
+        .maybeSingle();
+
+      if (orgByRefError) {
+        console.error(`[Import as Reporting Org] Error querying organizations by IATI ID:`, orgByRefError);
+      }
+
+      if (orgByRef) {
+        matchingOrg = orgByRef;
+        console.log(`[Import as Reporting Org] ✅ Found organization by IATI ID: ${matchingOrg.name} (ID: ${matchingOrg.id}, Acronym: ${matchingOrg.acronym || 'N/A'})`);
+      } else {
+        console.log(`[Import as Reporting Org] ❌ No organization found with iati_org_id = "${reportingOrgRef}"`);
+      }
+    }
+
+    // Step 2: If not found by IATI ID, try alias_refs
+    if (!matchingOrg && reportingOrgRef) {
+      const { data: orgsByAlias } = await supabase
+        .from('organizations')
+        .select('id, name, iati_org_id, alias_refs, acronym')
+        .not('alias_refs', 'is', null);
+
+      const aliasMatch = orgsByAlias?.find(org => 
+        org.alias_refs && Array.isArray(org.alias_refs) && org.alias_refs.includes(reportingOrgRef)
+      );
+
+      if (aliasMatch) {
+        matchingOrg = aliasMatch;
+        console.log(`[Import as Reporting Org] Found organization by alias_refs: ${matchingOrg.name} (ID: ${matchingOrg.id}, Acronym: ${matchingOrg.acronym})`);
+      }
+    }
+
+    // Step 3: Only use name match as last resort (and only if no IATI ID was provided)
+    if (!matchingOrg && reportingOrgName && !reportingOrgRef) {
+      const { data: orgsByName } = await supabase
+        .from('organizations')
+        .select('id, name, iati_org_id, alias_refs, acronym')
+        .ilike('name', `%${reportingOrgName}%`)
+        .limit(10);
+
+      // Find exact or close name match
+      const nameMatch = orgsByName?.find(org =>
+        org.name?.toLowerCase() === reportingOrgName.toLowerCase()
+      );
+
+      if (nameMatch) {
+        matchingOrg = nameMatch;
+        console.log(`[Import as Reporting Org] Found organization by name: ${matchingOrg.name} (ID: ${matchingOrg.id}, Acronym: ${matchingOrg.acronym})`);
+      }
+    }
 
     if (matchingOrg) {
-      reportingOrgId = matchingOrg.id;
-      reportingOrgAcronym = matchingOrg.acronym;
-      console.log(`[Import as Reporting Org] Found existing organization: ${matchingOrg.name} (ID: ${reportingOrgId}, Acronym: ${reportingOrgAcronym})`);
-    } else {
+      // CRITICAL VALIDATION: Ensure the matched org is NOT the user's organization
+      if (userOrgInfo && matchingOrg.id === userOrgInfo.id) {
+        console.error(`[Import as Reporting Org] ⚠️  CRITICAL ERROR: Matched organization is the logged-in user's org (${userOrgInfo.name})!`);
+        console.error(`[Import as Reporting Org] XML reporting org ref: "${reportingOrgRef}"`);
+        console.error(`[Import as Reporting Org] XML reporting org name: "${meta.reportingOrgName}"`);
+        console.error(`[Import as Reporting Org] Matched org: ${matchingOrg.name} (ID: ${matchingOrg.id}, iati_org_id: ${matchingOrg.iati_org_id})`);
+        console.error(`[Import as Reporting Org] User org: ${userOrgInfo.name} (ID: ${userOrgInfo.id})`);
+        console.error(`[Import as Reporting Org] This should NEVER happen - the XML's reporting org should be different from the user's org.`);
+        console.error(`[Import as Reporting Org] 🔧 Rejecting this match and will create/find the correct organization...`);
+        
+        // Reject this match - set matchingOrg to null so we can try other methods or create new
+        matchingOrg = null;
+      } else {
+        reportingOrgId = matchingOrg.id;
+        reportingOrgAcronym = matchingOrg.acronym;
+        reportingOrgNameFromDB = matchingOrg.name; // Use the name from the database
+        console.log(`[Import as Reporting Org] ✅ FOUND organization from XML: ${matchingOrg.name} (ID: ${reportingOrgId}, Acronym: ${reportingOrgAcronym || 'N/A'})`);
+        console.log(`[Import as Reporting Org] 🔒 Organization values that WILL be saved (from XML):`, {
+          reportingOrgId,
+          reportingOrgAcronym,
+          reportingOrgNameFromDB,
+          reportingOrgRef,
+          userOrgId: userOrgInfo?.id,
+          userOrgName: userOrgInfo?.name,
+          note: 'These MUST be used, NOT the logged-in user\'s org'
+        });
+      }
+    }
+    
+    // If we rejected the match (because it was user's org), try to find/create the correct one
+    if (!matchingOrg && reportingOrgRef) {
+      console.log(`[Import as Reporting Org] 🔍 Previous match was rejected or not found. Searching more carefully...`);
+      
+      // Try a more specific search - exclude user's org explicitly
+      let excludeUserOrgFilter = supabase
+        .from('organizations')
+        .select('id, name, iati_org_id, alias_refs, acronym')
+        .eq('iati_org_id', reportingOrgRef);
+      
+      if (userOrgInfo) {
+        excludeUserOrgFilter = excludeUserOrgFilter.neq('id', userOrgInfo.id);
+      }
+      
+      const { data: orgExcludingUser, error: excludeError } = await excludeUserOrgFilter.maybeSingle();
+      
+      if (orgExcludingUser) {
+        matchingOrg = orgExcludingUser;
+        reportingOrgId = matchingOrg.id;
+        reportingOrgAcronym = matchingOrg.acronym;
+        reportingOrgNameFromDB = matchingOrg.name;
+        console.log(`[Import as Reporting Org] ✅ FOUND correct organization (excluding user's org): ${matchingOrg.name} (ID: ${reportingOrgId})`);
+      } else {
+        // Try alias_refs search, but exclude user's org
+        const { data: orgsByAlias } = await supabase
+          .from('organizations')
+          .select('id, name, iati_org_id, alias_refs, acronym')
+          .not('alias_refs', 'is', null);
+        
+        if (userOrgInfo) {
+          // Filter out user's org from alias search
+          const aliasMatch = orgsByAlias?.find(org => 
+            org.id !== userOrgInfo.id &&
+            org.alias_refs && 
+            Array.isArray(org.alias_refs) && 
+            org.alias_refs.includes(reportingOrgRef)
+          );
+          
+          if (aliasMatch) {
+            matchingOrg = aliasMatch;
+            reportingOrgId = matchingOrg.id;
+            reportingOrgAcronym = matchingOrg.acronym;
+            reportingOrgNameFromDB = matchingOrg.name;
+            console.log(`[Import as Reporting Org] ✅ FOUND organization by alias_refs (excluding user's org): ${matchingOrg.name} (ID: ${reportingOrgId})`);
+          }
+        }
+      }
+    }
+    
+    if (!matchingOrg) {
       // Create the reporting organization
       console.log(`[Import as Reporting Org] Creating new organization: ${reportingOrgName}`);
 
@@ -314,9 +498,54 @@ export async function POST(request: NextRequest) {
       } else {
         reportingOrgId = newOrg.id;
         reportingOrgAcronym = newOrg.acronym;
-        console.log(`[Import as Reporting Org] Created new organization: ${newOrg.name} (ID: ${reportingOrgId})`);
+        reportingOrgNameFromDB = newOrg.name; // Use the name from the newly created org
+        console.log(`[Import as Reporting Org] ✅ CREATED new organization from XML: ${newOrg.name} (ID: ${reportingOrgId})`);
+        console.log(`[Import as Reporting Org] 🔒 New org values that WILL be saved (from XML):`, {
+          reportingOrgId,
+          reportingOrgAcronym,
+          reportingOrgNameFromDB,
+          reportingOrgRef,
+          note: 'These MUST be used, NOT the logged-in user\'s org'
+        });
       }
     }
+    
+    } // End of auto-detection block
+
+    // CRITICAL CHECK: Ensure we have org values from XML, not from user
+    if (!reportingOrgId && !reportingOrgNameFromDB) {
+      console.error(`[Import as Reporting Org] ⚠️  WARNING: No reporting org found/created! Using XML ref as fallback`);
+      reportingOrgNameFromDB = meta.reportingOrgName || reportingOrgRef;
+    }
+    
+    // FINAL VALIDATION: Double-check we're NOT using the user's organization
+    if (userOrgInfo && reportingOrgId === userOrgInfo.id) {
+      console.error(`[Import as Reporting Org] ⚠️  CRITICAL ERROR: Final check detected user's org is being used!`);
+      console.error(`[Import as Reporting Org] User org: ${userOrgInfo.name} (ID: ${userOrgInfo.id})`);
+      console.error(`[Import as Reporting Org] XML reporting org ref: "${reportingOrgRef}"`);
+      console.error(`[Import as Reporting Org] XML reporting org name: "${meta.reportingOrgName}"`);
+      console.error(`[Import as Reporting Org] 🔧 Clearing reportingOrgId to force use of XML text values only`);
+      
+      // Clear the ID but keep the XML text values - at least the name will be correct
+      reportingOrgId = null;
+      // Ensure we have the XML name/ref for text fields
+      if (!reportingOrgNameFromDB) {
+        reportingOrgNameFromDB = meta.reportingOrgName || reportingOrgRef;
+      }
+    }
+    
+    console.log(`[Import as Reporting Org] 🔒 FINAL org values before activity insert/update:`, {
+      reportingOrgId,
+      reportingOrgRef,
+      reportingOrgName: reportingOrgNameFromDB || meta.reportingOrgName || reportingOrgRef,
+      reportingOrgAcronym,
+      created_by_org_name: reportingOrgNameFromDB || meta.reportingOrgName || reportingOrgRef,
+      created_by_org_acronym: reportingOrgAcronym,
+      userOrgId: userOrgInfo?.id,
+      userOrgName: userOrgInfo?.name,
+      isUserOrg: userOrgInfo ? reportingOrgId === userOrgInfo.id : false,
+      note: 'These are from XML metadata, NOT from logged-in user'
+    });
 
     // Import activities
     const importedActivities = [];
@@ -333,39 +562,123 @@ export async function POST(request: NextRequest) {
       }
       try {
         // Check if activity still exists (in case deletion didn't fully commit or there's a race condition)
-        const { data: existingCheck } = await supabase
-          .from('activities')
-          .select('id, iati_identifier')
-          .eq('iati_identifier', iatiIdentifier)
-          .single();
+        // Prioritize activityId if provided (importing into existing activity)
+        let existingCheck = null;
+        let foundByActivityId = false;
+        if (activityId) {
+          // First check if we're updating a specific activity
+          const { data } = await supabase
+            .from('activities')
+            .select('id, iati_identifier')
+            .eq('id', activityId)
+            .single();
+          if (data) {
+            existingCheck = data;
+            foundByActivityId = true;
+            console.log(`[Import as Reporting Org] Found activity by activityId: ${activityId}`);
+          }
+        }
+        // If not found by activityId, fall back to iati_identifier matching
+        if (!existingCheck) {
+          const { data } = await supabase
+            .from('activities')
+            .select('id, iati_identifier')
+            .eq('iati_identifier', iatiIdentifier)
+            .single();
+          existingCheck = data;
+          if (existingCheck) {
+            console.log(`[Import as Reporting Org] Found activity by iati_identifier: ${iatiIdentifier}`);
+          }
+        }
 
         // Build activity insert object
-        // If fields and iati_data are provided, use them; otherwise use basic activityData
+        // IMPORTANT: Always set reporting org fields from XML, never from iati_data
+        // This ensures the XML's reporting org is used, not the logged-in user's org
         let activityInsert: any = {
           iati_identifier: iatiIdentifier,
+          // CRITICAL: Set reporting org fields from XML metadata, not from any other source
           reporting_org_ref: reportingOrgRef,
-          reporting_org_name: meta.reportingOrgName || null,
-          created_by_org_name: meta.reportingOrgName || null, // Set for "Reported by" display
+          reporting_org_iati_id: reportingOrgRef, // Store the IATI org ID from XML
+          reporting_org_name: reportingOrgNameFromDB || meta.reportingOrgName || reportingOrgRef,
+          created_by_org_name: reportingOrgNameFromDB || meta.reportingOrgName || reportingOrgRef, // Use DB name first, then XML name, then ref
           created_by_org_acronym: reportingOrgAcronym || null, // Extract acronym if available
           reporting_org_id: reportingOrgId, // Set reporting_org_id for consistency
           source_type: 'external',
           import_mode: 'reporting_org',
+          // NOTE: created_by is the user who performed the import, NOT the reporting org
+          // The reporting org is set via created_by_org_name/reporting_org_id above
           created_by: userId,
           last_edited_by: userId,
           publication_status: 'draft',
           submission_status: 'not_submitted'
         };
-
-        console.log(`[Import as Reporting Org] 🔍 Activity insert object:`, {
-          iatiIdentifier,
-          reportingOrgId,
-          reportingOrgName: meta.reportingOrgName,
-          reportingOrgAcronym,
+        
+        // Explicitly remove any reporting org fields from iati_data to prevent override
+        // This ensures we ALWAYS use the XML's reporting org, never values from the frontend
+        if (iati_data) {
+          console.log(`[Import as Reporting Org] 🧹 Cleaning iati_data - removing any reporting org fields that might override XML values`);
+          delete iati_data.reporting_org_name;
+          delete iati_data.reporting_org_ref;
+          delete iati_data.reporting_org_type;
+          delete iati_data.created_by_org_name;
+          delete iati_data.created_by_org_acronym;
+          delete iati_data.reporting_org_id;
+          // Also check nested _parsedActivity
+          if (iati_data._parsedActivity) {
+            delete iati_data._parsedActivity.reporting_org_name;
+            delete iati_data._parsedActivity.reporting_org_ref;
+            delete iati_data._parsedActivity.reporting_org_type;
+            delete iati_data._parsedActivity.created_by_org_name;
+            delete iati_data._parsedActivity.created_by_org_acronym;
+            delete iati_data._parsedActivity.reporting_org_id;
+          }
+        }
+        
+        console.log(`[Import as Reporting Org] 🔒 FINAL reporting org values (from XML only):`, {
           reporting_org_id: activityInsert.reporting_org_id,
+          reporting_org_ref: activityInsert.reporting_org_ref,
+          reporting_org_name: activityInsert.reporting_org_name,
           created_by_org_name: activityInsert.created_by_org_name,
-          created_by_org_acronym: activityInsert.created_by_org_acronym
+          created_by_org_acronym: activityInsert.created_by_org_acronym,
+          note: 'These values come from XML metadata, NOT from logged-in user'
         });
 
+        console.log(`[Import as Reporting Org] 🔍 Activity insert object BEFORE processing:`, {
+          iatiIdentifier,
+          reportingOrgId,
+          reportingOrgRef,
+          reportingOrgName: meta.reportingOrgName,
+          reportingOrgAcronym,
+          reportingOrgNameFromDB,
+          reporting_org_id: activityInsert.reporting_org_id,
+          created_by_org_name: activityInsert.created_by_org_name,
+          created_by_org_acronym: activityInsert.created_by_org_acronym,
+          reporting_org_name: activityInsert.reporting_org_name,
+          reporting_org_ref: activityInsert.reporting_org_ref
+        });
+        
+        // Ensure we always have a display name - use IATI ref as fallback
+        if (!activityInsert.created_by_org_name || activityInsert.created_by_org_name === '') {
+          activityInsert.created_by_org_name = reportingOrgRef || meta.reportingOrgName || 'Unknown';
+          console.log(`[Import as Reporting Org] ⚠️  No org name found, using IATI ref as fallback: ${activityInsert.created_by_org_name}`);
+        }
+        
+        // Verify all organization fields are set before insert/update
+        console.log(`[Import as Reporting Org] 🔍 Organization fields that will be saved:`, {
+          reporting_org_id: activityInsert.reporting_org_id,
+          reporting_org_ref: activityInsert.reporting_org_ref,
+          reporting_org_name: activityInsert.reporting_org_name,
+          created_by_org_name: activityInsert.created_by_org_name,
+          created_by_org_acronym: activityInsert.created_by_org_acronym,
+          created_by: activityInsert.created_by
+        });
+
+        // Check if there's a user-provided acronym for this activity
+        const userProvidedAcronym = acronyms && acronyms[iatiIdentifier];
+        if (userProvidedAcronym) {
+          console.log(`[Import as Reporting Org] User provided acronym: "${userProvidedAcronym}" for activity ${iatiIdentifier}`);
+        }
+        
         // If fields and iati_data are provided, use field selection
         if (fields && iati_data && typeof fields === 'object') {
           // Map IATI field paths to database fields
@@ -403,6 +716,12 @@ export async function POST(request: NextRequest) {
             if (!activityInsert.title_narrative && parsedActivity.title) {
               activityInsert.title_narrative = parsedActivity.title;
             }
+            
+            // Set user-provided acronym if available
+            if (userProvidedAcronym) {
+              activityInsert.acronym = userProvidedAcronym;
+            }
+            
             if (!activityInsert.description_narrative && parsedActivity.description) {
               activityInsert.description_narrative = parsedActivity.description;
             }
@@ -441,6 +760,7 @@ export async function POST(request: NextRequest) {
           activityInsert = {
             ...activityInsert,
             title_narrative: activityData.title || `Imported Activity: ${iatiIdentifier}`,
+            acronym: userProvidedAcronym || null,
             description_narrative: activityData.description || null,
             activity_status: activityData.activityStatus || 'implementation',
             planned_start_date: activityData.plannedStartDate || null,
@@ -458,10 +778,91 @@ export async function POST(request: NextRequest) {
         // If activity exists, update it; otherwise insert
         if (existingCheck) {
           console.log(`[Import as Reporting Org] Activity exists, updating instead of inserting: ${iatiIdentifier}`);
-          const { data: updated, error: updateError } = await supabase
+          
+          // Get current activity state before update for comparison
+          // Use the same query method we'll use for update
+          let currentActivityQuery = supabase
             .from('activities')
-            .update(activityInsert)
-            .eq('iati_identifier', iatiIdentifier)
+            .select('id, reporting_org_id, reporting_org_ref, reporting_org_name, created_by_org_name, created_by_org_acronym');
+          
+          if (foundByActivityId && activityId) {
+            currentActivityQuery = currentActivityQuery.eq('id', activityId);
+          } else {
+            currentActivityQuery = currentActivityQuery.eq('iati_identifier', iatiIdentifier);
+          }
+          
+          const { data: currentActivityState } = await currentActivityQuery.single();
+          
+          console.log(`[Import as Reporting Org] 📊 CURRENT activity state BEFORE update:`, {
+            reporting_org_id: currentActivityState?.reporting_org_id,
+            reporting_org_ref: currentActivityState?.reporting_org_ref,
+            reporting_org_name: currentActivityState?.reporting_org_name,
+            created_by_org_name: currentActivityState?.created_by_org_name,
+            created_by_org_acronym: currentActivityState?.created_by_org_acronym
+          });
+          
+          console.log(`[Import as Reporting Org] 🔍 FINAL activityInsert object before update:`, {
+            reporting_org_id: activityInsert.reporting_org_id,
+            reporting_org_ref: activityInsert.reporting_org_ref,
+            reporting_org_name: activityInsert.reporting_org_name,
+            created_by_org_name: activityInsert.created_by_org_name,
+            created_by_org_acronym: activityInsert.created_by_org_acronym,
+            created_by: activityInsert.created_by
+          });
+          
+          // Ensure reporting org fields are explicitly included in update
+          // CRITICAL: Always override any reporting org fields from activityInsert with XML values
+          const updatePayload = {
+            ...activityInsert,
+            // FORCE reporting org fields from XML - these must never be overridden
+            reporting_org_id: reportingOrgId,
+            reporting_org_ref: reportingOrgRef,
+            reporting_org_iati_id: reportingOrgRef, // Store the IATI org ID from XML
+            reporting_org_name: reportingOrgNameFromDB || meta.reportingOrgName || reportingOrgRef,
+            created_by_org_name: reportingOrgNameFromDB || meta.reportingOrgName || reportingOrgRef,
+            created_by_org_acronym: reportingOrgAcronym,
+            updated_at: new Date().toISOString()
+          };
+          
+          // Remove any reporting org fields that might have been in activityInsert from iati_data
+          // This ensures we always use the XML's reporting org, not any values from the frontend
+          console.log(`[Import as Reporting Org] 🔒 LOCKING reporting org fields to XML values:`, {
+            reporting_org_id: updatePayload.reporting_org_id,
+            reporting_org_ref: updatePayload.reporting_org_ref,
+            reporting_org_iati_id: updatePayload.reporting_org_iati_id,
+            reporting_org_name: updatePayload.reporting_org_name,
+            created_by_org_name: updatePayload.created_by_org_name,
+            created_by_org_acronym: updatePayload.created_by_org_acronym
+          });
+          
+          console.log(`[Import as Reporting Org] 🎯 Update payload with explicit reporting org fields:`, {
+            reporting_org_id: updatePayload.reporting_org_id,
+            reporting_org_ref: updatePayload.reporting_org_ref,
+            reporting_org_iati_id: updatePayload.reporting_org_iati_id,
+            reporting_org_name: updatePayload.reporting_org_name,
+            created_by_org_name: updatePayload.created_by_org_name,
+            created_by_org_acronym: updatePayload.created_by_org_acronym
+          });
+          
+          // Use activityId if we found activity by ID, otherwise use iati_identifier
+          let updateQuery;
+          if (foundByActivityId && activityId) {
+            // Update by activityId (importing into specific existing activity)
+            updateQuery = supabase
+              .from('activities')
+              .update(updatePayload)
+              .eq('id', activityId);
+            console.log(`[Import as Reporting Org] Updating activity by ID: ${activityId}`);
+          } else {
+            // Update by iati_identifier (fallback behavior)
+            updateQuery = supabase
+              .from('activities')
+              .update(updatePayload)
+              .eq('iati_identifier', iatiIdentifier);
+            console.log(`[Import as Reporting Org] Updating activity by iati_identifier: ${iatiIdentifier}`);
+          }
+          
+          const { data: updated, error: updateError } = await updateQuery
             .select('id, iati_identifier')
             .single();
           
@@ -484,6 +885,14 @@ export async function POST(request: NextRequest) {
           importedActivities.push(updated);
           console.log(`[Import as Reporting Org] Successfully updated activity: ${iatiIdentifier} (ID: ${updated.id})`);
         } else {
+          console.log(`[Import as Reporting Org] 🔍 FINAL activityInsert object before insert:`, {
+            reporting_org_id: activityInsert.reporting_org_id,
+            reporting_org_ref: activityInsert.reporting_org_ref,
+            reporting_org_name: activityInsert.reporting_org_name,
+            created_by_org_name: activityInsert.created_by_org_name,
+            created_by_org_acronym: activityInsert.created_by_org_acronym,
+            created_by: activityInsert.created_by
+          });
           console.log(`[Import as Reporting Org] Attempting to insert activity:`, JSON.stringify(activityInsert, null, 2));
 
           const { data: inserted, error: insertError } = await supabase
@@ -501,10 +910,56 @@ export async function POST(request: NextRequest) {
             // If it's a unique constraint error, try to update instead
             if (insertError.code === '23505' || insertError.message?.includes('unique') || insertError.message?.includes('duplicate')) {
               console.log(`[Import as Reporting Org] Unique constraint violation, attempting update instead`);
-              const { data: updated, error: updateError } = await supabase
-                .from('activities')
-                .update(activityInsert)
-                .eq('iati_identifier', iatiIdentifier)
+              
+              // Use explicit update payload with reporting org fields
+              // CRITICAL: Always use XML reporting org values, never from activityInsert
+              const updatePayload = {
+                ...activityInsert,
+                // FORCE reporting org fields from XML - override any values from activityInsert
+                reporting_org_id: reportingOrgId,
+                reporting_org_ref: reportingOrgRef,
+                reporting_org_iati_id: reportingOrgRef, // Store the IATI org ID from XML
+                reporting_org_name: reportingOrgNameFromDB || meta.reportingOrgName || reportingOrgRef,
+                created_by_org_name: reportingOrgNameFromDB || meta.reportingOrgName || reportingOrgRef,
+                created_by_org_acronym: reportingOrgAcronym,
+                updated_at: new Date().toISOString()
+              };
+              
+              console.log(`[Import as Reporting Org] 🔒 FALLBACK: LOCKING reporting org fields to XML values:`, {
+                reporting_org_id: updatePayload.reporting_org_id,
+                reporting_org_ref: updatePayload.reporting_org_ref,
+                reporting_org_name: updatePayload.reporting_org_name,
+                created_by_org_name: updatePayload.created_by_org_name,
+                created_by_org_acronym: updatePayload.created_by_org_acronym
+              });
+              
+              console.log(`[Import as Reporting Org] 🎯 Fallback update payload with explicit reporting org fields:`, {
+                reporting_org_id: updatePayload.reporting_org_id,
+                reporting_org_ref: updatePayload.reporting_org_ref,
+                reporting_org_name: updatePayload.reporting_org_name,
+                created_by_org_name: updatePayload.created_by_org_name,
+                created_by_org_acronym: updatePayload.created_by_org_acronym
+              });
+              
+              // Use activityId if we found activity by ID, otherwise use iati_identifier
+              let fallbackUpdateQuery;
+              if (foundByActivityId && activityId) {
+                // Update by activityId (importing into specific existing activity)
+                fallbackUpdateQuery = supabase
+                  .from('activities')
+                  .update(updatePayload)
+                  .eq('id', activityId);
+                console.log(`[Import as Reporting Org] Fallback: Updating activity by ID: ${activityId}`);
+              } else {
+                // Update by iati_identifier (fallback behavior)
+                fallbackUpdateQuery = supabase
+                  .from('activities')
+                  .update(updatePayload)
+                  .eq('iati_identifier', iatiIdentifier);
+                console.log(`[Import as Reporting Org] Fallback: Updating activity by iati_identifier: ${iatiIdentifier}`);
+              }
+              
+              const { data: updated, error: updateError } = await fallbackUpdateQuery
                 .select('id, iati_identifier')
                 .single();
               
@@ -544,13 +999,103 @@ export async function POST(request: NextRequest) {
 
         // Verify what was actually saved to the database
         if (finalActivityId) {
-          const { data: verifyActivity } = await supabase
+          // CRITICAL: Query directly from database to see what's actually stored
+          const { data: verifyActivity, error: verifyError } = await supabase
             .from('activities')
-            .select('id, iati_identifier, created_by_org, reporting_org_id, created_by_org_name, created_by_org_acronym')
+            .select('id, iati_identifier, reporting_org_id, reporting_org_ref, reporting_org_iati_id, reporting_org_name, created_by_org_name, created_by_org_acronym, created_by')
             .eq('id', finalActivityId)
             .single();
+          
+          // Also check if there's a view or join that might be overriding values
+          console.log(`[Import as Reporting Org] 🔍 DIRECT DATABASE QUERY RESULT:`, {
+            id: verifyActivity?.id,
+            iati_identifier: verifyActivity?.iati_identifier,
+            reporting_org_id: verifyActivity?.reporting_org_id,
+            reporting_org_ref: verifyActivity?.reporting_org_ref,
+            reporting_org_iati_id: verifyActivity?.reporting_org_iati_id,
+            reporting_org_name: verifyActivity?.reporting_org_name,
+            created_by_org_name: verifyActivity?.created_by_org_name,
+            created_by_org_acronym: verifyActivity?.created_by_org_acronym,
+            created_by: verifyActivity?.created_by,
+            note: 'These are the ACTUAL values in the database right now'
+          });
 
-          console.log(`[Import as Reporting Org] ✅ Verified saved activity data:`, verifyActivity);
+          if (verifyError) {
+            console.error(`[Import as Reporting Org] ❌ Error verifying saved activity:`, verifyError);
+          } else {
+            const expectedOrgId = reportingOrgId;
+            const expectedOrgRef = reportingOrgRef;
+            const expectedOrgName = reportingOrgNameFromDB || meta.reportingOrgName || reportingOrgRef;
+            
+            console.log(`[Import as Reporting Org] ✅ Verified saved activity data:`, {
+              id: verifyActivity.id,
+              iati_identifier: verifyActivity.iati_identifier,
+              reporting_org_id: verifyActivity.reporting_org_id,
+              reporting_org_ref: verifyActivity.reporting_org_ref,
+              reporting_org_iati_id: verifyActivity.reporting_org_iati_id,
+              reporting_org_name: verifyActivity.reporting_org_name,
+              created_by_org_name: verifyActivity.created_by_org_name,
+              created_by_org_acronym: verifyActivity.created_by_org_acronym,
+              created_by: verifyActivity.created_by
+            });
+            
+            // Compare expected vs actual values
+            console.log(`[Import as Reporting Org] 🔍 EXPECTED vs ACTUAL comparison:`, {
+              reporting_org_id: {
+                expected: expectedOrgId,
+                actual: verifyActivity.reporting_org_id,
+                match: expectedOrgId === verifyActivity.reporting_org_id
+              },
+              reporting_org_ref: {
+                expected: expectedOrgRef,
+                actual: verifyActivity.reporting_org_ref,
+                match: expectedOrgRef === verifyActivity.reporting_org_ref
+              },
+              reporting_org_iati_id: {
+                expected: expectedOrgRef,
+                actual: verifyActivity.reporting_org_iati_id,
+                match: expectedOrgRef === verifyActivity.reporting_org_iati_id
+              },
+              reporting_org_name: {
+                expected: expectedOrgName,
+                actual: verifyActivity.reporting_org_name,
+                match: expectedOrgName === verifyActivity.reporting_org_name
+              },
+              created_by_org_name: {
+                expected: expectedOrgName,
+                actual: verifyActivity.created_by_org_name,
+                match: expectedOrgName === verifyActivity.created_by_org_name
+              },
+              created_by_org_acronym: {
+                expected: reportingOrgAcronym,
+                actual: verifyActivity.created_by_org_acronym,
+                match: reportingOrgAcronym === verifyActivity.created_by_org_acronym
+              }
+            });
+            
+            // Alert if fields are unexpectedly NULL or don't match
+            if (!verifyActivity.reporting_org_id) {
+              console.error(`[Import as Reporting Org] ⚠️  WARNING: reporting_org_id is NULL after update! Expected: ${expectedOrgId}`);
+            } else if (expectedOrgId && verifyActivity.reporting_org_id !== expectedOrgId) {
+              console.error(`[Import as Reporting Org] ⚠️  WARNING: reporting_org_id mismatch! Expected: ${expectedOrgId}, Got: ${verifyActivity.reporting_org_id}`);
+            }
+            
+            if (!verifyActivity.created_by_org_name) {
+              console.error(`[Import as Reporting Org] ⚠️  WARNING: created_by_org_name is NULL after update! Expected: ${expectedOrgName}`);
+            } else if (expectedOrgName && verifyActivity.created_by_org_name !== expectedOrgName) {
+              console.error(`[Import as Reporting Org] ⚠️  WARNING: created_by_org_name mismatch! Expected: ${expectedOrgName}, Got: ${verifyActivity.created_by_org_name}`);
+            }
+            
+            if (expectedOrgRef && verifyActivity.reporting_org_ref !== expectedOrgRef) {
+              console.error(`[Import as Reporting Org] ⚠️  WARNING: reporting_org_ref mismatch! Expected: ${expectedOrgRef}, Got: ${verifyActivity.reporting_org_ref}`);
+            }
+            
+            // Success message if everything matches
+            if (expectedOrgId && verifyActivity.reporting_org_id === expectedOrgId && 
+                expectedOrgName && verifyActivity.created_by_org_name === expectedOrgName) {
+              console.log(`[Import as Reporting Org] ✅ SUCCESS: Reporting org correctly set to ${expectedOrgName} (${expectedOrgRef})`);
+            }
+          }
         }
 
         // Get the activity ID (either from inserted or updated)
@@ -860,6 +1405,7 @@ export async function POST(request: NextRequest) {
       success: true,
       reporting_org_ref: reportingOrgRef,
       count: importedActivities.length,
+      importedActivities: importedActivities, // Include activity IDs for frontend redirect
       skippedCount: skippedIdentifiers.length,
       skippedIdentifiers: skippedIdentifiers,
       duplicates: duplicates.length > 0 ? duplicates : undefined,

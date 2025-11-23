@@ -1,5 +1,6 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
+import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { fetchBasicActivityWithCache, invalidateActivityCache } from '@/lib/activity-cache';
@@ -44,8 +45,11 @@ import { ImportResultsDisplay } from './ImportResultsDisplay';
 import { extractIatiMeta } from '@/lib/iati/parseMeta';
 import { useUser } from '@/hooks/useUser';
 import { IatiImportFieldsTable } from './IatiImportFieldsTable';
+import { AcronymReviewModal } from './AcronymReviewModal';
+import { extractAcronymFromTitle } from '@/lib/text-utils';
 import { setFieldSaved } from '@/utils/persistentSave';
 import { getCurrencyByCode } from '@/data/currencies';
+import { OrganizationSearchableSelect } from '@/components/ui/organization-searchable-select';
 import {
   Upload,
   FileText,
@@ -76,6 +80,7 @@ import {
   ClipboardPaste,
   Loader2,
   Search,
+  Building2,
 } from 'lucide-react';
 
 interface IatiImportTabProps {
@@ -178,7 +183,7 @@ interface ParsedField {
   tab: string; // Which Activity Editor tab this field belongs to
   description?: string; // Optional description of what this field contains
   isFinancialItem?: boolean; // True for budget/transaction/disbursement summary items
-  itemType?: 'budget' | 'transaction' | 'plannedDisbursement' | 'countryBudgetItems'; // Type of financial item
+  itemType?: 'budget' | 'transaction' | 'plannedDisbursement' | 'countryBudgetItems' | 'result'; // Type of financial item or result
   itemIndex?: number; // Index in the array
   itemData?: any; // The actual data object
   isPolicyMarker?: boolean; // True for policy marker items
@@ -1656,6 +1661,7 @@ IatiSearchResultCard.displayName = 'IatiSearchResultCard';
 export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiImportTabProps) {
   // Get user data from useUser hook
   const { user } = useUser();
+  const router = useRouter();
   
   // Check if we have cached data for this activity
   const cachedData = parsedXmlCache.get(activityId);
@@ -1682,6 +1688,7 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
   const [xmlUrl, setXmlUrl] = useState<string>('');
   const [importMethod, setImportMethod] = useState<'file' | 'url' | 'snippet' | 'iatiSearch'>('file');
   const [snippetContent, setSnippetContent] = useState<string>('');
+  const [hierarchyFromSearchResult, setHierarchyFromSearchResult] = useState<number | null>(null);
   const urlInputRef = useRef<HTMLInputElement>(null);
   const [isUsingPasteButton, setIsUsingPasteButton] = useState(false);
   const loadingToastRef = useRef<string | number | null>(null);
@@ -1711,6 +1718,12 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
   const [capturedConsoleLogs, setCapturedConsoleLogs] = useState<string[]>([]); // Capture console output during import
   const [orgPreferences, setOrgPreferences] = useState<any>(null); // Organization IATI import preferences
   
+  // Pre-import reporting org selection modal state
+  const [showReportingOrgSelectionModal, setShowReportingOrgSelectionModal] = useState(false);
+  const [selectedReportingOrgId, setSelectedReportingOrgId] = useState<string | null>(null);
+  const [availableOrganizations, setAvailableOrganizations] = useState<any[]>([]);
+  const [xmlReportingOrgData, setXmlReportingOrgData] = useState<{ name?: string; ref?: string; acronym?: string } | null>(null);
+  
   // Multi-activity import state
   const [multiActivityData, setMultiActivityData] = useState<{
     count: number;
@@ -1719,7 +1732,31 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
   } | null>(null);
   const [selectedActivityIndices, setSelectedActivityIndices] = useState<number[]>([]);
   const [multiActivityImportMode, setMultiActivityImportMode] = useState<'update_current' | 'create_new' | 'bulk_create'>('create_new');
+
+  // Helper function to extract text from JSONB multilingual title fields
+  // Handles format: { en: "text" }, { fr: "text" }, or fallback to first available language
+  const extractTitleFromJsonb = (title: any): string => {
+    if (!title) return 'Untitled result';
+    if (typeof title === 'string') return title;
+    if (typeof title === 'object') {
+      // Try English first
+      if (title.en) return title.en;
+      // Fallback to first available language
+      const firstKey = Object.keys(title)[0];
+      if (firstKey) return title[firstKey];
+    }
+    return 'Untitled result';
+  };
   const [showActivityPreview, setShowActivityPreview] = useState(false);
+  
+  // Acronym extraction state
+  const [showAcronymModal, setShowAcronymModal] = useState(false);
+  const [detectedAcronyms, setDetectedAcronyms] = useState<Array<{
+    iatiIdentifier: string;
+    title: string;
+    detectedAcronym: string | null;
+  }>>([]);
+  const [userAcronyms, setUserAcronyms] = useState<Record<string, string>>({});
   
   // Debug console capture
   const captureConsoleLog = (message: string, ...args: any[]) => {
@@ -1822,6 +1859,52 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
     
     loadOrgPreferences();
   }, [user?.organizationId]);
+  
+  // Auto-select organization when modal opens if not already selected
+  useEffect(() => {
+    if (showReportingOrgSelectionModal && !selectedReportingOrgId && xmlReportingOrgData?.ref) {
+      const attemptAutoSelect = async () => {
+        try {
+          const orgsResponse = await fetch('/api/organizations');
+          if (!orgsResponse.ok) return;
+          
+          const orgs = await orgsResponse.json();
+          const normalizedXmlOrgRef = xmlReportingOrgData.ref.trim().toUpperCase();
+          
+          // Try to find matching org
+          let matchingOrg = orgs?.find((o: any) => {
+            if (!o || !o.iati_org_id) return false;
+            return o.iati_org_id.trim().toUpperCase() === normalizedXmlOrgRef;
+          });
+          
+          if (!matchingOrg) {
+            matchingOrg = orgs?.find((o: any) => {
+              if (!o || !o.alias_refs || !Array.isArray(o.alias_refs)) return false;
+              return o.alias_refs.some((alias: string) => 
+                alias && alias.trim().toUpperCase() === normalizedXmlOrgRef
+              );
+            });
+          }
+          
+          if (matchingOrg) {
+            setSelectedReportingOrgId(matchingOrg.id);
+            console.log('[Reporting Org Modal] ✅ Auto-selected org on modal open:', {
+              name: matchingOrg.name,
+              id: matchingOrg.id,
+              iati_org_id: matchingOrg.iati_org_id
+            });
+            toast.success('Matching organization found', {
+              description: `${matchingOrg.name} has been automatically selected.`
+            });
+          }
+        } catch (error) {
+          console.error('[Reporting Org Modal] Error during auto-select:', error);
+        }
+      };
+      
+      attemptAutoSelect();
+    }
+  }, [showReportingOrgSelectionModal, selectedReportingOrgId, xmlReportingOrgData]);
   
   // External Publisher Detection States
   const [showExternalPublisherModal, setShowExternalPublisherModal] = useState(false);
@@ -2441,7 +2524,8 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
         try {
           const resultsResponse = await fetch(`/api/activities/${activityId}/results`);
           if (resultsResponse.ok) {
-            const results = await resultsResponse.json();
+            const response = await resultsResponse.json();
+            const results = response.results || [];
             setCurrentResults(results);
             console.log(`[IatiImportTab] Fetched ${results.length} current results`);
           }
@@ -2464,6 +2548,7 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
           activity_status: data.activity_status || data.activityStatus,
           collaboration_type: data.collaboration_type || data.collaborationType,
           activity_scope: data.activity_scope || data.activityScope,
+          hierarchy: data.hierarchy,
           language: data.language,
           iati_identifier: data.iati_identifier || data.iatiIdentifier || data.iatiId,
           other_identifiers: data.other_identifiers || data.otherIdentifiers || [],
@@ -2805,6 +2890,7 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
           activity_status: data.activity_status || data.activityStatus,
           collaboration_type: data.collaboration_type || data.collaborationType,
           activity_scope: data.activity_scope || data.activityScope,
+          hierarchy: data.hierarchy,
           language: data.language,
           iati_identifier: data.iati_identifier || data.iatiIdentifier || data.iatiId,
           other_identifiers: data.other_identifiers || data.otherIdentifiers || [],
@@ -2918,7 +3004,8 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
           fetch(`/api/activities/${activityId}/results`)
             .then(async (res) => {
               if (res.ok) {
-                fetchedResults = await res.json();
+                const response = await res.json();
+                fetchedResults = response.results || [];
                 setCurrentResults(fetchedResults);
                 console.log(`[IATI Import Debug] Fetched ${fetchedResults.length} current results`);
               }
@@ -3138,8 +3225,44 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
       console.log('[Multi-Activity] Single activity detected, continuing normal flow');
       const parsedActivity = parser.parseActivity();
       
+      // Add hierarchy from multiple sources (priority: search result > extracted from XML > parsed from XML)
+      if (hierarchyFromSearchResult !== null && !isNaN(hierarchyFromSearchResult)) {
+        // Priority 1: Use hierarchy from search result (most reliable - IATI Search API includes it in JSON)
+        parsedActivity.hierarchy = hierarchyFromSearchResult;
+        console.log('[IATI Import] ✅ Added hierarchy from search result to parsed activity:', hierarchyFromSearchResult);
+      } else if (!parsedActivity.hierarchy && content) {
+        // Priority 2: Extract hierarchy from raw XML string if parser didn't find it
+        const hierarchyMatch = content.match(/<iati-activity[^>]*\shierarchy=["']?(\d+)["']?/i);
+        if (hierarchyMatch && hierarchyMatch[1]) {
+          const hierarchyValue = parseInt(hierarchyMatch[1], 10);
+          if (!isNaN(hierarchyValue)) {
+            parsedActivity.hierarchy = hierarchyValue;
+            console.log('[IATI Import] ✅ Extracted hierarchy from raw XML string:', {
+              rawValue: hierarchyMatch[1],
+              parsedValue: hierarchyValue,
+              method: 'regex-extraction'
+            });
+          }
+        }
+      } else if (parsedActivity.hierarchy) {
+        // Priority 3: Use hierarchy parsed from XML (already set)
+        console.log('[IATI Import] ✅ Hierarchy already parsed from XML:', parsedActivity.hierarchy);
+      }
+      
       // Store parsed activity data in state for use by import function
       setParsedActivity(parsedActivity);
+      
+      // Extract acronym from title for review modal
+      if (parsedActivity.title) {
+        const { acronym } = extractAcronymFromTitle(parsedActivity.title);
+        setDetectedAcronyms([{
+          iatiIdentifier: parsedActivity.iatiIdentifier || 'unknown',
+          title: parsedActivity.title,
+          detectedAcronym: acronym
+        }]);
+      } else {
+        setDetectedAcronyms([]);
+      }
       
       console.log('[IATI Import Debug] Parsed activity data:', parsedActivity);
       
@@ -3423,7 +3546,7 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
         fields.push({
           fieldName: 'Collaboration Type',
           iatiPath: 'iati-activity/collaboration-type',
-          currentValue: currentCollabLabel,
+          currentValue: currentCollabLabelObj, // Store the object with code and name for consistent comparison
           importValue: importCollabLabelObj, // Store the object with code and name
           selected: isFieldAllowedByPreferences('iati-activity/collaboration-type') && getDefaultSelectedFromPreferences('iati-activity/collaboration-type', collabShouldSelect),
           hasConflict: hasConflict(currentCollabLabel, importCollabLabel),
@@ -3441,7 +3564,7 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
         fields.push({
           fieldName: 'Activity Status',
           iatiPath: 'iati-activity/activity-status',
-          currentValue: currentStatusLabel,
+          currentValue: currentStatusLabelObj, // Store the object with code and name for consistent comparison
           importValue: importStatusLabelObj, // Store the object with code and name
           selected: isFieldAllowedByPreferences('iati-activity/activity-status') && getDefaultSelectedFromPreferences('iati-activity/activity-status', statusShouldSelect),
           hasConflict: hasConflict(currentStatusLabel, importStatusLabel),
@@ -3459,13 +3582,100 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
         fields.push({
           fieldName: 'Activity Scope',
           iatiPath: 'iati-activity/activity-scope',
-          currentValue: currentScopeLabel,
+          currentValue: currentScopeLabelObj, // Store the object with code and name for consistent comparison
           importValue: importScopeLabelObj, // Store the object with code and name
           selected: isFieldAllowedByPreferences('iati-activity/activity-scope') && getDefaultSelectedFromPreferences('iati-activity/activity-scope', scopeShouldSelect),
           hasConflict: hasConflict(currentScopeLabel, importScopeLabel),
           tab: 'other',
           description: 'Geographical scope of the activity'
         });
+      }
+
+      // Check for hierarchy attribute (can be 0-5, so check for number type explicitly)
+      console.log('[IATI Import] 🔍 Checking hierarchy - parsedActivity:', {
+        hasHierarchy: 'hierarchy' in parsedActivity,
+        hierarchyValue: parsedActivity.hierarchy,
+        hierarchyType: typeof parsedActivity.hierarchy,
+        parsedActivityKeys: Object.keys(parsedActivity).slice(0, 20)
+      });
+      if (typeof parsedActivity.hierarchy === 'number' && !isNaN(parsedActivity.hierarchy)) {
+        console.log('[IATI Import] Found hierarchy in parsed activity:', parsedActivity.hierarchy);
+        const currentHierarchy = fetchedActivityData.hierarchy ?? null;
+        const hierarchyLabels: Record<string, string> = {
+          '1': 'Top-level Program/Strategy',
+          '2': 'Sub-program/Country Project',
+          '3': 'Specific Implementation/Project',
+          '4': 'Sub-component/Activity',
+          '5': 'Task/Output Level'
+        };
+        const currentHierarchyLabel = currentHierarchy !== null ? hierarchyLabels[String(currentHierarchy)] || `Level ${currentHierarchy}` : null;
+        const importHierarchyLabel = hierarchyLabels[String(parsedActivity.hierarchy)] || `Level ${parsedActivity.hierarchy}`;
+
+        // Create objects with code and name for consistent display
+        const currentHierarchyObj = currentHierarchy !== null ? { code: String(currentHierarchy), name: currentHierarchyLabel } : null;
+        const importHierarchyObj = { code: String(parsedActivity.hierarchy), name: importHierarchyLabel };
+
+        const hierarchyShouldSelect = shouldSelectField(currentHierarchy, parsedActivity.hierarchy);
+
+        console.log('[IATI Import] Adding hierarchy field:', {
+          currentHierarchy,
+          importHierarchy: parsedActivity.hierarchy,
+          shouldSelect: hierarchyShouldSelect
+        });
+
+        const hierarchyField = {
+          fieldName: 'Activity Hierarchy Level',
+          iatiPath: 'iati-activity[@hierarchy]',
+          currentValue: currentHierarchyObj,
+          importValue: importHierarchyObj,
+          selected: isFieldAllowedByPreferences('iati-activity[@hierarchy]') && getDefaultSelectedFromPreferences('iati-activity[@hierarchy]', hierarchyShouldSelect),
+          hasConflict: hasConflict(currentHierarchy, parsedActivity.hierarchy),
+          tab: 'other',
+          description: 'Organizational level within project structure (1=top-level, higher=sub-components)'
+        };
+        fields.push(hierarchyField);
+        console.log('[IATI Import] ✅ Successfully added hierarchy field to fields array:', {
+          fieldName: hierarchyField.fieldName,
+          tab: hierarchyField.tab,
+          currentValue: hierarchyField.currentValue,
+          importValue: hierarchyField.importValue,
+          selected: hierarchyField.selected,
+          totalFieldsCount: fields.length
+        });
+      } else {
+        console.log('[IATI Import] ❌ No hierarchy found in parsed activity. parsedActivity.hierarchy:', parsedActivity.hierarchy, 'type:', typeof parsedActivity.hierarchy);
+
+        // FALLBACK: Always show hierarchy field even if XML doesn't have it, so users can see current value
+        const currentHierarchy = fetchedActivityData.hierarchy ?? null;
+        if (currentHierarchy !== null) {
+          const hierarchyLabels: Record<string, string> = {
+            '1': 'Top-level Program/Strategy',
+            '2': 'Sub-program/Country Project',
+            '3': 'Specific Implementation/Project',
+            '4': 'Sub-component/Activity',
+            '5': 'Task/Output Level'
+          };
+          const currentHierarchyLabel = hierarchyLabels[String(currentHierarchy)] || `Level ${currentHierarchy}`;
+          const currentHierarchyObj = { code: String(currentHierarchy), name: currentHierarchyLabel };
+
+          console.log('[IATI Import] ℹ️ Adding hierarchy field with current value only (no import value):', {
+            currentHierarchy,
+            currentHierarchyLabel
+          });
+
+          fields.push({
+            fieldName: 'Activity Hierarchy Level',
+            iatiPath: 'iati-activity[@hierarchy]',
+            currentValue: currentHierarchyObj,
+            importValue: null, // No import value since XML doesn't have it
+            selected: false, // Don't select by default since there's nothing to import
+            hasConflict: false,
+            tab: 'other',
+            description: 'Organizational level within project structure (current value shown, no import value available)'
+          });
+
+          console.log('[IATI Import] ✅ Added hierarchy field with current value only');
+        }
       }
 
       // Narrative Language field removed - language is handled within title/description narratives
@@ -3481,10 +3691,16 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
           narratives: parsedActivity.plannedStartNarratives || []
         };
 
+        // Create structured current value for consistent comparison
+        const currentValueStructured = currentValue ? {
+          date: currentValue,
+          narratives: []
+        } : null;
+
         fields.push({
           fieldName: 'Planned Start Date',
           iatiPath: 'iati-activity/activity-date[@type="1"]',
-          currentValue: currentValue,
+          currentValue: currentValueStructured,
           importValue: importValue,
           selected: isFieldAllowedByPreferences('iati-activity/activity-date[@type=start-planned]') && shouldSelectField(currentValue, parsedActivity.plannedStartDate),
           hasConflict: hasConflict(currentValue, parsedActivity.plannedStartDate),
@@ -3494,57 +3710,81 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
       }
 
       if (parsedActivity.actualStartDate) {
+        const currentValue = fetchedActivityData.actual_start_date || null;
+        
         // Create structured import value with date and narratives
         const importValue = {
           date: parsedActivity.actualStartDate,
           narratives: parsedActivity.actualStartNarratives || []
         };
 
+        // Create structured current value for consistent comparison
+        const currentValueStructured = currentValue ? {
+          date: currentValue,
+          narratives: []
+        } : null;
+
         fields.push({
           fieldName: 'Actual Start Date',
           iatiPath: 'iati-activity/activity-date[@type="2"]',
-          currentValue: fetchedActivityData.actual_start_date || null,
+          currentValue: currentValueStructured,
           importValue: importValue,
-          selected: isFieldAllowedByPreferences('iati-activity/activity-date[@type=start-actual]') && shouldSelectField(fetchedActivityData.actual_start_date || null, parsedActivity.actualStartDate),
-          hasConflict: hasConflict(fetchedActivityData.actual_start_date || null, parsedActivity.actualStartDate),
+          selected: isFieldAllowedByPreferences('iati-activity/activity-date[@type=start-actual]') && shouldSelectField(currentValue, parsedActivity.actualStartDate),
+          hasConflict: hasConflict(currentValue, parsedActivity.actualStartDate),
           tab: 'dates',
           description: 'When the activity actually started'
         });
       }
 
       if (parsedActivity.plannedEndDate) {
+        const currentValue = fetchedActivityData.planned_end_date || null;
+        
         // Create structured import value with date and narratives
         const importValue = {
           date: parsedActivity.plannedEndDate,
           narratives: parsedActivity.plannedEndNarratives || []
         };
 
+        // Create structured current value for consistent comparison
+        const currentValueStructured = currentValue ? {
+          date: currentValue,
+          narratives: []
+        } : null;
+
         fields.push({
           fieldName: 'Planned End Date',
           iatiPath: 'iati-activity/activity-date[@type="3"]',
-          currentValue: fetchedActivityData.planned_end_date || null,
+          currentValue: currentValueStructured,
           importValue: importValue,
-          selected: isFieldAllowedByPreferences('iati-activity/activity-date[@type=end-planned]') && shouldSelectField(fetchedActivityData.planned_end_date || null, parsedActivity.plannedEndDate),
-          hasConflict: hasConflict(fetchedActivityData.planned_end_date || null, parsedActivity.plannedEndDate),
+          selected: isFieldAllowedByPreferences('iati-activity/activity-date[@type=end-planned]') && shouldSelectField(currentValue, parsedActivity.plannedEndDate),
+          hasConflict: hasConflict(currentValue, parsedActivity.plannedEndDate),
           tab: 'dates',
           description: 'When the activity is planned to end'
         });
       }
 
       if (parsedActivity.actualEndDate) {
+        const currentValue = fetchedActivityData.actual_end_date || null;
+        
         // Create structured import value with date and narratives
         const importValue = {
           date: parsedActivity.actualEndDate,
           narratives: parsedActivity.actualEndNarratives || []
         };
 
+        // Create structured current value for consistent comparison
+        const currentValueStructured = currentValue ? {
+          date: currentValue,
+          narratives: []
+        } : null;
+
         fields.push({
           fieldName: 'Actual End Date',
           iatiPath: 'iati-activity/activity-date[@type="4"]',
-          currentValue: fetchedActivityData.actual_end_date || null,
+          currentValue: currentValueStructured,
           importValue: importValue,
-          selected: isFieldAllowedByPreferences('iati-activity/activity-date[@type=end-actual]') && shouldSelectField(fetchedActivityData.actual_end_date || null, parsedActivity.actualEndDate),
-          hasConflict: hasConflict(fetchedActivityData.actual_end_date || null, parsedActivity.actualEndDate),
+          selected: isFieldAllowedByPreferences('iati-activity/activity-date[@type=end-actual]') && shouldSelectField(currentValue, parsedActivity.actualEndDate),
+          hasConflict: hasConflict(currentValue, parsedActivity.actualEndDate),
           tab: 'dates',
           description: 'When the activity actually ended'
         });
@@ -3567,14 +3807,16 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
           const typeName = identifier.type ? identifierTypeNames[identifier.type] || identifier.type : 'Unknown type';
           const typeCode = identifier.type || 'N/A';
 
-          // Get current value from database if exists
+          // Get current value from database if exists - match by code AND type (exact match required)
           const currentOtherIdentifiers = fetchedActivityData.other_identifiers || [];
-          const currentIdentifier = currentOtherIdentifiers[index];
+          const currentIdentifier = currentOtherIdentifiers.find((existing: any) => 
+            existing.code === identifierRef && existing.type === typeCode
+          );
           let currentValue = null;
           if (currentIdentifier) {
             const currentTypeName = currentIdentifier.type ? identifierTypeNames[currentIdentifier.type] || currentIdentifier.type : 'Unknown type';
             currentValue = {
-              code: currentIdentifier.ref,
+              code: currentIdentifier.code,
               type: currentIdentifier.type || 'N/A',
               name: currentTypeName,
               ownerOrg: currentIdentifier.ownerOrg,
@@ -3583,7 +3825,7 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
           }
 
           fields.push({
-            fieldName: `Other Identifier ${index + 1}`,
+            fieldName: `Other Identifier`,
             iatiPath: `iati-activity/other-identifier[${index}]`,
             currentValue: currentValue,
             importValue: {
@@ -3644,7 +3886,7 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
         fields.push({
           fieldName: 'Default Finance Type',
           iatiPath: 'iati-activity/default-finance-type',
-          currentValue: currentFinanceLabel,
+          currentValue: currentFinanceLabelObj, // Store the object with code and name for consistent comparison
           importValue: importFinanceLabelObj, // Store the object with code and name
           selected: isFieldAllowedByPreferences('iati-activity/default-finance-type') && shouldSelectField(currentFinanceLabel, importFinanceLabel),
           hasConflict: hasConflict(currentFinanceLabel, importFinanceLabel),
@@ -3661,7 +3903,7 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
         fields.push({
           fieldName: 'Default Flow Type',
           iatiPath: 'iati-activity/default-flow-type',
-          currentValue: currentFlowLabel,
+          currentValue: currentFlowLabelObj, // Store the object with code and name for consistent comparison
           importValue: importFlowLabelObj, // Store the object with code and name
           selected: isFieldAllowedByPreferences('iati-activity/default-flow-type') && shouldSelectField(currentFlowLabel, importFlowLabel),
           hasConflict: hasConflict(currentFlowLabel, importFlowLabel),
@@ -3678,7 +3920,7 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
         fields.push({
           fieldName: 'Default Aid Type',
           iatiPath: 'iati-activity/default-aid-type',
-          currentValue: currentAidLabel,
+          currentValue: currentAidLabelObj, // Store the object with code and name for consistent comparison
           importValue: importAidLabelObj, // Store the object with code and name
           selected: isFieldAllowedByPreferences('iati-activity/default-aid-type') && shouldSelectField(currentAidLabel, importAidLabel),
           hasConflict: hasConflict(currentAidLabel, importAidLabel),
@@ -3699,7 +3941,7 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
         fields.push({
           fieldName: 'Default Tied Status',
           iatiPath: 'iati-activity/default-tied-status',
-          currentValue: currentTiedLabel,
+          currentValue: currentTiedLabelObj, // Store the object with code and name for consistent comparison
           importValue: importTiedValue,
           selected: isFieldAllowedByPreferences('iati-activity/default-tied-status') && shouldSelectField(currentTiedLabel, importTiedLabel),
           hasConflict: hasConflict(currentTiedLabel, importTiedLabel),
@@ -3833,7 +4075,24 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
           const typeLabel = type === 1 ? 'Original' : type === 2 ? 'Revised' : `Unknown (${type})`;
           const statusLabel = status === 1 ? 'Indicative' : status === 2 ? 'Committed' : `Unknown (${status})`;
           
-          // Create budget summary with validation warnings
+          // Create budget import value as object (matching currentValue structure)
+          const importBudgetValue = {
+            type: type,
+            status: status,
+            period: {
+              start: budget.period?.start,
+              end: budget.period?.end
+            },
+            start: budget.period?.start,
+            end: budget.period?.end,
+            value: budget.value,
+            currency: budget.currency || parsedActivity.defaultCurrency || 'USD',
+            value_date: budget.valueDate,
+            typeName: typeLabel,
+            statusName: statusLabel
+          };
+          
+          // Keep budgetSummary as string for backward compatibility (if needed for display)
           const budgetSummary = [
             `Type: ${typeLabel}`,
             `Status: ${statusLabel}`,
@@ -3862,8 +4121,8 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
             const endMatch = b.period_end === budget.period?.end;
             
             // Match by amount (fuzzy float comparison)
-            const amountMatch = b.amount !== undefined && budget.value !== undefined && 
-              Math.abs(Number(b.amount) - Number(budget.value)) < 0.01;
+            const amountMatch = (b.value !== undefined || b.amount !== undefined) && budget.value !== undefined && 
+              Math.abs(Number(b.value || b.amount) - Number(budget.value)) < 0.01;
               
             return typeMatch && startMatch && endMatch && amountMatch;
           });
@@ -3874,23 +4133,29 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
           }
 
           if (currentBudget) {
-            const currentTypeLabel = currentBudget.type === 1 ? 'Original' : currentBudget.type === 2 ? 'Revised' : `Type ${currentBudget.type}`;
-            const currentStatusLabel = currentBudget.status === 1 ? 'Indicative' : currentBudget.status === 2 ? 'Committed' : `Status ${currentBudget.status}`;
-            currentBudgetValue = [
-              `Type: ${currentTypeLabel}`,
-              `Status: ${currentStatusLabel}`,
-              currentBudget.period_start && `Start: ${currentBudget.period_start}`,
-              currentBudget.period_end && `End: ${currentBudget.period_end}`,
-              currentBudget.amount !== undefined && `Amount: ${Number(currentBudget.amount).toLocaleString()} ${currentBudget.currency || ''}`,
-              currentBudget.value_date && `Value Date: ${currentBudget.value_date}`
-            ].filter(Boolean).join(' | ');
+            // Transform database format to match expected format for table display
+            currentBudgetValue = {
+              type: currentBudget.type,
+              status: currentBudget.status,
+              period: {
+                start: currentBudget.period_start,
+                end: currentBudget.period_end
+              },
+              start: currentBudget.period_start,
+              end: currentBudget.period_end,
+              value: currentBudget.value || currentBudget.amount, // Support both field names for compatibility
+              currency: currentBudget.currency || parsedActivity.defaultCurrency || 'USD',
+              value_date: currentBudget.value_date,
+              typeName: currentBudget.type === 1 ? 'Original' : currentBudget.type === 2 ? 'Revised' : `Type ${currentBudget.type}`,
+              statusName: currentBudget.status === 1 ? 'Indicative' : currentBudget.status === 2 ? 'Committed' : `Status ${currentBudget.status}`
+            };
           }
 
           fields.push({
-            fieldName: `Budget ${budgetIndex + 1}`,
+            fieldName: `Budget`,
             iatiPath: `iati-activity/budget[${budgetIndex + 1}]`,
             currentValue: currentBudgetValue,
-            importValue: budgetSummary,
+            importValue: importBudgetValue, // Use object instead of budgetSummary string
             selected: warnings.length === 0, // Auto-select if valid
             hasConflict: warnings.length > 0,
             tab: 'budgets',
@@ -4016,7 +4281,7 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
             (currentDisbursement.receiver_org_activity_id || null) === (disbursement.receiverOrg?.receiverActivityId || null);
 
           fields.push({
-            fieldName: `Planned Disbursement ${disbIndex + 1}`,
+            fieldName: `Planned Disbursement`,
             iatiPath: `iati-activity/planned-disbursement[${disbIndex + 1}]`,
             currentValue: currentDisbursementValue,
             importValue: disbursementSummary,
@@ -4283,6 +4548,22 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
                 : `Sector: ${sectors[0].code || sectors[0].sector_code || 'N/A'}`)
             : null;
           
+          // Create transaction import value as object (matching currentValue structure)
+          const importTransactionValue = {
+            transaction_type: transaction.type,
+            transaction_date: transaction.date,
+            value: transaction.value,
+            currency: transaction.currency || parsedActivity.defaultCurrency || 'USD',
+            value_date: transaction.valueDate,
+            description: transaction.description,
+            provider_org_name: transaction.providerOrg?.name,
+            provider_org_ref: transaction.providerOrg?.ref,
+            receiver_org_name: transaction.receiverOrg?.name,
+            receiver_org_ref: transaction.receiverOrg?.ref,
+            transaction_type_name: transactionType
+          };
+          
+          // Keep transactionSummary as string for backward compatibility (if needed for display)
           const transactionSummary = [
             `Type: ${transactionType}`,
             transaction.date && `Date: ${transaction.date}`,
@@ -4307,9 +4588,10 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
           if (!currentTransaction) {
             currentTransaction = fetchedTransactions.find(t => {
               // Compare key fields
+              // Database uses 'value' column, not 'amount'
               const typeMatch = String(t.transaction_type) === String(transaction.type);
               const dateMatch = t.transaction_date === transaction.date;
-              const amountMatch = Number(t.amount) === Number(transaction.value);
+              const amountMatch = Number(t.value || t.amount) === Number(transaction.value);
               const currencyMatch = (t.currency || 'USD') === (transaction.currency || parsedActivity.defaultCurrency || 'USD');
               
               return typeMatch && dateMatch && amountMatch && currencyMatch;
@@ -4323,14 +4605,21 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
 
           if (currentTransaction) {
             const currentTransactionType = transactionTypes[currentTransaction.transaction_type?.toString() || ''] || currentTransaction.transaction_type || 'Unknown';
-            currentTransactionValue = [
-              `Type: ${currentTransactionType}`,
-              currentTransaction.transaction_date && `Date: ${currentTransaction.transaction_date}`,
-              currentTransaction.amount !== undefined && `Amount: ${Number(currentTransaction.amount).toLocaleString()} ${currentTransaction.currency || ''}`,
-              currentTransaction.description && `Description: ${currentTransaction.description}`,
-              currentTransaction.provider_org_name && `Provider: ${currentTransaction.provider_org_name}`,
-              currentTransaction.receiver_org_name && `Receiver: ${currentTransaction.receiver_org_name}`
-            ].filter(Boolean).join(' | ');
+            // Transform database format to match expected format for table display
+            // Database uses 'value' column, not 'amount'
+            currentTransactionValue = {
+              transaction_type: currentTransaction.transaction_type,
+              transaction_date: currentTransaction.transaction_date,
+              value: currentTransaction.value || currentTransaction.amount, // Support both for compatibility
+              currency: currentTransaction.currency || parsedActivity.defaultCurrency || 'USD',
+              value_date: currentTransaction.value_date,
+              description: currentTransaction.description,
+              provider_org_name: currentTransaction.provider_org_name,
+              provider_org_ref: currentTransaction.provider_org_ref,
+              receiver_org_name: currentTransaction.receiver_org_name,
+              receiver_org_ref: currentTransaction.receiver_org_ref,
+              transaction_type_name: currentTransactionType
+            };
           }
 
           // Create ONE transaction field with ALL sectors included
@@ -4341,10 +4630,10 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
           };
 
           fields.push({
-            fieldName: `Transaction ${transIndex + 1}`,
+            fieldName: `Transaction`,
             iatiPath: `iati-activity/transaction[${transIndex + 1}]`,
             currentValue: currentTransactionValue,
-            importValue: transactionSummary,
+            importValue: importTransactionValue, // Use object instead of transactionSummary string
             selected: false,
             hasConflict: false,
             tab: 'transactions',
@@ -4708,6 +4997,25 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
       }
 
       if (parsedActivity.policyMarkers && parsedActivity.policyMarkers.length > 0) {
+        // Helper function to get policy marker name from IATI code
+        const getPolicyMarkerName = (code: string): string => {
+          const policyMarkerNames: Record<string, string> = {
+            '1': 'Gender Equality',
+            '2': 'Aid to Environment',
+            '3': 'Participatory Development/Good Governance',
+            '4': 'Trade Development',
+            '5': 'Aid Targeting the Objectives of the Convention on Biological Diversity',
+            '6': 'Aid Targeting the Objectives of the Framework Convention on Climate Change - Mitigation',
+            '7': 'Aid Targeting the Objectives of the Framework Convention on Climate Change - Adaptation',
+            '8': 'Aid Targeting the Objectives of the Convention to Combat Desertification',
+            '9': 'Reproductive, Maternal, Newborn and Child Health (RMNCH)',
+            '10': 'Disaster Risk Reduction (DRR)',
+            '11': 'Disability',
+            '12': 'Nutrition'
+          };
+          return policyMarkerNames[code] || 'Unknown Policy Marker';
+        };
+
         // Fetch existing policy markers to populate current values
         let existingPolicyMarkers = [];
         try {
@@ -4723,26 +5031,48 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
         // Create individual fields for each policy marker
         parsedActivity.policyMarkers.forEach((marker: any, index: number) => {
           // Find matching existing policy marker
-          const existingMarker = existingPolicyMarkers.find((existing: any) => 
-            existing.policy_marker_details?.code === marker.code && 
-            existing.policy_marker_details?.vocabulary === marker.vocabulary
-          );
+          const markerVocabulary = marker.vocabulary || '1';
+          const existingMarker = existingPolicyMarkers.find((existing: any) => {
+            const details = existing.policy_marker_details;
+            if (!details) return false;
+            
+            // Match vocabulary first
+            if ((details.vocabulary || '1') !== markerVocabulary) return false;
+            
+            // For standard IATI markers (vocabulary="1"), match by iati_code
+            if (markerVocabulary === '1') {
+              return details.iati_code === marker.code && details.is_iati_standard === true;
+            }
+            
+            // For custom markers (vocabulary="99"), match by code and vocabulary_uri
+            if (markerVocabulary === '99') {
+              const existingUri = details.vocabulary_uri || '';
+              const markerUri = marker.vocabulary_uri || '';
+              return details.code === marker.code && existingUri === markerUri;
+            }
+            
+            // Fallback: match by code
+            return details.code === marker.code;
+          });
+
+          const policyMarkerName = getPolicyMarkerName(marker.code);
 
           const currentValue = existingMarker ? {
-            code: existingMarker.policy_marker_details?.code,
+            code: existingMarker.policy_marker_details?.iati_code || existingMarker.policy_marker_details?.code,
+            name: existingMarker.policy_marker_details?.name || getPolicyMarkerName(existingMarker.policy_marker_details?.iati_code || existingMarker.policy_marker_details?.code),
             significance: existingMarker.significance,
             vocabulary: existingMarker.policy_marker_details?.vocabulary,
             vocabulary_uri: existingMarker.policy_marker_details?.vocabulary_uri,
-            rationale: existingMarker.rationale,
-            name: existingMarker.policy_marker_details?.name
+            rationale: existingMarker.rationale
           } : null;
 
         fields.push({
-            fieldName: `Policy Marker: ${marker.code || 'Unknown'}`,
+            fieldName: `Policy Marker`,
             iatiPath: `iati-activity/policy-marker[${index}]`,
             currentValue: currentValue,
             importValue: {
               code: marker.code,
+              name: policyMarkerName,
               significance: marker.significance,
               vocabulary: marker.vocabulary,
               vocabulary_uri: marker.vocabulary_uri,
@@ -4847,11 +5177,11 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
       // === CONDITIONS === (handled once below with structured conditionsData and auto-selected)
       
       // === BUDGETS ===
-      // Individual budget fields are created below (Budget 1, Budget 2, etc.)
+      // Individual budget fields are created below (Budget, Budget, etc.)
       // No need for a summary field since individual budgets show all details
       
       // === PLANNED DISBURSEMENTS ===
-      // Individual planned disbursement fields are created below (Planned Disbursement 1, Planned Disbursement 2, etc.)
+      // Individual planned disbursement fields are created below (Planned Disbursement, Planned Disbursement, etc.)
       // No need for a summary field since individual planned disbursements show all details
       
       // === HUMANITARIAN SCOPE ===
@@ -5002,7 +5332,7 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
           }
           
         fields.push({
-            fieldName: `Participating Organization ${index + 1}`,
+            fieldName: `Participating Organization`,
             iatiPath: `iati-activity/participating-org[${index}]`,
           currentValue: currentValue,
             importValue: {
@@ -5046,8 +5376,24 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
           console.warn('[IATI Import] Error fetching existing conditions:', error);
         }
 
-        const currentConditionsValue = existingConditions.length > 0 
-          ? `${existingConditions.length} condition(s), Attached: ${existingConditions[0]?.attached ? 'Yes' : 'No'}`
+        // Format current conditions to show details (type + narrative) like import value
+        const currentConditionsValue = existingConditions.length > 0
+          ? existingConditions.map((cond: any) => {
+              const typeLabel = cond.type === '1' ? 'Policy' :
+                               cond.type === '2' ? 'Performance' :
+                               cond.type === '3' ? 'Fiduciary' : 'Unknown';
+
+              // Extract narrative from JSONB: {"en": "text", "fr": "texte"}
+              let narrativeText = 'No description';
+              if (cond.narrative && typeof cond.narrative === 'object') {
+                // Try to get English narrative first, then any available language
+                narrativeText = cond.narrative.en || cond.narrative[Object.keys(cond.narrative)[0]] || 'No description';
+              } else if (typeof cond.narrative === 'string') {
+                narrativeText = cond.narrative;
+              }
+
+              return `[${typeLabel}] ${narrativeText}`;
+            }).join('; ')
           : 'None';
 
         const importConditionsValue = parsedActivity.conditions.conditions.map((cond: any) => {
@@ -5077,16 +5423,65 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
           })
         };
 
+        // Create structured current value data
+        const currentConditionsData = existingConditions.length > 0 ? {
+          attached: fetchedActivityData.conditions_attached ?? true,
+          conditions: existingConditions.map((cond: any) => {
+            // narrative is already JSONB from database: {"en": "text", "fr": "texte"}
+            return {
+              type: cond.type || '1',
+              narrative: cond.narrative || {}
+            };
+          })
+        } : null;
+
+        // Check if there's an actual conflict by comparing conditions
+        let hasConditionsConflict = false;
+        if (existingConditions.length > 0) {
+          // Compare count first
+          if (existingConditions.length !== parsedActivity.conditions.conditions.length) {
+            hasConditionsConflict = true;
+          } else {
+            // Compare each condition
+            for (let i = 0; i < existingConditions.length; i++) {
+              const existing = existingConditions[i];
+              const imported = parsedActivity.conditions.conditions[i];
+
+              // Compare type
+              if (existing.type !== imported.type) {
+                hasConditionsConflict = true;
+                break;
+              }
+
+              // Compare narrative (handle JSONB vs string)
+              let existingNarrative = '';
+              if (existing.narrative && typeof existing.narrative === 'object') {
+                existingNarrative = existing.narrative.en || existing.narrative[Object.keys(existing.narrative)[0]] || '';
+              } else if (typeof existing.narrative === 'string') {
+                existingNarrative = existing.narrative;
+              }
+
+              const importedNarrative = imported.narrative || '';
+
+              if (existingNarrative.trim() !== importedNarrative.trim()) {
+                hasConditionsConflict = true;
+                break;
+              }
+            }
+          }
+        }
+
         fields.push({
           fieldName: 'Conditions',
           iatiPath: 'iati-activity/conditions',
-          currentValue: currentConditionsValue,
+          currentValue: currentConditionsData,
           importValue: conditionsImportValue,
           selected: isFieldAllowedByPreferences('iati-activity/conditions'),
-          hasConflict: existingConditions.length > 0,
+          hasConflict: hasConditionsConflict,
           tab: 'conditions',
           description: importConditionsValue,
           isConditionsField: true,
+          currentConditionsData,
           conditionsData: {
             attached: parsedActivity.conditions.attached,
             conditions: parsedActivity.conditions.conditions.map((condition: any) => {
@@ -5181,7 +5576,7 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
           console.log('[IATI Import Debug] Processing contact:', contact);
           
         fields.push({
-            fieldName: `Contact ${index + 1}: ${contactName}`,
+            fieldName: `Contact`,
             iatiPath: `iati-activity/contact-info[${index + 1}]`,
           currentValue: null,
             importValue: {
@@ -5205,24 +5600,50 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
       // === RESULTS TAB ===
 
       if (parsedActivity.results && parsedActivity.results.length > 0) {
-        // Get current value from database if exists
-        let currentResultsValue = null;
-        if (fetchedResults && fetchedResults.length > 0) {
-          currentResultsValue = fetchedResults.map(r => r.title || 'Untitled result').join('; ');
-        }
+        parsedActivity.results.forEach((result, resultIndex) => {
+          // Extract title from result (could be string from XML or object)
+          const resultTitle = typeof result.title === 'string' 
+            ? result.title 
+            : extractTitleFromJsonb(result.title);
+          const displayTitle = resultTitle || 'Untitled result';
+          
+          // Get current value for this specific result from database if exists
+          let currentResultValue = null;
+          let currentResultData = null;
+          if (fetchedResults && fetchedResults.length > resultIndex) {
+            currentResultData = fetchedResults[resultIndex];
+            currentResultValue = extractTitleFromJsonb(currentResultData.title);
+          }
 
-        const resultsInfo = parsedActivity.results.map(r =>
-          r.title || 'Untitled result'
-        ).join('; ');
-        fields.push({
-          fieldName: 'Results Framework',
-          iatiPath: 'iati-activity/result',
-          currentValue: currentResultsValue,
-          importValue: resultsInfo,
-          selected: isFieldAllowedByPreferences('iati-activity/result'),
-          hasConflict: false,
-          tab: 'results',
-          description: 'Results, indicators, and targets'
+          // Create result type label
+          const resultTypeLabels: Record<string, string> = {
+            'output': 'Output',
+            'outcome': 'Outcome',
+            'impact': 'Impact',
+            'other': 'Other'
+          };
+          const typeLabel = resultTypeLabels[result.type] || 'Result';
+          
+          // Count indicators for description
+          const indicatorCount = result.indicators?.length || 0;
+          const description = indicatorCount > 0 
+            ? `${typeLabel} - ${indicatorCount} indicator(s)`
+            : typeLabel;
+
+          fields.push({
+            fieldName: 'Result',
+            iatiPath: `iati-activity/result[${resultIndex + 1}]`,
+            currentValue: currentResultValue,
+            importValue: displayTitle,
+            selected: isFieldAllowedByPreferences('iati-activity/result'),
+            hasConflict: false,
+            tab: 'results',
+            description,
+            itemType: 'result',
+            itemIndex: resultIndex,
+            itemData: result,
+            currentItemData: currentResultData
+          });
         });
       }
 
@@ -5276,6 +5697,18 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
 
       const fieldCreationDuration = Date.now() - fieldCreationStartTime;
       console.log('[IATI Import Debug] Field creation complete, total fields:', fields.length, `(took ${fieldCreationDuration}ms)`);
+      
+      // Log all field names to verify hierarchy is included
+      const fieldNames = fields.map(f => f.fieldName);
+      const hasHierarchyField = fieldNames.includes('Activity Hierarchy Level');
+      console.log('[IATI Import Debug] 🔍 Field names check:', {
+        totalFields: fields.length,
+        hasHierarchyField,
+        hierarchyFieldIndex: fieldNames.indexOf('Activity Hierarchy Level'),
+        allFieldNames: fieldNames.slice(0, 20), // First 20 for debugging
+        otherTabFields: fields.filter(f => f.tab === 'other').map(f => f.fieldName)
+      });
+      
       console.log('[IATI Import Debug] About to exit try block for field creation');
       
       if (fieldCreationDuration > FIELD_CREATION_TIMEOUT) {
@@ -5622,6 +6055,18 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
         const parsedActivity = parser.parseActivityByIndex(selectedActivityIndices[0]);
         setParsedActivity(parsedActivity);
         
+        // Extract acronym from title for review modal
+        if (parsedActivity.title) {
+          const { acronym } = extractAcronymFromTitle(parsedActivity.title);
+          setDetectedAcronyms([{
+            iatiIdentifier: parsedActivity.iatiIdentifier || 'unknown',
+            title: parsedActivity.title,
+            detectedAcronym: acronym
+          }]);
+        } else {
+          setDetectedAcronyms([]);
+        }
+        
         console.log('[Multi-Activity Import] Parsed selected activity:', parsedActivity);
         
         // Continue with existing field mapping and import flow
@@ -5802,13 +6247,183 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
       // Just store as a reference without importing
       toast.info('Reference mode selected. Activity will be stored as external reference.');
     } else if (choice === 'import_as_reporting_org') {
-      // Import under original publisher - show inline field selection
-      console.log('[External Publisher] Import as reporting org - showing inline field selection');
+      // Import under original publisher - show reporting org selection modal first
+      console.log('[External Publisher] ✅ Setting import mode to import_as_reporting_org');
       setSelectedImportMode('import_as_reporting_org');
-      setImportStatus({ stage: 'previewing', progress: 100 });
-      toast.success('Review fields below', {
-        description: 'Select which fields to import. Activity will be created under the original reporting organization.'
+      
+      // Extract reporting org from XML - use multiple sources for reliability
+      // Try parsedActivity first (camelCase), then fallback to metadata sources
+      const xmlOrgRef = parsedActivity?.reportingOrg?.ref || 
+                        externalPublisherMeta?.reportingOrgRef || 
+                        xmlMetadata?.reportingOrgRef;
+      const xmlOrgName = parsedActivity?.reportingOrg?.narrative || 
+                         externalPublisherMeta?.reportingOrgName || 
+                         xmlMetadata?.reportingOrgName;
+      const xmlOrgAcronym = parsedActivity?.reportingOrg?.acronym || 
+                            externalPublisherMeta?.reportingOrgAcronym;
+      
+      console.log('[External Publisher] Extracting reporting org data:', {
+        fromParsedActivity: {
+          ref: parsedActivity?.reportingOrg?.ref,
+          narrative: parsedActivity?.reportingOrg?.narrative,
+          acronym: parsedActivity?.reportingOrg?.acronym
+        },
+        fromExternalPublisherMeta: {
+          ref: externalPublisherMeta?.reportingOrgRef,
+          name: externalPublisherMeta?.reportingOrgName,
+          acronym: externalPublisherMeta?.reportingOrgAcronym
+        },
+        fromXmlMetadata: {
+          ref: xmlMetadata?.reportingOrgRef,
+          name: xmlMetadata?.reportingOrgName
+        },
+        finalValues: {
+          ref: xmlOrgRef,
+          name: xmlOrgName,
+          acronym: xmlOrgAcronym
+        }
       });
+      
+      setXmlReportingOrgData({
+        name: xmlOrgName,
+        ref: xmlOrgRef,
+        acronym: xmlOrgAcronym
+      });
+      
+      // Fetch organizations and find matching one
+      try {
+        const orgsResponse = await fetch('/api/organizations');
+        if (!orgsResponse.ok) {
+          throw new Error(`Failed to fetch organizations: ${orgsResponse.status}`);
+        }
+        const orgs = await orgsResponse.json();
+        setAvailableOrganizations(orgs || []);
+        
+        // Normalize the XML org ref for case-insensitive matching
+        // Add null/undefined checks before string operations
+        const normalizedXmlOrgRef = xmlOrgRef?.trim()?.toUpperCase() || null;
+        
+        if (!normalizedXmlOrgRef) {
+          console.warn('[External Publisher] ⚠️  No reporting org ref found in XML data');
+          toast.warning('No reporting organization reference found in XML', {
+            description: 'Please select an organization manually.'
+          });
+        }
+        
+        console.log('[External Publisher] 🔍 Searching for matching org:', {
+          xmlOrgRef,
+          normalizedXmlOrgRef,
+          xmlOrgName,
+          totalOrgs: orgs?.length || 0,
+          hasParsedActivity: !!parsedActivity,
+          hasExternalPublisherMeta: !!externalPublisherMeta,
+          hasXmlMetadata: !!xmlMetadata
+        });
+        
+        let matchingOrg = null;
+        let matchMethod = '';
+        
+        if (normalizedXmlOrgRef) {
+          // Step 1: Try direct match by IATI org ID (case-insensitive)
+          matchingOrg = orgs?.find((o: any) => {
+            if (!o || !o.iati_org_id) return false;
+            const orgIatiId = o.iati_org_id?.trim()?.toUpperCase();
+            return orgIatiId === normalizedXmlOrgRef;
+          });
+          
+          if (matchingOrg) {
+            matchMethod = 'iati_org_id';
+            console.log('[External Publisher] ✅ Found matching org by iati_org_id:', {
+              name: matchingOrg.name,
+              id: matchingOrg.id,
+              iati_org_id: matchingOrg.iati_org_id,
+              matchedRef: normalizedXmlOrgRef
+            });
+          } else {
+            // Step 2: Try match by alias_refs array (case-insensitive)
+            console.log('[External Publisher] No direct match, checking alias_refs...');
+            matchingOrg = orgs?.find((o: any) => {
+              if (!o || !o.alias_refs || !Array.isArray(o.alias_refs)) {
+                return false;
+              }
+              return o.alias_refs.some((alias: string) => {
+                if (!alias || typeof alias !== 'string') return false;
+                return alias.trim().toUpperCase() === normalizedXmlOrgRef;
+              });
+            });
+            
+            if (matchingOrg) {
+              matchMethod = 'alias_refs';
+              console.log('[External Publisher] ✅ Found matching org by alias_refs:', {
+                name: matchingOrg.name,
+                id: matchingOrg.id,
+                iati_org_id: matchingOrg.iati_org_id,
+                alias_refs: matchingOrg.alias_refs,
+                matchedRef: normalizedXmlOrgRef
+              });
+            }
+          }
+        }
+        
+        if (!matchingOrg && normalizedXmlOrgRef) {
+          console.log('[External Publisher] ❌ No matching org found for:', xmlOrgRef);
+          // Log available orgs with IATI IDs for debugging
+          const orgsWithIatiIds = orgs?.filter((o: any) => 
+            o && (o.iati_org_id || (o.alias_refs && Array.isArray(o.alias_refs) && o.alias_refs.length > 0))
+          ) || [];
+          console.log('[External Publisher] Available orgs with IATI IDs:', orgsWithIatiIds.slice(0, 20).map((o: any) => ({
+            name: o.name,
+            iati_org_id: o.iati_org_id,
+            alias_refs: o.alias_refs
+          })));
+          
+          // Also log any orgs that might be close matches (check if ref contains parts of the search)
+          if (normalizedXmlOrgRef.length >= 3) {
+            const searchParts = normalizedXmlOrgRef.split('-').filter(p => p.length > 0);
+            const closeMatches = orgs?.filter((o: any) => {
+              if (!o) return false;
+              const orgIatiId = o.iati_org_id?.trim()?.toUpperCase();
+              if (orgIatiId) {
+                return searchParts.some(part => orgIatiId.includes(part));
+              }
+              return false;
+            }) || [];
+            if (closeMatches.length > 0) {
+              console.log('[External Publisher] Close matches found:', closeMatches.slice(0, 5).map((o: any) => ({
+                name: o.name,
+                iati_org_id: o.iati_org_id
+              })));
+            }
+          }
+        }
+        
+        if (matchingOrg) {
+          setSelectedReportingOrgId(matchingOrg.id);
+          console.log('[External Publisher] ✅ Pre-filled modal with:', {
+            name: matchingOrg.name,
+            id: matchingOrg.id,
+            iati_org_id: matchingOrg.iati_org_id
+          });
+        } else {
+          setSelectedReportingOrgId(null);
+          console.log('[External Publisher] ⚠️  No match found - user will need to select manually');
+          // Show a helpful message to the user
+          toast.info('No matching organization found', {
+            description: `Could not find an organization matching "${xmlOrgRef}". Please select one manually.`
+          });
+        }
+        
+        // Ensure organizations are set before showing modal
+        // Use a small delay to ensure state is updated
+        setTimeout(() => {
+        setShowReportingOrgSelectionModal(true);
+        }, 100);
+      } catch (error) {
+        console.error('[External Publisher] Failed to fetch organizations:', error);
+        toast.error('Failed to load organizations. Please try again.');
+        // Fall back to showing field selection without modal
+        setImportStatus({ stage: 'previewing', progress: 100 });
+      }
     } else {
       // For fork or merge, the fields are already parsed and preview is already showing
       // Ensure the import status is set correctly
@@ -5820,6 +6435,23 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
 
   const handleSelectIatiActivity = async (activity: any) => {
     setIsFetchingXmlFromDatastore(true);
+    
+    // Extract hierarchy from search result if available (IATI Search API includes it in JSON even if XML doesn't)
+    const hierarchyFromSearch = activity.hierarchy ? parseInt(String(activity.hierarchy), 10) : null;
+    if (hierarchyFromSearch !== null && !isNaN(hierarchyFromSearch)) {
+      setHierarchyFromSearchResult(hierarchyFromSearch);
+      console.log('[IATI Search] ✅ Found hierarchy in search result:', {
+        rawValue: activity.hierarchy,
+        parsedValue: hierarchyFromSearch
+      });
+    } else {
+      setHierarchyFromSearchResult(null);
+      console.log('[IATI Search] ❌ No hierarchy in search result:', {
+        activityKeys: Object.keys(activity),
+        hasHierarchy: 'hierarchy' in activity,
+        hierarchyValue: activity.hierarchy
+      });
+    }
     
     try {
       const response = await fetch(`/api/iati/activity/${encodeURIComponent(activity.iatiIdentifier)}`);
@@ -5852,12 +6484,55 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
       }
       
       console.log('[IATI Search] Fetched XML for:', activity.iatiIdentifier);
+      
       console.log('[IATI Search] 🔍 DIAGNOSTIC - XML Structure Analysis:', {
         xmlLength: data.xml.length,
         hasIatiActivities: data.xml.includes('<iati-activities'),
         hasIatiActivity: data.xml.includes('<iati-activity'),
         targetIdentifier: activity.iatiIdentifier
       });
+      
+      // Extract hierarchy from original XML BEFORE any processing (IATI Datastore API sometimes strips attributes during DOM parsing)
+      let extractedHierarchy: number | null = null;
+      // Try multiple regex patterns to catch hierarchy attribute in various formats
+      const hierarchyPatterns = [
+        /<iati-activity[^>]*\shierarchy=["']?(\d+)["']?/i,  // Standard: hierarchy="1"
+        /<iati-activity[^>]*hierarchy=["']?(\d+)["']?/i,     // No space before hierarchy
+        /hierarchy=["'](\d+)["']/i,                          // Just hierarchy="1" anywhere
+        /hierarchy=(\d+)/i                                    // hierarchy=1 without quotes
+      ];
+      
+      let hierarchyMatch: RegExpMatchArray | null = null;
+      for (const pattern of hierarchyPatterns) {
+        hierarchyMatch = data.xml.match(pattern);
+        if (hierarchyMatch && hierarchyMatch[1]) {
+          break;
+        }
+      }
+      
+      console.log('[IATI Search] 🔍 DIAGNOSTIC - Raw XML hierarchy check:', {
+        rawXmlContainsHierarchy: data.xml.includes('hierarchy='),
+        hierarchyMatch: hierarchyMatch ? hierarchyMatch[1] : null,
+        rawXmlSample: data.xml.substring(0, 1000), // First 1000 chars to see opening tag
+        fullXmlLength: data.xml.length,
+        firstIatiActivityTag: data.xml.match(/<iati-activity[^>]*>/)?.[0]?.substring(0, 500) // First 500 chars of opening tag
+      });
+      if (hierarchyMatch && hierarchyMatch[1]) {
+        const hierarchyValue = parseInt(hierarchyMatch[1], 10);
+        if (!isNaN(hierarchyValue)) {
+          extractedHierarchy = hierarchyValue;
+          console.log('[IATI Search] ✅ Found hierarchy in original XML:', {
+            rawValue: hierarchyMatch[1],
+            parsedValue: hierarchyValue
+          });
+        }
+      } else {
+        console.log('[IATI Search] ❌ No hierarchy found in original XML string');
+        // IATI Standard: If hierarchy is not reported, 1 is assumed
+        // Since IATI Datastore often strips this attribute, default to 1
+        extractedHierarchy = 1;
+        console.log('[IATI Search] ℹ️ Defaulting to hierarchy=1 (IATI standard default)');
+      }
       
       // Extract single activity from multi-activity XML if needed
       let singleActivityXml = data.xml;
@@ -5906,9 +6581,55 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
           }
           
           if (matchingActivity) {
+            // Check for hierarchy attribute before serialization
+            const hierarchyAttr = matchingActivity.getAttribute('hierarchy');
+            const allAttrs: string[] = [];
+            if (matchingActivity.attributes) {
+              for (let i = 0; i < matchingActivity.attributes.length; i++) {
+                const attr = matchingActivity.attributes[i];
+                allAttrs.push(`${attr.name}="${attr.value}"`);
+              }
+            }
+            console.log('[IATI Search] 🔍 DIAGNOSTIC - Activity element before serialization:', {
+              hasHierarchy: matchingActivity.hasAttribute('hierarchy'),
+              hierarchyValue: hierarchyAttr,
+              allAttributes: allAttrs,
+              attributeCount: matchingActivity.attributes?.length || 0
+            });
+            
             // Serialize just this activity element back to XML
             const serializer = new XMLSerializer();
-            const activityXml = serializer.serializeToString(matchingActivity);
+            let activityXml = serializer.serializeToString(matchingActivity);
+
+            // Check if hierarchy is in serialized XML
+            console.log('[IATI Search] 🔍 DIAGNOSTIC - Serialized XML contains hierarchy:', {
+              serializedXml: activityXml.substring(0, 500), // First 500 chars
+              containsHierarchy: activityXml.includes('hierarchy='),
+              hierarchyMatch: activityXml.match(/hierarchy=["']?(\d+)["']?/)?.[1]
+            });
+
+            // FIX: Inject hierarchy attribute if missing but available from search result or extracted hierarchy
+            const hierarchyToInject = hierarchyFromSearchResult ?? extractedHierarchy;
+            if (!activityXml.includes('hierarchy=') && hierarchyToInject !== null) {
+              console.log('[IATI Search] 🔧 Injecting hierarchy attribute:', {
+                source: hierarchyFromSearchResult !== null ? 'search-result-state' : 'extracted-from-xml',
+                value: hierarchyToInject
+              });
+              // Insert hierarchy attribute right after <iati-activity
+              activityXml = activityXml.replace(
+                /<iati-activity(\s)/,
+                `<iati-activity hierarchy="${hierarchyToInject}"$1`
+              );
+              console.log('[IATI Search] ✅ Hierarchy attribute injected. New XML:', activityXml.substring(0, 500));
+            } else {
+              console.log('[IATI Search] ℹ️ Hierarchy injection check:', {
+                alreadyHasHierarchy: activityXml.includes('hierarchy='),
+                hierarchyFromSearchResult,
+                extractedHierarchy,
+                hierarchyToInject
+              });
+            }
+
             // Wrap in proper root element with XML declaration
             singleActivityXml = `<?xml version="1.0" encoding="UTF-8"?><iati-activities>${activityXml}</iati-activities>`;
             console.log('[IATI Search] Extracted single activity, length:', singleActivityXml.length);
@@ -5916,13 +6637,29 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
               originalLength: data.xml.length,
               extractedLength: singleActivityXml.length,
               properlyWrapped: singleActivityXml.includes('<iati-activities>'),
-              activityIndex: matchingIndex
+              activityIndex: matchingIndex,
+              finalXmlContainsHierarchy: singleActivityXml.includes('hierarchy=')
             });
           } else {
             console.warn('[IATI Search] Could not find matching activity, using first activity as fallback');
             if (activities.length > 0) {
               const serializer = new XMLSerializer();
-              const activityXml = serializer.serializeToString(activities[0]);
+              let activityXml = serializer.serializeToString(activities[0]);
+
+              // FIX: Inject hierarchy attribute if missing but available from search result or extracted hierarchy
+              const hierarchyToInject = hierarchyFromSearchResult ?? extractedHierarchy;
+              if (!activityXml.includes('hierarchy=') && hierarchyToInject !== null) {
+                console.log('[IATI Search] 🔧 Injecting hierarchy attribute (fallback):', {
+                  source: hierarchyFromSearchResult !== null ? 'search-result-state' : 'extracted-from-xml',
+                  value: hierarchyToInject
+                });
+                activityXml = activityXml.replace(
+                  /<iati-activity(\s)/,
+                  `<iati-activity hierarchy="${hierarchyToInject}"$1`
+                );
+                console.log('[IATI Search] ✅ Hierarchy attribute injected (fallback)');
+              }
+
               // Wrap in proper root element with XML declaration
               singleActivityXml = `<?xml version="1.0" encoding="UTF-8"?><iati-activities>${activityXml}</iati-activities>`;
               console.log('[IATI Search] Using first activity, length:', singleActivityXml.length);
@@ -5950,6 +6687,22 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
       console.log('[IATI Search] 🔍 DIAGNOSTIC - About to parse XML, length:', singleActivityXml.length);
       const parser = new IATIXMLParser(singleActivityXml);
       const parsedActivity = parser.parseActivity();
+      
+      // Add hierarchy from multiple sources (priority: search result > extracted from XML > parsed from XML)
+      if (hierarchyFromSearchResult !== null && !isNaN(hierarchyFromSearchResult)) {
+        // Priority 1: Use hierarchy from search result (most reliable)
+        parsedActivity.hierarchy = hierarchyFromSearchResult;
+        console.log('[IATI Search] ✅ Added hierarchy from search result to parsed activity:', hierarchyFromSearchResult);
+      } else if (extractedHierarchy !== null && !parsedActivity.hierarchy) {
+        // Priority 2: Use hierarchy extracted from raw XML string
+        parsedActivity.hierarchy = extractedHierarchy;
+        console.log('[IATI Search] ✅ Manually added hierarchy from raw XML to parsed activity:', extractedHierarchy);
+      } else if (parsedActivity.hierarchy) {
+        // Priority 3: Use hierarchy parsed from XML (already set)
+        console.log('[IATI Search] ✅ Hierarchy already parsed from XML:', parsedActivity.hierarchy);
+      } else {
+        console.log('[IATI Search] ❌ No hierarchy found from any source');
+      }
       
       // DIAGNOSTIC: Log parser results
       console.log('[IATI Search] 🔍 DIAGNOSTIC - Parser Results:', {
@@ -5990,6 +6743,12 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
       console.log('[IATI Search] Setting snippet content, length:', singleActivityXml.length);
       setSnippetContent(singleActivityXml);
       
+      // Clear hierarchy from previous search when starting new import
+      // (It will be set again if found in the new search result)
+      if (importMethod !== 'iatiSearch') {
+        setHierarchyFromSearchResult(null);
+      }
+      
       if (!isOwnedActivity && reportingOrgRef) {
         // External publisher detected - parse after state updates
         console.log('[IATI Search] External publisher detected, will parse after state update');
@@ -6026,9 +6785,30 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
       setIsFetchingXmlFromDatastore(false);
     }
   };
+  
+  // Handler for continuing with import after acronym review
+  const handleContinueWithImport = (acronyms: Record<string, string>) => {
+    console.log('[IATI Import] User reviewed acronyms:', acronyms);
+    setUserAcronyms(acronyms);
+    setShowAcronymModal(false);
+    
+    // Proceed with import, passing acronyms
+    importSelectedFields(acronyms);
+  };
+  
   // Import selected fields
-  const importSelectedFields = async () => {
+  const importSelectedFields = async (acronyms?: Record<string, string>) => {
     const importStartTime = Date.now();
+    
+    // CRITICAL: Log import mode at the start of import
+    console.log('[IATI Import] 🚀 Starting import with mode:', {
+      selectedImportMode,
+      willUseImportAsReportingOrg: selectedImportMode === 'import_as_reporting_org',
+      willUseMergeMode: selectedImportMode === null || selectedImportMode === 'merge',
+      activityId,
+      note: 'If mode is null, will use merge mode (preserves existing reporting org)'
+    });
+    
     // Track whether transactions have already been imported server-side via /import-iati
     let didServerSideTransactionImport = false;
     
@@ -6251,7 +7031,12 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
       }
       
       if (parsedActivity?.results?.length > 0) {
-        updateData._importResults = true;
+        // Initialize importedResults array for comprehensive mode
+        if (!updateData.importedResults) updateData.importedResults = [];
+        // Add all results for comprehensive import
+        parsedActivity.results.forEach((result: any) => {
+          updateData.importedResults!.push(result);
+        });
         console.log(`[IATI Import] Auto-enabled bulk import for ${parsedActivity.results.length} results`);
       }
       
@@ -6436,6 +7221,9 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
           case 'Activity Scope':
             updateData.activity_scope = typeof field.importValue === 'object' ? field.importValue.code : field.importValue;
             break;
+          case 'Activity Hierarchy Level':
+            updateData.hierarchy = typeof field.importValue === 'object' ? parseInt(field.importValue.code, 10) : field.importValue;
+            break;
           case 'Default Currency':
             updateData.default_currency = field.importValue;
             break;
@@ -6469,15 +7257,19 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
             break;
           case 'Reporting Organization':
             // Handle reporting organization import
-            if (field.importValue && typeof field.importValue === 'object') {
+            // Only set reporting org fields for "Import Under Original Publisher" mode
+            // For merge/fork/reference modes, we should NOT change the reporting org
+            if (selectedImportMode === 'import_as_reporting_org' && field.importValue && typeof field.importValue === 'object') {
               updateData.reporting_org_name = field.importValue.name || field.importValue.narrative;
               updateData.reporting_org_ref = field.importValue.ref;
               updateData.reporting_org_type = field.importValue.type; // Add organization type
-              console.log(`[IATI Import] Setting reporting org:`, {
+              console.log(`[IATI Import] Setting reporting org for import_as_reporting_org mode:`, {
                 name: updateData.reporting_org_name,
                 ref: updateData.reporting_org_ref,
                 type: updateData.reporting_org_type
               });
+            } else {
+              console.log(`[IATI Import] Skipping reporting org update - mode is ${selectedImportMode}, not import_as_reporting_org`);
             }
             break;
           case 'Sectors':
@@ -6580,9 +7372,13 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
             // Handle tags import - will be processed separately after main activity update
             updateData._importTags = true;
             break;
-          case 'Results Framework':
-            // Handle results import - will be processed separately after main activity update
-            updateData._importResults = true;
+          case 'Result':
+            // Handle individual result import - collect for batch processing
+            if (!updateData.importedResults) updateData.importedResults = [];
+            if (field.itemData && field.itemIndex !== undefined) {
+              updateData.importedResults.push(field.itemData);
+              console.log(`[IATI Import] Added result ${field.itemIndex} to import queue`);
+            }
             break;
           case 'Contacts':
           case 'Contact Information':
@@ -6621,6 +7417,19 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
                 }))
               };
               console.log(`[IATI Import] Adding ${parsedActivity.conditions.conditions.length} conditions for import`);
+            }
+            break;
+          case 'Participating Organizations':
+          case 'Participating Organization':
+            // Handle participating organizations bulk import
+            if (parsedActivity.participatingOrgs && parsedActivity.participatingOrgs.length > 0) {
+              // Check if bulk mode is already active to avoid duplicates
+              if (updateData.importedParticipatingOrgs && Array.isArray(updateData.importedParticipatingOrgs) && updateData.importedParticipatingOrgs.length > 0) {
+                console.log(`[IATI Import] Skipping participating orgs addition - already have ${updateData.importedParticipatingOrgs.length} orgs`);
+              } else {
+                updateData.importedParticipatingOrgs = parsedActivity.participatingOrgs;
+                console.log(`[IATI Import] Adding ${parsedActivity.participatingOrgs.length} participating organizations for bulk import`);
+              }
             }
             break;
           case 'Budgets':
@@ -6759,24 +7568,39 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
             }
             break;
           default:
-            if (field.fieldName.startsWith('Other Identifier ')) {
+            if (field.fieldName === 'Other Identifier' || field.fieldName.startsWith('Other Identifier')) {
               // Collect other identifier data for import (use raw data if available)
               if (!updateData.importedOtherIdentifiers) updateData.importedOtherIdentifiers = [];
               const rawData = (field.importValue as any)?._rawData || field.importValue;
               updateData.importedOtherIdentifiers.push(rawData);
               console.log(`[IATI Import] Adding other identifier for import:`, rawData);
-            } else if (field.fieldName === 'Participating Organization' || field.fieldName.startsWith('Participating Organization:')) {
-              // Collect participating organization data for import
-              if (!updateData.importedParticipatingOrgs) updateData.importedParticipatingOrgs = [];
-              updateData.importedParticipatingOrgs.push(field.importValue);
-              console.log(`[IATI Import] Adding participating organization for import:`, field.importValue);
+            } else if (field.fieldName === 'Participating Organization' || 
+                       field.fieldName.startsWith('Participating Organization:') ||
+                       field.fieldName.startsWith('Participating Organization')) {
+              // Check if bulk mode is already active to avoid duplicates
+              const hasBulkMode = updateData.importedParticipatingOrgs && 
+                                  Array.isArray(updateData.importedParticipatingOrgs) && 
+                                  updateData.importedParticipatingOrgs.length > 0 &&
+                                  // Check if this looks like bulk mode data (has validated_ref/original_ref structure from parser)
+                                  updateData.importedParticipatingOrgs.some((org: any) => 
+                                    org.validated_ref !== undefined || org.original_ref !== undefined
+                                  );
+              
+              if (hasBulkMode) {
+                console.log(`[IATI Import] Skipping individual participating org addition - bulk mode already active with ${updateData.importedParticipatingOrgs.length} orgs`);
+              } else {
+                // Collect participating organization data for import
+                if (!updateData.importedParticipatingOrgs) updateData.importedParticipatingOrgs = [];
+                updateData.importedParticipatingOrgs.push(field.importValue);
+                console.log(`[IATI Import] Adding participating organization for import:`, field.importValue);
+              }
             } else if (field.fieldName.startsWith('Related Activity')) {
               // Collect related activity data for import
               if (!updateData.importedRelatedActivities) updateData.importedRelatedActivities = [];
               updateData.importedRelatedActivities.push(field.importValue);
               console.log(`[IATI Import] Adding related activity for import:`, field.importValue);
             } else
-            if (field.fieldName.startsWith('Policy Marker:')) {
+            if (field.fieldName === 'Policy Marker' || field.fieldName.startsWith('Policy Marker')) {
               // Handle individual policy marker import
               // Enhanced Select All Fix: Check if comprehensive selection is active
               if (updateData._importPolicyMarkers === true) {
@@ -6787,7 +7611,7 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
               if (!updateData._importPolicyMarkers) updateData._importPolicyMarkers = [];
               updateData._importPolicyMarkers.push(field.policyMarkerData);
               }
-            } else if (field.fieldName.startsWith('Transaction ')) {
+            } else if (field.fieldName === 'Transaction' || field.fieldName.startsWith('Transaction')) {
               // PHASE 2: Fixed unified transaction processing - works for both URL and snippet imports
               // Enhanced Select All Fix: Check if comprehensive selection is active
               if (updateData._importTransactions === true) {
@@ -6804,7 +7628,7 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
                 
                 if (!updateData.importedTransactions) updateData.importedTransactions = [];
                 
-                const transactionIndex = parseInt(field.fieldName.split(' ')[1]) - 1;
+                const transactionIndex = field.itemIndex !== undefined ? field.itemIndex : (field.fieldName.includes(' ') ? parseInt(field.fieldName.split(' ')[1]) - 1 : 0);
                 
                 // Individual mode: Get from field data (for snippet imports)
                 const txData = field.itemData;
@@ -6838,7 +7662,7 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
                   console.warn('🔍 [IATI Import] DIAGNOSTIC - No transaction data found for:', field.fieldName);
                 }
               }
-            } else if (field.fieldName.startsWith('Budget ') && field.itemType === 'budget') {
+            } else if ((field.fieldName === 'Budget' || field.fieldName.startsWith('Budget')) && field.itemType === 'budget') {
               // Handle individual budget import
               // Enhanced Select All Fix: Check if comprehensive selection is active
               if (updateData._importBudgets === true) {
@@ -6849,7 +7673,7 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
                 if (!updateData.importedBudgets) updateData.importedBudgets = [];
                 updateData.importedBudgets.push(field.itemData);
               }
-            } else if (field.fieldName.startsWith('Planned Disbursement ')) {
+            } else if (field.fieldName === 'Planned Disbursement' || field.fieldName.startsWith('Planned Disbursement')) {
               // Handle individual planned disbursement import
               // Enhanced Select All Fix: Check if comprehensive selection is active
               if (updateData._importPlannedDisbursements === true) {
@@ -6892,20 +7716,20 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
                 });
               }
               console.log(`[IATI Import] Total budget mappings queued: ${updateData.importedCountryBudgetItems?.length || 0}`);
-            } else if (field.fieldName.startsWith('Budget ')) {
+            } else if (field.fieldName === 'Budget' || field.fieldName.startsWith('Budget ')) {
               // Collect budget data for import
               // Check if bulk mode is already active to avoid duplicates
               if (updateData._importBudgets === true) {
                 console.log(`[IATI Import] Skipping individual budget ${field.fieldName} - bulk mode already active`);
               } else {
                 if (!updateData.importedBudgets) updateData.importedBudgets = [];
-                const budgetIndex = parseInt(field.fieldName.split(' ')[1]) - 1;
+                const budgetIndex = field.itemIndex !== undefined ? field.itemIndex : (field.fieldName.includes(' ') ? parseInt(field.fieldName.split(' ')[1]) - 1 : 0);
                 if (parsedActivity?.budgets && parsedActivity.budgets[budgetIndex]) {
                   updateData.importedBudgets.push(parsedActivity.budgets[budgetIndex]);
                 }
                 console.log(`[IATI Import] Adding budget ${budgetIndex + 1} for import`);
               }
-            } else if (field.fieldName.startsWith('Planned Disbursement ')) {
+            } else if (field.fieldName === 'Planned Disbursement' || field.fieldName.startsWith('Planned Disbursement ')) {
               // Collect planned disbursement data for import
               // Enhanced Select All Fix: Check if comprehensive selection is active
               if (updateData._importPlannedDisbursements === true) {
@@ -6914,7 +7738,7 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
               } else {
                 // Individual selection mode
                 if (!updateData.importedPlannedDisbursements) updateData.importedPlannedDisbursements = [];
-                const disbursementIndex = parseInt(field.fieldName.split(' ')[2]) - 1;
+                const disbursementIndex = field.itemIndex !== undefined ? field.itemIndex : (field.fieldName.includes(' ') ? parseInt(field.fieldName.split(' ')[2]) - 1 : 0);
                 if (parsedActivity?.plannedDisbursements && parsedActivity.plannedDisbursements[disbursementIndex]) {
                   updateData.importedPlannedDisbursements.push(parsedActivity.plannedDisbursements[disbursementIndex]);
                 }
@@ -7010,8 +7834,15 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
       let response;
 
       // Check if this is an "import as reporting org" operation (external publisher import)
+      console.log('[IATI Import] 🔍 Checking import mode before API call:', {
+        selectedImportMode,
+        isImportAsReportingOrg: selectedImportMode === 'import_as_reporting_org',
+        activityId,
+        note: 'If mode is null, it will use merge mode (preserves existing org)'
+      });
+      
       if (selectedImportMode === 'import_as_reporting_org') {
-        console.log('[IATI Import] Using import-as-reporting-org endpoint for external publisher import');
+        console.log('[IATI Import] ✅ Using import-as-reporting-org endpoint for external publisher import');
 
         // Build selected fields map
         const selectedFieldsMap: Record<string, boolean> = {};
@@ -7028,11 +7859,15 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
             xmlContent: xmlContent || snippetContent,
             userId: user?.id,
             userRole: user?.role,
+            activityId: activityId, // Pass current activity ID to update existing activity
+            replaceActivityIds: activityId ? [activityId] : undefined, // Tell route to update this specific activity
+            selectedReportingOrgId: selectedReportingOrgId, // Pass user-selected reporting org ID
             fields: selectedFieldsMap,
             iati_data: {
               _parsedActivity: parsedActivity,
               ...updateData
-            }
+            },
+            acronyms: acronyms || {} // Pass user-reviewed acronyms
           }),
         });
       } else {
@@ -7053,7 +7888,7 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
             contacts: updateData.importedContacts?.length > 0,
             participating_orgs: updateData.importedParticipatingOrgs?.length > 0,
             humanitarian_scopes: updateData._importHumanitarianScopes || false,
-            results: updateData._importResults || false,
+            results: (updateData.importedResults?.length || 0) > 0,
             document_links: updateData._importDocumentLinks || false,
             conditions: updateData.importedConditions?.length > 0,
             related_activities: updateData.importedRelatedActivities?.length > 0,
@@ -7066,6 +7901,7 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
             description_other: !!updateData.description_other,
             activity_status: !!updateData.activity_status,
             activity_scope: !!updateData.activity_scope,
+            hierarchy: !!updateData.hierarchy,
             activity_date_start_planned: !!updateData.planned_start_date,
             activity_date_start_actual: !!updateData.actual_start_date,
             activity_date_end_planned: !!updateData.planned_end_date,
@@ -7091,6 +7927,7 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
             description_other: updateData.description_other,
             activity_status: updateData.activity_status,
             activity_scope: updateData.activity_scope,
+            hierarchy: updateData.hierarchy,
             activity_date_start_planned: updateData.planned_start_date,
             activity_date_start_actual: updateData.actual_start_date,
             activity_date_end_planned: updateData.planned_end_date,
@@ -7112,7 +7949,7 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
             tags: parsedActivity?.tags,
             locations: updateData.locationsData || parsedActivity?.locations,
             contactInfo: updateData.importedContacts || parsedActivity?.contactInfo,
-            participating_orgs: updateData.importedParticipatingOrgs || parsedActivity?.participating_orgs,
+            participating_orgs: updateData.importedParticipatingOrgs || parsedActivity?.participatingOrgs,
             humanitarianScopes: updateData.humanitarianScopesData || parsedActivity?.humanitarianScopes,
             results: parsedActivity?.results,
             document_links: updateData.documentLinksData || parsedActivity?.document_links,
@@ -7133,7 +7970,10 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify(importRequestBody),
+          body: JSON.stringify({
+            ...importRequestBody,
+            acronyms: acronyms || {} // Pass user-reviewed acronyms
+          }),
         });
 
         // If the server-side /import-iati endpoint handled transactions, record that
@@ -7151,28 +7991,66 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
         throw new Error(`Failed to update activity: ${response.statusText}`);
       }
 
-      // Handle import-as-reporting-org response (creates new activity)
+      // Handle import-as-reporting-org response
       if (selectedImportMode === 'import_as_reporting_org') {
-        const newActivity = await response.json();
-        console.log('[IATI Import] New activity created:', newActivity);
+        const result = await response.json();
+        console.log('[IATI Import] Import as reporting org result:', result);
 
-        setImportStatus({
-          stage: 'complete',
-          progress: 100,
-          message: 'Activity imported successfully!'
-        });
+        // If activityId was provided, we're updating an existing activity
+        // Finalize immediately without confirmation modal
+        if (activityId) {
+          try {
+            // Finalize the import - invalidate cache and refresh
+            await invalidateActivityCache(activityId);
+            
+            // Dispatch event to refresh MetadataTab and other components
+            window.dispatchEvent(new CustomEvent('activity-updated', { 
+              detail: { activityId } 
+            }));
 
-        toast.success('Activity imported successfully!', {
-          description: `Created new activity under ${parsedActivity?.reporting_org?.narrative || 'original publisher'}. Redirecting...`,
-          duration: 5000,
-        });
+            setImportStatus({
+              stage: 'complete',
+              progress: 100,
+              message: 'Activity imported successfully!'
+            });
+            
+            toast.success('Reporting organisation updated!', {
+              description: 'Activity has been imported with the selected reporting organisation.',
+              duration: 5000,
+            });
+            
+            return;
+          } catch (error) {
+            console.error('[IATI Import] Error finalizing import:', error);
+            toast.error('Import completed but failed to refresh', {
+              description: 'Please refresh the page to see the updated data.'
+            });
+            return;
+          }
+        } else {
+          // Creating new activity - no confirmation needed
+          setImportStatus({
+            stage: 'complete',
+            progress: 100,
+            message: 'Activity imported successfully!'
+          });
+          
+          const newActivityId = result.createdId || result.id || (result.count > 0 && result.importedActivities?.[0]?.id);
+          
+          toast.success('Activity imported successfully!', {
+            description: 'Created new activity with selected reporting organisation. Redirecting...',
+            duration: 5000,
+          });
 
-        // Redirect to the new activity
-        setTimeout(() => {
-          router.push(`/activities/new?id=${newActivity.id}`);
-        }, 1500);
+          // Redirect to the new activity
+          if (newActivityId) {
+            setTimeout(() => {
+              router.push(`/activities/new?id=${newActivityId}`);
+            }, 1500);
+          }
 
-        return; // Exit early since we're redirecting
+          return; // Exit early since we're redirecting
+        }
       }
       // Refresh activity data to ensure subsequent imports use updated default_currency
       console.log('[IATI Import] Refreshing activity data after field updates...');
@@ -8505,28 +9383,27 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
       }
 
       // Handle results import
-      if (updateData._importResults) {
+      if (updateData.importedResults && updateData.importedResults.length > 0) {
         console.log('[IATI Import] Processing results import...');
         setImportStatus({ 
           stage: 'importing', 
           progress: 89,
-          message: 'Importing results framework...'
+          message: `Importing ${updateData.importedResults.length} result(s)...`
         });
 
         try {
-          if (parsedActivity.results && parsedActivity.results.length > 0) {
-            console.log(`[IATI Import] Importing ${parsedActivity.results.length} result(s)...`);
-            
-            const importResponse = await fetchWithTimeout(`/api/activities/${activityId}/results/import`, {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({ 
-                results: parsedActivity.results,
-                mode: 'create'
-              }),
-            }, 30000);
+          console.log(`[IATI Import] Importing ${updateData.importedResults.length} selected result(s)...`);
+          
+          const importResponse = await fetchWithTimeout(`/api/activities/${activityId}/results/import`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ 
+              results: updateData.importedResults,
+              mode: 'create'
+            }),
+          }, 30000);
 
             if (!importResponse.ok) {
               const errorText = await importResponse.text();
@@ -8573,10 +9450,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
                 });
               }
             }
-          } else {
-            console.log('[IATI Import] No results found in parsed activity');
-            toast.info('No results found in XML');
-          }
         } catch (resultsError: any) {
           console.error('[IATI Import] Results import error:', resultsError);
           toast.error('Failed to import results', {
@@ -9202,181 +10075,13 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
         invalidateActivityCache(activityId);
       }
       
-      // Process participating organizations import
+      // Participating organizations are now handled server-side by /api/activities/[id]/import-iati
+      // The server-side route will create missing organizations and link them to the activity
       if (updateData.importedParticipatingOrgs && Array.isArray(updateData.importedParticipatingOrgs) && updateData.importedParticipatingOrgs.length > 0) {
-        console.log('[IATI Import] Processing participating organizations import...');
-        setImportStatus({ 
-          stage: 'importing', 
-          progress: 92,
-          message: 'Importing participating organizations...'
-        });
-
-        try {
-          const { IATI_ORGANIZATION_ROLES } = await import('@/data/iati-organization-roles');
-          const roleMap: Record<string, 'funding' | 'extending' | 'implementing' | 'government'> = {
-            '1': 'funding',
-            '2': 'government', // Accountable maps to government
-            '3': 'extending',
-            '4': 'implementing'
-          };
-
-          // Clear existing participating organizations to avoid duplicates
-          console.log('[IATI Import] Clearing existing participating organizations...');
-          const clearResponse = await fetch(`/api/activities/${activityId}/participating-organizations`, {
-            method: 'DELETE'
-          });
-          
-          if (clearResponse.ok) {
-            console.log('[IATI Import] ✅ Cleared existing participating organizations');
-          } else {
-            console.log('[IATI Import] ⚠️ Could not clear existing participating organizations (this is okay if none exist)');
-          }
-
-          let successCount = 0;
-          let errorCount = 0;
-
-          for (const orgData of updateData.importedParticipatingOrgs) {
-            importSummary.participatingOrgs.attempted++;
-            try {
-              console.log('[IATI Import] Processing org data:', {
-                name: orgData.narrative,
-                role: orgData.role,
-                roleType: typeof orgData.role,
-                ref: orgData.ref,
-                type: orgData.type,
-                crsChannelCode: orgData.crsChannelCode
-              });
-              
-              // Determine role_type from IATI role code
-              const roleType = roleMap[orgData.role] || 'implementing';
-              console.log('[IATI Import] Mapped role', orgData.role, 'to role_type:', roleType);
-              
-              // Use shared helper to find or create organization
-              const organizationId = await getOrCreateOrganization(supabase, {
-                ref: orgData.ref,
-                name: orgData.narrative,
-                type: orgData.type
-              });
-              
-              if (!organizationId) {
-                console.error(`[IATI Import] Failed to resolve or create organization:`, orgData);
-                errorCount++;
-                continue;
-              }
-
-              // Now create the participating organization record
-              const requestBody = {
-                organization_id: organizationId,
-                role_type: roleType,
-                iati_role_code: parseInt(orgData.role) || 4,
-                iati_org_ref: orgData.ref || null,
-                org_type: orgData.type || null,
-                activity_id_ref: null, // Related activity (not used in basic import)
-                crs_channel_code: orgData.crsChannelCode || null,
-                narrative: orgData.narrative || null,
-                narrative_lang: orgData.narrativeLang || 'en',
-                narratives: orgData.narratives || [],
-                org_activity_id: orgData.activityId || null, // Organization's own activity ID from @activity-id
-                reporting_org_ref: null,
-                secondary_reporter: false
-              };
-              
-              console.log('[IATI Import] Creating participating org with data:', requestBody);
-              
-              const participatingOrgResponse = await fetch(
-                `/api/activities/${activityId}/participating-organizations`,
-                {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify(requestBody)
-                }
-              );
-
-              console.log('[IATI Import] API response status:', participatingOrgResponse.status);
-
-              if (participatingOrgResponse.ok) {
-                successCount++;
-                importSummary.participatingOrgs.successful++;
-                const createdOrg = await participatingOrgResponse.json();
-                console.log(`[IATI Import] ✅ Successfully imported participating organization:`, {
-                  name: orgData.narrative || orgData.ref,
-                  role: roleType,
-                  iati_role_code: createdOrg.iati_role_code,
-                  crs_channel_code: createdOrg.crs_channel_code,
-                  org_type: createdOrg.org_type,
-                  id: createdOrg.id
-                });
-
-                importSummary.participatingOrgs.details.push({
-                  name: orgData.narrative || orgData.ref,
-                  role: roleType,
-                  iati_role_code: createdOrg.iati_role_code,
-                  iati_org_ref: orgData.ref,
-                  org_type: createdOrg.org_type
-                });
-              } else {
-                const errorData = await participatingOrgResponse.json().catch(e => ({ message: 'Could not parse error response' }));
-                console.error(`[IATI Import] ❌ Failed to import participating organization:`, {
-                  name: orgData.narrative || orgData.ref,
-                  role: orgData.role,
-                  roleType: roleType,
-                  status: participatingOrgResponse.status,
-                  statusText: participatingOrgResponse.statusText,
-                  error: errorData,
-                  requestData: {
-                    organization_id: organizationId,
-                    role_type: roleType,
-                    iati_role_code: parseInt(orgData.role) || 4,
-                    org_type: orgData.type
-                  }
-                });
-                
-                // If it's a duplicate (409), it might be okay
-                if (participatingOrgResponse.status === 409) {
-                  console.warn('[IATI Import] Organization already exists in this role - skipping');
-                  importSummary.participatingOrgs.skipped++;
-                } else {
-                  errorCount++;
-                  importSummary.participatingOrgs.failed++;
-                  importSummary.participatingOrgs.failures.push({
-                    name: orgData.narrative || orgData.ref,
-                    role: orgData.role,
-                    reason: errorData.message || errorData.error || 'Unknown error',
-                    status: participatingOrgResponse.status
-                  });
-                }
-              }
-            } catch (orgError) {
-              console.error(`[IATI Import] Error importing participating organization:`, orgError);
-              errorCount++;
-              importSummary.participatingOrgs.failed++;
-              const errorMsg = orgError instanceof Error ? orgError.message : 'Unknown error';
-              importSummary.participatingOrgs.failures.push({
-                name: orgData.narrative || orgData.ref,
-                role: orgData.role,
-                reason: errorMsg,
-                status: 'Exception'
-              });
-            }
-          }
-
-          if (successCount > 0) {
-            toast.success(`Participating organizations imported successfully`, {
-              description: `${successCount} organization(s) added to the activity${errorCount > 0 ? ` (${errorCount} failed)` : ''}`
-            });
-          }
-
-          if (errorCount > 0 && successCount === 0) {
-            toast.error('Failed to import participating organizations', {
-              description: `${errorCount} organization(s) could not be imported`
-            });
-          }
-        } catch (participatingOrgsError: any) {
-          console.error('[IATI Import] Participating organizations import error:', participatingOrgsError);
-          toast.error('Failed to import participating organizations', {
-            description: `An error occurred: ${participatingOrgsError.message}`
-          });
-        }
+        console.log('[IATI Import] Participating organizations were processed server-side during main import');
+        importSummary.participatingOrgs.attempted = updateData.importedParticipatingOrgs.length;
+        // The server-side route handles organization creation and linking
+        // We'll update the summary based on the API response if needed
       }
       // Handle related activities import if any
       if (updateData.importedRelatedActivities && updateData.importedRelatedActivities.length > 0) {
@@ -9639,6 +10344,9 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
               break;
             case 'Activity Scope':
               saveKey = 'activityScope';
+              break;
+            case 'Activity Hierarchy Level':
+              saveKey = 'hierarchy';
               break;
             case 'Default Currency':
               saveKey = 'defaultCurrency';
@@ -10066,7 +10774,8 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
         try {
           const resultsResponse = await fetch(`/api/activities/${activityId}/results`);
           if (resultsResponse.ok) {
-            const results = await resultsResponse.json();
+            const response = await resultsResponse.json();
+            const results = response.results || [];
             setCurrentResults(results);
           }
         } catch (error) {
@@ -11523,7 +12232,27 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
             <Button 
               onClick={() => {
                 console.log('[IATI Import] Button clicked!');
-                importSelectedFields();
+                
+                // Check if we need to show the acronym modal
+                const hasNewAcronyms = detectedAcronyms.length > 0 && detectedAcronyms.some(activity => {
+                  // Only show modal if there's a detected acronym that differs from current
+                  if (!activity.detectedAcronym) return false;
+                  
+                  // Get current acronym from activity data
+                  const currentAcronym = currentActivityData.acronym;
+                  
+                  // Show modal if current is empty/null or different from detected
+                  return !currentAcronym || currentAcronym !== activity.detectedAcronym;
+                });
+                
+                if (hasNewAcronyms) {
+                  console.log('[IATI Import] New/different acronyms detected, showing modal');
+                  setShowAcronymModal(true);
+                } else {
+                  // No new acronyms or current matches detected, proceed directly
+                  console.log('[IATI Import] No new acronyms or current matches detected, skipping modal');
+                  importSelectedFields();
+                }
               }}
               disabled={parsedFields.filter(f => f.selected).length === 0}
               className="text-white"
@@ -11594,6 +12323,11 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
                 onSelectAll={() => handleSelectAllInTab(parsedFields)}
                 onDeselectAll={() => handleDeselectAllInTab(parsedFields)}
                 xmlContent={xmlContent}
+                reportingOrg={selectedImportMode === 'import_as_reporting_org' && parsedActivity?.reporting_org ? {
+                  name: parsedActivity.reporting_org.narrative,
+                  ref: parsedActivity.reporting_org.ref,
+                  acronym: parsedActivity.reporting_org.acronym
+                } : undefined}
               />
             </CardContent>
           </Card>
@@ -11616,12 +12350,12 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
                 
                 {/* Comprehensive Log Copy Button - Prominent */}
                 {comprehensiveLog && (
-                  <div className="mb-6 p-4 bg-blue-50 border-2 border-blue-200 rounded-lg">
-                    <h4 className="text-sm font-semibold text-blue-900 mb-2 flex items-center justify-center gap-2">
+                  <div className="mb-6 p-4 rounded-lg" style={{ backgroundColor: '#E8F1F3', border: '2px solid #8AC4D0' }}>
+                    <h4 className="text-sm font-semibold mb-2 flex items-center justify-center gap-2" style={{ color: '#145667' }}>
                       <Info className="h-4 w-4" />
                       Full Import Log
                     </h4>
-                    <p className="text-xs text-blue-700 mb-3">
+                    <p className="text-xs mb-3" style={{ color: '#1A6B7A' }}>
                       Copy the complete log including all successes and failures
                     </p>
                     <Button 
@@ -11637,13 +12371,16 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
                           });
                         });
                       }}
-                      className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium"
+                      className="w-full text-white font-medium"
+                      style={{ backgroundColor: '#145667' }}
+                      onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#1A6B7A'}
+                      onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#145667'}
                       size="lg"
                     >
                       <Copy className="h-5 w-5 mr-2" />
                       Copy Full Import Log
                     </Button>
-                    <p className="text-xs text-blue-600 mt-2">
+                    <p className="text-xs mt-2" style={{ color: '#145667' }}>
                       This includes structured summary with success/failure details
                     </p>
                   </div>
@@ -11686,6 +12423,47 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
               </div>
             </CardContent>
           </Card>
+
+          {/* Reporting Organization Hero Card */}
+          {parsedActivity?.reportingOrg && (
+            <Card className="border-2" style={{ borderColor: '#8AC4D0', background: 'linear-gradient(to bottom right, #E8F1F3, #D4E8ED)' }}>
+              <CardContent className="pt-6">
+                <div className="flex items-start gap-4">
+                  <div className="flex-shrink-0">
+                    <div className="w-16 h-16 rounded-full flex items-center justify-center" style={{ backgroundColor: '#C4E0E6' }}>
+                      <Building2 className="h-8 w-8" style={{ color: '#145667' }} />
+                    </div>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Badge variant="outline" className="bg-white" style={{ borderColor: '#5A9FAD', color: '#1A6B7A' }}>
+                        Reporting Organization
+                      </Badge>
+                      {parsedActivity.reportingOrg.type && (
+                        <Badge variant="secondary" className="text-xs">
+                          {parsedActivity.reportingOrg.type}
+                        </Badge>
+                      )}
+                    </div>
+                    <h3 className="text-xl font-semibold text-gray-900 mb-1">
+                      {parsedActivity.reportingOrg.narrative || parsedActivity.reportingOrg.ref || 'Unknown Organization'}
+                    </h3>
+                    {parsedActivity.reportingOrg.ref && (
+                      <div className="flex items-center gap-2 mt-2">
+                        <span className="text-sm font-mono text-gray-600 bg-white px-2 py-1 rounded border border-gray-200">
+                          {parsedActivity.reportingOrg.ref}
+                        </span>
+                        <span className="text-xs text-gray-500">IATI Org ID</span>
+                      </div>
+                    )}
+                    <p className="text-sm text-gray-600 mt-3">
+                      This activity is reported by <strong>{parsedActivity.reportingOrg.narrative || parsedActivity.reportingOrg.ref}</strong> as specified in the imported XML.
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
           {/* Detailed Import Results Display */}
           {lastImportSummary && (
@@ -11775,6 +12553,14 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
           setShowSectorRefinement(false);
           toast.success('Sectors refined successfully - ready for import');
         }}
+      />
+      
+      {/* Acronym Review Modal */}
+      <AcronymReviewModal
+        isOpen={showAcronymModal}
+        onClose={() => setShowAcronymModal(false)}
+        onContinue={handleContinueWithImport}
+        activities={detectedAcronyms}
       />
       
       {/* External Publisher Modal */}
@@ -11883,12 +12669,11 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
                   break;
 
                 case 'import_as_reporting_org':
-                  // Import under original reporting organization
-                  toast.info('Preparing import under original publisher...');
+                  // Import under original reporting organization - call the handler that shows the modal
+                  console.log('[IATI Import] Calling handleExternalPublisherChoice for import_as_reporting_org');
                   setShowExternalPublisherModal(false);
-                  // Continue with the field comparison that was already parsed
-                  // The parsed fields are already set, just update the status
-                  setImportStatus({ stage: 'previewing', progress: 100 });
+                  // Call the dedicated handler which will show the reporting org selection modal
+                  await handleExternalPublisherChoice('import_as_reporting_org');
                   break;
               }
               
@@ -12170,6 +12955,124 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowDebugConsole(false)}>
               Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Pre-Import Reporting Organization Selection Modal */}
+      <Dialog open={showReportingOrgSelectionModal} onOpenChange={setShowReportingOrgSelectionModal}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Building2 className="h-5 w-5 text-gray-600" />
+              Select Reporting Organisation
+            </DialogTitle>
+            <DialogDescription>
+              Choose which organization should be set as the reporting organisation for this imported activity.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-6 py-4">
+            {/* Organization Selection */}
+            <div className="space-y-2">
+              <Label htmlFor="reporting-org-select">Reporting Organisation</Label>
+              <OrganizationSearchableSelect
+                organizations={availableOrganizations}
+                value={selectedReportingOrgId || ''}
+                onValueChange={(orgId) => {
+                  setSelectedReportingOrgId(orgId || null);
+                }}
+                placeholder="Select reporting organisation..."
+                searchPlaceholder="Search organisations..."
+              />
+              <p className="text-xs text-gray-500">
+                {selectedReportingOrgId 
+                  ? 'Selected organisation will be used as the reporting organisation for this activity.'
+                  : 'If no organisation is selected, the system will attempt to match the XML reporting organisation or create a new one.'}
+              </p>
+            </div>
+
+            {/* Info Message */}
+            <Alert className="border-gray-200 bg-gray-50">
+              <Info className="h-4 w-4 text-gray-600" />
+              <AlertDescription className="text-gray-800">
+                <p className="text-sm">
+                  The selected organisation will be assigned as the reporting organisation for this activity.
+                  You can review and select which fields to import after confirming.
+                </p>
+              </AlertDescription>
+            </Alert>
+          </div>
+
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                setShowReportingOrgSelectionModal(false);
+                setSelectedReportingOrgId(null);
+                setSelectedImportMode(null);
+                toast.info('Import cancelled', {
+                  description: 'No changes were made.'
+                });
+              }}
+            >
+              Cancel
+            </Button>
+            <Button 
+              onClick={async () => {
+                // If no org selected, try to find and pre-select one
+                if (!selectedReportingOrgId && xmlReportingOrgData?.ref) {
+                  try {
+                    const orgsResponse = await fetch('/api/organizations');
+                    if (orgsResponse.ok) {
+                      const orgs = await orgsResponse.json();
+                      const normalizedXmlOrgRef = xmlReportingOrgData.ref.trim().toUpperCase();
+                      
+                      // Try to find matching org
+                      let matchingOrg = orgs?.find((o: any) => {
+                        if (!o || !o.iati_org_id) return false;
+                        return o.iati_org_id.trim().toUpperCase() === normalizedXmlOrgRef;
+                      });
+                      
+                      if (!matchingOrg) {
+                        matchingOrg = orgs?.find((o: any) => {
+                          if (!o || !o.alias_refs || !Array.isArray(o.alias_refs)) return false;
+                          return o.alias_refs.some((alias: string) => 
+                            alias && alias.trim().toUpperCase() === normalizedXmlOrgRef
+                          );
+                        });
+                      }
+                      
+                      if (matchingOrg) {
+                        setSelectedReportingOrgId(matchingOrg.id);
+                        toast.success('Matching organization found and selected', {
+                          description: `${matchingOrg.name} has been pre-selected. Please confirm to continue.`
+                        });
+                        // Don't close modal yet - let user see the selection
+                        return;
+                      }
+                    }
+                } catch (error) {
+                    console.error('[Reporting Org Modal] Error finding org in confirm handler:', error);
+                  }
+                  
+                  // If still no match found, warn user but allow them to proceed
+                  toast.warning('No matching organization found', {
+                    description: 'You can proceed without selecting an organization, or cancel to select one manually.'
+                  });
+                }
+                
+                // Save selected org and proceed to field selection
+                setShowReportingOrgSelectionModal(false);
+                setImportStatus({ stage: 'previewing', progress: 100 });
+                toast.success('Reporting organisation selected', {
+                  description: 'Please review and select which fields to import below.'
+                });
+              }}
+            >
+              <CheckCircle className="h-4 w-4 mr-2" />
+              Confirm and Continue
             </Button>
           </DialogFooter>
         </DialogContent>

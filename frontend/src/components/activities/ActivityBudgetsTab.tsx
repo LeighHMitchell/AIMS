@@ -1535,7 +1535,7 @@ export default function ActivityBudgetsTab({
           )}
           
           {/* Budgets Table */}
-          <Card data-budgets-tab>
+          <Card data-budgets-tab className="border-0">
         <CardHeader>
           <div className="flex items-center justify-between">
             {!hideSummaryCards && (

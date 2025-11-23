@@ -43,7 +43,7 @@ export function QuickAddActivityModal({ isOpen, onClose, user }: QuickAddActivit
   const [formData, setFormData] = useState({
     title: '',
     description: '',
-    activityStatus: '1', // Default to Pipeline
+    activityStatus: '', // No default status
     plannedStartDate: '',
     plannedEndDate: '',
     countryCode: '',
@@ -256,7 +256,7 @@ export function QuickAddActivityModal({ isOpen, onClose, user }: QuickAddActivit
       setFormData({
         title: '',
         description: '',
-        activityStatus: '1',
+        activityStatus: '',
         plannedStartDate: '',
         plannedEndDate: '',
         countryCode: '',
@@ -278,7 +278,7 @@ export function QuickAddActivityModal({ isOpen, onClose, user }: QuickAddActivit
     setFormData({
       title: '',
       description: '',
-      activityStatus: '1',
+      activityStatus: '',
       plannedStartDate: '',
       plannedEndDate: '',
       countryCode: '',

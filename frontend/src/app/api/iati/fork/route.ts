@@ -29,8 +29,8 @@ export async function POST(request: NextRequest) {
       // Copy original metadata but create as local activity
       iati_identifier: null, // User must assign their own IATI ID before publishing
       title_narrative: `[DRAFT] ${meta.reportingOrgName || meta.iatiId}`,
-      description_narrative: `Local draft forked from external IATI activity: ${meta.iatiId}. Originally reported by ${meta.reportingOrgName || meta.reportingOrgRef}.`,
-      activity_status: '1', // Pipeline/planned status (IATI code)
+      description_narrative: null, // User will fill in their own description
+      activity_status: null, // No default status
       
       // Required fields for activity creation
       default_currency: 'USD',
@@ -75,6 +75,26 @@ export async function POST(request: NextRequest) {
         { error: errorMessage, details: createError.message },
         { status: 500 }
       );
+    }
+
+    // Create external activity link to track the fork source
+    const { error: linkError } = await supabase
+      .from('external_iati_activity_links')
+      .insert({
+        activity_id: activity.id,
+        external_iati_identifier: meta.iatiId,
+        external_reporting_org_ref: meta.reportingOrgRef,
+        external_reporting_org_name: meta.reportingOrgName,
+        external_activity_title: meta.title || null,
+        link_type: 'fork',
+        link_status: 'active',
+        created_by: userId,
+        import_source: 'external_publisher_modal'
+      });
+
+    if (linkError) {
+      console.error('[IATI Fork] Failed to create external link:', linkError);
+      // Continue despite link error - the forked activity was created successfully
     }
 
     // Log audit trail

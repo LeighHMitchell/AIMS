@@ -1088,7 +1088,7 @@ export async function POST(request: Request) {
         collaboration_type: body.collaborationType,
         activity_scope: normalizeScope(body.activityScope),
         language: body.language,
-        activity_status: body.activityStatus || '1',
+        activity_status: body.activityStatus || null,
         publication_status: body.publicationStatus || 'draft',
         submission_status: body.submissionStatus || 'draft',
         banner: body.banner,
@@ -1974,10 +1974,38 @@ export async function GET(request: NextRequest) {
       });
     }
 
+    // Fetch planned disbursements summaries for all activities
+    const { data: plannedDisbursementSummaries, error: plannedDisbursementError } = await getSupabaseAdmin()
+      .from('planned_disbursements')
+      .select('activity_id, usd_amount')
+      .in('activity_id', activities?.map((a: any) => a.id) || []);
+
+    if (plannedDisbursementError) {
+      console.error('[AIMS] Error fetching planned disbursement summaries:', plannedDisbursementError);
+    }
+
+    // Calculate total planned disbursements USD for each activity
+    const activityPlannedDisbursementMap = new Map();
+    
+    if (plannedDisbursementSummaries) {
+      plannedDisbursementSummaries.forEach((pd: any) => {
+        if (!activityPlannedDisbursementMap.has(pd.activity_id)) {
+          activityPlannedDisbursementMap.set(pd.activity_id, {
+            totalPlannedDisbursementsUSD: 0
+          });
+        }
+        
+        const summary = activityPlannedDisbursementMap.get(pd.activity_id);
+        // Sum up all USD planned disbursement values
+        summary.totalPlannedDisbursementsUSD += pd.usd_amount || 0;
+      });
+    }
+
     // Add transaction and budget summaries to activities
     const activitiesWithSummaries = activities?.map((activity: any) => {
       const transactionSummary = activityTransactionMap.get(activity.id);
       const budgetSummary = activityBudgetMap.get(activity.id);
+      const plannedDisbursementSummary = activityPlannedDisbursementMap.get(activity.id);
       
       return {
         ...activity,
@@ -1986,6 +2014,7 @@ export async function GET(request: NextRequest) {
         expenditures: transactionSummary?.expenditures || 0,
         totalTransactions: transactionSummary?.totalTransactions || 0,
         totalPlannedBudgetUSD: budgetSummary?.totalPlannedBudgetUSD || 0,
+        totalPlannedDisbursementsUSD: plannedDisbursementSummary?.totalPlannedDisbursementsUSD || 0,
         totalDisbursementsAndExpenditureUSD: (transactionSummary?.disbursements || 0) + (transactionSummary?.expenditures || 0)
       };
     }) || [];

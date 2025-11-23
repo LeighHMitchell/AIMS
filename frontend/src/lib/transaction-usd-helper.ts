@@ -120,3 +120,82 @@ export function addUSDFieldsToTransaction(transactionData: any, usdResult: Trans
     usd_convertible: usdResult.usd_convertible
   };
 }
+
+/**
+ * Get USD value from a transaction object with strict validation
+ * 
+ * This function:
+ * - Only uses stored USD values or successful conversions
+ * - Never falls back to original currency value (except for USD transactions)
+ * - Returns 0 if transaction date is missing (never uses today's date)
+ * - Normalizes transaction_type to string for comparison
+ * 
+ * @param transaction - Transaction object with value, currency, value_usd, etc.
+ * @returns Promise<number> - USD value or 0 if conversion fails or date is missing
+ */
+export async function getTransactionUSDValue(transaction: any): Promise<number> {
+  // First, try to get existing USD value from database
+  let usdValue = parseFloat(transaction.value_usd) || 
+                 parseFloat(transaction.value_USD) || 
+                 parseFloat(transaction.usd_value) || 
+                 0;
+
+  // If transaction is already in USD but value_usd is missing, use the original value
+  // (This is safe because it's already USD)
+  if (!usdValue && transaction.currency === 'USD' && transaction.value && Number(transaction.value) > 0) {
+    usdValue = parseFloat(String(transaction.value)) || 0;
+  }
+
+  // If we still don't have a USD value and transaction is NOT in USD, try to convert
+  if (!usdValue && transaction.value && transaction.currency && transaction.currency !== 'USD') {
+    // CRITICAL: Never use today's date as fallback - return 0 if date is missing
+    const valueDate = transaction.value_date 
+      ? new Date(transaction.value_date) 
+      : transaction.transaction_date 
+      ? new Date(transaction.transaction_date) 
+      : null;
+    
+    if (!valueDate || isNaN(valueDate.getTime())) {
+      // No valid date - return 0 (never use original currency value)
+      console.warn(`[getTransactionUSDValue] Transaction ${transaction.id || transaction.uuid} has no valid date for conversion. Returning 0.`);
+      return 0;
+    }
+    
+    try {
+      const result = await fixedCurrencyConverter.convertToUSD(
+        parseFloat(String(transaction.value)),
+        transaction.currency,
+        valueDate
+      );
+      
+      // Only use converted value if conversion was successful
+      if (result.success && result.usd_amount != null && result.usd_amount > 0) {
+        usdValue = result.usd_amount;
+      } else {
+        // Conversion failed - return 0 (never use original currency value)
+        console.warn(`[getTransactionUSDValue] Failed to convert transaction ${transaction.id || transaction.uuid} to USD. Conversion result:`, result);
+        return 0;
+      }
+    } catch (error) {
+      // Conversion error - return 0 (never use original currency value)
+      console.warn(`[getTransactionUSDValue] Error converting transaction ${transaction.id || transaction.uuid} to USD:`, error);
+      return 0;
+    }
+  }
+
+  // Return USD value or 0 (never return original currency value)
+  return usdValue > 0 ? usdValue : 0;
+}
+
+/**
+ * Normalize transaction type to string for consistent comparison
+ * 
+ * @param transactionType - Transaction type (can be string, number, or undefined)
+ * @returns Normalized transaction type as string
+ */
+export function normalizeTransactionType(transactionType: any): string {
+  if (transactionType === null || transactionType === undefined) {
+    return '';
+  }
+  return String(transactionType);
+}

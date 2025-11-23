@@ -39,13 +39,15 @@ export async function PATCH(
     // Handle reporting organization fields from IATI import
     let reportingOrgId: string | null = null;
     let reportingOrgAcronym: string | null = null;
+    let reportingOrgNameFromDB: string | null = null; // Track the org name from database
 
-    if (body.reporting_org_name || body.reportingOrgName) {
+    // Process reporting org if name OR ref is provided
+    if (body.reporting_org_name || body.reportingOrgName || body.reporting_org_ref || body.reportingOrgRef) {
       const reportingOrgName = body.reporting_org_name || body.reportingOrgName;
       const reportingOrgRef = body.reporting_org_ref || body.reportingOrgRef;
       const reportingOrgType = body.reporting_org_type || body.reportingOrgType || '10'; // Default to 10 (Government) if not provided
 
-      console.log(`[AIMS API] Processing reporting organization: ${reportingOrgName}${reportingOrgRef ? ` (${reportingOrgRef})` : ' (no ref)'}, Type: ${reportingOrgType}`);
+      console.log(`[AIMS API] Processing reporting organization: ${reportingOrgName || reportingOrgRef}${reportingOrgRef ? ` (${reportingOrgRef})` : ' (no ref)'}, Type: ${reportingOrgType}`);
 
       // Build query - if we have a ref, search by ref/name, otherwise just by name
       let query = getSupabaseAdmin()
@@ -53,8 +55,8 @@ export async function PATCH(
         .select('id, name, iati_org_id, alias_refs, acronym');
 
       if (reportingOrgRef) {
-        query = query.or(`iati_org_id.eq.${reportingOrgRef},name.ilike.${reportingOrgName},alias_refs.cs.{${reportingOrgRef}}`);
-      } else {
+        query = query.or(`iati_org_id.eq.${reportingOrgRef},name.ilike.${reportingOrgName || reportingOrgRef},alias_refs.cs.{${reportingOrgRef}}`);
+      } else if (reportingOrgName) {
         query = query.ilike('name', reportingOrgName);
       }
 
@@ -66,19 +68,20 @@ export async function PATCH(
         if (reportingOrgRef) {
           return org.iati_org_id === reportingOrgRef ||
                  org.alias_refs?.includes(reportingOrgRef) ||
-                 org.name?.toLowerCase() === reportingOrgName?.toLowerCase();
+                 (reportingOrgName && org.name?.toLowerCase() === reportingOrgName?.toLowerCase());
         }
         // Otherwise just match by name
-        return org.name?.toLowerCase() === reportingOrgName?.toLowerCase();
+        return reportingOrgName && org.name?.toLowerCase() === reportingOrgName?.toLowerCase();
       });
 
       if (matchingOrg) {
         reportingOrgId = matchingOrg.id;
         reportingOrgAcronym = matchingOrg.acronym;
+        reportingOrgNameFromDB = matchingOrg.name; // Store the DB name
         console.log(`[AIMS API] Found existing organization: ${matchingOrg.name} (ID: ${reportingOrgId})`);
       } else {
         // Don't create organization for reporting-org - it should be created via transactions/participating orgs
-        console.log(`[AIMS API] Reporting organization not found: ${reportingOrgName}${reportingOrgRef ? ` (${reportingOrgRef})` : ' (no ref)'} - will be created via transactions or participating orgs`);
+        console.log(`[AIMS API] Reporting organization not found: ${reportingOrgName || reportingOrgRef}${reportingOrgRef ? ` (${reportingOrgRef})` : ' (no ref)'} - will be created via transactions or participating orgs`);
         // Store the ref and name for later use, but don't create the org here
       }
     }
@@ -140,10 +143,10 @@ export async function PATCH(
     // Add reporting organization fields if they were processed
     if (reportingOrgId) {
       activityFields.reporting_org_id = reportingOrgId;
-      activityFields.created_by_org_name = body.reporting_org_name || body.reportingOrgName;
+      activityFields.created_by_org_name = reportingOrgNameFromDB || body.reporting_org_name || body.reportingOrgName || body.reporting_org_ref || body.reportingOrgRef; // Use DB name first
       activityFields.created_by_org_acronym = reportingOrgAcronym;
       activityFields.reporting_org_ref = body.reporting_org_ref || body.reportingOrgRef;
-      activityFields.reporting_org_name = body.reporting_org_name || body.reportingOrgName;
+      activityFields.reporting_org_name = reportingOrgNameFromDB || body.reporting_org_name || body.reportingOrgName || body.reporting_org_ref || body.reportingOrgRef; // Use DB name first
       console.log(`[AIMS API] Setting reporting org fields:`, {
         reporting_org_id: reportingOrgId,
         created_by_org_name: activityFields.created_by_org_name,

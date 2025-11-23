@@ -19,6 +19,7 @@ import { CollaborationTypeSelect } from "@/components/forms/CollaborationTypeSel
 import { ActivityScopeSearchableSelect } from "@/components/forms/ActivityScopeSearchableSelect";
 import { HierarchySelect } from "@/components/forms/HierarchySelect";
 import { OtherIdentifierTypeSelect } from "@/components/forms/OtherIdentifierTypeSelect";
+import { OrganizationSearchableSelect } from "@/components/ui/organization-searchable-select";
 import { DropdownProvider } from "@/contexts/DropdownContext";
 import { LinkedActivityTitle } from "@/components/ui/linked-activity-title";
 import { CreateActivityModal } from "@/components/modals/CreateActivityModal";
@@ -122,6 +123,9 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
   // Track pending autosave operations
   const [pendingSaves, setPendingSaves] = useState(new Set<string>());
 
+  // State for organizations dropdown
+  const [organizations, setOrganizations] = useState<any[]>([]);
+
   // State to track which additional description fields are visible
   const [visibleDescriptionFields, setVisibleDescriptionFields] = useState<{
     objectives: boolean;
@@ -169,6 +173,20 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
     // Reset the edit flag when the component mounts or when switching between activities
     hasUserEditedDescriptionRef.current = false;
   }, [general.id]); // Only reset when activity ID changes
+
+  // Fetch organizations for reporting org dropdown
+  useEffect(() => {
+    const fetchOrgs = async () => {
+      try {
+        const res = await fetch('/api/organizations');
+        const data = await res.json();
+        setOrganizations(data || []);
+      } catch (error) {
+        console.error('Failed to fetch organizations:', error);
+      }
+    };
+    fetchOrgs();
+  }, []);
 
   // Field-level autosave hooks with context-aware success callbacks
   // Pass 'NEW' for new activities to trigger creation on first save
@@ -300,6 +318,45 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
       // Disabled autosave flow
     },
   });
+
+  // Custom save function for reporting org (uses different endpoint)
+  const saveReportingOrg = useCallback(async (orgId: string) => {
+    if (!effectiveActivityId || effectiveActivityId === 'NEW') {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/activities/${effectiveActivityId}/reporting-org`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ reporting_org_id: orgId || null })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update reporting organization');
+      }
+
+      const data = await response.json();
+      
+      // Update local state with the response
+      if (data.data) {
+        setGeneral((g: any) => ({
+          ...g,
+          reportingOrgId: data.data.reporting_org_id,
+          created_by_org_name: data.data.created_by_org_name,
+          created_by_org_acronym: data.data.created_by_org_acronym
+        }));
+      }
+
+      if (data.id && !general.id) {
+        setGeneral((g: any) => ({ ...g, id: data.id }));
+        setShowActivityCreatedAlert(true);
+      }
+    } catch (error) {
+      console.error('Failed to save reporting organization:', error);
+      toast.error('Failed to update reporting organization');
+    }
+  }, [effectiveActivityId, general.id, setGeneral, setShowActivityCreatedAlert]);
 
   const publicationStatusAutosave = useFieldAutosave('publicationStatus', { 
     activityId: effectiveActivityId, 
@@ -1006,6 +1063,59 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
           </div>
           {uuidAutosave.state.error && <p className="text-xs text-red-600">Failed to save: {uuidAutosave.state.error.message}</p>}
         </div>
+      </div>
+
+      {/* Reporting Organisation */}
+      <div className="space-y-2 mb-6">
+        <LabelSaveIndicator
+          isSaving={false}
+          isSaved={!!general.reportingOrgId}
+          hasValue={!!general.reportingOrgId}
+          className={fieldLockStatus.isLocked ? 'text-gray-400' : 'text-gray-700'}
+        >
+          <div className="flex items-center gap-2">
+            Reporting Organisation
+            <HelpTextTooltip>
+              Select the organization that reports this activity. This determines which organization is credited as the reporting organization for IATI compliance.
+            </HelpTextTooltip>
+            {fieldLockStatus.isLocked && (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Lock className="h-3 w-3 ml-2 text-gray-400" />
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>{fieldLockStatus.tooltipMessage}</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            )}
+          </div>
+        </LabelSaveIndicator>
+        <div className={fieldLockStatus.isLocked ? 'opacity-50' : ''}>
+          <OrganizationSearchableSelect
+            organizations={organizations}
+            value={general.reportingOrgId || ''}
+            onValueChange={(orgId) => {
+              if (!fieldLockStatus.isLocked) {
+                setGeneral((g: any) => ({ ...g, reportingOrgId: orgId }));
+                setHasUnsavedChanges(true);
+                if (general.id && orgId) {
+                  saveReportingOrg(orgId);
+                }
+              }
+            }}
+            placeholder="Select reporting organisation..."
+            searchPlaceholder="Search organisations..."
+            disabled={fieldLockStatus.isLocked}
+          />
+        </div>
+        {general.created_by_org_name && (
+          <p className="text-xs text-gray-500 mt-1">
+            Current: {general.created_by_org_name}
+            {general.created_by_org_acronym && ` (${general.created_by_org_acronym})`}
+          </p>
+        )}
       </div>
 
       {/* Description with field-level autosave */}
@@ -2453,7 +2563,7 @@ function NewActivityPageContent() {
       created_by_org_name: "",
       created_by_org_acronym: "",
       collaborationType: "",
-      activityStatus: "1", // Default to Pipeline (IATI code 1)
+      activityStatus: "", // No default status
       activityScope: "4", // Default to National
       hierarchy: 1, // Default to top-level activity
       language: "en", // Default to English
@@ -2489,6 +2599,7 @@ function NewActivityPageContent() {
       icon: "",
       createdBy: undefined as { id: string; name: string; role: string } | undefined,
       createdByOrg: "",
+      reportingOrgId: "",
       createdAt: "",
       updatedAt: "",
       iatiIdentifier: "",
@@ -2864,7 +2975,7 @@ function NewActivityPageContent() {
         created_by_org_name: user?.organisation || user?.organization?.name || "",
         created_by_org_acronym: "",
         collaborationType: "",
-        activityStatus: "1", // Default to Pipeline (IATI code 1)
+        activityStatus: "", // No default status
         defaultAidType: "",
         defaultFinanceType: "",
         defaultCurrency: "",
@@ -2893,6 +3004,7 @@ function NewActivityPageContent() {
         icon: "",
         createdBy: undefined,
         createdByOrg: user?.organizationId || "",
+        reportingOrgId: user?.organizationId || "",
         createdAt: "",
         updatedAt: "",
         iatiIdentifier: "",
@@ -2938,10 +3050,31 @@ function NewActivityPageContent() {
       setGeneral(prev => ({
         ...prev,
         created_by_org_name: user?.organisation || user?.organization?.name || "",
-        createdByOrg: user?.organizationId || ""
+        createdByOrg: user?.organizationId || "",
+        reportingOrgId: user?.organizationId || prev.reportingOrgId || ""
       }));
     }
-  }, [user?.organizationId, user?.organisation, user?.organization?.name]);
+  }, [user?.organizationId, user?.organisation, user?.organization?.name, searchParams]);
+
+  // Set default reporting org when user loads for new activities (only if not already set)
+  useEffect(() => {
+    const currentActivityId = searchParams?.get("id");
+    
+    // Only set default for new activities (no ID) and when user is available
+    if (!currentActivityId && user?.organizationId) {
+      setGeneral(prev => {
+        // Only update if reportingOrgId is not already set
+        if (!prev.reportingOrgId) {
+          console.log('[AIMS] Setting default reporting org to user organization:', user.organizationId);
+          return {
+            ...prev,
+            reportingOrgId: user.organizationId
+          };
+        }
+        return prev;
+      });
+    }
+  }, [user?.organizationId, searchParams]);
 
   const [similarActivities, setSimilarActivities] = useState<ActivityMatch[]>([]);
   const [showDuplicateDialog, setShowDuplicateDialog] = useState(false);
@@ -3226,7 +3359,7 @@ function NewActivityPageContent() {
             created_by_org_name: data.created_by_org_name || "",
             created_by_org_acronym: data.created_by_org_acronym || "",
             collaborationType: data.collaborationType || "",
-            activityStatus: data.activityStatus || "1",
+            activityStatus: data.activityStatus || "",
             defaultAidType: data.defaultAidType || "",
             defaultFinanceType: data.defaultFinanceType || "",
             defaultCurrency: data.defaultCurrency || "",
@@ -3259,6 +3392,7 @@ function NewActivityPageContent() {
             icon: data.icon || "",
             createdBy: data.createdBy || undefined,
             createdByOrg: data.createdByOrg || "",
+            reportingOrgId: data.reporting_org_id || data.reportingOrgId || "",
             createdAt: data.createdAt || "",
             updatedAt: data.updatedAt || "",
             iatiIdentifier: data.iatiIdentifier || "",
@@ -4194,7 +4328,7 @@ function NewActivityPageContent() {
                   <div className="flex items-center gap-1">
                     <Link
                       href={`/activities/${general.id}`}
-                      className="text-lg font-semibold text-gray-900 leading-tight cursor-pointer transition-opacity duration-200 hover:opacity-80 whitespace-nowrap"
+                      className="text-lg font-semibold text-gray-900 leading-tight cursor-pointer transition-opacity duration-200 hover:opacity-80"
                       title={`View activity profile: ${general.title || 'Untitled Activity'}${general.acronym ? ` (${general.acronym})` : ''}`}
                     >
                       {`${general.title || 'Untitled Activity'}${general.acronym ? ` (${general.acronym})` : ''}`}

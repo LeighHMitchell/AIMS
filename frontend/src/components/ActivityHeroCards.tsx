@@ -15,6 +15,7 @@ import {
   Clock
 } from "lucide-react";
 import { format, differenceInDays, parseISO } from "date-fns";
+import { normalizeTransactionType } from "@/lib/transaction-usd-helper";
 
 interface Transaction {
   transaction_type: string;
@@ -55,11 +56,16 @@ export const ActivityHeroCards: React.FC<ActivityHeroCardsProps> = ({
     const transactions = activity?.transactions || [];
     
     const totalCommitment = transactions
-      .filter((t: Transaction) => t.transaction_type === "2")
+      .filter((t: Transaction) => normalizeTransactionType(t.transaction_type) === "2")
       .reduce((sum: number, t: Transaction) => {
-        let usdValue = parseFloat(String(t.value_usd)) || 0;
+        // Only use stored USD values - never convert or use original currency
+        let usdValue = parseFloat(String(t.value_usd)) || 
+                      parseFloat(String((t as any).value_USD)) || 
+                      parseFloat(String((t as any).usd_value)) || 
+                      0;
         
-        // FIXED: If transaction is in USD but value_usd is missing, use the original value
+        // If transaction is in USD but value_usd is missing, use the original value
+        // (This is safe because it's already USD)
         if (!usdValue && t.currency === 'USD' && t.value && Number(t.value) > 0) {
           usdValue = parseFloat(String(t.value)) || 0;
         }
@@ -68,16 +74,24 @@ export const ActivityHeroCards: React.FC<ActivityHeroCardsProps> = ({
       }, 0);
     
     const totalDisbursement = transactions
-      .filter((t: Transaction) => t.transaction_type === "3")
+      .filter((t: Transaction) => normalizeTransactionType(t.transaction_type) === "3")
       .reduce((sum: number, t: Transaction) => {
-        const usdValue = parseFloat(String(t.value_usd)) || 0;
+        // Only use stored USD values - never convert or use original currency
+        const usdValue = parseFloat(String(t.value_usd)) || 
+                        parseFloat(String((t as any).value_USD)) || 
+                        parseFloat(String((t as any).usd_value)) || 
+                        0;
         return sum + (usdValue > 0 ? usdValue : 0);
       }, 0);
     
     const totalExpenditure = transactions
-      .filter((t: Transaction) => t.transaction_type === "4")
+      .filter((t: Transaction) => normalizeTransactionType(t.transaction_type) === "4")
       .reduce((sum: number, t: Transaction) => {
-        const usdValue = parseFloat(String(t.value_usd)) || 0;
+        // Only use stored USD values - never convert or use original currency
+        const usdValue = parseFloat(String(t.value_usd)) || 
+                        parseFloat(String((t as any).value_USD)) || 
+                        parseFloat(String((t as any).usd_value)) || 
+                        0;
         return sum + (usdValue > 0 ? usdValue : 0);
       }, 0);
 

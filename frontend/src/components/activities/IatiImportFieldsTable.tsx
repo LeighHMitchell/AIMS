@@ -19,9 +19,10 @@ interface ParsedField {
   tab: string;
   description?: string;
   isFinancialItem?: boolean;
-  itemType?: 'budget' | 'transaction' | 'plannedDisbursement' | 'countryBudgetItems';
+  itemType?: 'budget' | 'transaction' | 'plannedDisbursement' | 'countryBudgetItems' | 'result';
   itemIndex?: number;
   itemData?: any;
+  currentItemData?: any; // For storing current database values (e.g., current result object)
   isPolicyMarker?: boolean;
   policyMarkerData?: any;
   hasNonDacSectors?: boolean;
@@ -61,12 +62,13 @@ interface IatiImportFieldsTableProps {
   onSelectAll?: () => void;
   onDeselectAll?: () => void;
   xmlContent?: string;
+  reportingOrg?: { name?: string; ref?: string; acronym?: string };
 }
 
 type SortColumn = 'fieldName' | 'category' | 'fieldType' | 'iatiPath' | 'currentValue' | 'importValue' | 'conflict';
 type SortDirection = 'asc' | 'desc';
 
-export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelectAll, onDeselectAll, xmlContent }: IatiImportFieldsTableProps) {
+export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelectAll, onDeselectAll, xmlContent, reportingOrg }: IatiImportFieldsTableProps) {
   // Use sections if provided, otherwise use fields (backward compatibility)
   const allFields = sections ? sections.flatMap(s => s.fields) : (fields || []);
   const hasSections = sections && sections.length > 0;
@@ -248,9 +250,35 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
         return { text: `[${value.length} items]` };
       }
       // Handle financial item objects (budgets, transactions, planned disbursements) - show only currency and value
-      if (value.value !== undefined && value.currency) {
-        const formattedValue = typeof value.value === 'number' ? value.value.toLocaleString() : value.value;
-        return { text: `${value.currency} ${formattedValue}`, isCode: false };
+      // For transactions, value.value can be undefined/null/0/string, so check currency first and also check for amount property
+      // Check for currency in multiple possible locations
+      const currency = value.currency || value['@_currency'] || value.currencyCode;
+      if (currency) {
+        // Check for value or amount property (transactions may use either, and may be 0 or string which are valid)
+        // First check if 'value' property exists (using 'in' operator handles 0 correctly)
+        let amount: any = undefined;
+        if ('value' in value) {
+          amount = value.value;
+        } else if ('amount' in value) {
+          amount = value.amount;
+        }
+        
+        // Handle string values (from XML parsing) - convert to number
+        if (typeof amount === 'string' && amount.trim() !== '') {
+          const parsed = parseFloat(amount);
+          amount = isNaN(parsed) ? undefined : parsed;
+        }
+        
+        // 0 is a valid value, so check if it's a number (including 0) or a valid non-empty string
+        // Also allow 0 explicitly
+        if (typeof amount === 'number' || (typeof amount === 'string' && amount.trim() !== '')) {
+          // Has both currency and value (budgets, transactions with value)
+          const formattedValue = typeof amount === 'number' ? amount.toLocaleString() : String(amount);
+          return { text: `${currency} ${formattedValue}`, isCode: false };
+        } else if (value.transaction_type !== undefined || value.transaction_date !== undefined || value.transaction_type_name !== undefined) {
+          // Transaction object with currency but no value - show just currency
+          return { text: currency, isCode: false };
+        }
       }
       // Handle structured date objects (date + narratives)
       if (value.date) {
@@ -725,10 +753,21 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                              condition.type === '2' ? 'Performance' :
                              condition.type === '3' ? 'Fiduciary' : 'Unknown';
 
+            // Extract narrative text from JSONB object or string
+            let narrativeText = 'No description';
+            if (condition.narrative) {
+              if (typeof condition.narrative === 'object') {
+                // JSONB format: {"en": "text", "fr": "texte"}
+                narrativeText = condition.narrative.en || condition.narrative[Object.keys(condition.narrative)[0]] || 'No description';
+              } else if (typeof condition.narrative === 'string') {
+                narrativeText = condition.narrative;
+              }
+            }
+
             return (
               <div key={idx} className="flex items-baseline gap-2">
                 <span className="text-sm text-gray-900">{typeLabel}</span>
-                <span className="text-xs text-gray-500">{condition.narrative || 'No description'}</span>
+                <span className="text-xs text-gray-500">{narrativeText}</span>
               </div>
             );
           })}
@@ -873,11 +912,11 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
         // In summary view, show only: relationshipTypeLabel and ref (ID)
         const relationshipType = value.relationshipTypeLabel || '';
         const ref = value.ref || '';
-        
+
         if (!relationshipType && !ref) {
           return <span className="text-gray-400 italic">—</span>;
         }
-        
+
         return (
           <span className="text-sm">
             {relationshipType && <span className="text-gray-900">{relationshipType}</span>}
@@ -891,7 +930,80 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
         );
       }
     }
-    
+
+    // Special handling for Policy Marker fields - show vocabulary, code, and significance with names in collapsed view
+    if (field?.isPolicyMarker && typeof value === 'object' && value !== null && !Array.isArray(value)) {
+      const vocabularyCode = value.vocabulary || '';
+      const code = value.code || '';
+      const significance = value.significance || '';
+
+      // Helper function to get vocabulary name
+      const getVocabularyName = (vocabCode: string): string => {
+        const vocabularyNames: Record<string, string> = {
+          '1': 'OECD DAC CRS',
+          '99': 'Reporting Organisation'
+        };
+        return vocabularyNames[vocabCode] || vocabCode;
+      };
+
+      // Helper function to get policy marker name
+      const getPolicyMarkerName = (markerCode: string): string => {
+        const policyMarkerNames: Record<string, string> = {
+          '1': 'Gender Equality',
+          '2': 'Aid to Environment',
+          '3': 'Participatory Development/Good Governance',
+          '4': 'Trade Development',
+          '5': 'Aid Targeting the Objectives of the Convention on Biological Diversity',
+          '6': 'Aid Targeting the Objectives of the Framework Convention on Climate Change - Mitigation',
+          '7': 'Aid Targeting the Objectives of the Framework Convention on Climate Change - Adaptation',
+          '8': 'Aid Targeting the Objectives of the Convention to Combat Desertification',
+          '9': 'Reproductive, Maternal, Newborn and Child Health (RMNCH)',
+          '10': 'Disaster Risk Reduction (DRR)',
+          '11': 'Disability',
+          '12': 'Nutrition'
+        };
+        return policyMarkerNames[markerCode] || 'Unknown Policy Marker';
+      };
+
+      // Helper function to get significance name
+      const getSignificanceName = (sigCode: string): string => {
+        const significanceNames: Record<string, string> = {
+          '0': 'Not targeted',
+          '1': 'Significant objective',
+          '2': 'Principal objective',
+          '3': 'Principal objective AND in support of an action programme',
+          '4': 'Explicit primary objective'
+        };
+        return significanceNames[sigCode] || sigCode;
+      };
+
+      if (!code && !vocabularyCode) {
+        return <span className="text-gray-400 italic">—</span>;
+      }
+
+      return (
+        <div className="flex flex-col gap-0.5 text-sm">
+          {/* Vocabulary not shown in collapsed view - only in expanded view */}
+          {code && (
+            <div className="flex items-start gap-2">
+              <code className="font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded whitespace-nowrap flex-shrink-0">
+                {code}
+              </code>
+              <span className="text-gray-900">{getPolicyMarkerName(code)}</span>
+            </div>
+          )}
+          {significance && (
+            <div className="flex items-start gap-2">
+              <code className="font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded whitespace-nowrap flex-shrink-0">
+                {significance}
+              </code>
+              <span className="text-gray-700">{getSignificanceName(significance)}</span>
+            </div>
+          )}
+        </div>
+      );
+    }
+
     // Special handling for Contact fields - show simplified view in summary
     if ((fieldName && fieldName.includes('Contact')) || field?.tab === 'contacts') {
       if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
@@ -1090,6 +1202,94 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
       );
     }
     
+    // Special handling for transaction objects - show only currency and amount
+    const isTransactionField = field?.itemType === 'transaction' || (fieldName && fieldName.includes('Transaction'));
+    // Also check if object has transaction-like properties (transaction_type, transaction_date, etc.)
+    const looksLikeTransaction = typeof value === 'object' && value !== null && !Array.isArray(value) && 
+      (value.transaction_type !== undefined || value.transaction_date !== undefined || value.transaction_type_name !== undefined);
+    
+    if ((isTransactionField || looksLikeTransaction) && typeof value === 'object' && value !== null && !Array.isArray(value)) {
+      // For transactions, show only currency and amount (no other fields)
+      // Check for various possible property names
+      const currency = value.currency;
+      const amount = value.value !== undefined ? value.value : (value.amount !== undefined ? value.amount : undefined);
+      
+      // Always show something for transaction objects, even if values are missing
+      return (
+        <span className="text-sm">
+          {currency && (
+            <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">{currency}</code>
+          )}
+          {amount !== undefined && (
+            <span className={currency ? "ml-2" : ""}>{typeof amount === 'number' ? amount.toLocaleString() : amount}</span>
+          )}
+          {!currency && amount === undefined && (
+            <span className="text-gray-400 italic">—</span>
+          )}
+        </span>
+      );
+    }
+    
+    // Special handling for financial items when currentValue is an object (budgets, planned disbursements)
+    const isFinancialItem = (field?.isFinancialItem) || (fieldName && (
+      fieldName.includes('Budget') || 
+      fieldName.includes('Transaction') || 
+      fieldName.includes('Planned Disbursement')
+    ));
+    
+    // Special handling for financial items when importValue is an object (budgets, planned disbursements)
+    if (isFinancialItem && typeof value === 'object' && value !== null && !Array.isArray(value) && column === 'import') {
+      // For importValue objects (budgets, planned disbursements), show currency and value
+      if (value.value !== undefined && value.currency) {
+        return (
+          <span className="text-sm">
+            <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">{value.currency}</code>
+            <span className="ml-2">{value.value?.toLocaleString()}</span>
+          </span>
+        );
+      }
+    }
+    
+    if (isFinancialItem && typeof value === 'object' && value !== null && !Array.isArray(value) && column === 'current') {
+      // For currentValue objects (budgets, planned disbursements, transactions), show currency and value
+      const currency = value.currency || value['@_currency'] || value.currencyCode;
+      if (currency) {
+        // Check for value or amount property (transactions may use either, and may be 0 which is valid)
+        // First check if 'value' property exists (using 'in' operator handles 0 correctly)
+        let amount: any = undefined;
+        if ('value' in value) {
+          amount = value.value;
+        } else if ('amount' in value) {
+          amount = value.amount;
+        }
+        
+        // Handle string values (from XML parsing) - convert to number
+        if (typeof amount === 'string' && amount.trim() !== '') {
+          const parsed = parseFloat(amount);
+          amount = isNaN(parsed) ? undefined : parsed;
+        }
+        
+        // 0 is a valid value, so check if it's a number (including 0) or a valid non-empty string
+        if (typeof amount === 'number' || (typeof amount === 'string' && amount.trim() !== '')) {
+          // Has both currency and value
+          const formattedValue = typeof amount === 'number' ? amount.toLocaleString() : String(amount);
+          return (
+            <span className="text-sm">
+              <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">{currency}</code>
+              <span className="ml-2">{formattedValue}</span>
+            </span>
+          );
+        } else if (value.transaction_type !== undefined || value.transaction_date !== undefined || value.transaction_type_name !== undefined) {
+          // Transaction object with currency but no value - show just currency
+          return (
+            <span className="text-sm">
+              <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">{currency}</code>
+            </span>
+          );
+        }
+      }
+    }
+    
     // Plain text - check if it's code-like or pipe-separated
     if (formatted.text) {
       const text = formatted.text;
@@ -1098,23 +1298,16 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
       
       // Handle pipe-separated strings in 3-column layout
       // For financial items (Budgets, Transactions, Planned Disbursements) in import column, always use 3-column layout
-      const isFinancialItem = (field?.isFinancialItem) || (fieldName && (
-        fieldName.includes('Budget') || 
-        fieldName.includes('Transaction') || 
-        fieldName.includes('Planned Disbursement')
-      ));
       
       // Check if text contains pipes (as fallback detection)
       const hasPipes = text.includes('|');
       
-      // For financial items in summary view, show transaction type (for transactions) and currency/value
+      // For financial items in summary view, show only currency and value
       if (isFinancialItem && hasPipes) {
         const { data } = parsePipeSeparatedData(text);
         
-        // For transactions, show type and amount on same line
-        if (fieldName && fieldName.includes('Transaction') && data['Type']) {
-          const transactionType = data['Type'];
-          if (data['Amount']) {
+        // For transactions, show only currency and amount (no type)
+        if (fieldName && fieldName.includes('Transaction') && data['Amount']) {
             // Parse amount to show currency before value (e.g., "0 EUR" -> "EUR 0")
             const amountStr = data['Amount'];
             const currencyMatch = amountStr.match(/^([\d,.\s]+)\s+([A-Z]{3})$/);
@@ -1123,8 +1316,6 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
               const currency = currencyMatch[2];
               return (
                 <span className="text-sm text-gray-900">
-                  <span className="font-medium">{transactionType}</span>
-                  <span className="mx-1.5 text-gray-400">•</span>
                   <span className="text-muted-foreground">{currency}</span> {value}
                 </span>
               );
@@ -1132,15 +1323,8 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
             // If no currency pattern, display as-is
             return (
               <span className="text-sm text-gray-900">
-                <span className="font-medium">{transactionType}</span>
-                <span className="mx-1.5 text-gray-400">•</span>
                 <span className="text-gray-600">{amountStr}</span>
               </span>
-            );
-          }
-          // If no amount, just show type
-          return (
-            <span className="text-sm text-gray-900 font-medium">{transactionType}</span>
           );
         }
         
@@ -1154,7 +1338,8 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
             const currency = currencyMatch[2];
             return (
               <span className="text-sm">
-                <span className="text-muted-foreground">{currency}</span> {value}
+                <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">{currency}</code>
+                <span className="ml-2">{value}</span>
               </span>
             );
           }
@@ -1295,19 +1480,72 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
     // If import value doesn't exist, it's not a match
     if (!importValue && importValue !== 0) return false;
 
+    // Special handling for budget objects
+    if (field?.itemType === 'budget' && typeof currentValue === 'object' && typeof importValue === 'object' && currentValue !== null && importValue !== null) {
+      const typeMatch = String(currentValue.type) === String(importValue.type);
+      const statusMatch = String(currentValue.status) === String(importValue.status);
+      const startMatch = (currentValue.period?.start || currentValue.start) === (importValue.period?.start || importValue.start);
+      const endMatch = (currentValue.period?.end || currentValue.end) === (importValue.period?.end || importValue.end);
+      const valueMatch = currentValue.value !== undefined && importValue.value !== undefined &&
+        Math.abs(Number(currentValue.value) - Number(importValue.value)) < 0.01;
+      const currencyMatch = (currentValue.currency || '').toUpperCase() === (importValue.currency || '').toUpperCase();
+      
+      return typeMatch && statusMatch && startMatch && endMatch && valueMatch && currencyMatch;
+    }
+
+    // Special handling for transaction objects
+    if (field?.itemType === 'transaction' && typeof currentValue === 'object' && typeof importValue === 'object' && currentValue !== null && importValue !== null) {
+      const typeMatch = String(currentValue.transaction_type) === String(importValue.transaction_type);
+      const dateMatch = currentValue.transaction_date === importValue.transaction_date;
+      const valueMatch = currentValue.value !== undefined && importValue.value !== undefined &&
+        Math.abs(Number(currentValue.value) - Number(importValue.value)) < 0.01;
+      const currencyMatch = (currentValue.currency || '').toUpperCase() === (importValue.currency || '').toUpperCase();
+      
+      return typeMatch && dateMatch && valueMatch && currencyMatch;
+    }
+
     // Handle object comparison (e.g., for coded fields that return {code, name})
     if (typeof currentValue === 'object' && typeof importValue === 'object') {
       if (currentValue === null || importValue === null) {
         return currentValue === importValue;
       }
 
-      // For objects with code property (common in IATI fields)
+      // For objects with code property (common in IATI fields like activity status, collaboration type, etc.)
       if ('code' in currentValue && 'code' in importValue) {
         return String(currentValue.code) === String(importValue.code);
       }
 
+      // For structured date objects (with date property)
+      if ('date' in currentValue && 'date' in importValue) {
+        return String(currentValue.date) === String(importValue.date);
+      }
+
       // Deep comparison for other objects
       return JSON.stringify(currentValue) === JSON.stringify(importValue);
+    }
+
+    // Handle mixed types: one is object, one is string
+    // Extract the relevant value from objects for comparison
+    if (typeof currentValue === 'object' && currentValue !== null) {
+      // If currentValue is an object with code, compare code with importValue string
+      if ('code' in currentValue) {
+        return String(currentValue.code) === String(importValue).trim();
+      }
+      // If currentValue is an object with date, compare date with importValue string
+      if ('date' in currentValue) {
+        return String(currentValue.date) === String(importValue).trim();
+      }
+    }
+    
+    if (typeof importValue === 'object' && importValue !== null) {
+      // If importValue is an object with code, compare code with currentValue string
+      if ('code' in importValue) {
+        return String(currentValue).trim() === String(importValue.code);
+      }
+      // If importValue is an object with date, compare date with currentValue string
+      if ('date' in importValue) {
+        return String(currentValue).trim() === String(importValue.date);
+      }
     }
 
     // String comparison (normalize whitespace and case for flexibility)
@@ -1514,6 +1752,27 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
         Showing {totalCount} field{totalCount !== 1 ? 's' : ''} ({selectedCount} selected)
         {searchQuery && ` matching "${searchQuery}"`}
       </div>
+
+      {/* Reporting Organisation Display */}
+      {reportingOrg && (reportingOrg.name || reportingOrg.ref) && (
+        <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+          <div className="flex items-center gap-2">
+            <Building2 className="h-4 w-4 text-blue-600 flex-shrink-0" />
+            <span className="text-sm font-medium text-gray-700">Reporting Organisation:</span>
+            <span className="text-sm font-semibold text-gray-900">
+              {reportingOrg.name || reportingOrg.ref}
+              {reportingOrg.acronym && reportingOrg.acronym !== reportingOrg.name && (
+                <span className="ml-1 text-gray-600">({reportingOrg.acronym})</span>
+              )}
+            </span>
+            {reportingOrg.ref && (
+              <span className="ml-2 text-xs text-gray-500 font-mono bg-white px-2 py-0.5 rounded border border-gray-200">
+                {reportingOrg.ref}
+              </span>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Table */}
       <div className="border rounded-lg">
@@ -2695,7 +2954,84 @@ ${budgetItems.map((bi: any) => `  <budget-item code="${bi.code || ''}"${bi.perce
                                             </tbody>
                                           </table>
                                         ) : (
-                                          // Regular display for budgets, transactions, planned disbursements
+                                          // Transaction-specific display: Amount, Transaction Date, Value Date, Type, Provider Org, Receiver Org
+                                          field.itemType === 'transaction' ? (
+                                            <table className="w-full text-xs">
+                                              <tbody>
+                                                {item.value !== undefined && item.currency && (
+                                                  <tr className="border-b border-gray-100 align-top">
+                                                    <td className="py-1.5 pr-2 font-medium text-gray-600">Amount:</td>
+                                                    <td className="py-1.5 text-gray-900">
+                                                      <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                        {item.currency}
+                                                      </code>
+                                                      <span className="ml-2">{item.value?.toLocaleString()}</span>
+                                                    </td>
+                                                  </tr>
+                                                )}
+                                                {(item.transaction_date || item.date) && (
+                                                  <tr className="border-b border-gray-100 align-top">
+                                                    <td className="py-1.5 pr-2 font-medium text-gray-600">Transaction Date:</td>
+                                                    <td className="py-1.5 text-gray-900">
+                                                      <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                        {item.transaction_date || item.date}
+                                                      </code>
+                                                    </td>
+                                                  </tr>
+                                                )}
+                                                {(item.value_date || item.valueDate) && (
+                                                  <tr className="border-b border-gray-100 align-top">
+                                                    <td className="py-1.5 pr-2 font-medium text-gray-600">Value Date:</td>
+                                                    <td className="py-1.5 text-gray-900">
+                                                      <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                        {item.value_date || item.valueDate}
+                                                      </code>
+                                                    </td>
+                                                  </tr>
+                                                )}
+                                                {(item.transaction_type || item.type) && (
+                                                  <tr className="border-b border-gray-100 align-top">
+                                                    <td className="py-1.5 pr-2 font-medium text-gray-600">Type:</td>
+                                                    <td className="py-1.5 text-gray-900">
+                                                      <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                        {item.transaction_type || item.type}
+                                                      </code>
+                                                      {(item.transaction_type_name || item.typeName) && (
+                                                        <span className="ml-2">{item.transaction_type_name || item.typeName}</span>
+                                                      )}
+                                                    </td>
+                                                  </tr>
+                                                )}
+                                                {(item.providerOrg?.ref || item.providerOrg?.name) && (
+                                                  <tr className="border-b border-gray-100 align-top">
+                                                    <td className="py-1.5 pr-2 font-medium text-gray-600">Provider Org:</td>
+                                                    <td className="py-1.5 text-gray-900">
+                                                      {item.providerOrg?.ref && (
+                                                        <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded mr-2">
+                                                          {item.providerOrg.ref}
+                                                        </code>
+                                                      )}
+                                                      {item.providerOrg?.name}
+                                                    </td>
+                                                  </tr>
+                                                )}
+                                                {(item.receiverOrg?.ref || item.receiverOrg?.name) && (
+                                                  <tr className="align-top">
+                                                    <td className="py-1.5 pr-2 font-medium text-gray-600">Receiver Org:</td>
+                                                    <td className="py-1.5 text-gray-900">
+                                                      {item.receiverOrg?.ref && (
+                                                        <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded mr-2">
+                                                          {item.receiverOrg.ref}
+                                                        </code>
+                                                      )}
+                                                      {item.receiverOrg?.name}
+                                                    </td>
+                                                  </tr>
+                                                )}
+                                              </tbody>
+                                            </table>
+                                          ) : (
+                                            // Regular display for budgets, planned disbursements
                                           <table className="w-full text-xs">
                                           <tbody>
                                             {item.value !== undefined && item.currency && (
@@ -2729,12 +3065,22 @@ ${budgetItems.map((bi: any) => `  <budget-item code="${bi.code || ''}"${bi.perce
                                                 </td>
                                               </tr>
                                             )}
-                                            {item.value_date && (
+                                            {(item.transaction_date || item.date) && (
+                                              <tr className="border-b border-gray-100 align-top">
+                                                <td className="py-1.5 pr-2 font-medium text-gray-600">Transaction Date:</td>
+                                                <td className="py-1.5 text-gray-900">
+                                                  <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                    {item.transaction_date || item.date}
+                                                  </code>
+                                                </td>
+                                              </tr>
+                                            )}
+                                            {(item.value_date || item.valueDate) && (
                                               <tr className="border-b border-gray-100 align-top">
                                                 <td className="py-1.5 pr-2 font-medium text-gray-600">Value Date:</td>
                                                 <td className="py-1.5 text-gray-900">
                                                   <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
-                                                    {item.value_date}
+                                                    {item.value_date || item.valueDate}
                                                   </code>
                                                 </td>
                                               </tr>
@@ -2806,6 +3152,7 @@ ${budgetItems.map((bi: any) => `  <budget-item code="${bi.code || ''}"${bi.perce
                                             )}
                                           </tbody>
                                         </table>
+                                          )
                                         )}
                                       </div>
 
@@ -2813,26 +3160,134 @@ ${budgetItems.map((bi: any) => `  <budget-item code="${bi.code || ''}"${bi.perce
                                       <div className="bg-gray-50 rounded-md p-3 border border-gray-200">
                                         <div className="text-xs font-semibold text-gray-700 mb-2">Current Value</div>
                                         {field.currentValue ? (
+                                          // Transaction-specific display: Amount, Transaction Date, Value Date, Type, Provider Org, Receiver Org
+                                          field.itemType === 'transaction' ? (
+                                            <table className="w-full text-xs">
+                                              <tbody>
+                                                {(field.currentValue.value !== undefined || field.currentValue.currency) && (
+                                                  <tr className="border-b border-gray-100 align-top">
+                                                    <td className="py-1.5 pr-2 font-medium text-gray-600">Amount:</td>
+                                                    <td className="py-1.5 text-gray-900">
+                                                      {field.currentValue.currency && (
+                                                        <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                          {field.currentValue.currency}
+                                                        </code>
+                                                      )}
+                                                      {field.currentValue.value !== undefined && (
+                                                        <span className={field.currentValue.currency ? "ml-2" : ""}>
+                                                          {field.currentValue.value?.toLocaleString()}
+                                                        </span>
+                                                      )}
+                                                      {field.currentValue.value === undefined && !field.currentValue.currency && (
+                                                        <span className="text-gray-500 italic">No value</span>
+                                                      )}
+                                                    </td>
+                                                  </tr>
+                                                )}
+                                                {field.currentValue.transaction_date && (
+                                                  <tr className="border-b border-gray-100 align-top">
+                                                    <td className="py-1.5 pr-2 font-medium text-gray-600">Transaction Date:</td>
+                                                    <td className="py-1.5 text-gray-900">
+                                                      <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                        {field.currentValue.transaction_date}
+                                                      </code>
+                                                    </td>
+                                                  </tr>
+                                                )}
+                                                {field.currentValue.value_date && (
+                                                  <tr className="border-b border-gray-100 align-top">
+                                                    <td className="py-1.5 pr-2 font-medium text-gray-600">Value Date:</td>
+                                                    <td className="py-1.5 text-gray-900">
+                                                      <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                        {field.currentValue.value_date}
+                                                      </code>
+                                                    </td>
+                                                  </tr>
+                                                )}
+                                                {(field.currentValue.transaction_type || field.currentValue.type) && (
+                                                  <tr className="border-b border-gray-100 align-top">
+                                                    <td className="py-1.5 pr-2 font-medium text-gray-600">Type:</td>
+                                                    <td className="py-1.5 text-gray-900">
+                                                      <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                        {field.currentValue.transaction_type || field.currentValue.type}
+                                                      </code>
+                                                      {(field.currentValue.transaction_type_name || field.currentValue.typeName) && (
+                                                        <span className="ml-2">{field.currentValue.transaction_type_name || field.currentValue.typeName}</span>
+                                                      )}
+                                                    </td>
+                                                  </tr>
+                                                )}
+                                                {(field.currentValue.provider_org_ref || field.currentValue.provider_org_name) && (
+                                                  <tr className="border-b border-gray-100 align-top">
+                                                    <td className="py-1.5 pr-2 font-medium text-gray-600">Provider Org:</td>
+                                                    <td className="py-1.5 text-gray-900">
+                                                      {field.currentValue.provider_org_ref && (
+                                                        <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded mr-2">
+                                                          {field.currentValue.provider_org_ref}
+                                                        </code>
+                                                      )}
+                                                      {field.currentValue.provider_org_name}
+                                                    </td>
+                                                  </tr>
+                                                )}
+                                                {(field.currentValue.receiver_org_ref || field.currentValue.receiver_org_name) && (
+                                                  <tr className="align-top">
+                                                    <td className="py-1.5 pr-2 font-medium text-gray-600">Receiver Org:</td>
+                                                    <td className="py-1.5 text-gray-900">
+                                                      {field.currentValue.receiver_org_ref && (
+                                                        <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded mr-2">
+                                                          {field.currentValue.receiver_org_ref}
+                                                        </code>
+                                                      )}
+                                                      {field.currentValue.receiver_org_name}
+                                                    </td>
+                                                  </tr>
+                                                )}
+                                              </tbody>
+                                            </table>
+                                          ) : (
+                                            // Regular display for budgets, planned disbursements
                                           <table className="w-full text-xs">
                                             <tbody>
                                               {field.currentValue.value !== undefined && field.currentValue.currency && (
                                                 <tr className="border-b border-gray-100 align-top">
                                                   <td className="py-1.5 pr-2 font-medium text-gray-600">Amount:</td>
                                                   <td className="py-1.5 text-gray-900">
-                                                    <span className="font-mono">{field.currentValue.currency} {field.currentValue.value?.toLocaleString()}</span>
+                                                    <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                      {field.currentValue.currency}
+                                                    </code>
+                                                    <span className="ml-2">{field.currentValue.value?.toLocaleString()}</span>
                                                   </td>
                                                 </tr>
                                               )}
                                               {(field.currentValue.period?.start || field.currentValue.start) && (
                                                 <tr className="border-b border-gray-100 align-top">
                                                   <td className="py-1.5 pr-2 font-medium text-gray-600">Start:</td>
-                                                  <td className="py-1.5 text-gray-900">{formatDateDisplay(field.currentValue.period?.start || field.currentValue.start)}</td>
+                                                  <td className="py-1.5 text-gray-900">
+                                                    <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                      {field.currentValue.period?.start || field.currentValue.start}
+                                                    </code>
+                                                  </td>
                                                 </tr>
                                               )}
                                               {(field.currentValue.period?.end || field.currentValue.end) && (
                                                 <tr className="border-b border-gray-100 align-top">
                                                   <td className="py-1.5 pr-2 font-medium text-gray-600">End:</td>
-                                                  <td className="py-1.5 text-gray-900">{formatDateDisplay(field.currentValue.period?.end || field.currentValue.end)}</td>
+                                                  <td className="py-1.5 text-gray-900">
+                                                    <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                      {field.currentValue.period?.end || field.currentValue.end}
+                                                    </code>
+                                                  </td>
+                                                </tr>
+                                              )}
+                                              {field.currentValue.transaction_date && (
+                                                <tr className="border-b border-gray-100 align-top">
+                                                  <td className="py-1.5 pr-2 font-medium text-gray-600">Transaction Date:</td>
+                                                  <td className="py-1.5 text-gray-900">
+                                                    <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                      {field.currentValue.transaction_date}
+                                                    </code>
+                                                  </td>
                                                 </tr>
                                               )}
                                               {field.currentValue.value_date && (
@@ -2845,13 +3300,42 @@ ${budgetItems.map((bi: any) => `  <budget-item code="${bi.code || ''}"${bi.perce
                                                   </td>
                                                 </tr>
                                               )}
-                                              {field.currentValue.type && (
+                                              {field.currentValue.status !== undefined && (
+                                                <tr className="border-b border-gray-100 align-top">
+                                                  <td className="py-1.5 pr-2 font-medium text-gray-600">Status:</td>
+                                                  <td className="py-1.5 text-gray-900">
+                                                    <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                      {field.currentValue.status}
+                                                    </code>
+                                                    {field.currentValue.statusName && (
+                                                      <span className="ml-2">{field.currentValue.statusName}</span>
+                                                    )}
+                                                  </td>
+                                                </tr>
+                                              )}
+                                              {field.currentValue.transaction_type !== undefined && (
+                                                <tr className="border-b border-gray-100 align-top">
+                                                  <td className="py-1.5 pr-2 font-medium text-gray-600">Transaction Type:</td>
+                                                  <td className="py-1.5 text-gray-900">
+                                                    <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                      {field.currentValue.transaction_type}
+                                                    </code>
+                                                    {field.currentValue.transaction_type_name && (
+                                                      <span className="ml-2">{field.currentValue.transaction_type_name}</span>
+                                                    )}
+                                                  </td>
+                                                </tr>
+                                              )}
+                                              {field.currentValue.type !== undefined && (
                                                 <tr className="border-b border-gray-100 align-top">
                                                   <td className="py-1.5 pr-2 font-medium text-gray-600">Type:</td>
                                                   <td className="py-1.5 text-gray-900">
                                                     <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
                                                       {field.currentValue.type}
                                                     </code>
+                                                    {field.currentValue.typeName && (
+                                                      <span className="ml-2">{field.currentValue.typeName}</span>
+                                                    )}
                                                   </td>
                                                 </tr>
                                               )}
@@ -2883,6 +3367,7 @@ ${budgetItems.map((bi: any) => `  <budget-item code="${bi.code || ''}"${bi.perce
                                               )}
                                             </tbody>
                                           </table>
+                                          )
                                         ) : (
                                           <div className="text-xs text-gray-500 italic">No existing value</div>
                                         )}
@@ -2895,6 +3380,46 @@ ${budgetItems.map((bi: any) => `  <budget-item code="${bi.code || ''}"${bi.perce
                               // Policy Markers
                               if (field.isPolicyMarker && field.policyMarkerData) {
                                 const pm = field.policyMarkerData;
+
+                                // Helper function to get vocabulary name from code
+                                const getVocabularyName = (vocabCode: string): string => {
+                                  const vocabularyNames: Record<string, string> = {
+                                    '1': 'OECD DAC CRS',
+                                    '99': 'Reporting Organisation'
+                                  };
+                                  return vocabularyNames[vocabCode] || vocabCode;
+                                };
+
+                                // Helper function to get policy marker name
+                                const getPolicyMarkerName = (code: string): string => {
+                                  const policyMarkerNames: Record<string, string> = {
+                                    '1': 'Gender Equality',
+                                    '2': 'Aid to Environment',
+                                    '3': 'Participatory Development/Good Governance',
+                                    '4': 'Trade Development',
+                                    '5': 'Aid Targeting the Objectives of the Convention on Biological Diversity',
+                                    '6': 'Aid Targeting the Objectives of the Framework Convention on Climate Change - Mitigation',
+                                    '7': 'Aid Targeting the Objectives of the Framework Convention on Climate Change - Adaptation',
+                                    '8': 'Aid Targeting the Objectives of the Convention to Combat Desertification',
+                                    '9': 'Reproductive, Maternal, Newborn and Child Health (RMNCH)',
+                                    '10': 'Disaster Risk Reduction (DRR)',
+                                    '11': 'Disability',
+                                    '12': 'Nutrition'
+                                  };
+                                  return policyMarkerNames[code] || 'Unknown';
+                                };
+
+                                // Helper function to get significance name
+                                const getSignificanceName = (sigCode: string): string => {
+                                  const significanceNames: Record<string, string> = {
+                                    '0': 'Not targeted',
+                                    '1': 'Significant objective',
+                                    '2': 'Principal objective',
+                                    '3': 'Principal objective AND in support of an action programme',
+                                    '4': 'Explicit primary objective'
+                                  };
+                                  return significanceNames[sigCode] || sigCode;
+                                };
 
                                 // Generate XML snippet for display
                                 const xmlSnippet = `<policy-marker vocabulary="${pm.vocabulary || '1'}" code="${pm.code || ''}" significance="${pm.significance || ''}" />`;
@@ -2921,33 +3446,34 @@ ${budgetItems.map((bi: any) => `  <budget-item code="${bi.code || ''}"${bi.perce
                                         <div className="text-xs font-semibold text-gray-700 mb-2">Import Value</div>
                                         <table className="w-full text-xs">
                                           <tbody>
+                                            <tr className="border-b border-gray-100 align-top">
+                                              <td className="py-1.5 pr-2 font-medium text-gray-600">Vocabulary:</td>
+                                              <td className="py-1.5 text-gray-900">
+                                                <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded mr-2">
+                                                  {pm.vocabulary || '1'}
+                                                </code>
+                                                <span className="text-gray-700">{getVocabularyName(pm.vocabulary || '1')}</span>
+                                              </td>
+                                            </tr>
                                             {pm.code && (
                                               <tr className="border-b border-gray-100 align-top">
                                                 <td className="py-1.5 pr-2 font-medium text-gray-600">Code:</td>
                                                 <td className="py-1.5 text-gray-900">
-                                                  <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                  <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded mr-2">
                                                     {pm.code}
                                                   </code>
+                                                  <span className="text-gray-700">{getPolicyMarkerName(pm.code)}</span>
                                                 </td>
                                               </tr>
                                             )}
                                             {pm.significance && (
-                                              <tr className="border-b border-gray-100 align-top">
+                                              <tr className="align-top">
                                                 <td className="py-1.5 pr-2 font-medium text-gray-600">Significance:</td>
                                                 <td className="py-1.5 text-gray-900">
-                                                  <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                  <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded mr-2">
                                                     {pm.significance}
                                                   </code>
-                                                </td>
-                                              </tr>
-                                            )}
-                                            {pm.vocabulary && (
-                                              <tr className="align-top">
-                                                <td className="py-1.5 pr-2 font-medium text-gray-600">Vocabulary:</td>
-                                                <td className="py-1.5 text-gray-900">
-                                                  <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
-                                                    {pm.vocabulary}
-                                                  </code>
+                                                  <span className="text-gray-700">{getSignificanceName(pm.significance)}</span>
                                                 </td>
                                               </tr>
                                             )}
@@ -2961,33 +3487,36 @@ ${budgetItems.map((bi: any) => `  <budget-item code="${bi.code || ''}"${bi.perce
                                         {field.currentValue ? (
                                           <table className="w-full text-xs">
                                             <tbody>
+                                              {field.currentValue.vocabulary && (
+                                                <tr className="border-b border-gray-100 align-top">
+                                                  <td className="py-1.5 pr-2 font-medium text-gray-600">Vocabulary:</td>
+                                                  <td className="py-1.5 text-gray-900">
+                                                    <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded mr-2">
+                                                      {field.currentValue.vocabulary}
+                                                    </code>
+                                                    <span className="text-gray-700">{getVocabularyName(field.currentValue.vocabulary)}</span>
+                                                  </td>
+                                                </tr>
+                                              )}
                                               {field.currentValue.code && (
                                                 <tr className="border-b border-gray-100 align-top">
                                                   <td className="py-1.5 pr-2 font-medium text-gray-600">Code:</td>
                                                   <td className="py-1.5 text-gray-900">
-                                                    <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                    <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded mr-2">
                                                       {field.currentValue.code}
                                                     </code>
+                                                    <span className="text-gray-700">{getPolicyMarkerName(field.currentValue.code)}</span>
                                                   </td>
                                                 </tr>
                                               )}
                                               {field.currentValue.significance && (
-                                                <tr className="border-b border-gray-100 align-top">
+                                                <tr className="align-top">
                                                   <td className="py-1.5 pr-2 font-medium text-gray-600">Significance:</td>
                                                   <td className="py-1.5 text-gray-900">
-                                                    <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                    <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded mr-2">
                                                       {field.currentValue.significance}
                                                     </code>
-                                                  </td>
-                                                </tr>
-                                              )}
-                                              {field.currentValue.vocabulary && (
-                                                <tr className="align-top">
-                                                  <td className="py-1.5 pr-2 font-medium text-gray-600">Vocabulary:</td>
-                                                  <td className="py-1.5 text-gray-900">
-                                                    <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
-                                                      {field.currentValue.vocabulary}
-                                                    </code>
+                                                    <span className="text-gray-700">{getSignificanceName(field.currentValue.significance)}</span>
                                                   </td>
                                                 </tr>
                                               )}
@@ -3124,8 +3653,55 @@ ${narrativeLines}
                                       {/* Column 3: Current Value */}
                                       <div className="bg-gray-50 rounded-md p-3 border border-gray-200">
                                         <div className="text-xs font-semibold text-gray-700 mb-2">Current Value</div>
-                                        {field.currentValue && field.currentValue !== 'None' ? (
-                                          <div className="text-xs text-gray-900">{field.currentValue}</div>
+                                        {field.currentConditionsData ? (
+                                          <table className="w-full text-xs">
+                                            <tbody>
+                                              <tr className="border-b border-gray-100 align-top">
+                                                <td className="py-1.5 pr-2 font-medium text-gray-600">Conditions:</td>
+                                                <td className="py-1.5 text-gray-900">
+                                                  <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                    {field.currentConditionsData.attached ? '1' : '0'}
+                                                  </code>
+                                                  <span className="ml-2">{field.currentConditionsData.attached ? 'Yes' : 'No'}</span>
+                                                </td>
+                                              </tr>
+                                              {field.currentConditionsData.conditions.map((condition: any, idx: number) => (
+                                                <tr key={idx} className={idx < field.currentConditionsData.conditions.length - 1 ? "border-b border-gray-100 align-top" : "align-top"}>
+                                                  <td className="py-1.5 pr-2 font-medium text-gray-600">
+                                                    Condition Type:
+                                                  </td>
+                                                  <td className="py-1.5 text-gray-900">
+                                                    <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                      {condition.type}
+                                                    </code>
+                                                    <span className="ml-2">{getTypeLabel(condition.type)}</span>
+                                                  </td>
+                                                </tr>
+                                              ))}
+                                              {field.currentConditionsData.conditions.map((condition: any, idx: number) => {
+                                                // Get all narratives with their languages from JSONB
+                                                const narratives = condition.narrative || {};
+                                                const narrativeEntries = Object.entries(narratives);
+
+                                                // Return separate rows for each narrative language
+                                                return narrativeEntries.map(([lang, text], nIdx) => {
+                                                  const isNonEnglish = lang && lang !== 'en';
+                                                  const isLastNarrative = idx === field.currentConditionsData.conditions.length - 1 && nIdx === narrativeEntries.length - 1;
+
+                                                  return (
+                                                    <tr key={`current-narrative-${idx}-${lang}`} className={isLastNarrative ? "align-top" : "border-b border-gray-100 align-top"}>
+                                                      <td className={`py-1.5 pr-2 font-medium ${isNonEnglish ? 'text-gray-400' : 'text-gray-600'}`}>
+                                                        {isNonEnglish ? `Narrative (${lang.toUpperCase()}):` : 'Narrative:'}
+                                                      </td>
+                                                      <td className={`py-1.5 ${isNonEnglish ? 'text-gray-400' : 'text-gray-900'}`}>
+                                                        {text || <span className="text-gray-500 italic">No description</span>}
+                                                      </td>
+                                                    </tr>
+                                                  );
+                                                });
+                                              })}
+                                            </tbody>
+                                          </table>
                                         ) : (
                                           <div className="text-xs text-gray-500 italic">No existing conditions</div>
                                         )}
@@ -4110,8 +4686,134 @@ ${narrativeLines}
                               // Extract raw XML snippet from the imported XML
                               const xmlSnippet = extractXmlSnippet(field.iatiPath, field.itemIndex);
 
+                              // Helper function to extract text from JSONB multilingual fields
+                              const extractTextFromJsonb = (obj: any): string => {
+                                if (!obj) return '';
+                                if (typeof obj === 'string') return obj;
+                                if (typeof obj === 'object') {
+                                  if (obj.en) return obj.en;
+                                  const firstKey = Object.keys(obj)[0];
+                                  if (firstKey) return obj[firstKey];
+                                }
+                                return '';
+                              };
+
+                              // Helper function to render result details
+                              const renderResultDetails = (resultData: any) => {
+                                if (!resultData) {
+                                  return <div className="text-xs text-gray-500 italic">No value</div>;
+                                }
+
+                                const rows: Array<{ label: string; value: string }> = [];
+
+                                // Result Title
+                                const resultTitle = extractTextFromJsonb(resultData.title);
+                                if (resultTitle) {
+                                  rows.push({ label: 'Result Title', value: resultTitle });
+                                }
+
+                                // Aggregation Status (Result) - show early
+                                if (resultData.aggregation_status !== undefined && resultData.aggregation_status !== null) {
+                                  rows.push({ label: 'Aggregation Status (Result)', value: String(resultData.aggregation_status) });
+                                }
+
+                                // Get first indicator (if exists)
+                                const indicator = resultData.indicators?.[0];
+                                if (indicator) {
+                                  // Indicator Title
+                                  const indicatorTitle = extractTextFromJsonb(indicator.title);
+                                  if (indicatorTitle) {
+                                    rows.push({ label: 'Indicator Title', value: indicatorTitle });
+                                  }
+
+                                  // Aggregation Status (Indicator)
+                                  if (indicator.aggregation_status !== undefined && indicator.aggregation_status !== null) {
+                                    rows.push({ label: 'Aggregation Status (Indicator)', value: String(indicator.aggregation_status) });
+                                  }
+
+                                  // Ascending
+                                  if (indicator.ascending !== undefined && indicator.ascending !== null) {
+                                    rows.push({ label: 'Ascending', value: String(indicator.ascending) });
+                                  }
+
+                                  // Measure
+                                  if (indicator.measure) {
+                                    rows.push({ label: 'Measure', value: String(indicator.measure) });
+                                  }
+
+                                  // Get first period (if exists)
+                                  const period = indicator.periods?.[0];
+                                  if (period) {
+                                    // Period Start - handle both period_start and period-start formats
+                                    const periodStart = period.period_start || period['period-start'];
+                                    if (periodStart) {
+                                      rows.push({ label: 'Period Start', value: periodStart });
+                                    }
+                                    
+                                    // Period End - handle both period_end and period-end formats
+                                    const periodEnd = period.period_end || period['period-end'];
+                                    if (periodEnd) {
+                                      rows.push({ label: 'Period End', value: periodEnd });
+                                    }
+                                    
+                                    // Actual Value - handle both actual_value and actual.value formats
+                                    const actualValue = period.actual_value !== undefined 
+                                      ? period.actual_value 
+                                      : (period.actual?.value !== undefined ? period.actual.value : undefined);
+                                    if (actualValue !== undefined && actualValue !== null) {
+                                      rows.push({ label: 'Actual Value', value: String(actualValue) });
+                                    }
+                                    
+                                    // Dimension Name - handle both actual_dimensions array and actual.dimensions
+                                    const actualDimensions = period.actual_dimensions || period.actual?.dimensions || [];
+                                    if (actualDimensions.length > 0 && actualDimensions[0]?.name) {
+                                      rows.push({ label: 'Dimension Name', value: actualDimensions[0].name });
+                                    }
+                                    
+                                    // Comment - handle both actual_comment and actual.comment
+                                    const actualComment = period.actual_comment || period.actual?.comment;
+                                    if (actualComment) {
+                                      const commentText = extractTextFromJsonb(actualComment);
+                                      if (commentText) {
+                                        rows.push({ label: 'Comment', value: commentText });
+                                      }
+                                    }
+                                  }
+                                }
+
+                                if (rows.length === 0) {
+                                  return <div className="text-xs text-gray-500 italic">No value</div>;
+                                }
+
+                                return (
+                                  <table className="w-full text-xs">
+                                    <tbody>
+                                      {rows.map((row, idx) => (
+                                        <tr key={idx} className={`align-top ${idx < rows.length - 1 ? 'border-b border-gray-100' : ''}`}>
+                                          <td className="py-1.5 pr-2 font-medium text-gray-600 whitespace-nowrap">
+                                            {row.label}:
+                                          </td>
+                                          <td className="py-1.5 text-gray-900 break-words">
+                                            {row.value}
+                                          </td>
+                                        </tr>
+                                      ))}
+                                    </tbody>
+                                  </table>
+                                );
+                              };
+
                               // Helper function to render a value in table format
-                              const renderValueInTable = (value: any, fieldName: string) => {
+                              const renderValueInTable = (value: any, fieldName: string, isCurrentValue = false) => {
+                                // Special handling for result fields
+                                if (field.itemType === 'result') {
+                                  if (isCurrentValue) {
+                                    return renderResultDetails(field.currentItemData);
+                                  } else {
+                                    return renderResultDetails(field.itemData);
+                                  }
+                                }
+
                                 if (value === undefined || value === null || value === '') {
                                   return <div className="text-xs text-gray-500 italic">No value</div>;
                                 }
@@ -4227,13 +4929,13 @@ ${narrativeLines}
                                     {/* Column 2: Import Value */}
                                     <div className="bg-gray-50 rounded-md p-3 border border-gray-200">
                                       <div className="text-xs font-semibold text-gray-700 mb-2">Import Value</div>
-                                      {renderValueInTable(field.importValue, field.fieldName)}
+                                      {renderValueInTable(field.importValue, field.fieldName, false)}
                                     </div>
 
                                     {/* Column 3: Current Value */}
                                     <div className="bg-gray-50 rounded-md p-3 border border-gray-200">
                                       <div className="text-xs font-semibold text-gray-700 mb-2">Current Value</div>
-                                      {renderValueInTable(field.currentValue, field.fieldName)}
+                                      {renderValueInTable(field.currentValue, field.fieldName, true)}
                                     </div>
                                   </div>
                                 </div>

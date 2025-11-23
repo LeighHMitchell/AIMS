@@ -43,20 +43,40 @@ export async function POST(request: NextRequest) {
     console.log('[IATI Merge] Allowing merge operation for user:', userId, 'on activity created by:', targetActivity.created_by);
 
     // Create a link between the external source and the existing activity
-    // Using only existing database columns
-    const linkData = {
-      description_narrative: targetActivity.description_narrative ? 
-        `${targetActivity.description_narrative}\n\n[External Link] Merged with IATI activity ${meta.iatiId} from ${meta.reportingOrgName || meta.reportingOrgRef}` :
-        `[External Link] Merged with IATI activity ${meta.iatiId} from ${meta.reportingOrgName || meta.reportingOrgRef}`,
-      last_edited_by: userId
-    };
+    // Using the external_iati_activity_links table
+    const { error: linkError } = await supabase
+      .from('external_iati_activity_links')
+      .insert({
+        activity_id: targetActivityId,
+        external_iati_identifier: meta.iatiId,
+        external_reporting_org_ref: meta.reportingOrgRef,
+        external_reporting_org_name: meta.reportingOrgName,
+        external_activity_title: meta.title || null,
+        link_type: 'merge',
+        link_status: 'active',
+        created_by: userId,
+        import_source: 'external_publisher_modal'
+      });
 
-    console.log('[IATI Merge] Linking external source to activity:', targetActivityId, linkData);
+    if (linkError) {
+      // Handle duplicate constraint - link already exists, that's okay
+      if (linkError.code === '23505') {
+        console.log('[IATI Merge] Link already exists for', meta.iatiId);
+      } else {
+        console.error('[IATI Merge] Failed to create link:', linkError);
+        return NextResponse.json(
+          { error: 'Failed to create external activity link', details: linkError.message },
+          { status: 500 }
+        );
+      }
+    }
 
-    // Update the existing activity with external link information
+    console.log('[IATI Merge] Linking external source to activity:', targetActivityId);
+
+    // Update the existing activity to track last editor
     const { data: updatedActivity, error: updateError } = await supabase
       .from('activities')
-      .update(linkData)
+      .update({ last_edited_by: userId })
       .eq('id', targetActivityId)
       .select('id, title_narrative, iati_identifier')
       .single();
@@ -64,7 +84,7 @@ export async function POST(request: NextRequest) {
     if (updateError) {
       console.error('[IATI Merge] Update error:', updateError);
       return NextResponse.json(
-        { error: 'Failed to link external activity', details: updateError.message },
+        { error: 'Failed to update activity', details: updateError.message },
         { status: 500 }
       );
     }
@@ -88,8 +108,7 @@ export async function POST(request: NextRequest) {
         }
       });
 
-    // Note: External activity link information is stored in the activity description
-    // Future enhancement could create a dedicated external_activity_links table
+    // Note: External activity link information is stored in the external_iati_activity_links table
 
     // Track analytics
     iatiAnalytics.optionSelected('merge', meta.iatiId, meta.reportingOrgRef);

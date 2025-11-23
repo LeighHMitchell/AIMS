@@ -19,7 +19,7 @@ export async function POST(request: NextRequest) {
     const activityData = {
       iati_identifier: meta.iatiId,
       title_narrative: meta.reportingOrgName || `External Activity: ${meta.iatiId}`,
-      description_narrative: `This is a reference to an external IATI activity imported from ${meta.reportingOrgName}. Original reporting organisation: ${meta.reportingOrgRef}.`,
+      description_narrative: null, // External link tracked in external_iati_activity_links table
       activity_status: 'implementation', // Default status
       created_by: userId,
       last_edited_by: userId,
@@ -41,6 +41,26 @@ export async function POST(request: NextRequest) {
         { error: 'Failed to create reference activity', details: createError.message },
         { status: 500 }
       );
+    }
+
+    // Create external activity link to track the reference source
+    const { error: linkError } = await supabase
+      .from('external_iati_activity_links')
+      .insert({
+        activity_id: activity.id,
+        external_iati_identifier: meta.iatiId,
+        external_reporting_org_ref: meta.reportingOrgRef,
+        external_reporting_org_name: meta.reportingOrgName,
+        external_activity_title: meta.title || null,
+        link_type: 'reference',
+        link_status: 'active',
+        created_by: userId,
+        import_source: 'external_publisher_modal'
+      });
+
+    if (linkError) {
+      console.error('[IATI Reference] Failed to create external link:', linkError);
+      // Continue despite link error - the reference activity was created successfully
     }
 
     // Log audit trail

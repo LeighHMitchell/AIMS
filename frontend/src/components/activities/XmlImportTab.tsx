@@ -2454,10 +2454,27 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
           const typeName = identifier.type ? identifierTypeNames[identifier.type] || identifier.type : 'Unknown type';
           const typeCode = identifier.type || 'N/A';
           
+          // Get current value from database if exists - match by code AND type (exact match required)
+          const currentOtherIdentifiers = currentActivityData.other_identifiers || [];
+          const currentIdentifier = currentOtherIdentifiers.find((existing: any) => 
+            existing.code === identifierRef && existing.type === typeCode
+          );
+          let currentValue = null;
+          if (currentIdentifier) {
+            const currentTypeName = currentIdentifier.type ? identifierTypeNames[currentIdentifier.type] || currentIdentifier.type : 'Unknown type';
+            currentValue = {
+              code: currentIdentifier.code,
+              type: currentIdentifier.type || 'N/A',
+              name: currentTypeName,
+              ownerOrg: currentIdentifier.ownerOrg,
+              _rawData: currentIdentifier
+            };
+          }
+          
           fields.push({
             fieldName: `Other Identifier ${index + 1}`,
             iatiPath: `iati-activity/other-identifier[${index}]`,
-            currentValue: null,
+            currentValue: currentValue,
             importValue: {
               code: identifierRef,
               type: typeCode,
@@ -2466,7 +2483,12 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
               _rawData: identifier // Keep raw data for import processing
             },
             selected: isFieldAllowedByPreferences('iati-activity/other-identifier'),
-            hasConflict: false,
+            hasConflict: hasConflict(currentValue, {
+              code: identifierRef,
+              type: typeCode,
+              name: typeName,
+              ownerOrg: identifier.ownerOrg
+            }),
             tab: 'identifiers_ids',
             description: `${typeCode} - ${typeName}`
           });
@@ -3356,13 +3378,32 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
         // Create individual fields for each policy marker
         parsedActivity.policyMarkers.forEach((marker: any, index: number) => {
           // Find matching existing policy marker
-          const existingMarker = existingPolicyMarkers.find((existing: any) => 
-            existing.policy_marker_details?.code === marker.code && 
-            existing.policy_marker_details?.vocabulary === marker.vocabulary
-          );
+          const markerVocabulary = marker.vocabulary || '1';
+          const existingMarker = existingPolicyMarkers.find((existing: any) => {
+            const details = existing.policy_marker_details;
+            if (!details) return false;
+            
+            // Match vocabulary first
+            if ((details.vocabulary || '1') !== markerVocabulary) return false;
+            
+            // For standard IATI markers (vocabulary="1"), match by iati_code
+            if (markerVocabulary === '1') {
+              return details.iati_code === marker.code && details.is_iati_standard === true;
+            }
+            
+            // For custom markers (vocabulary="99"), match by code and vocabulary_uri
+            if (markerVocabulary === '99') {
+              const existingUri = details.vocabulary_uri || '';
+              const markerUri = marker.vocabulary_uri || '';
+              return details.code === marker.code && existingUri === markerUri;
+            }
+            
+            // Fallback: match by code
+            return details.code === marker.code;
+          });
 
           const currentValue = existingMarker ? {
-            code: existingMarker.policy_marker_details?.code,
+            code: existingMarker.policy_marker_details?.iati_code || existingMarker.policy_marker_details?.code,
             significance: existingMarker.significance,
             vocabulary: existingMarker.policy_marker_details?.vocabulary,
             vocabulary_uri: existingMarker.policy_marker_details?.vocabulary_uri,

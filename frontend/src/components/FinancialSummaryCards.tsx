@@ -5,6 +5,7 @@ import { createClient } from "@supabase/supabase-js";
 import { HeroCard } from "@/components/ui/hero-card";
 import { cn } from "@/lib/utils";
 import { fixedCurrencyConverter } from "@/lib/currency-converter-fixed";
+import { normalizeTransactionType } from "@/lib/transaction-usd-helper";
 
 interface Budget {
   id?: string;
@@ -189,12 +190,16 @@ export function FinancialSummaryCards({ activityId, className, budgets, showBudg
         let usdValue = t.value_usd || t.value_USD || t.usd_value || t.USD_value;
         
         // FIXED: If transaction is in USD but value_usd is missing, use the original value
+        // (This is safe because it's already USD)
         if (!usdValue && t.currency === 'USD' && t.value && t.value > 0) {
           usdValue = t.value;
           console.log(`[FinancialSummaryCards] Using original USD value for transaction ${t.id}: $${t.value}`);
         }
         
-        if (t.transaction_type === '2') {
+        // Normalize transaction type to string for consistent comparison
+        const transactionType = normalizeTransactionType(t.transaction_type);
+        
+        if (transactionType === '2') {
           if (usdValue && usdValue > 0) {
             committed += usdValue;
           } else if (t.currency !== 'USD') {
@@ -203,7 +208,7 @@ export function FinancialSummaryCards({ activityId, className, budgets, showBudg
             console.log(`[FinancialSummaryCards] Commitment transaction ${t.id} missing USD value (${t.currency})`);
           }
         }
-        if (t.transaction_type === '3') {
+        if (transactionType === '3') {
           if (usdValue && usdValue > 0) {
             disbursedOnly += usdValue;
             disbursed += usdValue;
@@ -213,7 +218,7 @@ export function FinancialSummaryCards({ activityId, className, budgets, showBudg
             console.log(`[FinancialSummaryCards] Disbursement transaction ${t.id} missing USD value (${t.currency})`);
           }
         }
-        if (t.transaction_type === '4') {
+        if (transactionType === '4') {
           if (usdValue && usdValue > 0) {
             expended += usdValue;
             disbursed += usdValue;

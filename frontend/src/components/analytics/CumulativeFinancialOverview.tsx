@@ -91,10 +91,24 @@ export function CumulativeFinancialOverview({
         setLoading(true)
         setError(null)
 
+        // Check if Supabase client is available
+        if (!supabase) {
+          console.error('[CumulativeFinancialOverview] Supabase client is not initialized')
+          setError('Database connection not available. Please check your environment configuration.')
+          return
+        }
+
         // Fetch all transactions
+        console.log('[CumulativeFinancialOverview] === FETCHING TRANSACTIONS ===')
+        console.log('[CumulativeFinancialOverview] Query filters:', {
+          dateRange: dateRange ? { from: dateRange.from.toISOString(), to: dateRange.to.toISOString() } : 'none',
+          donor: filters?.donor || 'none',
+          selectedActivities: selectedActivities.length > 0 ? selectedActivities : 'none'
+        })
+
         let transactionsQuery = supabase
           .from('transactions')
-          .select('transaction_date, transaction_type, value, value_usd, currency, activity_id, provider_org_id, period_start, period_end')
+          .select('transaction_date, transaction_type, value, value_usd, currency, activity_id, provider_org_id')
           .eq('status', 'actual')
           .order('transaction_date', { ascending: true })
 
@@ -115,12 +129,22 @@ export function CumulativeFinancialOverview({
           transactionsQuery = transactionsQuery.in('activity_id', selectedActivities)
         }
 
+        console.log('[CumulativeFinancialOverview] Executing query...')
         const { data: transactions, error: transactionsError } = await transactionsQuery
+        console.log('[CumulativeFinancialOverview] Query completed. Error:', transactionsError ? transactionsError.message : 'none')
+        console.log('[CumulativeFinancialOverview] Transactions count:', transactions?.length ?? 'null/undefined')
 
         if (transactionsError) {
           console.error('[CumulativeFinancialOverview] Error fetching transactions:', transactionsError)
-          setError('Failed to fetch transaction data')
+          setError(`Failed to fetch transaction data: ${transactionsError.message || transactionsError.toString()}`)
           return
+        }
+
+        console.log('[CumulativeFinancialOverview] Transactions fetched:', transactions?.length || 0)
+        if (transactions && transactions.length > 0) {
+          console.log('[CumulativeFinancialOverview] Sample transaction:', transactions[0])
+        } else {
+          console.log('[CumulativeFinancialOverview] No transactions found or transactions is null/undefined')
         }
 
         // Debug: Log transaction type distribution

@@ -310,10 +310,12 @@ export function useOptimizedActivities(
     setCurrentPage(page);
   }, []);
 
-  // Remove activity from local state
+  // Remove activity from local state and clear cache
   const removeActivity = useCallback((id: string) => {
     setActivities(prev => prev.filter(activity => activity.id !== id));
     setTotalCount(prev => prev - 1);
+    // Clear cache to prevent stale data from being used
+    cacheRef.current.clear();
   }, []);
 
   // Calculate average query time

@@ -3,6 +3,7 @@
  */
 
 import { validateAndCorrectParticipatingOrgs } from './iati-participating-org-xml';
+import { extractAcronymFromTitle } from './text-utils';
 
 export interface ActivityMetadata {
   index: number;
@@ -21,6 +22,7 @@ interface ParsedActivity {
   iatiIdentifier?: string;
   otherIdentifier?: string; // Other identifier (e.g., internal project ID)
   title?: string;
+  acronym?: string;
   description?: string;
   descriptionObjectives?: string; // IATI description type="1"
   descriptionTargetGroups?: string; // IATI description type="2"  
@@ -576,6 +578,12 @@ export class IATIXMLParser {
     const title = activity.querySelector('title');
     result.title = this.extractNarrative(title);
 
+    // Extract acronym from title
+    if (result.title) {
+      const { acronym } = extractAcronymFromTitle(result.title);
+      result.acronym = acronym || undefined;
+    }
+
     // Description
     const description = activity.querySelector('description');
     result.description = this.extractNarrative(description);
@@ -635,9 +643,31 @@ export class IATIXMLParser {
     // === IATI ACTIVITY ATTRIBUTES ===
     
     // Hierarchy attribute (IATI activity level indicator)
+    // Debug: Log all attributes on the activity element
+    const allAttributes: string[] = [];
+    if (activity.attributes) {
+      for (let i = 0; i < activity.attributes.length; i++) {
+        const attr = activity.attributes[i];
+        allAttributes.push(`${attr.name}="${attr.value}"`);
+      }
+    }
+    console.log('[XML Parser] 🔍 Activity element attributes:', {
+      totalAttributes: activity.attributes?.length || 0,
+      attributes: allAttributes,
+      hasHierarchy: activity.hasAttribute('hierarchy'),
+      hierarchyValue: activity.getAttribute('hierarchy')
+    });
+    
     const hierarchyAttr = activity.getAttribute('hierarchy');
     if (hierarchyAttr) {
       result.hierarchy = parseInt(hierarchyAttr, 10);
+      console.log('[XML Parser] ✅ Extracted hierarchy:', {
+        rawValue: hierarchyAttr,
+        parsedValue: result.hierarchy,
+        type: typeof result.hierarchy
+      });
+    } else {
+      console.log('[XML Parser] ❌ No hierarchy attribute found on iati-activity element');
     }
     
     // Budget not provided flag
@@ -987,16 +1017,17 @@ export class IATIXMLParser {
             const lang = narrative.getAttribute('xml:lang');
             const text = narrative.textContent?.trim() || '';
             
-            if (!lang || lang === 'en') {
+            // Case-insensitive comparison for language codes (EN, en, En all treated as English)
+            if (!lang || lang.toLowerCase() === 'en') {
               if (!foundPrimary) {
                 primaryNarrative = text;
-                narrativeLang = lang || 'en';
+                narrativeLang = lang?.toLowerCase() || 'en';
                 foundPrimary = true;
               }
             } else {
               // Add non-English narratives to multilingual array
               if (text) {
-                multilingualNarratives.push({ lang, text });
+                multilingualNarratives.push({ lang: lang.toLowerCase(), text });
               }
             }
           }
@@ -1004,7 +1035,8 @@ export class IATIXMLParser {
           // If no primary found, use the first one
           if (!foundPrimary && narrativeElements.length > 0) {
             primaryNarrative = narrativeElements[0].textContent?.trim() || '';
-            narrativeLang = narrativeElements[0].getAttribute('xml:lang') || 'en';
+            const firstLang = narrativeElements[0].getAttribute('xml:lang');
+            narrativeLang = firstLang?.toLowerCase() || 'en';
           }
         }
 

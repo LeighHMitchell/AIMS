@@ -36,7 +36,7 @@ export function CreateActivityModal({ isOpen, onClose }: CreateActivityModalProp
         },
         body: JSON.stringify({
           title: title.trim(),
-          activityStatus: '1', // Pipeline
+          activityStatus: '', // No default status
           publicationStatus: 'draft',
           submissionStatus: 'draft',
         }),

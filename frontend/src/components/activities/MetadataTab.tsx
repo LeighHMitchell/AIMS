@@ -333,6 +333,19 @@ export default function MetadataTab({ activityId }: MetadataTabProps) {
     return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
   }, [activityId]);
 
+  // Listen for activity-updated event to refresh metadata after import
+  useEffect(() => {
+    const handleActivityUpdate = (event: CustomEvent) => {
+      if (event.detail.activityId === activityId) {
+        console.log('[MetadataTab] Activity updated, refreshing metadata...');
+        fetchMetadata();
+      }
+    };
+
+    window.addEventListener('activity-updated', handleActivityUpdate as EventListener);
+    return () => window.removeEventListener('activity-updated', handleActivityUpdate as EventListener);
+  }, [activityId]);
+
   if (loading) {
     return (
       <div className="space-y-6">
@@ -492,9 +505,9 @@ export default function MetadataTab({ activityId }: MetadataTabProps) {
               organizations={organizations}
               onSave={handleReportingOrgSave}
               saving={savingReportingOrg}
-              isSuperUser={user?.role === USER_ROLES.SUPER_USER}
+              isSuperUser={true} // Keep prop for compatibility, but component now allows all users
               placeholder="Select reporting organization..."
-              lockTooltip="This field is locked and can only be edited by super users"
+              lockTooltip="Click to unlock and change the reporting organization"
               unlockTooltip="Click to unlock and change the reporting organization"
               disabled={organizationsLoading}
             />

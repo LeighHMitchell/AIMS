@@ -243,7 +243,7 @@ export default function TransactionList({
   
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage] = useState(10);
+  const [itemsPerPage, setItemsPerPage] = useState(20);
 
   // Currency converter hook
   const { convertTransaction, isConverting, convertingIds, error: conversionError } = useCurrencyConverter();
@@ -2131,12 +2131,43 @@ export default function TransactionList({
             </div>
             
             {/* Pagination Controls - Hide in grouped view */}
-            {!groupedView && transactions.length > itemsPerPage && (
+            {!groupedView && transactions.length > 0 && (
               <div className="flex items-center justify-between mt-4 px-2">
-                <div className="text-sm text-muted-foreground">
-                  Showing {((currentPage - 1) * itemsPerPage) + 1} to {Math.min(currentPage * itemsPerPage, sortedTransactions.length)} of {sortedTransactions.length} transactions
+                <div className="flex items-center gap-4">
+                  <div className="text-sm text-muted-foreground">
+                    Showing {((currentPage - 1) * itemsPerPage) + 1} to {Math.min(currentPage * itemsPerPage, sortedTransactions.length)} of {sortedTransactions.length} transactions
+                  </div>
+                  {sortedTransactions.length > 20 && (
+                    <div className="flex items-center gap-2">
+                      <Label htmlFor="items-per-page" className="text-sm text-muted-foreground">
+                        Rows per page:
+                      </Label>
+                      <Select
+                        value={itemsPerPage === sortedTransactions.length ? "all" : String(itemsPerPage)}
+                        onValueChange={(value) => {
+                          if (value === "all") {
+                            setItemsPerPage(sortedTransactions.length);
+                          } else {
+                            setItemsPerPage(Number(value));
+                          }
+                          setCurrentPage(1); // Reset to first page when changing page size
+                        }}
+                      >
+                        <SelectTrigger id="items-per-page" className="w-[100px] h-8">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="20">20</SelectItem>
+                          <SelectItem value="50">50</SelectItem>
+                          <SelectItem value="100">100</SelectItem>
+                          <SelectItem value="all">All</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
                 </div>
-                <div className="flex items-center gap-2">
+                {sortedTransactions.length > itemsPerPage && (
+                  <div className="flex items-center gap-2">
                   <Button
                     variant="outline"
                     size="sm"
@@ -2199,7 +2230,8 @@ export default function TransactionList({
                     Last
                     <ChevronRight className="h-4 w-4" />
                   </Button>
-                </div>
+                  </div>
+                )}
               </div>
             )}
             </>

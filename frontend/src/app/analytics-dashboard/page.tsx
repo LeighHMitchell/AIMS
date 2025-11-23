@@ -612,24 +612,19 @@ export default function AnalyticsDashboardPage() {
                       onDataChange={setFinanceTypeFlowData}
                     />
                   </div>
+
+                  {/* All Donors Financial Overview - Full Width Below Finance Type Flow */}
+                  <div className="mb-6">
+                    <AllDonorsHorizontalBarChart
+                      dateRange={dateRange}
+                      refreshKey={refreshKey}
+                      onDataChange={setDonorsData}
+                    />
+                  </div>
                 </TabsContent>
 
                 <TabsContent value="under-development">
                   <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-              {/* All Donors Chart - Replaced Top 10 */}
-              <ExpandableCard
-                className="bg-white border-slate-200"
-                title="All Donors Financial Overview"
-                description="Complete ranking of all donors by total budgets, planned disbursements, or actual disbursements in USD"
-                exportData={donorsData}
-              >
-                <AllDonorsHorizontalBarChart
-                  dateRange={dateRange}
-                  refreshKey={refreshKey}
-                  onDataChange={setDonorsData}
-                />
-              </ExpandableCard>
-
               {/* Aid by Sector */}
               <ExpandableCard
                 className="bg-white border-slate-200"

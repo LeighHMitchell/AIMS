@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>æther | Development Finance Information</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;800&display=swap" rel="stylesheet">
+    
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            black: '#0F172A', 
+                            offWhite: '#F8FAFC',
+                            blue: '#2563EB',
+                            teal: '#0D9488',
+                            border: '#E2E8F0'
+                        }
+                    },
+                    animation: {
+                        'float': 'float 6s ease-in-out infinite',
+                        'grow-width': 'growWidth 1.5s ease-out forwards',
+                        'fade-in-up': 'fadeInUp 0.8s ease-out forwards',
+                    },
+                    keyframes: {
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0)' },
+                            '50%': { transform: 'translateY(-10px)' },
+                        },
+                        growWidth: {
+                            '0%': { width: '0%' },
+                            '100%': { width: 'var(--target-width)' },
+                        },
+                        fadeInUp: {
+                            '0%': { opacity: '0', transform: 'translateY(20px)' },
+                            '100%': { opacity: '1', transform: 'translateY(0)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #fff; }
+        ::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94A3B8; }
+
+        /* Reveal on Scroll Utility Classes */
+        .reveal {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: all 0.8s cubic-bezier(0.5, 0, 0, 1);
+        }
+        .reveal.active {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        
+        /* Stagger delays for children */
+        .delay-100 { transition-delay: 0.1s; }
+        .delay-200 { transition-delay: 0.2s; }
+        .delay-300 { transition-delay: 0.3s; }
+    </style>
+</head>
+<body class="font-sans text-slate-600 antialiased bg-brand-offWhite selection:bg-brand-black selection:text-white">
+
+    <nav class="fixed w-full z-50 bg-white/80 backdrop-blur-xl border-b border-slate-100 transition-all duration-300" id="navbar">
+        <div class="max-w-[1400px] mx-auto px-6 lg:px-12 flex justify-between items-center h-20">
+            <a href="#" class="flex items-center gap-3 group">
+                <div class="h-8 w-8 relative transition-transform duration-500 group-hover:rotate-180">
+                    <img src="Logo - No Text 2.jpg" alt="æther Logo" class="h-full w-full object-contain">
+                </div>
+                <span class="font-bold text-2xl tracking-tight text-brand-black lowercase">æther</span>
+            </a>
+            
+            <div class="hidden md:flex items-center gap-8">
+                <a href="#features" class="text-sm font-medium text-slate-500 hover:text-brand-black transition">Features</a>
+                <a href="#impact" class="text-sm font-medium text-slate-500 hover:text-brand-black transition">Impact</a>
+                <a href="#signin" class="text-sm font-medium text-slate-500 hover:text-brand-black transition">Sign In</a>
+                <a href="#get-started" class="bg-brand-black text-white px-5 py-2.5 rounded-lg text-sm font-semibold hover:bg-slate-800 transition shadow-lg hover:shadow-xl transform hover:-translate-y-0.5">
+                    Get Started
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <section class="relative pt-32 pb-20 lg:pt-48 lg:pb-32 overflow-hidden">
+        <div class="max-w-[1400px] mx-auto px-6 lg:px-12 grid lg:grid-cols-2 gap-16 items-center">
+            
+            <div class="max-w-2xl relative z-10 animate-fade-in-up">
+                <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 border border-blue-100 text-brand-blue text-[11px] font-bold uppercase tracking-wider mb-8">
+                    <span class="w-2 h-2 rounded-full bg-brand-blue animate-pulse"></span>
+                    v1.1 Live
+                </div>
+                
+                <h1 class="text-5xl sm:text-6xl lg:text-[5rem] font-bold text-brand-black leading-[0.95] tracking-tight mb-8">
+                    Track Aid Flows <br> 
+                    <span class="text-transparent bg-clip-text bg-gradient-to-r from-brand-black via-slate-600 to-slate-400">With Precision.</span>
+                </h1>
+                
+                <p class="text-lg text-slate-600 leading-relaxed mb-10 max-w-lg">
+                    The DFMIS designed for modern governments. Plan activities, track transactions, and publish IATI data in one unified workspace.
+                </p>
+
+                <div class="flex flex-col sm:flex-row gap-4">
+                    <a href="#get-started" class="flex items-center justify-center px-8 py-4 rounded-lg bg-brand-black text-white font-semibold hover:bg-slate-800 transition shadow-xl hover:shadow-2xl hover:-translate-y-1">
+                        Start Tracking
+                    </a>
+                    <a href="#demo" class="flex items-center justify-center px-8 py-4 rounded-lg border border-slate-200 bg-white text-brand-black font-semibold hover:bg-slate-50 transition group">
+                        <svg class="w-5 h-5 mr-2 text-slate-400 group-hover:text-brand-blue transition" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                        Watch Demo
+                    </a>
+                </div>
+            </div>
+
+            <div class="relative lg:h-[600px] flex items-center justify-center animate-float">
+                <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[120%] h-[80%] bg-gradient-to-tr from-blue-100 to-teal-100 blur-3xl rounded-full -z-10 opacity-60"></div>
+                
+                <div class="relative w-full max-w-lg bg-white rounded-2xl shadow-2xl border border-slate-100 overflow-hidden transform rotate-[-2deg] hover:rotate-0 transition duration-700 ease-out">
+                    <div class="h-12 border-b border-slate-100 flex items-center px-4 gap-2 bg-slate-50/50">
+                        <div class="flex gap-1.5">
+                            <div class="w-2.5 h-2.5 rounded-full bg-slate-300"></div>
+                            <div class="w-2.5 h-2.5 rounded-full bg-slate-300"></div>
+                        </div>
+                    </div>
+                    <div class="p-8">
+                        <div class="flex justify-between items-end mb-8">
+                            <div>
+                                <div class="text-xs text-slate-400 font-semibold uppercase tracking-wide mb-1">Total Disbursements</div>
+                                <div class="text-4xl font-bold text-brand-black">$142.8M</div>
+                            </div>
+                            <div class="text-xs font-medium text-green-600 bg-green-50 px-2 py-1 rounded-full">+12.4%</div>
+                        </div>
+                        
+                        <div class="space-y-4">
+                            <div>
+                                <div class="flex justify-between text-xs mb-1 text-slate-500">
+                                    <span>Health Sector</span>
+                                    <span>82%</span>
+                                </div>
+                                <div class="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
+                                    <div class="h-full bg-brand-black rounded-full animate-[growWidth_1.5s_ease-out_forwards]" style="--target-width: 82%; width: 0;"></div>
+                                </div>
+                            </div>
+                            <div>
+                                <div class="flex justify-between text-xs mb-1 text-slate-500">
+                                    <span>Infrastructure</span>
+                                    <span>64%</span>
+                                </div>
+                                <div class="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
+                                    <div class="h-full bg-brand-blue rounded-full animate-[growWidth_1.5s_ease-out_forwards_0.2s]" style="--target-width: 64%; width: 0;"></div>
+                                </div>
+                            </div>
+                            <div>
+                                <div class="flex justify-between text-xs mb-1 text-slate-500">
+                                    <span>Education</span>
+                                    <span>45%</span>
+                                </div>
+                                <div class="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
+                                    <div class="h-full bg-teal-500 rounded-full animate-[growWidth_1.5s_ease-out_forwards_0.4s]" style="--target-width: 45%; width: 0;"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="py-10 border-y border-slate-100 bg-white">
+        <div class="max-w-[1400px] mx-auto px-6 text-center">
+            <p class="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-6">Trusted by data-driven organizations</p>
+            <div class="flex flex-wrap justify-center gap-12 lg:gap-20 opacity-40 grayscale">
+                <svg class="h-8" viewBox="0 0 100 30" fill="currentColor"><path d="M10,15 L20,5 L30,15 L20,25 Z M40,5 H50 V25 H40 Z M60,5 H80 V10 H65 V12 H75 V17 H65 V25 H60 Z"/></svg>
+                <svg class="h-8" viewBox="0 0 100 30" fill="currentColor"><circle cx="15" cy="15" r="10"/><rect x="35" y="5" width="20" height="20"/><path d="M70,25 L80,5 L90,25"/></svg>
+                <svg class="h-8" viewBox="0 0 100 30" fill="currentColor"><rect x="10" y="10" width="80" height="10" rx="5"/></svg>
+                <svg class="h-8" viewBox="0 0 100 30" fill="currentColor"><path d="M10,5 L10,25 L30,25 M40,5 L60,5 M50,5 L50,25 M70,5 L70,25 L90,25"/></svg>
+            </div>
+        </div>
+    </section>
+
+    <section id="features" class="py-32 overflow-hidden">
+        <div class="max-w-[1200px] mx-auto px-6 lg:px-12 space-y-32">
+            
+            <div class="grid lg:grid-cols-2 gap-16 items-center reveal">
+                <div class="order-2 lg:order-1 relative">
+                    <div class="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-transparent rounded-3xl -rotate-3"></div>
+                    <img src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=1000&q=80" alt="Analytics Dashboard" class="relative rounded-2xl shadow-2xl border border-slate-100 hover:scale-[1.02] transition duration-500">
+                </div>
+                <div class="order-1 lg:order-2">
+                    <div class="w-12 h-12 rounded-xl bg-blue-100 text-brand-blue flex items-center justify-center mb-6">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+                    </div>
+                    <h2 class="text-3xl lg:text-4xl font-bold text-brand-black mb-6">Visualize Financial Flows</h2>
+                    <p class="text-lg text-slate-600 leading-relaxed mb-6">
+                        Stop guessing. See exactly where funding is coming from and where it's going. Our interactive Sankey diagrams and geospatial maps bring static spreadsheets to life.
+                    </p>
+                    <ul class="space-y-3 text-slate-700 font-medium">
+                        <li class="flex items-center gap-3"><span class="text-brand-blue">✓</span> Real-time disbursement tracking</li>
+                        <li class="flex items-center gap-3"><span class="text-brand-blue">✓</span> Sectoral heatmaps</li>
+                        <li class="flex items-center gap-3"><span class="text-brand-blue">✓</span> Donor performance analytics</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="grid lg:grid-cols-2 gap-16 items-center reveal">
+                <div>
+                    <div class="w-12 h-12 rounded-xl bg-teal-100 text-brand-teal flex items-center justify-center mb-6">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"></path></svg>
+                    </div>
+                    <h2 class="text-3xl lg:text-4xl font-bold text-brand-black mb-6">Native IATI Compliance</h2>
+                    <p class="text-lg text-slate-600 leading-relaxed mb-6">
+                        Built on the International Aid Transparency Initiative standard. Export compliant XML files with one click, ensuring your country remains transparent and accountable on the global stage.
+                    </p>
+                    <a href="#" class="text-brand-blue font-semibold hover:underline">Explore Data Standards &rarr;</a>
+                </div>
+                <div class="relative">
+                    <div class="absolute inset-0 bg-brand-black rounded-3xl rotate-3"></div>
+                    <div class="relative bg-slate-900 rounded-2xl shadow-2xl p-6 font-mono text-xs leading-relaxed text-slate-300 hover:scale-[1.02] transition duration-500">
+                        <div class="flex gap-2 mb-4">
+                            <div class="w-3 h-3 rounded-full bg-red-500"></div>
+                            <div class="w-3 h-3 rounded-full bg-yellow-500"></div>
+                            <div class="w-3 h-3 rounded-full bg-green-500"></div>
+                        </div>
+                        <p><span class="text-pink-400">&lt;iati-activity</span> <span class="text-blue-400">default-currency</span>=<span class="text-green-400">"USD"</span>&gt;</p>
+                        <p class="pl-4"><span class="text-pink-400">&lt;title&gt;</span>Education Support Program<span class="text-pink-400">&lt;/title&gt;</span></p>
+                        <p class="pl-4"><span class="text-pink-400">&lt;activity-status</span> <span class="text-blue-400">code</span>=<span class="text-green-400">"2"</span>/&gt;</p>
+                        <p class="pl-4"><span class="text-pink-400">&lt;sector</span> <span class="text-blue-400">vocabulary</span>=<span class="text-green-400">"1"</span> <span class="text-blue-400">code</span>=<span class="text-green-400">"11220"</span>/&gt;</p>
+                        <p class="pl-4"><span class="text-pink-400">&lt;transaction&gt;</span></p>
+                        <p class="pl-8"><span class="text-pink-400">&lt;value</span> <span class="text-blue-400">value-date</span>=<span class="text-green-400">"2025-10-01"</span>&gt;5000000<span class="text-pink-400">&lt;/value&gt;</span></p>
+                        <p class="pl-4"><span class="text-pink-400">&lt;/transaction&gt;</span></p>
+                        <p><span class="text-pink-400">&lt;/iati-activity&gt;</span></p>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </section>
+
+    <section class="py-24 bg-brand-black text-white relative overflow-hidden reveal">
+        <div class="absolute inset-0 opacity-10" style="background-image: radial-gradient(circle at center, #ffffff 1px, transparent 1px); background-size: 30px 30px;"></div>
+        
+        <div class="max-w-[1200px] mx-auto px-6 lg:px-12 relative z-10">
+            <div class="grid md:grid-cols-3 gap-12 text-center divide-y md:divide-y-0 md:divide-x divide-white/10">
+                <div class="p-4">
+                    <div class="text-5xl font-bold mb-2 text-transparent bg-clip-text bg-gradient-to-b from-white to-slate-400">18+</div>
+                    <div class="text-slate-400 uppercase tracking-widest text-xs font-semibold">Partner Governments</div>
+                </div>
+                <div class="p-4">
+                    <div class="text-5xl font-bold mb-2 text-transparent bg-clip-text bg-gradient-to-b from-white to-slate-400">$4.2B</div>
+                    <div class="text-slate-400 uppercase tracking-widest text-xs font-semibold">Aid Tracked Annually</div>
+                </div>
+                <div class="p-4">
+                    <div class="text-5xl font-bold mb-2 text-transparent bg-clip-text bg-gradient-to-b from-white to-slate-400">100%</div>
+                    <div class="text-slate-400 uppercase tracking-widest text-xs font-semibold">Uptime Reliability</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="get-started" class="py-32 bg-white">
+        <div class="max-w-[800px] mx-auto px-6 text-center reveal">
+            <div class="w-16 h-16 bg-slate-100 rounded-2xl flex items-center justify-center mx-auto mb-8">
+                <img src="Logo - No Text 2.jpg" class="w-10 h-10 object-contain">
+            </div>
+            <h2 class="text-4xl md:text-5xl font-bold text-brand-black mb-6">Ready to modernize your aid data?</h2>
+            <p class="text-lg text-slate-500 mb-12">Join the waitlist for Version 1.1. We are rolling out access to select partners starting next month.</p>
+            
+            <div class="max-w-md mx-auto bg-brand-offWhite p-2 rounded-xl border border-slate-200 shadow-lg">
+                <form class="space-y-2">
+                    <input type="email" placeholder="Enter your work email" class="w-full px-4 py-3 rounded-lg border border-slate-200 focus:ring-2 focus:ring-brand-black outline-none transition text-center" required>
+                    <button class="w-full py-3 rounded-lg bg-brand-black text-white font-bold hover:bg-brand-blue transition duration-300">
+                        Request Access
+                    </button>
+                </form>
+                <p class="text-xs text-slate-400 mt-3">No credit card required. Unsubscribe anytime.</p>
+            </div>
+        </div>
+    </section>
+
+    <footer class="bg-white border-t border-slate-100 py-16">
+        <div class="max-w-[1400px] mx-auto px-6 lg:px-12 flex flex-col md:flex-row justify-between items-center gap-8">
+            <div class="flex items-center gap-3 opacity-50 hover:opacity-100 transition">
+                <img src="Logo - No Text 2.jpg" class="h-6 w-6 grayscale">
+                <span class="font-bold text-brand-black lowercase">æther</span>
+            </div>
+            <div class="flex gap-8 text-sm font-medium text-slate-500">
+                <a href="#" class="hover:text-brand-black transition">Documentation</a>
+                <a href="#" class="hover:text-brand-black transition">API Status</a>
+                <a href="#" class="hover:text-brand-black transition">Privacy Policy</a>
+            </div>
+            <div class="text-sm text-slate-400">
+                © 2025 Aether Systems.
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Simple Intersection Observer to trigger animations when elements scroll into view
+        document.addEventListener('DOMContentLoaded', () => {
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('active');
+                    }
+                });
+            }, { threshold: 0.1 });
+
+            document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+        });
+    </script>
+
+</body>
+</html>

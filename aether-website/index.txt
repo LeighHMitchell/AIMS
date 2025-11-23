@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>æther | Development Finance Information</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;800&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            black: '#0F172A', 
+                            offWhite: '#F9FAFB', // The specific background tone from your image
+                            grayText: '#64748B',
+                            border: '#E2E8F0'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="font-sans text-slate-900 antialiased bg-brand-offWhite h-screen flex flex-col">
+
+    <nav class="w-full py-8">
+        <div class="max-w-[1400px] mx-auto px-6 lg:px-12 flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <div class="h-8 w-8 relative">
+                    <img src="Logo - No Text 2.jpg" alt="æther Logo" class="h-full w-full object-contain">
+                </div>
+                <div class="flex items-baseline gap-3">
+                    <span class="font-bold text-2xl tracking-tight text-brand-black lowercase">æther</span>
+                    <span class="text-sm font-semibold text-slate-400">v1.1</span>
+                    <span class="hidden md:block text-sm font-semibold text-slate-900 ml-2">Development Finance Information, Simplified.</span>
+                </div>
+            </div>
+            
+            <a href="#" class="bg-brand-black text-white px-6 py-2.5 rounded-lg text-sm font-semibold hover:bg-slate-800 transition">
+                Sign In
+            </a>
+        </div>
+    </nav>
+
+    <main class="flex-1 flex items-center">
+        <div class="max-w-[1400px] mx-auto px-6 lg:px-12 w-full grid lg:grid-cols-2 gap-16 lg:gap-24 items-center">
+            
+            <div class="max-w-xl py-10">
+                <div class="flex items-center gap-2 mb-8 opacity-80">
+                     <img src="Logo - No Text 2.jpg" alt="Logo" class="h-6 w-6 object-contain">
+                     <span class="font-bold text-xl lowercase">æther</span>
+                </div>
+
+                <h1 class="text-5xl sm:text-6xl lg:text-[5.5rem] font-bold text-brand-black leading-[0.95] tracking-tight mb-8">
+                    Track Development Finance Flows <span class="text-slate-400">with</span> <br>
+                    Precision and Transparency
+                </h1>
+                
+                <p class="text-lg text-slate-600 leading-relaxed mb-12 max-w-lg">
+                    <span class="font-bold text-slate-900">æther</span> is a purpose-built Development Finance Information Management System (DFMIS) for recipient governments and development partners. It enables you to plan activities, track transactions, and publish data in line with the IATI Standard.
+                </p>
+
+                <div class="space-y-6">
+                    <p class="text-sm text-slate-600 font-medium">
+                        Sign up to receive updates on new features, release timelines, and early access opportunities
+                    </p>
+                    
+                    <form class="space-y-4">
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="space-y-1">
+                                <label class="text-xs font-bold text-slate-700 uppercase tracking-wide">First Name</label>
+                                <input type="text" placeholder="First name" class="w-full px-4 py-3 rounded-lg border border-brand-border bg-white focus:ring-2 focus:ring-brand-black focus:border-transparent outline-none transition text-sm">
+                            </div>
+                            <div class="space-y-1">
+                                <label class="text-xs font-bold text-slate-700 uppercase tracking-wide">Last Name</label>
+                                <input type="text" placeholder="Last name" class="w-full px-4 py-3 rounded-lg border border-brand-border bg-white focus:ring-2 focus:ring-brand-black focus:border-transparent outline-none transition text-sm">
+                            </div>
+                        </div>
+                        
+                        <div class="space-y-1">
+                            <label class="text-xs font-bold text-slate-700 uppercase tracking-wide">Email Address *</label>
+                            <input type="email" placeholder="Enter your email address" class="w-full px-4 py-3 rounded-lg border border-brand-border bg-white focus:ring-2 focus:ring-brand-black focus:border-transparent outline-none transition text-sm">
+                        </div>
+
+                        <button type="submit" class="w-full py-4 rounded-lg bg-brand-black text-white font-bold text-sm hover:bg-slate-800 transition shadow-lg">
+                            Sign Up for Updates
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <div class="relative hidden lg:block h-full flex items-center">
+                <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[120%] h-[80%] bg-slate-200/50 blur-3xl rounded-full -z-10"></div>
+                
+                <div class="relative w-full bg-white rounded-xl shadow-2xl border border-slate-200 overflow-hidden transform transition hover:scale-[1.01] duration-500">
+                    <div class="bg-slate-50 border-b border-slate-100 h-10 flex items-center px-4 gap-2">
+                        <div class="flex gap-1.5">
+                            <div class="w-2.5 h-2.5 rounded-full bg-red-400"></div>
+                            <div class="w-2.5 h-2.5 rounded-full bg-amber-400"></div>
+                            <div class="w-2.5 h-2.5 rounded-full bg-green-400"></div>
+                        </div>
+                        <div class="flex-1 mx-4 h-6 bg-white border border-slate-200 rounded text-[10px] flex items-center px-2 text-slate-400 font-mono">
+                            app.aether.io/dashboard/overview
+                        </div>
+                    </div>
+                    
+                    <img src="https://placehold.co/1200x800/ffffff/e2e8f0?text=Your+App+Screenshot+Here" alt="App Dashboard" class="w-full h-auto object-cover">
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+</body>
+</html>

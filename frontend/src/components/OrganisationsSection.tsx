@@ -431,7 +431,9 @@ export default function OrganisationsSection({
                         </TableCell>
                         <TableCell>
                           <span className="text-sm text-gray-600">
-                            {participatingOrg.org_type ? getOrganizationTypeName(participatingOrg.org_type) : <span className="text-gray-400">Not set</span>}
+                            {participatingOrg.organization?.Organisation_Type_Name || 
+                             (participatingOrg.organization?.Organisation_Type_Code ? getOrganizationTypeName(participatingOrg.organization.Organisation_Type_Code) : null) || 
+                             <span className="text-gray-400">Not set</span>}
                           </span>
                         </TableCell>
                         <TableCell className="text-right">

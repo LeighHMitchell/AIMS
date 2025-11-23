@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase';
 import { fixedCurrencyConverter } from '@/lib/currency-converter-fixed';
 import { getOrCreateOrganization } from '@/lib/organization-helpers';
+import { validatePolicyMarkerSignificance } from '@/lib/policy-marker-validation';
 
 interface ImportRequest {
   fields: Record<string, boolean>;
@@ -19,8 +20,16 @@ interface IATISector {
 interface IATIOrganization {
   ref?: string;
   name?: string;
+  narrative?: string; // Some parsers use 'narrative' instead of 'name'
   role?: string;
   type?: string;
+  activityId?: string; // IATI @activity-id attribute
+  crsChannelCode?: string; // IATI @crs-channel-code attribute
+  narrativeLang?: string; // xml:lang attribute for narrative
+  narratives?: Array<{ lang: string; text: string }>; // Multilingual narratives
+  validated_ref?: string; // Validated/corrected IATI org reference
+  original_ref?: string; // Original IATI org reference before validation
+  wasCorrected?: boolean; // Whether the ref was corrected during validation
 }
 
 interface IATITransaction {
@@ -88,6 +97,7 @@ export async function POST(
   request: NextRequest,
   { params }: { params: { id: string } | Promise<{ id: string }> }
 ) {
+  console.log('[IATI Import] 🚀 POST handler called');
   try {
     // Handle both sync and async params (Next.js 14/15 compatibility)
     const resolvedParams = await Promise.resolve(params);
@@ -96,6 +106,25 @@ export async function POST(
     const body: ImportRequest = await request.json();
     const { fields, iati_data } = body;
     
+    // Extract acronyms from body (if provided by user after review)
+    const acronyms = (body as any).acronyms || {};
+    
+    // Extract reporting org fields from body (they're sent at top level, not in iati_data)
+    // NOTE: For merge/fork/reference modes, we should NOT update reporting org fields
+    // These fields should only be processed in import-as-reporting-org mode
+    const reportingOrgName = (body as any).reporting_org_name;
+    const reportingOrgRef = (body as any).reporting_org_ref;
+    const reportingOrgType = (body as any).reporting_org_type;
+    
+    console.log('[IATI Import] Request received:', { 
+      activityId,
+      hasFields: !!fields,
+      hasIatiData: !!iati_data,
+      reportingOrgRef,
+      reportingOrgName,
+      note: 'This route (merge/fork/reference) should NOT update reporting org fields'
+    });
+    
     if (!fields || !iati_data) {
       return NextResponse.json(
         { error: 'Missing required fields: fields and iati_data' },
@@ -103,6 +132,7 @@ export async function POST(
       );
     }
     
+    console.log('[IATI Import] 🚀 POST handler called for activity:', activityId);
     console.log('[IATI Import] Starting import for activity:', activityId);
     console.log('[IATI Import] Fields to import:', Object.keys(fields).filter(k => fields[k]));
     console.log('[IATI Import] Related activities flag:', fields.related_activities);
@@ -151,10 +181,19 @@ export async function POST(
     // Build update object based on selected fields
     const updateData: Record<string, any> = {};
     
+    // Check if there's an acronym for this activity's IATI identifier
+    const activityIatiId = currentActivity.iati_identifier || iati_data.iati_identifier;
+    const userProvidedAcronym = activityIatiId && acronyms[activityIatiId];
+    
+    if (userProvidedAcronym) {
+      console.log('[IATI Import] User provided acronym for activity:', userProvidedAcronym);
+    }
+    
     // Simple field mappings
     // Maps from IATI field name (key) to database column name (value)
     const fieldMappings: Record<string, string> = {
       title_narrative: 'title_narrative',
+      acronym: 'acronym',
       description_narrative: 'description_narrative',
       description_objectives: 'description_objectives',
       description_target_groups: 'description_target_groups',
@@ -172,7 +211,8 @@ export async function POST(
       default_finance_type: 'default_finance_type',
       default_currency: 'default_currency',  // Added - was missing
       default_tied_status: 'default_tied_status',  // Added - was missing
-      capital_spend_percentage: 'capital_spend_percentage'
+      capital_spend_percentage: 'capital_spend_percentage',
+      hierarchy: 'hierarchy'
     };
     
     // Process simple fields
@@ -191,9 +231,27 @@ export async function POST(
       }
     });
     
+    // Add user-provided acronym if available
+    if (userProvidedAcronym) {
+      updateData.acronym = userProvidedAcronym;
+      updatedFields.push('acronym');
+      console.log(`[IATI Import] Setting acronym from user input: "${userProvidedAcronym}"`);
+    }
+    
+    // IMPORTANT: This route is for merge/fork/reference modes only
+    // We should NOT update reporting org fields - preserve the existing reporting org
+    // Reporting org updates are handled by the import-as-reporting-org route
+    if (reportingOrgName || reportingOrgRef) {
+      console.log(`[IATI Import] ⚠️  Reporting org fields provided but IGNORED - this route preserves existing reporting org`);
+      console.log(`[IATI Import] ⚠️  To update reporting org, use import-as-reporting-org mode instead`);
+    }
+    
     // Update activity with simple fields
     if (Object.keys(updateData).length > 0) {
       updateData.updated_at = new Date().toISOString();
+      
+      // Explicitly DO NOT update reporting org fields - preserve existing values
+      // This ensures merge/fork/reference modes keep the original reporting org
       
       const { error: updateError } = await supabase
         .from('activities')
@@ -201,8 +259,23 @@ export async function POST(
         .eq('id', activityId);
       
       if (updateError) {
-        console.error('[IATI Import] Error updating activity:', updateError);
+        console.error('[IATI Import] ❌ Error updating activity:', updateError);
         throw updateError;
+      }
+      
+      console.log('[IATI Import] ✅ Activity updated successfully');
+      
+      // Verify what was actually saved to the database
+      const { data: verifyActivity } = await supabase
+        .from('activities')
+        .select('id, reporting_org_id, reporting_org_ref, reporting_org_name, created_by_org_name, created_by_org_acronym')
+        .eq('id', activityId)
+        .single();
+      
+      console.log(`[IATI Import] ✅ Verified saved org fields:`, verifyActivity);
+      
+      if (!verifyActivity?.reporting_org_id && !verifyActivity?.created_by_org_name) {
+        console.error(`[IATI Import] ⚠️  WARNING: Organization fields are NULL after update!`);
       }
     }
     
@@ -282,6 +355,253 @@ export async function POST(
       updatedFields.push('sectors');
     }
     
+    // Handle policy markers if selected
+    let policyMarkersCount = 0;
+    if (fields.policy_markers && iati_data.policyMarkers) {
+      console.log('[IATI Import] Updating policy markers');
+      
+      // Store previous policy markers
+      const { data: previousPolicyMarkers } = await supabase
+        .from('activity_policy_markers')
+        .select('*')
+        .eq('activity_id', activityId);
+      
+      previousValues.policy_markers = previousPolicyMarkers;
+      
+      // Clear existing policy markers
+      await supabase
+        .from('activity_policy_markers')
+        .delete()
+        .eq('activity_id', activityId);
+      
+      // Insert new policy markers
+      if (Array.isArray(iati_data.policyMarkers) && iati_data.policyMarkers.length > 0) {
+        // Fetch available policy markers from database
+        // Get all standard IATI markers
+        const { data: standardMarkers, error: standardError } = await supabase
+          .from('policy_markers')
+          .select('uuid, code, iati_code, name, vocabulary, vocabulary_uri, is_iati_standard')
+          .eq('is_active', true)
+          .eq('is_iati_standard', true);
+        
+        if (standardError) {
+          console.error('[IATI Import] Error fetching standard policy markers:', standardError);
+          importWarnings.push({
+            type: 'policy_markers_fetch_error',
+            message: 'Failed to fetch standard policy markers from database',
+            details: standardError.message
+          });
+        }
+        
+        // Get custom markers linked to this activity
+        const { data: activityCustomMarkers, error: customError } = await supabase
+          .from('activity_policy_markers')
+          .select(`
+            policy_markers!activity_policy_markers_policy_marker_uuid_fkey (
+              uuid, code, iati_code, name, vocabulary, vocabulary_uri, is_iati_standard
+            )
+          `)
+          .eq('activity_id', activityId);
+        
+        if (customError) {
+          console.error('[IATI Import] Error fetching custom policy markers:', customError);
+        }
+        
+        // Combine all available markers
+        const availableMarkers: any[] = [...(standardMarkers || [])];
+        if (activityCustomMarkers) {
+          const customMarkersList = activityCustomMarkers
+            .map((item: any) => item.policy_markers)
+            .filter(Boolean);
+          availableMarkers.push(...customMarkersList);
+        }
+        
+        // Remove duplicates based on UUID
+        const uniqueMarkers = Array.from(
+          new Map(availableMarkers.map((m: any) => [m.uuid, m])).values()
+        );
+        
+        console.log(`[IATI Import] Found ${uniqueMarkers.length} available policy markers`);
+        
+        const importedPolicyMarkers: any[] = [];
+        const unmatchedMarkers: any[] = [];
+        
+        // Process each policy marker from XML
+        for (const xmlMarker of iati_data.policyMarkers) {
+          const markerVocabulary = xmlMarker.vocabulary || '1';
+          let matchingMarker = null;
+          
+          // Determine lookup strategy based on vocabulary
+          if (markerVocabulary === '1') {
+            // Standard IATI marker: match by vocabulary + iati_code
+            matchingMarker = uniqueMarkers.find((marker: any) => {
+              return marker.is_iati_standard === true &&
+                marker.vocabulary === '1' &&
+                marker.iati_code === xmlMarker.code;
+            });
+          } else if (markerVocabulary === '99') {
+            // Custom marker: match by vocabulary + code + vocabulary_uri
+            const vocabularyUri = xmlMarker.vocabulary_uri || '';
+            matchingMarker = uniqueMarkers.find((marker: any) => {
+              return marker.is_iati_standard === false &&
+                marker.vocabulary === '99' &&
+                marker.code === xmlMarker.code &&
+                (marker.vocabulary_uri || '') === vocabularyUri;
+            });
+          }
+          
+          if (matchingMarker) {
+            // Convert significance from string to number
+            const rawSignificance = parseInt(xmlMarker.significance || '0', 10);
+            
+            // Validate significance according to IATI rules
+            const validation = validatePolicyMarkerSignificance(matchingMarker, rawSignificance);
+            
+            let significance = rawSignificance;
+            if (!validation.isValid) {
+              // Normalize to maximum allowed significance
+              significance = validation.maxAllowedSignificance;
+              console.warn(`[IATI Import] Normalized significance for ${matchingMarker.name}: ${rawSignificance} -> ${significance} (IATI compliance)`);
+              importWarnings.push({
+                type: 'policy_marker_significance_normalized',
+                message: `Significance normalized for ${matchingMarker.name}`,
+                details: {
+                  marker: matchingMarker.name,
+                  original: rawSignificance,
+                  normalized: significance,
+                  reason: validation.error
+                }
+              });
+            }
+            
+            importedPolicyMarkers.push({
+              activity_id: activityId,
+              policy_marker_id: matchingMarker.uuid, // Use UUID, not ID!
+              significance: significance,
+              rationale: xmlMarker.narrative || null
+            });
+            
+            console.log(`[IATI Import] Mapped policy marker: ${xmlMarker.code} -> ${matchingMarker.name} (significance: ${significance})`);
+          } else {
+            // Marker not found - try to create custom marker if vocabulary is 99
+            if (markerVocabulary === '99') {
+              console.log(`[IATI Import] Creating custom policy marker for code: ${xmlMarker.code}, vocabulary: 99`);
+              
+              try {
+                // Create custom policy marker
+                const { data: newMarker, error: createError } = await supabase
+                  .from('policy_markers')
+                  .insert({
+                    name: `Policy Marker ${xmlMarker.code}`,
+                    description: `Custom policy marker imported from IATI XML (code: ${xmlMarker.code})`,
+                    marker_type: 'custom',
+                    code: xmlMarker.code,
+                    vocabulary: '99',
+                    vocabulary_uri: xmlMarker.vocabulary_uri || null,
+                    is_iati_standard: false,
+                    is_active: true,
+                    display_order: 999
+                  })
+                  .select('uuid, code, iati_code, name, vocabulary, vocabulary_uri, is_iati_standard')
+                  .single();
+                
+                if (createError || !newMarker) {
+                  console.error(`[IATI Import] Failed to create custom policy marker:`, createError);
+                  unmatchedMarkers.push({
+                    code: xmlMarker.code,
+                    vocabulary: markerVocabulary,
+                    reason: createError?.message || 'Failed to create custom marker'
+                  });
+                  importWarnings.push({
+                    type: 'policy_marker_creation_failed',
+                    message: `Failed to create custom policy marker "${xmlMarker.code}"`,
+                    details: createError?.message || 'Unknown error'
+                  });
+                } else {
+                  console.log(`[IATI Import] Successfully created custom policy marker:`, newMarker);
+                  
+                  // Convert significance from string to number
+                  const rawSignificance = parseInt(xmlMarker.significance || '0', 10);
+                  
+                  // Validate significance according to IATI rules
+                  const validation = validatePolicyMarkerSignificance(newMarker, rawSignificance);
+                  
+                  let significance = rawSignificance;
+                  if (!validation.isValid) {
+                    // Normalize to maximum allowed significance
+                    significance = validation.maxAllowedSignificance;
+                    console.warn(`[IATI Import] Normalized significance for custom marker ${xmlMarker.code}: ${rawSignificance} -> ${significance} (IATI compliance)`);
+                  }
+                  
+                  // Add the newly created marker to our import list
+                  importedPolicyMarkers.push({
+                    activity_id: activityId,
+                    policy_marker_id: newMarker.uuid, // Use UUID!
+                    significance: significance,
+                    rationale: xmlMarker.narrative || null
+                  });
+                  
+                  console.log(`[IATI Import] Created and assigned custom policy marker: ${xmlMarker.code} -> ${newMarker.name} (significance: ${significance})`);
+                }
+              } catch (createErr: any) {
+                console.error(`[IATI Import] Exception creating custom policy marker:`, createErr);
+                unmatchedMarkers.push({
+                  code: xmlMarker.code,
+                  vocabulary: markerVocabulary,
+                  reason: createErr.message || 'Exception during creation'
+                });
+              }
+            } else {
+              // Standard marker not found - log warning
+              console.warn(`[IATI Import] Policy marker not found: code=${xmlMarker.code}, vocabulary=${markerVocabulary}`);
+              unmatchedMarkers.push({
+                code: xmlMarker.code,
+                vocabulary: markerVocabulary,
+                reason: 'Standard IATI marker not found in database'
+              });
+              importWarnings.push({
+                type: 'policy_marker_not_found',
+                message: `Policy marker not found: code ${xmlMarker.code} (vocabulary ${markerVocabulary})`,
+                details: {
+                  code: xmlMarker.code,
+                  vocabulary: markerVocabulary,
+                  suggestion: 'Ensure IATI standard policy markers are seeded in the database'
+                }
+              });
+            }
+          }
+        }
+        
+        // Insert matched policy markers
+        if (importedPolicyMarkers.length > 0) {
+          const { error: insertError } = await supabase
+            .from('activity_policy_markers')
+            .insert(importedPolicyMarkers);
+          
+          if (insertError) {
+            console.error('[IATI Import] Error inserting policy markers:', insertError);
+            importWarnings.push({
+              type: 'policy_markers_insert_error',
+              message: 'Failed to insert policy markers',
+              details: insertError.message
+            });
+          } else {
+            policyMarkersCount = importedPolicyMarkers.length;
+            console.log(`[IATI Import] ✓ Imported ${policyMarkersCount} policy markers`);
+            updatedFields.push('policy_markers');
+          }
+        }
+        
+        // Log unmatched markers
+        if (unmatchedMarkers.length > 0) {
+          console.warn(`[IATI Import] ⚠️  ${unmatchedMarkers.length} policy marker(s) could not be matched or created`);
+          unmatchedMarkers.forEach((marker, idx) => {
+            console.warn(`[IATI Import]    ${idx + 1}. Code: ${marker.code}, Vocabulary: ${marker.vocabulary}, Reason: ${marker.reason}`);
+          });
+        }
+      }
+    }
+    
     // Handle participating organizations if selected
     if (fields.participating_orgs && iati_data.participating_orgs) {
       console.log('[IATI Import] Updating participating organizations');
@@ -295,53 +615,222 @@ export async function POST(
       
       previousValues.participating_orgs = previousParticipatingOrgs;
       
-      // Map organization references/names to IDs
-      const orgRefs = iati_data.participating_orgs.map((o: IATIOrganization) => o.ref).filter(Boolean);
-      const orgNames = iati_data.participating_orgs.map((o: IATIOrganization) => o.name).filter(Boolean);
-      
-      const { data: organizations } = await supabase
-        .from('organizations')
-        .select('id, iati_org_id, name')
-        .or(`iati_org_id.in.(${orgRefs.join(',')}),name.in.(${orgNames.join(',')})`);
-      
-      const orgMap = new Map<string, string>();
-      (organizations || []).forEach((org: DBOrganization) => {
-        if (org.iati_org_id) orgMap.set(org.iati_org_id, org.id);
-        orgMap.set(org.name, org.id);
-      });
-      
-      console.log(`[IATI Import] Found ${organizations?.length || 0} matching organizations in database`);
-      
       // Clear existing participating organizations
       await supabase
         .from('activity_participating_organizations')
         .delete()
         .eq('activity_id', activityId);
       
-      // Track unmatched organizations for logging
-      const unmatchedOrgs: Array<{ref?: string; name?: string; role?: string}> = [];
+      // Track results for better error reporting
+      const unmatchedOrgs: Array<{ref?: string; name?: string; role?: string; reason?: string}> = [];
+      const matchedOrgs: Array<{name: string; id: string; method: string; wasExisting: boolean}> = [];
       
-      // Insert new participating organizations
-      const participatingOrgs = iati_data.participating_orgs
-        .map((org: IATIOrganization, index: number) => {
-          const orgId = orgMap.get(org.ref || '') || orgMap.get(org.name || '');
-          if (!orgId) {
+      // Server-side organization resolution function (uses direct Supabase queries)
+      const resolveOrCreateOrganization = async (org: IATIOrganization): Promise<{id: string | null; method: string; wasExisting: boolean}> => {
+        const orgName = org.name || org.narrative || org.ref || 'Unknown Organization';
+        let orgId: string | null = null;
+        let method = '';
+        let wasExisting = false;
+        
+        // Step 1: Try direct match by iati_org_id
+        if (org.ref) {
+          const { data: directMatch } = await supabase
+            .from('organizations')
+            .select('id, name, iati_org_id')
+            .eq('iati_org_id', org.ref)
+            .maybeSingle();
+          
+          if (directMatch) {
+            orgId = directMatch.id;
+            method = 'matched by IATI ID';
+            wasExisting = true;
+            console.log(`[IATI Import] ✓ Found existing organization: "${directMatch.name || orgName}" (${method})`);
+            return { id: orgId, method, wasExisting };
+          }
+          
+          // Step 2: Try match by alias_refs array
+          const { data: aliasMatches } = await supabase
+            .from('organizations')
+            .select('id, name, alias_refs')
+            .not('alias_refs', 'is', null);
+          
+          if (aliasMatches && aliasMatches.length > 0) {
+            const aliasMatch = aliasMatches.find(o => 
+              o.alias_refs && Array.isArray(o.alias_refs) && o.alias_refs.includes(org.ref)
+            );
+            if (aliasMatch) {
+              orgId = aliasMatch.id;
+              method = 'matched by alias reference';
+              wasExisting = true;
+              console.log(`[IATI Import] ✓ Found existing organization: "${aliasMatch.name || orgName}" (${method})`);
+              return { id: orgId, method, wasExisting };
+            }
+          }
+        }
+        
+        // Step 3: Try fuzzy match by name
+        if (!orgId && (org.name || org.narrative)) {
+          const searchName = (org.name || org.narrative || '').trim();
+          if (searchName) {
+            // Try exact match first
+            const { data: exactMatch } = await supabase
+              .from('organizations')
+              .select('id, name')
+              .ilike('name', searchName)
+              .limit(1)
+              .maybeSingle();
+            
+            if (exactMatch) {
+              orgId = exactMatch.id;
+              method = 'matched by name (exact)';
+              wasExisting = true;
+              console.log(`[IATI Import] ✓ Found existing organization: "${exactMatch.name || orgName}" (${method})`);
+              return { id: orgId, method, wasExisting };
+            }
+            
+            // Try partial match
+            const { data: partialMatches } = await supabase
+              .from('organizations')
+              .select('id, name')
+              .ilike('name', `%${searchName}%`)
+              .limit(1);
+            
+            if (partialMatches && partialMatches.length > 0) {
+              orgId = partialMatches[0].id;
+              method = 'matched by name (partial)';
+              wasExisting = true;
+              console.log(`[IATI Import] ✓ Found existing organization: "${partialMatches[0].name || orgName}" (${method})`);
+              return { id: orgId, method, wasExisting };
+            }
+          }
+        }
+        
+        // Step 4: Try to create new organization (but check if it already exists)
+        try {
+          const newOrgData: any = {
+            name: orgName,
+            iati_org_id: org.ref || null,
+            alias_refs: org.ref ? [org.ref] : [],
+            type: org.type || null,
+            Organisation_Type_Code: org.type || null,
+            country: null
+          };
+          
+          const { data: createdOrg, error: createError } = await supabase
+            .from('organizations')
+            .insert([newOrgData])
+            .select()
+            .single();
+          
+          if (createdOrg && !createError) {
+            orgId = createdOrg.id;
+            method = 'created new organization';
+            wasExisting = false;
+            console.log(`[IATI Import] ✓ Created new organization: "${createdOrg.name || orgName}"`);
+            return { id: orgId, method, wasExisting };
+          } else if (createError) {
+            // Check if error is due to duplicate (unique constraint violation)
+            if (createError.code === '23505' || createError.message?.includes('duplicate') || createError.message?.includes('unique')) {
+              // Try to find the existing organization
+              if (org.ref) {
+                const { data: existing } = await supabase
+                  .from('organizations')
+                  .select('id, name')
+                  .eq('iati_org_id', org.ref)
+                  .maybeSingle();
+                
+                if (existing) {
+                  orgId = existing.id;
+                  method = 'already exists in database (duplicate prevented)';
+                  wasExisting = true;
+                  console.log(`[IATI Import] ✓ Organization already exists: "${existing.name || orgName}" (${method})`);
+                  return { id: orgId, method, wasExisting };
+                }
+              }
+              
+              // Try by name
+              const searchName = (org.name || org.narrative || '').trim();
+              if (searchName) {
+                const { data: existing } = await supabase
+                  .from('organizations')
+                  .select('id, name')
+                  .ilike('name', searchName)
+                  .maybeSingle();
+                
+                if (existing) {
+                  orgId = existing.id;
+                  method = 'already exists in database (duplicate prevented)';
+                  wasExisting = true;
+                  console.log(`[IATI Import] ✓ Organization already exists: "${existing.name || orgName}" (${method})`);
+                  return { id: orgId, method, wasExisting };
+                }
+              }
+            }
+            
+            console.error(`[IATI Import] ✗ Error creating organization "${orgName}":`, createError.message);
+            return { id: null, method: `creation failed: ${createError.message}`, wasExisting: false };
+          }
+        } catch (createErr: any) {
+          console.error(`[IATI Import] ✗ Exception creating organization "${orgName}":`, createErr);
+          return { id: null, method: `creation failed: ${createErr.message || 'unknown error'}`, wasExisting: false };
+        }
+        
+        return { id: null, method: 'not found and creation failed', wasExisting: false };
+      };
+      
+      // Process each participating organization - find or create as needed
+      const participatingOrgs = await Promise.all(
+        iati_data.participating_orgs.map(async (org: IATIOrganization, index: number) => {
+          // Handle both 'name' and 'narrative' fields (different parsers use different fields)
+          const orgName = org.name || org.narrative || org.ref || 'Unknown Organization';
+          
+          // Resolve or create the organization
+          const result = await resolveOrCreateOrganization(org);
+          
+          if (!result.id) {
             // Log detailed warning about unmatched organization
-            const orgIdentifier = org.ref || org.name || 'Unknown';
-            console.warn(`[IATI Import] ⚠️  Organization not found in database: ${orgIdentifier}`);
+            const orgIdentifier = org.ref || org.name || org.narrative || 'Unknown';
+            const detailedReason = result.method || 'Unknown error during organization resolution';
+            
+            console.warn(`[IATI Import] ⚠️  Organization not found/created: ${orgIdentifier}`);
             console.warn(`[IATI Import]     - IATI Ref: ${org.ref || 'N/A'}`);
             console.warn(`[IATI Import]     - Name: ${org.name || 'N/A'}`);
+            console.warn(`[IATI Import]     - Narrative: ${org.narrative || 'N/A'}`);
             console.warn(`[IATI Import]     - Role: ${org.role || 'N/A'}`);
             console.warn(`[IATI Import]     - Type: ${org.type || 'N/A'}`);
+            console.warn(`[IATI Import]     - Activity ID: ${org.activityId || 'N/A'}`);
+            console.warn(`[IATI Import]     - CRS Channel Code: ${org.crsChannelCode || 'N/A'}`);
+            console.warn(`[IATI Import]     - Reason: ${detailedReason}`);
+            
+            // Create user-friendly error message
+            let userFriendlyReason = detailedReason;
+            if (detailedReason.includes('creation failed')) {
+              userFriendlyReason = `Failed to create organization: ${detailedReason.replace('creation failed: ', '')}`;
+            } else if (detailedReason.includes('not found')) {
+              userFriendlyReason = 'Organization not found in database and could not be created. Please ensure the organization exists or can be created.';
+            } else if (detailedReason.includes('duplicate')) {
+              userFriendlyReason = 'Organization already exists but could not be matched.';
+            }
             
             unmatchedOrgs.push({
-              ref: org.ref,
-              name: org.name,
-              role: org.role
+              ref: org.ref || org.validated_ref,
+              name: org.name || org.narrative || orgIdentifier,
+              role: org.role || 'unknown',
+              reason: userFriendlyReason,
+              type: org.type || null,
+              activityId: org.activityId || null
             });
             
             return null;
           }
+          
+          // Track successful matches
+          matchedOrgs.push({
+            name: orgName,
+            id: result.id,
+            method: result.method,
+            wasExisting: result.wasExisting
+          });
           
           // Map IATI role codes to our role types
           let roleType: 'extending' | 'implementing' | 'government' | 'funding' = 'implementing';
@@ -355,47 +844,252 @@ export async function POST(
             roleType = 'implementing';
           }
           
+          // Parse IATI role code to integer (1-4)
+          const iatiRoleCode = org.role ? parseInt(org.role, 10) : 4;
+          
+          // Prepare IATI fields for insert
+          const iatiOrgRef = org.validated_ref || org.ref || null;
+          const narrative = org.narrative || org.name || null;
+          const narrativeLang = org.narrativeLang || 'en';
+          const narratives = org.narratives && org.narratives.length > 0 
+            ? JSON.stringify(org.narratives) 
+            : null;
+          
           return {
             activity_id: activityId,
-            organization_id: orgId,
+            organization_id: result.id,
             role_type: roleType,
-            display_order: index
+            display_order: index,
+            // IATI-specific fields
+            iati_role_code: (iatiRoleCode >= 1 && iatiRoleCode <= 4) ? iatiRoleCode : 4,
+            iati_org_ref: iatiOrgRef,
+            org_type: org.type || null,
+            activity_id_ref: org.activityId || null,
+            crs_channel_code: org.crsChannelCode || null,
+            narrative: narrative,
+            narrative_lang: narrativeLang,
+            narratives: narratives,
+            org_activity_id: org.activityId || null,
+            reporting_org_ref: null,
+            secondary_reporter: false
           };
         })
-        .filter(Boolean);
+      );
       
-      if (participatingOrgs.length > 0) {
-        await supabase
+      // Filter out null values
+      const validParticipatingOrgs = participatingOrgs.filter(Boolean);
+      
+      if (validParticipatingOrgs.length > 0) {
+        // Check for existing records to handle unique constraint violations
+        const orgIdsToCheck = validParticipatingOrgs.map(org => org.organization_id);
+        const { data: existingOrgs, error: checkError } = await supabase
           .from('activity_participating_organizations')
-          .insert(participatingOrgs);
-        console.log(`[IATI Import] ✅ Successfully imported ${participatingOrgs.length} participating organizations`);
+          .select('id, activity_id, organization_id, role_type')
+          .eq('activity_id', activityId)
+          .in('organization_id', orgIdsToCheck);
+        
+        if (checkError) {
+          console.error('[IATI Import] Error checking existing participating orgs:', checkError);
+        }
+        
+        // Create a map of existing orgs for quick lookup
+        const existingOrgsMap = new Map<string, string>();
+        if (existingOrgs) {
+          existingOrgs.forEach(existing => {
+            const key = `${existing.activity_id}-${existing.organization_id}-${existing.role_type}`;
+            existingOrgsMap.set(key, existing.id);
+          });
+        }
+        
+        // Separate new orgs from ones that need updating
+        const orgsToInsert: any[] = [];
+        const orgsToUpdate: Array<{ id: string; data: any }> = [];
+        const duplicateOrgs: Array<{ org: any; reason: string }> = [];
+        
+        for (const org of validParticipatingOrgs) {
+          const key = `${org.activity_id}-${org.organization_id}-${org.role_type}`;
+          const existingId = existingOrgsMap.get(key);
+          
+          if (existingId) {
+            // Record exists - update it with new IATI fields
+            orgsToUpdate.push({
+              id: existingId,
+              data: {
+                iati_role_code: org.iati_role_code,
+                iati_org_ref: org.iati_org_ref,
+                org_type: org.org_type,
+                activity_id_ref: org.activity_id_ref,
+                crs_channel_code: org.crs_channel_code,
+                narrative: org.narrative,
+                narrative_lang: org.narrative_lang,
+                narratives: org.narratives,
+                org_activity_id: org.org_activity_id,
+                display_order: org.display_order,
+                updated_at: new Date().toISOString()
+              }
+            });
+          } else {
+            // New record - insert it
+            orgsToInsert.push(org);
+          }
+        }
+        
+        let insertedCount = 0;
+        let updatedCount = 0;
+        let failedCount = 0;
+        
+        // Insert new records
+        if (orgsToInsert.length > 0) {
+          const { data: insertedData, error: insertError } = await supabase
+            .from('activity_participating_organizations')
+            .insert(orgsToInsert)
+            .select('id');
+          
+          if (insertError) {
+            console.error('[IATI Import] Error inserting participating organizations:', insertError);
+            console.error('[IATI Import] Error code:', insertError.code);
+            console.error('[IATI Import] Error message:', insertError.message);
+            console.error('[IATI Import] Failed orgs data:', JSON.stringify(orgsToInsert, null, 2));
+            
+            // Handle unique constraint violations
+            if (insertError.code === '23505' || insertError.message?.includes('unique') || insertError.message?.includes('duplicate')) {
+              console.warn('[IATI Import] Unique constraint violation detected - some orgs may already exist');
+              
+              // Try to identify which orgs failed
+              for (const org of orgsToInsert) {
+                duplicateOrgs.push({
+                  org,
+                  reason: 'Organization already participating in this role for this activity'
+                });
+              }
+            } else {
+              // Other errors - add to unmatched orgs
+              for (const org of orgsToInsert) {
+                const orgName = org.narrative || `Organization ID ${org.organization_id}`;
+                unmatchedOrgs.push({
+                  ref: org.iati_org_ref || null,
+                  name: orgName,
+                  role: org.iati_role_code?.toString() || 'unknown',
+                  reason: `Database insert failed: ${insertError.message}`
+                });
+                failedCount++;
+              }
+            }
+          } else {
+            insertedCount = insertedData?.length || 0;
+            console.log(`[IATI Import] ✅ Successfully inserted ${insertedCount} new participating organizations`);
+          }
+        }
+        
+        // Update existing records
+        if (orgsToUpdate.length > 0) {
+          for (const updateItem of orgsToUpdate) {
+            const { error: updateError } = await supabase
+              .from('activity_participating_organizations')
+              .update(updateItem.data)
+              .eq('id', updateItem.id);
+            
+            if (updateError) {
+              console.error(`[IATI Import] Error updating participating org ${updateItem.id}:`, updateError);
+              failedCount++;
+            } else {
+              updatedCount++;
+            }
+          }
+          
+          if (updatedCount > 0) {
+            console.log(`[IATI Import] ✅ Successfully updated ${updatedCount} existing participating organizations with IATI fields`);
+          }
+        }
+        
+        // Log summary of matched organizations
+        const existingCount = matchedOrgs.filter(m => m.wasExisting).length;
+        const createdCount = matchedOrgs.filter(m => !m.wasExisting).length;
+        
+        if (existingCount > 0) {
+          console.log(`[IATI Import] ℹ️  ${existingCount} organization(s) were already in the database and were linked to the activity`);
+        }
+        if (createdCount > 0) {
+          console.log(`[IATI Import] ℹ️  ${createdCount} organization(s) were created during import`);
+        }
+        
+        // Add warnings for duplicate orgs
+        if (duplicateOrgs.length > 0) {
+          importWarnings.push({
+            type: 'duplicate_organizations',
+            message: `${duplicateOrgs.length} organization(s) were skipped because they already participate in the same role`,
+            details: {
+              skipped_organizations: duplicateOrgs.map(d => ({
+                organization_id: d.org.organization_id,
+                role_type: d.org.role_type,
+                reason: d.reason
+              }))
+            }
+          });
+        }
+        
+        // Log final summary
+        const totalProcessed = insertedCount + updatedCount;
+        if (totalProcessed > 0) {
+          console.log(`[IATI Import] ✅ Successfully processed ${totalProcessed} participating organizations (${insertedCount} inserted, ${updatedCount} updated)`);
+        }
+        if (failedCount > 0) {
+          console.error(`[IATI Import] ❌ Failed to process ${failedCount} participating organizations`);
+        }
       }
       
-      // Log summary of unmatched organizations
+      // Log summary of unmatched organizations with better messaging
       if (unmatchedOrgs.length > 0) {
         console.error(`[IATI Import] ❌ Failed to match ${unmatchedOrgs.length} organizations:`);
         unmatchedOrgs.forEach((org, idx) => {
-          console.error(`[IATI Import]    ${idx + 1}. ${org.ref || org.name || 'Unknown'} (${org.ref ? 'ref' : 'name'}-based lookup)`);
+          const reason = org.reason || 'Not found in database';
+          const identifier = org.ref || org.name || 'Unknown';
+          console.error(`[IATI Import]    ${idx + 1}. ${identifier} (${org.ref ? 'ref' : 'name'}-based lookup)`);
+          console.error(`[IATI Import]       Role: ${org.role || 'N/A'}, Type: ${(org as any).type || 'N/A'}`);
+          console.error(`[IATI Import]       Reason: ${reason}`);
+          if ((org as any).activityId) {
+            console.error(`[IATI Import]       Activity ID: ${(org as any).activityId}`);
+          }
         });
         console.error('[IATI Import] 💡 Tip: Ensure these organizations exist in the organizations table with matching iati_org_id or name values');
         
-        // Add to import warnings
+        // Add to import warnings with better messaging
         importWarnings.push({
           type: 'organization_matching',
-          message: `${unmatchedOrgs.length} organization(s) could not be matched and were skipped`,
+          message: `${unmatchedOrgs.length} organization(s) could not be matched or created and were skipped`,
           details: {
             total_attempted: iati_data.participating_orgs.length,
-            successfully_matched: participatingOrgs.length,
+            successfully_matched: validParticipatingOrgs.length,
             unmatched_count: unmatchedOrgs.length,
             unmatched_organizations: unmatchedOrgs.map(org => ({
               identifier: org.ref || org.name || 'Unknown',
-              ref: org.ref,
-              name: org.name,
-              role: org.role,
-              lookup_method: org.ref ? 'iati_org_id' : 'name'
+              ref: org.ref || null,
+              name: org.name || null,
+              role: org.role || 'unknown',
+              type: (org as any).type || null,
+              activity_id: (org as any).activityId || null,
+              reason: org.reason || 'Not found in database',
+              lookup_method: org.ref ? 'iati_org_id' : 'name',
+              suggestion: org.reason?.includes('creation failed') 
+                ? 'Check database constraints and organization data requirements'
+                : org.reason?.includes('not found')
+                ? 'Create the organization manually or ensure it exists with matching IATI ID or name'
+                : 'Review the error message for specific resolution steps'
+            })),
+            matched_organizations: matchedOrgs.map(m => ({
+              name: m.name,
+              id: m.id,
+              method: m.method,
+              was_existing: m.wasExisting
             }))
           }
         });
+      } else if (matchedOrgs.length > 0) {
+        // All organizations were matched - log summary
+        const existingCount = matchedOrgs.filter(m => m.wasExisting).length;
+        if (existingCount > 0) {
+          console.log(`[IATI Import] ℹ️  All ${matchedOrgs.length} organizations were successfully linked (${existingCount} were already in the database)`);
+        }
       }
       
       updatedFields.push('participating_orgs');
@@ -860,13 +1554,25 @@ export async function POST(
       
       // Insert new conditions
       if (iati_data.conditions.conditions && iati_data.conditions.conditions.length > 0) {
-        const conditionData = iati_data.conditions.conditions.map((condition: any, index: number) => ({
-          activity_id: activityId,
-          condition_type: condition.type || '1',
-          condition_text: condition.narrative,
-          language: condition.narrativeLang || 'en',
-          display_order: index
-        }));
+        const conditionData = iati_data.conditions.conditions.map((condition: any, index: number) => {
+          // Convert narrative to JSONB format
+          // If narrative is already an object (multi-language), use it
+          // Otherwise, create a single-language object
+          let narrativeJson: any;
+          if (condition.narrative && typeof condition.narrative === 'object') {
+            narrativeJson = condition.narrative;
+          } else {
+            const lang = condition.narrativeLang || 'en';
+            narrativeJson = { [lang]: condition.narrative || '' };
+          }
+
+          return {
+            activity_id: activityId,
+            type: condition.type || '1',
+            narrative: narrativeJson,
+            attached: iati_data.conditions.attached
+          };
+        });
         
         const { error: conditionsError } = await supabase
           .from('activity_conditions')
@@ -1652,7 +2358,8 @@ export async function POST(
         details: {
           sectors_updated: fields.sectors ? (iati_data.sectors?.length || 0) : null,
           orgs_updated: fields.participating_orgs ? (iati_data.participating_orgs?.length || 0) : null,
-          transactions_added: fields.transactions ? newTransactionsCount : null
+          transactions_added: fields.transactions ? newTransactionsCount : null,
+          policy_markers_added: fields.policy_markers ? policyMarkersCount : null
         }
       },
       fields_updated: updatedFields,
@@ -1685,6 +2392,7 @@ export async function POST(
           iati_data.participating_orgs.length : 0,
         transactions_added: fields.transactions ? newTransactionsCount : 0,
         planned_disbursements_added: fields.planned_disbursements ? plannedDisbursementsCount : 0,
+        policy_markers_added: fields.policy_markers ? policyMarkersCount : 0,
         organizations_created: orgStats.created,
         organizations_linked: orgStats.linked,
         last_sync_time: syncUpdate.last_sync_time,

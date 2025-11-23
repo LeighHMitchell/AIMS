@@ -142,6 +142,7 @@ import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
 import { HelpTextTooltip } from "@/components/ui/help-text-tooltip"
 import { splitBudgetAcrossYears, splitPlannedDisbursementAcrossYears } from "@/utils/year-allocation"
+import { getTransactionUSDValue, normalizeTransactionType } from "@/lib/transaction-usd-helper"
 
 // Hierarchy levels mapping
 type HierarchyOption = {
@@ -483,6 +484,20 @@ export default function ActivityDetailPage() {
   const [regionAllocations, setRegionAllocations] = useState<any[]>([])
   const [reportingOrg, setReportingOrg] = useState<any>(null)
   
+  // State for financial calculations (async due to currency conversion)
+  const [financials, setFinancials] = useState({
+    totalCommitment: 0,
+    totalDisbursement: 0,
+    totalExpenditure: 0,
+    percentDisbursed: 0,
+    aidTypes: [] as string[],
+    flowTypes: [] as string[],
+    totalTransactions: 0,
+    draftCount: 0,
+    actualCount: 0
+  })
+  const [totalActualSpending, setTotalActualSpending] = useState(0)
+  
   // State for show more/less in partner sections
   const [showAllFundingPartners, setShowAllFundingPartners] = useState(false)
   const [showAllImplementingPartners, setShowAllImplementingPartners] = useState(false)
@@ -810,6 +825,211 @@ export default function ActivityDetailPage() {
     activityRef.current = activity
   }, [activity])
 
+  // Calculate financial summary with USD conversion
+  useEffect(() => {
+    let cancelled = false;
+    
+    const calculateFinancials = async () => {
+      const transactions: any[] = activity?.transactions || []
+      
+      // Include all transactions regardless of status for profile view
+      // This ensures published activities show their financial data
+      const allTransactions = transactions
+      
+      // IATI transaction types:
+      // '2' = Outgoing Commitment
+      // '3' = Disbursement  
+      // '4' = Expenditure
+      
+      // Debug logging to identify what's being counted
+      console.log('[Total Committed Debug] Total transactions:', allTransactions.length);
+      const typeBreakdown = allTransactions.reduce((acc: any, t: any) => {
+        const type = normalizeTransactionType(t.transaction_type);
+        if (!acc[type]) acc[type] = { count: 0, totalValue: 0, currencies: new Set() };
+        acc[type].count++;
+        acc[type].totalValue += (parseFloat(t.value) || 0);
+        acc[type].currencies.add(t.currency || 'unknown');
+        return acc;
+      }, {});
+      console.log('[Total Committed Debug] Transaction type breakdown:', 
+        Object.entries(typeBreakdown).map(([type, data]: [string, any]) => ({
+          type,
+          count: data.count,
+          totalValue: data.totalValue,
+          currencies: Array.from(data.currencies)
+        }))
+      );
+      
+      // Calculate commitment - normalize transaction_type to string for comparison
+      const commitmentTransactions = allTransactions.filter(t => {
+        const type = normalizeTransactionType(t.transaction_type);
+        return type === "2";
+      });
+      
+      console.log('[Total Committed Debug] Commitment transactions found:', commitmentTransactions.length);
+      console.log('[Total Committed Debug] Commitment transaction details:', 
+        commitmentTransactions.map(t => ({
+          id: t.id || t.uuid,
+          type: t.transaction_type,
+          normalizedType: normalizeTransactionType(t.transaction_type),
+          status: t.status,
+          value: t.value,
+          currency: t.currency,
+          value_usd: t.value_usd || t.value_USD || t.usd_value,
+          transaction_date: t.transaction_date,
+          value_date: t.value_date
+        }))
+      );
+      
+      const commitmentPromises = commitmentTransactions.map(async (t) => {
+        const usdValue = await getTransactionUSDValue(t);
+        if (usdValue > 0) {
+          console.log('[Total Committed Debug] Transaction', t.id || t.uuid, '→ USD:', usdValue, {
+            original: t.value,
+            currency: t.currency,
+            stored_usd: t.value_usd || t.value_USD || t.usd_value,
+            date: t.transaction_date || t.value_date
+          });
+        }
+        return usdValue;
+      });
+      const commitmentValues = await Promise.all(commitmentPromises);
+      console.log('[Total Committed Debug] All commitment USD values:', commitmentValues);
+      const commitment = commitmentValues.reduce((sum, val) => sum + val, 0);
+      console.log('[Total Committed Debug] Final commitment total:', commitment, '($' + (commitment / 1000000).toFixed(2) + 'm)');
+
+      // Calculate disbursement - normalize transaction_type to string for comparison
+      const disbursementPromises = allTransactions
+        .filter(t => normalizeTransactionType(t.transaction_type) === "3")
+        .map(t => getTransactionUSDValue(t));
+      const disbursementValues = await Promise.all(disbursementPromises);
+      const disbursement = disbursementValues.reduce((sum, val) => sum + val, 0);
+
+      // Calculate expenditure - normalize transaction_type to string for comparison
+      const expenditurePromises = allTransactions
+        .filter(t => normalizeTransactionType(t.transaction_type) === "4")
+        .map(t => getTransactionUSDValue(t));
+      const expenditureValues = await Promise.all(expenditurePromises);
+      const expenditure = expenditureValues.reduce((sum, val) => sum + val, 0);
+      
+      // Get unique aid types and flow types
+      const aidTypes = Array.from(new Set(transactions.map(t => t.aid_type).filter(Boolean)))
+      const flowTypes = Array.from(new Set(transactions.map(t => t.flow_type).filter(Boolean)))
+      
+      // Calculate draft vs actual
+      const draftTransactions = transactions.filter(t => t.status === "draft")
+      const actualTransactions = transactions.filter(t => t.status === "actual")
+      
+      // Only update state if this effect hasn't been cancelled (activity hasn't changed)
+      if (!cancelled) {
+        setFinancials({
+          totalCommitment: commitment,
+          totalDisbursement: disbursement,
+          totalExpenditure: expenditure,
+          percentDisbursed: commitment > 0 && !isNaN(disbursement) && !isNaN(commitment) 
+            ? Math.round((disbursement / commitment) * 100) 
+            : 0,
+          aidTypes,
+          flowTypes,
+          totalTransactions: transactions.length,
+          draftCount: draftTransactions.length,
+          actualCount: actualTransactions.length
+        })
+      }
+    }
+
+    if (activity) {
+      calculateFinancials();
+    }
+    
+    return () => {
+      cancelled = true;
+    };
+  }, [activity])
+
+  // Calculate actual spending (disbursement + expenditure) in USD
+  useEffect(() => {
+    let cancelled = false;
+    
+    const calculateTotalActualSpending = async () => {
+      const transactions = activity?.transactions || [];
+
+      const spendingPromises = transactions
+        .filter((t: any) => {
+          const type = normalizeTransactionType(t.transaction_type);
+          return type === '3' || type === '4';
+        })
+        .map((t: any) => getTransactionUSDValue(t));
+      
+      const spendingValues = await Promise.all(spendingPromises);
+      const total = spendingValues.reduce((sum, val) => sum + val, 0);
+      
+      // Only update state if this effect hasn't been cancelled (activity hasn't changed)
+      if (!cancelled) {
+        setTotalActualSpending(total);
+      }
+    };
+
+    if (activity) {
+      calculateTotalActualSpending();
+    }
+    
+    return () => {
+      cancelled = true;
+    };
+  }, [activity]);
+
+  // Calculate total planned disbursements (USD only) - must be before early returns
+  const totalPlannedDisbursements = plannedDisbursements.reduce((sum: number, pd: any) => {
+    // Use usdAmount if available (primary source)
+    if (pd.usdAmount != null && pd.usdAmount > 0) {
+      return sum + parseFloat(pd.usdAmount);
+    }
+    // If currency is USD, use the amount directly
+    if (pd.currency === 'USD' && pd.amount && pd.amount > 0) {
+      return sum + parseFloat(pd.amount);
+    }
+    // For non-USD planned disbursements without usdAmount, skip (0 contribution)
+    // This ensures we only show USD values
+    return sum;
+  }, 0);
+
+  // Calculate total budgeted (USD only, return 0 if no budgets) - must be before early returns
+  const totalBudgeted = budgets?.length > 0 ? budgets.reduce((sum: number, b: any) => {
+    // Use usd_value if available (primary source)
+    if (b.usd_value != null && b.usd_value > 0) {
+      return sum + parseFloat(b.usd_value);
+    }
+    // If currency is USD, use the value directly
+    if (b.currency === 'USD' && b.value && b.value > 0) {
+      return sum + parseFloat(b.value);
+    }
+    // For non-USD budgets without usd_value, skip (0 contribution)
+    // This ensures we only show USD values
+    return sum;
+  }, 0) : 0;
+
+  // Calculate progress percentages - must be before early returns
+  const financialDeliveryPercent = financials.totalCommitment > 0 
+    ? Math.round(((financials.totalDisbursement + financials.totalExpenditure) / financials.totalCommitment) * 100)
+    : 0;
+  
+  const implementationVsPlanPercent = totalBudgeted > 0
+    ? Math.round(((financials.totalDisbursement + financials.totalExpenditure) / totalBudgeted) * 100)
+    : 0;
+
+  // Calculate financial data by sector based on percentage allocation (reactive to state changes) - must be before early returns
+  const sectorFinancialData = React.useMemo(() => {
+    if (!activity?.sectors) return [];
+    return activity.sectors.map((sector: any) => ({
+      code: sector.sector_code || sector.code,
+      budget: totalBudgeted * ((sector.percentage || 0) / 100),
+      commitment: financials.totalCommitment * ((sector.percentage || 0) / 100),
+      plannedDisbursement: totalPlannedDisbursements * ((sector.percentage || 0) / 100),
+      actualDisbursement: totalActualSpending * ((sector.percentage || 0) / 100)
+    }));
+  }, [activity?.sectors, totalBudgeted, financials.totalCommitment, totalPlannedDisbursements, totalActualSpending]);
+
   const handleIconChange = useCallback(async (newIcon: string | null) => {
     const currentActivity = activityRef.current
     if (!currentActivity?.id) return
@@ -1027,149 +1247,6 @@ export default function ActivityDetailPage() {
       </MainLayout>
     )
   }
-
-  // Calculate financial summary
-  const calculateFinancials = () => {
-    const transactions: any[] = activity?.transactions || []
-    
-    // Include all transactions regardless of status for profile view
-    // This ensures published activities show their financial data
-    const allTransactions = transactions
-    
-    // IATI transaction types:
-    // '2' = Outgoing Commitment
-    // '3' = Disbursement  
-    // '4' = Expenditure
-    
-    const commitment = allTransactions
-      .filter(t => t.transaction_type === "2")
-      .reduce((sum, t) => {
-        // Use USD value from transaction with fallbacks
-        let usdValue = parseFloat(t.value_usd) || parseFloat(t.value_USD) || parseFloat(t.usd_value) || 0;
-
-        // If transaction is in USD but value_usd is missing, use the original value
-        if (!usdValue && t.currency === 'USD' && t.value && Number(t.value) > 0) {
-          usdValue = parseFloat(String(t.value)) || 0;
-        }
-
-        return sum + (usdValue > 0 ? usdValue : 0);
-      }, 0)
-
-    const disbursement = allTransactions
-      .filter(t => t.transaction_type === "3")
-      .reduce((sum, t) => {
-        // Use USD value from transaction with fallbacks
-        let usdValue = parseFloat(t.value_usd) || parseFloat(t.value_USD) || parseFloat(t.usd_value) || 0;
-
-        // If transaction is in USD but value_usd is missing, use the original value
-        if (!usdValue && t.currency === 'USD' && t.value && Number(t.value) > 0) {
-          usdValue = parseFloat(String(t.value)) || 0;
-        }
-
-        return sum + (usdValue > 0 ? usdValue : 0);
-      }, 0)
-
-    const expenditure = allTransactions
-      .filter(t => t.transaction_type === "4")
-      .reduce((sum, t) => {
-        // Use USD value from transaction with fallbacks
-        let usdValue = parseFloat(t.value_usd) || parseFloat(t.value_USD) || parseFloat(t.usd_value) || 0;
-
-        // If transaction is in USD but value_usd is missing, use the original value
-        if (!usdValue && t.currency === 'USD' && t.value && Number(t.value) > 0) {
-          usdValue = parseFloat(String(t.value)) || 0;
-        }
-
-        return sum + (usdValue > 0 ? usdValue : 0);
-      }, 0)
-    
-    // Get unique aid types and flow types
-    const aidTypes = Array.from(new Set(transactions.map(t => t.aid_type).filter(Boolean)))
-    const flowTypes = Array.from(new Set(transactions.map(t => t.flow_type).filter(Boolean)))
-    
-    // Calculate draft vs actual
-    const draftTransactions = transactions.filter(t => t.status === "draft")
-    const actualTransactions = transactions.filter(t => t.status === "actual")
-    
-    return {
-      totalCommitment: commitment,
-      totalDisbursement: disbursement,
-      totalExpenditure: expenditure,
-      percentDisbursed: commitment > 0 && !isNaN(disbursement) && !isNaN(commitment) 
-        ? Math.round((disbursement / commitment) * 100) 
-        : 0,
-      aidTypes,
-      flowTypes,
-      totalTransactions: transactions.length,
-      draftCount: draftTransactions.length,
-      actualCount: actualTransactions.length
-    }
-  }
-
-  const financials = calculateFinancials()
-
-  // Calculate total planned disbursements (USD only)
-  const totalPlannedDisbursements = plannedDisbursements.reduce((sum: number, pd: any) => {
-    // Use usdAmount if available (primary source)
-    if (pd.usdAmount != null && pd.usdAmount > 0) {
-      return sum + parseFloat(pd.usdAmount);
-    }
-    // If currency is USD, use the amount directly
-    if (pd.currency === 'USD' && pd.amount && pd.amount > 0) {
-      return sum + parseFloat(pd.amount);
-    }
-    // For non-USD planned disbursements without usdAmount, skip (0 contribution)
-    // This ensures we only show USD values
-    return sum;
-  }, 0);
-
-  // Calculate total budgeted (USD only, return 0 if no budgets)
-  const totalBudgeted = budgets?.length > 0 ? budgets.reduce((sum: number, b: any) => {
-    // Use usd_value if available (primary source)
-    if (b.usd_value != null && b.usd_value > 0) {
-      return sum + parseFloat(b.usd_value);
-    }
-    // If currency is USD, use the value directly
-    if (b.currency === 'USD' && b.value && b.value > 0) {
-      return sum + parseFloat(b.value);
-    }
-    // For non-USD budgets without usd_value, skip (0 contribution)
-    // This ensures we only show USD values
-    return sum;
-  }, 0) : 0;
-
-  // Calculate progress percentages
-  const financialDeliveryPercent = financials.totalCommitment > 0 
-    ? Math.round(((financials.totalDisbursement + financials.totalExpenditure) / financials.totalCommitment) * 100)
-    : 0;
-  
-  const implementationVsPlanPercent = totalBudgeted > 0
-    ? Math.round(((financials.totalDisbursement + financials.totalExpenditure) / totalBudgeted) * 100)
-    : 0;
-
-  // Calculate actual spending (disbursement + expenditure) in USD
-  const totalActualSpending = (activity.transactions || []).reduce((sum: number, t: any) => {
-    if (t.transaction_type === '3' || t.transaction_type === '4') {
-      // Use USD value from transaction with fallbacks
-      let usdValue = parseFloat(t.value_usd) || parseFloat(t.value_USD) || parseFloat(t.usd_value) || 0;
-
-      // If transaction is in USD but value_usd is missing, use the original value
-      if (!usdValue && t.currency === 'USD' && t.value && Number(t.value) > 0) {
-        usdValue = parseFloat(String(t.value)) || 0;
-      }
-
-      return sum + (usdValue > 0 ? usdValue : 0);
-    }
-    return sum;
-  }, 0);
-  // Calculate financial data by sector based on percentage allocation
-  const sectorFinancialData = activity.sectors?.map((sector: any) => ({
-    code: sector.sector_code || sector.code,
-    budget: totalBudgeted * ((sector.percentage || 0) / 100),
-    commitment: financials.totalCommitment * ((sector.percentage || 0) / 100),
-    plannedDisbursement: totalPlannedDisbursements * ((sector.percentage || 0) / 100),
-    actualDisbursement: totalActualSpending * ((sector.percentage || 0) / 100)
-  })) || [];
 
   const formatDate = (dateString: string) => {
     if (!dateString) return 'Not set'
@@ -2257,24 +2334,6 @@ export default function ActivityDetailPage() {
               <CardHeader className="pb-2 pt-3 px-3 flex flex-row items-center justify-between">
                 <CardTitle className="text-xs font-semibold text-slate-900">Budget by Year</CardTitle>
                 <div className="flex items-center gap-2">
-                  {/* Allocation Method Toggle */}
-                  <div className="flex items-center gap-2 border rounded-lg px-2 py-1 bg-white">
-                    <Label htmlFor="budget-allocation-toggle" className="text-xs text-slate-700 cursor-pointer whitespace-nowrap">
-                      {budgetAllocationMethod === 'proportional' ? 'Proportional' : 'Period Start'}
-                    </Label>
-                    <Switch
-                      id="budget-allocation-toggle"
-                      checked={budgetAllocationMethod === 'proportional'}
-                      onCheckedChange={(checked) => setBudgetAllocationMethod(checked ? 'proportional' : 'period-start')}
-                    />
-                  </div>
-                  <HelpTextTooltip 
-                    content={
-                      budgetAllocationMethod === 'proportional'
-                        ? "Allocates budget amounts proportionally across calendar years based on the number of days. For example, a budget spanning July 2024 to June 2025 will be split between 2024 and 2025."
-                        : "Allocates the full budget amount to the year of the start date."
-                    }
-                  />
                   <div className="flex gap-1">
                   <Button
                     variant="ghost"
@@ -2320,7 +2379,7 @@ export default function ActivityDetailPage() {
                   </div>
                 </div>
               </CardHeader>
-              <CardContent className="p-3 pt-0">
+              <CardContent className="p-3 pt-0 flex flex-col">
                 {(() => {
                   // Calculate budgets by year
                   const budgetsByYear = new Map<number, number>()
@@ -2438,6 +2497,27 @@ export default function ActivityDetailPage() {
                     </div>
                   )
                 })()}
+                {/* Allocation Method Toggle - Bottom */}
+                <div className="flex items-center gap-1.5 mt-2 pt-2 border-t border-slate-100">
+                  <div className="flex items-center gap-1.5 border rounded-lg px-1.5 py-0.5 bg-white">
+                    <Label htmlFor="budget-allocation-toggle" className="text-[10px] text-slate-700 cursor-pointer whitespace-nowrap">
+                      {budgetAllocationMethod === 'proportional' ? 'Proportional' : 'Period Start'}
+                    </Label>
+                    <Switch
+                      id="budget-allocation-toggle"
+                      checked={budgetAllocationMethod === 'proportional'}
+                      onCheckedChange={(checked) => setBudgetAllocationMethod(checked ? 'proportional' : 'period-start')}
+                      className="scale-75"
+                    />
+                  </div>
+                  <HelpTextTooltip 
+                    content={
+                      budgetAllocationMethod === 'proportional'
+                        ? "Allocates budget amounts proportionally across calendar years based on the number of days. For example, a budget spanning July 2024 to June 2025 will be split between 2024 and 2025."
+                        : "Allocates the full budget amount to the year of the start date."
+                    }
+                  />
+                </div>
               </CardContent>
             </Card>
 
@@ -2446,24 +2526,6 @@ export default function ActivityDetailPage() {
               <CardHeader className="pb-2 pt-3 px-3 flex flex-row items-center justify-between">
                 <CardTitle className="text-xs font-semibold text-slate-900">Planned vs Actual</CardTitle>
                 <div className="flex items-center gap-2">
-                  {/* Allocation Method Toggle */}
-                  <div className="flex items-center gap-2 border rounded-lg px-2 py-1 bg-white">
-                    <Label htmlFor="budget-vs-spend-allocation-toggle" className="text-xs text-slate-700 cursor-pointer whitespace-nowrap">
-                      {budgetVsSpendAllocationMethod === 'proportional' ? 'Proportional' : 'Period Start'}
-                    </Label>
-                    <Switch
-                      id="budget-vs-spend-allocation-toggle"
-                      checked={budgetVsSpendAllocationMethod === 'proportional'}
-                      onCheckedChange={(checked) => setBudgetVsSpendAllocationMethod(checked ? 'proportional' : 'period-start')}
-                    />
-                  </div>
-                  <HelpTextTooltip 
-                    content={
-                      budgetVsSpendAllocationMethod === 'proportional'
-                        ? "Allocates budget and planned disbursement amounts proportionally across calendar years based on the number of days. For example, a budget spanning July 2024 to June 2025 will be split between 2024 and 2025."
-                        : "Allocates the full budget or planned disbursement amount to the year of the start date."
-                    }
-                  />
                   <div className="flex gap-1">
                   <Button
                     variant="ghost"
@@ -2536,7 +2598,7 @@ export default function ActivityDetailPage() {
                   </div>
                 </div>
               </CardHeader>
-              <CardContent className="p-3 pt-0">
+              <CardContent className="p-3 pt-0 flex flex-col">
                 {(() => {
                   // Calculate planned disbursements and actuals by year
                   const plannedDisbursementsByYearMap = new Map<number, number>()
@@ -2724,6 +2786,27 @@ export default function ActivityDetailPage() {
                     </div>
                   )
                 })()}
+                {/* Allocation Method Toggle - Bottom */}
+                <div className="flex items-center gap-1.5 mt-2 pt-2 border-t border-slate-100">
+                  <div className="flex items-center gap-1.5 border rounded-lg px-1.5 py-0.5 bg-white">
+                    <Label htmlFor="budget-vs-spend-allocation-toggle" className="text-[10px] text-slate-700 cursor-pointer whitespace-nowrap">
+                      {budgetVsSpendAllocationMethod === 'proportional' ? 'Proportional' : 'Period Start'}
+                    </Label>
+                    <Switch
+                      id="budget-vs-spend-allocation-toggle"
+                      checked={budgetVsSpendAllocationMethod === 'proportional'}
+                      onCheckedChange={(checked) => setBudgetVsSpendAllocationMethod(checked ? 'proportional' : 'period-start')}
+                      className="scale-75"
+                    />
+                  </div>
+                  <HelpTextTooltip 
+                    content={
+                      budgetVsSpendAllocationMethod === 'proportional'
+                        ? "Allocates budget and planned disbursement amounts proportionally across calendar years based on the number of days. For example, a budget spanning July 2024 to June 2025 will be split between 2024 and 2025."
+                        : "Allocates the full budget or planned disbursement amount to the year of the start date."
+                    }
+                  />
+                </div>
               </CardContent>
             </Card>
 

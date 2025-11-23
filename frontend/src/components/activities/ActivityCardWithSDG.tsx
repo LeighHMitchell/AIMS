@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, memo } from 'react';
 import Link from 'next/link';
 
 import { Calendar, MoreVertical, Edit3, Trash2, Clock, Copy } from 'lucide-react';
@@ -552,4 +552,18 @@ const ActivityCardWithSDG: React.FC<ActivityCardWithSDGProps> = ({
   );
 };
 
-export default ActivityCardWithSDG;
+// Memoize component to prevent unnecessary re-renders when parent re-renders
+// but activity data hasn't changed
+export default memo(ActivityCardWithSDG, (prevProps, nextProps) => {
+  // Only re-render if these key props change
+  return (
+    prevProps.activity.id === nextProps.activity.id &&
+    prevProps.activity.title === nextProps.activity.title &&
+    prevProps.activity.updated_at === nextProps.activity.updated_at &&
+    prevProps.onEdit === nextProps.onEdit &&
+    prevProps.onDelete === nextProps.onDelete &&
+    prevProps.isLoading === nextProps.isLoading &&
+    prevProps.showSDGs === nextProps.showSDGs &&
+    prevProps.maxSDGDisplay === nextProps.maxSDGDisplay
+  );
+});

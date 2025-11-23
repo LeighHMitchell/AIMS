@@ -46,15 +46,14 @@ export function LockedOrganizationField({
   }, [value])
 
   const handleToggleLock = () => {
-    if (isSuperUser) {
-      if (isUnlocked) {
-        // Locking - save any changes
-        if (localValue !== value && onSave) {
-          onSave(localValue)
-        }
+    // Allow all users to unlock (removed super user restriction)
+    if (isUnlocked) {
+      // Locking - save any changes
+      if (localValue !== value && onSave) {
+        onSave(localValue)
       }
-      setIsUnlocked(!isUnlocked)
     }
+    setIsUnlocked(!isUnlocked)
   }
 
   const handleValueChange = (newValue: string) => {
@@ -69,7 +68,8 @@ export function LockedOrganizationField({
     }
   }
 
-  const isFieldDisabled = disabled || (!isSuperUser || !isUnlocked)
+  // Allow all users to edit (removed super user restriction)
+  const isFieldDisabled = disabled || !isUnlocked
 
   return (
     <div className={cn("space-y-2", className)}>
@@ -81,7 +81,7 @@ export function LockedOrganizationField({
           {label}
         </Label>
         <div className="flex items-center gap-2">
-          {isUnlocked && isSuperUser && localValue !== value && (
+          {isUnlocked && localValue !== value && (
             <Button
               type="button"
               variant="outline"
@@ -93,45 +93,30 @@ export function LockedOrganizationField({
               Save
             </Button>
           )}
-          {isSuperUser && (
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={handleToggleLock}
-                    className="h-6 w-6 p-0 hover:bg-gray-100"
-                    disabled={saving}
-                  >
-                    {isUnlocked ? (
-                      <Unlock className="h-3 w-3 text-green-600" />
-                    ) : (
-                      <Lock className="h-3 w-3 text-gray-500" />
-                    )}
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>{isUnlocked ? "Click to lock field" : unlockTooltip}</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          )}
-          {!isSuperUser && (
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <div className="h-6 w-6 flex items-center justify-center">
-                    <Lock className="h-3 w-3 text-gray-400" />
-                  </div>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>{lockTooltip}</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          )}
+          {/* Allow all users to unlock (removed super user restriction) */}
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleToggleLock}
+                  className="h-6 w-6 p-0 hover:bg-gray-100"
+                  disabled={saving}
+                >
+                  {isUnlocked ? (
+                    <Unlock className="h-3 w-3 text-green-600" />
+                  ) : (
+                    <Lock className="h-3 w-3 text-gray-500" />
+                  )}
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>{isUnlocked ? "Click to lock field" : unlockTooltip}</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         </div>
       </div>
       
@@ -148,7 +133,7 @@ export function LockedOrganizationField({
       
       {isFieldDisabled && (
         <p className="text-xs text-gray-400 mt-1">
-          {isSuperUser ? "Unlock to edit this field" : "This field can only be edited by super users"}
+          Unlock to edit this field
         </p>
       )}
     </div>

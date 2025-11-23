@@ -67,6 +67,9 @@ export async function GET(request: NextRequest) {
         publication_status,
         submission_status,
         reporting_org_id,
+        reporting_org_ref,
+        reporting_org_name,
+        created_by,
         created_at,
         updated_at,
         planned_start_date,
@@ -195,6 +198,7 @@ export async function GET(request: NextRequest) {
     
     let summariesMap = new Map();
     let budgetMap = new Map();
+    const plannedDisbursementMap = new Map<string, number>();
     
     if (activityIds.length > 0) {
       // Fetch budget totals
@@ -216,6 +220,26 @@ export async function GET(request: NextRequest) {
         console.log('[AIMS Optimized] Budget map:', Object.fromEntries(budgetMap));
       } else {
         console.log('[AIMS Optimized] No budget data found');
+      }
+
+      // Fetch planned disbursements totals
+      const { data: plannedDisbursements, error: plannedDisbursementError } = await supabase
+        .from('planned_disbursements')
+        .select('activity_id, usd_amount')
+        .in('activity_id', activityIds);
+
+      if (plannedDisbursementError) {
+        console.error('[AIMS Optimized] Planned disbursement fetch error:', plannedDisbursementError);
+      } else if (plannedDisbursements) {
+        console.log('[AIMS Optimized] Planned disbursement data fetched:', plannedDisbursements.length, 'entries');
+        plannedDisbursements.forEach((pd: any) => {
+          const current = plannedDisbursementMap.get(pd.activity_id) || 0;
+          const pdValue = pd.usd_amount || 0;
+          plannedDisbursementMap.set(pd.activity_id, current + pdValue);
+        });
+        console.log('[AIMS Optimized] Planned disbursement map:', Object.fromEntries(plannedDisbursementMap));
+      } else {
+        console.log('[AIMS Optimized] No planned disbursement data found');
       }
 
       // Temporarily disable materialized view to force USD calculation
@@ -267,8 +291,14 @@ export async function GET(request: NextRequest) {
               inflows: 0,
               totalTransactions: 0,
               totalBudget: budgetMap.get(t.activity_id) || 0,
-              totalDisbursed: 0
+              totalDisbursed: 0,
+              totalPlannedDisbursementsUSD: plannedDisbursementMap.get(t.activity_id) || 0
             };
+            
+            // Ensure planned disbursements are included
+            if (!current.totalPlannedDisbursementsUSD) {
+              current.totalPlannedDisbursementsUSD = plannedDisbursementMap.get(t.activity_id) || 0;
+            }
             
             current.totalTransactions++;
             
@@ -307,8 +337,13 @@ export async function GET(request: NextRequest) {
               inflows: 0,
               totalTransactions: 0,
               totalBudget: budgetMap.get(activityId) || 0,
-              totalDisbursed: 0
+              totalDisbursed: 0,
+              totalPlannedDisbursementsUSD: plannedDisbursementMap.get(activityId) || 0
             });
+          } else {
+            // Add planned disbursements to existing summary
+            const summary = summariesMap.get(activityId)!;
+            summary.totalPlannedDisbursementsUSD = plannedDisbursementMap.get(activityId) || 0;
           }
         });
       }
@@ -323,8 +358,14 @@ export async function GET(request: NextRequest) {
         inflows: 0,
         totalTransactions: 0,
         totalBudget: 0,
-        totalDisbursed: 0
+        totalDisbursed: 0,
+        totalPlannedDisbursementsUSD: plannedDisbursementMap.get(activity.id) || 0
       };
+      
+      // Ensure planned disbursements are included even if summary exists
+      if (!summary.totalPlannedDisbursementsUSD) {
+        summary.totalPlannedDisbursementsUSD = plannedDisbursementMap.get(activity.id) || 0;
+      }
       
       console.log(`[AIMS Optimized] Activity ${activity.id} summary:`, summary);
 
@@ -343,6 +384,9 @@ export async function GET(request: NextRequest) {
         publicationStatus: activity.publication_status,
         submissionStatus: activity.submission_status,
         reportingOrgId: activity.reporting_org_id,
+        reportingOrgRef: activity.reporting_org_ref,
+        reportingOrgName: activity.reporting_org_name,
+        createdBy: activity.created_by,
         plannedStartDate: activity.planned_start_date,
         plannedEndDate: activity.planned_end_date,
         default_aid_type: activity.default_aid_type,
@@ -365,8 +409,8 @@ export async function GET(request: NextRequest) {
       };
     });
 
-    // Apply client-side sorting for calculated fields (budget and disbursement)
-    if (sortField === 'commitments' || sortField === 'disbursements') {
+    // Apply client-side sorting for calculated fields (budget, disbursement, and planned disbursements)
+    if (sortField === 'commitments' || sortField === 'disbursements' || sortField === 'plannedDisbursements') {
       transformedActivities.sort((a: any, b: any) => {
         let aValue, bValue;
         if (sortField === 'commitments') {
@@ -375,6 +419,9 @@ export async function GET(request: NextRequest) {
         } else if (sortField === 'disbursements') {
           aValue = a.totalDisbursed || 0;
           bValue = b.totalDisbursed || 0;
+        } else if (sortField === 'plannedDisbursements') {
+          aValue = a.totalPlannedDisbursementsUSD || 0;
+          bValue = b.totalPlannedDisbursementsUSD || 0;
         }
         
         if (sortOrder === 'asc') {
