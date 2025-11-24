@@ -676,6 +676,16 @@ function ActivitiesPageContent() {
           if (errorData.error === "Activity not found" || errorData.error === "No activities found") {
             console.log("[AIMS] Activity already deleted:", id);
             toast.success(`"${activityTitle}" was deleted successfully`);
+
+            // Refetch to ensure UI is in sync with backend (prevents reappearing activity)
+            setTimeout(() => {
+              if (usingOptimization) {
+                safeOptimizedData.refetch();
+              } else {
+                fetchActivities(currentPage, false);
+              }
+            }, 100);
+
             return;
           } else {
             // Route not found - this is a deployment/build issue
