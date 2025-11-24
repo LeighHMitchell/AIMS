@@ -1535,6 +1535,26 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
       return typeMatch && dateMatch && valueMatch && currencyMatch;
     }
 
+    // Special handling for planned disbursement objects
+    if (field?.itemType === 'plannedDisbursement' && typeof currentValue === 'object' && currentValue !== null && field.itemData) {
+      const itemData = field.itemData;
+      const normalizeOrgRef = (ref: any) => {
+        if (!ref || ref === '') return null;
+        return String(ref).trim() || null;
+      };
+
+      const typeMatch = String(currentValue.type || '1') === String(itemData.type || '1');
+      const startMatch = (currentValue.period?.start || currentValue.start) === (itemData.period?.start || itemData.start);
+      const endMatch = (currentValue.period?.end || currentValue.end) === (itemData.period?.end || itemData.end);
+      const valueMatch = currentValue.value !== undefined && itemData.value !== undefined &&
+        Math.abs(Number(currentValue.value) - Number(itemData.value)) < 0.01;
+      const currencyMatch = (currentValue.currency || 'USD').toUpperCase() === (itemData.currency || 'USD').toUpperCase();
+      const providerRefMatch = normalizeOrgRef(currentValue.provider_org_ref) === normalizeOrgRef(itemData.providerOrg?.ref);
+      const receiverRefMatch = normalizeOrgRef(currentValue.receiver_org_ref) === normalizeOrgRef(itemData.receiverOrg?.ref);
+      
+      return typeMatch && startMatch && endMatch && valueMatch && currencyMatch && providerRefMatch && receiverRefMatch;
+    }
+
     // Handle object comparison (e.g., for coded fields that return {code, name})
     if (typeof currentValue === 'object' && typeof importValue === 'object') {
       if (currentValue === null || importValue === null) {
