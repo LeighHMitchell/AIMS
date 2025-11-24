@@ -136,7 +136,7 @@ export function useOptimizedActivities(
   }, [sortField, sortOrder]);
 
   // Fetch activities
-  const fetchActivities = useCallback(async (showLoading = true) => {
+  const fetchActivities = useCallback(async (showLoading = true, bypassCache = false) => {
     // Cancel any in-flight request
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
@@ -158,14 +158,21 @@ export function useOptimizedActivities(
       viewMode
     });
 
-    // Check cache first
-    const cached = cacheRef.current.get(cacheKey);
-    if (cached && Date.now() - cached.timestamp < 60000) {
-      setActivities(cached.data);
-      setTotalCount(cached.totalCount);
-      setTotalPages(cached.totalPages);
-      setLoading(false);
-      return;
+    // Clear cache if bypassing
+    if (bypassCache) {
+      cacheRef.current.clear();
+    }
+
+    // Check cache first (unless bypassing)
+    if (!bypassCache) {
+      const cached = cacheRef.current.get(cacheKey);
+      if (cached && Date.now() - cached.timestamp < 60000) {
+        setActivities(cached.data);
+        setTotalCount(cached.totalCount);
+        setTotalPages(cached.totalPages);
+        setLoading(false);
+        return;
+      }
     }
 
     // Create new abort controller
@@ -179,7 +186,7 @@ export function useOptimizedActivities(
 
       const startTime = Date.now();
 
-      // Build query parameters
+      // Build query parameters with cache-busting timestamp
       const params = new URLSearchParams({
         page: currentPage.toString(),
         limit: pageSize.toString(),
@@ -192,7 +199,8 @@ export function useOptimizedActivities(
         ...(aidType !== 'all' && { aidType }),
         ...(flowType !== 'all' && { flowType }),
         ...(tiedStatus !== 'all' && { tiedStatus }),
-        ...(viewMode === 'card' && { includeImages: 'true' })
+        ...(viewMode === 'card' && { includeImages: 'true' }),
+        _t: Date.now().toString() // Cache-busting timestamp
       });
 
       // Try optimized endpoint first, fallback to lightweight simple endpoint
@@ -200,6 +208,7 @@ export function useOptimizedActivities(
       
       let response = await fetch(endpoint, {
         signal: abortControllerRef.current.signal,
+        cache: 'no-store',
         headers: {
           'Content-Type': 'application/json'
         }
@@ -210,6 +219,7 @@ export function useOptimizedActivities(
         endpoint = `/api/activities-simple?${params}`;
         response = await fetch(endpoint, {
           signal: abortControllerRef.current.signal,
+          cache: 'no-store',
           headers: {
             'Content-Type': 'application/json'
           }
@@ -352,7 +362,7 @@ export function useOptimizedActivities(
       tiedStatus,
       setTiedStatus
     },
-    refetch: () => fetchActivities(),
+    refetch: () => fetchActivities(true, true), // Always bypass cache on refetch
     removeActivity,
     performance: {
       lastQueryTime,

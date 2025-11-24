@@ -477,7 +477,15 @@ export async function GET(request: NextRequest) {
       }
     };
 
-    return NextResponse.json(response);
+    return NextResponse.json(response, {
+      headers: {
+        'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0',
+        'CDN-Cache-Control': 'no-store',
+        'Vercel-CDN-Cache-Control': 'no-store'
+      }
+    });
 
   } catch (error) {
     console.error('[AIMS Optimized] Error:', error);

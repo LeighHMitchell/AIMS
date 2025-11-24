@@ -3,6 +3,7 @@ import { getSupabaseAdmin } from '@/lib/supabase';
 import { ActivityLogger } from '@/lib/activity-logger';
 import { upsertActivitySectors, validateSectorAllocation } from '@/lib/activity-sectors-helper';
 import { v4 as uuidv4 } from 'uuid';
+import { supabaseOptimized } from '@/lib/supabase-optimized';
 
 // Force dynamic rendering to ensure environment variables are always loaded
 export const dynamic = 'force-dynamic';
@@ -2247,6 +2248,13 @@ export async function GET(request: NextRequest) {
     response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
     response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
     
+    // Add no-cache headers to prevent Vercel CDN caching
+    response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    response.headers.set('Pragma', 'no-cache');
+    response.headers.set('Expires', '0');
+    response.headers.set('CDN-Cache-Control', 'no-store');
+    response.headers.set('Vercel-CDN-Cache-Control', 'no-store');
+    
     return response;
   } catch (error) {
     console.error('[AIMS] Error fetching activities:', error);
@@ -2285,7 +2293,8 @@ export async function DELETE(request: NextRequest) {
         return NextResponse.json({ error: "At least one activity ID required" }, { status: 400 });
       }
       
-      console.log(`[AIMS] Bulk deleting ${ids.length} activities:`, ids);
+      const deletionTimestamp = new Date().toISOString();
+      console.log(`[AIMS] [${deletionTimestamp}] Bulk deleting ${ids.length} activities:`, ids);
       
       // Fetch all activities before deletion for logging
       const { data: activities, error: fetchError } = await getSupabaseAdmin()
@@ -2302,6 +2311,16 @@ export async function DELETE(request: NextRequest) {
         return NextResponse.json({ error: "No activities found" }, { status: 404 });
       }
       
+      // Log activity details before deletion
+      activities.forEach(activity => {
+        console.log(`[AIMS] [${deletionTimestamp}] About to delete activity:`, {
+          id: activity.id,
+          iati_identifier: activity.iati_identifier,
+          title_narrative: activity.title_narrative,
+          created_at: activity.created_at
+        });
+      });
+      
       // Delete all activities (cascading will handle related records)
       const { error: deleteError } = await getSupabaseAdmin()
         .from('activities')
@@ -2313,6 +2332,8 @@ export async function DELETE(request: NextRequest) {
         return NextResponse.json({ error: "Failed to delete activities" }, { status: 500 });
       }
       
+      console.log(`[AIMS] [${deletionTimestamp}] Deletion query executed successfully for ${activities.length} activities`);
+      
       // Log each activity deletion
       if (user && activities) {
         for (const activity of activities) {
@@ -2320,11 +2341,52 @@ export async function DELETE(request: NextRequest) {
         }
       }
       
-      console.log(`[AIMS] Successfully bulk deleted ${activities.length} activities`);
+      // Clear cache after successful deletion
+      try {
+        supabaseOptimized.clearCache();
+        console.log(`[AIMS] [${deletionTimestamp}] Cleared activities cache after bulk deletion`);
+      } catch (cacheError) {
+        console.warn("[AIMS] Error clearing cache:", cacheError);
+      }
+      
+      // Refresh materialized view after deletion
+      try {
+        await getSupabaseAdmin().rpc('refresh_activity_transaction_summaries');
+        console.log(`[AIMS] [${deletionTimestamp}] Refreshed activity_transaction_summaries materialized view`);
+      } catch (refreshError) {
+        console.warn("[AIMS] Could not refresh materialized view (function may not exist):", refreshError);
+      }
+      
+      // Post-deletion verification after 2 second delay
+      setTimeout(async () => {
+        try {
+          const { data: verifyActivities, error: verifyError } = await getSupabaseAdmin()
+            .from('activities')
+            .select('id, iati_identifier, title_narrative')
+            .in('id', ids);
+          
+          if (verifyError) {
+            console.error(`[AIMS] [${deletionTimestamp}] Error verifying deletion:`, verifyError);
+            return;
+          }
+          
+          if (verifyActivities && verifyActivities.length > 0) {
+            console.error(`[AIMS] [${deletionTimestamp}] CRITICAL: ${verifyActivities.length} activities still exist after deletion!`, verifyActivities);
+          } else {
+            console.log(`[AIMS] [${deletionTimestamp}] Verification successful: All ${activities.length} activities confirmed deleted`);
+          }
+        } catch (verifyException) {
+          console.error(`[AIMS] [${deletionTimestamp}] Exception during verification:`, verifyException);
+        }
+      }, 2000);
+      
+      console.log(`[AIMS] [${deletionTimestamp}] Successfully bulk deleted ${activities.length} activities`);
       return NextResponse.json({ 
         message: `${activities.length} activities deleted successfully`,
         deletedCount: activities.length,
-        activities 
+        activities,
+        deletionTimestamp,
+        verificationScheduled: true
       });
     }
     
@@ -2332,6 +2394,9 @@ export async function DELETE(request: NextRequest) {
     if (!id) {
       return NextResponse.json({ error: "Activity ID required" }, { status: 400 });
     }
+    
+    const deletionTimestamp = new Date().toISOString();
+    console.log(`[AIMS] [${deletionTimestamp}] Starting deletion for activity ID:`, id);
     
     // Fetch the activity before deletion
     const { data: activity, error: fetchError } = await getSupabaseAdmin()
@@ -2341,8 +2406,18 @@ export async function DELETE(request: NextRequest) {
       .single();
     
     if (fetchError || !activity) {
+      console.error(`[AIMS] [${deletionTimestamp}] Activity not found:`, fetchError);
       return NextResponse.json({ error: "Activity not found" }, { status: 404 });
     }
+    
+    // Log activity details before deletion
+    console.log(`[AIMS] [${deletionTimestamp}] About to delete activity:`, {
+      id: activity.id,
+      iati_identifier: activity.iati_identifier,
+      title_narrative: activity.title_narrative,
+      created_at: activity.created_at,
+      updated_at: activity.updated_at
+    });
     
     // Delete the activity (cascading will handle related records)
     const { error: deleteError } = await getSupabaseAdmin()
@@ -2351,17 +2426,67 @@ export async function DELETE(request: NextRequest) {
       .eq('id', id);
     
     if (deleteError) {
-      console.error("[AIMS] Error deleting activity:", deleteError);
+      console.error(`[AIMS] [${deletionTimestamp}] Error deleting activity:`, deleteError);
       return NextResponse.json({ error: "Failed to delete activity" }, { status: 500 });
     }
+    
+    console.log(`[AIMS] [${deletionTimestamp}] Deletion query executed successfully for activity ${id}`);
     
     // Log the activity deletion
     if (user) {
       await ActivityLogger.activityDeleted(activity, user);
     }
     
-    console.log("[AIMS] Deleted activity:", activity);
-    return NextResponse.json({ message: "Activity deleted successfully", activity });
+    // Clear cache after successful deletion
+    try {
+      supabaseOptimized.clearCache();
+      console.log(`[AIMS] [${deletionTimestamp}] Cleared activities cache after deletion`);
+    } catch (cacheError) {
+      console.warn("[AIMS] Error clearing cache:", cacheError);
+    }
+    
+    // Refresh materialized view after deletion
+    try {
+      await getSupabaseAdmin().rpc('refresh_activity_transaction_summaries');
+      console.log(`[AIMS] [${deletionTimestamp}] Refreshed activity_transaction_summaries materialized view`);
+    } catch (refreshError) {
+      console.warn("[AIMS] Could not refresh materialized view (function may not exist):", refreshError);
+    }
+    
+    // Post-deletion verification after 2 second delay
+    setTimeout(async () => {
+      try {
+        const { data: verifyActivity, error: verifyError } = await getSupabaseAdmin()
+          .from('activities')
+          .select('id, iati_identifier, title_narrative')
+          .eq('id', id)
+          .single();
+        
+        if (verifyError && verifyError.code === 'PGRST116') {
+          // PGRST116 means no rows returned, which is expected
+          console.log(`[AIMS] [${deletionTimestamp}] Verification successful: Activity ${id} confirmed deleted`);
+        } else if (verifyError) {
+          console.error(`[AIMS] [${deletionTimestamp}] Error verifying deletion:`, verifyError);
+        } else if (verifyActivity) {
+          console.error(`[AIMS] [${deletionTimestamp}] CRITICAL: Activity still exists after deletion!`, verifyActivity);
+        }
+      } catch (verifyException) {
+        console.error(`[AIMS] [${deletionTimestamp}] Exception during verification:`, verifyException);
+      }
+    }, 2000);
+    
+    console.log(`[AIMS] [${deletionTimestamp}] Successfully deleted activity:`, {
+      id: activity.id,
+      iati_identifier: activity.iati_identifier,
+      title_narrative: activity.title_narrative
+    });
+    
+    return NextResponse.json({ 
+      message: "Activity deleted successfully", 
+      activity,
+      deletionTimestamp,
+      verificationScheduled: true
+    });
   } catch (error) {
     console.error("[AIMS] Error deleting activity:", error);
     return NextResponse.json({ error: "Failed to delete activity" }, { status: 500 });

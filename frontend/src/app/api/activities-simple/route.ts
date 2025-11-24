@@ -4,13 +4,6 @@ import { getSupabaseAdmin } from '@/lib/supabase';
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
-// Add caching headers for better performance
-const CACHE_HEADERS = {
-  'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300',
-  'CDN-Cache-Control': 'public, s-maxage=60',
-  'Vercel-CDN-Cache-Control': 'public, s-maxage=60',
-};
-
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
@@ -287,9 +280,11 @@ export async function GET(request: NextRequest) {
       headers: {
         'Content-Type': 'application/json',
         'X-Total-Count': String(count || 0),
-        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
         'Pragma': 'no-cache',
-        'Expires': '0'
+        'Expires': '0',
+        'CDN-Cache-Control': 'no-store',
+        'Vercel-CDN-Cache-Control': 'no-store'
       }
     });
   } catch (error) {
