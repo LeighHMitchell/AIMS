@@ -576,7 +576,9 @@ export default function PlannedDisbursementsTab({
       setLoading(true);
       try {
         // Use API endpoint instead of direct Supabase query to avoid RLS issues
-        const response = await fetch(`/api/activities/${activityId}/planned-disbursements`);
+        const response = await fetch(`/api/activities/${activityId}/planned-disbursements`, {
+          cache: 'no-store'
+        });
         if (!response.ok) {
           const errorData = await response.json();
           throw new Error(errorData.error || 'Failed to fetch planned disbursements');
@@ -905,6 +907,7 @@ export default function PlannedDisbursementsTab({
         
         const response = await fetch('/api/planned-disbursements', {
           method: 'PUT',
+          cache: 'no-store',
           headers: {
             'Content-Type': 'application/json',
           },
@@ -925,6 +928,7 @@ export default function PlannedDisbursementsTab({
         // Insert new
         const response = await fetch('/api/planned-disbursements', {
           method: 'POST',
+          cache: 'no-store',
           headers: {
             'Content-Type': 'application/json',
           },
@@ -994,6 +998,7 @@ export default function PlannedDisbursementsTab({
     try {
       const response = await fetch(`/api/planned-disbursements?id=${id}`, {
         method: 'DELETE',
+        cache: 'no-store',
       });
 
       if (!response.ok) {
@@ -1042,6 +1047,7 @@ export default function PlannedDisbursementsTab({
       
       const response = await fetch('/api/planned-disbursements', {
         method: 'POST',
+        cache: 'no-store',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ...disbursementData,
@@ -1102,6 +1108,7 @@ export default function PlannedDisbursementsTab({
       await Promise.all(selectedArray.map(async (id) => {
         const response = await fetch(`/api/planned-disbursements?id=${id}`, {
           method: 'DELETE',
+          cache: 'no-store',
         });
         if (!response.ok) {
           const errorData = await response.json();
@@ -1286,6 +1293,7 @@ export default function PlannedDisbursementsTab({
         
         const response = await fetch('/api/planned-disbursements', {
           method: 'PUT',
+          cache: 'no-store',
           headers: {
             'Content-Type': 'application/json',
           },
@@ -1306,6 +1314,7 @@ export default function PlannedDisbursementsTab({
         // Insert new
         const response = await fetch('/api/planned-disbursements', {
           method: 'POST',
+          cache: 'no-store',
           headers: {
             'Content-Type': 'application/json',
           },

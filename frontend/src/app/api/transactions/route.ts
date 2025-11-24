@@ -293,7 +293,7 @@ export async function GET(request: Request) {
     }));
     
     // Return paginated response
-    return NextResponse.json({
+    const response = NextResponse.json({
       data: transformedTransactions,
       total: totalCombined,
       page,
@@ -302,6 +302,15 @@ export async function GET(request: Request) {
       includeLinked,
       transactionSource
     });
+    
+    // Add no-cache headers to prevent Vercel CDN caching
+    response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    response.headers.set('Pragma', 'no-cache');
+    response.headers.set('Expires', '0');
+    response.headers.set('CDN-Cache-Control', 'no-store');
+    response.headers.set('Vercel-CDN-Cache-Control', 'no-store');
+    
+    return response;
     
   } catch (error) {
     console.error('[AIMS] Error:', error);

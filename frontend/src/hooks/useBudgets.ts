@@ -57,7 +57,9 @@ export function useBudgets(params: BudgetHookParams = {}) {
         queryParams.append("limit", params.limit.toString());
       }
 
-      const response = await fetch(`/api/budgets/list?${queryParams.toString()}`);
+      const response = await fetch(`/api/budgets/list?${queryParams.toString()}`, {
+        cache: 'no-store'
+      });
       
       if (!response.ok) {
         throw new Error(`Failed to fetch budgets: ${response.status}`);

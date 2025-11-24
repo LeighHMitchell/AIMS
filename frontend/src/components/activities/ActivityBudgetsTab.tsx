@@ -414,7 +414,9 @@ export default function ActivityBudgetsTab({
         console.log('[ActivityBudgetsTab] Fetching budgets for activity:', activityId);
 
         // Use API endpoint instead of direct Supabase query to avoid RLS issues
-        const response = await fetch(`/api/activities/${activityId}/budgets`);
+        const response = await fetch(`/api/activities/${activityId}/budgets`, {
+          cache: 'no-store'
+        });
         if (!response.ok) {
           const errorData = await response.json();
           throw new Error(errorData.error || 'Failed to fetch budgets');

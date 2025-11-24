@@ -145,8 +145,9 @@ export function useOptimizedTransactions(
 
       const res = await fetch(`/api/activities/${activityId}/transactions?${params}`, {
         signal: abortControllerRef.current.signal,
+        cache: 'no-store',
         headers: {
-          'Cache-Control': 'no-cache'
+          'Content-Type': 'application/json'
         }
       });
 

@@ -4,6 +4,9 @@ import { resolveCurrency, resolveValueDate } from '@/lib/currency-helpers';
 import { getOrCreateOrganization } from '@/lib/organization-helpers';
 import { fixedCurrencyConverter } from '@/lib/currency-converter-fixed';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } }
@@ -46,7 +49,15 @@ export async function GET(
     }
 
     console.log('[PlannedDisbursementsAPI] Returning', disbursements?.length || 0, 'disbursements');
-    return NextResponse.json(disbursements || []);
+    return NextResponse.json(disbursements || [], {
+      headers: {
+        'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0',
+        'CDN-Cache-Control': 'no-store',
+        'Vercel-CDN-Cache-Control': 'no-store'
+      }
+    });
   } catch (error) {
     console.error('[PlannedDisbursementsAPI] Unexpected error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
