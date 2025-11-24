@@ -4228,15 +4228,105 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
           ].filter(Boolean).join(' | ');
 
           // Get current value from database if exists
-          console.log(`[Planned Disbursement Debug] Looking for disbursement at index ${disbIndex}, total fetched: ${fetchedPlannedDisbursements.length}`, fetchedPlannedDisbursements);
-          const currentDisbursement = fetchedPlannedDisbursements[disbIndex];
+          // Match by content instead of index to handle order differences
+          console.log(`[Planned Disbursement Debug] Looking for matching disbursement (not by index), total fetched: ${fetchedPlannedDisbursements.length}`, {
+            searchingFor: {
+              type: disbursement.type,
+              period: disbursement.period,
+              amount: disbursement.value,
+              currency: disbursement.currency,
+              providerRef: disbursement.providerOrg?.ref,
+              receiverRef: disbursement.receiverOrg?.ref
+            }
+          });
+
+          const currentDisbursement = fetchedPlannedDisbursements.find((dbDisb: any) => {
+            // Match by key identifying fields to handle order differences
+            // Normalize null/undefined/empty string for org refs
+            const normalizeOrgRef = (ref: any) => {
+              if (!ref || ref === '') return null;
+              return String(ref).trim() || null;
+            };
+            
+            // Convert database status to type for comparison
+            // Database stores status as 'original' or 'revised', XML has type as '1' or '2'
+            const dbType = dbDisb.status === 'revised' ? '2' : 
+                          dbDisb.status === 'original' ? '1' : 
+                          dbDisb.type || '1';
+            
+            const dbProviderRef = normalizeOrgRef(dbDisb.provider_org_ref);
+            const dbReceiverRef = normalizeOrgRef(dbDisb.receiver_org_ref);
+            const xmlProviderRef = normalizeOrgRef(disbursement.providerOrg?.ref);
+            const xmlReceiverRef = normalizeOrgRef(disbursement.receiverOrg?.ref);
+            
+            // Detailed comparison for debugging
+            const typeMatch = String(dbType) === String(disbursement.type || '1');
+            const periodStartMatch = dbDisb.period_start === disbursement.period?.start;
+            const periodEndMatch = dbDisb.period_end === disbursement.period?.end;
+            const amountMatch = Number(dbDisb.amount) === Number(disbursement.value);
+            const dbCurrency = dbDisb.currency || 'USD';
+            const xmlCurrency = disbursement.currency || parsedActivity.defaultCurrency || 'USD';
+            const currencyMatch = dbCurrency === xmlCurrency;
+            const providerRefMatch = dbProviderRef === xmlProviderRef;
+            const receiverRefMatch = dbReceiverRef === xmlReceiverRef;
+            
+            const allMatch = typeMatch && periodStartMatch && periodEndMatch && amountMatch && currencyMatch && providerRefMatch && receiverRefMatch;
+            
+            if (!allMatch) {
+              console.log(`[Planned Disbursement Debug] Match failed for disbursement:`, {
+                dbDisb: {
+                  id: dbDisb.id,
+                  type: dbType,
+                  status: dbDisb.status,
+                  period_start: dbDisb.period_start,
+                  period_end: dbDisb.period_end,
+                  amount: dbDisb.amount,
+                  currency: dbCurrency,
+                  provider_org_ref: dbProviderRef,
+                  receiver_org_ref: dbReceiverRef
+                },
+                searchingFor: {
+                  type: disbursement.type || '1',
+                  period_start: disbursement.period?.start,
+                  period_end: disbursement.period?.end,
+                  amount: disbursement.value,
+                  currency: xmlCurrency,
+                  providerRef: xmlProviderRef,
+                  receiverRef: xmlReceiverRef
+                },
+                matches: {
+                  type: typeMatch,
+                  periodStart: periodStartMatch,
+                  periodEnd: periodEndMatch,
+                  amount: amountMatch,
+                  currency: currencyMatch,
+                  providerRef: providerRefMatch,
+                  receiverRef: receiverRefMatch
+                }
+              });
+            }
+            
+            return allMatch;
+          });
+
           let currentDisbursementValue = null;
           if (currentDisbursement) {
-            console.log('[Planned Disbursement Debug] Found current disbursement data:', currentDisbursement);
+            console.log('[Planned Disbursement Debug] Found matching disbursement by content:', currentDisbursement);
+
+            // Convert database status to type (status 'original' -> type '1', status 'revised' -> type '2')
+            const dbType = currentDisbursement.status === 'revised' ? '2' : 
+                          currentDisbursement.status === 'original' ? '1' : 
+                          currentDisbursement.type || '1';
+            
+            // Calculate type label for current value
+            const currentTypeLabel = dbType === '1' || dbType === 1 ? 'Original' : 
+                                     dbType === '2' || dbType === 2 ? 'Revised' :
+                                     dbType ? `Type ${dbType}` : '';
 
             // Transform database format to match expected format for table display
             currentDisbursementValue = {
-              type: currentDisbursement.type,
+              type: dbType,
+              typeName: currentTypeLabel,
               period: {
                 start: currentDisbursement.period_start,
                 end: currentDisbursement.period_end
@@ -4256,29 +4346,43 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
               receiver_org_activity_id: currentDisbursement.receiver_org_activity_id
             };
           } else {
-            console.log('[Planned Disbursement Debug] No current disbursement found at index', disbIndex, 'Total fetched:', fetchedPlannedDisbursements.length);
+            console.log('[Planned Disbursement Debug] No matching disbursement found by content. Total fetched:', fetchedPlannedDisbursements.length);
+            console.log('[Planned Disbursement Debug] Available disbursements in database:', fetchedPlannedDisbursements.map((db: any) => ({
+              id: db.id,
+              type: db.status === 'revised' ? '2' : db.status === 'original' ? '1' : db.type || '1',
+              status: db.status,
+              period_start: db.period_start,
+              period_end: db.period_end,
+              amount: db.amount,
+              currency: db.currency || 'USD',
+              provider_org_ref: db.provider_org_ref,
+              receiver_org_ref: db.receiver_org_ref
+            })));
           }
 
           const description = warnings.length > 0
             ? `Planned Disbursement ${disbIndex + 1} - ${warnings.join(', ')}`
             : `Planned Disbursement ${disbIndex + 1} - IATI compliant ✓`;
 
-          // Check if values match for auto-selection
+          // Check if values match for auto-selection - use same logic as matching
+          const normalizeOrgRef = (ref: any) => {
+            if (!ref || ref === '') return null;
+            return String(ref).trim() || null;
+          };
+          
+          // Convert database status to type for comparison
+          const dbType = currentDisbursement ? (currentDisbursement.status === 'revised' ? '2' : 
+                          currentDisbursement.status === 'original' ? '1' : 
+                          currentDisbursement.type || '1') : null;
+          
           const valuesMatch = currentDisbursement &&
-            String(currentDisbursement.type || '1') === String(disbursement.type || '1') &&
+            String(dbType) === String(disbursement.type || '1') &&
             currentDisbursement.period_start === disbursement.period?.start &&
             currentDisbursement.period_end === disbursement.period?.end &&
             Number(currentDisbursement.amount) === Number(disbursement.value) &&
             (currentDisbursement.currency || 'USD') === (disbursement.currency || parsedActivity.defaultCurrency || 'USD') &&
-            (currentDisbursement.value_date || null) === (disbursement.valueDate || null) &&
-            (currentDisbursement.provider_org_name || null) === (disbursement.providerOrg?.name || null) &&
-            (currentDisbursement.provider_org_ref || null) === (disbursement.providerOrg?.ref || null) &&
-            (currentDisbursement.provider_org_type || null) === (disbursement.providerOrg?.type || null) &&
-            (currentDisbursement.provider_org_activity_id || null) === (disbursement.providerOrg?.providerActivityId || null) &&
-            (currentDisbursement.receiver_org_name || null) === (disbursement.receiverOrg?.name || null) &&
-            (currentDisbursement.receiver_org_ref || null) === (disbursement.receiverOrg?.ref || null) &&
-            (currentDisbursement.receiver_org_type || null) === (disbursement.receiverOrg?.type || null) &&
-            (currentDisbursement.receiver_org_activity_id || null) === (disbursement.receiverOrg?.receiverActivityId || null);
+            normalizeOrgRef(currentDisbursement.provider_org_ref) === normalizeOrgRef(disbursement.providerOrg?.ref) &&
+            normalizeOrgRef(currentDisbursement.receiver_org_ref) === normalizeOrgRef(disbursement.receiverOrg?.ref);
 
           fields.push({
             fieldName: `Planned Disbursement`,
@@ -5041,18 +5145,26 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
             
             // For standard IATI markers (vocabulary="1"), match by iati_code
             if (markerVocabulary === '1') {
-              return details.iati_code === marker.code && details.is_iati_standard === true;
+              // Convert both to strings for comparison to handle type mismatches
+              const existingCode = String(details.iati_code || '');
+              const markerCode = String(marker.code || '');
+              // Check is_iati_standard as truthy (handles both true and 1)
+              return existingCode === markerCode && Boolean(details.is_iati_standard);
             }
             
             // For custom markers (vocabulary="99"), match by code and vocabulary_uri
             if (markerVocabulary === '99') {
               const existingUri = details.vocabulary_uri || '';
               const markerUri = marker.vocabulary_uri || '';
-              return details.code === marker.code && existingUri === markerUri;
+              const existingCode = String(details.code || '');
+              const markerCode = String(marker.code || '');
+              return existingCode === markerCode && existingUri === markerUri;
             }
             
-            // Fallback: match by code
-            return details.code === marker.code;
+            // Fallback: match by code (convert to strings)
+            const existingCode = String(details.code || '');
+            const markerCode = String(marker.code || '');
+            return existingCode === markerCode;
           });
 
           const policyMarkerName = getPolicyMarkerName(marker.code);
@@ -10426,6 +10538,173 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
 
       // Clear refined sectors after successful import
       setSavedRefinedSectors([]);
+
+      // Refetch planned disbursements after import to update current values in fields
+      console.log('[IATI Import] Refetching planned disbursements after import to update current values...');
+      try {
+        const refreshResponse = await fetch(`/api/activities/${activityId}/planned-disbursements?_=${Date.now()}`, {
+          cache: 'no-store'
+        });
+        if (refreshResponse.ok) {
+          const refreshedDisbursements = await refreshResponse.json();
+          setCurrentPlannedDisbursements(refreshedDisbursements);
+          console.log(`[IATI Import] Refetched ${refreshedDisbursements.length} planned disbursements after import`);
+          console.log('[IATI Import] Refreshed disbursements:', refreshedDisbursements);
+          
+          // Get default currency from current activity data or parsed activity
+          const defaultCurrency = currentActivityData?.default_currency || parsedActivity?.defaultCurrency || 'USD';
+          console.log('[IATI Import] Using default currency:', defaultCurrency, {
+            fromCurrentActivityData: currentActivityData?.default_currency,
+            fromParsedActivity: parsedActivity?.defaultCurrency
+          });
+          
+          // Update fields with fresh current values
+          if (parsedFields.length > 0) {
+            setParsedFields(prevFields => {
+              const updatedFields = prevFields.map(field => {
+                // Only update planned disbursement fields
+                if (field.isFinancialItem && field.itemType === 'plannedDisbursement' && field.itemData) {
+                  const disbursement = field.itemData;
+                  
+                  console.log(`[IATI Import] Updating field: ${field.fieldName}`, {
+                    searchingFor: {
+                      type: disbursement.type,
+                      period: disbursement.period,
+                      amount: disbursement.value,
+                      currency: disbursement.currency,
+                      providerRef: disbursement.providerOrg?.ref,
+                      receiverRef: disbursement.receiverOrg?.ref
+                    },
+                    totalRefreshed: refreshedDisbursements.length
+                  });
+                  
+                  // Find matching disbursement in refreshed data - use EXACT same logic as initial parse
+                  const normalizeOrgRef = (ref: any) => {
+                    if (!ref || ref === '') return null;
+                    return String(ref).trim() || null;
+                  };
+                  
+                  const currentDisbursement = refreshedDisbursements.find((dbDisb: any) => {
+                    const dbProviderRef = normalizeOrgRef(dbDisb.provider_org_ref);
+                    const dbReceiverRef = normalizeOrgRef(dbDisb.receiver_org_ref);
+                    const xmlProviderRef = normalizeOrgRef(disbursement.providerOrg?.ref);
+                    const xmlReceiverRef = normalizeOrgRef(disbursement.receiverOrg?.ref);
+                    
+                    // Convert database status to type for comparison
+                    // Database stores status as 'original' or 'revised', XML has type as '1' or '2'
+                    const dbType = dbDisb.status === 'revised' ? '2' : 
+                                  dbDisb.status === 'original' ? '1' : 
+                                  dbDisb.type || '1';
+                    
+                    const matches = (
+                      String(dbType) === String(disbursement.type || '1') &&
+                      dbDisb.period_start === disbursement.period?.start &&
+                      dbDisb.period_end === disbursement.period?.end &&
+                      Number(dbDisb.amount) === Number(disbursement.value) &&
+                      (dbDisb.currency || 'USD') === (disbursement.currency || defaultCurrency) &&
+                      dbProviderRef === xmlProviderRef &&
+                      dbReceiverRef === xmlReceiverRef
+                    );
+                    
+                    if (matches) {
+                      console.log(`[IATI Import] Found match for ${field.fieldName}:`, dbDisb);
+                    }
+                    
+                    return matches;
+                  });
+                  
+                  if (currentDisbursement) {
+                    // Convert database status to type (status 'original' -> type '1', status 'revised' -> type '2')
+                    const dbType = currentDisbursement.status === 'revised' ? '2' : 
+                                  currentDisbursement.status === 'original' ? '1' : 
+                                  currentDisbursement.type || '1';
+                    
+                    const currentTypeLabel = dbType === '1' || dbType === 1 ? 'Original' : 
+                                           dbType === '2' || dbType === 2 ? 'Revised' :
+                                           dbType ? `Type ${dbType}` : '';
+                    
+                    const updatedCurrentValue = {
+                      type: dbType,
+                      typeName: currentTypeLabel,
+                      period: {
+                        start: currentDisbursement.period_start,
+                        end: currentDisbursement.period_end
+                      },
+                      start: currentDisbursement.period_start,
+                      end: currentDisbursement.period_end,
+                      value: currentDisbursement.amount,
+                      currency: currentDisbursement.currency || 'USD',
+                      value_date: currentDisbursement.value_date,
+                      provider_org_name: currentDisbursement.provider_org_name,
+                      provider_org_ref: currentDisbursement.provider_org_ref,
+                      provider_org_type: currentDisbursement.provider_org_type,
+                      provider_org_activity_id: currentDisbursement.provider_org_activity_id,
+                      receiver_org_name: currentDisbursement.receiver_org_name,
+                      receiver_org_ref: currentDisbursement.receiver_org_ref,
+                      receiver_org_type: currentDisbursement.receiver_org_type,
+                      receiver_org_activity_id: currentDisbursement.receiver_org_activity_id
+                    };
+                    
+                    // Check for conflicts by comparing key fields - use same logic as initial parse
+                    const hasConflict = !(
+                      String(updatedCurrentValue.type || '1') === String(disbursement.type || '1') &&
+                      updatedCurrentValue.period?.start === disbursement.period?.start &&
+                      updatedCurrentValue.period?.end === disbursement.period?.end &&
+                      Number(updatedCurrentValue.value) === Number(disbursement.value) &&
+                      (updatedCurrentValue.currency || 'USD') === (disbursement.currency || defaultCurrency) &&
+                      normalizeOrgRef(updatedCurrentValue.provider_org_ref) === normalizeOrgRef(disbursement.providerOrg?.ref) &&
+                      normalizeOrgRef(updatedCurrentValue.receiver_org_ref) === normalizeOrgRef(disbursement.receiverOrg?.ref)
+                    );
+                    
+                    console.log(`[IATI Import] Updated ${field.fieldName} with current value, hasConflict: ${hasConflict}`);
+                    
+                    return {
+                      ...field,
+                      currentValue: updatedCurrentValue,
+                      hasConflict
+                    };
+                  } else {
+                    // No match found - log details for debugging
+                    console.log(`[IATI Import] No matching disbursement found for field: ${field.fieldName}`, {
+                      searchingFor: {
+                        type: disbursement.type,
+                        period: disbursement.period,
+                        amount: disbursement.value,
+                        currency: disbursement.currency,
+                        providerRef: disbursement.providerOrg?.ref,
+                        receiverRef: disbursement.receiverOrg?.ref
+                      },
+                      availableDisbursements: refreshedDisbursements.map((db: any) => ({
+                        type: db.type,
+                        period: { start: db.period_start, end: db.period_end },
+                        amount: db.amount,
+                        currency: db.currency,
+                        providerRef: db.provider_org_ref,
+                        receiverRef: db.receiver_org_ref
+                      }))
+                    });
+                    return {
+                      ...field,
+                      currentValue: null,
+                      hasConflict: true
+                    };
+                  }
+                }
+                return field;
+              });
+              
+              console.log('[IATI Import] Updated planned disbursement fields with fresh current values', {
+                totalFields: updatedFields.length,
+                plannedDisbursementFields: updatedFields.filter(f => f.itemType === 'plannedDisbursement').length
+              });
+              
+              return updatedFields;
+            });
+          }
+        }
+      } catch (error) {
+        console.warn('[IATI Import] Failed to refetch planned disbursements after import:', error);
+      }
 
       // === ULTRA-COMPREHENSIVE IMPORT SUMMARY ===
       const importEndTime = Date.now();

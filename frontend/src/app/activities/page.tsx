@@ -678,13 +678,14 @@ function ActivitiesPageContent() {
             toast.success(`"${activityTitle}" was deleted successfully`);
 
             // Refetch to ensure UI is in sync with backend (prevents reappearing activity)
+            // Increased delay to ensure database transaction has committed
             setTimeout(() => {
               if (usingOptimization) {
                 safeOptimizedData.refetch();
               } else {
                 fetchActivities(currentPage, false);
               }
-            }, 100);
+            }, 500);
 
             return;
           } else {
@@ -720,14 +721,14 @@ function ActivitiesPageContent() {
       toast.success(`"${activityTitle}" was deleted successfully`);
       
       // Refetch to ensure UI is in sync with backend (prevents reappearing activity)
-      // Use a small delay to ensure backend has processed the deletion
+      // Use a longer delay to ensure backend has processed the deletion and database has committed
       setTimeout(() => {
         if (usingOptimization) {
           safeOptimizedData.refetch();
         } else {
           fetchActivities(currentPage, false);
         }
-      }, 100);
+      }, 500);
       
     } catch (error) {
       console.error(`[AIMS] Error deleting activity (attempt ${retryCount + 1}):`, error);
@@ -835,11 +836,14 @@ function ActivitiesPageContent() {
       setSelectedActivityIds(new Set());
       
       // Force refresh to ensure list is up to date and remove any stale entries
-      if (usingOptimization) {
-        safeOptimizedData.refetch();
-      } else {
-        fetchActivities(currentPage, false);
-      }
+      // Use delay to ensure database has committed the deletion
+      setTimeout(() => {
+        if (usingOptimization) {
+          safeOptimizedData.refetch();
+        } else {
+          fetchActivities(currentPage, false);
+        }
+      }, 500);
       
     } catch (error) {
       console.error('Bulk delete failed:', error);
@@ -852,11 +856,13 @@ function ActivitiesPageContent() {
       }
       
       // Revert optimistic updates by refetching
-      if (usingOptimization) {
-        safeOptimizedData.refetch();
-      } else {
-        fetchActivities(currentPage, false);
-      }
+      setTimeout(() => {
+        if (usingOptimization) {
+          safeOptimizedData.refetch();
+        } else {
+          fetchActivities(currentPage, false);
+        }
+      }, 500);
     } finally {
       setIsBulkDeleting(false);
     }

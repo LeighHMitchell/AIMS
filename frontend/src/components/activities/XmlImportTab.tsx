@@ -3388,18 +3388,26 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
             
             // For standard IATI markers (vocabulary="1"), match by iati_code
             if (markerVocabulary === '1') {
-              return details.iati_code === marker.code && details.is_iati_standard === true;
+              // Convert both to strings for comparison to handle type mismatches
+              const existingCode = String(details.iati_code || '');
+              const markerCode = String(marker.code || '');
+              // Check is_iati_standard as truthy (handles both true and 1)
+              return existingCode === markerCode && Boolean(details.is_iati_standard);
             }
             
             // For custom markers (vocabulary="99"), match by code and vocabulary_uri
             if (markerVocabulary === '99') {
               const existingUri = details.vocabulary_uri || '';
               const markerUri = marker.vocabulary_uri || '';
-              return details.code === marker.code && existingUri === markerUri;
+              const existingCode = String(details.code || '');
+              const markerCode = String(marker.code || '');
+              return existingCode === markerCode && existingUri === markerUri;
             }
             
-            // Fallback: match by code
-            return details.code === marker.code;
+            // Fallback: match by code (convert to strings)
+            const existingCode = String(details.code || '');
+            const markerCode = String(marker.code || '');
+            return existingCode === markerCode;
           });
 
           const currentValue = existingMarker ? {

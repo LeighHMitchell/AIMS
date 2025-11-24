@@ -1243,7 +1243,7 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
       if (value.value !== undefined && value.currency) {
         return (
           <span className="text-sm">
-            <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">{value.currency}</code>
+            <code className="text-xs font-mono text-gray-500">{value.currency}</code>
             <span className="ml-2">{value.value?.toLocaleString()}</span>
           </span>
         );
@@ -1275,7 +1275,7 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
           const formattedValue = typeof amount === 'number' ? amount.toLocaleString() : String(amount);
           return (
             <span className="text-sm">
-              <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">{currency}</code>
+              <code className="text-xs font-mono text-gray-500">{currency}</code>
               <span className="ml-2">{formattedValue}</span>
             </span>
           );
@@ -1283,7 +1283,7 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
           // Transaction object with currency but no value - show just currency
           return (
             <span className="text-sm">
-              <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">{currency}</code>
+              <code className="text-xs font-mono text-gray-500">{currency}</code>
             </span>
           );
         }
@@ -1295,6 +1295,21 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
       const text = formatted.text;
       const isCode = formatted.isCode || false;
       const isPipeSeparated = formatted.isPipeSeparated || false;
+      
+      // Check if text matches currency + value pattern (e.g., "EUR 3,000") - do this early for financial items
+      if (isFinancialItem && typeof text === 'string' && text.trim()) {
+        const currencyMatch = text.match(/^([A-Z]{3})\s+([\d,.\s]+)$/);
+        if (currencyMatch) {
+          const currency = currencyMatch[1];
+          const value = currencyMatch[2].trim();
+          return (
+            <span className="text-sm">
+              <code className="text-xs font-mono text-gray-500">{currency}</code>
+              <span className="ml-2">{value}</span>
+            </span>
+          );
+        }
+      }
       
       // Handle pipe-separated strings in 3-column layout
       // For financial items (Budgets, Transactions, Planned Disbursements) in import column, always use 3-column layout
@@ -1338,7 +1353,7 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
             const currency = currencyMatch[2];
             return (
               <span className="text-sm">
-                <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">{currency}</code>
+                <code className="text-xs font-mono text-gray-500">{currency}</code>
                 <span className="ml-2">{value}</span>
               </span>
             );
@@ -1430,6 +1445,22 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
       }
 
       return <span className={isDescription ? 'whitespace-pre-wrap' : ''}>{textContent}</span>;
+    }
+    
+    // Check if text matches currency + value pattern (e.g., "EUR 3,000")
+    const text = formatted.text || '';
+    if (text && typeof text === 'string') {
+      const currencyMatch = text.match(/^([A-Z]{3})\s+([\d,.\s]+)$/);
+      if (currencyMatch) {
+        const currency = currencyMatch[1];
+        const value = currencyMatch[2].trim();
+        return (
+          <span className="text-sm">
+            <code className="text-xs font-mono text-gray-500">{currency}</code>
+            <span className="ml-2">{value}</span>
+          </span>
+        );
+      }
     }
     
     return <span>{formatted.text || '—'}</span>;
@@ -3004,27 +3035,29 @@ ${budgetItems.map((bi: any) => `  <budget-item code="${bi.code || ''}"${bi.perce
                                                 )}
                                                 {(item.providerOrg?.ref || item.providerOrg?.name) && (
                                                   <tr className="border-b border-gray-100 align-top">
-                                                    <td className="py-1.5 pr-2 font-medium text-gray-600">Provider Org:</td>
+                                                    <td className="py-1.5 pr-2 font-medium text-gray-600">Provider organisation:</td>
                                                     <td className="py-1.5 text-gray-900">
-                                                      {item.providerOrg?.ref && (
-                                                        <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded mr-2">
+                                                      {item.providerOrg?.ref ? (
+                                                        <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
                                                           {item.providerOrg.ref}
                                                         </code>
+                                                      ) : (
+                                                        <span className="text-gray-500 italic">No ref</span>
                                                       )}
-                                                      {item.providerOrg?.name}
                                                     </td>
                                                   </tr>
                                                 )}
                                                 {(item.receiverOrg?.ref || item.receiverOrg?.name) && (
                                                   <tr className="align-top">
-                                                    <td className="py-1.5 pr-2 font-medium text-gray-600">Receiver Org:</td>
+                                                    <td className="py-1.5 pr-2 font-medium text-gray-600">Receiver organisation:</td>
                                                     <td className="py-1.5 text-gray-900">
-                                                      {item.receiverOrg?.ref && (
-                                                        <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded mr-2">
+                                                      {item.receiverOrg?.ref ? (
+                                                        <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
                                                           {item.receiverOrg.ref}
                                                         </code>
+                                                      ) : (
+                                                        <span className="text-gray-500 italic">No ref</span>
                                                       )}
-                                                      {item.receiverOrg?.name}
                                                     </td>
                                                   </tr>
                                                 )}
@@ -3126,27 +3159,29 @@ ${budgetItems.map((bi: any) => `  <budget-item code="${bi.code || ''}"${bi.perce
                                             )}
                                             {(item.providerOrg?.ref || item.providerOrg?.name) && (
                                               <tr className="border-b border-gray-100 align-top">
-                                                <td className="py-1.5 pr-2 font-medium text-gray-600">Provider Org:</td>
+                                                <td className="py-1.5 pr-2 font-medium text-gray-600">Provider organisation:</td>
                                                 <td className="py-1.5 text-gray-900">
-                                                  {item.providerOrg?.ref && (
-                                                    <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded mr-2">
+                                                  {item.providerOrg?.ref ? (
+                                                    <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
                                                       {item.providerOrg.ref}
                                                     </code>
+                                                  ) : (
+                                                    <span className="text-gray-500 italic">No ref</span>
                                                   )}
-                                                  {item.providerOrg?.name}
                                                 </td>
                                               </tr>
                                             )}
                                             {(item.receiverOrg?.ref || item.receiverOrg?.name) && (
                                               <tr className="align-top">
-                                                <td className="py-1.5 pr-2 font-medium text-gray-600">Receiver Org:</td>
+                                                <td className="py-1.5 pr-2 font-medium text-gray-600">Receiver organisation:</td>
                                                 <td className="py-1.5 text-gray-900">
-                                                  {item.receiverOrg?.ref && (
-                                                    <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded mr-2">
+                                                  {item.receiverOrg?.ref ? (
+                                                    <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
                                                       {item.receiverOrg.ref}
                                                     </code>
+                                                  ) : (
+                                                    <span className="text-gray-500 italic">No ref</span>
                                                   )}
-                                                  {item.receiverOrg?.name}
                                                 </td>
                                               </tr>
                                             )}
@@ -3219,27 +3254,29 @@ ${budgetItems.map((bi: any) => `  <budget-item code="${bi.code || ''}"${bi.perce
                                                 )}
                                                 {(field.currentValue.provider_org_ref || field.currentValue.provider_org_name) && (
                                                   <tr className="border-b border-gray-100 align-top">
-                                                    <td className="py-1.5 pr-2 font-medium text-gray-600">Provider Org:</td>
+                                                    <td className="py-1.5 pr-2 font-medium text-gray-600">Provider organisation:</td>
                                                     <td className="py-1.5 text-gray-900">
-                                                      {field.currentValue.provider_org_ref && (
-                                                        <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded mr-2">
+                                                      {field.currentValue.provider_org_ref ? (
+                                                        <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
                                                           {field.currentValue.provider_org_ref}
                                                         </code>
+                                                      ) : (
+                                                        <span className="text-gray-500 italic">No ref</span>
                                                       )}
-                                                      {field.currentValue.provider_org_name}
                                                     </td>
                                                   </tr>
                                                 )}
                                                 {(field.currentValue.receiver_org_ref || field.currentValue.receiver_org_name) && (
                                                   <tr className="align-top">
-                                                    <td className="py-1.5 pr-2 font-medium text-gray-600">Receiver Org:</td>
+                                                    <td className="py-1.5 pr-2 font-medium text-gray-600">Receiver organisation:</td>
                                                     <td className="py-1.5 text-gray-900">
-                                                      {field.currentValue.receiver_org_ref && (
-                                                        <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded mr-2">
+                                                      {field.currentValue.receiver_org_ref ? (
+                                                        <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
                                                           {field.currentValue.receiver_org_ref}
                                                         </code>
+                                                      ) : (
+                                                        <span className="text-gray-500 italic">No ref</span>
                                                       )}
-                                                      {field.currentValue.receiver_org_name}
                                                     </td>
                                                   </tr>
                                                 )}
@@ -3326,7 +3363,7 @@ ${budgetItems.map((bi: any) => `  <budget-item code="${bi.code || ''}"${bi.perce
                                                   </td>
                                                 </tr>
                                               )}
-                                              {field.currentValue.type !== undefined && (
+                                              {(field.currentValue.type || field.currentValue.typeName) && (
                                                 <tr className="border-b border-gray-100 align-top">
                                                   <td className="py-1.5 pr-2 font-medium text-gray-600">Type:</td>
                                                   <td className="py-1.5 text-gray-900">
@@ -3341,27 +3378,29 @@ ${budgetItems.map((bi: any) => `  <budget-item code="${bi.code || ''}"${bi.perce
                                               )}
                                               {(field.currentValue.provider_org_ref || field.currentValue.provider_org_name) && (
                                                 <tr className="border-b border-gray-100 align-top">
-                                                  <td className="py-1.5 pr-2 font-medium text-gray-600">Provider Org:</td>
+                                                  <td className="py-1.5 pr-2 font-medium text-gray-600">Provider organisation:</td>
                                                   <td className="py-1.5 text-gray-900">
-                                                    {field.currentValue.provider_org_ref && (
-                                                      <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded mr-2">
+                                                    {field.currentValue.provider_org_ref ? (
+                                                      <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
                                                         {field.currentValue.provider_org_ref}
                                                       </code>
+                                                    ) : (
+                                                      <span className="text-gray-500 italic">No ref</span>
                                                     )}
-                                                    {field.currentValue.provider_org_name}
                                                   </td>
                                                 </tr>
                                               )}
                                               {(field.currentValue.receiver_org_ref || field.currentValue.receiver_org_name) && (
                                                 <tr className="border-b border-gray-100 align-top">
-                                                  <td className="py-1.5 pr-2 font-medium text-gray-600">Receiver Org:</td>
+                                                  <td className="py-1.5 pr-2 font-medium text-gray-600">Receiver organisation:</td>
                                                   <td className="py-1.5 text-gray-900">
-                                                    {field.currentValue.receiver_org_ref && (
-                                                      <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded mr-2">
+                                                    {field.currentValue.receiver_org_ref ? (
+                                                      <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
                                                         {field.currentValue.receiver_org_ref}
                                                       </code>
+                                                    ) : (
+                                                      <span className="text-gray-500 italic">No ref</span>
                                                     )}
-                                                    {field.currentValue.receiver_org_name}
                                                   </td>
                                                 </tr>
                                               )}
