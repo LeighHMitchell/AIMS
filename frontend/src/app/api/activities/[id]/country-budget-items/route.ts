@@ -163,12 +163,25 @@ export async function POST(
     }
 
     // Insert budget items
-    const budgetItemsToInsert = body.budget_items.map(item => ({
-      country_budget_items_id: countryBudgetItemsId,
-      code: item.code,
-      percentage: item.percentage,
-      description: item.description || null
-    }));
+    // Note: description is stored as JSONB with multi-language support
+    const budgetItemsToInsert = body.budget_items.map(item => {
+      let description = null;
+      if (item.description) {
+        // If already an object (e.g. {"en": "text"}), use as-is
+        if (typeof item.description === 'object') {
+          description = item.description;
+        } else if (typeof item.description === 'string' && item.description.trim()) {
+          // Convert plain string to JSONB format with "en" as default language
+          description = { en: item.description };
+        }
+      }
+      return {
+        country_budget_items_id: countryBudgetItemsId,
+        code: item.code,
+        percentage: item.percentage,
+        description
+      };
+    });
 
     const { error: biError } = await supabase
       .from('budget_items')

@@ -1112,43 +1112,43 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
       );
     }
 
-    // Special handling for Country Budget Items - show code/percentage with vocabulary below
-    // TEMPORARILY DISABLED FOR DEBUGGING
-    if (false && field?.itemType === 'countryBudgetItems' && field?.itemData && column === 'import') {
-      const itemData = field.itemData;
-      const budgetItem = itemData.budget_items?.[0];
+    // Special handling for Country Budget Items - show vocabulary label, code, and percentage
+    // Works for both import and current value columns with consistent formatting
+    if (field?.itemType === 'countryBudgetItems') {
+      // For import column, use itemData; for current column, use currentValue
+      let itemData: any = null;
+      let budgetItem: any = null;
+      
+      if (column === 'import' && field?.itemData) {
+        itemData = field.itemData;
+        budgetItem = itemData.budget_items?.[0];
+      } else if (column === 'current' && field?.currentValue && typeof field.currentValue === 'object' && field.currentValue.budget_items) {
+        itemData = field.currentValue;
+        budgetItem = itemData.budget_items?.[0];
+      }
 
       if (!budgetItem) {
         return <span className="text-gray-400 italic">—</span>;
       }
 
       // Get vocabulary label
-      const vocabLabel = itemData.vocabulary === '1' ? 'IATI' :
+      const vocabLabel = itemData.vocabularyLabel || 
+                        (itemData.vocabulary === '1' ? 'IATI' :
                         itemData.vocabulary === '2' ? 'COFOG' :
                         itemData.vocabulary === '3' ? 'COFOG (2014)' :
                         itemData.vocabulary === '4' ? 'COFOG' :
                         itemData.vocabulary === '5' ? 'Other' :
-                        itemData.vocabulary === '99' ? 'Reporting Organisation' : '';
-
-      // Prefer narrative/description over code, display code in monospace with gray background if no narrative
-      const displayText = budgetItem.description || budgetItem.narrative;
-      const showCode = !displayText && budgetItem.code;
+                        itemData.vocabulary === '99' ? 'Reporting Organisation' : '');
 
       return (
-        <div className="flex flex-col">
-          <div className="flex items-center gap-2 text-sm">
-            {displayText ? (
-              <span className="text-gray-900">{displayText}</span>
-            ) : showCode ? (
-              <code className="font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
-                {budgetItem.code}
-              </code>
-            ) : null}
-            {budgetItem.percentage !== undefined && (
-              <span className="text-gray-900">{budgetItem.percentage}%</span>
-            )}
-          </div>
-          <span className="text-xs text-gray-500">{vocabLabel}</span>
+        <div className="flex items-center gap-2 text-sm">
+          <span className="text-gray-600">{vocabLabel}</span>
+          <code className="font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
+            {budgetItem.code}
+          </code>
+          {budgetItem.percentage !== undefined && (
+            <span className="text-gray-900">{budgetItem.percentage}%</span>
+          )}
         </div>
       );
     }
@@ -1511,6 +1511,28 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
     // If import value doesn't exist, it's not a match
     if (!importValue && importValue !== 0) return false;
 
+    // Special handling for Recipient Countries, Recipient Regions, and Custom Geographies (arrays)
+    if ((field.fieldName === 'Recipient Countries' || 
+         field.fieldName === 'Recipient Regions' || 
+         field.fieldName === 'Custom Geographies') &&
+        Array.isArray(currentValue) && Array.isArray(importValue)) {
+      
+      if (currentValue.length !== importValue.length) return false;
+      
+      // Compare each item - normalize for comparison
+      const normalizeItem = (item: any) => ({
+        code: String(item.code || '').trim(),
+        name: String(item.name || '').trim(),
+        percentage: item.percentage || 0,
+        vocabulary: String(item.vocabulary || '').trim()
+      });
+      
+      const normalizedCurrent = currentValue.map(normalizeItem).sort((a, b) => a.code.localeCompare(b.code));
+      const normalizedImport = importValue.map(normalizeItem).sort((a, b) => a.code.localeCompare(b.code));
+      
+      return JSON.stringify(normalizedCurrent) === JSON.stringify(normalizedImport);
+    }
+
     // Special handling for budget objects
     if (field?.itemType === 'budget' && typeof currentValue === 'object' && typeof importValue === 'object' && currentValue !== null && importValue !== null) {
       const typeMatch = String(currentValue.type) === String(importValue.type);
@@ -1553,6 +1575,28 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
       const receiverRefMatch = normalizeOrgRef(currentValue.receiver_org_ref) === normalizeOrgRef(itemData.receiverOrg?.ref);
       
       return typeMatch && startMatch && endMatch && valueMatch && currencyMatch && providerRefMatch && receiverRefMatch;
+    }
+
+    // Special handling for country budget items
+    if (field?.itemType === 'countryBudgetItems' && typeof currentValue === 'object' && currentValue !== null && field.itemData) {
+      const itemData = field.itemData;
+      const currentBI = currentValue.budget_items?.[0];
+      const importBI = itemData.budget_items?.[0];
+
+      if (!currentBI || !importBI) return false;
+
+      // Compare vocabulary
+      const vocabMatch = String(currentValue.vocabulary) === String(itemData.vocabulary);
+      // Compare code
+      const codeMatch = String(currentBI.code) === String(importBI.code);
+      // Compare percentage (allow small floating point differences)
+      const percentageMatch = Math.abs((currentBI.percentage || 0) - (importBI.percentage || 0)) < 0.01;
+      // Compare description (normalize whitespace)
+      const currentDesc = (currentBI.description || '').trim();
+      const importDesc = (importBI.description || '').trim();
+      const descMatch = currentDesc === importDesc;
+
+      return vocabMatch && codeMatch && percentageMatch && descMatch;
     }
 
     // Handle object comparison (e.g., for coded fields that return {code, name})
@@ -2041,6 +2085,143 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                           <TableCell colSpan={6} className="bg-gray-50 p-4">
                             {/* Detailed Data Display */}
                             {(() => {
+                              // Recipient Countries, Recipient Regions, and Custom Geographies - handle arrays
+                              if (field.fieldName === 'Recipient Countries' || 
+                                  field.fieldName === 'Recipient Regions' || 
+                                  field.fieldName === 'Custom Geographies') {
+                                
+                                const importData = Array.isArray(field.importValue) ? field.importValue : [];
+                                const currentData = Array.isArray(field.currentValue) ? field.currentValue : [];
+                                
+                                // Generate XML snippet
+                                let xmlSnippet = '';
+                                if (field.fieldName === 'Recipient Countries') {
+                                  xmlSnippet = importData.map((item: any) => 
+                                    `<recipient-country code="${item.code || ''}"${item.percentage ? ` percentage="${item.percentage}"` : ''} />`
+                                  ).join('\n');
+                                } else if (field.fieldName === 'Recipient Regions') {
+                                  xmlSnippet = importData.map((item: any) => {
+                                    const vocab = item.vocabulary?.split(' ')[0] || '1';
+                                    return `<recipient-region code="${item.code || ''}" vocabulary="${vocab}"${item.percentage ? ` percentage="${item.percentage}"` : ''} />`;
+                                  }).join('\n');
+                                } else if (field.fieldName === 'Custom Geographies') {
+                                  xmlSnippet = importData.map((item: any) => {
+                                    const vocabUri = item.vocabularyUri ? ` vocabulary-uri="${item.vocabularyUri}"` : '';
+                                    return `<recipient-region code="${item.code || ''}" vocabulary="99"${vocabUri}${item.percentage ? ` percentage="${item.percentage}"` : ''} />`;
+                                  }).join('\n');
+                                }
+                                
+                                return (
+                                  <div className="mb-6 border-b border-gray-200 pb-6">
+                                    <div className="text-sm font-semibold mb-3 text-gray-900 flex items-center gap-2">
+                                      <MapPin className="h-4 w-4" />
+                                      {field.fieldName} Details
+                                    </div>
+
+                                    {/* 3-column layout */}
+                                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                                      {/* Column 1: Raw XML */}
+                                      <div className="bg-gray-50 rounded-md p-3 border border-gray-200">
+                                        <div className="text-xs font-semibold text-gray-700 mb-2">Raw XML</div>
+                                        <pre className="text-xs font-mono text-gray-800 overflow-x-auto whitespace-pre-wrap break-all">
+{xmlSnippet || '—'}
+                                        </pre>
+                                      </div>
+
+                                      {/* Column 2: Import Value */}
+                                      <div className="bg-gray-50 rounded-md p-3 border border-gray-200">
+                                        <div className="text-xs font-semibold text-gray-700 mb-2">Import Value</div>
+                                        {importData.length > 0 ? (
+                                          <table className="w-full text-xs">
+                                            <tbody>
+                                              {importData.map((item: any, idx: number) => (
+                                                <React.Fragment key={idx}>
+                                                  {item.code && (
+                                                    <tr className="border-b border-gray-100 align-top">
+                                                      <td className="py-1.5 pr-2 font-medium text-gray-600">Code:</td>
+                                                      <td className="py-1.5 text-gray-900">
+                                                        <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                          {item.code}
+                                                        </code>
+                                                      </td>
+                                                    </tr>
+                                                  )}
+                                                  {item.name && (
+                                                    <tr className="border-b border-gray-100 align-top">
+                                                      <td className="py-1.5 pr-2 font-medium text-gray-600">Name:</td>
+                                                      <td className="py-1.5 text-gray-900">{item.name}</td>
+                                                    </tr>
+                                                  )}
+                                                  {item.vocabulary && (
+                                                    <tr className="border-b border-gray-100 align-top">
+                                                      <td className="py-1.5 pr-2 font-medium text-gray-600">Vocabulary:</td>
+                                                      <td className="py-1.5 text-gray-900">{item.vocabulary}</td>
+                                                    </tr>
+                                                  )}
+                                                  {item.percentage !== undefined && (
+                                                    <tr className={idx < importData.length - 1 ? "border-b-2 border-gray-300 align-top" : "align-top"}>
+                                                      <td className="py-1.5 pr-2 font-medium text-gray-600">Percentage:</td>
+                                                      <td className="py-1.5 text-gray-900">{item.percentage}%</td>
+                                                    </tr>
+                                                  )}
+                                                </React.Fragment>
+                                              ))}
+                                            </tbody>
+                                          </table>
+                                        ) : (
+                                          <div className="text-xs text-gray-500 italic">No import value</div>
+                                        )}
+                                      </div>
+
+                                      {/* Column 3: Current Value */}
+                                      <div className="bg-gray-50 rounded-md p-3 border border-gray-200">
+                                        <div className="text-xs font-semibold text-gray-700 mb-2">Current Value</div>
+                                        {currentData.length > 0 ? (
+                                          <table className="w-full text-xs">
+                                            <tbody>
+                                              {currentData.map((item: any, idx: number) => (
+                                                <React.Fragment key={idx}>
+                                                  {item.code && (
+                                                    <tr className="border-b border-gray-100 align-top">
+                                                      <td className="py-1.5 pr-2 font-medium text-gray-600">Code:</td>
+                                                      <td className="py-1.5 text-gray-900">
+                                                        <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                          {item.code}
+                                                        </code>
+                                                      </td>
+                                                    </tr>
+                                                  )}
+                                                  {item.name && (
+                                                    <tr className="border-b border-gray-100 align-top">
+                                                      <td className="py-1.5 pr-2 font-medium text-gray-600">Name:</td>
+                                                      <td className="py-1.5 text-gray-900">{item.name}</td>
+                                                    </tr>
+                                                  )}
+                                                  {item.vocabulary && (
+                                                    <tr className="border-b border-gray-100 align-top">
+                                                      <td className="py-1.5 pr-2 font-medium text-gray-600">Vocabulary:</td>
+                                                      <td className="py-1.5 text-gray-900">{item.vocabulary}</td>
+                                                    </tr>
+                                                  )}
+                                                  {item.percentage !== undefined && (
+                                                    <tr className={idx < currentData.length - 1 ? "border-b-2 border-gray-300 align-top" : "align-top"}>
+                                                      <td className="py-1.5 pr-2 font-medium text-gray-600">Percentage:</td>
+                                                      <td className="py-1.5 text-gray-900">{item.percentage}%</td>
+                                                    </tr>
+                                                  )}
+                                                </React.Fragment>
+                                              ))}
+                                            </tbody>
+                                          </table>
+                                        ) : (
+                                          <div className="text-xs text-gray-500 italic">No existing value</div>
+                                        )}
+                                      </div>
+                                    </div>
+                                  </div>
+                                );
+                              }
+
                               // Participating Org fields - show all details in expanded view
                               if ((field.fieldName && field.fieldName.includes('Participating Organization')) || field?.tab === 'participating_orgs') {
                                 const orgData = typeof field.importValue === 'object' && field.importValue !== null && !Array.isArray(field.importValue)
@@ -3215,6 +3396,53 @@ ${budgetItems.map((bi: any) => `  <budget-item code="${bi.code || ''}"${bi.perce
                                       <div className="bg-gray-50 rounded-md p-3 border border-gray-200">
                                         <div className="text-xs font-semibold text-gray-700 mb-2">Current Value</div>
                                         {field.currentValue ? (
+                                          // Country Budget Items-specific display
+                                          field.itemType === 'countryBudgetItems' && field.currentValue.budget_items ? (
+                                            <table className="w-full text-xs">
+                                              <tbody>
+                                                {field.currentValue.budget_items && field.currentValue.budget_items.map((bi: any, biIdx: number) => (
+                                                  <React.Fragment key={biIdx}>
+                                                    {field.currentValue.vocabulary && (
+                                                      <tr className="border-b border-gray-100 align-top">
+                                                        <td className="py-1.5 pr-2 font-medium text-gray-600">Vocabulary:</td>
+                                                        <td className="py-1.5 text-gray-900">
+                                                          <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                            {field.currentValue.vocabulary}
+                                                          </code>
+                                                          <span className="ml-2">
+                                                            {field.currentValue.vocabularyLabel || 
+                                                             (field.currentValue.vocabulary === '1' ? 'IATI' :
+                                                              field.currentValue.vocabulary === '2' ? 'COFOG' :
+                                                              field.currentValue.vocabulary === '3' ? 'COFOG (2014)' :
+                                                              field.currentValue.vocabulary === '4' ? 'COFOG' :
+                                                              field.currentValue.vocabulary === '99' ? 'Reporting Organisation' : '')}
+                                                          </span>
+                                                        </td>
+                                                      </tr>
+                                                    )}
+                                                    <tr className="border-b border-gray-100 align-top">
+                                                      <td className="py-1.5 pr-2 font-medium text-gray-600">Item Code:</td>
+                                                      <td className="py-1.5 text-gray-900">
+                                                        <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                          {bi.code}
+                                                        </code>
+                                                      </td>
+                                                    </tr>
+                                                    {bi.percentage !== undefined && (
+                                                      <tr className="border-b border-gray-100 align-top">
+                                                        <td className="py-1.5 pr-2 font-medium text-gray-600">% of Activity Budget:</td>
+                                                        <td className="py-1.5 text-gray-900">{bi.percentage}%</td>
+                                                      </tr>
+                                                    )}
+                                                    <tr className={biIdx < field.currentValue.budget_items.length - 1 ? "border-b-2 border-gray-300 align-top" : "align-top"}>
+                                                      <td className="py-1.5 pr-2 font-medium text-gray-600">Description:</td>
+                                                      <td className="py-1.5 text-gray-900">{bi.description || '—'}</td>
+                                                    </tr>
+                                                  </React.Fragment>
+                                                ))}
+                                              </tbody>
+                                            </table>
+                                          ) :
                                           // Transaction-specific display: Amount, Transaction Date, Value Date, Type, Provider Org, Receiver Org
                                           field.itemType === 'transaction' ? (
                                             <table className="w-full text-xs">

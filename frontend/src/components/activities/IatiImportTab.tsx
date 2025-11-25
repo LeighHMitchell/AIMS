@@ -1005,8 +1005,15 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
               {implementingOrgs.length > 0 && (
                 <div>
                     <div className="text-[10px] uppercase tracking-wide text-slate-500 font-semibold mb-1.5">Implementing Organisation</div>
-                    <table className="w-full text-[10px] border-collapse">
-                      <tbody>
+                    <div className="border border-slate-200 rounded-md overflow-hidden">
+                      <table className="w-full text-[10px] border-collapse">
+                        <thead className="bg-slate-50/80 border-b border-slate-200">
+                          <tr>
+                            <th className="px-2 py-1 text-[9px] uppercase tracking-wide font-semibold text-slate-600 text-left align-top">Attribute</th>
+                            <th className="px-2 py-1 text-[9px] uppercase tracking-wide font-semibold text-slate-600 text-left align-top">Detail</th>
+                          </tr>
+                        </thead>
+                        <tbody>
                         {implementingOrgs.slice(0, 3).map((org, idx) => {
                           const orgRef = org.validated_ref || org.ref;
                           const refDisplay = getOrgRefDisplay(orgRef);
@@ -1014,8 +1021,8 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
                           return (
                             <React.Fragment key={idx}>
                               <tr className={idx > 0 ? "border-t border-slate-200" : ""}>
-                                <td className="py-1 pr-2 text-slate-600 whitespace-nowrap align-top">Name:</td>
-                                <td className="py-1 min-w-0">
+                                <td className="px-2 py-1 text-slate-600 whitespace-nowrap align-top">Name:</td>
+                                <td className="px-2 py-1 min-w-0">
                                   <div className="flex items-center gap-2 flex-wrap min-w-0">
                                     <span className="text-sm font-medium text-slate-900 break-words min-w-0">{org.name || org.narrative}</span>
                                     {refDisplay.normalized && (
@@ -1042,8 +1049,8 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
                                 const typeLabel = getOrganizationTypeLabel(org.type);
                                 return (
                                   <tr>
-                                    <td className="py-1 pr-2 text-slate-600 whitespace-nowrap align-top">Type:</td>
-                                    <td className="py-1">
+                                    <td className="px-2 py-1 text-slate-600 whitespace-nowrap align-top">Type:</td>
+                                    <td className="px-2 py-1">
                                       <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-medium bg-green-100 text-green-700">
                                         {typeLabel?.name}
                                       </span>
@@ -1056,13 +1063,14 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
                         })}
                         {implementingOrgs.length > 3 && (
                           <tr>
-                            <td colSpan={2} className="py-1 text-xs text-slate-500">
+                            <td colSpan={2} className="px-2 py-1 text-xs text-slate-500">
                               and {implementingOrgs.length - 3} more...
                             </td>
                           </tr>
                         )}
                       </tbody>
                     </table>
+                    </div>
                 </div>
               )}
 
@@ -1177,16 +1185,23 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
                 {(activity.aidType || activity.defaultAidType || activity.flowType || activity.financeType || activity.tiedStatus || activity.activityScope || activity.collaborationType || activity.hierarchy || activity.currency || activity.defaultCurrency || activity.status) && (
                   <div>
                     <div className="text-[10px] uppercase tracking-wide text-slate-500 font-semibold mb-1.5">Classifications</div>
-                    <table className="w-full text-[10px] border-collapse">
-                      <tbody>
+                    <div className="border border-slate-200 rounded-md overflow-hidden">
+                      <table className="w-full text-[10px] border-collapse">
+                        <thead className="bg-slate-50/80 border-b border-slate-200">
+                          <tr>
+                            <th className="px-2 py-1 text-[9px] uppercase tracking-wide font-semibold text-slate-600 text-left align-top">Classification</th>
+                            <th className="px-2 py-1 text-[9px] uppercase tracking-wide font-semibold text-slate-600 text-left align-top">Detail</th>
+                          </tr>
+                        </thead>
+                        <tbody>
                         {(activity.currency || activity.defaultCurrency) && (() => {
                           const currencyCode = activity.currency || activity.defaultCurrency || '';
                           const currency = getCurrencyByCode(currencyCode);
                           const currencyName = currency?.name || '';
                           return (
                             <tr key="currency" className="border-b border-slate-100">
-                              <td className="py-1 pr-2 text-slate-600 whitespace-nowrap align-top">Currency:</td>
-                              <td className="py-1">
+                              <td className="px-2 py-1 text-slate-600 whitespace-nowrap align-top">Currency:</td>
+                              <td className="px-2 py-1">
                                 <div className="flex items-center gap-1.5">
                                   <code className="text-[9px] font-mono bg-slate-100 px-1 py-0.5 rounded text-slate-700">
                                     {currencyCode}
@@ -1204,8 +1219,8 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
                           const statusName = statusInfo?.name || activity.statusNarrative || '';
                           return (
                             <tr key="status" className="border-b border-slate-100">
-                              <td className="py-1 pr-2 text-slate-600 whitespace-nowrap align-top">Status:</td>
-                              <td className="py-1">
+                              <td className="px-2 py-1 text-slate-600 whitespace-nowrap align-top">Status:</td>
+                              <td className="px-2 py-1">
                                 <div className="flex items-center gap-1.5">
                                   <code className="text-[9px] font-mono bg-slate-100 px-1 py-0.5 rounded text-slate-700">
                                     {activity.status}
@@ -1223,8 +1238,8 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
                           const label = getAidTypeLabel(aidTypeCode);
                           return (
                             <tr key="aidType" className="border-b border-slate-100">
-                              <td className="py-1 pr-2 text-slate-600 whitespace-nowrap align-top">Aid Type:</td>
-                              <td className="py-1">
+                              <td className="px-2 py-1 text-slate-600 whitespace-nowrap align-top">Aid Type:</td>
+                              <td className="px-2 py-1">
                                 <div className="flex items-center gap-1.5">
                                   <code className="text-[9px] font-mono bg-slate-100 px-1 py-0.5 rounded text-slate-700">
                                     {label?.code || aidTypeCode}
@@ -1239,8 +1254,8 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
                           const label = getFlowTypeLabel(activity.flowType);
                           return (
                             <tr key="flowType" className="border-b border-slate-100">
-                              <td className="py-1 pr-2 text-slate-600 whitespace-nowrap align-top">Flow Type:</td>
-                              <td className="py-1">
+                              <td className="px-2 py-1 text-slate-600 whitespace-nowrap align-top">Flow Type:</td>
+                              <td className="px-2 py-1">
                                 <div className="flex items-center gap-1.5">
                                   <code className="text-[9px] font-mono bg-slate-100 px-1 py-0.5 rounded text-slate-700">
                                     {label?.code || activity.flowType}
@@ -1255,8 +1270,8 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
                           const label = getFinanceTypeLabel(activity.financeType);
                           return (
                             <tr key="financeType" className="border-b border-slate-100">
-                              <td className="py-1 pr-2 text-slate-600 whitespace-nowrap align-top">Finance Type:</td>
-                              <td className="py-1">
+                              <td className="px-2 py-1 text-slate-600 whitespace-nowrap align-top">Finance Type:</td>
+                              <td className="px-2 py-1">
                                 <div className="flex items-center gap-1.5">
                                   <code className="text-[9px] font-mono bg-slate-100 px-1 py-0.5 rounded text-slate-700">
                                     {label?.code || activity.financeType}
@@ -1271,8 +1286,8 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
                           const label = getTiedStatusLabel(activity.tiedStatus);
                           return (
                             <tr key="tiedStatus" className="border-b border-slate-100">
-                              <td className="py-1 pr-2 text-slate-600 whitespace-nowrap align-top">Tied Status:</td>
-                              <td className="py-1">
+                              <td className="px-2 py-1 text-slate-600 whitespace-nowrap align-top">Tied Status:</td>
+                              <td className="px-2 py-1">
                                 <div className="flex items-center gap-1.5">
                                   <code className="text-[9px] font-mono bg-slate-100 px-1 py-0.5 rounded text-slate-700">
                                     {label?.code || activity.tiedStatus}
@@ -1345,6 +1360,7 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
                         })()}
                       </tbody>
                     </table>
+                    </div>
                   </div>
                 )}
               </div>
@@ -1372,9 +1388,9 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
                   <table className="w-full text-[10px]">
                     <thead className="bg-slate-50/80 border-b border-slate-200">
                       <tr>
-                        <th className="text-left px-2 py-1 text-[9px] uppercase tracking-wide font-semibold text-slate-600">Item</th>
-                        <th className="text-right px-2 py-1 text-[9px] uppercase tracking-wide font-semibold text-slate-600">#</th>
-                        <th className="text-right px-2 py-1 text-[9px] uppercase tracking-wide font-semibold text-slate-600">Total</th>
+                        <th className="text-left px-2 py-1 text-[9px] uppercase tracking-wide font-semibold text-slate-600">Category</th>
+                        <th className="text-right px-2 py-1 text-[9px] uppercase tracking-wide font-semibold text-slate-600">Count</th>
+                        <th className="text-right px-2 py-1 text-[9px] uppercase tracking-wide font-semibold text-slate-600">Total Amount</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">
@@ -2476,7 +2492,9 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
         try {
           const cbiResponse = await fetch(`/api/activities/${activityId}/country-budget-items`);
           if (cbiResponse.ok) {
-            const cbi = await cbiResponse.json();
+            const cbiData = await cbiResponse.json();
+            // API returns { country_budget_items: [...] } - extract the array
+            const cbi = cbiData.country_budget_items || [];
             setCurrentCountryBudgetItems(cbi);
             console.log(`[IatiImportTab] Fetched ${cbi.length} current country budget items`);
           }
@@ -2867,6 +2885,7 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
     let fetchedContacts: any[] = [];
     let fetchedResults: any[] = [];
     let fetchedLoanStatuses: any[] = [];
+    let fetchedLoanTerms: any = null;
 
     if (activityId) {
       console.log('[IATI Import Debug] Fetching latest activity data before parsing');
@@ -2960,7 +2979,9 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
           fetch(`/api/activities/${activityId}/country-budget-items`)
             .then(async (res) => {
               if (res.ok) {
-                fetchedCountryBudgetItems = await res.json();
+                const cbiResponse = await res.json();
+                // API returns { country_budget_items: [...] } - extract the array
+                fetchedCountryBudgetItems = cbiResponse.country_budget_items || [];
                 setCurrentCountryBudgetItems(fetchedCountryBudgetItems);
                 console.log(`[IATI Import Debug] Fetched ${fetchedCountryBudgetItems.length} current country budget items`);
               }
@@ -2971,7 +2992,9 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
           fetch(`/api/activities/${activityId}/humanitarian`)
             .then(async (res) => {
               if (res.ok) {
-                fetchedHumanitarianScopes = await res.json();
+                const hsResponse = await res.json();
+                // API returns { humanitarian, humanitarian_scopes } - extract the array
+                fetchedHumanitarianScopes = hsResponse.humanitarian_scopes || [];
                 setCurrentHumanitarianScopes(fetchedHumanitarianScopes);
                 console.log(`[IATI Import Debug] Fetched ${fetchedHumanitarianScopes.length} current humanitarian scopes`);
               }
@@ -3046,7 +3069,22 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
                 console.log(`[IATI Import Debug] Fetched ${fetchedLoanStatuses.length} current loan statuses`);
               }
             })
-            .catch((error) => console.warn('[IATI Import Debug] Failed to fetch loan statuses:', error))
+            .catch((error) => console.warn('[IATI Import Debug] Failed to fetch loan statuses:', error)),
+
+          // Fetch loan terms (financing terms)
+          supabase
+            .from('activity_financing_terms')
+            .select('*')
+            .eq('activity_id', activityId)
+            .maybeSingle()
+            .then(({ data: loanTermsData, error: loanTermsError }: { data: any; error: any }) => {
+              if (!loanTermsError && loanTermsData) {
+                fetchedLoanTerms = loanTermsData;
+                fetchedActivityData.loanTerms = loanTermsData;
+                console.log(`[IATI Import Debug] Fetched current loan terms`);
+              }
+            })
+            .catch((error: any) => console.warn('[IATI Import Debug] Failed to fetch loan terms:', error))
         ]);
         
         // Race against timeout to prevent hanging (5 second timeout)
@@ -3979,13 +4017,35 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
           if (ft.loanTerms.commitment_date) loanTermsSummary.push(`Commitment: ${ft.loanTerms.commitment_date}`);
           
           if (loanTermsSummary.length > 0) {
+            // Match with current database value
+            let currentLoanTermsValue = null;
+            if (fetchedLoanTerms) {
+              const currentSummary = [];
+              if (fetchedLoanTerms.rate_1) currentSummary.push(`Rate 1: ${fetchedLoanTerms.rate_1}%`);
+              if (fetchedLoanTerms.rate_2) currentSummary.push(`Rate 2: ${fetchedLoanTerms.rate_2}%`);
+              if (fetchedLoanTerms.repayment_type_code) currentSummary.push(`Repayment Type: ${fetchedLoanTerms.repayment_type_code}`);
+              if (fetchedLoanTerms.commitment_date) currentSummary.push(`Commitment: ${fetchedLoanTerms.commitment_date}`);
+              
+              if (currentSummary.length > 0) {
+                currentLoanTermsValue = currentSummary.join(', ');
+              }
+            }
+            
+            // Determine if there's a conflict
+            const hasLoanTermsConflict = currentLoanTermsValue !== null && (
+              (fetchedLoanTerms?.rate_1 || null) !== (ft.loanTerms.rate_1 || null) ||
+              (fetchedLoanTerms?.rate_2 || null) !== (ft.loanTerms.rate_2 || null) ||
+              (fetchedLoanTerms?.repayment_type_code || null) !== (ft.loanTerms.repayment_type_code || null) ||
+              (fetchedLoanTerms?.commitment_date || null) !== (ft.loanTerms.commitment_date || null)
+            );
+            
             fields.push({
               fieldName: 'Loan Terms',
               iatiPath: 'iati-activity/crs-add/loan-terms',
-              currentValue: null,
+              currentValue: currentLoanTermsValue,
               importValue: loanTermsSummary.join(', '),
               selected: true,
-              hasConflict: false,
+              hasConflict: hasLoanTermsConflict,
               tab: 'finances',
               description: 'OECD CRS loan terms including interest rates and repayment schedule'
             });
@@ -4016,13 +4076,47 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
         
         // Display CRS flags if present
         if (ft.other_flags && ft.other_flags.length > 0) {
+          // Match with current database value
+          let currentFlagsValue = null;
+          let parsedCurrentFlags: any[] = [];
+          
+          if (fetchedLoanTerms && fetchedLoanTerms.other_flags) {
+            // Parse other_flags if it's a JSON string
+            let currentFlags = fetchedLoanTerms.other_flags;
+            if (typeof currentFlags === 'string') {
+              try {
+                currentFlags = JSON.parse(currentFlags);
+              } catch (e) {
+                console.warn('[IATI Import Debug] Failed to parse other_flags:', e);
+                currentFlags = [];
+              }
+            }
+            
+            // Store parsed flags for conflict detection
+            parsedCurrentFlags = Array.isArray(currentFlags) ? currentFlags : [];
+            
+            // Format current flags the same way as import value
+            if (parsedCurrentFlags.length > 0) {
+              currentFlagsValue = parsedCurrentFlags.map((f: any) => `Code ${f.code}`).join(', ');
+            }
+          }
+          
+          // Determine if there's a conflict
+          const hasFlagsConflict = currentFlagsValue !== null && (
+            parsedCurrentFlags.length !== ft.other_flags.length ||
+            ft.other_flags.some((importFlag: any) => {
+              const currentFlag = parsedCurrentFlags.find((cf: any) => cf.code === importFlag.code);
+              return !currentFlag || currentFlag.significance !== importFlag.significance;
+            })
+          );
+          
           fields.push({
             fieldName: 'OECD CRS Flags',
             iatiPath: 'iati-activity/crs-add/other-flags',
-            currentValue: null,
+            currentValue: currentFlagsValue,
             importValue: ft.other_flags.map(f => `Code ${f.code}`).join(', '),
             selected: isFieldAllowedByPreferences('iati-activity/crs-add'),
-            hasConflict: false,
+            hasConflict: hasFlagsConflict,
             tab: 'finances',
             description: 'OECD CRS reporting flags'
           });
@@ -4560,17 +4654,81 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
                 ? `Country Budget Mapping ${globalBudgetItemIndex} - ${itemWarnings.join(', ')}`
                 : `Country Budget Mapping ${globalBudgetItemIndex} - Valid ✓`;
 
-              // Get current value from database if exists
-              const currentCBI = fetchedCountryBudgetItems[globalBudgetItemIndex - 1];
-              let currentCBIValue = null;
-              if (currentCBI && currentCBI.budget_items && currentCBI.budget_items.length > 0) {
-                const currentVocabLabel = vocabularyLabels[currentCBI.vocabulary] || `Vocabulary ${currentCBI.vocabulary}`;
-                const currentItem = currentCBI.budget_items[0];
-                currentCBIValue = [
-                  currentVocabLabel,
-                  currentItem.code,
-                  currentItem.percentage !== undefined && `${currentItem.percentage}%`
-                ].filter(Boolean).join(' ');
+              // Get current value from database if exists - match by vocabulary and code
+              // Find the country_budget_items entry with matching vocabulary
+              const matchingVocabEntry = fetchedCountryBudgetItems.find(
+                (cbiEntry: any) => String(cbiEntry.vocabulary) === String(vocabulary)
+              );
+              let currentCBIValue: any = null;
+              let currentCBIDisplayText: string | null = null;
+              if (matchingVocabEntry && matchingVocabEntry.budget_items && matchingVocabEntry.budget_items.length > 0) {
+                // Find matching budget item by code within this vocabulary
+                const matchingBudgetItem = matchingVocabEntry.budget_items.find(
+                  (bi: any) => String(bi.code) === String(budgetItem.code)
+                );
+                if (matchingBudgetItem) {
+                  const currentVocabLabel = vocabularyLabels[matchingVocabEntry.vocabulary] || `Vocabulary ${matchingVocabEntry.vocabulary}`;
+                  // Store the display text for the collapsed view
+                  currentCBIDisplayText = [
+                    currentVocabLabel,
+                    matchingBudgetItem.code,
+                    matchingBudgetItem.percentage !== undefined && `${matchingBudgetItem.percentage}%`
+                  ].filter(Boolean).join(' ');
+                  
+                  // Extract description text from JSONB
+                  let currentDescriptionText = '';
+                  if (matchingBudgetItem.description) {
+                    if (typeof matchingBudgetItem.description === 'string') {
+                      currentDescriptionText = matchingBudgetItem.description;
+                    } else if (typeof matchingBudgetItem.description === 'object') {
+                      currentDescriptionText = matchingBudgetItem.description['en'] ||
+                                               matchingBudgetItem.description[Object.keys(matchingBudgetItem.description)[0]] || '';
+                    }
+                  }
+                  
+                  // Store the full data object for the expanded view, plus display text for collapsed view
+                  currentCBIValue = {
+                    vocabulary: matchingVocabEntry.vocabulary,
+                    vocabularyLabel: currentVocabLabel,
+                    budget_items: [{
+                      code: matchingBudgetItem.code,
+                      percentage: matchingBudgetItem.percentage,
+                      description: currentDescriptionText
+                    }],
+                    displayText: currentCBIDisplayText
+                  };
+                }
+              }
+
+              // Check for conflicts: compare current value with import value
+              let hasCBIConflict = itemWarnings.length > 0; // Start with validation warnings
+              if (!hasCBIConflict && currentCBIValue) {
+                // Compare vocabulary, code, percentage, and description
+                const currentBI = currentCBIValue.budget_items?.[0];
+                const importBI = budgetItem;
+                
+                if (currentBI && importBI) {
+                  // Check if vocabulary matches
+                  if (String(currentCBIValue.vocabulary) !== String(vocabulary)) {
+                    hasCBIConflict = true;
+                  }
+                  // Check if code matches
+                  else if (String(currentBI.code) !== String(importBI.code)) {
+                    hasCBIConflict = true;
+                  }
+                  // Check if percentage matches (allow small floating point differences)
+                  else if (Math.abs((currentBI.percentage || 0) - (importBI.percentage || 0)) > 0.01) {
+                    hasCBIConflict = true;
+                  }
+                  // Check if description matches (normalize whitespace)
+                  else {
+                    const currentDesc = (currentBI.description || '').trim();
+                    const importDesc = (descriptionText || '').trim();
+                    if (currentDesc !== importDesc) {
+                      hasCBIConflict = true;
+                    }
+                  }
+                }
               }
 
           fields.push({
@@ -4579,7 +4737,7 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
             currentValue: currentCBIValue,
                 importValue: itemSummary,
                 selected: isFieldAllowedByPreferences('iati-activity/country-budget-items') && itemWarnings.length === 0,
-                hasConflict: itemWarnings.length > 0,
+                hasConflict: hasCBIConflict,
             tab: 'country-budget',
             description,
                 isFinancialItem: true,
@@ -5687,10 +5845,60 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
           
           console.log('[IATI Import Debug] Processing contact:', contact);
           
-        fields.push({
+          // Match with current database value
+          let currentContactValue = null;
+          if (fetchedContacts && fetchedContacts.length > 0) {
+            // Try to find matching contact by type and identifying fields (email, name, or organization)
+            const matchingContact = fetchedContacts.find((c: any) => {
+              const typeMatch = String(c.type || '1') === String(contactTypeCode);
+              const emailMatch = contact.email && c.email && c.email.toLowerCase() === contact.email.toLowerCase();
+              // Build person name from firstName + lastName for comparison
+              const dbPersonName = [c.firstName, c.lastName].filter(Boolean).join(' ').trim();
+              const nameMatch = contact.personName && dbPersonName && 
+                dbPersonName.toLowerCase() === contact.personName.toLowerCase();
+              const orgMatch = contact.organization && c.organisation && 
+                c.organisation.toLowerCase() === contact.organization.toLowerCase();
+              
+              // Match if type matches AND at least one identifier matches
+              return typeMatch && (emailMatch || nameMatch || orgMatch);
+            });
+            
+            // Fallback to index match if counts are the same and no semantic match found
+            const currentContact = matchingContact || 
+              (fetchedContacts.length === parsedActivity.contactInfo.length 
+                ? fetchedContacts[index] 
+                : null);
+            
+            if (currentContact) {
+              const currentPersonName = [currentContact.firstName, currentContact.lastName]
+                .filter(Boolean).join(' ').trim() || null;
+              
+              currentContactValue = {
+                type: currentContact.type,
+                organization: currentContact.organisation || null,
+                personName: currentPersonName,
+                jobTitle: currentContact.jobTitle || currentContact.position || null,
+                department: currentContact.department || null,
+                email: currentContact.email || null,
+                telephone: currentContact.phone || currentContact.phoneNumber || null,
+                website: currentContact.website || null,
+                mailingAddress: currentContact.mailingAddress || null,
+                displayName: currentPersonName || currentContact.organisation || 'Contact'
+              };
+            }
+          }
+          
+          // Determine if there's a conflict (current exists but differs)
+          const hasContactConflict = currentContactValue !== null && (
+            String(currentContactValue.type || '1') !== String(contactTypeCode) ||
+            (currentContactValue.email && contact.email && 
+              currentContactValue.email.toLowerCase() !== contact.email.toLowerCase())
+          );
+          
+          fields.push({
             fieldName: `Contact`,
             iatiPath: `iati-activity/contact-info[${index + 1}]`,
-          currentValue: null,
+            currentValue: currentContactValue,
             importValue: {
               type: contactTypeCode,
               organization: contact.organization || null,
@@ -5702,8 +5910,8 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
               website: contact.website || null,
               mailingAddress: contact.mailingAddress || null
             },
-          selected: false,
-          hasConflict: false,
+            selected: false,
+            hasConflict: hasContactConflict,
             tab: 'contacts',
             description: `${contactTypeLabel} contact: ${contactName}`
           });
@@ -5787,10 +5995,63 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
           const typeLabel = scope.type === '1' ? 'Emergency' : scope.type === '2' ? 'Appeal' : scope.type;
           const narrativesText = scope.narratives?.map(n => n.text).join('; ') || scope.code;
           
+          // Match with current database value
+          let currentScopeValue = null;
+          if (fetchedHumanitarianScopes && fetchedHumanitarianScopes.length > 0) {
+            // Try to find matching scope by code and vocabulary
+            const matchingScope = fetchedHumanitarianScopes.find((hs: any) => 
+              hs.code === scope.code && 
+              (hs.vocabulary || '1-2') === (scope.vocabulary || '1-2')
+            );
+            
+            // Fallback to index match if counts are the same and no semantic match found
+            const currentScope = matchingScope || 
+              (fetchedHumanitarianScopes.length === parsedActivity.humanitarianScopes.length 
+                ? fetchedHumanitarianScopes[index] 
+                : null);
+            
+            if (currentScope) {
+              // Get type label for current scope (API returns 'type' mapped from scope_type)
+              const currentType = currentScope.type || currentScope.scope_type || '1';
+              const currentTypeLabel = currentType === '1' ? 'Emergency' : 
+                                       currentType === '2' ? 'Appeal' : 
+                                       currentType;
+              
+              // Parse narratives if needed
+              let currentNarratives = currentScope.narratives;
+              if (typeof currentNarratives === 'string') {
+                try {
+                  currentNarratives = JSON.parse(currentNarratives);
+                } catch (e) {
+                  currentNarratives = [];
+                }
+              }
+              const currentNarrativesText = Array.isArray(currentNarratives) && currentNarratives.length > 0
+                ? currentNarratives.map((n: any) => n.text).join('; ')
+                : currentScope.code;
+              
+              currentScopeValue = {
+                type: currentType,
+                vocabulary: currentScope.vocabulary,
+                code: currentScope.code,
+                vocabularyUri: currentScope.vocabulary_uri,
+                narratives: currentNarratives,
+                displayText: `${currentTypeLabel}: ${currentNarrativesText}`
+              };
+            }
+          }
+          
+          // Determine if there's a conflict between current and import values
+          const hasScopeConflict = currentScopeValue !== null && (
+            currentScopeValue.code !== scope.code ||
+            currentScopeValue.type !== scope.type ||
+            (currentScopeValue.vocabulary || '1-2') !== (scope.vocabulary || '1-2')
+          );
+          
           fields.push({
             fieldName: `Humanitarian Scope ${index + 1}`,
             iatiPath: 'iati-activity/humanitarian-scope',
-            currentValue: null,
+            currentValue: currentScopeValue,
             importValue: {
               type: scope.type,
               vocabulary: scope.vocabulary,
@@ -5799,7 +6060,7 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
               narratives: scope.narratives
             },
             selected: false,
-            hasConflict: false,
+            hasConflict: hasScopeConflict,
             tab: 'humanitarian',
             description: `${typeLabel}: ${narrativesText}`
           });
@@ -7807,27 +8068,28 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
                 if (!updateData.importedLocations) updateData.importedLocations = [];
                 updateData.importedLocations.push(field.itemData);
               }
-            } else if (field.fieldName.startsWith('Budget Mapping ')) {
-              // NOTE: This MUST come BEFORE 'Budget ' check since "Budget Mapping" starts with "Budget"
+            } else if (field.fieldName.startsWith('Country Budget Mapping ')) {
+              // NOTE: This MUST come BEFORE 'Budget ' check since "Country Budget Mapping" contains "Budget"
               // Collect country budget items data for import
               if (!updateData.importedCountryBudgetItems) updateData.importedCountryBudgetItems = [];
-              const cbiIndex = parseInt(field.fieldName.split(' ')[2]) - 1;
+              // Field name is "Country Budget Mapping N" - extract N from index 3
+              const cbiIndex = parseInt(field.fieldName.split(' ')[3]) - 1;
               if (parsedActivity?.countryBudgetItems && parsedActivity.countryBudgetItems[cbiIndex]) {
                 const budgetMapping = parsedActivity.countryBudgetItems[cbiIndex];
                 updateData.importedCountryBudgetItems.push(budgetMapping);
-                console.log(`[IATI Import] ✅ Adding budget mapping ${cbiIndex + 1} for import:`, {
+                console.log(`[IATI Import] ✅ Adding country budget mapping ${cbiIndex + 1} for import:`, {
                   vocabulary: budgetMapping.vocabulary,
                   budgetItemsCount: budgetMapping.budgetItems?.length || 0,
                   budgetMapping
                 });
               } else {
-                console.error(`[IATI Import] ❌ Budget mapping ${cbiIndex + 1} not found in parsed activity!`, {
+                console.error(`[IATI Import] ❌ Country budget mapping ${cbiIndex + 1} not found in parsed activity!`, {
                   cbiIndex,
                   availableCount: parsedActivity?.countryBudgetItems?.length || 0,
                   parsedActivity: parsedActivity?.countryBudgetItems
                 });
               }
-              console.log(`[IATI Import] Total budget mappings queued: ${updateData.importedCountryBudgetItems?.length || 0}`);
+              console.log(`[IATI Import] Total country budget mappings queued: ${updateData.importedCountryBudgetItems?.length || 0}`);
             } else if (field.fieldName === 'Budget' || field.fieldName.startsWith('Budget ')) {
               // Collect budget data for import
               // Check if bulk mode is already active to avoid duplicates
@@ -8907,6 +9169,77 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
           });
         }
       }
+
+      // Handle country budget items import if any
+      if (updateData.importedCountryBudgetItems && updateData.importedCountryBudgetItems.length > 0) {
+        console.log('[IATI Import] Processing country budget items import...');
+        
+        setImportStatus({ 
+          stage: 'importing', 
+          progress: 89,
+          message: 'Importing country budget items...'
+        });
+
+        try {
+          let successCount = 0;
+          let errorCount = 0;
+
+          for (const cbi of updateData.importedCountryBudgetItems) {
+            try {
+              // Transform from parsed format to API format
+              // Parsed: { vocabulary, budgetItems: [{code, percentage, description}] }
+              // API expects: { vocabulary, budget_items: [{code, percentage, description}] }
+              // Note: description is stored as JSONB in DB, so keep object format if present
+              const cbiData = {
+                vocabulary: cbi.vocabulary,
+                budget_items: (cbi.budgetItems || []).map((item: any) => ({
+                  code: item.code,
+                  percentage: item.percentage,
+                  // Keep JSONB structure if already an object, API will handle conversion
+                  description: item.description || null
+                }))
+              };
+
+              console.log('[IATI Import] Posting country budget item:', cbiData);
+
+              const response = await fetchWithTimeout(`/api/activities/${activityId}/country-budget-items`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(cbiData)
+              }, 15000);
+
+              if (response.ok) {
+                successCount++;
+                console.log(`[IATI Import] ✅ Country budget item imported: vocabulary=${cbi.vocabulary}`);
+              } else {
+                errorCount++;
+                const errorText = await response.text();
+                console.error('[IATI Import] Country budget item import failed:', errorText);
+              }
+            } catch (cbiError) {
+              console.error('[IATI Import] Error importing country budget item:', cbiError);
+              errorCount++;
+            }
+          }
+
+          if (successCount > 0) {
+            toast.success(`Country budget items imported successfully`, {
+              description: `${successCount} item(s) added${errorCount > 0 ? ` (${errorCount} failed)` : ''}`
+            });
+            invalidateActivityCache(activityId);
+          } else if (errorCount > 0) {
+            toast.error('Failed to import country budget items', {
+              description: `All ${errorCount} item(s) failed to import`
+            });
+          }
+        } catch (cbiError) {
+          console.error('[IATI Import] Country budget items import error:', cbiError);
+          toast.error('Failed to import country budget items', {
+            description: 'An error occurred while processing country budget items.'
+          });
+        }
+      }
+
       // Handle planned disbursements import if any
       if (updateData.importedPlannedDisbursements && updateData.importedPlannedDisbursements.length > 0) {
         console.log('[IATI Import] Processing planned disbursements import...');
@@ -11009,7 +11342,9 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
         try {
           const cbiResponse = await fetch(`/api/activities/${activityId}/country-budget-items`);
           if (cbiResponse.ok) {
-            const cbi = await cbiResponse.json();
+            const cbiData = await cbiResponse.json();
+            // API returns { country_budget_items: [...] } - extract the array
+            const cbi = cbiData.country_budget_items || [];
             setCurrentCountryBudgetItems(cbi);
           }
         } catch (error) {

@@ -245,6 +245,62 @@ export async function POST(
       console.log(`[IATI Import] ⚠️  Reporting org fields provided but IGNORED - this route preserves existing reporting org`);
       console.log(`[IATI Import] ⚠️  To update reporting org, use import-as-reporting-org mode instead`);
     }
+
+    // Handle JSONB geography fields (stored directly on activities table)
+    if (fields.recipient_countries && iati_data.recipient_countries && Array.isArray(iati_data.recipient_countries)) {
+      console.log('[IATI Import] Processing recipient_countries:', iati_data.recipient_countries.length, 'items');
+      previousValues.recipient_countries = currentActivity.recipient_countries;
+      updateData.recipient_countries = iati_data.recipient_countries.map((country: any) => ({
+        id: country.id || `country-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        country: {
+          code: country.country?.code || country.code,
+          name: country.country?.name || country.name,
+          iso2: country.country?.iso2 || country.code,
+          withdrawn: country.country?.withdrawn || false
+        },
+        percentage: country.percentage || 0,
+        vocabulary: country.vocabulary || 'A4',
+        vocabularyUri: country.vocabularyUri || null,
+        narrative: country.narrative || null
+      }));
+      updatedFields.push('recipient_countries');
+      console.log(`[IATI Import] ✓ Processed ${updateData.recipient_countries.length} recipient countries`);
+    }
+
+    if (fields.recipient_regions && iati_data.recipient_regions && Array.isArray(iati_data.recipient_regions)) {
+      console.log('[IATI Import] Processing recipient_regions:', iati_data.recipient_regions.length, 'items');
+      previousValues.recipient_regions = currentActivity.recipient_regions;
+      updateData.recipient_regions = iati_data.recipient_regions.map((region: any) => ({
+        id: region.id || `region-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        region: {
+          code: region.region?.code || region.code,
+          name: region.region?.name || region.name,
+          withdrawn: region.region?.withdrawn || false
+        },
+        percentage: region.percentage || 0,
+        vocabulary: region.vocabulary || '1',
+        vocabularyUri: region.vocabularyUri || null,
+        narrative: region.narrative || null
+      }));
+      updatedFields.push('recipient_regions');
+      console.log(`[IATI Import] ✓ Processed ${updateData.recipient_regions.length} recipient regions`);
+    }
+
+    if (fields.custom_geographies && iati_data.custom_geographies && Array.isArray(iati_data.custom_geographies)) {
+      console.log('[IATI Import] Processing custom_geographies:', iati_data.custom_geographies.length, 'items');
+      previousValues.custom_geographies = currentActivity.custom_geographies;
+      updateData.custom_geographies = iati_data.custom_geographies.map((geo: any) => ({
+        id: geo.id || `custom-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        name: geo.name,
+        code: geo.code,
+        percentage: geo.percentage || 0,
+        vocabulary: geo.vocabulary || '99',
+        vocabularyUri: geo.vocabularyUri || null,
+        narrative: geo.narrative || null
+      }));
+      updatedFields.push('custom_geographies');
+      console.log(`[IATI Import] ✓ Processed ${updateData.custom_geographies.length} custom geographies`);
+    }
     
     // Update activity with simple fields
     if (Object.keys(updateData).length > 0) {
