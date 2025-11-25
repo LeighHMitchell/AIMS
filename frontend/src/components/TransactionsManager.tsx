@@ -393,6 +393,16 @@ export default function TransactionsManager({
       return;
     }
 
+    // Optimistically remove transaction from UI immediately
+    const deletedTransaction = transactions.find(t => (t.uuid || t.id) === id);
+    const updatedTransactions = transactions.filter(t => (t.uuid || t.id) !== id);
+    setTransactions(updatedTransactions);
+    
+    // Also notify parent immediately for consistency
+    if (onTransactionsChange) {
+      onTransactionsChange(updatedTransactions);
+    }
+
     setDeleteLoading(id);
     try {
       const response = await fetch(`/api/transactions?id=${id}`, {
@@ -400,11 +410,18 @@ export default function TransactionsManager({
       });
 
       if (!response.ok) {
+        // Restore the transaction on error
+        if (deletedTransaction) {
+          setTransactions(prev => [...prev, deletedTransaction]);
+          if (onTransactionsChange) {
+            onTransactionsChange([...updatedTransactions, deletedTransaction]);
+          }
+        }
         const error = await response.json();
         throw new Error(error.error || 'Failed to delete transaction');
       }
 
-      // Always refresh from server to get complete data and ensure consistency
+      // Optionally still refresh from server to ensure full consistency
       if (onRefreshNeeded) {
         await onRefreshNeeded();
       }

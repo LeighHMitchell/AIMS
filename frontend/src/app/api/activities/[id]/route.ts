@@ -1319,7 +1319,12 @@ export async function GET(
     console.log('[AIMS API] Transformed sectors being sent to frontend:', JSON.stringify(transformedActivity.sectors, null, 2));
     console.log('[AIMS API] Policy markers being sent to frontend:', JSON.stringify(transformedActivity.policyMarkers, null, 2));
     
-    return NextResponse.json(transformedActivity);
+    return NextResponse.json(transformedActivity, {
+      headers: {
+        'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+        'Pragma': 'no-cache',
+      }
+    });
   } catch (error) {
     console.error('[AIMS API] Error fetching activity:', error);
     return NextResponse.json(

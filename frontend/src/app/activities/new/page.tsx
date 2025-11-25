@@ -2877,7 +2877,9 @@ function NewActivityPageContent() {
     
     try {
       console.log('[AIMS] Refreshing transactions for activity:', activityId);
-      const response = await fetch(`/api/activities/${activityId}`);
+      const response = await fetch(`/api/activities/${activityId}`, {
+        cache: 'no-store'
+      });
       if (response.ok) {
         const data = await response.json();
         setTransactions(data.transactions || []);
