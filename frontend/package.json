@@ -45,7 +45,8 @@
     "dev:reset": "pkill -f 'next dev' || true && rm -rf .next && npm cache clean --force && npm run dev",
     "dev:hard-reset": "pkill -f node || true && rm -rf .next && rm -rf node_modules && npm cache clean --force && npm install && npm run dev",
     "validate-production": "node scripts/validate-production.js",
-    "prepare-deployment": "npm run validate-production && npm run type-check && npm run lint && npm run build"
+    "prepare-deployment": "npm run validate-production && npm run type-check && npm run lint && npm run build",
+    "postinstall": "npm rebuild sharp || npm install sharp --no-save"
   },
   "keywords": [],
   "author": "",

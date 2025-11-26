@@ -2,7 +2,7 @@
   "buildCommand": "npm run build",
   "outputDirectory": ".next",
   "framework": "nextjs",
-  "installCommand": "npm ci",
+  "installCommand": "npm ci --include=optional",
   "functions": {
     "src/pages/api/**/*.ts": {
       "maxDuration": 30
