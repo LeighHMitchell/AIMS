@@ -3477,13 +3477,21 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
           return `${vocabLabel}${codeLabel} ${tag.narrative || 'Unnamed tag'}`;
         }).join(', ');
 
+        // Check if ALL import tags have matching existing tags (by vocabulary + code)
+        const allTagsMatch = parsedActivity.tagClassifications.every((importTag: any) => 
+          existingTags.some((existingTag: any) => 
+            String(existingTag.vocabulary) === String(importTag.vocabulary) &&
+            String(existingTag.code) === String(importTag.code)
+          )
+        );
+        
         fields.push({
           fieldName: 'Tags',
           iatiPath: 'iati-activity/tag',
           currentValue: currentTagsValue,
           importValue: importTagsValue,
           selected: isFieldAllowedByPreferences('iati-activity/tag'),
-          hasConflict: existingTags.length > 0,
+          hasConflict: existingTags.length > 0 && !allTagsMatch,
           tab: 'tags',
           description: `${parsedActivity.tagClassifications.length} tag(s) found in XML`,
           isTagField: true,
@@ -8440,6 +8448,38 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
                   </div>
                 )}
               </div>
+            ) : field.isTagField && (field as any).existingTags && (field as any).existingTags.length > 0 ? (
+              <div className="flex flex-col gap-2">
+                {((field as any).existingTags || []).slice(0, 3).map((tag: any, index: number) => (
+                  <div key={index} className="flex items-center gap-1 flex-wrap">
+                    {tag.vocabulary && (
+                      <span className={`text-xs font-mono px-1.5 py-0.5 rounded ${
+                        tag.vocabulary === '1' ? 'bg-blue-100 text-blue-700' : 
+                        tag.vocabulary === '99' ? 'bg-purple-100 text-purple-700' : 
+                        'bg-gray-100 text-gray-700'
+                      }`}>
+                        {tag.vocabulary === '1' ? 'Standard' : tag.vocabulary === '99' ? 'Custom' : `Vocab ${tag.vocabulary}`}
+                      </span>
+                    )}
+                    {tag.code && (
+                      <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{tag.code}</span>
+                    )}
+                    <span className="text-sm font-medium text-gray-900">{tag.name || tag.narrative || 'Unnamed tag'}</span>
+                    {tag.vocabulary_uri && (
+                      <span className="text-xs text-gray-500 italic truncate max-w-32" title={tag.vocabulary_uri}>
+                        {tag.vocabulary_uri.substring(0, 30)}...
+                      </span>
+                    )}
+                  </div>
+                ))}
+                {((field as any).existingTags || []).length > 3 && (
+                  <span className="text-xs text-gray-500 italic">
+                    +{((field as any).existingTags || []).length - 3} more tag(s)
+                  </span>
+                )}
+              </div>
+            ) : field.isTagField ? (
+              <span className="text-sm text-gray-400 italic">No existing tags</span>
             ) : typeof field.currentValue === 'object' && field.currentValue?.code ? (
               <div className="flex items-center gap-1 flex-nowrap whitespace-nowrap">
               <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{field.currentValue.code}</span>

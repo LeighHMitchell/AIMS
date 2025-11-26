@@ -60,6 +60,7 @@ export async function GET(
             organizationAcronym: '',
             icon: '',
             relationshipType: getRelationshipTypeName(link.relationship_type),
+            relationshipTypeCode: link.relationship_type, // Raw code for comparison
             relationshipNarrative: link.narrative || '',
             source: 'External Link',
             direction: 'outgoing',
@@ -79,6 +80,7 @@ export async function GET(
             organizationAcronym: link.activities.created_by_org_acronym || '',
             icon: link.activities.icon || '',
             relationshipType: getRelationshipTypeName(link.relationship_type),
+            relationshipTypeCode: link.relationship_type, // Raw code for comparison
             relationshipNarrative: link.narrative || '',
             source: 'Linked Activities',
             direction: 'outgoing',
@@ -126,6 +128,7 @@ export async function GET(
             organizationAcronym: link.activities.created_by_org_acronym || '',
             icon: link.activities.icon || '',
             relationshipType: getRelationshipTypeName(link.relationship_type),
+            relationshipTypeCode: link.relationship_type, // Raw code for comparison
             relationshipNarrative: link.narrative || '',
             source: 'Linked Activities',
             direction: 'incoming'

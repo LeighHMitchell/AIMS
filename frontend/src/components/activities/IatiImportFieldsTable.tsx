@@ -19,7 +19,7 @@ interface ParsedField {
   tab: string;
   description?: string;
   isFinancialItem?: boolean;
-  itemType?: 'budget' | 'transaction' | 'plannedDisbursement' | 'countryBudgetItems' | 'result';
+  itemType?: 'budget' | 'transaction' | 'plannedDisbursement' | 'countryBudgetItems' | 'result' | 'document';
   itemIndex?: number;
   itemData?: any;
   currentItemData?: any; // For storing current database values (e.g., current result object)
@@ -824,6 +824,22 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
         );
       }
     }
+
+    // Special handling for individual Document Link fields
+    // Collapsed view: just show the title
+    if (fieldName && (fieldName === 'Document Link' || fieldName.match(/^Document Link \d+$/))) {
+      if (value && typeof value === 'object' && !Array.isArray(value)) {
+        const docTitle = value.title || 'Untitled';
+        
+        if (!docTitle || docTitle === 'Untitled') {
+          return <span className="text-gray-400 italic">—</span>;
+        }
+        
+        return (
+          <span className="text-sm text-gray-900">{docTitle}</span>
+        );
+      }
+    }
     
     // Special handling for Recipient Countries field - show only country names
     if (fieldName && fieldName.includes('Recipient Countries')) {
@@ -838,6 +854,32 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
         }
         
         return <span className="text-sm text-gray-900">{countryNames}</span>;
+      }
+    }
+
+    // Special handling for Forward Spend (FSS) field - show forecasts in collapsed view
+    if (field?.isFssItem || fieldName === 'Forward Spend') {
+      if (column === 'import' && field?.fssData?.forecasts && field.fssData.forecasts.length > 0) {
+        return (
+          <div className="flex flex-col gap-1">
+            {field.fssData.forecasts.map((f: any, idx: number) => (
+              <span key={idx} className="text-sm text-gray-900">
+                {f.year} · {f.currency} {f.value?.toLocaleString()}
+              </span>
+            ))}
+          </div>
+        );
+      }
+      if (column === 'current' && typeof value === 'object' && value !== null && value.forecasts && value.forecasts.length > 0) {
+        return (
+          <div className="flex flex-col gap-1">
+            {value.forecasts.map((f: any, idx: number) => (
+              <span key={idx} className="text-sm text-gray-900">
+                {f.year} · {f.currency} {f.value?.toLocaleString()}
+              </span>
+            ))}
+          </div>
+        );
       }
     }
     
@@ -1057,7 +1099,22 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
     
     // Special handling for Tags field - render as badges
     if (field?.isTagField && (field.tagData || field.existingTags)) {
-      const tags = column === 'import' ? (field.tagData || []) : (field.existingTags || []);
+      const importTags = field.tagData || [];
+      const existingTagsAll = field.existingTags || [];
+      
+      // For current column, only show tags that match import tags (by vocabulary + code)
+      let tags: any[];
+      if (column === 'import') {
+        tags = importTags;
+      } else {
+        // Filter existing tags to only show ones matching import tags
+        tags = importTags.map((importTag: any) => {
+          return existingTagsAll.find((existingTag: any) => 
+            String(existingTag.vocabulary) === String(importTag.vocabulary) &&
+            String(existingTag.code) === String(importTag.code)
+          );
+        }).filter(Boolean);
+      }
 
       // Helper to get badge color variant based on vocabulary or code
       // All tags use shades of IATI color #135667
@@ -1505,6 +1562,26 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
   const valuesMatch = (field: ParsedField): boolean => {
     const { currentValue, importValue } = field;
 
+    // Special handling for Tags field
+    if (field.isTagField) {
+      const importTags = field.tagData || [];
+      const existingTags = field.existingTags || [];
+      
+      // No import tags = no match
+      if (importTags.length === 0) return false;
+      
+      // Check if ALL import tags have a matching existing tag (by vocabulary + code)
+      const allTagsMatch = importTags.every((importTag: any) => {
+        const matchingExisting = existingTags.find((existingTag: any) => 
+          String(existingTag.vocabulary) === String(importTag.vocabulary) &&
+          String(existingTag.code) === String(importTag.code)
+        );
+        return !!matchingExisting;
+      });
+      
+      return allTagsMatch;
+    }
+
     // If current value doesn't exist, it's not a match
     if (!currentValue && currentValue !== 0) return false;
 
@@ -1599,10 +1676,71 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
       return vocabMatch && codeMatch && percentageMatch && descMatch;
     }
 
+    // Special handling for document link fields
+    // importValue is the title string, currentValue is an object with url, title, etc.
+    if (field?.itemType === 'document' && typeof currentValue === 'object' && currentValue !== null && typeof importValue === 'string') {
+      const currentTitle = currentValue.title || '';
+      const importTitle = importValue || '';
+      // Compare titles (case-insensitive, trimmed)
+      return currentTitle.toLowerCase().trim() === importTitle.toLowerCase().trim();
+    }
+
     // Handle object comparison (e.g., for coded fields that return {code, name})
     if (typeof currentValue === 'object' && typeof importValue === 'object') {
       if (currentValue === null || importValue === null) {
         return currentValue === importValue;
+      }
+
+      // Special handling for Related Activity fields - compare ref and type
+      if ('ref' in currentValue && 'ref' in importValue) {
+        const refMatch = String(currentValue.ref || '').trim() === String(importValue.ref || '').trim();
+        const typeMatch = String(currentValue.type || '').trim() === String(importValue.type || '').trim();
+        return refMatch && typeMatch;
+      }
+
+      // Special handling for Conditions - compare attached and conditions array
+      if ('conditions' in currentValue && 'conditions' in importValue && 
+          Array.isArray(currentValue.conditions) && Array.isArray(importValue.conditions)) {
+        // Compare attached flag
+        const attachedMatch = Boolean(currentValue.attached) === Boolean(importValue.attached);
+        
+        // Compare conditions count
+        if (currentValue.conditions.length !== importValue.conditions.length) {
+          return false;
+        }
+        
+        // Compare each condition (type and narrative)
+        for (let i = 0; i < currentValue.conditions.length; i++) {
+          const curr = currentValue.conditions[i];
+          const imp = importValue.conditions[i];
+          
+          // Compare type
+          if (String(curr.type || '1') !== String(imp.type || '1')) {
+            return false;
+          }
+          
+          // Compare narrative (handle JSONB vs string)
+          let currNarrative = '';
+          let impNarrative = '';
+          
+          if (typeof curr.narrative === 'object' && curr.narrative !== null) {
+            currNarrative = Object.values(curr.narrative)[0] as string || '';
+          } else {
+            currNarrative = String(curr.narrative || '');
+          }
+          
+          if (typeof imp.narrative === 'object' && imp.narrative !== null) {
+            impNarrative = Object.values(imp.narrative)[0] as string || '';
+          } else {
+            impNarrative = String(imp.narrative || '');
+          }
+          
+          if (currNarrative.trim() !== impNarrative.trim()) {
+            return false;
+          }
+        }
+        
+        return attachedMatch;
       }
 
       // For objects with code property (common in IATI fields like activity status, collaboration type, etc.)
@@ -1999,10 +2137,13 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                         {categoryFields.map((field, index) => {
                   const rowId = getRowId(field, index);
                   const isExpanded = expandedRows.has(rowId);
-                  const isMissing = field.currentValue === null ||
-                                   field.currentValue === undefined ||
-                                   field.currentValue === '' ||
-                                   (Array.isArray(field.currentValue) && field.currentValue.length === 0);
+                  // For tag fields, check existingTags instead of currentValue
+                  const isMissing = field.isTagField 
+                    ? (!field.existingTags || field.existingTags.length === 0)
+                    : (field.currentValue === null ||
+                       field.currentValue === undefined ||
+                       field.currentValue === '' ||
+                       (Array.isArray(field.currentValue) && field.currentValue.length === 0));
 
                   return (
                     <React.Fragment key={rowId}>
@@ -2213,6 +2354,229 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                               ))}
                                             </tbody>
                                           </table>
+                                        ) : (
+                                          <div className="text-xs text-gray-500 italic">No existing value</div>
+                                        )}
+                                      </div>
+                                    </div>
+                                  </div>
+                                );
+                              }
+
+                              // Forward Spend (FSS) fields - show all details in expanded view
+                              if (field.isFssItem || field.fieldName === 'Forward Spend') {
+                                const fssData = field.fssData;
+                                const currentFss = field.currentValue;
+                                
+                                // Priority labels
+                                const priorityLabels: Record<number, string> = {
+                                  1: 'High Priority',
+                                  2: 'Medium Priority',
+                                  3: 'Low Priority',
+                                  4: 'Very Low Priority',
+                                  5: 'Uncertain'
+                                };
+                                
+                                // Generate XML snippet
+                                let xmlSnippet = '';
+                                if (fssData) {
+                                  xmlSnippet = `<fss extraction-date="${fssData.extractionDate || ''}"${fssData.priority ? ` priority="${fssData.priority}"` : ''}${fssData.phaseoutYear ? ` phaseout-year="${fssData.phaseoutYear}"` : ''}>`;
+                                  if (fssData.forecasts && fssData.forecasts.length > 0) {
+                                    fssData.forecasts.forEach((f: any) => {
+                                      xmlSnippet += `\n  <forecast year="${f.year}"${f.valueDate ? ` value-date="${f.valueDate}"` : ''} currency="${f.currency || 'USD'}">${f.value}</forecast>`;
+                                    });
+                                  }
+                                  xmlSnippet += '\n</fss>';
+                                }
+                                
+                                return (
+                                  <div className="mb-6 border-b border-gray-200 pb-6">
+                                    <div className="text-sm font-semibold mb-3 text-gray-900 flex items-center gap-2">
+                                      <DollarSign className="h-4 w-4" />
+                                      Forward Spending Survey Details
+                                    </div>
+
+                                    {/* 3-column layout */}
+                                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                                      {/* Column 1: Raw XML */}
+                                      <div className="bg-gray-50 rounded-md p-3 border border-gray-200">
+                                        <div className="text-xs font-semibold text-gray-700 mb-2">Raw XML</div>
+                                        <pre className="text-xs font-mono text-gray-800 overflow-x-auto whitespace-pre-wrap break-all">
+{xmlSnippet || '—'}
+                                        </pre>
+                                      </div>
+
+                                      {/* Column 2: Import Value */}
+                                      <div className="bg-gray-50 rounded-md p-3 border border-gray-200">
+                                        <div className="text-xs font-semibold text-gray-700 mb-2">Import Value</div>
+                                        {fssData ? (
+                                          <div className="space-y-4">
+                                            {/* FSS Attributes Table */}
+                                            <div>
+                                              <div className="text-xs font-semibold text-gray-700 mb-2">FSS Attributes</div>
+                                              <table className="w-full text-xs">
+                                                <tbody>
+                                                  {fssData.extractionDate && (
+                                                    <tr className="border-b border-gray-100 align-top">
+                                                      <td className="py-1.5 pr-2 font-medium text-gray-600">Extraction Date</td>
+                                                      <td className="py-1.5 text-gray-900">
+                                                        <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                          {fssData.extractionDate}
+                                                        </code>
+                                                      </td>
+                                                    </tr>
+                                                  )}
+                                                  {fssData.priority && (
+                                                    <tr className="border-b border-gray-100 align-top">
+                                                      <td className="py-1.5 pr-2 font-medium text-gray-600">Priority</td>
+                                                      <td className="py-1.5 text-gray-900">
+                                                        <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded mr-2">
+                                                          {fssData.priority}
+                                                        </code>
+                                                        {priorityLabels[fssData.priority] || ''}
+                                                      </td>
+                                                    </tr>
+                                                  )}
+                                                  {fssData.phaseoutYear && (
+                                                    <tr className="align-top">
+                                                      <td className="py-1.5 pr-2 font-medium text-gray-600">Phaseout Year</td>
+                                                      <td className="py-1.5 text-gray-900">
+                                                        <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                          {fssData.phaseoutYear}
+                                                        </code>
+                                                      </td>
+                                                    </tr>
+                                                  )}
+                                                </tbody>
+                                              </table>
+                                            </div>
+
+                                            {/* Forecast Tables */}
+                                            {fssData.forecasts && fssData.forecasts.length > 0 && fssData.forecasts.map((f: any, idx: number) => (
+                                              <div key={idx}>
+                                                <div className="text-xs font-semibold text-gray-700 mb-2">Forecast</div>
+                                                <table className="w-full text-xs">
+                                                  <tbody>
+                                                    <tr className="border-b border-gray-100 align-top">
+                                                      <td className="py-1.5 pr-2 font-medium text-gray-600">Year</td>
+                                                      <td className="py-1.5 text-gray-900">
+                                                        <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                          {f.year}
+                                                        </code>
+                                                      </td>
+                                                    </tr>
+                                                    {f.valueDate && (
+                                                      <tr className="border-b border-gray-100 align-top">
+                                                        <td className="py-1.5 pr-2 font-medium text-gray-600">Value Date</td>
+                                                        <td className="py-1.5 text-gray-900">
+                                                          <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                            {f.valueDate}
+                                                          </code>
+                                                        </td>
+                                                      </tr>
+                                                    )}
+                                                    <tr className="align-top">
+                                                      <td className="py-1.5 pr-2 font-medium text-gray-600">Currency and Amount</td>
+                                                      <td className="py-1.5 text-gray-900">
+                                                        <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded mr-2">
+                                                          {f.currency}
+                                                        </code>
+                                                        {f.value?.toLocaleString()}
+                                                      </td>
+                                                    </tr>
+                                                  </tbody>
+                                                </table>
+                                              </div>
+                                            ))}
+                                          </div>
+                                        ) : (
+                                          <div className="text-xs text-gray-500 italic">No import value</div>
+                                        )}
+                                      </div>
+
+                                      {/* Column 3: Current Value */}
+                                      <div className="bg-gray-50 rounded-md p-3 border border-gray-200">
+                                        <div className="text-xs font-semibold text-gray-700 mb-2">Current Value</div>
+                                        {currentFss ? (
+                                          <div className="space-y-4">
+                                            {/* FSS Attributes Table */}
+                                            <div>
+                                              <div className="text-xs font-semibold text-gray-700 mb-2">FSS Attributes</div>
+                                              <table className="w-full text-xs">
+                                                <tbody>
+                                                  {currentFss.extractionDate && (
+                                                    <tr className="border-b border-gray-100 align-top">
+                                                      <td className="py-1.5 pr-2 font-medium text-gray-600">Extraction Date</td>
+                                                      <td className="py-1.5 text-gray-900">
+                                                        <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                          {currentFss.extractionDate}
+                                                        </code>
+                                                      </td>
+                                                    </tr>
+                                                  )}
+                                                  {currentFss.priority && (
+                                                    <tr className="border-b border-gray-100 align-top">
+                                                      <td className="py-1.5 pr-2 font-medium text-gray-600">Priority</td>
+                                                      <td className="py-1.5 text-gray-900">
+                                                        <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded mr-2">
+                                                          {currentFss.priority}
+                                                        </code>
+                                                        {priorityLabels[currentFss.priority] || ''}
+                                                      </td>
+                                                    </tr>
+                                                  )}
+                                                  {currentFss.phaseoutYear && (
+                                                    <tr className="align-top">
+                                                      <td className="py-1.5 pr-2 font-medium text-gray-600">Phaseout Year</td>
+                                                      <td className="py-1.5 text-gray-900">
+                                                        <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                          {currentFss.phaseoutYear}
+                                                        </code>
+                                                      </td>
+                                                    </tr>
+                                                  )}
+                                                </tbody>
+                                              </table>
+                                            </div>
+
+                                            {/* Forecast Tables */}
+                                            {currentFss.forecasts && currentFss.forecasts.length > 0 && currentFss.forecasts.map((f: any, idx: number) => (
+                                              <div key={idx}>
+                                                <div className="text-xs font-semibold text-gray-700 mb-2">Forecast</div>
+                                                <table className="w-full text-xs">
+                                                  <tbody>
+                                                    <tr className="border-b border-gray-100 align-top">
+                                                      <td className="py-1.5 pr-2 font-medium text-gray-600">Year</td>
+                                                      <td className="py-1.5 text-gray-900">
+                                                        <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                          {f.year}
+                                                        </code>
+                                                      </td>
+                                                    </tr>
+                                                    {f.valueDate && (
+                                                      <tr className="border-b border-gray-100 align-top">
+                                                        <td className="py-1.5 pr-2 font-medium text-gray-600">Value Date</td>
+                                                        <td className="py-1.5 text-gray-900">
+                                                          <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                            {f.valueDate}
+                                                          </code>
+                                                        </td>
+                                                      </tr>
+                                                    )}
+                                                    <tr className="align-top">
+                                                      <td className="py-1.5 pr-2 font-medium text-gray-600">Currency and Amount</td>
+                                                      <td className="py-1.5 text-gray-900">
+                                                        <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded mr-2">
+                                                          {f.currency}
+                                                        </code>
+                                                        {f.value?.toLocaleString()}
+                                                      </td>
+                                                    </tr>
+                                                  </tbody>
+                                                </table>
+                                              </div>
+                                            ))}
+                                          </div>
                                         ) : (
                                           <div className="text-xs text-gray-500 italic">No existing value</div>
                                         )}
@@ -2665,6 +3029,43 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                               
                               // Documents
                               if (field.fieldName.includes('Document') && field.documentData && Array.isArray(field.documentData)) {
+                                // Document category code to name mapping
+                                const getDocumentCategoryName = (code: string): string => {
+                                  const categories: Record<string, string> = {
+                                    'A01': 'Pre- and post-project impact appraisal',
+                                    'A02': 'Objectives / Purpose of activity',
+                                    'A03': 'Intended ultimate beneficiaries',
+                                    'A04': 'Conditions',
+                                    'A05': 'Budget',
+                                    'A06': 'Summary information about contract',
+                                    'A07': 'Review of project performance and evaluation',
+                                    'A08': 'Results, outcomes and outputs',
+                                    'A09': 'Memorandum of understanding (If agreed by all parties)',
+                                    'A10': 'Tender',
+                                    'A11': 'Contract',
+                                    'A12': 'Activity web page',
+                                    'B01': 'Annual report',
+                                    'B02': 'Institutional Strategy paper',
+                                    'B03': 'Country strategy paper',
+                                    'B04': 'Aid Allocation Policy',
+                                    'B05': 'Procurement Policy and Procedure',
+                                    'B06': 'Institutional Audit Report',
+                                    'B07': 'Country Audit Report',
+                                    'B08': 'Exclusions Policy',
+                                    'B09': 'Institutional Evaluation Report',
+                                    'B10': 'Country Evaluation Report',
+                                    'B11': 'Sector strategy',
+                                    'B12': 'Thematic strategy',
+                                    'B13': 'Country-level Memorandum of Understanding',
+                                    'B14': 'Evaluations policy',
+                                    'B15': 'General Terms and Conditions',
+                                    'B16': 'Organisation web page',
+                                    'B17': 'Country/Region web page',
+                                    'B18': 'Sector web page',
+                                  };
+                                  return categories[code] || '';
+                                };
+
                                 // Generate XML snippet for first document (representative)
                                 const firstDoc = field.documentData[0];
                                 const xmlSnippet = `<document-link url="${firstDoc?.url || ''}" format="${firstDoc?.format || ''}">
@@ -2680,7 +3081,7 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                   <div className="mb-6 border-b border-gray-200 pb-6">
                                     <div className="text-sm font-semibold mb-3 text-gray-900 flex items-center gap-2">
                                       <FileText className="h-4 w-4" />
-                                      Document Details ({field.documentData.length} document{field.documentData.length !== 1 ? 's' : ''})
+                                      Document Details
                                     </div>
 
                                     {/* 3-column layout */}
@@ -2695,7 +3096,7 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
 
                                       {/* Column 2: Import Value */}
                                       <div className="bg-gray-50 rounded-md p-3 border border-gray-200">
-                                        <div className="text-xs font-semibold text-gray-700 mb-2">Import Value ({field.documentData.length})</div>
+                                        <div className="text-xs font-semibold text-gray-700 mb-2">Import Value</div>
                                         <div className="space-y-3">
                                           {field.documentData.map((doc: any, docIndex: number) => (
                                             <div key={docIndex} className="border-b border-gray-100 pb-2 last:border-b-0">
@@ -2712,15 +3113,18 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                                         <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
                                                           {doc.category_code}
                                                         </code>
+                                                        {getDocumentCategoryName(doc.category_code) && (
+                                                          <span className="ml-1.5 text-gray-600">{getDocumentCategoryName(doc.category_code)}</span>
+                                                        )}
                                                       </td>
                                                     </tr>
                                                   )}
                                                   {doc.url && (
                                                     <tr className="align-top">
                                                       <td className="py-1 pr-2 font-medium text-gray-600">URL:</td>
-                                                      <td className="py-1 text-gray-900">
-                                                        <a href={doc.url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-800 hover:underline break-all text-xs">
-                                                          {doc.url.substring(0, 30)}...
+                                                      <td className="py-1 text-gray-900 break-all">
+                                                        <a href={doc.url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-800 hover:underline text-xs break-all">
+                                                          {doc.url}
                                                         </a>
                                                       </td>
                                                     </tr>
@@ -2728,8 +3132,8 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                                   {doc.format && (
                                                     <tr className="align-top">
                                                       <td className="py-1 pr-2 font-medium text-gray-600">Format:</td>
-                                                      <td className="py-1 text-gray-900">
-                                                        <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                      <td className="py-1 text-gray-900 break-all">
+                                                        <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded break-all whitespace-normal">
                                                           {doc.format}
                                                         </code>
                                                       </td>
@@ -2745,14 +3149,52 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                       {/* Column 3: Current Value */}
                                       <div className="bg-gray-50 rounded-md p-3 border border-gray-200">
                                         <div className="text-xs font-semibold text-gray-700 mb-2">Current Value</div>
-                                        {field.currentValue && Array.isArray(field.currentValue) && field.currentValue.length > 0 ? (
-                                          <div className="space-y-2">
-                                            {field.currentValue.map((doc: any, idx: number) => (
-                                              <div key={idx} className="border-b border-gray-100 pb-2 last:border-b-0">
-                                                <div className="text-xs font-medium text-gray-900 mb-1">{doc.title || 'Untitled'}</div>
-                                                {doc.category_code && (
-                                                  <div className="text-xs text-gray-600">Category: <code className="bg-gray-100 px-1 py-0.5 rounded">{doc.category_code}</code></div>
-                                                )}
+                                        {field.currentValue ? (
+                                          <div className="space-y-3">
+                                            {/* Handle both array (Document Links plural) and object (Document Link 1, 2, etc.) */}
+                                            {(Array.isArray(field.currentValue) ? field.currentValue : [field.currentValue]).map((doc: any, docIndex: number) => (
+                                              <div key={docIndex} className="border-b border-gray-100 pb-2 last:border-b-0">
+                                                <table className="w-full text-xs">
+                                                  <tbody>
+                                                    <tr className="align-top">
+                                                      <td className="py-1 pr-2 font-medium text-gray-600">Title:</td>
+                                                      <td className="py-1 text-gray-900">{doc.title || 'Untitled'}</td>
+                                                    </tr>
+                                                    {doc.category_code && (
+                                                      <tr className="align-top">
+                                                        <td className="py-1 pr-2 font-medium text-gray-600">Category:</td>
+                                                        <td className="py-1 text-gray-900">
+                                                          <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                            {doc.category_code}
+                                                          </code>
+                                                          {getDocumentCategoryName(doc.category_code) && (
+                                                            <span className="ml-1.5 text-gray-600">{getDocumentCategoryName(doc.category_code)}</span>
+                                                          )}
+                                                        </td>
+                                                      </tr>
+                                                    )}
+                                                    {doc.url && (
+                                                      <tr className="align-top">
+                                                        <td className="py-1 pr-2 font-medium text-gray-600">URL:</td>
+                                                        <td className="py-1 text-gray-900 break-all">
+                                                          <a href={doc.url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-800 hover:underline text-xs break-all">
+                                                            {doc.url}
+                                                          </a>
+                                                        </td>
+                                                      </tr>
+                                                    )}
+                                                    {doc.format && (
+                                                      <tr className="align-top">
+                                                        <td className="py-1 pr-2 font-medium text-gray-600">Format:</td>
+                                                        <td className="py-1 text-gray-900 break-all">
+                                                          <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded break-all whitespace-normal">
+                                                            {doc.format}
+                                                          </code>
+                                                        </td>
+                                                      </tr>
+                                                    )}
+                                                  </tbody>
+                                                </table>
                                               </div>
                                             ))}
                                           </div>
@@ -2770,14 +3212,14 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                 const existingTags = field.existingTags || [];
                                 const importTags = field.tagData || [];
 
-                                // Helper to format vocabulary label
+                                // Helper to format vocabulary label (IATI Tag Vocabulary codes)
                                 const getVocabLabel = (vocab: string) => {
                                   if (vocab === '1') return 'Agrovoc';
                                   if (vocab === '2') return 'UN Sustainable Development Goals (SDG)';
                                   if (vocab === '3') return 'UN Sustainable Development Goals (SDG) Targets';
                                   if (vocab === '4') return 'Team Europe Initiatives';
                                   if (vocab === '99') return 'Reporting Organisation';
-                                  return '';
+                                  return vocab ? `Vocabulary ${vocab}` : '';
                                 };
 
                                 // Helper to get badge color variant based on vocabulary or code
@@ -2899,26 +3341,56 @@ ${importTags.map((tag: any) => {
                                       {/* Column 3: Current Value */}
                                       <div className="bg-gray-50 rounded-md p-3 border border-gray-200">
                                         <div className="text-xs font-semibold text-gray-700 mb-2">Current Value</div>
-                                        {existingTags.length > 0 ? (
-                                          <div className="flex flex-wrap gap-2">
-                                            {existingTags.map((tag: any, idx: number) => (
-                                              <Badge
-                                                key={idx}
-                                                variant="outline"
-                                                className={`${getTagBadgeColor(tag, idx)} border px-2.5 py-1 rounded-md text-xs font-medium`}
-                                              >
-                                                {tag.name || tag.narrative || 'Unnamed tag'}
-                                                {tag.vocabulary && (
-                                                  <span className="ml-1.5 text-xs opacity-75">
-                                                    ({getVocabLabel(String(tag.vocabulary))})
-                                                  </span>
-                                                )}
-                                              </Badge>
-                                            ))}
-                                          </div>
-                                        ) : (
-                                          <div className="text-xs text-gray-500 italic">No existing tags</div>
-                                        )}
+                                        {(() => {
+                                          // Find matching existing tag based on import tag's vocabulary and code
+                                          const importTag = importTags[0]; // The tag being imported for this row
+                                          const matchingTag = importTag ? existingTags.find((t: any) => 
+                                            String(t.vocabulary) === String(importTag.vocabulary) && 
+                                            String(t.code) === String(importTag.code)
+                                          ) : null;
+                                          
+                                          if (matchingTag) {
+                                            return (
+                                              <table className="w-full text-xs">
+                                                <tbody>
+                                                  {matchingTag.vocabulary && (
+                                                    <tr className="border-b border-gray-100 align-top">
+                                                      <td className="py-1.5 pr-2 font-medium text-gray-400">Vocabulary:</td>
+                                                      <td className="py-1.5 text-gray-400">
+                                                        <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                          {matchingTag.vocabulary}
+                                                        </code>
+                                                        <span className="ml-2">{getVocabLabel(String(matchingTag.vocabulary))}</span>
+                                                      </td>
+                                                    </tr>
+                                                  )}
+                                                  {matchingTag.vocabulary_uri && (
+                                                    <tr className="border-b border-gray-100 align-top">
+                                                      <td className="py-1.5 pr-2 font-medium text-gray-600">Vocabulary URI:</td>
+                                                      <td className="py-1.5 text-gray-900 break-all">{matchingTag.vocabulary_uri}</td>
+                                                    </tr>
+                                                  )}
+                                                  {matchingTag.code && (
+                                                    <tr className="border-b border-gray-100 align-top">
+                                                      <td className="py-1.5 pr-2 font-medium text-gray-400">Code:</td>
+                                                      <td className="py-1.5 text-gray-400">
+                                                        <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                          {matchingTag.code}
+                                                        </code>
+                                                      </td>
+                                                    </tr>
+                                                  )}
+                                                  <tr className="align-top">
+                                                    <td className="py-1.5 pr-2 font-medium text-gray-600">Narrative:</td>
+                                                    <td className="py-1.5 text-gray-900">{matchingTag.name || matchingTag.narrative || '—'}</td>
+                                                  </tr>
+                                                </tbody>
+                                              </table>
+                                            );
+                                          } else {
+                                            return <div className="text-xs text-gray-500 italic">No matching existing tag</div>;
+                                          }
+                                        })()}
                                       </div>
                                     </div>
                                   </div>

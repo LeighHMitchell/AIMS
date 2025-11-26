@@ -43,8 +43,8 @@ export async function GET(
       );
     }
 
-    // Flatten the structure for easier consumption
-    const tags = data?.map(t => ({
+    // Flatten the structure for easier consumption (filter out null tags in case of orphaned relationships)
+    const tags = data?.filter(t => t.tags !== null).map(t => ({
       id: t.tags.id,
       name: t.tags.name,
       vocabulary: t.tags.vocabulary,

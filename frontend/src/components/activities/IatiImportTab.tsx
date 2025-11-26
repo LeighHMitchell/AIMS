@@ -183,7 +183,7 @@ interface ParsedField {
   tab: string; // Which Activity Editor tab this field belongs to
   description?: string; // Optional description of what this field contains
   isFinancialItem?: boolean; // True for budget/transaction/disbursement summary items
-  itemType?: 'budget' | 'transaction' | 'plannedDisbursement' | 'countryBudgetItems' | 'result'; // Type of financial item or result
+  itemType?: 'budget' | 'transaction' | 'plannedDisbursement' | 'countryBudgetItems' | 'result' | 'document'; // Type of financial item, result, or document
   itemIndex?: number; // Index in the array
   itemData?: any; // The actual data object
   isPolicyMarker?: boolean; // True for policy marker items
@@ -424,8 +424,9 @@ interface IatiSearchResultCardProps {
   isLoading: boolean;
 }
 const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: IatiSearchResultCardProps) => {
-  const [isExpanded, setIsExpanded] = useState(false);
   const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
+  const [exceedsFiveLines, setExceedsFiveLines] = useState(false);
+  const descriptionRef = React.useRef<HTMLSpanElement>(null);
   const [financialData, setFinancialData] = useState<{
     totalBudget?: number;
     totalPlannedDisbursement?: number;
@@ -912,6 +913,44 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
 
     fetchFinancialData();
   }, [activity.iatiIdentifier]);
+
+  // Measure description height to determine if it exceeds 5 lines
+  useEffect(() => {
+    // Use requestAnimationFrame to ensure DOM is fully rendered
+    const measureHeight = () => {
+      if (descriptionRef.current) {
+        const element = descriptionRef.current;
+        // Temporarily remove line-clamp to measure full height
+        const originalClass = element.className;
+        const hasLineClamp = originalClass.includes('line-clamp');
+        if (hasLineClamp) {
+          element.className = element.className.replace(/line-clamp-\d+/g, '');
+        }
+        
+        // Get the computed line height
+        const computedStyle = getComputedStyle(element);
+        const lineHeight = parseFloat(computedStyle.lineHeight) || parseFloat(computedStyle.fontSize) * 1.5;
+        const maxHeight = lineHeight * 5; // 5 lines
+        
+        // Check if content exceeds 5 lines
+        const exceeds = element.scrollHeight > maxHeight;
+        setExceedsFiveLines(exceeds);
+        
+        // Restore original class
+        if (hasLineClamp) {
+          element.className = originalClass;
+        }
+      }
+    };
+    
+    // Use setTimeout to ensure measurement happens after render
+    const timeoutId = setTimeout(() => {
+      requestAnimationFrame(measureHeight);
+    }, 0);
+    
+    return () => clearTimeout(timeoutId);
+  }, [activity.description, activity.reportingOrg, activity.reportingOrgRef, isDescriptionExpanded]);
+
   return (
     <div className="relative w-full rounded-lg border bg-white px-4 py-3 hover:bg-gray-50 transition-colors">
       {/* Collapsed View */}
@@ -962,25 +1001,26 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
               </Button>
             </div>
             
-            {/* Essential Info - 3 Column Layout */}
-            <div className="grid grid-cols-3 gap-4">
-              {/* Column 1: Reported by and Implementing Org - Stacked */}
-              <div className="space-y-4">
+            {/* Essential Info - Restructured Layout */}
+            <div className="space-y-4">
+              {/* Reported by section - spans full width */}
               {activity.reportingOrg && (
                 <div>
                     <div className="text-[10px] uppercase tracking-wide text-slate-500 font-semibold mb-1.5">Reported by</div>
-                    <table className="w-full text-[10px] border-collapse">
+                    <table className="w-full text-[10px] border-collapse table-fixed">
                       <tbody>
                         <tr>
-                          <td className="py-1 pr-2 text-slate-600 whitespace-nowrap align-top">Organization:</td>
-                          <td className="py-1 min-w-0">
-                            <div className="flex items-center gap-2 flex-wrap min-w-0">
-                              <span className="text-sm font-medium text-slate-900 break-words min-w-0">{activity.reportingOrg}</span>
-                              {activity.reportingOrgRef && (
-                                <code className="text-[10px] font-mono bg-slate-100 px-1.5 py-0.5 rounded text-slate-600 inline-block shrink-0">
-                                  {activity.reportingOrgRef}
-                                </code>
-                              )}
+                          <td className="py-1 text-slate-600 whitespace-nowrap align-top" colSpan={2}>
+                            <div>
+                              <div className="mb-1">Organization:</div>
+                              <div className="flex items-center gap-2 flex-wrap min-w-0">
+                                <span className="text-sm font-medium text-slate-900 break-words min-w-0">{activity.reportingOrg}</span>
+                                {activity.reportingOrgRef && (
+                                  <code className="text-[10px] font-mono bg-slate-100 px-1.5 py-0.5 rounded text-slate-600 inline-block shrink-0">
+                                    {activity.reportingOrgRef}
+                                  </code>
+                                )}
+                              </div>
                             </div>
                           </td>
                         </tr>
@@ -988,7 +1028,7 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
                           const typeLabel = getOrganizationTypeLabel(activity.reportingOrgType);
                           return (
                             <tr key="reportingType">
-                              <td className="py-1 pr-2 text-slate-600 whitespace-nowrap align-top">Type:</td>
+                              <td className="py-1 pr-1 text-slate-600 whitespace-nowrap align-top">Type:</td>
                               <td className="py-1">
                                 <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-medium bg-blue-100 text-blue-700">
                                   {typeLabel?.name}
@@ -997,377 +1037,358 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
                             </tr>
                           );
                         })()}
+                        {/* Activity Dates Row */}
+                        {(activity.startDatePlanned || activity.startDateActual || activity.endDatePlanned || activity.endDateActual) && (() => {
+                          // Helper to format date as "4 December 2017"
+                          const formatDate = (dateStr: string | undefined): string => {
+                            if (!dateStr) return '';
+                            try {
+                              const date = new Date(dateStr);
+                              if (isNaN(date.getTime())) return dateStr;
+                              return date.toLocaleDateString('en-GB', { 
+                                day: 'numeric', 
+                                month: 'long', 
+                                year: 'numeric' 
+                              });
+                            } catch {
+                              return dateStr;
+                            }
+                          };
+                          
+                          return (
+                            <tr>
+                              <td className="py-1.5 text-slate-600 align-top" colSpan={2}>
+                                <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs">
+                                  {activity.startDateActual && (
+                                    <div className="flex items-center gap-1.5">
+                                      <span className="text-slate-500 text-[10px]">Actual Start:</span>
+                                      <span className="text-slate-800 font-medium">{formatDate(activity.startDateActual)}</span>
+                                    </div>
+                                  )}
+                                  {activity.startDatePlanned && (
+                                    <div className="flex items-center gap-1.5">
+                                      <span className="text-slate-500 text-[10px]">Planned Start:</span>
+                                      <span className="text-slate-600">{formatDate(activity.startDatePlanned)}</span>
+                                    </div>
+                                  )}
+                                  {activity.endDateActual && (
+                                    <div className="flex items-center gap-1.5">
+                                      <span className="text-slate-500 text-[10px]">Actual End:</span>
+                                      <span className="text-slate-800 font-medium">{formatDate(activity.endDateActual)}</span>
+                                    </div>
+                                  )}
+                                  {activity.endDatePlanned && (
+                                    <div className="flex items-center gap-1.5">
+                                      <span className="text-slate-500 text-[10px]">Planned End:</span>
+                                      <span className="text-slate-600">{formatDate(activity.endDatePlanned)}</span>
+                                    </div>
+                                  )}
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        })()}
+                        <tr>
+                          <td className="py-1 text-slate-600 align-top min-w-0 w-full" colSpan={2} style={{ wordBreak: 'break-word', overflowWrap: 'anywhere' }}>
+                            <div className="text-xs text-slate-700 leading-relaxed break-words overflow-wrap-anywhere min-w-0 w-full" style={{ wordBreak: 'break-word', overflowWrap: 'anywhere' }}>
+                              {(() => {
+                                const description = activity.description || 
+                                  `This activity is reported by ${activity.reportingOrg}${activity.reportingOrgRef ? ` (${activity.reportingOrgRef})` : ''}. The reporting organization is responsible for publishing this activity data to the IATI Registry and maintaining its accuracy. This organization typically provides funding or has oversight responsibility for the activity.`;
+                                
+                                if (!description || description.trim() === '') {
+                                  return null;
+                                }
+                                
+                                // Only show "read more" if description exceeds 5 lines
+                                return (
+                                  <>
+                                    <span 
+                                      ref={descriptionRef}
+                                      className={`break-words min-w-0 ${exceedsFiveLines && !isDescriptionExpanded ? 'line-clamp-5' : ''}`} 
+                                      style={{ wordBreak: 'break-word', overflowWrap: 'anywhere' }}
+                                    >
+                                      {description}
+                                    </span>
+                                    {exceedsFiveLines && (
+                                      <button
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          setIsDescriptionExpanded(!isDescriptionExpanded);
+                                        }}
+                                        className="ml-2 text-xs text-slate-600 hover:text-slate-900 transition-colors underline shrink-0"
+                                      >
+                                        {isDescriptionExpanded ? 'read less' : 'read more'}
+                                      </button>
+                                    )}
+                                  </>
+                                );
+                              })()}
+                            </div>
+                          </td>
+                        </tr>
                       </tbody>
                     </table>
                 </div>
               )}
 
-              {implementingOrgs.length > 0 && (
+              {/* Three Tables on Same Row */}
+              <div className="grid grid-cols-3 gap-4">
+                {/* Column 1: Participating Organisations */}
                 <div>
-                    <div className="text-[10px] uppercase tracking-wide text-slate-500 font-semibold mb-1.5">Implementing Organisation</div>
-                    <div className="border border-slate-200 rounded-md overflow-hidden">
-                      <table className="w-full text-[10px] border-collapse">
-                        <thead className="bg-slate-50/80 border-b border-slate-200">
-                          <tr>
-                            <th className="px-2 py-1 text-[9px] uppercase tracking-wide font-semibold text-slate-600 text-left align-top">Attribute</th>
-                            <th className="px-2 py-1 text-[9px] uppercase tracking-wide font-semibold text-slate-600 text-left align-top">Detail</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                        {implementingOrgs.slice(0, 3).map((org, idx) => {
-                          const orgRef = org.validated_ref || org.ref;
-                          const refDisplay = getOrgRefDisplay(orgRef);
-                          
-                          return (
-                            <React.Fragment key={idx}>
-                              <tr className={idx > 0 ? "border-t border-slate-200" : ""}>
-                                <td className="px-2 py-1 text-slate-600 whitespace-nowrap align-top">Name:</td>
-                                <td className="px-2 py-1 min-w-0">
-                                  <div className="flex items-center gap-2 flex-wrap min-w-0">
-                                    <span className="text-sm font-medium text-slate-900 break-words min-w-0">{org.name || org.narrative}</span>
-                                    {refDisplay.normalized && (
-                                      <>
-                                        <code className={`text-[10px] font-mono bg-slate-100 px-1.5 py-0.5 rounded text-slate-600 inline-block shrink-0 ${!refDisplay.isValid ? 'border border-red-300' : ''}`}>
-                                          {refDisplay.normalized}
+                  {participatingOrgsToUse.length > 0 && (
+                    <div>
+                        <div className="text-[10px] uppercase tracking-wide text-slate-500 font-semibold mb-1.5">Participating Organisations</div>
+                        <div className="border border-slate-200 rounded-md overflow-hidden">
+                          <table className="w-full text-[10px] border-collapse">
+                            <thead className="bg-slate-50/80 border-b border-slate-200">
+                              <tr>
+                                <th className="px-2 py-1 text-[9px] uppercase tracking-wide font-semibold text-slate-600 text-left align-top">Organisation</th>
+                                <th className="px-2 py-1 text-[9px] uppercase tracking-wide font-semibold text-slate-600 text-left align-top">Role</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                            {participatingOrgsToUse.map((org: any, idx: number) => {
+                              const orgRef = org.validated_ref || org.ref;
+                              const refDisplay = getOrgRefDisplay(orgRef);
+                              const orgRole = org.role || org.iati_role_code;
+                              const roleName = orgRole ? getOrganizationRoleName(orgRole) : null;
+                              
+                              const orgName = org.name || org.narrative || '-';
+                              
+                              return (
+                                <tr key={idx} className={idx > 0 ? "border-t border-slate-200" : ""}>
+                                  <td className="px-2 py-1 min-w-0">
+                                    <div className="flex items-center gap-2 flex-wrap min-w-0">
+                                      <span className="text-sm font-medium text-slate-900 break-words min-w-0">{orgName}</span>
+                                      {refDisplay.normalized && (
+                                        <>
+                                          <code className={`text-[10px] font-mono bg-slate-100 px-1.5 py-0.5 rounded text-slate-600 inline-block shrink-0 ${!refDisplay.isValid ? 'border border-red-300' : ''}`}>
+                                            {refDisplay.normalized}
+                                          </code>
+                                          {!refDisplay.isValid && (
+                                            <Tooltip>
+                                              <TooltipTrigger asChild>
+                                                <span className="text-red-500 text-xs cursor-help shrink-0">⚠</span>
+                                              </TooltipTrigger>
+                                              <TooltipContent>
+                                                <p className="text-xs">Invalid IATI organization identifier format</p>
+                                              </TooltipContent>
+                                            </Tooltip>
+                                          )}
+                                        </>
+                                      )}
+                                    </div>
+                                  </td>
+                                  <td className="px-2 py-1 min-w-0">
+                                    {orgRole && roleName ? (
+                                      <div className="flex items-center gap-1.5">
+                                        <code className="text-[10px] font-mono bg-slate-100 px-1.5 py-0.5 rounded text-slate-600 inline-block shrink-0">
+                                          {orgRole}
                                         </code>
-                                        {!refDisplay.isValid && (
-                                          <Tooltip>
-                                            <TooltipTrigger asChild>
-                                              <span className="text-red-500 text-xs cursor-help shrink-0">⚠</span>
-                                            </TooltipTrigger>
-                                            <TooltipContent>
-                                              <p className="text-xs">Invalid IATI organization identifier format</p>
-                                            </TooltipContent>
-                                          </Tooltip>
-                                        )}
-                                      </>
+                                        <span className="text-slate-600">{roleName}</span>
+                                      </div>
+                                    ) : (
+                                      <span className="text-slate-400">-</span>
+                                    )}
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                        </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Column 2: Classifications */}
+                <div>
+                  {(activity.aidType || activity.defaultAidType || activity.flowType || activity.financeType || activity.tiedStatus || activity.activityScope || activity.collaborationType || activity.hierarchy || activity.currency || activity.defaultCurrency || activity.status) && (
+                    <div>
+                      <div className="text-[10px] uppercase tracking-wide text-slate-500 font-semibold mb-1.5">Classifications</div>
+                      <div className="border border-slate-200 rounded-md overflow-hidden">
+                        <table className="w-full text-[10px] border-collapse">
+                          <thead className="bg-slate-50/80 border-b border-slate-200">
+                            <tr>
+                              <th className="px-2 py-1 text-[9px] uppercase tracking-wide font-semibold text-slate-600 text-left align-top">Classification</th>
+                              <th className="px-2 py-1 text-[9px] uppercase tracking-wide font-semibold text-slate-600 text-left align-top">Detail</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                          {(activity.currency || activity.defaultCurrency) && (() => {
+                            const currencyCode = activity.currency || activity.defaultCurrency || '';
+                            const currency = getCurrencyByCode(currencyCode);
+                            const currencyName = currency?.name || '';
+                            return (
+                              <tr key="currency" className="border-b border-slate-100">
+                                <td className="px-2 py-1 text-slate-600 whitespace-nowrap align-top">Currency:</td>
+                                <td className="px-2 py-1">
+                                  <div className="flex items-center gap-1.5">
+                                    <code className="text-[9px] font-mono bg-slate-100 px-1 py-0.5 rounded text-slate-700">
+                                      {currencyCode}
+                                    </code>
+                                    {currencyName && (
+                                      <span className="text-slate-900">{currencyName}</span>
                                     )}
                                   </div>
                                 </td>
                               </tr>
-                              {org.type && (() => {
-                                const typeLabel = getOrganizationTypeLabel(org.type);
-                                return (
-                                  <tr>
-                                    <td className="px-2 py-1 text-slate-600 whitespace-nowrap align-top">Type:</td>
-                                    <td className="px-2 py-1">
-                                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-medium bg-green-100 text-green-700">
-                                        {typeLabel?.name}
-                                      </span>
-                                    </td>
-                                  </tr>
-                                );
-                              })()}
-                            </React.Fragment>
-                          );
-                        })}
-                        {implementingOrgs.length > 3 && (
-                          <tr>
-                            <td colSpan={2} className="px-2 py-1 text-xs text-slate-500">
-                              and {implementingOrgs.length - 3} more...
-                            </td>
-                          </tr>
-                        )}
-                      </tbody>
-                    </table>
+                            );
+                          })()}
+                          {activity.status && (() => {
+                            const statusInfo = getActivityStatusByCode(activity.status);
+                            const statusName = statusInfo?.name || activity.statusNarrative || '';
+                            return (
+                              <tr key="status" className="border-b border-slate-100">
+                                <td className="px-2 py-1 text-slate-600 whitespace-nowrap align-top">Status:</td>
+                                <td className="px-2 py-1">
+                                  <div className="flex items-center gap-1.5">
+                                    <code className="text-[9px] font-mono bg-slate-100 px-1 py-0.5 rounded text-slate-700">
+                                      {activity.status}
+                                    </code>
+                                    {statusName && (
+                                      <span className="text-slate-900">{statusName}</span>
+                                    )}
+                                  </div>
+                                </td>
+                              </tr>
+                            );
+                          })()}
+                          {(activity.aidType || activity.defaultAidType) && (() => {
+                            const aidTypeCode = activity.aidType || activity.defaultAidType;
+                            const label = getAidTypeLabel(aidTypeCode);
+                            return (
+                              <tr key="aidType" className="border-b border-slate-100">
+                                <td className="px-2 py-1 text-slate-600 whitespace-nowrap align-top">Aid Type:</td>
+                                <td className="px-2 py-1">
+                                  <div className="flex items-center gap-1.5">
+                                    <code className="text-[9px] font-mono bg-slate-100 px-1 py-0.5 rounded text-slate-700">
+                                      {label?.code || aidTypeCode}
+                                    </code>
+                                    <span className="text-slate-900">{label?.name || activity.aidTypeName || aidTypeCode}</span>
+                                  </div>
+                                </td>
+                              </tr>
+                            );
+                          })()}
+                          {activity.flowType && (() => {
+                            const label = getFlowTypeLabel(activity.flowType);
+                            return (
+                              <tr key="flowType" className="border-b border-slate-100">
+                                <td className="px-2 py-1 text-slate-600 whitespace-nowrap align-top">Flow Type:</td>
+                                <td className="px-2 py-1">
+                                  <div className="flex items-center gap-1.5">
+                                    <code className="text-[9px] font-mono bg-slate-100 px-1 py-0.5 rounded text-slate-700">
+                                      {label?.code || activity.flowType}
+                                    </code>
+                                    <span className="text-slate-900">{label?.name || activity.flowTypeName || activity.flowType}</span>
+                                  </div>
+                                </td>
+                              </tr>
+                            );
+                          })()}
+                          {activity.financeType && (() => {
+                            const label = getFinanceTypeLabel(activity.financeType);
+                            return (
+                              <tr key="financeType" className="border-b border-slate-100">
+                                <td className="px-2 py-1 text-slate-600 whitespace-nowrap align-top">Finance Type:</td>
+                                <td className="px-2 py-1">
+                                  <div className="flex items-center gap-1.5">
+                                    <code className="text-[9px] font-mono bg-slate-100 px-1 py-0.5 rounded text-slate-700">
+                                      {label?.code || activity.financeType}
+                                    </code>
+                                    <span className="text-slate-900">{label?.name || activity.financeTypeName || activity.financeType}</span>
+                                  </div>
+                                </td>
+                              </tr>
+                            );
+                          })()}
+                          {activity.tiedStatus && (() => {
+                            const label = getTiedStatusLabel(activity.tiedStatus);
+                            return (
+                              <tr key="tiedStatus" className="border-b border-slate-100">
+                                <td className="px-2 py-1 text-slate-600 whitespace-nowrap align-top">Tied Status:</td>
+                                <td className="px-2 py-1">
+                                  <div className="flex items-center gap-1.5">
+                                    <code className="text-[9px] font-mono bg-slate-100 px-1 py-0.5 rounded text-slate-700">
+                                      {label?.code || activity.tiedStatus}
+                                    </code>
+                                    <span className="text-slate-900">{label?.name || activity.tiedStatusName || activity.tiedStatus}</span>
+                                  </div>
+                                </td>
+                              </tr>
+                            );
+                          })()}
+                          {activity.activityScope && (() => {
+                            // activityScope might be a code (e.g., "4") or a narrative (e.g., "National")
+                            // Try to find it as a code first, then as a name
+                            const scopeItem = IATI_ACTIVITY_SCOPE[0]?.types.find(t =>
+                              t.code === activity.activityScope || t.name.toLowerCase() === activity.activityScope.toLowerCase()
+                            );
+                            return (
+                              <tr key="scope" className="border-b border-slate-100">
+                                <td className="py-1 pr-2 text-slate-600 whitespace-nowrap align-top">Scope:</td>
+                                <td className="py-1">
+                                  <div className="flex items-center gap-1.5">
+                                    <code className="text-[9px] font-mono bg-slate-100 px-1 py-0.5 rounded text-slate-700">
+                                      {scopeItem?.code || activity.activityScope}
+                                    </code>
+                                    <span className="text-slate-900">{scopeItem?.name || activity.activityScope}</span>
+                                  </div>
+                                </td>
+                              </tr>
+                            );
+                          })()}
+                          {activity.collaborationType && (() => {
+                            // collaborationType might be a code (e.g., "2") or a narrative (e.g., "Multilateral (inflows)")
+                            const label = getCollaborationTypeLabel(activity.collaborationType);
+                            return (
+                              <tr key="collaboration" className="border-b border-slate-100">
+                                <td className="py-1 pr-2 text-slate-600 whitespace-nowrap align-top">Collaboration:</td>
+                                <td className="py-1">
+                                  <div className="flex items-center gap-1.5">
+                                    <code className="text-[9px] font-mono bg-slate-100 px-1 py-0.5 rounded text-slate-700">
+                                      {label?.code || activity.collaborationType}
+                                    </code>
+                                    <span className="text-slate-900">{label?.name || activity.collaborationType}</span>
+                                  </div>
+                                </td>
+                              </tr>
+                            );
+                          })()}
+                          {activity.hierarchy && (() => {
+                            // Hierarchy values: 1 = Parent activity, 2 = Child activity
+                            const hierarchyLabels: Record<string, string> = {
+                              '1': 'Parent activity',
+                              '2': 'Child activity'
+                            };
+                            const hierarchyName = activity.hierarchyName || hierarchyLabels[String(activity.hierarchy)] || '';
+                            return (
+                              <tr key="hierarchy" className="border-b border-slate-100">
+                                <td className="py-1 pr-2 text-slate-600 whitespace-nowrap align-top">Hierarchy:</td>
+                                <td className="py-1">
+                                  <div className="flex items-center gap-1.5">
+                                    <code className="text-[9px] font-mono bg-slate-100 px-1 py-0.5 rounded text-slate-700">
+                                      {activity.hierarchy}
+                                    </code>
+                                    {hierarchyName && (
+                                      <span className="text-slate-900">{hierarchyName}</span>
+                                    )}
+                                  </div>
+                                </td>
+                              </tr>
+                            );
+                          })()}
+                        </tbody>
+                      </table>
+                      </div>
                     </div>
+                  )}
                 </div>
-              )}
 
-                {activity.recipientCountries && activity.recipientCountries.length > 0 && (
-                  <div>
-                    <div className="text-[10px] uppercase tracking-wide text-slate-500 font-semibold mb-1.5">Recipient Country</div>
-              <div className="space-y-1">
-                      {activity.recipientCountries.slice(0, 2).map((country: any, idx: number) => {
-                        // Handle both string codes/names and objects with code property
-                        let countryCodeRaw: string = '';
-                        let countryName: string = '';
-                        
-                        if (typeof country === 'string') {
-                          // Could be a code (e.g., "KH") or a name (e.g., "Cambodia")
-                          countryCodeRaw = country;
-                          // Try to find if it's a code first
-                          const countryFromCode = countries.find(c => c.code === country.toUpperCase());
-                          if (countryFromCode) {
-                            // It's a code
-                            countryName = countryFromCode.name;
-                          } else {
-                            // It's likely a name, try to find the code
-                            const codeFromName = getCountryCodeFromName(country);
-                            if (codeFromName) {
-                              countryCodeRaw = codeFromName;
-                              countryName = country; // Use the original name
-                            } else {
-                              // Can't find code, just use the string as-is
-                              countryName = country;
-                            }
-                          }
-                        } else {
-                          // It's an object
-                          countryCodeRaw = country?.code || country?.iso2 || '';
-                          countryName = country?.name || getCountryName(countryCodeRaw) || countryCodeRaw;
-                        }
-
-                        const countryCode = countryCodeRaw?.toUpperCase()?.trim() || '';
-
-                        return (
-                          <div key={idx} className="flex items-center gap-1.5 text-sm font-medium text-slate-900">
-                            {countryCode && countryCode.length === 2 && (
-                              <img
-                                src={`https://flagcdn.com/w20/${countryCode.toLowerCase()}.png`}
-                                alt={`${countryName || countryCode} flag`}
-                                className="w-4 h-3 object-cover rounded-sm shrink-0"
-                                onError={(e) => {
-                                  const target = e.target as HTMLImageElement;
-                                  target.style.display = 'none';
-                                }}
-                              />
-                            )}
-                            <span>{countryName || countryCodeRaw || country}</span>
-                          </div>
-                        );
-                      })}
-                      {activity.recipientCountries.length > 2 && (
-                        <div className="text-xs text-slate-500">
-                          +{activity.recipientCountries.length - 2} more
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )}
-
-                {/* Dates Section */}
-                {(activity.startDatePlanned || activity.startDateActual || activity.endDatePlanned || activity.endDateActual) && (
-                  <div>
-                    <div className="text-[10px] uppercase tracking-wide text-slate-500 font-semibold mb-1.5">Dates</div>
-                    <table className="w-full text-[10px] border-collapse">
-                      <tbody>
-                        {activity.startDatePlanned && (
-                          <tr>
-                            <td className="py-1 pr-2 text-slate-600 whitespace-nowrap align-top">Planned Start:</td>
-                            <td className="py-1">
-                              <span className="text-slate-900">{formatDate(activity.startDatePlanned)}</span>
-                            </td>
-                          </tr>
-                        )}
-                        {activity.startDateActual && (
-                          <tr>
-                            <td className="py-1 pr-2 text-slate-600 whitespace-nowrap align-top">Actual Start:</td>
-                            <td className="py-1">
-                              <span className="text-slate-900">{formatDate(activity.startDateActual)}</span>
-                            </td>
-                          </tr>
-                        )}
-                        {activity.endDatePlanned && (
-                          <tr>
-                            <td className="py-1 pr-2 text-slate-600 whitespace-nowrap align-top">Planned End:</td>
-                            <td className="py-1">
-                              <span className="text-slate-900">{formatDate(activity.endDatePlanned)}</span>
-                            </td>
-                          </tr>
-                        )}
-                        {activity.endDateActual && (
-                          <tr>
-                            <td className="py-1 pr-2 text-slate-600 whitespace-nowrap align-top">Actual End:</td>
-                            <td className="py-1">
-                              <span className="text-slate-900">{formatDate(activity.endDateActual)}</span>
-                            </td>
-                          </tr>
-                        )}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
-              </div>
-
-              {/* Column 2: Classifications */}
-              <div>
-                {(activity.aidType || activity.defaultAidType || activity.flowType || activity.financeType || activity.tiedStatus || activity.activityScope || activity.collaborationType || activity.hierarchy || activity.currency || activity.defaultCurrency || activity.status) && (
-                  <div>
-                    <div className="text-[10px] uppercase tracking-wide text-slate-500 font-semibold mb-1.5">Classifications</div>
-                    <div className="border border-slate-200 rounded-md overflow-hidden">
-                      <table className="w-full text-[10px] border-collapse">
-                        <thead className="bg-slate-50/80 border-b border-slate-200">
-                          <tr>
-                            <th className="px-2 py-1 text-[9px] uppercase tracking-wide font-semibold text-slate-600 text-left align-top">Classification</th>
-                            <th className="px-2 py-1 text-[9px] uppercase tracking-wide font-semibold text-slate-600 text-left align-top">Detail</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                        {(activity.currency || activity.defaultCurrency) && (() => {
-                          const currencyCode = activity.currency || activity.defaultCurrency || '';
-                          const currency = getCurrencyByCode(currencyCode);
-                          const currencyName = currency?.name || '';
-                          return (
-                            <tr key="currency" className="border-b border-slate-100">
-                              <td className="px-2 py-1 text-slate-600 whitespace-nowrap align-top">Currency:</td>
-                              <td className="px-2 py-1">
-                                <div className="flex items-center gap-1.5">
-                                  <code className="text-[9px] font-mono bg-slate-100 px-1 py-0.5 rounded text-slate-700">
-                                    {currencyCode}
-                                  </code>
-                                  {currencyName && (
-                                    <span className="text-slate-900">{currencyName}</span>
-                                  )}
-                                </div>
-                              </td>
-                            </tr>
-                          );
-                        })()}
-                        {activity.status && (() => {
-                          const statusInfo = getActivityStatusByCode(activity.status);
-                          const statusName = statusInfo?.name || activity.statusNarrative || '';
-                          return (
-                            <tr key="status" className="border-b border-slate-100">
-                              <td className="px-2 py-1 text-slate-600 whitespace-nowrap align-top">Status:</td>
-                              <td className="px-2 py-1">
-                                <div className="flex items-center gap-1.5">
-                                  <code className="text-[9px] font-mono bg-slate-100 px-1 py-0.5 rounded text-slate-700">
-                                    {activity.status}
-                                  </code>
-                                  {statusName && (
-                                    <span className="text-slate-900">{statusName}</span>
-                                  )}
-                                </div>
-                              </td>
-                            </tr>
-                          );
-                        })()}
-                        {(activity.aidType || activity.defaultAidType) && (() => {
-                          const aidTypeCode = activity.aidType || activity.defaultAidType;
-                          const label = getAidTypeLabel(aidTypeCode);
-                          return (
-                            <tr key="aidType" className="border-b border-slate-100">
-                              <td className="px-2 py-1 text-slate-600 whitespace-nowrap align-top">Aid Type:</td>
-                              <td className="px-2 py-1">
-                                <div className="flex items-center gap-1.5">
-                                  <code className="text-[9px] font-mono bg-slate-100 px-1 py-0.5 rounded text-slate-700">
-                                    {label?.code || aidTypeCode}
-                                  </code>
-                                  <span className="text-slate-900">{label?.name || activity.aidTypeName || aidTypeCode}</span>
-                                </div>
-                              </td>
-                            </tr>
-                          );
-                        })()}
-                        {activity.flowType && (() => {
-                          const label = getFlowTypeLabel(activity.flowType);
-                          return (
-                            <tr key="flowType" className="border-b border-slate-100">
-                              <td className="px-2 py-1 text-slate-600 whitespace-nowrap align-top">Flow Type:</td>
-                              <td className="px-2 py-1">
-                                <div className="flex items-center gap-1.5">
-                                  <code className="text-[9px] font-mono bg-slate-100 px-1 py-0.5 rounded text-slate-700">
-                                    {label?.code || activity.flowType}
-                                  </code>
-                                  <span className="text-slate-900">{label?.name || activity.flowTypeName || activity.flowType}</span>
-                                </div>
-                              </td>
-                            </tr>
-                          );
-                        })()}
-                        {activity.financeType && (() => {
-                          const label = getFinanceTypeLabel(activity.financeType);
-                          return (
-                            <tr key="financeType" className="border-b border-slate-100">
-                              <td className="px-2 py-1 text-slate-600 whitespace-nowrap align-top">Finance Type:</td>
-                              <td className="px-2 py-1">
-                                <div className="flex items-center gap-1.5">
-                                  <code className="text-[9px] font-mono bg-slate-100 px-1 py-0.5 rounded text-slate-700">
-                                    {label?.code || activity.financeType}
-                                  </code>
-                                  <span className="text-slate-900">{label?.name || activity.financeTypeName || activity.financeType}</span>
-                                </div>
-                              </td>
-                            </tr>
-                          );
-                        })()}
-                        {activity.tiedStatus && (() => {
-                          const label = getTiedStatusLabel(activity.tiedStatus);
-                          return (
-                            <tr key="tiedStatus" className="border-b border-slate-100">
-                              <td className="px-2 py-1 text-slate-600 whitespace-nowrap align-top">Tied Status:</td>
-                              <td className="px-2 py-1">
-                                <div className="flex items-center gap-1.5">
-                                  <code className="text-[9px] font-mono bg-slate-100 px-1 py-0.5 rounded text-slate-700">
-                                    {label?.code || activity.tiedStatus}
-                                  </code>
-                                  <span className="text-slate-900">{label?.name || activity.tiedStatusName || activity.tiedStatus}</span>
-                                </div>
-                              </td>
-                            </tr>
-                          );
-                        })()}
-                        {activity.activityScope && (() => {
-                          // activityScope might be a code (e.g., "4") or a narrative (e.g., "National")
-                          // Try to find it as a code first, then as a name
-                          const scopeItem = IATI_ACTIVITY_SCOPE[0]?.types.find(t =>
-                            t.code === activity.activityScope || t.name.toLowerCase() === activity.activityScope.toLowerCase()
-                          );
-                          return (
-                            <tr key="scope" className="border-b border-slate-100">
-                              <td className="py-1 pr-2 text-slate-600 whitespace-nowrap align-top">Scope:</td>
-                              <td className="py-1">
-                                <div className="flex items-center gap-1.5">
-                                  <code className="text-[9px] font-mono bg-slate-100 px-1 py-0.5 rounded text-slate-700">
-                                    {scopeItem?.code || activity.activityScope}
-                                  </code>
-                                  <span className="text-slate-900">{scopeItem?.name || activity.activityScope}</span>
-                                </div>
-                              </td>
-                            </tr>
-                          );
-                        })()}
-                        {activity.collaborationType && (() => {
-                          // collaborationType might be a code (e.g., "2") or a narrative (e.g., "Multilateral (inflows)")
-                          const label = getCollaborationTypeLabel(activity.collaborationType);
-                          return (
-                            <tr key="collaboration" className="border-b border-slate-100">
-                              <td className="py-1 pr-2 text-slate-600 whitespace-nowrap align-top">Collaboration:</td>
-                              <td className="py-1">
-                                <div className="flex items-center gap-1.5">
-                                  <code className="text-[9px] font-mono bg-slate-100 px-1 py-0.5 rounded text-slate-700">
-                                    {label?.code || activity.collaborationType}
-                                  </code>
-                                  <span className="text-slate-900">{label?.name || activity.collaborationType}</span>
-                                </div>
-                              </td>
-                            </tr>
-                          );
-                        })()}
-                        {activity.hierarchy && (() => {
-                          // Hierarchy values: 1 = Parent activity, 2 = Child activity
-                          const hierarchyLabels: Record<string, string> = {
-                            '1': 'Parent activity',
-                            '2': 'Child activity'
-                          };
-                          const hierarchyName = activity.hierarchyName || hierarchyLabels[String(activity.hierarchy)] || '';
-                          return (
-                            <tr key="hierarchy" className="border-b border-slate-100">
-                              <td className="py-1 pr-2 text-slate-600 whitespace-nowrap align-top">Hierarchy:</td>
-                              <td className="py-1">
-                                <div className="flex items-center gap-1.5">
-                                  <code className="text-[9px] font-mono bg-slate-100 px-1 py-0.5 rounded text-slate-700">
-                                    {activity.hierarchy}
-                                  </code>
-                                  {hierarchyName && (
-                                    <span className="text-slate-900">{hierarchyName}</span>
-                                  )}
-                                </div>
-                              </td>
-                            </tr>
-                          );
-                        })()}
-                      </tbody>
-                    </table>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Column 3: Financial Summary */}
-              <div>
-                <div className="text-[10px] uppercase tracking-wide text-slate-500 font-semibold mb-1.5">Financial Summary</div>
+                {/* Column 3: Financial Summary */}
+                <div>
+                  <div className="text-[10px] uppercase tracking-wide text-slate-500 font-semibold mb-1.5">Financial Summary</div>
 
                 {/* Multi-currency warning - shown at top if applicable */}
                 {hasMultipleCurrencies && (
@@ -1464,195 +1485,6 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
                   </table>
                 </div>
               </div>
-            </div>
-          </div>
-        </div>
-        
-        {/* Expand/Collapse Button */}
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            setIsExpanded(!isExpanded);
-          }}
-          className="mt-3 flex items-center gap-1 text-xs text-slate-600 hover:text-slate-900 transition-colors"
-        >
-          {isExpanded ? (
-            <>
-              <ChevronUp className="h-3 w-3" />
-              <span>Show less</span>
-            </>
-          ) : (
-            <>
-              <ChevronDown className="h-3 w-3" />
-              <span>Show more details</span>
-            </>
-          )}
-        </button>
-      </div>
-      
-      {/* Expanded View - 3 column grid layout */}
-      {isExpanded && (
-        <div className="mt-4 pt-4 border-t border-slate-200 bg-slate-50 rounded-b-lg px-4 pb-4 overflow-hidden">
-          <div className="grid grid-cols-3 gap-x-6 gap-y-3 text-xs min-w-0 w-full max-w-full">
-            {/* Description - spans all 3 columns */}
-            {activity.description && (() => {
-              const cleanDescription = activity.description.replace(/<[^>]*>/g, '');
-              // Estimate if content is likely to exceed 6 lines (roughly 300-400 chars for 6 lines)
-              const shouldTruncate = cleanDescription.length > 300;
-
-              return (
-                <div className="col-span-3 min-w-0 max-w-full overflow-hidden">
-                  <span className="text-slate-700 font-semibold block mb-2">Description:</span>
-                <div className={`text-slate-900 whitespace-pre-wrap break-words max-w-full leading-relaxed ${shouldTruncate && !isDescriptionExpanded ? 'line-clamp-6' : ''}`} style={{ wordBreak: 'break-word', overflowWrap: 'break-word' }}>
-                    {cleanDescription}
-                    {shouldTruncate && (
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setIsDescriptionExpanded(!isDescriptionExpanded);
-                        }}
-                        className="ml-2 text-xs text-slate-600 hover:text-slate-900 transition-colors"
-                      >
-                        {isDescriptionExpanded ? 'show less' : 'show more'}
-                      </button>
-                    )}
-                </div>
-              </div>
-              );
-            })()}
-
-            {activity.sectors && activity.sectors.length > 0 && (
-              <div className="col-span-1">
-                <span className="text-slate-700 font-semibold block mb-2">Sectors:</span>
-                <div className="border border-slate-200 rounded-md overflow-hidden">
-                  <table className="w-full text-[10px]">
-                    <thead className="bg-slate-50/80 border-b border-slate-200">
-                      <tr>
-                        <th className="text-left px-2 py-1 text-[9px] uppercase tracking-wide font-semibold text-slate-600">Code</th>
-                        <th className="text-left px-2 py-1 text-[9px] uppercase tracking-wide font-semibold text-slate-600">Name</th>
-                        <th className="text-right px-2 py-1 text-[9px] uppercase tracking-wide font-semibold text-slate-600">%</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100">
-                      {(Array.isArray(activity.sectors) ? activity.sectors : []).map((sector: any, idx: number) => {
-                        const sectorCode = typeof sector === 'string' ? sector : sector.code || sector;
-                        const sectorName = typeof sector === 'object' && sector.name ? sector.name : (typeof sector === 'string' ? null : null);
-                        const sectorPercentage = typeof sector === 'object' && sector.percentage !== undefined ? sector.percentage : null;
-                        return (
-                          <tr key={idx} className="hover:bg-slate-50/50 transition-colors">
-                            <td className="px-2 py-1">
-                              <code className="text-[9px] font-mono bg-slate-100 px-1.5 py-0.5 rounded text-slate-700">
-                                {sectorCode}
-                              </code>
-                            </td>
-                            <td className="px-2 py-1 text-slate-900 break-words">
-                              {sectorName && sectorName !== sectorCode ? sectorName : '-'}
-                            </td>
-                            <td className="px-2 py-1 text-right text-slate-600 font-medium">
-                              {sectorPercentage !== null && sectorPercentage !== undefined ? `${sectorPercentage}%` : '-'}
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            )}
-
-            {participatingOrgsToUse.length > 0 && (() => {
-              const roleGroups: Record<string, Array<{ name: string; ref?: string }>> = {};
-              participatingOrgsToUse.forEach((org: any) => {
-                // Handle both parsed XML format (role as string) and search API format
-                const role = org.role || org.iati_role_code;
-                
-                if (role) {
-                  const roleStr = String(role);
-                  if (!roleGroups[roleStr]) {
-                    roleGroups[roleStr] = [];
-                  }
-                  
-                  roleGroups[roleStr].push({ 
-                    name: org.name || org.narrative || 'Unknown', 
-                    ref: org.validated_ref || org.ref 
-                  });
-                }
-              });
-              
-              return (
-                <div className="col-span-1">
-                  <span className="text-slate-700 font-semibold block mb-1">Participating Organisations:</span>
-                  <div className="space-y-3">
-                    {Object.entries(roleGroups).map(([roleCode, orgs]) => {
-                      const roleName = getOrganizationRoleName(roleCode);
-                      return orgs.map((org, idx) => (
-                        <div key={`${roleCode}-${idx}`} className="text-slate-900">
-                          <span className="font-semibold text-slate-600">{roleName}:</span>
-                          {' '}
-                          <span>{org.name}</span>
-                          {(() => {
-                            const refDisplay = getOrgRefDisplay(org.ref);
-                            if (!refDisplay.normalized) return null;
-
-                            return (
-                          <>
-                            {' '}
-                                <code className={`text-xs font-mono bg-slate-100 px-1.5 py-0.5 rounded text-slate-700 ${!refDisplay.isValid ? 'border border-red-300' : ''}`}>
-                                  {refDisplay.normalized}
-                                </code>
-                                {!refDisplay.isValid && (
-                                  <Tooltip>
-                                    <TooltipTrigger asChild>
-                                      <span className="text-red-500 text-xs cursor-help ml-1">⚠</span>
-                                    </TooltipTrigger>
-                                    <TooltipContent>
-                                      <p className="text-xs">Invalid IATI organization identifier format</p>
-                                    </TooltipContent>
-                                  </Tooltip>
-                                )}
-                              </>
-                            );
-                          })()}
-                        </div>
-                      ));
-                    })}
-                  </div>
-                      </div>
-                    );
-            })()}
-
-            {/* Dates Section - spans all 3 columns */}
-            {(activity.startDatePlanned || activity.startDateActual || activity.endDatePlanned || activity.endDateActual) && (
-              <div className="col-span-3">
-                <span className="text-slate-700 font-semibold block mb-2">Dates:</span>
-                <div className="grid grid-cols-2 gap-x-6 gap-y-2">
-                  {activity.startDatePlanned && (
-                    <div>
-                      <span className="text-slate-600 text-xs block mb-1">Planned Start:</span>
-                      <div className="text-slate-900">{formatDate(activity.startDatePlanned)}</div>
-                    </div>
-                  )}
-                  {activity.startDateActual && (
-                    <div>
-                      <span className="text-slate-600 text-xs block mb-1">Actual Start:</span>
-                      <div className="text-slate-900">{formatDate(activity.startDateActual)}</div>
-                    </div>
-                  )}
-                  {activity.endDatePlanned && (
-                    <div>
-                      <span className="text-slate-600 text-xs block mb-1">Planned End:</span>
-                      <div className="text-slate-900">{formatDate(activity.endDatePlanned)}</div>
-                    </div>
-                  )}
-                  {activity.endDateActual && (
-                    <div>
-                      <span className="text-slate-600 text-xs block mb-1">Actual End:</span>
-                      <div className="text-slate-900">{formatDate(activity.endDateActual)}</div>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
 
             {activity.collaborationType && (
               <div className="pb-4 border-b border-slate-200">
@@ -1666,9 +1498,11 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
                 </div>
               </div>
             )}
+            </div>
           </div>
         </div>
-      )}
+      </div>
+    </div>
     </div>
   );
 });
@@ -2518,7 +2352,8 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
         try {
           const docsResponse = await fetch(`/api/activities/${activityId}/documents`);
           if (docsResponse.ok) {
-            const docs = await docsResponse.json();
+            const data = await docsResponse.json();
+            const docs = data.documents || [];
             setCurrentDocumentLinks(docs);
             console.log(`[IatiImportTab] Fetched ${docs.length} current document links`);
           }
@@ -2886,6 +2721,7 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
     let fetchedResults: any[] = [];
     let fetchedLoanStatuses: any[] = [];
     let fetchedLoanTerms: any = null;
+    let fetchedFss: any = null;
 
     if (activityId) {
       console.log('[IATI Import Debug] Fetching latest activity data before parsing');
@@ -3001,13 +2837,20 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
             })
             .catch((error) => console.warn('[IATI Import Debug] Failed to fetch humanitarian scopes:', error)),
 
-          // Fetch document links
-          fetch(`/api/activities/${activityId}/documents`)
+          // Fetch document links (with cache-busting)
+          fetch(`/api/activities/${activityId}/documents?_=${Date.now()}`)
             .then(async (res) => {
+              console.log(`[IATI Import Debug] Documents fetch response status: ${res.status} for activity: ${activityId}`);
               if (res.ok) {
-                fetchedDocumentLinks = await res.json();
+                const data = await res.json();
+                fetchedDocumentLinks = data.documents || [];
                 setCurrentDocumentLinks(fetchedDocumentLinks);
-                console.log(`[IATI Import Debug] Fetched ${fetchedDocumentLinks.length} current document links`);
+                console.log(`[IATI Import Debug] Fetched ${fetchedDocumentLinks.length} current document links:`, 
+                  fetchedDocumentLinks.map((d: any) => ({ url: d.url, title: d.title }))
+                );
+              } else {
+                const errorText = await res.text();
+                console.error(`[IATI Import Debug] Documents fetch failed with status ${res.status}:`, errorText);
               }
             })
             .catch((error) => console.warn('[IATI Import Debug] Failed to fetch document links:', error)),
@@ -3070,6 +2913,18 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
               }
             })
             .catch((error) => console.warn('[IATI Import Debug] Failed to fetch loan statuses:', error)),
+
+          // Fetch FSS (Forward Spending Survey)
+          fetch(`/api/activities/${activityId}/fss`)
+            .then(async (res) => {
+              if (res.ok) {
+                fetchedFss = await res.json();
+                if (fetchedFss) {
+                  console.log(`[IATI Import Debug] Fetched current FSS with ${fetchedFss.forecasts?.length || 0} forecasts`);
+                }
+              }
+            })
+            .catch((error) => console.warn('[IATI Import Debug] Failed to fetch FSS:', error)),
 
           // Fetch loan terms (financing terms)
           supabase
@@ -4556,34 +4411,50 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
         const description = warnings.length > 0
           ? `Forward Spend - ${warnings.join(', ')}`
           : 'Forward Spend - IATI compliant ✓';
+
+        // Build current FSS value from fetched data
+        let currentFssValue = null;
+        let currentFssSummary = null;
+        if (fetchedFss) {
+          const currentPriorityLabel = fetchedFss.priority 
+            ? priorityLabels[fetchedFss.priority] || `Priority ${fetchedFss.priority}`
+            : '';
+          currentFssSummary = [
+            fetchedFss.extraction_date && `Extraction: ${fetchedFss.extraction_date}`,
+            currentPriorityLabel && `Priority: ${currentPriorityLabel}`,
+            fetchedFss.phaseout_year && `Phaseout: ${fetchedFss.phaseout_year}`,
+            fetchedFss.forecasts?.length && `${fetchedFss.forecasts.length} forecast(s)`
+          ].filter(Boolean).join(' | ');
+          
+          // Store full current FSS data for expanded view
+          currentFssValue = {
+            extractionDate: fetchedFss.extraction_date,
+            priority: fetchedFss.priority,
+            phaseoutYear: fetchedFss.phaseout_year,
+            forecasts: fetchedFss.forecasts?.map((f: any) => ({
+              year: f.forecast_year,
+              value: f.amount,
+              currency: f.currency,
+              valueDate: f.value_date
+            })) || [],
+            displayText: currentFssSummary
+          };
+        }
+
+        // Check for conflict (values differ)
+        const hasFssConflict = warnings.length > 0 || !!(currentFssValue && currentFssSummary !== fssSummary);
         
         fields.push({
           fieldName: 'Forward Spend',
           iatiPath: 'iati-activity/fss',
-          currentValue: null,
+          currentValue: currentFssValue,
           importValue: fssSummary,
           selected: isFieldAllowedByPreferences('iati-activity/fss') && warnings.length === 0,
-          hasConflict: false,
+          hasConflict: hasFssConflict,
           tab: 'forward-spending-survey',
           description: description,
           isFssItem: true,
           fssData: parsedActivity.fss
-        });
-      }
-
-      // === DOCUMENT LINKS ===
-      
-      if (parsedActivity.document_links && parsedActivity.document_links.length > 0) {
-        fields.push({
-          fieldName: `Document Links (${parsedActivity.document_links.length})`,
-          iatiPath: 'iati-activity/document-link',
-          currentValue: null,
-          importValue: `${parsedActivity.document_links.length} document${parsedActivity.document_links.length > 1 ? 's' : ''} to import`,
-          selected: true,
-          hasConflict: false,
-          tab: 'documents',
-          description: 'Activity-level document links from XML',
-          documentData: parsedActivity.document_links
         });
       }
 
@@ -5401,13 +5272,19 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
             tag.narrative && `Description: ${tag.narrative}`
           ].filter(Boolean).join(' | ');
 
+          // Check if this import tag has a matching existing tag (by vocabulary + code)
+          const hasMatchingExistingTag = existingTags.some((existingTag: any) => 
+            String(existingTag.vocabulary) === String(tag.vocabulary) &&
+            String(existingTag.code) === String(tag.code)
+          );
+          
           fields.push({
             fieldName: `Tag ${tagIndex + 1}`,
             iatiPath: `iati-activity/tag[${tagIndex + 1}]`,
             currentValue: existingTags.length > 0 ? existingTags.map(t => t.name).join(', ') : 'None',
             importValue: tagSummary,
             selected: isFieldAllowedByPreferences('iati-activity/tag'),
-            hasConflict: existingTags.length > 0,
+            hasConflict: existingTags.length > 0 && !hasMatchingExistingTag,
             tab: 'tags',
             description: `Tag ${tagIndex + 1} - ${tag.narrative || 'Unnamed tag'}`,
             isTagField: true,
@@ -5487,23 +5364,89 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
       // === DOCUMENT LINKS ===
 
       if (parsedActivity.document_links && parsedActivity.document_links.length > 0) {
-        // Get current value from database if exists
-        let currentDocsValue = null;
+        // Transform fetched documents to match the format expected by the display
+        const transformedCurrentDocs: any[] = [];
         if (fetchedDocumentLinks && fetchedDocumentLinks.length > 0) {
-          currentDocsValue = `${fetchedDocumentLinks.length} existing document(s)`;
+          fetchedDocumentLinks.forEach((doc: any) => {
+            // Extract title - handle both array format and string
+            const title = Array.isArray(doc.title) 
+              ? doc.title[0]?.text || doc.title.find((t: any) => t.text)?.text || 'Untitled'
+              : (doc.title || 'Untitled');
+            
+            // Extract category_code - use categoryCode (singular) or first from categoryCodes array
+            const category_code = doc.categoryCode || (Array.isArray(doc.categoryCodes) && doc.categoryCodes.length > 0 
+              ? doc.categoryCodes[0] 
+              : undefined);
+            
+            transformedCurrentDocs.push({
+              url: doc.url,
+              format: doc.format,
+              title: title,
+              description: Array.isArray(doc.description) 
+                ? doc.description[0]?.text || ''
+                : (doc.description || ''),
+              category_code: category_code,
+              language_code: Array.isArray(doc.languageCodes) && doc.languageCodes.length > 0
+                ? doc.languageCodes[0]
+                : (doc.languageCode || 'en'),
+              document_date: doc.documentDate
+            });
+          });
         }
 
-        fields.push({
-          fieldName: 'Document Links',
-          iatiPath: 'iati-activity/document-link',
-          currentValue: currentDocsValue,
-          importValue: parsedActivity.document_links,
-          selected: isFieldAllowedByPreferences('iati-activity/document-link'),
-          hasConflict: false,
-          tab: 'documents',
-          description: `${parsedActivity.document_links.length} document link(s) found in XML`,
-          category: 'documents',
-          documentData: parsedActivity.document_links
+        // URL normalization helper for matching
+        const normalizeUrl = (url: string | undefined) => 
+          url?.trim().toLowerCase().replace(/\/+$/, '') || '';
+
+        // Create individual field for each document
+        parsedActivity.document_links.forEach((doc: any, docIndex: number) => {
+          // Try to find matching document in current database by URL or title
+          let currentDocValue = null;
+          if (transformedCurrentDocs.length > 0) {
+            const importTitle = Array.isArray(doc.title) 
+              ? (doc.title[0]?.text || doc.title.find((t: any) => t.text)?.text || '')
+              : (doc.title || '');
+            
+            // Debug logging to help identify match issues
+            console.log(`[Document Link Match] Doc ${docIndex + 1}:`, {
+              importUrl: doc.url,
+              importTitle,
+              currentDocsCount: transformedCurrentDocs.length
+            });
+            
+            // Match by normalized URL or case-insensitive title
+            const matchingDoc = transformedCurrentDocs.find((currentDoc: any) => {
+              const urlMatch = normalizeUrl(currentDoc.url) === normalizeUrl(doc.url);
+              const titleMatch = currentDoc.title?.toLowerCase().trim() === importTitle?.toLowerCase().trim();
+              return urlMatch || titleMatch;
+            });
+            
+            if (matchingDoc) {
+              currentDocValue = matchingDoc;
+              console.log(`[Document Link Match] Found match for doc ${docIndex + 1}:`, matchingDoc.title);
+            }
+          }
+
+          // Create document summary for import value display - just show title in collapsed view
+          const docTitle = Array.isArray(doc.title) 
+            ? (doc.title[0]?.text || doc.title.find((t: any) => t.text)?.text || 'Untitled')
+            : (doc.title || 'Untitled');
+
+          fields.push({
+            fieldName: `Document Link`,
+            iatiPath: `iati-activity/document-link[${docIndex + 1}]`,
+            currentValue: currentDocValue,
+            importValue: docTitle,  // Just the title for collapsed view
+            selected: isFieldAllowedByPreferences('iati-activity/document-link'),
+            hasConflict: false,
+            tab: 'documents',
+            description: `Document Link - ${docTitle}`,
+            category: 'documents',
+            itemType: 'document',
+            itemIndex: docIndex,
+            itemData: doc,
+            documentData: [doc]  // Single document array for display compatibility
+          });
         });
       }
       
@@ -5782,35 +5725,36 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
         // Get relationship type labels for display
         const { getRelationshipTypeName } = await import('@/data/iati-relationship-types');
         
-        // Fetch existing linked activities to populate currentValue
+        // Fetch existing linked activities to populate currentValue (includes both internal and external links)
         let existingLinkedActivities: any[] = [];
         if (activityId) {
           try {
-            const linkedResponse = await fetch(`/api/activities/${activityId}/linked`);
+            const linkedResponse = await fetch(`/api/activities/${activityId}/related-activities`);
             if (linkedResponse.ok) {
               existingLinkedActivities = await linkedResponse.json();
-              console.log(`[IATI Import] Found ${existingLinkedActivities.length} existing linked activities`);
+              console.log(`[IATI Import] Found ${existingLinkedActivities.length} existing related activities (including external)`);
             }
           } catch (error) {
-            console.warn('[IATI Import] Failed to fetch existing linked activities:', error);
+            console.warn('[IATI Import] Failed to fetch existing related activities:', error);
           }
         }
         
         parsedActivity.relatedActivities.forEach((relatedActivity: any, index: number) => {
           const relationshipTypeLabel = getRelationshipTypeName(relatedActivity.type);
           
-          // Find matching existing linked activity by IATI identifier
+          // Find matching existing linked activity by IATI identifier (supports both internal and external links)
           const existingLink = existingLinkedActivities.find((link: any) =>
             link.iatiIdentifier === relatedActivity.ref
           );
 
           fields.push({
-            fieldName: `Related Activity ${index + 1}`,
+            fieldName: `Related Activity`,
             iatiPath: `iati-activity/related-activity[${index}]`,
             currentValue: existingLink ? {
               ref: existingLink.iatiIdentifier,
-              type: existingLink.relationshipType,
-              relationshipTypeLabel: existingLink.relationshipTypeLabel
+              type: existingLink.relationshipTypeCode || existingLink.relationshipType, // Use raw code if available
+              relationshipTypeLabel: existingLink.relationshipType, // Display name
+              isExternal: existingLink.isExternal || false
             } : null,
             importValue: {
               ref: relatedActivity.ref,
@@ -7185,6 +7129,9 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
     // Track whether transactions have already been imported server-side via /import-iati
     let didServerSideTransactionImport = false;
     
+    // Track whether related activities have already been imported server-side via /import-iati
+    let didServerSideRelatedActivitiesImport = false;
+    
     // Helper function for fetch with timeout
     const fetchWithTimeout = async (url: string, options: RequestInit = {}, timeoutMs: number = 30000): Promise<Response> => {
       const controller = new AbortController();
@@ -7508,6 +7455,19 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
         itemIndex: f.itemIndex,
         tab: f.tab
       })));
+      
+      // Check specifically for document fields
+      const documentFields = selectedFieldsList.filter(f => f.fieldName.startsWith('Document Link '));
+      console.log('📄 [IATI Import] DOCUMENT FIELDS SELECTED:', documentFields.length);
+      if (documentFields.length > 0) {
+        console.log('📄 [IATI Import] DOCUMENT FIELDS DETAILS:', documentFields.map(f => ({
+          fieldName: f.fieldName,
+          itemType: f.itemType,
+          hasItemData: !!f.itemData,
+          itemDataUrl: f.itemData?.url,
+          itemDataTitle: f.itemData?.title
+        })));
+      }
       console.log('🔍 [IATI Import] DIAGNOSTIC - Comprehensive Flags:', {
         transactions: updateData._importTransactions,
         budgets: updateData._importBudgets,
@@ -7972,6 +7932,11 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
               if (!updateData.importedRelatedActivities) updateData.importedRelatedActivities = [];
               updateData.importedRelatedActivities.push(field.importValue);
               console.log(`[IATI Import] Adding related activity for import:`, field.importValue);
+            } else if (field.fieldName.startsWith('Tag ') || field.fieldName === 'Tags') {
+              // Handle tag import - set flag to trigger server-side import
+              updateData._importTags = true;
+              console.log(`[IATI Import] 🏷️ Enabling tags import for field: ${field.fieldName}`);
+              console.log(`[IATI Import] 🏷️ parsedActivity?.tagClassifications:`, parsedActivity?.tagClassifications);
             } else
             if (field.fieldName === 'Policy Marker' || field.fieldName.startsWith('Policy Marker')) {
               // Handle individual policy marker import
@@ -8124,12 +8089,35 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
                 updateData.importedFss = field.fssData;
                 console.log('[IATI Import] Adding FSS for import');
               }
-            } else if (field.fieldName.startsWith('Document Links')) {
-              // Collect document links for import
-              if (parsedActivity?.document_links && parsedActivity.document_links.length > 0) {
-                updateData.importedDocuments = parsedActivity.document_links;
-                console.log('[IATI Import] Adding', parsedActivity.document_links.length, 'documents for import');
+            } else if (field.fieldName.startsWith('Document Link ') && field.itemType === 'document') {
+              // Handle individual document import
+              console.log(`[IATI Import] 📄 DOCUMENT FIELD MATCHED: ${field.fieldName}`);
+              console.log(`[IATI Import] 📄 Document field details:`, {
+                fieldName: field.fieldName,
+                itemType: field.itemType,
+                hasItemData: !!field.itemData,
+                itemData: field.itemData
+              });
+              if (!updateData.importedDocuments) updateData.importedDocuments = [];
+              if (field.itemData) {
+                updateData.importedDocuments.push(field.itemData);
+                console.log(`[IATI Import] 📄 Adding document ${field.itemIndex !== undefined ? field.itemIndex + 1 : 'unknown'} for import:`, {
+                  url: field.itemData.url,
+                  title: field.itemData.title,
+                  category: field.itemData.category_code
+                });
+              } else {
+                console.log(`[IATI Import] 📄 Document field has no itemData, trying fallback`);
+                // Fallback: try to get from parsedActivity using itemIndex
+                const docIndex = field.itemIndex !== undefined ? field.itemIndex : (field.fieldName.includes(' ') ? parseInt(field.fieldName.split(' ')[2]) - 1 : 0);
+                if (parsedActivity?.document_links && parsedActivity.document_links[docIndex]) {
+                  updateData.importedDocuments.push(parsedActivity.document_links[docIndex]);
+                  console.log(`[IATI Import] 📄 Adding document ${docIndex + 1} for import (fallback):`, parsedActivity.document_links[docIndex]);
+                } else {
+                  console.error(`[IATI Import] 📄 ERROR: Could not find document at index ${docIndex} in parsedActivity.document_links`);
+                }
               }
+              console.log(`[IATI Import] 📄 Total documents queued for import: ${updateData.importedDocuments?.length || 0}`);
               // PHASE 2: Transaction processing is now handled earlier in the unified logic (line 3824-3856)
             } else if (field.fieldName.startsWith('Location ')) {
               // Collect location data for import
@@ -8320,7 +8308,7 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
             // Other data
             sectors: updateData.importedSectors || parsedActivity?.sectors,
             policyMarkers: parsedActivity?.policyMarkers,
-            tags: parsedActivity?.tags,
+            tags: parsedActivity?.tagClassifications, // XML parser stores tags in tagClassifications
             locations: updateData.locationsData || parsedActivity?.locations,
             contactInfo: updateData.importedContacts || parsedActivity?.contactInfo,
             participating_orgs: updateData.importedParticipatingOrgs || parsedActivity?.participatingOrgs,
@@ -8338,6 +8326,8 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
         console.log('[IATI Import] Sending import request with fields:', importRequestBody.fields);
         console.log('[IATI Import] Transaction count:', importRequestBody.iati_data.transactions?.length);
         console.log('[IATI Import] Budget count:', importRequestBody.iati_data.budgets?.length);
+        console.log('[IATI Import] 🏷️ Tags field value:', importRequestBody.fields.tags);
+        console.log('[IATI Import] 🏷️ Tags data:', importRequestBody.iati_data.tags);
 
         response = await fetch(`/api/activities/${activityId}/import-iati`, {
           method: 'POST',
@@ -8353,6 +8343,11 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
         // If the server-side /import-iati endpoint handled transactions, record that
         if (importRequestBody.fields.transactions && response.ok) {
           didServerSideTransactionImport = true;
+        }
+        
+        // If the server-side /import-iati endpoint handled related activities, record that
+        if (importRequestBody.fields.related_activities && response.ok) {
+          didServerSideRelatedActivitiesImport = true;
         }
       }
 
@@ -8883,6 +8878,11 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
       // Handle document links import if any
       if (updateData.importedDocuments && updateData.importedDocuments.length > 0) {
         console.log('[IATI Import] Processing document links import...');
+        console.log('[IATI Import] Documents to import:', updateData.importedDocuments.map((d: any) => ({
+          url: d.url,
+          title: d.title,
+          category_code: d.category_code
+        })));
         setImportStatus({ 
           stage: 'importing', 
           progress: 87,
@@ -8907,9 +8907,24 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
           } else {
             const successData = await docResponse.json();
             console.log('[IATI Import] Documents imported successfully:', successData);
+            console.log('[IATI Import] Documents import response details:', JSON.stringify(successData, null, 2));
             toast.success(`Document links imported successfully`, {
               description: `${successData.success} of ${updateData.importedDocuments.length} document(s) added to the activity`
             });
+            
+            // Verify documents were actually saved by fetching them back
+            try {
+              const verifyResponse = await fetch(`/api/activities/${activityId}/documents?_verify=${Date.now()}`);
+              if (verifyResponse.ok) {
+                const verifyData = await verifyResponse.json();
+                console.log('[IATI Import] VERIFICATION - Documents in database after import:', verifyData.documents?.length || 0);
+                console.log('[IATI Import] VERIFICATION - Document details:', verifyData.documents);
+              } else {
+                console.error('[IATI Import] VERIFICATION - Failed to verify documents were saved');
+              }
+            } catch (verifyError) {
+              console.error('[IATI Import] VERIFICATION - Error checking saved documents:', verifyError);
+            }
           }
         } catch (docError) {
           console.error('[IATI Import] Document import network error:', docError);
@@ -8917,6 +8932,8 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
             description: 'Network error occurred while importing documents. Please check your connection and try again.'
           });
         }
+      } else {
+        console.log('[IATI Import] No documents to import (importedDocuments is empty or undefined)');
       }
 
       // Handle contacts import if any
@@ -10529,7 +10546,27 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
         // We'll update the summary based on the API response if needed
       }
       // Handle related activities import if any
-      if (updateData.importedRelatedActivities && updateData.importedRelatedActivities.length > 0) {
+      // If server already processed related activities, just log and update summary
+      if (didServerSideRelatedActivitiesImport && updateData.importedRelatedActivities && updateData.importedRelatedActivities.length > 0) {
+        console.log('[IATI Import] Related activities were processed server-side during main import');
+        importSummary.relatedActivities = { 
+          attempted: updateData.importedRelatedActivities.length, 
+          successful: updateData.importedRelatedActivities.length, // Server handles all including external links
+          failed: 0, 
+          skipped: 0, 
+          details: updateData.importedRelatedActivities.map((ra: any) => ({
+            ref: ra.ref,
+            type: ra.type,
+            relationshipTypeLabel: ra.relationshipTypeLabel,
+            status: 'server_processed'
+          })), 
+          failures: [], 
+          warnings: [],
+          missing: []
+        };
+      }
+      // Only run client-side processing if the server didn't handle related activities
+      if (updateData.importedRelatedActivities && updateData.importedRelatedActivities.length > 0 && !didServerSideRelatedActivitiesImport) {
         // Check for cancel before processing related activities
         if (importCancelRequested) {
           console.log('[IATI Import] Import cancelled before related activities processing');
@@ -10632,16 +10669,42 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
               }
               
               if (!matchingActivities || matchingActivities.length === 0) {
-                console.warn(`[IATI Import] No activities found with IATI ID: ${relatedActivityData.ref}`);
-                skippedCount++;
-                if (importSummary.relatedActivities) {
-                  importSummary.relatedActivities.skipped++;
-                  importSummary.relatedActivities.warnings.push(`Not found in DB: ${relatedActivityData.ref}`);
-                  importSummary.relatedActivities.missing.push({
-                    ref: relatedActivityData.ref,
-                    type: relatedActivityData.type,
-                    relationshipTypeLabel: relatedActivityData.relationshipTypeLabel
-                  });
+                console.log(`[IATI Import] Activity not found in DB: ${relatedActivityData.ref}, creating as external link`);
+                
+                // Create as an external link since the target activity doesn't exist in the database
+                const externalLinkData = {
+                  external_iati_identifier: relatedActivityData.ref,
+                  external_activity_title: `External Activity: ${relatedActivityData.ref}`,
+                  relationship_type: relatedActivityData.type,
+                  narrative: `Imported from XML - ${relatedActivityData.relationshipTypeLabel}`
+                };
+
+                const externalResponse = await fetch(`/api/activities/${activityId}/related-activities`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify(externalLinkData)
+                });
+
+                if (externalResponse.ok) {
+                  console.log(`[IATI Import] ✅ Created external link: ${relatedActivityData.ref}`);
+                  successCount++;
+                  if (importSummary.relatedActivities) {
+                    importSummary.relatedActivities.successful++;
+                    importSummary.relatedActivities.details.push({ 
+                      ref: relatedActivityData.ref, 
+                      type: relatedActivityData.type, 
+                      relationshipTypeLabel: relatedActivityData.relationshipTypeLabel, 
+                      status: 'external_link' 
+                    });
+                  }
+                } else {
+                  const errorData = await externalResponse.json();
+                  console.error(`[IATI Import] ❌ Failed to create external link: ${relatedActivityData.ref}`, errorData);
+                  skippedCount++;
+                  if (importSummary.relatedActivities) {
+                    importSummary.relatedActivities.skipped++;
+                    importSummary.relatedActivities.warnings.push(`Failed to create external link: ${relatedActivityData.ref}`);
+                  }
                 }
                 continue;
               }
@@ -11366,7 +11429,8 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
         try {
           const docsResponse = await fetch(`/api/activities/${activityId}/documents`);
           if (docsResponse.ok) {
-            const docs = await docsResponse.json();
+            const data = await docsResponse.json();
+            const docs = data.documents || [];
             setCurrentDocumentLinks(docs);
           }
         } catch (error) {
@@ -11734,6 +11798,38 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
                   </div>
                 )}
               </div>
+            ) : field.isTagField && (field as any).existingTags && (field as any).existingTags.length > 0 ? (
+              <div className="flex flex-col gap-2">
+                {((field as any).existingTags || []).slice(0, 3).map((tag: any, index: number) => (
+                  <div key={index} className="flex items-center gap-1 flex-wrap">
+                    {tag.vocabulary && (
+                      <span className={`text-xs font-mono px-1.5 py-0.5 rounded ${
+                        tag.vocabulary === '1' ? 'bg-blue-100 text-blue-700' : 
+                        tag.vocabulary === '99' ? 'bg-purple-100 text-purple-700' : 
+                        'bg-gray-100 text-gray-700'
+                      }`}>
+                        {tag.vocabulary === '1' ? 'Standard' : tag.vocabulary === '99' ? 'Custom' : `Vocab ${tag.vocabulary}`}
+                      </span>
+                    )}
+                    {tag.code && (
+                      <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{tag.code}</span>
+                    )}
+                    <span className="text-sm font-medium text-gray-900">{tag.name || tag.narrative || 'Unnamed tag'}</span>
+                    {tag.vocabulary_uri && (
+                      <span className="text-xs text-gray-500 italic truncate max-w-32" title={tag.vocabulary_uri}>
+                        {tag.vocabulary_uri.substring(0, 30)}...
+                      </span>
+                    )}
+                  </div>
+                ))}
+                {((field as any).existingTags || []).length > 3 && (
+                  <span className="text-xs text-gray-500 italic">
+                    +{((field as any).existingTags || []).length - 3} more tag(s)
+                  </span>
+                )}
+              </div>
+            ) : field.isTagField ? (
+              <span className="text-sm text-gray-400 italic">No existing tags</span>
             ) : typeof field.currentValue === 'object' && field.currentValue?.code ? (
               <div className="flex items-center gap-1 flex-nowrap whitespace-nowrap">
               <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{field.currentValue.code}</span>

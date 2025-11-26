@@ -2168,6 +2168,7 @@ export async function POST(
     }
 
     // Handle tags if selected
+    console.log('[IATI Import] Tags check - fields.tags:', fields.tags, 'iati_data.tags:', iati_data.tags ? `${iati_data.tags.length} tags` : 'undefined');
     if (fields.tags && iati_data.tags) {
       console.log('[IATI Import] Updating tags');
 
@@ -2322,15 +2323,14 @@ export async function POST(
               const relatedActivityId = matchingActivities[0].id;
               console.log(`[IATI Import] Found matching activity: ${matchingActivities[0].title_narrative} (${relatedActivityId})`);
 
-              // Create the relationship
+              // Create the relationship (internal link)
               const { error: linkError } = await supabase
                 .from('activity_relationships')
                 .insert({
                   activity_id: activityId,
                   related_activity_id: relatedActivityId,
                   relationship_type: relatedActivity.type,
-                  narrative: `Imported from IATI XML`,
-                  created_by: 'iati-import'
+                  narrative: `Imported from IATI XML`
                 });
 
               if (!linkError) {
@@ -2341,24 +2341,43 @@ export async function POST(
                 skippedCount++;
               }
             } else {
-              console.warn(`[IATI Import] ⚠️  Related activity not found in database: ${relatedActivity.ref} (skipped)`);
-              skippedCount++;
+              // Activity not found in database - create an external link
+              console.log(`[IATI Import] Activity not found in database: ${relatedActivity.ref} - creating external link`);
+              
+              const { error: externalLinkError } = await supabase
+                .from('activity_relationships')
+                .insert({
+                  activity_id: activityId,
+                  external_iati_identifier: relatedActivity.ref,
+                  external_activity_title: `External: ${relatedActivity.ref}`,
+                  is_resolved: false,
+                  relationship_type: relatedActivity.type,
+                  narrative: `Imported from IATI XML (external reference)`
+                });
+
+              if (!externalLinkError) {
+                linkedCount++;
+                console.log(`[IATI Import] ✓ Created external link for activity: ${relatedActivity.ref}`);
+              } else {
+                console.error(`[IATI Import] ❌ Error creating external link for ${relatedActivity.ref}:`, externalLinkError);
+                skippedCount++;
+              }
             }
           }
 
           if (linkedCount > 0) {
             updatedFields.push('related_activities');
-            console.log(`[IATI Import] ✓ Imported ${linkedCount} related activities (${skippedCount} skipped - not found in database)`);
+            console.log(`[IATI Import] ✓ Imported ${linkedCount} related activities (${skippedCount} errors)`);
           }
 
           if (skippedCount > 0) {
             importWarnings.push({
-              type: 'related_activities_missing',
-              message: `${skippedCount} related activit${skippedCount === 1 ? 'y' : 'ies'} could not be linked (not found in database)`,
+              type: 'related_activities_errors',
+              message: `${skippedCount} related activit${skippedCount === 1 ? 'y' : 'ies'} could not be imported`,
               details: {
                 total_attempted: iati_data.relatedActivities.length,
-                successfully_linked: linkedCount,
-                skipped_count: skippedCount
+                successfully_imported: linkedCount,
+                error_count: skippedCount
               }
             });
           }

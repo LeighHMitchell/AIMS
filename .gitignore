@@ -29,6 +29,7 @@ yarn-error.log*
 # Backup files
 *.bak
 *.backup
+*.swp
 
 # System settings (local storage)
 frontend/src/data/system-settings.json

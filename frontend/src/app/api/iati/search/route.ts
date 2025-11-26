@@ -72,6 +72,33 @@ const extractActivityDate = (activityDates: any, dateType: string): string | und
   return undefined
 }
 
+// Helper function to extract date from Solr parallel arrays format
+// The IATI Datastore Solr API returns dates in parallel arrays:
+// - activity_date_iso_date: ["2020-01-01", "2021-12-31", ...]
+// - activity_date_type: ["1", "3", ...]
+const extractDateFromSolrArrays = (
+  activity: any, 
+  dateType: string
+): string | undefined => {
+  const dateValues = activity.activity_date_iso_date
+  const dateTypes = activity.activity_date_type
+  
+  if (!dateValues || !dateTypes) return undefined
+  
+  // Ensure both are arrays
+  const valuesArr = Array.isArray(dateValues) ? dateValues : [dateValues]
+  const typesArr = Array.isArray(dateTypes) ? dateTypes : [dateTypes]
+  
+  // Find the index where type matches
+  const idx = typesArr.findIndex((t: any) => String(t) === dateType)
+  
+  if (idx !== -1 && valuesArr[idx]) {
+    return valuesArr[idx]
+  }
+  
+  return undefined
+}
+
 /**
  * POST /api/iati/search
  * Search the IATI Datastore using the correct API v3 format
@@ -256,6 +283,14 @@ export async function POST(request: NextRequest) {
               console.log(`  ${key}:`, activitiesData[0][key])
             }
           })
+          // Try to extract dates using our helper
+          const testDates = {
+            startPlanned: extractDateFromSolrArrays(activitiesData[0], '1'),
+            startActual: extractDateFromSolrArrays(activitiesData[0], '2'),
+            endPlanned: extractDateFromSolrArrays(activitiesData[0], '3'),
+            endActual: extractDateFromSolrArrays(activitiesData[0], '4'),
+          }
+          console.log("[IATI Search API] Extracted dates from first activity:", testDates)
         }
 
         // Log organization-related fields specifically
@@ -562,6 +597,7 @@ export async function POST(request: NextRequest) {
                 status: activity.activity_status_code || activity.activity_status || undefined,
                 statusNarrative: activity.activity_status_narrative || activity.activity_status_name || activity.activity_status_narrative_text || undefined,
                 startDatePlanned: 
+                  extractDateFromSolrArrays(activity, '1') ||
                   extractActivityDate(activity.activity_date, '1') ||
                   activity.activity_date_start_planned || 
                   activity.activity_date_start_planned_iso_date || 
@@ -569,6 +605,7 @@ export async function POST(request: NextRequest) {
                   activity['activity-date-start-planned-iso-date'] || 
                   undefined,
                 endDatePlanned: 
+                  extractDateFromSolrArrays(activity, '3') ||
                   extractActivityDate(activity.activity_date, '3') ||
                   activity.activity_date_end_planned || 
                   activity.activity_date_end_planned_iso_date || 
@@ -576,6 +613,7 @@ export async function POST(request: NextRequest) {
                   activity['activity-date-end-planned-iso-date'] || 
                   undefined,
                 startDateActual: 
+                  extractDateFromSolrArrays(activity, '2') ||
                   extractActivityDate(activity.activity_date, '2') ||
                   activity.activity_date_start_actual || 
                   activity.activity_date_start_actual_iso_date || 
@@ -583,6 +621,7 @@ export async function POST(request: NextRequest) {
                   activity['activity-date-start-actual-iso-date'] || 
                   undefined,
                 endDateActual: 
+                  extractDateFromSolrArrays(activity, '4') ||
                   extractActivityDate(activity.activity_date, '4') ||
                   activity.activity_date_end_actual || 
                   activity.activity_date_end_actual_iso_date || 
