@@ -142,11 +142,15 @@ export function mapIatiContactToDb(iatiContact: any) {
     firstName: extractFirstName(fullName) || 'Unknown',
     lastName: extractLastName(fullName) || 'Contact',
     position: extractNarrative(iatiContact.jobTitle) || 'Not specified', // Use jobTitle as position/role
+    jobTitle: extractNarrative(iatiContact.jobTitle), // IATI job-title field
     organisation: extractNarrative(iatiContact.organization),
     organisationId: null, // Will be matched later if possible
+    department: extractNarrative(iatiContact.department), // IATI department field
     email: iatiContact.email,
     phone: iatiContact.telephone,
     phoneNumber: iatiContact.telephone,
+    website: iatiContact.website, // IATI website field
+    mailingAddress: extractNarrative(iatiContact.mailingAddress), // IATI mailing-address field
     importedFromIati: true, // Mark this contact as imported from IATI XML
   };
 }

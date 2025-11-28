@@ -5943,9 +5943,10 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
           let currentScopeValue = null;
           if (fetchedHumanitarianScopes && fetchedHumanitarianScopes.length > 0) {
             // Try to find matching scope by code and vocabulary
+            // Use String() and trim() for robust comparison across types and whitespace
             const matchingScope = fetchedHumanitarianScopes.find((hs: any) => 
-              hs.code === scope.code && 
-              (hs.vocabulary || '1-2') === (scope.vocabulary || '1-2')
+              String(hs.code || '').trim() === String(scope.code || '').trim() && 
+              String(hs.vocabulary || '1-2').trim() === String(scope.vocabulary || '1-2').trim()
             );
             
             // Fallback to index match if counts are the same and no semantic match found
@@ -5986,10 +5987,11 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
           }
           
           // Determine if there's a conflict between current and import values
+          // Use String() and trim() for robust comparison
           const hasScopeConflict = currentScopeValue !== null && (
-            currentScopeValue.code !== scope.code ||
-            currentScopeValue.type !== scope.type ||
-            (currentScopeValue.vocabulary || '1-2') !== (scope.vocabulary || '1-2')
+            String(currentScopeValue.code || '').trim() !== String(scope.code || '').trim() ||
+            String(currentScopeValue.type || '1').trim() !== String(scope.type || '1').trim() ||
+            String(currentScopeValue.vocabulary || '1-2').trim() !== String(scope.vocabulary || '1-2').trim()
           );
           
           fields.push({

@@ -4,7 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
-import { AlertCircle, ArrowUpDown, ArrowUp, ArrowDown, Search, ChevronDown, ChevronRight, Copy, Check, CheckCircle2, ChevronUp, Calendar, DollarSign, Tag, FileText, ExternalLink, MapPin, Building2, Info } from 'lucide-react';
+import { AlertCircle, AlertTriangle, ArrowUpDown, ArrowUp, ArrowDown, Search, ChevronDown, ChevronRight, Copy, Check, CheckCircle2, ChevronUp, Calendar, DollarSign, Tag, FileText, ExternalLink, MapPin, Building2, Info, Lock } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { toast } from 'sonner';
 import { getOrganizationRoleName } from '@/data/iati-organization-roles';
@@ -44,6 +44,8 @@ interface ParsedField {
   isCrsField?: boolean;
   crsData?: any;
   currentCrsData?: any;
+  hasCrsSubComponents?: boolean; // Flag to indicate this field has sub-components
+  crsSubComponents?: { [key: string]: boolean }; // Track which sub-components are selected
   isInherited?: boolean;
   inheritedFrom?: string;
   category?: string;
@@ -58,7 +60,7 @@ interface FieldSection {
 interface IatiImportFieldsTableProps {
   fields?: ParsedField[];
   sections?: FieldSection[];
-  onFieldToggle: (field: ParsedField) => void;
+  onFieldToggle: (field: ParsedField, checked: boolean) => void;
   onSelectAll?: () => void;
   onDeselectAll?: () => void;
   xmlContent?: string;
@@ -86,6 +88,40 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
     if (!xmlContent) return null;
 
     try {
+      // Special handling for attribute paths (e.g., iati-activity/@humanitarian)
+      if (iatiPath.includes('/@') || iatiPath.startsWith('@')) {
+        // Extract the attribute name and parent element
+        const attributeMatch = iatiPath.match(/(?:iati-activity\/)?@([^\/]+)$/);
+        if (attributeMatch) {
+          const attributeName = attributeMatch[1];
+          const parentElement = 'iati-activity';
+          
+          // Find the parent element with this attribute
+          const parentPattern = new RegExp(
+            `(<${parentElement}[^>]*>)`,
+            'i'
+          );
+          
+          const parentMatch = xmlContent.match(parentPattern);
+          if (parentMatch) {
+            // Extract the opening tag with the attribute
+            const openingTag = parentMatch[1];
+            // Check if the attribute exists in this tag
+            const attributePattern = new RegExp(
+              `${attributeName}="([^"]*)"`,
+              'i'
+            );
+            const attrMatch = openingTag.match(attributePattern);
+            
+            if (attrMatch) {
+              // Return just the opening tag showing the attribute
+              return openingTag;
+            }
+          }
+        }
+        return null;
+      }
+
       // Remove array indices from path for searching
       const cleanPath = iatiPath.replace('iati-activity/', '').replace(/\[\d+\]/g, '');
       const pathParts = cleanPath.split('/');
@@ -1049,40 +1085,14 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
     // Special handling for Contact fields - show simplified view in summary
     if ((fieldName && fieldName.includes('Contact')) || field?.tab === 'contacts') {
       if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
-        // In summary view, show only: department, email, telephone, mailingAddress
-        const parts: JSX.Element[] = [];
+        // In summary view, show only: Person Name and Organization (no labels)
+        const parts: string[] = [];
         
-        if (value.department) {
-          parts.push(
-            <div key="department" className="flex items-start">
-              <span className="text-gray-600 font-medium min-w-[120px] flex-shrink-0">Department:</span>
-              <span className="ml-2 text-gray-900">{value.department}</span>
-            </div>
-          );
+        if (value.personName) {
+          parts.push(value.personName);
         }
-        if (value.email) {
-          parts.push(
-            <div key="email" className="flex items-start">
-              <span className="text-gray-600 font-medium min-w-[120px] flex-shrink-0">Email:</span>
-              <span className="ml-2 text-gray-900">{value.email}</span>
-            </div>
-          );
-        }
-        if (value.telephone) {
-          parts.push(
-            <div key="telephone" className="flex items-start">
-              <span className="text-gray-600 font-medium min-w-[120px] flex-shrink-0">Telephone:</span>
-              <span className="ml-2 text-gray-900">{value.telephone}</span>
-            </div>
-          );
-        }
-        if (value.mailingAddress) {
-          parts.push(
-            <div key="mailingAddress" className="flex items-start">
-              <span className="text-gray-600 font-medium min-w-[120px] flex-shrink-0">Mailing Address:</span>
-              <span className="ml-2 text-gray-900">{value.mailingAddress}</span>
-            </div>
-          );
+        if (value.organization) {
+          parts.push(value.organization);
         }
         
         if (parts.length === 0) {
@@ -1090,9 +1100,9 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
         }
         
         return (
-          <div className="flex flex-col gap-1 text-xs">
-            {parts}
-          </div>
+          <span className="text-xs text-gray-900">
+            {parts.join(' • ')}
+          </span>
         );
       }
     }
@@ -1582,6 +1592,30 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
       return allTagsMatch;
     }
 
+    // Special handling for CRS fields - compare summary strings
+    if (field.isCrsField) {
+      // If current value doesn't exist, it's not a match
+      if (!currentValue) return false;
+      
+      // If import value doesn't exist, it's not a match
+      if (!importValue) return false;
+      
+      // Compare the summary strings directly
+      return String(currentValue).trim() === String(importValue).trim();
+    }
+
+    // Special handling for Humanitarian Scope fields - compare by code, type, and vocabulary
+    if (field.fieldName?.startsWith('Humanitarian Scope') && 
+        typeof currentValue === 'object' && currentValue !== null &&
+        typeof importValue === 'object' && importValue !== null) {
+      // Compare using normalized strings to handle type differences and whitespace
+      const codeMatch = String(currentValue.code || '').trim() === String(importValue.code || '').trim();
+      const typeMatch = String(currentValue.type || '1').trim() === String(importValue.type || '1').trim();
+      const vocabMatch = String(currentValue.vocabulary || '1-2').trim() === String(importValue.vocabulary || '1-2').trim();
+      
+      return codeMatch && typeMatch && vocabMatch;
+    }
+
     // If current value doesn't exist, it's not a match
     if (!currentValue && currentValue !== 0) return false;
 
@@ -1683,6 +1717,36 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
       const importTitle = importValue || '';
       // Compare titles (case-insensitive, trimmed)
       return currentTitle.toLowerCase().trim() === importTitle.toLowerCase().trim();
+    }
+
+    // Special handling for Contact fields - compare all contact fields
+    if ((field.fieldName && field.fieldName.includes('Contact')) || field?.tab === 'contacts') {
+      if (typeof currentValue === 'object' && typeof importValue === 'object' && currentValue !== null && importValue !== null) {
+        // Normalize values for comparison (handle null, undefined, empty strings)
+        const normalize = (val: any) => {
+          if (val === null || val === undefined || val === '') return null;
+          return String(val).trim();
+        };
+        
+        // Compare all contact fields
+        const typeMatch = normalize(currentValue.type) === normalize(importValue.type);
+        const orgMatch = normalize(currentValue.organization) === normalize(importValue.organization);
+        const personMatch = normalize(currentValue.personName) === normalize(importValue.personName);
+        const jobTitleMatch = normalize(currentValue.jobTitle) === normalize(importValue.jobTitle);
+        const deptMatch = normalize(currentValue.department) === normalize(importValue.department);
+        const emailMatch = normalize(currentValue.email) === normalize(importValue.email);
+        // Handle phone field name differences (currentValue uses telephone, importValue uses telephone)
+        const currentPhone = normalize(currentValue.telephone || currentValue.phone || currentValue.phoneNumber);
+        const importPhone = normalize(importValue.telephone || importValue.phone || importValue.phoneNumber);
+        const phoneMatch = currentPhone === importPhone;
+        const websiteMatch = normalize(currentValue.website) === normalize(importValue.website);
+        const addressMatch = normalize(currentValue.mailingAddress) === normalize(importValue.mailingAddress);
+        
+        // All fields must match
+        return typeMatch && orgMatch && personMatch && jobTitleMatch && deptMatch && 
+               emailMatch && phoneMatch && websiteMatch && addressMatch;
+      }
+      return false;
     }
 
     // Handle object comparison (e.g., for coded fields that return {code, name})
@@ -3010,9 +3074,31 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                                   </tr>
                                                 )}
                                                 {field.currentValue.telephone && (
-                                                  <tr className="align-top">
+                                                  <tr className="border-b border-gray-100 align-top">
                                                     <td className="py-1.5 pr-2 font-medium text-gray-600">Telephone:</td>
                                                     <td className="py-1.5 text-gray-900">{field.currentValue.telephone}</td>
+                                                  </tr>
+                                                )}
+                                                {field.currentValue.department && (
+                                                  <tr className="border-b border-gray-100 align-top">
+                                                    <td className="py-1.5 pr-2 font-medium text-gray-600">Department:</td>
+                                                    <td className="py-1.5 text-gray-900">{field.currentValue.department}</td>
+                                                  </tr>
+                                                )}
+                                                {field.currentValue.website && (
+                                                  <tr className="border-b border-gray-100 align-top">
+                                                    <td className="py-1.5 pr-2 font-medium text-gray-600">Website:</td>
+                                                    <td className="py-1.5 text-gray-900">
+                                                      <a href={field.currentValue.website} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-800 hover:underline break-all">
+                                                        {field.currentValue.website}
+                                                      </a>
+                                                    </td>
+                                                  </tr>
+                                                )}
+                                                {field.currentValue.mailingAddress && (
+                                                  <tr className="align-top">
+                                                    <td className="py-1.5 pr-2 font-medium text-gray-600">Mailing Address:</td>
+                                                    <td className="py-1.5 text-gray-900">{field.currentValue.mailingAddress}</td>
                                                   </tr>
                                                 )}
                                               </tbody>
@@ -4508,26 +4594,6 @@ ${narrativeLines}
                                                 </td>
                                               </tr>
                                             )}
-                                            {crsData.other_flags && crsData.other_flags.length > 0 && crsData.other_flags.map((flag: any, idx: number) => (
-                                              <React.Fragment key={idx}>
-                                                <tr className="border-b border-gray-100 align-top">
-                                                  <td className="py-1.5 pr-2 font-medium text-gray-600">Other Flags Code:</td>
-                                                  <td className="py-1.5 text-gray-900">
-                                                    <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
-                                                      {flag.code}
-                                                    </code>
-                                                  </td>
-                                                </tr>
-                                                <tr className="border-b border-gray-100 align-top">
-                                                  <td className="py-1.5 pr-2 font-medium text-gray-600">Significance:</td>
-                                                  <td className="py-1.5 text-gray-900">
-                                                    <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
-                                                      {flag.significance}
-                                                    </code>
-                                                  </td>
-                                                </tr>
-                                              </React.Fragment>
-                                            ))}
                                             {crsData.loanTerms && (
                                               <React.Fragment>
                                                 {crsData.loanTerms.rate_1 !== undefined && (
@@ -4595,61 +4661,33 @@ ${narrativeLines}
                                               </React.Fragment>
                                             )}
                                             {crsData.loanStatuses && crsData.loanStatuses.length > 0 && (
-                                              <React.Fragment>
-                                                {crsData.loanStatuses.map((status: any, idx: number) => (
-                                                  <React.Fragment key={idx}>
-                                                    <tr className="border-b border-gray-100 align-top">
-                                                      <td className="py-1.5 pr-2 font-medium text-gray-600">Year:</td>
-                                                      <td className="py-1.5 text-gray-900">{status.year}</td>
-                                                    </tr>
-                                                    {status.currency && (
-                                                      <tr className="border-b border-gray-100 align-top">
-                                                        <td className="py-1.5 pr-2 font-medium text-gray-600">Currency:</td>
-                                                        <td className="py-1.5 text-gray-900">
-                                                          <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
-                                                            {status.currency}
-                                                          </code>
-                                                        </td>
-                                                      </tr>
-                                                    )}
-                                                    {status.value_date && (
-                                                      <tr className="border-b border-gray-100 align-top">
-                                                        <td className="py-1.5 pr-2 font-medium text-gray-600">Value date:</td>
-                                                        <td className="py-1.5 text-gray-900">
-                                                          <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
-                                                            {status.value_date}
-                                                          </code>
-                                                        </td>
-                                                      </tr>
-                                                    )}
-                                                    {status.interest_received !== undefined && (
-                                                      <tr className="border-b border-gray-100 align-top">
-                                                        <td className="py-1.5 pr-2 font-medium text-gray-600">Interest received:</td>
-                                                        <td className="py-1.5 text-gray-900">{status.interest_received.toLocaleString()}</td>
-                                                      </tr>
-                                                    )}
-                                                    {status.principal_outstanding !== undefined && (
-                                                      <tr className="border-b border-gray-100 align-top">
-                                                        <td className="py-1.5 pr-2 font-medium text-gray-600">Principal outstanding:</td>
-                                                        <td className="py-1.5 text-gray-900">{status.principal_outstanding.toLocaleString()}</td>
-                                                      </tr>
-                                                    )}
-                                                    {status.principal_arrears !== undefined && (
-                                                      <tr className="border-b border-gray-100 align-top">
-                                                        <td className="py-1.5 pr-2 font-medium text-gray-600">Principal arrears:</td>
-                                                        <td className="py-1.5 text-gray-900">{status.principal_arrears.toLocaleString()}</td>
-                                                      </tr>
-                                                    )}
-                                                    {status.interest_arrears !== undefined && (
-                                                      <tr className="border-b border-gray-100 align-top">
-                                                        <td className="py-1.5 pr-2 font-medium text-gray-600">Interest arrears:</td>
-                                                        <td className="py-1.5 text-gray-900">{status.interest_arrears.toLocaleString()}</td>
-                                                      </tr>
-                                                    )}
-                                                  </React.Fragment>
-                                                ))}
-                                              </React.Fragment>
+                                              <tr className="border-b border-gray-100 align-top">
+                                                <td className="py-1.5 pr-2 font-medium text-gray-600">Loan Statuses:</td>
+                                                <td className="py-1.5 text-gray-900">
+                                                  {crsData.loanStatuses.length} year(s) of loan status data
+                                                </td>
+                                              </tr>
                                             )}
+                                            {crsData.other_flags && crsData.other_flags.length > 0 && crsData.other_flags.map((flag: any, idx: number) => (
+                                              <React.Fragment key={idx}>
+                                                <tr className="border-b border-gray-100 align-top">
+                                                  <td className="py-1.5 pr-2 font-medium text-gray-600">Other Flags Code:</td>
+                                                  <td className="py-1.5 text-gray-900">
+                                                    <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                      {flag.code}
+                                                    </code>
+                                                  </td>
+                                                </tr>
+                                                <tr className="border-b border-gray-100 align-top">
+                                                  <td className="py-1.5 pr-2 font-medium text-gray-600">Significance:</td>
+                                                  <td className="py-1.5 text-gray-900">
+                                                    <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                      {flag.significance}
+                                                    </code>
+                                                  </td>
+                                                </tr>
+                                              </React.Fragment>
+                                            ))}
                                           </tbody>
                                         </table>
                                       </div>
@@ -4657,65 +4695,107 @@ ${narrativeLines}
                                       {/* Column 3: Current Value */}
                                       <div className="bg-gray-50 rounded-md p-3 border border-gray-200">
                                         <div className="text-xs font-semibold text-gray-700 mb-2">Current Value</div>
-                                        {field.currentCrsData && field.currentCrsData.loanStatuses && field.currentCrsData.loanStatuses.length > 0 ? (
+                                        {field.currentCrsData ? (
                                           <table className="w-full text-xs">
                                             <tbody>
-                                              {field.currentCrsData.loanStatuses.map((status: any, idx: number) => (
+                                              {field.currentCrsData.loanTerms && (
+                                                <React.Fragment>
+                                                  {field.currentCrsData.loanTerms.rate_1 !== null && field.currentCrsData.loanTerms.rate_1 !== undefined && (
+                                                    <tr className="border-b border-gray-100 align-top">
+                                                      <td className="py-1.5 pr-2 font-medium text-gray-600">Rate 1:</td>
+                                                      <td className="py-1.5 text-gray-900">{field.currentCrsData.loanTerms.rate_1}%</td>
+                                                    </tr>
+                                                  )}
+                                                  {field.currentCrsData.loanTerms.rate_2 !== null && field.currentCrsData.loanTerms.rate_2 !== undefined && (
+                                                    <tr className="border-b border-gray-100 align-top">
+                                                      <td className="py-1.5 pr-2 font-medium text-gray-600">Rate 2:</td>
+                                                      <td className="py-1.5 text-gray-900">{field.currentCrsData.loanTerms.rate_2}%</td>
+                                                    </tr>
+                                                  )}
+                                                  {field.currentCrsData.loanTerms.repayment_type_code && (
+                                                    <tr className="border-b border-gray-100 align-top">
+                                                      <td className="py-1.5 pr-2 font-medium text-gray-600">Repayment Type:</td>
+                                                      <td className="py-1.5 text-gray-900">
+                                                        <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                          {field.currentCrsData.loanTerms.repayment_type_code}
+                                                        </code>
+                                                      </td>
+                                                    </tr>
+                                                  )}
+                                                  {field.currentCrsData.loanTerms.repayment_plan_code && (
+                                                    <tr className="border-b border-gray-100 align-top">
+                                                      <td className="py-1.5 pr-2 font-medium text-gray-600">Repayment Plan:</td>
+                                                      <td className="py-1.5 text-gray-900">
+                                                        <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                          {field.currentCrsData.loanTerms.repayment_plan_code}
+                                                        </code>
+                                                      </td>
+                                                    </tr>
+                                                  )}
+                                                  {field.currentCrsData.loanTerms.commitment_date && (
+                                                    <tr className="border-b border-gray-100 align-top">
+                                                      <td className="py-1.5 pr-2 font-medium text-gray-600">Commitment Date:</td>
+                                                      <td className="py-1.5 text-gray-900">
+                                                        <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                          {field.currentCrsData.loanTerms.commitment_date}
+                                                        </code>
+                                                      </td>
+                                                    </tr>
+                                                  )}
+                                                  {field.currentCrsData.loanTerms.repayment_first_date && (
+                                                    <tr className="border-b border-gray-100 align-top">
+                                                      <td className="py-1.5 pr-2 font-medium text-gray-600">Repayment First Date:</td>
+                                                      <td className="py-1.5 text-gray-900">
+                                                        <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                          {field.currentCrsData.loanTerms.repayment_first_date}
+                                                        </code>
+                                                      </td>
+                                                    </tr>
+                                                  )}
+                                                  {field.currentCrsData.loanTerms.repayment_final_date && (
+                                                    <tr className="border-b border-gray-100 align-top">
+                                                      <td className="py-1.5 pr-2 font-medium text-gray-600">Repayment Final Date:</td>
+                                                      <td className="py-1.5 text-gray-900">
+                                                        <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                          {field.currentCrsData.loanTerms.repayment_final_date}
+                                                        </code>
+                                                      </td>
+                                                    </tr>
+                                                  )}
+                                                </React.Fragment>
+                                              )}
+                                              {field.currentCrsData.loanStatuses && field.currentCrsData.loanStatuses.length > 0 && (
+                                                <tr className="border-b border-gray-100 align-top">
+                                                  <td className="py-1.5 pr-2 font-medium text-gray-600">Loan Statuses:</td>
+                                                  <td className="py-1.5 text-gray-900">
+                                                    {field.currentCrsData.loanStatuses.length} year(s) of loan status data
+                                                  </td>
+                                                </tr>
+                                              )}
+                                              {field.currentCrsData.otherFlags && field.currentCrsData.otherFlags.length > 0 && field.currentCrsData.otherFlags.map((flag: any, idx: number) => (
                                                 <React.Fragment key={idx}>
                                                   <tr className="border-b border-gray-100 align-top">
-                                                    <td className="py-1.5 pr-2 font-medium text-gray-600">Year:</td>
-                                                    <td className="py-1.5 text-gray-900">{status.year}</td>
+                                                    <td className="py-1.5 pr-2 font-medium text-gray-600">Other Flags Code:</td>
+                                                    <td className="py-1.5 text-gray-900">
+                                                      <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                        {flag.code}
+                                                      </code>
+                                                    </td>
                                                   </tr>
-                                                  {status.currency && (
-                                                    <tr className="border-b border-gray-100 align-top">
-                                                      <td className="py-1.5 pr-2 font-medium text-gray-600">Currency:</td>
-                                                      <td className="py-1.5 text-gray-900">
-                                                        <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
-                                                          {status.currency}
-                                                        </code>
-                                                      </td>
-                                                    </tr>
-                                                  )}
-                                                  {status.value_date && (
-                                                    <tr className="border-b border-gray-100 align-top">
-                                                      <td className="py-1.5 pr-2 font-medium text-gray-600">Value date:</td>
-                                                      <td className="py-1.5 text-gray-900">
-                                                        <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
-                                                          {status.value_date}
-                                                        </code>
-                                                      </td>
-                                                    </tr>
-                                                  )}
-                                                  {status.interest_received !== undefined && status.interest_received !== null && (
-                                                    <tr className="border-b border-gray-100 align-top">
-                                                      <td className="py-1.5 pr-2 font-medium text-gray-600">Interest received:</td>
-                                                      <td className="py-1.5 text-gray-900">{Number(status.interest_received).toLocaleString()}</td>
-                                                    </tr>
-                                                  )}
-                                                  {status.principal_outstanding !== undefined && status.principal_outstanding !== null && (
-                                                    <tr className="border-b border-gray-100 align-top">
-                                                      <td className="py-1.5 pr-2 font-medium text-gray-600">Principal outstanding:</td>
-                                                      <td className="py-1.5 text-gray-900">{Number(status.principal_outstanding).toLocaleString()}</td>
-                                                    </tr>
-                                                  )}
-                                                  {status.principal_arrears !== undefined && status.principal_arrears !== null && (
-                                                    <tr className="border-b border-gray-100 align-top">
-                                                      <td className="py-1.5 pr-2 font-medium text-gray-600">Principal arrears:</td>
-                                                      <td className="py-1.5 text-gray-900">{Number(status.principal_arrears).toLocaleString()}</td>
-                                                    </tr>
-                                                  )}
-                                                  {status.interest_arrears !== undefined && status.interest_arrears !== null && (
-                                                    <tr className="border-b border-gray-100 align-top">
-                                                      <td className="py-1.5 pr-2 font-medium text-gray-600">Interest arrears:</td>
-                                                      <td className="py-1.5 text-gray-900">{Number(status.interest_arrears).toLocaleString()}</td>
-                                                    </tr>
-                                                  )}
+                                                  <tr className="border-b border-gray-100 align-top">
+                                                    <td className="py-1.5 pr-2 font-medium text-gray-600">Significance:</td>
+                                                    <td className="py-1.5 text-gray-900">
+                                                      <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                        {flag.significance}
+                                                      </code>
+                                                    </td>
+                                                  </tr>
                                                 </React.Fragment>
                                               ))}
                                             </tbody>
                                           </table>
                                         ) : (
-                                          <div className="text-xs text-gray-500 italic">No loan status data saved</div>
+                                          <div className="text-xs text-gray-500 italic">No CRS data saved</div>
                                         )}
                                       </div>
                                     </div>
@@ -4843,17 +4923,42 @@ ${narrativeLines}
                                 );
                               }
                               
-                              // Non-DAC Sectors
+                              // Non-DAC Sectors (Custom Vocabulary)
                               if (field.hasNonDacSectors && field.nonDacSectors && Array.isArray(field.nonDacSectors) && field.nonDacSectors.length > 0) {
                                 // Generate XML snippet for first sector (representative)
                                 const firstSector = field.nonDacSectors[0];
-                                const xmlSnippet = `<sector vocabulary="${firstSector.vocabulary || ''}" code="${firstSector.code || ''}">
+                                const vocabularyUri = firstSector.vocabularyUri || firstSector['vocabulary-uri'] || '';
+                                const xmlSnippet = `<sector vocabulary="${firstSector.vocabulary || ''}"${vocabularyUri ? ` vocabulary-uri="${vocabularyUri}"` : ''} code="${firstSector.code || ''}">
   ${firstSector.name ? `<narrative>${firstSector.name}</narrative>` : ''}
 </sector>${field.nonDacSectors.length > 1 ? `\n... and ${field.nonDacSectors.length - 1} more sector${field.nonDacSectors.length - 1 !== 1 ? 's' : ''}` : ''}`;
 
                                 return (
-                                  <div className="mb-6 border-b border-gray-200 pb-6">
-                                    <div className="text-sm font-semibold mb-3 text-gray-900 flex items-center gap-2">
+                                  <div className="mb-6 border-b border-amber-200 pb-6">
+                                    {/* Explanatory Header */}
+                                    <div className="bg-amber-50 border border-amber-200 rounded-md p-3 mb-4">
+                                      <div className="flex items-center gap-2 text-amber-800">
+                                        <AlertTriangle className="h-4 w-4 flex-shrink-0" />
+                                        <span className="font-medium">Custom Vocabulary Sectors (Not Importable)</span>
+                                        <TooltipProvider>
+                                          <Tooltip>
+                                            <TooltipTrigger asChild>
+                                              <Lock className="h-3.5 w-3.5 text-amber-600 cursor-help" />
+                                            </TooltipTrigger>
+                                            <TooltipContent className="max-w-xs">
+                                              <p>These sectors use vocabulary 99 (custom codes defined by the reporting organization) and cannot be automatically mapped to standard DAC sector codes.</p>
+                                            </TooltipContent>
+                                          </Tooltip>
+                                        </TooltipProvider>
+                                      </div>
+                                      <p className="text-xs text-amber-700 mt-1.5">
+                                        These sectors use vocabulary 99 (reporting organization&apos;s custom codes) and cannot be automatically mapped to standard DAC sector codes. They are shown for reference only.
+                                      </p>
+                                      <p className="text-xs text-amber-600 mt-1 italic">
+                                        Tip: To include these sectors, manually select equivalent DAC sectors in the Sectors tab after import.
+                                      </p>
+                                    </div>
+
+                                    <div className="text-sm font-semibold mb-3 text-amber-900 flex items-center gap-2">
                                       <Tag className="h-4 w-4" />
                                       Non-DAC Sectors ({field.nonDacSectors.length})
                                     </div>
@@ -4861,22 +4966,22 @@ ${narrativeLines}
                                     {/* 3-column layout */}
                                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
                                       {/* Column 1: Raw XML */}
-                                      <div className="bg-gray-50 rounded-md p-3 border border-gray-200">
-                                        <div className="text-xs font-semibold text-gray-700 mb-2">Raw XML</div>
+                                      <div className="bg-amber-50/50 rounded-md p-3 border border-amber-200">
+                                        <div className="text-xs font-semibold text-amber-800 mb-2">Raw XML</div>
                                         <pre className="text-xs font-mono text-gray-800 overflow-x-auto whitespace-pre-wrap break-all">
 {xmlSnippet}
                                         </pre>
                                       </div>
 
                                       {/* Column 2: Import Value */}
-                                      <div className="bg-gray-50 rounded-md p-3 border border-gray-200">
-                                        <div className="text-xs font-semibold text-gray-700 mb-2">Import Value ({field.nonDacSectors.length})</div>
+                                      <div className="bg-amber-50/50 rounded-md p-3 border border-amber-200">
+                                        <div className="text-xs font-semibold text-amber-800 mb-2">Import Value ({field.nonDacSectors.length})</div>
                                         <div className="space-y-2">
                                           {field.nonDacSectors.map((sector: any, idx: number) => (
-                                            <div key={idx} className="border-b border-gray-100 pb-2 last:border-b-0">
+                                            <div key={idx} className="border-b border-amber-100 pb-2 last:border-b-0">
                                               <div className="flex items-center gap-2 flex-wrap">
                                                 {sector.code && (
-                                                  <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                  <code className="text-xs font-mono bg-amber-100 text-amber-900 px-1.5 py-0.5 rounded">
                                                     {sector.code}
                                                   </code>
                                                 )}
@@ -4884,23 +4989,28 @@ ${narrativeLines}
                                                   <span className="text-xs text-gray-900">{sector.name}</span>
                                                 )}
                                                 {sector.vocabulary && (
-                                                  <Badge variant="outline" className="text-xs">
-                                                    {sector.vocabulary}
+                                                  <Badge variant="outline" className="text-xs border-amber-300 text-amber-700">
+                                                    vocab {sector.vocabulary}
                                                   </Badge>
                                                 )}
                                               </div>
+                                              {(sector.vocabularyUri || sector['vocabulary-uri']) && (
+                                                <div className="text-xs text-amber-600 mt-1 truncate">
+                                                  URI: {sector.vocabularyUri || sector['vocabulary-uri']}
+                                                </div>
+                                              )}
                                             </div>
                                           ))}
                                         </div>
                                       </div>
 
                                       {/* Column 3: Current Value */}
-                                      <div className="bg-gray-50 rounded-md p-3 border border-gray-200">
-                                        <div className="text-xs font-semibold text-gray-700 mb-2">Current Value</div>
+                                      <div className="bg-amber-50/50 rounded-md p-3 border border-amber-200">
+                                        <div className="text-xs font-semibold text-amber-800 mb-2">Current Value</div>
                                         {field.currentValue && Array.isArray(field.currentValue) && field.currentValue.length > 0 ? (
                                           <div className="space-y-2">
                                             {field.currentValue.map((sector: any, idx: number) => (
-                                              <div key={idx} className="border-b border-gray-100 pb-2 last:border-b-0">
+                                              <div key={idx} className="border-b border-amber-100 pb-2 last:border-b-0">
                                                 <div className="flex items-center gap-2">
                                                   {sector.code && (
                                                     <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
@@ -4915,7 +5025,7 @@ ${narrativeLines}
                                             ))}
                                           </div>
                                         ) : (
-                                          <div className="text-xs text-gray-500 italic">No existing sectors</div>
+                                          <div className="text-xs text-amber-600 italic">No existing sectors</div>
                                         )}
                                       </div>
                                     </div>
@@ -5634,22 +5744,63 @@ ${narrativeLines}
                                   return (
                                     <table className="w-full text-xs">
                                       <tbody>
-                                        {entries.map(([key, val], idx) => (
-                                          <tr key={idx} className={`align-top ${idx < entries.length - 1 ? 'border-b border-gray-100' : ''}`}>
-                                            <td className="py-1.5 pr-2 font-medium text-gray-600 capitalize whitespace-nowrap">
-                                              {key.replace(/_/g, ' ')}:
-                                            </td>
-                                            <td className="py-1.5 text-gray-900">
-                                              {typeof val === 'string' && val.length > 100 ? (
-                                                <div className="break-words">{val}</div>
-                                              ) : (
-                                                <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
-                                                  {String(val)}
-                                                </code>
-                                              )}
-                                            </td>
-                                          </tr>
-                                        ))}
+                                        {entries.map(([key, val], idx) => {
+                                          // Special handling for narratives array
+                                          if (key === 'narratives' && Array.isArray(val) && val.length > 0) {
+                                            return val.map((narrative: any, nIdx: number) => (
+                                              <tr 
+                                                key={`${idx}-narrative-${nIdx}`} 
+                                                className={`align-top ${nIdx < val.length - 1 || idx < entries.length - 1 ? 'border-b border-gray-100' : ''}`}
+                                              >
+                                                <td className="py-1.5 pr-2 font-medium text-gray-600 whitespace-nowrap">
+                                                  {narrative.language ? `Narrative (${narrative.language.toUpperCase()}):` : 'Narrative:'}
+                                                </td>
+                                                <td className="py-1.5 text-gray-900">
+                                                  {narrative.text || narrative.narrative || ''}
+                                                </td>
+                                              </tr>
+                                            ));
+                                          }
+
+                                          // Handle other arrays
+                                          if (Array.isArray(val)) {
+                                            const arrayText = val.map(v => {
+                                              if (typeof v === 'object' && v !== null) {
+                                                return v.text || v.narrative || v.name || JSON.stringify(v);
+                                              }
+                                              return String(v);
+                                            }).join(', ');
+
+                                            return (
+                                              <tr key={idx} className={`align-top ${idx < entries.length - 1 ? 'border-b border-gray-100' : ''}`}>
+                                                <td className="py-1.5 pr-2 font-medium text-gray-600 capitalize whitespace-nowrap">
+                                                  {key.replace(/_/g, ' ')}:
+                                                </td>
+                                                <td className="py-1.5 text-gray-900">
+                                                  <div className="break-words">{arrayText || '—'}</div>
+                                                </td>
+                                              </tr>
+                                            );
+                                          }
+
+                                          // Default handling for non-array values
+                                          return (
+                                            <tr key={idx} className={`align-top ${idx < entries.length - 1 ? 'border-b border-gray-100' : ''}`}>
+                                              <td className="py-1.5 pr-2 font-medium text-gray-600 capitalize whitespace-nowrap">
+                                                {key.replace(/_/g, ' ')}:
+                                              </td>
+                                              <td className="py-1.5 text-gray-900">
+                                                {typeof val === 'string' && val.length > 100 ? (
+                                                  <div className="break-words">{val}</div>
+                                                ) : (
+                                                  <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                    {String(val)}
+                                                  </code>
+                                                )}
+                                              </td>
+                                            </tr>
+                                          );
+                                        })}
                                       </tbody>
                                     </table>
                                   );
@@ -5703,7 +5854,7 @@ ${narrativeLines}
 
                             {/* Field metadata */}
                             <div className="mt-4 text-sm flex items-center gap-2">
-                              <span className="font-semibold">IATI Path:</span>
+                              <span className="font-semibold">IATI Standard Reference:</span>
                               <a
                                 href={`https://iatistandard.org/en/iati-standard/203/activity-standard/iati-activities/iati-activity/${field.iatiPath.replace('iati-activity/', '').replace(/\[\d+\]/g, '').replace(/\[@[^\]]+\]/g, '').replace(/\/narrative$/, '')}/`}
                                 target="_blank"
@@ -5795,7 +5946,7 @@ ${narrativeLines}
                         <TableCell colSpan={6} className="bg-gray-50 p-4">
                           {/* Field metadata */}
                           <div className="mt-4 text-sm flex items-center gap-2">
-                            <span className="font-semibold">IATI Path:</span>
+                            <span className="font-semibold">IATI Standard Reference:</span>
                             <code className="text-xs font-mono text-gray-700 bg-white px-2 py-1 rounded border">
                               {field.iatiPath}
                             </code>
