@@ -3,7 +3,7 @@ import { getSupabaseAdmin } from '@/lib/supabase';
 import { fixedCurrencyConverter } from '@/lib/currency-converter-fixed';
 import { getOrCreateOrganization } from '@/lib/organization-helpers';
 import { validatePolicyMarkerSignificance } from '@/lib/policy-marker-validation';
-import { sanitizeIatiDescriptionServerSafe } from '@/lib/sanitize';
+import { sanitizeIatiDescriptionServerSafe } from '@/lib/sanitize-server';
 
 interface ImportRequest {
   fields: Record<string, boolean>;

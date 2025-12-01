@@ -5,7 +5,7 @@ import { XMLParser } from 'fast-xml-parser';
 import { iatiAnalytics } from '@/lib/analytics';
 import { USER_ROLES } from '@/types/user';
 import { getOrCreateOrganization } from '@/lib/organization-helpers';
-import { sanitizeIatiDescriptionServerSafe } from '@/lib/sanitize';
+import { sanitizeIatiDescriptionServerSafe } from '@/lib/sanitize-server';
 
 export const dynamic = 'force-dynamic';
 

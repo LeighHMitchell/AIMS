@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { sanitizeIatiDescriptionServerSafe } from "@/lib/sanitize"
+import { sanitizeIatiDescriptionServerSafe } from "@/lib/sanitize-server"
 
 // Force dynamic rendering - critical for production
 export const dynamic = 'force-dynamic';
