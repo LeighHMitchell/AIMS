@@ -24,7 +24,7 @@ export async function GET(request: NextRequest) {
     // Get unique activity IDs to fetch activity info
     const activityIds = [...new Set(locations?.map(loc => loc.activity_id).filter(Boolean))] || [];
     
-    // Fetch activities with organization info
+    // Fetch activities with organization info and dates
     const { data: activities, error: activitiesError } = await supabase
       .from('activities')
       .select(`
@@ -32,6 +32,10 @@ export async function GET(request: NextRequest) {
         title_narrative,
         activity_status,
         reporting_org_id,
+        planned_start_date,
+        actual_start_date,
+        planned_end_date,
+        actual_end_date,
         organizations (
           name
         )
@@ -42,14 +46,34 @@ export async function GET(request: NextRequest) {
       console.warn('[All Locations API] Warning: Could not fetch activities:', activitiesError);
     }
 
-    // Fetch sectors for these activities
+    // Fetch sectors for these activities (with percentages)
     const { data: sectors, error: sectorsError } = await supabase
       .from('activity_sectors')
-      .select('activity_id, sector_code, sector_name, category_code, category_name, level')
+      .select('activity_id, sector_code, sector_name, category_code, category_name, level, percentage')
       .in('activity_id', activityIds);
 
     if (sectorsError) {
       console.warn('[All Locations API] Warning: Could not fetch sectors:', sectorsError);
+    }
+
+    // Fetch budgets for these activities
+    const { data: budgets, error: budgetsError } = await supabase
+      .from('budgets')
+      .select('activity_id, amount, currency')
+      .in('activity_id', activityIds);
+
+    if (budgetsError) {
+      console.warn('[All Locations API] Warning: Could not fetch budgets:', budgetsError);
+    }
+
+    // Fetch planned disbursements for these activities
+    const { data: plannedDisbursements, error: pdError } = await supabase
+      .from('planned_disbursements')
+      .select('activity_id, amount, currency')
+      .in('activity_id', activityIds);
+
+    if (pdError) {
+      console.warn('[All Locations API] Warning: Could not fetch planned disbursements:', pdError);
     }
 
     // Create a map of activities by ID for quick lookup
@@ -69,8 +93,23 @@ export async function GET(request: NextRequest) {
         name: sector.sector_name,
         categoryCode: sector.category_code,
         categoryName: sector.category_name,
-        level: sector.level
+        level: sector.level,
+        percentage: sector.percentage || 0
       });
+    });
+
+    // Create a map of total budgets by activity ID
+    const budgetsMap = new Map<string, number>();
+    budgets?.forEach(budget => {
+      const current = budgetsMap.get(budget.activity_id) || 0;
+      budgetsMap.set(budget.activity_id, current + (budget.amount || 0));
+    });
+
+    // Create a map of total planned disbursements by activity ID
+    const pdMap = new Map<string, number>();
+    plannedDisbursements?.forEach(pd => {
+      const current = pdMap.get(pd.activity_id) || 0;
+      pdMap.set(pd.activity_id, current + (pd.amount || 0));
     });
 
     // Transform the data for the map
@@ -93,6 +132,9 @@ export async function GET(request: NextRequest) {
         state_region_name: location.state_region_name,
         township_code: location.township_code,
         township_name: location.township_name,
+        district_name: location.district_name,
+        village_name: location.village_name,
+        city: location.city,
         created_at: location.created_at,
         updated_at: location.updated_at,
         // Activity information
@@ -102,7 +144,11 @@ export async function GET(request: NextRequest) {
           status: activity.activity_status,
           organization_id: activity.reporting_org_id,
           organization_name: activity.organizations?.name,
-          sectors: sectorsMap.get(location.activity_id) || []
+          sectors: sectorsMap.get(location.activity_id) || [],
+          totalBudget: budgetsMap.get(location.activity_id) || 0,
+          totalPlannedDisbursement: pdMap.get(location.activity_id) || 0,
+          startDate: activity.actual_start_date || activity.planned_start_date,
+          endDate: activity.actual_end_date || activity.planned_end_date
         } : null
       };
     }) || [];

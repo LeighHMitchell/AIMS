@@ -13,8 +13,6 @@ import {
   Satellite, 
   Mountain, 
   MapPin, 
-  Building, 
-  Filter, 
   Flame, 
   BarChart3, 
   CircleDot 
@@ -22,7 +20,8 @@ import {
 import dynamic from 'next/dynamic';
 import { Skeleton } from '@/components/ui/skeleton-loader';
 import { EnhancedSubnationalBreakdown } from '@/components/activities/EnhancedSubnationalBreakdown';
-import { MultiSelect, MultiSelectOption } from '@/components/ui/multi-select';
+import { SectorHierarchyFilter, SectorFilterSelection, matchesSectorFilter } from '@/components/maps/SectorHierarchyFilter';
+import { ACTIVITY_STATUS_GROUPS } from '@/data/activity-status-types';
 
 // Dynamic import for MyanmarRegionsMap to avoid SSR issues
 const MyanmarRegionsMap = dynamic(() => import('@/components/MyanmarRegionsMap'), { ssr: false });
@@ -155,7 +154,12 @@ interface LocationData {
       categoryCode?: string;
       categoryName?: string;
       level?: string;
+      percentage?: number;
     }>;
+    totalBudget?: number;
+    totalPlannedDisbursement?: number;
+    startDate?: string;
+    endDate?: string;
   } | null;
 }
 
@@ -280,7 +284,11 @@ export default function AidMap() {
   const [shouldResetMap, setShouldResetMap] = useState(false);
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [orgFilter, setOrgFilter] = useState<string>('all');
-  const [sectorFilter, setSectorFilter] = useState<string[]>([]);
+  const [sectorFilter, setSectorFilter] = useState<SectorFilterSelection>({
+    sectorCategories: [],
+    sectors: [],
+    subSectors: [],
+  });
   const mapRef = useRef<any>(null);
 
   // State for locations data
@@ -398,21 +406,17 @@ export default function AidMap() {
       filtered = filtered.filter(loc => loc.activity?.organization_name === orgFilter);
     }
 
-    if (sectorFilter.length > 0) {
+    // Apply sector hierarchy filter
+    const hasSectorFilter = 
+      sectorFilter.sectorCategories.length > 0 || 
+      sectorFilter.sectors.length > 0 || 
+      sectorFilter.subSectors.length > 0;
+    
+    if (hasSectorFilter) {
       filtered = filtered.filter(loc => {
         const activitySectors = loc.activity?.sectors || [];
-        return activitySectors.some(sector => {
-          // Check if sector code matches
-          if (sectorFilter.includes(sector.code)) return true;
-          // Check if category code matches
-          if (sector.categoryCode && sectorFilter.includes(sector.categoryCode)) return true;
-          // For 5-digit codes, also check the 3-digit prefix (category)
-          if (sector.code && sector.code.length === 5) {
-            const categoryPrefix = sector.code.substring(0, 3);
-            if (sectorFilter.includes(categoryPrefix)) return true;
-          }
-          return false;
-        });
+        const sectorCodes = activitySectors.map(s => s.code);
+        return matchesSectorFilter(sectorCodes, sectorFilter);
       });
     }
 
@@ -428,64 +432,6 @@ export default function AidMap() {
       }
     });
     return Array.from(orgs).sort();
-  }, [locations]);
-
-  // Get unique sectors for filter (category, sector, and sub-sector)
-  const sectorOptions = useMemo(() => {
-    const sectorMap = new Map<string, { label: string; group: string; code: string }>();
-    
-    locations.forEach(location => {
-      const sectors = location.activity?.sectors || [];
-      sectors.forEach(sector => {
-        // Add category if available (use categoryCode as the value)
-        if (sector.categoryCode && sector.categoryName) {
-          if (!sectorMap.has(sector.categoryCode)) {
-            sectorMap.set(sector.categoryCode, {
-              label: sector.categoryName,
-              group: 'Category',
-              code: sector.categoryCode
-            });
-          }
-        }
-        // Add sector (3-digit code)
-        if (sector.code && sector.code.length === 3) {
-          if (!sectorMap.has(sector.code)) {
-            sectorMap.set(sector.code, {
-              label: sector.name,
-              group: 'Sector',
-              code: sector.code
-            });
-          }
-        }
-        // Add sub-sector (5-digit code)
-        if (sector.code && sector.code.length === 5) {
-          if (!sectorMap.has(sector.code)) {
-            sectorMap.set(sector.code, {
-              label: sector.name,
-              group: 'Sub-Sector',
-              code: sector.code
-            });
-          }
-        }
-      });
-    });
-    
-    // Convert to array and sort by group, then label
-    const options: MultiSelectOption[] = Array.from(sectorMap.values())
-      .sort((a, b) => {
-        const groupOrder = { 'Category': 1, 'Sector': 2, 'Sub-Sector': 3 };
-        const groupDiff = (groupOrder[a.group as keyof typeof groupOrder] || 99) - 
-                         (groupOrder[b.group as keyof typeof groupOrder] || 99);
-        if (groupDiff !== 0) return groupDiff;
-        return a.label.localeCompare(b.label);
-      })
-      .map(item => ({
-        label: `${item.code} - ${item.label}`,
-        value: item.code,
-        group: item.group
-      }));
-    
-    return options;
   }, [locations]);
 
   // Use subnational breakdown data from database
@@ -583,46 +529,45 @@ export default function AidMap() {
           <div className="h-[600px] w-full relative rounded-lg overflow-hidden border border-gray-200">
             {/* Filters - top left */}
             <div className="absolute top-3 left-3 z-[1000] flex items-center gap-2">
-              <div className="flex items-center gap-2">
-                <Filter className="h-4 w-4 text-gray-600" />
-                <Select value={statusFilter} onValueChange={setStatusFilter}>
-                  <SelectTrigger className="w-48 bg-white shadow-md border-gray-300">
-                    <SelectValue placeholder="Filter by status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Statuses</SelectItem>
-                    <SelectItem value="active">Active</SelectItem>
-                    <SelectItem value="planned">Planned</SelectItem>
-                    <SelectItem value="completed">Completed</SelectItem>
-                    <SelectItem value="cancelled">Cancelled</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="w-[280px] bg-white shadow-md border-gray-300">
+                  <SelectValue placeholder="Filter by status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Statuses</SelectItem>
+                  {ACTIVITY_STATUS_GROUPS.map((group) => (
+                    <React.Fragment key={group.label}>
+                      {group.options.map((status) => (
+                        <SelectItem key={status.code} value={status.code}>
+                          <span className="inline-flex items-center gap-2">
+                            <code className="px-1.5 py-0.5 bg-gray-100 text-gray-700 rounded text-xs font-mono">{status.code}</code>
+                            <span>{status.name}</span>
+                          </span>
+                        </SelectItem>
+                      ))}
+                    </React.Fragment>
+                  ))}
+                </SelectContent>
+              </Select>
               
-              <div className="flex items-center gap-2">
-                <Building className="h-4 w-4 text-gray-600" />
-                <Select value={orgFilter} onValueChange={setOrgFilter}>
-                  <SelectTrigger className="w-48 bg-white shadow-md border-gray-300">
-                    <SelectValue placeholder="Filter by organization" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Organizations</SelectItem>
-                    {organizations.map((org) => (
-                      <SelectItem key={org} value={org}>
-                        {org}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+              <Select value={orgFilter} onValueChange={setOrgFilter}>
+                <SelectTrigger className="w-[280px] bg-white shadow-md border-gray-300">
+                  <SelectValue placeholder="Filter by organization" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Organizations</SelectItem>
+                  {organizations.map((org) => (
+                    <SelectItem key={org} value={org}>
+                      {org}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
               
-              <MultiSelect
-                options={sectorOptions}
+              <SectorHierarchyFilter
                 selected={sectorFilter}
                 onChange={setSectorFilter}
-                placeholder="Filter by sector"
-                className="w-48 bg-white shadow-md border-gray-300"
-                selectedLabel="sectors"
+                className="w-[280px] bg-white shadow-md border-gray-300"
               />
             </div>
             
@@ -683,6 +628,9 @@ export default function AidMap() {
                 ref={mapRef}
                 center={[19.5, 96.0]}
                 zoom={6}
+                minZoom={2}
+                maxBounds={[[-90, -180], [90, 180]]}
+                maxBoundsViscosity={1.0}
                 style={{ height: '100%', width: '100%' }}
                 zoomControl={false}
                 attributionControl={false}
@@ -700,6 +648,7 @@ export default function AidMap() {
                   keepBuffer={2}
                   updateWhenIdle={false}
                   updateWhenZooming={false}
+                  noWrap={true}
                 />
                 
                 {/* Markers Mode */}
