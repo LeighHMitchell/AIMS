@@ -6,7 +6,19 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Map, RotateCcw, Layers, Satellite, Mountain, MapPin, Building, Filter, Flame, BarChart3, CircleDot } from 'lucide-react';
+import { 
+  Map as MapIcon, 
+  RotateCcw, 
+  Layers, 
+  Satellite, 
+  Mountain, 
+  MapPin, 
+  Building, 
+  Filter, 
+  Flame, 
+  BarChart3, 
+  CircleDot 
+} from 'lucide-react';
 import dynamic from 'next/dynamic';
 import { Skeleton } from '@/components/ui/skeleton-loader';
 import { EnhancedSubnationalBreakdown } from '@/components/activities/EnhancedSubnationalBreakdown';
@@ -502,7 +514,7 @@ export default function AidMap() {
         <Card>
           <CardHeader>
             <div className="flex items-center gap-2">
-              <Map className="h-5 w-5" />
+              <MapIcon className="h-5 w-5" />
               <Skeleton variant="text" width="120px" height="1.5rem" />
             </div>
           </CardHeader>
@@ -519,7 +531,7 @@ export default function AidMap() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Map className="h-5 w-5" />
+            <MapIcon className="h-5 w-5" />
             Atlas
           </CardTitle>
         </CardHeader>
@@ -543,7 +555,7 @@ export default function AidMap() {
         <CardHeader>
           <div className="flex items-center justify-between">
             <CardTitle className="flex items-center gap-2">
-              <Map className="h-5 w-5" />
+              <MapIcon className="h-5 w-5" />
               Map & Analysis
             </CardTitle>
             
