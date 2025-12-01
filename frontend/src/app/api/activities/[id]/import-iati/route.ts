@@ -3,7 +3,7 @@ import { getSupabaseAdmin } from '@/lib/supabase';
 import { fixedCurrencyConverter } from '@/lib/currency-converter-fixed';
 import { getOrCreateOrganization } from '@/lib/organization-helpers';
 import { validatePolicyMarkerSignificance } from '@/lib/policy-marker-validation';
-import { sanitizeIatiDescription } from '@/lib/sanitize';
+import { sanitizeIatiDescriptionServerSafe } from '@/lib/sanitize';
 
 interface ImportRequest {
   fields: Record<string, boolean>;
@@ -237,7 +237,7 @@ export async function POST(
         
         // Sanitize HTML in description fields
         if (descriptionFields.includes(iatiField) && typeof value === 'string') {
-          value = sanitizeIatiDescription(value);
+          value = sanitizeIatiDescriptionServerSafe(value);
         }
         
         updateData[dbField] = value;

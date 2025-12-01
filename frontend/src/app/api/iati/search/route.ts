@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { sanitizeIatiDescription } from "@/lib/sanitize"
+import { sanitizeIatiDescriptionServerSafe } from "@/lib/sanitize"
 
 // Force dynamic rendering - critical for production
 export const dynamic = 'force-dynamic';
@@ -590,7 +590,7 @@ export async function POST(request: NextRequest) {
                 ? activity.description_narrative[0]
                 : activity.description_narrative;
               const sanitizedDescription = rawDescription 
-                ? sanitizeIatiDescription(rawDescription) 
+                ? sanitizeIatiDescriptionServerSafe(rawDescription) 
                 : undefined;
 
               activities.push({

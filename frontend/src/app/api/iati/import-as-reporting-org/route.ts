@@ -5,7 +5,7 @@ import { XMLParser } from 'fast-xml-parser';
 import { iatiAnalytics } from '@/lib/analytics';
 import { USER_ROLES } from '@/types/user';
 import { getOrCreateOrganization } from '@/lib/organization-helpers';
-import { sanitizeIatiDescription } from '@/lib/sanitize';
+import { sanitizeIatiDescriptionServerSafe } from '@/lib/sanitize';
 
 export const dynamic = 'force-dynamic';
 
@@ -222,7 +222,7 @@ export async function POST(request: NextRequest) {
         // Extract and sanitize description HTML
         const rawDescription = extractNarrative(xmlActivity.description);
         const sanitizedDescription = rawDescription 
-          ? sanitizeIatiDescription(rawDescription) 
+          ? sanitizeIatiDescriptionServerSafe(rawDescription) 
           : undefined;
 
         activities.push({
@@ -731,7 +731,7 @@ export async function POST(request: NextRequest) {
             
             if (!activityInsert.description_narrative && parsedActivity.description) {
               // Sanitize HTML in description
-              activityInsert.description_narrative = sanitizeIatiDescription(parsedActivity.description);
+              activityInsert.description_narrative = sanitizeIatiDescriptionServerSafe(parsedActivity.description);
             }
             if (!activityInsert.activity_status && parsedActivity.activityStatus) {
               activityInsert.activity_status = parsedActivity.activityStatus;
@@ -767,7 +767,7 @@ export async function POST(request: NextRequest) {
           // Use basic activityData (backward compatibility)
           // Sanitize HTML in description
           const sanitizedDesc = activityData.description 
-            ? sanitizeIatiDescription(activityData.description) 
+            ? sanitizeIatiDescriptionServerSafe(activityData.description) 
             : null;
           activityInsert = {
             ...activityInsert,
