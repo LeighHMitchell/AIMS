@@ -10,8 +10,10 @@ import { Map, RotateCcw, Layers, Satellite, Mountain, MapPin, Building, Filter, 
 import dynamic from 'next/dynamic';
 import { Skeleton } from '@/components/ui/skeleton-loader';
 import { EnhancedSubnationalBreakdown } from '@/components/activities/EnhancedSubnationalBreakdown';
-import MyanmarRegionsMap from '@/components/MyanmarRegionsMap';
 import { MultiSelect, MultiSelectOption } from '@/components/ui/multi-select';
+
+// Dynamic import for MyanmarRegionsMap to avoid SSR issues
+const MyanmarRegionsMap = dynamic(() => import('@/components/MyanmarRegionsMap'), { ssr: false });
 
 // Dynamic import for map components to avoid SSR issues
 const MapContainer = dynamic(
