@@ -66,7 +66,7 @@ export function SidebarNav({ userRole, canManageUsers, isLoading, isCollapsed = 
       items: [
         { name: "Analytics", href: "/analytics-dashboard", show: true },
         { name: "Transparency Index", href: "/transparency-index", show: true },
-        { name: "Aid Map", href: "/aid-map", show: true },
+        { name: "Atlas", href: "/aid-map", show: true },
         { name: "Aid Flow Map", href: "/aid-flow-map", show: true },
         { name: "Search", href: "/search", show: true },
         { name: "Aid Effectiveness", href: "/aid-effectiveness-dashboard", show: true },

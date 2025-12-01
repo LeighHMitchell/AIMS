@@ -6,11 +6,12 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Map, RotateCcw, Layers, Satellite, Mountain, MapPin, Activity, Building, Filter, Flame, BarChart3, CircleDot, Download } from 'lucide-react';
+import { Map, RotateCcw, Layers, Satellite, Mountain, MapPin, Building, Filter, Flame, BarChart3, CircleDot } from 'lucide-react';
 import dynamic from 'next/dynamic';
 import { Skeleton } from '@/components/ui/skeleton-loader';
 import { EnhancedSubnationalBreakdown } from '@/components/activities/EnhancedSubnationalBreakdown';
 import MyanmarRegionsMap from '@/components/MyanmarRegionsMap';
+import { MultiSelect, MultiSelectOption } from '@/components/ui/multi-select';
 
 // Dynamic import for map components to avoid SSR issues
 const MapContainer = dynamic(
@@ -134,6 +135,13 @@ interface LocationData {
     status: string;
     organization_id: string;
     organization_name?: string;
+    sectors?: Array<{
+      code: string;
+      name: string;
+      categoryCode?: string;
+      categoryName?: string;
+      level?: string;
+    }>;
   } | null;
 }
 
@@ -258,6 +266,7 @@ export default function AidMap() {
   const [shouldResetMap, setShouldResetMap] = useState(false);
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [orgFilter, setOrgFilter] = useState<string>('all');
+  const [sectorFilter, setSectorFilter] = useState<string[]>([]);
   const mapRef = useRef<any>(null);
 
   // State for locations data
@@ -375,8 +384,26 @@ export default function AidMap() {
       filtered = filtered.filter(loc => loc.activity?.organization_name === orgFilter);
     }
 
+    if (sectorFilter.length > 0) {
+      filtered = filtered.filter(loc => {
+        const activitySectors = loc.activity?.sectors || [];
+        return activitySectors.some(sector => {
+          // Check if sector code matches
+          if (sectorFilter.includes(sector.code)) return true;
+          // Check if category code matches
+          if (sector.categoryCode && sectorFilter.includes(sector.categoryCode)) return true;
+          // For 5-digit codes, also check the 3-digit prefix (category)
+          if (sector.code && sector.code.length === 5) {
+            const categoryPrefix = sector.code.substring(0, 3);
+            if (sectorFilter.includes(categoryPrefix)) return true;
+          }
+          return false;
+        });
+      });
+    }
+
     return filtered;
-  }, [validLocations, statusFilter, orgFilter]);
+  }, [validLocations, statusFilter, orgFilter, sectorFilter]);
 
   // Get unique organizations for filter
   const organizations = useMemo(() => {
@@ -387,6 +414,64 @@ export default function AidMap() {
       }
     });
     return Array.from(orgs).sort();
+  }, [locations]);
+
+  // Get unique sectors for filter (category, sector, and sub-sector)
+  const sectorOptions = useMemo(() => {
+    const sectorMap = new Map<string, { label: string; group: string; code: string }>();
+    
+    locations.forEach(location => {
+      const sectors = location.activity?.sectors || [];
+      sectors.forEach(sector => {
+        // Add category if available (use categoryCode as the value)
+        if (sector.categoryCode && sector.categoryName) {
+          if (!sectorMap.has(sector.categoryCode)) {
+            sectorMap.set(sector.categoryCode, {
+              label: sector.categoryName,
+              group: 'Category',
+              code: sector.categoryCode
+            });
+          }
+        }
+        // Add sector (3-digit code)
+        if (sector.code && sector.code.length === 3) {
+          if (!sectorMap.has(sector.code)) {
+            sectorMap.set(sector.code, {
+              label: sector.name,
+              group: 'Sector',
+              code: sector.code
+            });
+          }
+        }
+        // Add sub-sector (5-digit code)
+        if (sector.code && sector.code.length === 5) {
+          if (!sectorMap.has(sector.code)) {
+            sectorMap.set(sector.code, {
+              label: sector.name,
+              group: 'Sub-Sector',
+              code: sector.code
+            });
+          }
+        }
+      });
+    });
+    
+    // Convert to array and sort by group, then label
+    const options: MultiSelectOption[] = Array.from(sectorMap.values())
+      .sort((a, b) => {
+        const groupOrder = { 'Category': 1, 'Sector': 2, 'Sub-Sector': 3 };
+        const groupDiff = (groupOrder[a.group as keyof typeof groupOrder] || 99) - 
+                         (groupOrder[b.group as keyof typeof groupOrder] || 99);
+        if (groupDiff !== 0) return groupDiff;
+        return a.label.localeCompare(b.label);
+      })
+      .map(item => ({
+        label: `${item.code} - ${item.label}`,
+        value: item.code,
+        group: item.group
+      }));
+    
+    return options;
   }, [locations]);
 
   // Use subnational breakdown data from database
@@ -433,7 +518,7 @@ export default function AidMap() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Map className="h-5 w-5" />
-            Aid Map
+            Atlas
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -457,7 +542,7 @@ export default function AidMap() {
           <div className="flex items-center justify-between">
             <CardTitle className="flex items-center gap-2">
               <Map className="h-5 w-5" />
-              Aid Map & Analysis
+              Map & Analysis
             </CardTitle>
             
             <div className="flex justify-end">
@@ -480,46 +565,55 @@ export default function AidMap() {
         <CardContent>
           <Tabs value={tabMode} onValueChange={(value: TabMode) => setTabMode(value)}>
             <TabsContent value="map" className="space-y-4">
-              {/* Filters - outside map */}
-              <div className="flex gap-4">
-                  <div className="flex items-center gap-2">
-                    <Filter className="h-4 w-4" />
-                    <Select value={statusFilter} onValueChange={setStatusFilter}>
-                      <SelectTrigger className="w-48">
-                        <SelectValue placeholder="Filter by status" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">All Statuses</SelectItem>
-                        <SelectItem value="active">Active</SelectItem>
-                        <SelectItem value="planned">Planned</SelectItem>
-                        <SelectItem value="completed">Completed</SelectItem>
-                        <SelectItem value="cancelled">Cancelled</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  
-                  <div className="flex items-center gap-2">
-                    <Building className="h-4 w-4" />
-                    <Select value={orgFilter} onValueChange={setOrgFilter}>
-                      <SelectTrigger className="w-48">
-                        <SelectValue placeholder="Filter by organization" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">All Organizations</SelectItem>
-                  {organizations.map((org) => (
-                    <SelectItem key={org} value={org}>
-                      {org}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-                </div>
-            </div>
-            
           {/* Map */}
           <div className="h-[600px] w-full relative rounded-lg overflow-hidden border border-gray-200">
-            {/* Map Controls Overlay - inside map */}
+            {/* Filters - top left */}
             <div className="absolute top-3 left-3 z-[1000] flex items-center gap-2">
+              <div className="flex items-center gap-2">
+                <Filter className="h-4 w-4 text-gray-600" />
+                <Select value={statusFilter} onValueChange={setStatusFilter}>
+                  <SelectTrigger className="w-48 bg-white shadow-md border-gray-300">
+                    <SelectValue placeholder="Filter by status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Statuses</SelectItem>
+                    <SelectItem value="active">Active</SelectItem>
+                    <SelectItem value="planned">Planned</SelectItem>
+                    <SelectItem value="completed">Completed</SelectItem>
+                    <SelectItem value="cancelled">Cancelled</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="flex items-center gap-2">
+                <Building className="h-4 w-4 text-gray-600" />
+                <Select value={orgFilter} onValueChange={setOrgFilter}>
+                  <SelectTrigger className="w-48 bg-white shadow-md border-gray-300">
+                    <SelectValue placeholder="Filter by organization" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Organizations</SelectItem>
+                    {organizations.map((org) => (
+                      <SelectItem key={org} value={org}>
+                        {org}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <MultiSelect
+                options={sectorOptions}
+                selected={sectorFilter}
+                onChange={setSectorFilter}
+                placeholder="Filter by sector"
+                className="w-48 bg-white shadow-md border-gray-300"
+                selectedLabel="sectors"
+              />
+            </div>
+            
+            {/* Map Controls - top right */}
+            <div className="absolute top-3 right-3 z-[1000] flex items-center gap-2">
               <Select value={mapLayer} onValueChange={(value) => setMapLayer(value as MapLayerType)}>
                 <SelectTrigger className="w-48 bg-white shadow-md border-gray-300">
                   <SelectValue placeholder="Select map type" />
@@ -564,7 +658,7 @@ export default function AidMap() {
                   title="Show heatmap"
                   className={`rounded-none border-0 border-l border-gray-300 ${viewMode === 'heatmap' ? 'bg-orange-100 text-orange-700' : 'hover:bg-gray-100'}`}
                 >
-                <Flame className="h-4 w-4" />
+                  <Flame className="h-4 w-4" />
                 </Button>
               </div>
             </div>
@@ -742,43 +836,6 @@ export default function AidMap() {
           </Tabs>
         </CardContent>
       </Card>
-
-      {/* Summary Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card>
-          <CardContent className="pt-6">
-            <div className="text-2xl font-bold">{filteredLocations.length}</div>
-            <p className="text-xs text-muted-foreground">Activity Locations</p>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardContent className="pt-6">
-            <div className="text-2xl font-bold">
-              {new Set(filteredLocations.map(l => l.activity?.id).filter(Boolean)).size}
-            </div>
-            <p className="text-xs text-muted-foreground">Unique Activities</p>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardContent className="pt-6">
-            <div className="text-2xl font-bold">
-              {new Set(filteredLocations.map(l => l.activity?.organization_name).filter(Boolean)).size}
-            </div>
-            <p className="text-xs text-muted-foreground">Organizations</p>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardContent className="pt-6">
-            <div className="text-2xl font-bold">
-              {new Set(filteredLocations.map(l => l.location_type)).size}
-            </div>
-            <p className="text-xs text-muted-foreground">Location Types</p>
-          </CardContent>
-        </Card>
-      </div>
     </div>
   );
 }

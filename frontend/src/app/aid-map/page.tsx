@@ -9,7 +9,7 @@ export default function AidMapPage() {
   return (
     <MainLayout>
       <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Aid Map</h1>
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">Atlas</h1>
         <p className="text-gray-600">
           Interactive map showing the locations of all activities across Myanmar
         </p>

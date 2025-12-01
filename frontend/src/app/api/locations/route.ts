@@ -42,10 +42,35 @@ export async function GET(request: NextRequest) {
       console.warn('[All Locations API] Warning: Could not fetch activities:', activitiesError);
     }
 
+    // Fetch sectors for these activities
+    const { data: sectors, error: sectorsError } = await supabase
+      .from('activity_sectors')
+      .select('activity_id, sector_code, sector_name, category_code, category_name, level')
+      .in('activity_id', activityIds);
+
+    if (sectorsError) {
+      console.warn('[All Locations API] Warning: Could not fetch sectors:', sectorsError);
+    }
+
     // Create a map of activities by ID for quick lookup
     const activitiesMap = new Map();
     activities?.forEach(activity => {
       activitiesMap.set(activity.id, activity);
+    });
+
+    // Create a map of sectors by activity ID
+    const sectorsMap = new Map<string, any[]>();
+    sectors?.forEach(sector => {
+      if (!sectorsMap.has(sector.activity_id)) {
+        sectorsMap.set(sector.activity_id, []);
+      }
+      sectorsMap.get(sector.activity_id)!.push({
+        code: sector.sector_code,
+        name: sector.sector_name,
+        categoryCode: sector.category_code,
+        categoryName: sector.category_name,
+        level: sector.level
+      });
     });
 
     // Transform the data for the map
@@ -76,7 +101,8 @@ export async function GET(request: NextRequest) {
           title: activity.title_narrative,
           status: activity.activity_status,
           organization_id: activity.reporting_org_id,
-          organization_name: activity.organizations?.name
+          organization_name: activity.organizations?.name,
+          sectors: sectorsMap.get(location.activity_id) || []
         } : null
       };
     }) || [];
