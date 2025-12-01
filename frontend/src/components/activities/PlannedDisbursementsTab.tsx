@@ -2,7 +2,8 @@
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { format, parseISO, isValid, addMonths, startOfMonth, endOfMonth, startOfQuarter, endOfQuarter, differenceInMonths, getQuarter, getYear } from 'date-fns';
-import { Trash2, Copy, Loader2, Plus, CalendarIcon, Download, DollarSign, Users, Edit, Save, X, Check, MoreVertical, Calendar, ArrowUp, ArrowDown, ArrowUpDown, CheckCircle, ChevronLeft, ChevronRight, ChevronUp, ChevronDown } from 'lucide-react';
+import { Trash2, Copy, Loader2, Plus, CalendarIcon, Download, DollarSign, Users, Edit, Save, X, Check, MoreVertical, Calendar, ArrowUp, ArrowDown, ArrowUpDown, CheckCircle, ChevronLeft, ChevronRight, ChevronUp, ChevronDown, Lock, Unlock, RefreshCw } from 'lucide-react';
+import { fixedCurrencyConverter } from '@/lib/currency-converter-fixed';
 import { supabase } from '@/lib/supabase';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -150,6 +151,7 @@ interface PlannedDisbursementsTabProps {
   onDisbursementsChange?: (disbursements: PlannedDisbursement[]) => void;
   hideSummaryCards?: boolean;
   renderFilters?: (filters: React.ReactNode) => React.ReactNode;
+  onLoadingChange?: (loading: boolean) => void;
 }
 
 interface Organization {
@@ -170,7 +172,8 @@ export default function PlannedDisbursementsTab({
   readOnly = false,
   onDisbursementsChange,
   hideSummaryCards = false,
-  renderFilters
+  renderFilters,
+  onLoadingChange
 }: PlannedDisbursementsTabProps) {
   const [disbursements, setDisbursements] = useState<PlannedDisbursement[]>([]);
   const [organizations, setOrganizations] = useState<Organization[]>([]);
@@ -192,6 +195,12 @@ export default function PlannedDisbursementsTab({
   const [currencyPopoverOpen, setCurrencyPopoverOpen] = useState(false);
   const [amountInputValue, setAmountInputValue] = useState<string>('');
   const [isAmountFocused, setIsAmountFocused] = useState(false);
+  
+  // Exchange rate state for modal
+  const [modalExchangeRateManual, setModalExchangeRateManual] = useState(false);
+  const [modalExchangeRate, setModalExchangeRate] = useState<number | null>(null);
+  const [isLoadingModalRate, setIsLoadingModalRate] = useState(false);
+  const [modalRateError, setModalRateError] = useState<string | null>(null);
   
   // Sorting state
   const [sortColumn, setSortColumn] = useState<string | null>(null);
@@ -411,6 +420,79 @@ export default function PlannedDisbursementsTab({
     validateField(field, value);
   };
 
+  // Fetch exchange rate for modal
+  const fetchModalExchangeRate = useCallback(async () => {
+    if (!modalDisbursement) return;
+    
+    const currency = modalDisbursement.currency;
+    if (!currency || currency === 'USD') {
+      setModalExchangeRate(1);
+      setModalRateError(null);
+      return;
+    }
+
+    const valueDate = modalDisbursement.value_date || modalDisbursement.period_start;
+    if (!valueDate) {
+      setModalRateError('Please set a value date or period start first');
+      return;
+    }
+
+    setIsLoadingModalRate(true);
+    setModalRateError(null);
+
+    try {
+      const result = await fixedCurrencyConverter.convertToUSD(
+        1,
+        currency,
+        new Date(valueDate)
+      );
+
+      if (result.success && result.exchange_rate) {
+        setModalExchangeRate(result.exchange_rate);
+        setModalRateError(null);
+        console.log(`[PlannedDisbursementsTab] Fetched exchange rate: 1 ${currency} = ${result.exchange_rate} USD`);
+      } else {
+        setModalRateError(result.error || 'Failed to fetch exchange rate');
+        setModalExchangeRate(null);
+      }
+    } catch (err) {
+      console.error('[PlannedDisbursementsTab] Error fetching exchange rate:', err);
+      setModalRateError('Failed to fetch exchange rate');
+      setModalExchangeRate(null);
+    } finally {
+      setIsLoadingModalRate(false);
+    }
+  }, [modalDisbursement]);
+
+  // Calculate modal USD value
+  const modalCalculatedUsdValue = modalDisbursement?.amount && modalExchangeRate 
+    ? Math.round(modalDisbursement.amount * modalExchangeRate * 100) / 100 
+    : null;
+
+  // Auto-fetch exchange rate when currency or date changes in modal (only if not manual)
+  useEffect(() => {
+    if (!modalExchangeRateManual && modalDisbursement?.currency && modalDisbursement.currency !== 'USD') {
+      const valueDate = modalDisbursement.value_date || modalDisbursement.period_start;
+      if (valueDate) {
+        fetchModalExchangeRate();
+      }
+    } else if (modalDisbursement?.currency === 'USD') {
+      setModalExchangeRate(1);
+      setModalRateError(null);
+    }
+  }, [modalDisbursement?.currency, modalDisbursement?.value_date, modalDisbursement?.period_start, modalExchangeRateManual, fetchModalExchangeRate]);
+
+  // Reset exchange rate state when modal opens
+  useEffect(() => {
+    if (showModal && modalDisbursement) {
+      const existingManual = (modalDisbursement as any).exchange_rate_manual ?? false;
+      const existingRate = (modalDisbursement as any).exchange_rate_used ?? null;
+      setModalExchangeRateManual(existingManual);
+      setModalExchangeRate(existingRate);
+      setModalRateError(null);
+    }
+  }, [showModal, modalDisbursement?.id]);
+
   // Focus management
   useEffect(() => {
     if (showModal) {
@@ -570,10 +652,12 @@ export default function PlannedDisbursementsTab({
     const fetchDisbursements = async () => {
       if (!activityId) {
         setLoading(false);
+        onLoadingChange?.(false);
         return;
       }
 
       setLoading(true);
+      onLoadingChange?.(true);
       try {
         // Use API endpoint instead of direct Supabase query to avoid RLS issues
         const response = await fetch(`/api/activities/${activityId}/planned-disbursements`, {
@@ -649,6 +733,7 @@ export default function PlannedDisbursementsTab({
         setError('Failed to load planned disbursements');
       } finally {
         setLoading(false);
+        onLoadingChange?.(false);
       }
     };
 
@@ -1256,12 +1341,15 @@ export default function PlannedDisbursementsTab({
       const periodStart = new Date(modalDisbursement.period_start).toISOString().slice(0, 10);
       const periodEnd = new Date(modalDisbursement.period_end).toISOString().slice(0, 10);
 
-      // API will handle USD conversion
+      // Include exchange rate fields
       const disbursementData = {
         activity_id: activityId,
         amount: modalDisbursement.amount,
         currency: modalDisbursement.currency,
-        // usd_amount will be calculated by the API
+        // Include USD conversion fields
+        usd_amount: modalCalculatedUsdValue,
+        exchange_rate_used: modalExchangeRate,
+        exchange_rate_manual: modalExchangeRateManual,
         period_start: periodStart,
         period_end: periodEnd,
         type: modalDisbursement.type || '1',
@@ -1435,7 +1523,7 @@ export default function PlannedDisbursementsTab({
           )}
 
           {/* Planned Disbursements Table */}
-          <Card data-planned-tab>
+          <Card data-planned-tab className="border-0 shadow-none">
         <CardHeader>
           <div className="flex items-center justify-between">
             {!hideSummaryCards && (
@@ -1688,7 +1776,7 @@ export default function PlannedDisbursementsTab({
                           )}
                         </div>
                       </TableHead>
-                      <TableHead className="text-sm font-medium text-foreground/90 py-3 px-4">
+                      <TableHead className="text-sm font-medium text-foreground/90 py-3 px-4" style={{ maxWidth: '300px' }}>
                         <div 
                           className="flex items-center gap-1 cursor-pointer hover:bg-muted/30 transition-colors"
                           onClick={() => handleSort('provider')}
@@ -1806,24 +1894,24 @@ export default function PlannedDisbursementsTab({
                           </TableCell>
 
                           {/* Provider → Receiver */}
-                          <TableCell className="py-3 px-4 whitespace-nowrap">
-                            <div className="flex items-center gap-2 font-medium">
-                              <div className="flex items-center gap-1.5">
+                          <TableCell className="py-3 px-4 max-w-[300px]">
+                            <div className="flex items-center gap-2 font-medium min-w-0">
+                              <div className="flex items-center gap-1.5 min-w-0 flex-1 max-w-[45%]">
                                 <OrganizationLogo
                                   logo={disbursement.provider_org_logo}
                                   name={getOrganizationAcronym(disbursement.provider_org_id, disbursement.provider_org_name)}
                                   size="sm"
                                 />
-                                <span>{getOrganizationAcronym(disbursement.provider_org_id, disbursement.provider_org_name)}</span>
+                                <span className="truncate">{getOrganizationAcronym(disbursement.provider_org_id, disbursement.provider_org_name)}</span>
                               </div>
-                              <span className="text-muted-foreground">→</span>
-                              <div className="flex items-center gap-1.5">
+                              <span className="text-muted-foreground flex-shrink-0">→</span>
+                              <div className="flex items-center gap-1.5 min-w-0 flex-1 max-w-[45%]">
                                 <OrganizationLogo
                                   logo={disbursement.receiver_org_logo}
                                   name={getOrganizationAcronym(disbursement.receiver_org_id, disbursement.receiver_org_name)}
                                   size="sm"
                                 />
-                                <span>{getOrganizationAcronym(disbursement.receiver_org_id, disbursement.receiver_org_name)}</span>
+                                <span className="truncate">{getOrganizationAcronym(disbursement.receiver_org_id, disbursement.receiver_org_name)}</span>
                               </div>
                             </div>
                           </TableCell>
@@ -1854,8 +1942,11 @@ export default function PlannedDisbursementsTab({
                                 <TooltipProvider>
                                   <UITooltip>
                                     <TooltipTrigger asChild>
-                                      <span className="font-medium cursor-help">
+                                      <span className="font-medium cursor-help flex items-center gap-1">
                                         <span className="text-muted-foreground">USD</span> {usdValues[disbursement.id || `${disbursement.period_start}-${disbursement.period_end}`].usd?.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                                        {(disbursement as any).exchange_rate_manual && (
+                                          <Badge variant="outline" className="ml-1 text-[10px] px-1 py-0 h-4 bg-orange-50 text-orange-600 border-orange-200">Manual</Badge>
+                                        )}
                                       </span>
                                     </TooltipTrigger>
                                     <TooltipContent>
@@ -1863,6 +1954,7 @@ export default function PlannedDisbursementsTab({
                                         <div>Original: {disbursement.amount} {disbursement.currency}</div>
                                         <div>Rate: {usdValues[disbursement.id || `${disbursement.period_start}-${disbursement.period_end}`].rate}</div>
                                         <div>Date: {usdValues[disbursement.id || `${disbursement.period_start}-${disbursement.period_end}`].date}</div>
+                                        {(disbursement as any).exchange_rate_manual && <div className="text-orange-500 font-medium">Manually entered rate</div>}
                                       </div>
                                     </TooltipContent>
                                   </UITooltip>
@@ -2425,6 +2517,100 @@ export default function PlannedDisbursementsTab({
                 )}
               </div>
             </div>
+
+            {/* USD Conversion Section */}
+            {modalDisbursement?.currency && modalDisbursement.currency !== 'USD' && (
+              <div className="border border-green-200 bg-green-50/50 rounded-lg p-4 space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <DollarSign className="h-4 w-4 text-green-600" />
+                    <Label className="text-sm font-medium">USD Conversion</Label>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-muted-foreground">
+                      {modalExchangeRateManual ? 'Manual' : 'API Rate'}
+                    </span>
+                    <Switch 
+                      checked={!modalExchangeRateManual}
+                      onCheckedChange={(checked) => {
+                        setModalExchangeRateManual(!checked);
+                        if (checked) {
+                          fetchModalExchangeRate();
+                        }
+                      }}
+                    />
+                    {modalExchangeRateManual ? (
+                      <Unlock className="h-4 w-4 text-orange-500" />
+                    ) : (
+                      <Lock className="h-4 w-4 text-green-600" />
+                    )}
+                  </div>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  {modalExchangeRateManual 
+                    ? 'Enter your own exchange rate below'
+                    : 'Exchange rate is automatically fetched based on value date'
+                  }
+                </p>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label className="flex items-center gap-2 text-sm">
+                      Exchange Rate
+                      {!modalExchangeRateManual && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="h-6 w-6 p-0"
+                          onClick={fetchModalExchangeRate}
+                          disabled={isLoadingModalRate}
+                        >
+                          <RefreshCw className={`h-3 w-3 ${isLoadingModalRate ? 'animate-spin' : ''}`} />
+                        </Button>
+                      )}
+                    </Label>
+                    <div className="relative">
+                      <Input
+                        type="number"
+                        step="0.000001"
+                        value={modalExchangeRate || ''}
+                        onChange={(e) => {
+                          const value = parseFloat(e.target.value);
+                          setModalExchangeRate(isNaN(value) ? null : value);
+                        }}
+                        disabled={!modalExchangeRateManual || isLoadingModalRate}
+                        className={!modalExchangeRateManual ? 'bg-gray-100' : ''}
+                        placeholder={isLoadingModalRate ? 'Loading...' : 'Enter rate'}
+                      />
+                      {isLoadingModalRate && (
+                        <Loader2 className="absolute right-3 top-3 h-4 w-4 animate-spin text-muted-foreground" />
+                      )}
+                    </div>
+                    {modalExchangeRate && (
+                      <p className="text-xs text-muted-foreground">
+                        1 {modalDisbursement.currency} = {modalExchangeRate.toFixed(6)} USD
+                      </p>
+                    )}
+                    {modalRateError && (
+                      <p className="text-xs text-red-500">{modalRateError}</p>
+                    )}
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-sm">USD Value</Label>
+                    <div className="h-10 px-3 py-2 border rounded-md bg-gray-100 flex items-center font-medium text-green-700">
+                      {modalCalculatedUsdValue !== null ? (
+                        <>$ {modalCalculatedUsdValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</>
+                      ) : (
+                        <span className="text-muted-foreground">—</span>
+                      )}
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Calculated from {modalDisbursement.currency} {modalDisbursement.amount?.toLocaleString() || 0}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Provider Organisation */}
             <div className="space-y-2">

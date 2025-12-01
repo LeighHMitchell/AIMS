@@ -139,19 +139,19 @@ export function mapIatiContactToDb(iatiContact: any) {
   return {
     type: typeValidation.code,
     title: '', // IATI doesn't specify title, leave empty
-    firstName: extractFirstName(fullName) || 'Unknown',
-    lastName: extractLastName(fullName) || 'Contact',
-    position: extractNarrative(iatiContact.jobTitle) || 'Not specified', // Use jobTitle as position/role
-    jobTitle: extractNarrative(iatiContact.jobTitle), // IATI job-title field
+    firstName: extractFirstName(fullName) || null,
+    lastName: extractLastName(fullName) || null,
+    position: extractNarrative(iatiContact.jobTitle) || null,
+    jobTitle: extractNarrative(iatiContact.jobTitle),
     organisation: extractNarrative(iatiContact.organization),
-    organisationId: null, // Will be matched later if possible
-    department: extractNarrative(iatiContact.department), // IATI department field
+    organisationId: null,
+    department: extractNarrative(iatiContact.department),
     email: iatiContact.email,
     phone: iatiContact.telephone,
     phoneNumber: iatiContact.telephone,
-    website: iatiContact.website, // IATI website field
-    mailingAddress: extractNarrative(iatiContact.mailingAddress), // IATI mailing-address field
-    importedFromIati: true, // Mark this contact as imported from IATI XML
+    website: iatiContact.website,
+    mailingAddress: extractNarrative(iatiContact.mailingAddress),
+    importedFromIati: true,
   };
 }
 

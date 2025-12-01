@@ -4,8 +4,10 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
-import { AlertCircle, AlertTriangle, ArrowUpDown, ArrowUp, ArrowDown, Search, ChevronDown, ChevronRight, Copy, Check, CheckCircle2, ChevronUp, Calendar, DollarSign, Tag, FileText, ExternalLink, MapPin, Building2, Info, Lock } from 'lucide-react';
+import { AlertCircle, AlertTriangle, ArrowUpDown, ArrowUp, ArrowDown, Search, ChevronDown, ChevronRight, Copy, Check, CheckCircle2, ChevronUp, Calendar, DollarSign, Tag, FileText, ExternalLink, MapPin, Building2, Info, Lock, Settings } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { SafeHtml } from '@/components/ui/safe-html';
+import { htmlToPlainText } from '@/lib/sanitize';
 import { toast } from 'sonner';
 import { getOrganizationRoleName } from '@/data/iati-organization-roles';
 
@@ -27,6 +29,8 @@ interface ParsedField {
   policyMarkerData?: any;
   hasNonDacSectors?: boolean;
   nonDacSectors?: any[];
+  needsRefinement?: boolean;
+  importedSectors?: any[];
   isTagField?: boolean;
   tagData?: Array<{
     vocabulary?: string;
@@ -39,6 +43,22 @@ interface ParsedField {
   conditionsData?: any;
   isLocationItem?: boolean;
   locationData?: any;
+  isRecipientCountryItem?: boolean;
+  recipientCountryData?: {
+    code: string;
+    name: string;
+    percentage?: number;
+    narrative?: string;
+  };
+  isRecipientRegionItem?: boolean;
+  recipientRegionData?: {
+    code: string;
+    name: string;
+    percentage?: number;
+    vocabulary?: string;
+    vocabularyUri?: string;
+    narrative?: string;
+  };
   isFssItem?: boolean;
   fssData?: any;
   isCrsField?: boolean;
@@ -65,12 +85,13 @@ interface IatiImportFieldsTableProps {
   onDeselectAll?: () => void;
   xmlContent?: string;
   reportingOrg?: { name?: string; ref?: string; acronym?: string };
+  onSectorRefinement?: (importedSectors: any[]) => void;
 }
 
 type SortColumn = 'fieldName' | 'category' | 'fieldType' | 'iatiPath' | 'currentValue' | 'importValue' | 'conflict';
 type SortDirection = 'asc' | 'desc';
 
-export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelectAll, onDeselectAll, xmlContent, reportingOrg }: IatiImportFieldsTableProps) {
+export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelectAll, onDeselectAll, xmlContent, reportingOrg, onSectorRefinement }: IatiImportFieldsTableProps) {
   // Use sections if provided, otherwise use fields (backward compatibility)
   const allFields = sections ? sections.flatMap(s => s.fields) : (fields || []);
   const hasSections = sections && sections.length > 0;
@@ -88,6 +109,37 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
     if (!xmlContent) return null;
 
     try {
+      // Special handling for bracket notation attribute paths (e.g., iati-activity[@hierarchy])
+      const bracketAttributeMatch = iatiPath.match(/^([^[]+)\[@([^\]]+)\]$/);
+      if (bracketAttributeMatch) {
+        const parentElement = bracketAttributeMatch[1].replace('iati-activity/', '');
+        const attributeName = bracketAttributeMatch[2];
+        
+        // Find the parent element with this attribute
+        const parentPattern = new RegExp(
+          `(<${parentElement}[^>]*>)`,
+          'i'
+        );
+        
+        const parentMatch = xmlContent.match(parentPattern);
+        if (parentMatch) {
+          // Extract the opening tag with the attribute
+          const openingTag = parentMatch[1];
+          // Check if the attribute exists in this tag
+          const attributePattern = new RegExp(
+            `${attributeName}="([^"]*)"`,
+            'i'
+          );
+          const attrMatch = openingTag.match(attributePattern);
+          
+          if (attrMatch) {
+            // Return just the opening tag showing the attribute
+            return openingTag;
+          }
+        }
+        return null;
+      }
+
       // Special handling for attribute paths (e.g., iati-activity/@humanitarian)
       if (iatiPath.includes('/@') || iatiPath.startsWith('@')) {
         // Extract the attribute name and parent element
@@ -138,7 +190,8 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
       elementName = elementName.replace(/\[@[^\]]+\]/g, '');
 
       // Check if this is a description or activity-date field with type attribute
-      const typeMatch = iatiPath.match(/@type="(\d+)"/);
+      // Match both bracket notation [@type="1"] and slash notation /@type="1"
+      const typeMatch = iatiPath.match(/(?:\[@|@)type="(\d+)"/);
       const expectedType = typeMatch ? typeMatch[1] : null;
 
       // First, try to match individual elements without comments (more reliable for multiple elements)
@@ -425,19 +478,21 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
     const isExpanded = expandedTexts.has(cellId);
 
     if (isDescription) {
-      // For descriptions, use word count (10 words for 1-2 lines)
-      const words = text.trim().split(/\s+/);
+      // Convert HTML to plain text for word counting
+      const plainText = htmlToPlainText(text);
+      const words = plainText.trim().split(/\s+/);
       const shouldTruncate = words.length > MAX_DESCRIPTION_WORDS;
 
       if (!shouldTruncate) {
-        return <span className="whitespace-pre-wrap">{text}</span>;
+        // Short text - render as HTML
+        return <SafeHtml html={text} className="whitespace-pre-wrap" as="span" />;
       }
 
       return (
-        <span className="whitespace-pre-wrap">
+        <span>
           {isExpanded ? (
             <>
-              {text}
+              <SafeHtml html={text} as="span" />
               <button
                 onClick={(e) => {
                   e.stopPropagation();
@@ -454,7 +509,7 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
             </>
           ) : (
             <>
-              {getFirstNWords(text, MAX_DESCRIPTION_WORDS)}
+              <span className="whitespace-pre-wrap">{getFirstNWords(plainText, MAX_DESCRIPTION_WORDS)}</span>
               <button
                 onClick={(e) => {
                   e.stopPropagation();
@@ -670,7 +725,7 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                       const currency = currencyMatch[2];
                       return (
                         <>
-                          <span className="text-xs text-muted-foreground">{currency}</span> {value}
+                          <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">{currency}</code> {value}
                         </>
                       );
                     }
@@ -755,6 +810,11 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
 
   // Render formatted value with all enhancements
   const renderValue = (value: any, rowId: string, column: 'current' | 'import', fieldName?: string, field?: ParsedField) => {
+    // Check if value is a React element and render it directly
+    if (value && typeof value === 'object' && value.$$typeof === Symbol.for('react.element')) {
+      return value;
+    }
+
     // Special handling for date fields with structured format (date + narratives)
     const isDateField = fieldName && (
       fieldName === 'Planned Start Date' ||
@@ -814,6 +874,18 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
     // Special handling for Sectors field - show all sectors
     if (fieldName && fieldName.includes('Sectors')) {
       if (Array.isArray(value) && value.length > 0) {
+        // Check if there are any 3-digit numeric DAC sector codes that could be mapped to subsectors
+        const has3DigitDacCodes = value.some((sector: any) => {
+          const code = sector.code || '';
+          return code.length === 3 && /^\d{3}$/.test(code);
+        });
+        
+        // Check if there are any numeric DAC sector codes (3 or 5 digit)
+        const hasDacCodes = value.some((sector: any) => {
+          const code = sector.code || '';
+          return /^\d{3,5}$/.test(code);
+        });
+        
         return (
           <div className="flex flex-col gap-1.5">
             {value.map((sector: any, idx: number) => {
@@ -837,6 +909,18 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                 </div>
               );
             })}
+            {/* Map/Edit Subsectors button - always show in import column when there are DAC codes */}
+            {column === 'import' && hasDacCodes && onSectorRefinement && (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => onSectorRefinement(value)}
+                className="mt-2 text-xs"
+              >
+                <Settings className="h-3 w-3 mr-1" />
+                {has3DigitDacCodes ? 'Map to Subsectors' : 'Edit Sector Mapping'}
+              </Button>
+            )}
           </div>
         );
       }
@@ -900,7 +984,7 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
           <div className="flex flex-col gap-1">
             {field.fssData.forecasts.map((f: any, idx: number) => (
               <span key={idx} className="text-sm text-gray-900">
-                {f.year} · {f.currency} {f.value?.toLocaleString()}
+                {f.year} · <span className="text-xs text-muted-foreground">{f.currency}</span> {f.value?.toLocaleString()}
               </span>
             ))}
           </div>
@@ -911,7 +995,7 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
           <div className="flex flex-col gap-1">
             {value.forecasts.map((f: any, idx: number) => (
               <span key={idx} className="text-sm text-gray-900">
-                {f.year} · {f.currency} {f.value?.toLocaleString()}
+                {f.year} · <span className="text-xs text-muted-foreground">{f.currency}</span> {f.value?.toLocaleString()}
               </span>
             ))}
           </div>
@@ -1107,6 +1191,55 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
       }
     }
     
+    // Special handling for Location fields - show badge format in collapsed view
+    if (field?.isLocationItem && field.locationData) {
+      // For import column, use locationData; for current column, use the value object
+      const locData = column === 'import' ? field.locationData : value;
+      
+      if (!locData || typeof locData !== 'object') {
+        return <span className="text-gray-400 italic">—</span>;
+      }
+      
+      const locationCode = locData.country_code || locData.ref || locData.location_ref || '';
+      const locationName = locData.name || locData.location_name || 'Unnamed Location';
+      const lat = locData.latitude;
+      const lon = locData.longitude;
+      const coordinates = lat && lon ? `${lat} ${lon}` : '';
+      
+      return (
+        <div className="flex flex-wrap items-center gap-2">
+          {locationCode && (
+            <span className="inline-flex items-center rounded bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-700">
+              {locationCode}
+            </span>
+          )}
+          <span className="text-sm font-medium text-gray-900">
+            {locationName}
+          </span>
+          {coordinates && (
+            <span className="inline-flex items-center rounded bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-700">
+              {coordinates}
+            </span>
+          )}
+        </div>
+      );
+    }
+    
+    // Special handling for Humanitarian Scope fields - show only narrative title in summary
+    if (fieldName && fieldName.startsWith('Humanitarian Scope') && typeof value === 'object' && value !== null && !Array.isArray(value)) {
+      // Extract narrative text from the scope
+      const narratives = value.narratives || [];
+      const narrativeText = narratives.length > 0 
+        ? narratives.map((n: any) => n.text || n.narrative || '').filter(Boolean).join('; ')
+        : value.code || '';
+      
+      if (!narrativeText) {
+        return <span className="text-gray-400 italic">—</span>;
+      }
+      
+      return <span className="text-sm text-gray-900">{narrativeText}</span>;
+    }
+    
     // Special handling for Tags field - render as badges
     if (field?.isTagField && (field.tagData || field.existingTags)) {
       const importTags = field.tagData || [];
@@ -1285,7 +1418,7 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
       return (
         <span className="text-sm">
           {currency && (
-            <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">{currency}</code>
+            <span className="text-xs text-muted-foreground">{currency}</span>
           )}
           {amount !== undefined && (
             <span className={currency ? "ml-2" : ""}>{typeof amount === 'number' ? amount.toLocaleString() : amount}</span>
@@ -1310,7 +1443,7 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
       if (value.value !== undefined && value.currency) {
         return (
           <span className="text-sm">
-            <code className="text-xs font-mono text-gray-500">{value.currency}</code>
+            <span className="text-xs text-muted-foreground">{value.currency}</span>
             <span className="ml-2">{value.value?.toLocaleString()}</span>
           </span>
         );
@@ -1342,7 +1475,7 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
           const formattedValue = typeof amount === 'number' ? amount.toLocaleString() : String(amount);
           return (
             <span className="text-sm">
-              <code className="text-xs font-mono text-gray-500">{currency}</code>
+              <span className="text-xs text-muted-foreground">{currency}</span>
               <span className="ml-2">{formattedValue}</span>
             </span>
           );
@@ -1350,7 +1483,7 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
           // Transaction object with currency but no value - show just currency
           return (
             <span className="text-sm">
-              <code className="text-xs font-mono text-gray-500">{currency}</code>
+              <span className="text-xs text-muted-foreground">{currency}</span>
             </span>
           );
         }
@@ -1371,7 +1504,7 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
           const value = currencyMatch[2].trim();
           return (
             <span className="text-sm">
-              <code className="text-xs font-mono text-gray-500">{currency}</code>
+              <span className="text-xs text-muted-foreground">{currency}</span>
               <span className="ml-2">{value}</span>
             </span>
           );
@@ -1398,7 +1531,7 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
               const currency = currencyMatch[2];
               return (
                 <span className="text-sm text-gray-900">
-                  <span className="text-muted-foreground">{currency}</span> {value}
+                  <span className="text-xs text-muted-foreground">{currency}</span> {value}
                 </span>
               );
             }
@@ -1420,7 +1553,7 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
             const currency = currencyMatch[2];
             return (
               <span className="text-sm">
-                <code className="text-xs font-mono text-gray-500">{currency}</code>
+                <span className="text-xs text-muted-foreground">{currency}</span>
                 <span className="ml-2">{value}</span>
               </span>
             );
@@ -1489,8 +1622,9 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
       // Only apply 75 word limit to description fields, not all import values
       const isDescription = isActivityDescription;
       
-      // Regular text with expansion and tooltip (only if truncated)
-      const words = text.trim().split(/\s+/);
+      // For descriptions, convert to plain text for accurate word counting
+      const plainText = isDescription ? htmlToPlainText(text) : text;
+      const words = plainText.trim().split(/\s+/);
       const isLongText = isDescription ? words.length > MAX_DESCRIPTION_WORDS : text.length > MAX_TEXT_LENGTH;
       const textContent = renderExpandableText(text, cellId, isDescription);
       
@@ -1504,14 +1638,14 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                 </span>
               </TooltipTrigger>
               <TooltipContent className="max-w-md">
-                <p className="break-words whitespace-pre-wrap">{text}</p>
+                <p className="break-words whitespace-pre-wrap">{plainText}</p>
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
         );
       }
 
-      return <span className={isDescription ? 'whitespace-pre-wrap' : ''}>{textContent}</span>;
+      return <span className={isDescription ? '' : ''}>{textContent}</span>;
     }
     
     // Check if text matches currency + value pattern (e.g., "EUR 3,000")
@@ -1523,8 +1657,17 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
         const value = currencyMatch[2].trim();
         return (
           <span className="text-sm">
-            <code className="text-xs font-mono text-gray-500">{currency}</code>
+            <span className="text-xs text-muted-foreground">{currency}</span>
             <span className="ml-2">{value}</span>
+          </span>
+        );
+      }
+      
+      // Check if text is a standalone currency code (3 uppercase letters)
+      if (/^[A-Z]{3}$/.test(text)) {
+        return (
+          <span className="text-sm">
+            <span className="text-xs text-muted-foreground">{text}</span>
           </span>
         );
       }
@@ -1614,6 +1757,85 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
       const vocabMatch = String(currentValue.vocabulary || '1-2').trim() === String(importValue.vocabulary || '1-2').trim();
       
       return codeMatch && typeMatch && vocabMatch;
+    }
+
+    // Special handling for individual Location items
+    if (field.isLocationItem && field.locationData) {
+      // If no current value, it's not a match
+      if (!currentValue || typeof currentValue !== 'object') return false;
+      
+      // Compare using the locationData
+      const importData = field.locationData;
+      const currentRef = String(currentValue.country_code || currentValue.ref || currentValue.location_ref || '').trim();
+      const importRef = String(importData.country_code || importData.ref || '').trim();
+      const refMatch = currentRef === importRef;
+      const nameMatch = String(currentValue.name || currentValue.location_name || '').trim() === String(importData.name || '').trim();
+      
+      return refMatch && nameMatch;
+    }
+
+    // Special handling for individual Recipient Country items
+    if (field.isRecipientCountryItem && field.recipientCountryData) {
+      // If no current value, it's not a match
+      if (!currentValue || typeof currentValue !== 'object') return false;
+      
+      // Compare using the recipientCountryData
+      const importData = field.recipientCountryData;
+      const codeMatch = String(currentValue.code || '').trim() === String(importData.code || '').trim();
+      const percentageMatch = Math.abs((currentValue.percentage || 0) - (importData.percentage || 0)) < 0.01;
+      
+      return codeMatch && percentageMatch;
+    }
+
+    // Special handling for individual Recipient Region items
+    if (field.isRecipientRegionItem && field.recipientRegionData) {
+      // If no current value, it's not a match
+      if (!currentValue || typeof currentValue !== 'object') return false;
+      
+      // Compare using the recipientRegionData
+      const importData = field.recipientRegionData;
+      const codeMatch = String(currentValue.code || '').trim() === String(importData.code || '').trim();
+      const vocabMatch = String(currentValue.vocabulary || '1').trim() === String(importData.vocabulary || '1').trim();
+      const percentageMatch = Math.abs((currentValue.percentage || 0) - (importData.percentage || 0)) < 0.01;
+      
+      return codeMatch && vocabMatch && percentageMatch;
+    }
+
+    // Special handling for FSS (Forward Spending Survey) fields
+    if (field.isFssItem) {
+      // If no current FSS data, it's not a match
+      if (!currentValue || typeof currentValue !== 'object') return false;
+      
+      // Get the import FSS data from field.fssData
+      const importFss = field.fssData;
+      if (!importFss) return false;
+      
+      // Compare FSS attributes
+      const extractionMatch = String(currentValue.extractionDate || '').trim() === String(importFss.extractionDate || '').trim();
+      const priorityMatch = String(currentValue.priority || '') === String(importFss.priority || '');
+      const phaseoutMatch = String(currentValue.phaseoutYear || '') === String(importFss.phaseoutYear || '');
+      
+      // Compare forecasts
+      const currentForecasts = currentValue.forecasts || [];
+      const importForecasts = importFss.forecasts || [];
+      
+      if (currentForecasts.length !== importForecasts.length) return false;
+      
+      // Sort forecasts by year for comparison
+      const sortByYear = (a: any, b: any) => String(a.year || '').localeCompare(String(b.year || ''));
+      const sortedCurrentForecasts = [...currentForecasts].sort(sortByYear);
+      const sortedImportForecasts = [...importForecasts].sort(sortByYear);
+      
+      const forecastsMatch = sortedCurrentForecasts.every((current: any, idx: number) => {
+        const imp = sortedImportForecasts[idx];
+        const yearMatch = String(current.year || '') === String(imp.year || '');
+        const valueMatch = Math.abs(Number(current.value || 0) - Number(imp.value || 0)) < 0.01;
+        const currencyMatch = String(current.currency || '').toUpperCase() === String(imp.currency || '').toUpperCase();
+        const valueDateMatch = String(current.valueDate || '').trim() === String(imp.valueDate || '').trim();
+        return yearMatch && valueMatch && currencyMatch && valueDateMatch;
+      });
+      
+      return extractionMatch && priorityMatch && phaseoutMatch && forecastsMatch;
     }
 
     // If current value doesn't exist, it's not a match
@@ -2050,27 +2272,6 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
         {searchQuery && ` matching "${searchQuery}"`}
       </div>
 
-      {/* Reporting Organisation Display */}
-      {reportingOrg && (reportingOrg.name || reportingOrg.ref) && (
-        <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
-          <div className="flex items-center gap-2">
-            <Building2 className="h-4 w-4 text-blue-600 flex-shrink-0" />
-            <span className="text-sm font-medium text-gray-700">Reporting Organisation:</span>
-            <span className="text-sm font-semibold text-gray-900">
-              {reportingOrg.name || reportingOrg.ref}
-              {reportingOrg.acronym && reportingOrg.acronym !== reportingOrg.name && (
-                <span className="ml-1 text-gray-600">({reportingOrg.acronym})</span>
-              )}
-            </span>
-            {reportingOrg.ref && (
-              <span className="ml-2 text-xs text-gray-500 font-mono bg-white px-2 py-0.5 rounded border border-gray-200">
-                {reportingOrg.ref}
-              </span>
-            )}
-          </div>
-        </div>
-      )}
-
       {/* Table */}
       <div className="border rounded-lg">
         <Table>
@@ -2257,7 +2458,19 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                               </Tooltip>
                             </TooltipProvider>
                           )}
-                          {!field.hasConflict && isMissing && (
+                          {!field.hasConflict && field.fieldName === 'Sectors' && field.description?.includes('Refined successfully') && (
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger>
+                                  <CheckCircle2 className="h-4 w-4 text-green-600 mx-auto" />
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p>Sectors refined successfully - ready for import</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          )}
+                          {!field.hasConflict && !(field.fieldName === 'Sectors' && field.description?.includes('Refined successfully')) && isMissing && (
                             <TooltipProvider>
                               <Tooltip>
                                 <TooltipTrigger>
@@ -2269,7 +2482,7 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                               </Tooltip>
                             </TooltipProvider>
                           )}
-                          {!field.hasConflict && !isMissing && valuesMatch(field) && (
+                          {!field.hasConflict && !(field.fieldName === 'Sectors' && field.description?.includes('Refined successfully')) && !isMissing && valuesMatch(field) && (
                             <TooltipProvider>
                               <Tooltip>
                                 <TooltipTrigger>
@@ -2290,7 +2503,177 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                           <TableCell colSpan={6} className="bg-gray-50 p-4">
                             {/* Detailed Data Display */}
                             {(() => {
-                              // Recipient Countries, Recipient Regions, and Custom Geographies - handle arrays
+                              // Individual Recipient Country items
+                              if (field.isRecipientCountryItem && field.recipientCountryData) {
+                                const country = field.recipientCountryData;
+                                const xmlSnippet = `<recipient-country code="${country.code || ''}"${country.percentage !== undefined ? ` percentage="${country.percentage}"` : ''} />`;
+                                
+                                return (
+                                  <div className="mb-6 border-b border-gray-200 pb-6">
+                                    <div className="text-sm font-semibold mb-3 text-gray-900 flex items-center gap-2">
+                                      <MapPin className="h-4 w-4" />
+                                      Recipient Country Details
+                                    </div>
+
+                                    {/* 3-column layout */}
+                                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                                      {/* Column 1: Raw XML */}
+                                      <div className="bg-gray-50 rounded-md p-3 border border-gray-200">
+                                        <div className="text-xs font-semibold text-gray-700 mb-2">Raw XML</div>
+                                        <pre className="text-xs font-mono text-gray-800 overflow-x-auto whitespace-pre-wrap break-all bg-gray-100 p-2 rounded">
+{xmlSnippet}
+                                        </pre>
+                                      </div>
+
+                                      {/* Column 2: Import Value */}
+                                      <div className="bg-gray-50 rounded-md p-3 border border-gray-200">
+                                        <div className="text-xs font-semibold text-gray-700 mb-2">Import Value</div>
+                                        <table className="w-full text-xs">
+                                          <tbody>
+                                            <tr className="border-b border-gray-100 align-top">
+                                              <td className="py-1.5 pr-2 font-medium text-gray-600">Code:</td>
+                                              <td className="py-1.5 text-gray-900">
+                                                <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">{country.code}</code>
+                                              </td>
+                                            </tr>
+                                            <tr className="border-b border-gray-100 align-top">
+                                              <td className="py-1.5 pr-2 font-medium text-gray-600">Country:</td>
+                                              <td className="py-1.5 text-gray-900">{country.name}</td>
+                                            </tr>
+                                            {country.percentage !== undefined && (
+                                              <tr className="align-top">
+                                                <td className="py-1.5 pr-2 font-medium text-gray-600">Percentage:</td>
+                                                <td className="py-1.5 text-gray-900">{country.percentage}%</td>
+                                              </tr>
+                                            )}
+                                          </tbody>
+                                        </table>
+                                      </div>
+
+                                      {/* Column 3: Current Value */}
+                                      <div className="bg-gray-50 rounded-md p-3 border border-gray-200">
+                                        <div className="text-xs font-semibold text-gray-700 mb-2">Current Value</div>
+                                        {field.currentValue ? (
+                                          <table className="w-full text-xs">
+                                            <tbody>
+                                              <tr className="border-b border-gray-100 align-top">
+                                                <td className="py-1.5 pr-2 font-medium text-gray-600">Code:</td>
+                                                <td className="py-1.5 text-gray-900">
+                                                  <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">{field.currentValue.code || '—'}</code>
+                                                </td>
+                                              </tr>
+                                              <tr className="border-b border-gray-100 align-top">
+                                                <td className="py-1.5 pr-2 font-medium text-gray-600">Country:</td>
+                                                <td className="py-1.5 text-gray-900">{field.currentValue.name || '—'}</td>
+                                              </tr>
+                                              {field.currentValue.percentage !== undefined && (
+                                                <tr className="align-top">
+                                                  <td className="py-1.5 pr-2 font-medium text-gray-600">Percentage:</td>
+                                                  <td className="py-1.5 text-gray-900">{field.currentValue.percentage}%</td>
+                                                </tr>
+                                              )}
+                                            </tbody>
+                                          </table>
+                                        ) : (
+                                          <div className="text-xs text-gray-500 italic">No existing value</div>
+                                        )}
+                                      </div>
+                                    </div>
+                                  </div>
+                                );
+                              }
+
+                              // Individual Recipient Region items
+                              if (field.isRecipientRegionItem && field.recipientRegionData) {
+                                const region = field.recipientRegionData;
+                                const vocabUri = region.vocabularyUri ? ` vocabulary-uri="${region.vocabularyUri}"` : '';
+                                const xmlSnippet = `<recipient-region code="${region.code || ''}" vocabulary="${region.vocabulary || '1'}"${vocabUri}${region.percentage !== undefined ? ` percentage="${region.percentage}"` : ''} />`;
+                                const vocabName = region.vocabulary === '1' ? 'OECD DAC' : region.vocabulary === '2' ? 'UN' : region.vocabulary === '99' ? 'Custom' : `Vocabulary ${region.vocabulary}`;
+                                
+                                return (
+                                  <div className="mb-6 border-b border-gray-200 pb-6">
+                                    <div className="text-sm font-semibold mb-3 text-gray-900 flex items-center gap-2">
+                                      <MapPin className="h-4 w-4" />
+                                      Recipient Region Details
+                                    </div>
+
+                                    {/* 3-column layout */}
+                                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                                      {/* Column 1: Raw XML */}
+                                      <div className="bg-gray-50 rounded-md p-3 border border-gray-200">
+                                        <div className="text-xs font-semibold text-gray-700 mb-2">Raw XML</div>
+                                        <pre className="text-xs font-mono text-gray-800 overflow-x-auto whitespace-pre-wrap break-all bg-gray-100 p-2 rounded">
+{xmlSnippet}
+                                        </pre>
+                                      </div>
+
+                                      {/* Column 2: Import Value */}
+                                      <div className="bg-gray-50 rounded-md p-3 border border-gray-200">
+                                        <div className="text-xs font-semibold text-gray-700 mb-2">Import Value</div>
+                                        <table className="w-full text-xs">
+                                          <tbody>
+                                            <tr className="border-b border-gray-100 align-top">
+                                              <td className="py-1.5 pr-2 font-medium text-gray-600">Code:</td>
+                                              <td className="py-1.5 text-gray-900">
+                                                <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">{region.code}</code>
+                                              </td>
+                                            </tr>
+                                            <tr className="border-b border-gray-100 align-top">
+                                              <td className="py-1.5 pr-2 font-medium text-gray-600">Region:</td>
+                                              <td className="py-1.5 text-gray-900">{region.name}</td>
+                                            </tr>
+                                            <tr className="border-b border-gray-100 align-top">
+                                              <td className="py-1.5 pr-2 font-medium text-gray-600">Vocabulary:</td>
+                                              <td className="py-1.5 text-gray-900">{vocabName}</td>
+                                            </tr>
+                                            {region.percentage !== undefined && (
+                                              <tr className="align-top">
+                                                <td className="py-1.5 pr-2 font-medium text-gray-600">Percentage:</td>
+                                                <td className="py-1.5 text-gray-900">{region.percentage}%</td>
+                                              </tr>
+                                            )}
+                                          </tbody>
+                                        </table>
+                                      </div>
+
+                                      {/* Column 3: Current Value */}
+                                      <div className="bg-gray-50 rounded-md p-3 border border-gray-200">
+                                        <div className="text-xs font-semibold text-gray-700 mb-2">Current Value</div>
+                                        {field.currentValue ? (
+                                          <table className="w-full text-xs">
+                                            <tbody>
+                                              <tr className="border-b border-gray-100 align-top">
+                                                <td className="py-1.5 pr-2 font-medium text-gray-600">Code:</td>
+                                                <td className="py-1.5 text-gray-900">
+                                                  <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">{field.currentValue.code || '—'}</code>
+                                                </td>
+                                              </tr>
+                                              <tr className="border-b border-gray-100 align-top">
+                                                <td className="py-1.5 pr-2 font-medium text-gray-600">Region:</td>
+                                                <td className="py-1.5 text-gray-900">{field.currentValue.name || '—'}</td>
+                                              </tr>
+                                              <tr className="border-b border-gray-100 align-top">
+                                                <td className="py-1.5 pr-2 font-medium text-gray-600">Vocabulary:</td>
+                                                <td className="py-1.5 text-gray-900">{field.currentValue.vocabularyName || field.currentValue.vocabulary || '—'}</td>
+                                              </tr>
+                                              {field.currentValue.percentage !== undefined && (
+                                                <tr className="align-top">
+                                                  <td className="py-1.5 pr-2 font-medium text-gray-600">Percentage:</td>
+                                                  <td className="py-1.5 text-gray-900">{field.currentValue.percentage}%</td>
+                                                </tr>
+                                              )}
+                                            </tbody>
+                                          </table>
+                                        ) : (
+                                          <div className="text-xs text-gray-500 italic">No existing value</div>
+                                        )}
+                                      </div>
+                                    </div>
+                                  </div>
+                                );
+                              }
+
+                              // Recipient Countries, Recipient Regions, and Custom Geographies - handle arrays (legacy/grouped)
                               if (field.fieldName === 'Recipient Countries' || 
                                   field.fieldName === 'Recipient Regions' || 
                                   field.fieldName === 'Custom Geographies') {
@@ -2644,6 +3027,105 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                         ) : (
                                           <div className="text-xs text-gray-500 italic">No existing value</div>
                                         )}
+                                      </div>
+                                    </div>
+                                  </div>
+                                );
+                              }
+
+                              // Humanitarian Scope fields - show all details in table format
+                              if (field.fieldName && field.fieldName.startsWith('Humanitarian Scope')) {
+                                const importScope = typeof field.importValue === 'object' ? field.importValue : null;
+                                const currentScope = typeof field.currentValue === 'object' ? field.currentValue : null;
+                                
+                                // Helper to get type label
+                                const getTypeLabel = (type: string) => {
+                                  return type === '1' ? 'Emergency' : type === '2' ? 'Appeal' : type || '—';
+                                };
+                                
+                                // Helper to get vocabulary label
+                                const getVocabLabel = (vocab: string) => {
+                                  const vocabLabels: Record<string, string> = {
+                                    '1-1': 'Glide',
+                                    '1-2': 'Humanitarian Plan',
+                                    '2-1': 'Humanitarian Cluster',
+                                    '99': 'Reporting Organisation'
+                                  };
+                                  return vocabLabels[vocab] || vocab || '—';
+                                };
+                                
+                                // Generate XML snippet
+                                let xmlSnippet = '';
+                                if (importScope) {
+                                  const narrativeXml = importScope.narratives?.map((n: any) => 
+                                    `  <narrative${n.language ? ` xml:lang="${n.language}"` : ''}>${n.text || n.narrative || ''}</narrative>`
+                                  ).join('\n') || '';
+                                  xmlSnippet = `<humanitarian-scope type="${importScope.type || ''}" vocabulary="${importScope.vocabulary || '1-2'}" code="${importScope.code || ''}">${narrativeXml ? '\n' + narrativeXml + '\n' : ''}</humanitarian-scope>`;
+                                }
+                                
+                                // Helper to render scope details as table
+                                const renderScopeTable = (scope: any) => {
+                                  if (!scope) {
+                                    return <div className="text-xs text-gray-500 italic">No value</div>;
+                                  }
+                                  
+                                  const narrativeText = scope.narratives?.map((n: any) => n.text || n.narrative || '').filter(Boolean).join('; ') || scope.code || '—';
+                                  
+                                  return (
+                                    <table className="w-full text-xs">
+                                      <tbody>
+                                        <tr className="border-b border-gray-100 align-top">
+                                          <td className="py-1.5 pr-2 font-medium text-gray-600">Type:</td>
+                                          <td className="py-1.5 text-gray-900">{getTypeLabel(scope.type)}</td>
+                                        </tr>
+                                        <tr className="border-b border-gray-100 align-top">
+                                          <td className="py-1.5 pr-2 font-medium text-gray-600">Vocabulary:</td>
+                                          <td className="py-1.5 text-gray-900">{getVocabLabel(scope.vocabulary)}</td>
+                                        </tr>
+                                        <tr className="border-b border-gray-100 align-top">
+                                          <td className="py-1.5 pr-2 font-medium text-gray-600">Code:</td>
+                                          <td className="py-1.5 text-gray-900">
+                                            <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                              {scope.code || '—'}
+                                            </code>
+                                          </td>
+                                        </tr>
+                                        <tr className="align-top">
+                                          <td className="py-1.5 pr-2 font-medium text-gray-600">Narrative:</td>
+                                          <td className="py-1.5 text-gray-900">{narrativeText}</td>
+                                        </tr>
+                                      </tbody>
+                                    </table>
+                                  );
+                                };
+                                
+                                return (
+                                  <div className="mb-6 border-b border-gray-200 pb-6">
+                                    <div className="text-sm font-semibold mb-3 text-gray-900 flex items-center gap-2">
+                                      <AlertCircle className="h-4 w-4" />
+                                      Humanitarian Scope Details
+                                    </div>
+
+                                    {/* 3-column layout */}
+                                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                                      {/* Column 1: Raw XML */}
+                                      <div className="bg-gray-50 rounded-md p-3 border border-gray-200">
+                                        <div className="text-xs font-semibold text-gray-700 mb-2">Raw XML</div>
+                                        <pre className="text-xs font-mono text-gray-800 overflow-x-auto whitespace-pre-wrap break-all">
+{xmlSnippet || '—'}
+                                        </pre>
+                                      </div>
+
+                                      {/* Column 2: Import Value */}
+                                      <div className="bg-gray-50 rounded-md p-3 border border-gray-200">
+                                        <div className="text-xs font-semibold text-gray-700 mb-2">Import Value</div>
+                                        {renderScopeTable(importScope)}
+                                      </div>
+
+                                      {/* Column 3: Current Value */}
+                                      <div className="bg-gray-50 rounded-md p-3 border border-gray-200">
+                                        <div className="text-xs font-semibold text-gray-700 mb-2">Current Value</div>
+                                        {renderScopeTable(currentScope)}
                                       </div>
                                     </div>
                                   </div>
@@ -3667,8 +4149,8 @@ ${budgetItems.map((bi: any) => `  <budget-item code="${bi.code || ''}"${bi.perce
                                 } else if (field.itemType === 'transaction') {
                                   xmlSnippet = `<transaction>
   <transaction-type code="${item.transaction_type || item.type || ''}" />
-  <transaction-date iso-date="${item.value_date || ''}" />
-  <value currency="${item.currency || ''}" value-date="${item.value_date || ''}">${item.value || ''}</value>
+  <transaction-date iso-date="${item.transaction_date || item.date || ''}" />
+  <value currency="${item.currency || ''}" value-date="${item.value_date || item.valueDate || ''}">${item.value || ''}</value>
 </transaction>`;
                                 } else if (field.itemType === 'plannedDisbursement') {
                                   xmlSnippet = `<planned-disbursement type="${item.type || ''}">
@@ -4698,6 +5180,16 @@ ${narrativeLines}
                                         {field.currentCrsData ? (
                                           <table className="w-full text-xs">
                                             <tbody>
+                                              {field.currentCrsData.channel_code && (
+                                                <tr className="border-b border-gray-100 align-top">
+                                                  <td className="py-1.5 pr-2 font-medium text-gray-600">Channel Code:</td>
+                                                  <td className="py-1.5 text-gray-900">
+                                                    <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                      {field.currentCrsData.channel_code}
+                                                    </code>
+                                                  </td>
+                                                </tr>
+                                              )}
                                               {field.currentCrsData.loanTerms && (
                                                 <React.Fragment>
                                                   {field.currentCrsData.loanTerms.rate_1 !== null && field.currentCrsData.loanTerms.rate_1 !== undefined && (

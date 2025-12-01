@@ -49,8 +49,12 @@ import {
   ChevronRight,
   FileText,
   ExternalLink,
-  Link as LinkIcon
+  Link as LinkIcon,
+  Columns3,
+  Heart
 } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Checkbox } from "@/components/ui/checkbox";
 import { format } from "date-fns";
 import { Transaction, TRANSACTION_TYPE_LABELS, TransactionFormData, FLOW_TYPE_LABELS, TIED_STATUS_LABELS } from '@/types/transaction';
 import TransactionForm from './TransactionForm';
@@ -89,6 +93,171 @@ const TRANSACTION_TYPE_DEFINITIONS: Record<string, string> = {
   '12': 'Funds received for use on the activity, which can be from any source.',
   '13': 'Cancellation of a commitment.'
 };
+
+// Column configuration for the activity transaction list
+type ActivityTransactionColumnId = 
+  | 'transactionDate' | 'transactionType' | 'financeType' | 'organizations' 
+  | 'amount' | 'valueDate' | 'usdValue'
+  | 'aidType' | 'flowType' | 'tiedStatus' | 'currency' 
+  | 'description' | 'disbursementChannel' | 'humanitarian';
+
+interface ActivityTransactionColumnConfig {
+  id: ActivityTransactionColumnId;
+  label: string;
+  group: 'default' | 'classification' | 'additionalDetails';
+  defaultVisible?: boolean;
+  sortable?: boolean;
+  align?: 'left' | 'center' | 'right';
+}
+
+const ACTIVITY_TRANSACTION_COLUMN_CONFIGS: ActivityTransactionColumnConfig[] = [
+  // Default columns (visible by default)
+  { id: 'transactionDate', label: 'Date', group: 'default', defaultVisible: true, sortable: true },
+  { id: 'transactionType', label: 'Type', group: 'default', defaultVisible: true, sortable: true },
+  { id: 'financeType', label: 'Finance Type', group: 'default', defaultVisible: true, sortable: true },
+  { id: 'organizations', label: 'Provider → Receiver', group: 'default', defaultVisible: true, sortable: true },
+  { id: 'amount', label: 'Amount', group: 'default', defaultVisible: true, sortable: true, align: 'right' },
+  { id: 'valueDate', label: 'Value Date', group: 'default', defaultVisible: true, sortable: true },
+  { id: 'usdValue', label: 'USD Value', group: 'default', defaultVisible: true, sortable: true, align: 'right' },
+  
+  // Classification columns (optional, gray if inherited)
+  { id: 'aidType', label: 'Aid Type', group: 'classification', defaultVisible: false },
+  { id: 'flowType', label: 'Flow Type', group: 'classification', defaultVisible: false },
+  { id: 'tiedStatus', label: 'Tied Status', group: 'classification', defaultVisible: false },
+  { id: 'humanitarian', label: 'Humanitarian', group: 'classification', defaultVisible: false },
+  
+  // Additional Details (optional)
+  { id: 'currency', label: 'Currency', group: 'additionalDetails', defaultVisible: false },
+  { id: 'description', label: 'Description', group: 'additionalDetails', defaultVisible: false },
+  { id: 'disbursementChannel', label: 'Channel', group: 'additionalDetails', defaultVisible: false },
+];
+
+const ACTIVITY_TRANSACTION_COLUMN_GROUPS = {
+  default: 'Default Columns',
+  classification: 'Classification',
+  additionalDetails: 'Additional Details',
+};
+
+const DEFAULT_VISIBLE_ACTIVITY_COLUMNS: ActivityTransactionColumnId[] = 
+  ACTIVITY_TRANSACTION_COLUMN_CONFIGS.filter(col => col.defaultVisible).map(col => col.id);
+
+const ACTIVITY_TRANSACTION_COLUMNS_LOCALSTORAGE_KEY = 'aims_activity_transaction_list_visible_columns';
+
+// Column Selector Component for Activity Transaction List
+interface ActivityTransactionColumnSelectorProps {
+  visibleColumns: ActivityTransactionColumnId[];
+  onColumnsChange: (columns: ActivityTransactionColumnId[]) => void;
+}
+
+function ActivityTransactionColumnSelector({ visibleColumns, onColumnsChange }: ActivityTransactionColumnSelectorProps) {
+  const [open, setOpen] = useState(false);
+
+  const toggleColumn = (columnId: ActivityTransactionColumnId) => {
+    if (visibleColumns.includes(columnId)) {
+      onColumnsChange(visibleColumns.filter(id => id !== columnId));
+    } else {
+      onColumnsChange([...visibleColumns, columnId]);
+    }
+  };
+
+  const toggleGroup = (group: keyof typeof ACTIVITY_TRANSACTION_COLUMN_GROUPS) => {
+    const groupColumns = ACTIVITY_TRANSACTION_COLUMN_CONFIGS.filter(c => c.group === group);
+    const allVisible = groupColumns.every(c => visibleColumns.includes(c.id));
+    
+    if (allVisible) {
+      onColumnsChange(visibleColumns.filter(id => !groupColumns.find(c => c.id === id)));
+    } else {
+      const newColumns = [...visibleColumns];
+      groupColumns.forEach(c => {
+        if (!newColumns.includes(c.id)) {
+          newColumns.push(c.id);
+        }
+      });
+      onColumnsChange(newColumns);
+    }
+  };
+
+  const resetToDefaults = () => {
+    onColumnsChange(DEFAULT_VISIBLE_ACTIVITY_COLUMNS);
+  };
+
+  const visibleCount = visibleColumns.length;
+  const totalColumns = ACTIVITY_TRANSACTION_COLUMN_CONFIGS.length;
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button variant="outline" size="sm" className="gap-2">
+          <Columns3 className="h-4 w-4" />
+          <span className="hidden sm:inline">Columns</span>
+          <Badge variant="secondary" className="ml-1 px-1.5 py-0 text-xs">
+            {visibleCount}
+          </Badge>
+          <ChevronDown className="h-3 w-3 opacity-50" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-72 p-0 z-[100]" align="end" sideOffset={5}>
+        <div className="p-3 border-b">
+          <div className="flex items-center justify-between">
+            <h4 className="font-medium text-sm">Visible Columns</h4>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={resetToDefaults}
+              className="h-7 text-xs"
+            >
+              Reset to defaults
+            </Button>
+          </div>
+          <p className="text-xs text-muted-foreground mt-1">
+            {visibleCount} of {totalColumns} columns visible
+          </p>
+        </div>
+        <div className="max-h-[350px] overflow-y-auto">
+          {(Object.keys(ACTIVITY_TRANSACTION_COLUMN_GROUPS) as Array<keyof typeof ACTIVITY_TRANSACTION_COLUMN_GROUPS>).map(groupKey => {
+            const groupColumns = ACTIVITY_TRANSACTION_COLUMN_CONFIGS.filter(c => c.group === groupKey);
+            if (groupColumns.length === 0) return null;
+            
+            const allVisible = groupColumns.every(c => visibleColumns.includes(c.id));
+            const someVisible = groupColumns.some(c => visibleColumns.includes(c.id));
+            
+            return (
+              <div key={groupKey} className="border-b last:border-b-0">
+                <div 
+                  className="flex items-center gap-2 px-3 py-2 bg-muted/50 cursor-pointer hover:bg-muted/80"
+                  onClick={() => toggleGroup(groupKey)}
+                >
+                  <Checkbox 
+                    checked={allVisible}
+                    // @ts-ignore - indeterminate is valid but not in types
+                    indeterminate={someVisible && !allVisible}
+                    onCheckedChange={() => toggleGroup(groupKey)}
+                  />
+                  <span className="text-sm font-medium">{ACTIVITY_TRANSACTION_COLUMN_GROUPS[groupKey]}</span>
+                </div>
+                <div className="py-1">
+                  {groupColumns.map(column => (
+                    <div
+                      key={column.id}
+                      className="flex items-center gap-2 px-3 py-1.5 hover:bg-muted/50 cursor-pointer"
+                      onClick={() => toggleColumn(column.id)}
+                    >
+                      <Checkbox 
+                        checked={visibleColumns.includes(column.id)}
+                        onCheckedChange={() => toggleColumn(column.id)}
+                      />
+                      <span className="text-sm">{column.label}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
+}
 
 interface TransactionListProps {
   transactions: Transaction[];
@@ -231,6 +400,33 @@ export default function TransactionList({
   
   // Track if component is mounted for portal rendering
   const [isMounted, setIsMounted] = useState(false);
+  
+  // Column visibility state with localStorage persistence
+  const [visibleColumns, setVisibleColumns] = useState<ActivityTransactionColumnId[]>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem(ACTIVITY_TRANSACTION_COLUMNS_LOCALSTORAGE_KEY);
+      if (saved) {
+        try {
+          return JSON.parse(saved);
+        } catch {
+          return DEFAULT_VISIBLE_ACTIVITY_COLUMNS;
+        }
+      }
+    }
+    return DEFAULT_VISIBLE_ACTIVITY_COLUMNS;
+  });
+  
+  // Save column visibility to localStorage
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(ACTIVITY_TRANSACTION_COLUMNS_LOCALSTORAGE_KEY, JSON.stringify(visibleColumns));
+    }
+  }, [visibleColumns]);
+  
+  // Column visibility helper
+  const isColumnVisible = (columnId: ActivityTransactionColumnId) => {
+    return visibleColumns.includes(columnId);
+  };
   
   useEffect(() => {
     setIsMounted(true);
@@ -1133,10 +1329,112 @@ export default function TransactionList({
         </CardHeader>
         
         {/* Filters shown inline when hideSummaryCards is false (regular view) */}
-        {!hideSummaryCards && transactions.length > 0 && (
+        {!hideSummaryCards && (
           <div className="px-6 pb-4 border-b">
             <div className="flex items-center gap-2 flex-wrap">
-              {/* Transaction Type Filter */}
+              {/* Transaction Type Filter - only show when transactions exist */}
+              {transactions.length > 0 && (
+                <Select value={transactionTypeFilter} onValueChange={setTransactionTypeFilter}>
+                  <SelectTrigger className="w-[140px] h-9">
+                    <SelectValue placeholder="Transaction Type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Transaction Types</SelectItem>
+                    {uniqueTransactionTypes.map(type => (
+                      <SelectItem key={type} value={type}>
+                        <span className="flex items-center gap-2">
+                          <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{type}</span>
+                          <span>{TRANSACTION_TYPE_LABELS[type as keyof typeof TRANSACTION_TYPE_LABELS] || type}</span>
+                        </span>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+              
+              {/* Finance Type Filter - only show when transactions exist */}
+              {transactions.length > 0 && (
+                <Select value={financeTypeFilter} onValueChange={setFinanceTypeFilter}>
+                  <SelectTrigger className="w-[140px] h-9">
+                    <SelectValue placeholder="Finance Type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Finance Types</SelectItem>
+                    {uniqueFinanceTypes.map(type => (
+                      <SelectItem key={type} value={type}>
+                        <span className="flex items-center gap-2">
+                          <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{type}</span>
+                          <span>{FINANCE_TYPE_LABELS[type] || type}</span>
+                        </span>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+              
+              {/* Grouped View Toggle - only show when transactions exist */}
+              {transactions.length > 0 && (
+                <div className="flex items-center gap-2 px-3 py-1.5 border rounded-md bg-background">
+                  <Switch
+                    id="grouped-view-inline"
+                    checked={groupedView}
+                    onCheckedChange={setGroupedView}
+                  />
+                  <Label htmlFor="grouped-view-inline" className="text-sm cursor-pointer whitespace-nowrap">
+                    Grouped View
+                  </Label>
+                </div>
+              )}
+              
+              {/* Expand/Collapse All - only show when transactions exist */}
+              {transactions.length > 0 && (
+                expandedRows.size > 0 ? (
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={collapseAllRows}
+                    title={groupedView ? "Not available in grouped view" : "Collapse all expanded rows"}
+                    disabled={groupedView}
+                  >
+                    <ChevronUp className="h-4 w-4 mr-1" />
+                    Collapse All
+                  </Button>
+                ) : (
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={expandAllRows}
+                    title={groupedView ? "Not available in grouped view" : "Expand all rows"}
+                    disabled={groupedView}
+                  >
+                    <ChevronDown className="h-4 w-4 mr-1" />
+                    Expand All
+                  </Button>
+                )
+              )}
+              
+              {/* Column Selector - always visible */}
+              <div className="relative z-[200]">
+                <ActivityTransactionColumnSelector 
+                  visibleColumns={visibleColumns} 
+                  onColumnsChange={setVisibleColumns} 
+                />
+              </div>
+              
+              {/* Export Button - always visible */}
+              <Button variant="outline" size="sm" onClick={handleExport}>
+                <Download className="h-4 w-4 mr-1" />
+                Export
+              </Button>
+            </div>
+          </div>
+        )}
+        
+        {/* Filters for when hideSummaryCards is true - portaled to Activity Profile Page */}
+        {isMounted && hideSummaryCards && renderFilters?.(
+          <div className="flex items-center gap-2 flex-wrap">
+            {/* Transaction Type Filter - only show when transactions exist */}
+            {transactions.length > 0 && (
               <Select value={transactionTypeFilter} onValueChange={setTransactionTypeFilter}>
                 <SelectTrigger className="w-[140px] h-9">
                   <SelectValue placeholder="Transaction Type" />
@@ -1153,8 +1451,10 @@ export default function TransactionList({
                   ))}
                 </SelectContent>
               </Select>
-              
-              {/* Finance Type Filter */}
+            )}
+            
+            {/* Finance Type Filter - only show when transactions exist */}
+            {transactions.length > 0 && (
               <Select value={financeTypeFilter} onValueChange={setFinanceTypeFilter}>
                 <SelectTrigger className="w-[140px] h-9">
                   <SelectValue placeholder="Finance Type" />
@@ -1171,27 +1471,32 @@ export default function TransactionList({
                   ))}
                 </SelectContent>
               </Select>
-              
-              {/* Grouped View Toggle */}
+            )}
+            
+            {/* Grouped View Toggle - only show when transactions exist */}
+            {transactions.length > 0 && (
               <div className="flex items-center gap-2 px-3 py-1.5 border rounded-md bg-background">
                 <Switch
-                  id="grouped-view-inline"
+                  id="grouped-view-portal"
                   checked={groupedView}
                   onCheckedChange={setGroupedView}
                 />
-                <Label htmlFor="grouped-view-inline" className="text-sm cursor-pointer whitespace-nowrap">
+                <Label htmlFor="grouped-view-portal" className="text-sm cursor-pointer whitespace-nowrap">
                   Grouped View
                 </Label>
               </div>
-              
-              {/* Expand/Collapse All - Always visible, disabled in grouped view */}
-              {expandedRows.size > 0 ? (
+            )}
+            
+            {/* Expand/Collapse All - only show when transactions exist */}
+            {transactions.length > 0 && (
+              expandedRows.size > 0 ? (
                 <Button 
                   variant="outline" 
                   size="sm" 
                   onClick={collapseAllRows}
                   title={groupedView ? "Not available in grouped view" : "Collapse all expanded rows"}
                   disabled={groupedView}
+                  data-expand-all
                 >
                   <ChevronUp className="h-4 w-4 mr-1" />
                   Collapse All
@@ -1203,100 +1508,23 @@ export default function TransactionList({
                   onClick={expandAllRows}
                   title={groupedView ? "Not available in grouped view" : "Expand all rows"}
                   disabled={groupedView}
+                  data-expand-all
                 >
                   <ChevronDown className="h-4 w-4 mr-1" />
                   Expand All
                 </Button>
-              )}
-              
-              {/* Export Button */}
-              <Button variant="outline" size="sm" onClick={handleExport}>
-                <Download className="h-4 w-4 mr-1" />
-                Export
-              </Button>
-            </div>
-          </div>
-        )}
-        
-        {/* Filters for when hideSummaryCards is true - portaled to Activity Profile Page */}
-        {isMounted && hideSummaryCards && transactions.length > 0 && renderFilters?.(
-          <div className="flex items-center gap-2 flex-wrap">
-            {/* Transaction Type Filter */}
-            <Select value={transactionTypeFilter} onValueChange={setTransactionTypeFilter}>
-              <SelectTrigger className="w-[140px] h-9">
-                <SelectValue placeholder="Transaction Type" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Transaction Types</SelectItem>
-                {uniqueTransactionTypes.map(type => (
-                  <SelectItem key={type} value={type}>
-                    <span className="flex items-center gap-2">
-                      <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{type}</span>
-                      <span>{TRANSACTION_TYPE_LABELS[type as keyof typeof TRANSACTION_TYPE_LABELS] || type}</span>
-                    </span>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            
-            {/* Finance Type Filter */}
-            <Select value={financeTypeFilter} onValueChange={setFinanceTypeFilter}>
-              <SelectTrigger className="w-[140px] h-9">
-                <SelectValue placeholder="Finance Type" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Finance Types</SelectItem>
-                {uniqueFinanceTypes.map(type => (
-                  <SelectItem key={type} value={type}>
-                    <span className="flex items-center gap-2">
-                      <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{type}</span>
-                      <span>{FINANCE_TYPE_LABELS[type] || type}</span>
-                    </span>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            
-            {/* Grouped View Toggle */}
-            <div className="flex items-center gap-2 px-3 py-1.5 border rounded-md bg-background">
-              <Switch
-                id="grouped-view-portal"
-                checked={groupedView}
-                onCheckedChange={setGroupedView}
-              />
-              <Label htmlFor="grouped-view-portal" className="text-sm cursor-pointer whitespace-nowrap">
-                Grouped View
-              </Label>
-            </div>
-            
-            {/* Expand/Collapse All - Always visible, disabled in grouped view */}
-            {expandedRows.size > 0 ? (
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={collapseAllRows}
-                title={groupedView ? "Not available in grouped view" : "Collapse all expanded rows"}
-                disabled={groupedView}
-                data-expand-all
-              >
-                <ChevronUp className="h-4 w-4 mr-1" />
-                Collapse All
-              </Button>
-            ) : (
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={expandAllRows}
-                title={groupedView ? "Not available in grouped view" : "Expand all rows"}
-                disabled={groupedView}
-                data-expand-all
-              >
-                <ChevronDown className="h-4 w-4 mr-1" />
-                Expand All
-              </Button>
+              )
             )}
             
-            {/* Export Button */}
+            {/* Column Selector - always visible */}
+            <div className="relative z-[200]">
+              <ActivityTransactionColumnSelector 
+                visibleColumns={visibleColumns} 
+                onColumnsChange={setVisibleColumns} 
+              />
+            </div>
+            
+            {/* Export Button - always visible */}
             <Button variant="outline" size="sm" onClick={handleExport} data-export>
               <Download className="h-4 w-4 mr-1" />
               Export
@@ -1334,49 +1562,127 @@ export default function TransactionList({
               <Table className="table-fixed w-full">
                 <TableHeader className="bg-muted/50 border-b border-border/70">
                   <TableRow>
+                    {/* Expand/collapse column - always visible */}
                     <TableHead className="py-3 px-2 whitespace-nowrap" style={{ width: '40px', maxWidth: '40px' }}></TableHead>
-                    <TableHead className="text-sm font-medium text-foreground/90 py-3 px-3 cursor-pointer hover:bg-muted/30 transition-colors whitespace-nowrap" style={{ width: '110px', maxWidth: '110px' }} onClick={() => handleSort('transaction_date')}>
-                      <div className="flex items-center gap-1">
-                        <span>Date</span>
-                        {getSortIcon('transaction_date')}
-                      </div>
-                    </TableHead>
-                    <TableHead className="text-sm font-medium text-foreground/90 py-3 px-3 cursor-pointer hover:bg-muted/30 transition-colors whitespace-nowrap" style={{ width: '160px', maxWidth: '160px' }} onClick={() => handleSort('transaction_type')}>
-                      <div className="flex items-center gap-1">
-                        <span>Type</span>
-                        {getSortIcon('transaction_type')}
-                      </div>
-                    </TableHead>
-                    <TableHead className="text-sm font-medium text-foreground/90 py-3 px-3 cursor-pointer hover:bg-muted/30 transition-colors whitespace-nowrap" style={{ width: '200px', maxWidth: '200px' }} onClick={() => handleSort('finance_type')}>
-                      <div className="flex items-center gap-1">
-                        <span>Finance Type</span>
-                        {getSortIcon('finance_type')}
-                      </div>
-                    </TableHead>
-                    <TableHead className="text-sm font-medium text-foreground/90 py-3 px-3 cursor-pointer hover:bg-muted/30 transition-colors whitespace-nowrap" style={{ width: '280px', maxWidth: '280px' }} onClick={() => handleSort('provider_org_name')}>
-                      <div className="flex items-center gap-1">
-                        <span>Provider → Receiver</span>
-                        {getSortIcon('provider_org_name')}
-                      </div>
-                    </TableHead>
-                    <TableHead className="text-sm font-medium text-foreground/90 py-3 px-3 text-right cursor-pointer hover:bg-muted/30 transition-colors whitespace-nowrap" style={{ width: '130px', maxWidth: '130px' }} onClick={() => handleSort('value')}>
-                      <div className="flex items-center justify-end gap-1">
-                        <span>Amount</span>
-                        {getSortIcon('value')}
-                      </div>
-                    </TableHead>
-                    <TableHead className="text-sm font-medium text-foreground/90 py-3 px-3 cursor-pointer hover:bg-muted/30 transition-colors whitespace-nowrap" style={{ width: '110px', maxWidth: '110px' }} onClick={() => handleSort('value_date')}>
-                      <div className="flex items-center gap-1">
-                        <span>Val. Date</span>
-                        {getSortIcon('value_date')}
-                      </div>
-                    </TableHead>
-                    <TableHead className="text-sm font-medium text-foreground/90 py-3 px-3 text-right cursor-pointer hover:bg-muted/30 transition-colors whitespace-nowrap" style={{ width: '130px', maxWidth: '130px' }} onClick={() => handleSort('value_usd')}>
-                      <div className="flex items-center justify-end gap-1">
-                        <span>USD Value</span>
-                        {getSortIcon('value_usd')}
-                      </div>
-                    </TableHead>
+                    
+                    {/* Date column */}
+                    {isColumnVisible('transactionDate') && (
+                      <TableHead className="text-sm font-medium text-foreground/90 py-3 px-3 cursor-pointer hover:bg-muted/30 transition-colors whitespace-nowrap" style={{ width: '110px', maxWidth: '110px' }} onClick={() => handleSort('transaction_date')}>
+                        <div className="flex items-center gap-1">
+                          <span>Date</span>
+                          {getSortIcon('transaction_date')}
+                        </div>
+                      </TableHead>
+                    )}
+                    
+                    {/* Type column */}
+                    {isColumnVisible('transactionType') && (
+                      <TableHead className="text-sm font-medium text-foreground/90 py-3 px-3 cursor-pointer hover:bg-muted/30 transition-colors whitespace-nowrap" style={{ width: '160px', maxWidth: '160px' }} onClick={() => handleSort('transaction_type')}>
+                        <div className="flex items-center gap-1">
+                          <span>Type</span>
+                          {getSortIcon('transaction_type')}
+                        </div>
+                      </TableHead>
+                    )}
+                    
+                    {/* Finance Type column */}
+                    {isColumnVisible('financeType') && (
+                      <TableHead className="text-sm font-medium text-foreground/90 py-3 px-3 cursor-pointer hover:bg-muted/30 transition-colors whitespace-nowrap" style={{ width: '200px', maxWidth: '200px' }} onClick={() => handleSort('finance_type')}>
+                        <div className="flex items-center gap-1">
+                          <span>Finance Type</span>
+                          {getSortIcon('finance_type')}
+                        </div>
+                      </TableHead>
+                    )}
+                    
+                    {/* Aid Type column (optional) */}
+                    {isColumnVisible('aidType') && (
+                      <TableHead className="text-sm font-medium text-foreground/90 py-3 px-3 whitespace-nowrap" style={{ width: '180px', maxWidth: '180px' }}>
+                        Aid Type
+                      </TableHead>
+                    )}
+                    
+                    {/* Flow Type column (optional) */}
+                    {isColumnVisible('flowType') && (
+                      <TableHead className="text-sm font-medium text-foreground/90 py-3 px-3 whitespace-nowrap" style={{ width: '120px', maxWidth: '120px' }}>
+                        Flow Type
+                      </TableHead>
+                    )}
+                    
+                    {/* Tied Status column (optional) */}
+                    {isColumnVisible('tiedStatus') && (
+                      <TableHead className="text-sm font-medium text-foreground/90 py-3 px-3 whitespace-nowrap" style={{ width: '120px', maxWidth: '120px' }}>
+                        Tied Status
+                      </TableHead>
+                    )}
+                    
+                    {/* Humanitarian column (optional) */}
+                    {isColumnVisible('humanitarian') && (
+                      <TableHead className="text-sm font-medium text-foreground/90 py-3 px-3 text-center whitespace-nowrap" style={{ width: '100px', maxWidth: '100px' }}>
+                        Humanitarian
+                      </TableHead>
+                    )}
+                    
+                    {/* Provider → Receiver column */}
+                    {isColumnVisible('organizations') && (
+                      <TableHead className="text-sm font-medium text-foreground/90 py-3 px-3 cursor-pointer hover:bg-muted/30 transition-colors whitespace-nowrap" style={{ width: '280px', maxWidth: '280px' }} onClick={() => handleSort('provider_org_name')}>
+                        <div className="flex items-center gap-1">
+                          <span>Provider → Receiver</span>
+                          {getSortIcon('provider_org_name')}
+                        </div>
+                      </TableHead>
+                    )}
+                    
+                    {/* Currency column (optional) */}
+                    {isColumnVisible('currency') && (
+                      <TableHead className="text-sm font-medium text-foreground/90 py-3 px-3 whitespace-nowrap" style={{ width: '80px', maxWidth: '80px' }}>
+                        Currency
+                      </TableHead>
+                    )}
+                    
+                    {/* Amount column */}
+                    {isColumnVisible('amount') && (
+                      <TableHead className="text-sm font-medium text-foreground/90 py-3 px-3 text-right cursor-pointer hover:bg-muted/30 transition-colors whitespace-nowrap" style={{ width: '130px', maxWidth: '130px' }} onClick={() => handleSort('value')}>
+                        <div className="flex items-center justify-end gap-1">
+                          <span>Amount</span>
+                          {getSortIcon('value')}
+                        </div>
+                      </TableHead>
+                    )}
+                    
+                    {/* Value Date column */}
+                    {isColumnVisible('valueDate') && (
+                      <TableHead className="text-sm font-medium text-foreground/90 py-3 px-3 cursor-pointer hover:bg-muted/30 transition-colors whitespace-nowrap" style={{ width: '110px', maxWidth: '110px' }} onClick={() => handleSort('value_date')}>
+                        <div className="flex items-center gap-1">
+                          <span>Val. Date</span>
+                          {getSortIcon('value_date')}
+                        </div>
+                      </TableHead>
+                    )}
+                    
+                    {/* USD Value column */}
+                    {isColumnVisible('usdValue') && (
+                      <TableHead className="text-sm font-medium text-foreground/90 py-3 px-3 text-right cursor-pointer hover:bg-muted/30 transition-colors whitespace-nowrap" style={{ width: '130px', maxWidth: '130px' }} onClick={() => handleSort('value_usd')}>
+                        <div className="flex items-center justify-end gap-1">
+                          <span>USD Value</span>
+                          {getSortIcon('value_usd')}
+                        </div>
+                      </TableHead>
+                    )}
+                    
+                    {/* Description column (optional) */}
+                    {isColumnVisible('description') && (
+                      <TableHead className="text-sm font-medium text-foreground/90 py-3 px-3 whitespace-nowrap" style={{ width: '200px', maxWidth: '200px' }}>
+                        Description
+                      </TableHead>
+                    )}
+                    
+                    {/* Disbursement Channel column (optional) */}
+                    {isColumnVisible('disbursementChannel') && (
+                      <TableHead className="text-sm font-medium text-foreground/90 py-3 px-3 whitespace-nowrap" style={{ width: '150px', maxWidth: '150px' }}>
+                        Channel
+                      </TableHead>
+                    )}
                   </TableRow>
               </TableHeader>
               <TableBody>
@@ -1393,7 +1699,7 @@ export default function TransactionList({
                       {/* Group Header Row - only show in grouped view */}
                       {groupedView && type && (
                         <TableRow className="bg-muted hover:bg-muted">
-                          <TableCell colSpan={8} className="py-3 px-3">
+                          <TableCell colSpan={visibleColumns.length + 1} className="py-3 px-3">
                             <div className="flex justify-between items-center">
                               <div className="flex items-center gap-3">
                                 <Badge variant="outline" className="font-mono text-xs">
@@ -1437,7 +1743,7 @@ export default function TransactionList({
                         e.preventDefault();
                       }}
                     >
-                      {/* Chevron for expand/collapse */}
+                      {/* Chevron for expand/collapse - always visible */}
                       <TableCell className="py-3 px-2 whitespace-nowrap">
                         <Button
                           variant="ghost"
@@ -1457,198 +1763,349 @@ export default function TransactionList({
                       </TableCell>
                       
                       {/* Date */}
-                      <TableCell className="py-3 px-4 font-medium whitespace-nowrap">
-                        {format(new Date(transaction.transaction_date), 'MMM d, yyyy')}
-                      </TableCell>
+                      {isColumnVisible('transactionDate') && (
+                        <TableCell className="py-3 px-4 font-medium whitespace-nowrap">
+                          {format(new Date(transaction.transaction_date), 'MMM d, yyyy')}
+                        </TableCell>
+                      )}
                       
                       {/* Transaction Type */}
-                      <TableCell className="py-3 px-4 whitespace-nowrap">
-                        <TooltipProvider>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <div className="flex items-center gap-2 cursor-default">
-                                <span className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
-                                  {transaction.transaction_type}
-                                </span>
-                                <span className="font-medium">
-                                  {TRANSACTION_TYPE_LABELS[transaction.transaction_type as keyof typeof TRANSACTION_TYPE_LABELS] || transaction.transaction_type}
-                                </span>
-                              </div>
-                            </TooltipTrigger>
-                            <TooltipContent className="max-w-xs">
-                              <div className="space-y-1">
-                                <div className="font-semibold">
-                                  {TRANSACTION_TYPE_LABELS[transaction.transaction_type as keyof typeof TRANSACTION_TYPE_LABELS] || transaction.transaction_type}
+                      {isColumnVisible('transactionType') && (
+                        <TableCell className="py-3 px-4 whitespace-nowrap">
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <div className="flex items-center gap-2 cursor-default">
+                                  <span className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
+                                    {transaction.transaction_type}
+                                  </span>
+                                  <span className="font-medium">
+                                    {TRANSACTION_TYPE_LABELS[transaction.transaction_type as keyof typeof TRANSACTION_TYPE_LABELS] || transaction.transaction_type}
+                                  </span>
                                 </div>
-                                <div className="text-xs text-muted-foreground">
-                                  {TRANSACTION_TYPE_DEFINITIONS[transaction.transaction_type] || 'No definition available'}
+                              </TooltipTrigger>
+                              <TooltipContent className="max-w-xs">
+                                <div className="space-y-1">
+                                  <div className="font-semibold">
+                                    {TRANSACTION_TYPE_LABELS[transaction.transaction_type as keyof typeof TRANSACTION_TYPE_LABELS] || transaction.transaction_type}
+                                  </div>
+                                  <div className="text-xs text-muted-foreground">
+                                    {TRANSACTION_TYPE_DEFINITIONS[transaction.transaction_type] || 'No definition available'}
+                                  </div>
                                 </div>
-                              </div>
-                            </TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
-                      </TableCell>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        </TableCell>
+                      )}
                       
                       {/* Finance Type */}
-                      <TableCell className="py-3 px-4 whitespace-nowrap">
-                        {transaction.finance_type ? (
-                          transaction.finance_type_inherited ? (
+                      {isColumnVisible('financeType') && (
+                        <TableCell className="py-3 px-4 whitespace-nowrap">
+                          {transaction.finance_type ? (
+                            transaction.finance_type_inherited ? (
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <div className="flex items-center gap-2 text-gray-400 opacity-70 cursor-help">
+                                      <span className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
+                                        {transaction.finance_type}
+                                      </span>
+                                      <span className="text-sm">
+                                        {FINANCE_TYPE_LABELS[transaction.finance_type] || transaction.finance_type}
+                                      </span>
+                                    </div>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p className="text-xs">
+                                      Inherited from activity's default finance type (code {transaction.finance_type} – {FINANCE_TYPE_LABELS[transaction.finance_type] || transaction.finance_type})
+                                    </p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                            ) : (
+                              <div className="flex items-center gap-2">
+                                <span className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
+                                  {transaction.finance_type}
+                                </span>
+                                <span className="text-sm">
+                                  {FINANCE_TYPE_LABELS[transaction.finance_type] || transaction.finance_type}
+                                </span>
+                              </div>
+                            )
+                          ) : defaultFinanceType ? (
                             <TooltipProvider>
                               <Tooltip>
                                 <TooltipTrigger asChild>
                                   <div className="flex items-center gap-2 text-gray-400 opacity-70 cursor-help">
                                     <span className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
-                                      {transaction.finance_type}
+                                      {defaultFinanceType}
                                     </span>
                                     <span className="text-sm">
-                                      {FINANCE_TYPE_LABELS[transaction.finance_type] || transaction.finance_type}
+                                      {FINANCE_TYPE_LABELS[defaultFinanceType] || defaultFinanceType}
                                     </span>
                                   </div>
                                 </TooltipTrigger>
                                 <TooltipContent>
                                   <p className="text-xs">
-                                    Inherited from activity's default finance type (code {transaction.finance_type} – {FINANCE_TYPE_LABELS[transaction.finance_type] || transaction.finance_type})
+                                    This finance type has been inferred from the activity's default finance type (code {defaultFinanceType} – {FINANCE_TYPE_LABELS[defaultFinanceType] || defaultFinanceType})
                                   </p>
-                                </TooltipContent>
-                              </Tooltip>
-                            </TooltipProvider>
-                          ) : (
-                            <div className="flex items-center gap-2">
-                              <span className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
-                                {transaction.finance_type}
-                              </span>
-                              <span className="text-sm">
-                                {FINANCE_TYPE_LABELS[transaction.finance_type] || transaction.finance_type}
-                              </span>
-                            </div>
-                          )
-                        ) : defaultFinanceType ? (
-                          <TooltipProvider>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <div className="flex items-center gap-2 text-gray-400 opacity-70 cursor-help">
-                                  <span className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
-                                    {defaultFinanceType}
-                                  </span>
-                                  <span className="text-sm">
-                                    {FINANCE_TYPE_LABELS[defaultFinanceType] || defaultFinanceType}
-                                  </span>
-                                </div>
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                <p className="text-xs">
-                                  This finance type has been inferred from the activity's default finance type (code {defaultFinanceType} – {FINANCE_TYPE_LABELS[defaultFinanceType] || defaultFinanceType})
-                                </p>
-                              </TooltipContent>
-                            </Tooltip>
-                          </TooltipProvider>
-                        ) : (
-                          <span className="text-gray-400">—</span>
-                        )}
-                      </TableCell>
-                      
-                      {/* Provider → Receiver */}
-                      <TableCell className="py-3 px-3" style={{ maxWidth: '280px' }}>
-                        <div className="flex items-center gap-1.5 font-medium overflow-hidden">
-                          <div className="flex items-center gap-1.5 min-w-0 flex-shrink">
-                            <OrganizationLogo
-                              logo={getOrgLogo(transaction.provider_org_id, transaction.provider_org_ref) || (transaction as any).provider_org_logo}
-                              name={getOrgAcronymOrName(transaction.provider_org_id, transaction.provider_org_name, transaction.provider_org_ref) || "Unknown"}
-                              size="sm"
-                            />
-                            {getOrgId(transaction.provider_org_id, transaction.provider_org_ref) ? (
-                              <Link
-                                href={`/organizations/${getOrgId(transaction.provider_org_id, transaction.provider_org_ref)}`}
-                                className="truncate hover:text-gray-700 transition-colors block"
-                                onClick={(e) => e.stopPropagation()}
-                              >
-                                {getOrgAcronymOrName(transaction.provider_org_id, transaction.provider_org_name, transaction.provider_org_ref) || "Unknown"}
-                              </Link>
-                            ) : (
-                              <span className="truncate block">
-                                {getOrgAcronymOrName(transaction.provider_org_id, transaction.provider_org_name, transaction.provider_org_ref) || "Unknown"}
-                              </span>
-                            )}
-                          </div>
-                          <span className="text-muted-foreground flex-shrink-0">→</span>
-                          <div className="flex items-center gap-1.5 min-w-0 flex-shrink">
-                            <OrganizationLogo
-                              logo={getOrgLogo(transaction.receiver_org_id, transaction.receiver_org_ref) || (transaction as any).receiver_org_logo}
-                              name={getOrgAcronymOrName(transaction.receiver_org_id, transaction.receiver_org_name, transaction.receiver_org_ref) || "Unknown"}
-                              size="sm"
-                            />
-                            {getOrgId(transaction.receiver_org_id, transaction.receiver_org_ref) ? (
-                              <Link
-                                href={`/organizations/${getOrgId(transaction.receiver_org_id, transaction.receiver_org_ref)}`}
-                                className="truncate hover:text-gray-700 transition-colors block"
-                                onClick={(e) => e.stopPropagation()}
-                              >
-                                {getOrgAcronymOrName(transaction.receiver_org_id, transaction.receiver_org_name, transaction.receiver_org_ref) || "Unknown"}
-                              </Link>
-                            ) : (
-                              <span className="truncate block">
-                                {getOrgAcronymOrName(transaction.receiver_org_id, transaction.receiver_org_name, transaction.receiver_org_ref) || "Unknown"}
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                      </TableCell>
-                      
-                      {/* Amount */}
-                      <TableCell className="py-3 px-4 text-right whitespace-nowrap">
-                        {transaction.value !== null && transaction.value !== undefined && !isNaN(transaction.value) ? (
-                          <span className="font-medium">
-                            <span className="text-muted-foreground">{transaction.currency || 'USD'}</span> {transaction.value.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
-                          </span>
-                        ) : (
-                          <span className="text-red-600">Invalid</span>
-                        )}
-                      </TableCell>
-                      
-                      {/* Value Date */}
-                      <TableCell className="py-3 px-4 whitespace-nowrap">
-                        <span className="text-sm">
-                          {transaction.value_date 
-                            ? format(new Date(transaction.value_date), 'MMM d, yyyy') 
-                            : transaction.transaction_date 
-                            ? format(new Date(transaction.transaction_date), 'MMM d, yyyy')
-                            : '—'}
-                        </span>
-                      </TableCell>
-                      
-                      {/* USD Value */}
-                      <TableCell className="py-3 px-4 text-right whitespace-nowrap">
-                        <div className="flex items-center justify-end gap-1">
-                          {usdValues[transaction.uuid || transaction.id]?.loading ? (
-                            <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />
-                          ) : usdValues[transaction.uuid || transaction.id]?.usd != null ? (
-                            <TooltipProvider>
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <span className="font-medium cursor-help">
-                                    <span className="text-muted-foreground">USD</span> {usdValues[transaction.uuid || transaction.id].usd!.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
-                                  </span>
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                  <div>
-                                    <div>Original: <span className="text-muted-foreground">{transaction.currency}</span> {transaction.value.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</div>
-                                    <div>Rate: {usdValues[transaction.uuid || transaction.id].rate}</div>
-                                    <div>Date: {usdValues[transaction.uuid || transaction.id].date}</div>
-                                  </div>
                                 </TooltipContent>
                               </Tooltip>
                             </TooltipProvider>
                           ) : (
                             <span className="text-gray-400">—</span>
                           )}
-                        </div>
-                      </TableCell>
+                        </TableCell>
+                      )}
+                      
+                      {/* Aid Type (optional) */}
+                      {isColumnVisible('aidType') && (
+                        <TableCell className="py-3 px-4 whitespace-nowrap">
+                          {(() => {
+                            const aidType = transaction.aid_type || defaultAidType;
+                            const isInherited = !transaction.aid_type && defaultAidType;
+                            if (!aidType) return <span className="text-gray-400">—</span>;
+                            
+                            if (isInherited) {
+                              return (
+                                <TooltipProvider>
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <div className="flex items-center gap-2 text-gray-400 opacity-70 cursor-help">
+                                        <span className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">{aidType}</span>
+                                        <span className="text-sm truncate max-w-[140px]">{AID_TYPE_LABELS[aidType] || aidType}</span>
+                                      </div>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                      <p className="text-xs">Inherited from activity's default aid type</p>
+                                    </TooltipContent>
+                                  </Tooltip>
+                                </TooltipProvider>
+                              );
+                            }
+                            return (
+                              <div className="flex items-center gap-2">
+                                <span className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">{aidType}</span>
+                                <span className="text-sm truncate max-w-[140px]">{AID_TYPE_LABELS[aidType] || aidType}</span>
+                              </div>
+                            );
+                          })()}
+                        </TableCell>
+                      )}
+                      
+                      {/* Flow Type (optional) */}
+                      {isColumnVisible('flowType') && (
+                        <TableCell className="py-3 px-4 whitespace-nowrap">
+                          {(() => {
+                            const flowType = transaction.flow_type || defaultFlowType;
+                            const isInherited = !transaction.flow_type && defaultFlowType;
+                            if (!flowType) return <span className="text-gray-400">—</span>;
+                            
+                            if (isInherited) {
+                              return (
+                                <TooltipProvider>
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <span className="text-gray-400 opacity-70 cursor-help text-sm">
+                                        {FLOW_TYPE_LABELS[flowType] || flowType}
+                                      </span>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                      <p className="text-xs">Inherited from activity's default flow type</p>
+                                    </TooltipContent>
+                                  </Tooltip>
+                                </TooltipProvider>
+                              );
+                            }
+                            return <span className="text-sm">{FLOW_TYPE_LABELS[flowType] || flowType}</span>;
+                          })()}
+                        </TableCell>
+                      )}
+                      
+                      {/* Tied Status (optional) */}
+                      {isColumnVisible('tiedStatus') && (
+                        <TableCell className="py-3 px-4 whitespace-nowrap">
+                          {(() => {
+                            const tiedStatus = transaction.tied_status || defaultTiedStatus;
+                            const isInherited = !transaction.tied_status && defaultTiedStatus;
+                            if (!tiedStatus) return <span className="text-gray-400">—</span>;
+                            
+                            if (isInherited) {
+                              return (
+                                <TooltipProvider>
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <span className="text-gray-400 opacity-70 cursor-help text-sm">
+                                        {TIED_STATUS_LABELS[tiedStatus] || tiedStatus}
+                                      </span>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                      <p className="text-xs">Inherited from activity's default tied status</p>
+                                    </TooltipContent>
+                                  </Tooltip>
+                                </TooltipProvider>
+                              );
+                            }
+                            return <span className="text-sm">{TIED_STATUS_LABELS[tiedStatus] || tiedStatus}</span>;
+                          })()}
+                        </TableCell>
+                      )}
+                      
+                      {/* Humanitarian (optional) */}
+                      {isColumnVisible('humanitarian') && (
+                        <TableCell className="py-3 px-4 text-center whitespace-nowrap">
+                          {transaction.humanitarian ? (
+                            <Heart className="h-4 w-4 text-red-500 mx-auto" />
+                          ) : (
+                            <span className="text-gray-400">—</span>
+                          )}
+                        </TableCell>
+                      )}
+                      
+                      {/* Provider → Receiver */}
+                      {isColumnVisible('organizations') && (
+                        <TableCell className="py-3 px-3" style={{ maxWidth: '280px' }}>
+                          <div className="flex items-center gap-1.5 font-medium overflow-hidden">
+                            <div className="flex items-center gap-1.5 min-w-0 flex-shrink">
+                              <OrganizationLogo
+                                logo={getOrgLogo(transaction.provider_org_id, transaction.provider_org_ref) || (transaction as any).provider_org_logo}
+                                name={getOrgAcronymOrName(transaction.provider_org_id, transaction.provider_org_name, transaction.provider_org_ref) || "Unknown"}
+                                size="sm"
+                              />
+                              {getOrgId(transaction.provider_org_id, transaction.provider_org_ref) ? (
+                                <Link
+                                  href={`/organizations/${getOrgId(transaction.provider_org_id, transaction.provider_org_ref)}`}
+                                  className="truncate hover:text-gray-700 transition-colors block"
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  {getOrgAcronymOrName(transaction.provider_org_id, transaction.provider_org_name, transaction.provider_org_ref) || "Unknown"}
+                                </Link>
+                              ) : (
+                                <span className="truncate block">
+                                  {getOrgAcronymOrName(transaction.provider_org_id, transaction.provider_org_name, transaction.provider_org_ref) || "Unknown"}
+                                </span>
+                              )}
+                            </div>
+                            <span className="text-muted-foreground flex-shrink-0">→</span>
+                            <div className="flex items-center gap-1.5 min-w-0 flex-shrink">
+                              <OrganizationLogo
+                                logo={getOrgLogo(transaction.receiver_org_id, transaction.receiver_org_ref) || (transaction as any).receiver_org_logo}
+                                name={getOrgAcronymOrName(transaction.receiver_org_id, transaction.receiver_org_name, transaction.receiver_org_ref) || "Unknown"}
+                                size="sm"
+                              />
+                              {getOrgId(transaction.receiver_org_id, transaction.receiver_org_ref) ? (
+                                <Link
+                                  href={`/organizations/${getOrgId(transaction.receiver_org_id, transaction.receiver_org_ref)}`}
+                                  className="truncate hover:text-gray-700 transition-colors block"
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  {getOrgAcronymOrName(transaction.receiver_org_id, transaction.receiver_org_name, transaction.receiver_org_ref) || "Unknown"}
+                                </Link>
+                              ) : (
+                                <span className="truncate block">
+                                  {getOrgAcronymOrName(transaction.receiver_org_id, transaction.receiver_org_name, transaction.receiver_org_ref) || "Unknown"}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </TableCell>
+                      )}
+                      
+                      {/* Currency (optional) */}
+                      {isColumnVisible('currency') && (
+                        <TableCell className="py-3 px-4 whitespace-nowrap">
+                          <span className="text-sm font-mono">{transaction.currency || 'USD'}</span>
+                        </TableCell>
+                      )}
+                      
+                      {/* Amount */}
+                      {isColumnVisible('amount') && (
+                        <TableCell className="py-3 px-4 text-right whitespace-nowrap">
+                          {transaction.value !== null && transaction.value !== undefined && !isNaN(transaction.value) ? (
+                            <span className="font-medium">
+                              <span className="text-muted-foreground">{transaction.currency || 'USD'}</span> {transaction.value.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                            </span>
+                          ) : (
+                            <span className="text-red-600">Invalid</span>
+                          )}
+                        </TableCell>
+                      )}
+                      
+                      {/* Value Date */}
+                      {isColumnVisible('valueDate') && (
+                        <TableCell className="py-3 px-4 whitespace-nowrap">
+                          <span className="text-sm">
+                            {transaction.value_date 
+                              ? format(new Date(transaction.value_date), 'MMM d, yyyy') 
+                              : transaction.transaction_date 
+                              ? format(new Date(transaction.transaction_date), 'MMM d, yyyy')
+                              : '—'}
+                          </span>
+                        </TableCell>
+                      )}
+                      
+                      {/* USD Value */}
+                      {isColumnVisible('usdValue') && (
+                        <TableCell className="py-3 px-4 text-right whitespace-nowrap">
+                          <div className="flex items-center justify-end gap-1">
+                            {usdValues[transaction.uuid || transaction.id]?.loading ? (
+                              <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />
+                            ) : usdValues[transaction.uuid || transaction.id]?.usd != null ? (
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <span className="font-medium cursor-help flex items-center gap-1">
+                                      <span className="text-muted-foreground">USD</span> {usdValues[transaction.uuid || transaction.id].usd!.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                                      {(transaction as any).exchange_rate_manual && (
+                                        <Badge variant="outline" className="ml-1 text-[10px] px-1 py-0 h-4 bg-orange-50 text-orange-600 border-orange-200">Manual</Badge>
+                                      )}
+                                    </span>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <div>
+                                      <div>Original: <span className="text-muted-foreground">{transaction.currency}</span> {transaction.value.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</div>
+                                      <div>Rate: {usdValues[transaction.uuid || transaction.id].rate}</div>
+                                      <div>Date: {usdValues[transaction.uuid || transaction.id].date}</div>
+                                      {(transaction as any).exchange_rate_manual && <div className="text-orange-500 font-medium">Manually entered rate</div>}
+                                  </div>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                            ) : (
+                              <span className="text-gray-400">—</span>
+                            )}
+                          </div>
+                        </TableCell>
+                      )}
+                      
+                      {/* Description (optional) */}
+                      {isColumnVisible('description') && (
+                        <TableCell className="py-3 px-4 whitespace-nowrap">
+                          <span className="text-sm truncate max-w-[180px] block">
+                            {transaction.description || <span className="text-gray-400">—</span>}
+                          </span>
+                        </TableCell>
+                      )}
+                      
+                      {/* Disbursement Channel (optional) */}
+                      {isColumnVisible('disbursementChannel') && (
+                        <TableCell className="py-3 px-4 whitespace-nowrap">
+                          {transaction.disbursement_channel ? (
+                            <span className="text-sm">
+                              {DISBURSEMENT_CHANNEL_LABELS[transaction.disbursement_channel] || transaction.disbursement_channel}
+                            </span>
+                          ) : (
+                            <span className="text-gray-400">—</span>
+                          )}
+                        </TableCell>
+                      )}
                     </TableRow>
                     
                     {/* Expandable Detail Row */}
                     {isExpanded && (
                       <TableRow className="bg-muted/20 animate-in fade-in-from-top-2 duration-200">
-                        <TableCell colSpan={8} className="py-4 px-4 relative">
+                        <TableCell colSpan={visibleColumns.length + 1} className="py-4 px-4 relative">
                           {/* CSV Export Button */}
                           <div className="absolute top-4 right-4 z-10">
                             <TooltipProvider>

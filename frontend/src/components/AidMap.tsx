@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Map, RotateCcw, Layers, Satellite, Mountain, MapPin, Activity, Building, Filter, Flame, BarChart3 } from 'lucide-react';
+import { Map, RotateCcw, Layers, Satellite, Mountain, MapPin, Activity, Building, Filter, Flame, BarChart3, CircleDot, Download } from 'lucide-react';
 import dynamic from 'next/dynamic';
 import { Skeleton } from '@/components/ui/skeleton-loader';
 import { EnhancedSubnationalBreakdown } from '@/components/activities/EnhancedSubnationalBreakdown';
@@ -21,14 +21,6 @@ const TileLayer = dynamic(
   () => import('react-leaflet').then((mod) => mod.TileLayer),
   { ssr: false }
 );
-const Marker = dynamic(
-  () => import('react-leaflet').then((mod) => mod.Marker),
-  { ssr: false }
-);
-const Popup = dynamic(
-  () => import('react-leaflet').then((mod) => mod.Popup),
-  { ssr: false }
-);
 const ZoomControl = dynamic(
   () => import('react-leaflet').then((mod) => mod.ZoomControl),
   { ssr: false }
@@ -37,6 +29,10 @@ const AttributionControl = dynamic(
   () => import('react-leaflet').then((mod) => mod.AttributionControl),
   { ssr: false }
 );
+
+// Dynamic import for new marker and heatmap layers
+const AidMapMarkersLayer = dynamic(() => import('./maps/AidMapMarkersLayer'), { ssr: false });
+const HeatmapLayer = dynamic(() => import('./maps/HeatmapLayer'), { ssr: false });
 
 // Import Leaflet and fix SSR issues
 let L: any = null;
@@ -67,54 +63,46 @@ const loadLeafletDependencies = () => {
   }
 };
 
-// Create activity marker icon
-function createActivityMarkerIcon() {
-  if (typeof window === 'undefined' || !L) {
-    return null;
-  }
-  
-  const svgPin = `<svg width="25" height="41" viewBox="0 0 25 41" xmlns="http://www.w3.org/2000/svg">
-    <path d="M12.5 0C5.6 0 0 5.6 0 12.5c0 8.3 12.5 28.5 12.5 28.5s12.5-20.2 12.5-28.5C25 5.6 19.4 0 12.5 0z" fill="#2563eb"/>
-    <circle cx="12.5" cy="12.5" r="6" fill="white"/>
-  </svg>`;
-  
-  const svgDataUrl = `data:image/svg+xml;base64,${btoa(svgPin)}`;
-  
-  try {
-    return new L.Icon({
-      iconUrl: svgDataUrl,
-      iconSize: [25, 41],
-      iconAnchor: [12, 41],
-      popupAnchor: [1, -34],
-      className: 'activity-marker'
-    });
-  } catch (error) {
-    console.error('Failed to create activity marker icon:', error);
-    return null;
-  }
-}
 
 // Map layer configurations
-type MapLayerType = 'streets' | 'satellite' | 'terrain';
+type MapLayerType = 'cartodb_voyager' | 'osm_standard' | 'osm_humanitarian' | 'cyclosm' | 'opentopo' | 'satellite_esri';
 
-const MAP_LAYERS = {
-  streets: {
-    name: 'Streets',
+const MAP_LAYERS: Record<MapLayerType, { name: string; url: string; attribution: string; icon: any }> = {
+  cartodb_voyager: {
+    name: 'Streets (CartoDB Voyager)',
     url: 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
     attribution: '© OpenStreetMap contributors, © CARTO',
     icon: Layers
   },
-  satellite: {
-    name: 'Satellite',
-    url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-    attribution: 'Tiles © Esri',
-    icon: Satellite
+  osm_standard: {
+    name: 'OpenStreetMap Standard',
+    url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+    attribution: '© OpenStreetMap contributors',
+    icon: Layers
   },
-  terrain: {
-    name: 'Terrain',
+  osm_humanitarian: {
+    name: 'Humanitarian (HOT)',
+    url: 'https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png',
+    attribution: '© OpenStreetMap contributors, © HOT',
+    icon: Layers
+  },
+  cyclosm: {
+    name: 'CyclOSM Transport',
+    url: 'https://{s}.tile-cyclosm.openstreetmap.fr/cyclosm/{z}/{x}/{y}.png',
+    attribution: '© OpenStreetMap contributors, © CyclOSM',
+    icon: Layers
+  },
+  opentopo: {
+    name: 'OpenTopo Terrain',
     url: 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',
-    attribution: 'Map data: © OpenStreetMap contributors, SRTM | Map style: © OpenTopoMap',
+    attribution: '© OpenStreetMap contributors, © OpenTopoMap',
     icon: Mountain
+  },
+  satellite_esri: {
+    name: 'ESRI Satellite',
+    url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+    attribution: '© Esri',
+    icon: Satellite
   }
 };
 
@@ -135,6 +123,9 @@ interface LocationData {
   state_region_name?: string;
   township_code?: string;
   township_name?: string;
+  district_name?: string;
+  village_name?: string;
+  city?: string;
   created_at: string;
   updated_at: string;
   activity?: {
@@ -240,58 +231,19 @@ function MapReset({ shouldReset, locations }: { shouldReset: boolean; locations:
   return null;
 }
 
-// Heatmap component
-function HeatmapLayer({ locations }: { locations: LocationData[] }) {
-  if (!useMapEventsHook || typeof window === 'undefined' || !L) {
-    return null;
-  }
-  
-  const map = useMapEventsHook({});
-
-  useEffect(() => {
-    if (!map || !locations.length || !L.heatLayer) return;
-    
-    // Prepare heatmap data: [latitude, longitude, intensity]
-    const heatmapData = locations.map(location => [
-      location.latitude,
-      location.longitude,
-      1 // Base intensity of 1 for each location
-    ]);
-    
-    // Create heatmap layer with smaller, more intense circles
-    const heatLayer = L.heatLayer(heatmapData, {
-      radius: 30,        // Reduced from 50 for smaller circles
-      blur: 15,          // Reduced from 25 for sharper edges
-      maxZoom: 18,       // Keep high max zoom
-      minOpacity: 0.4,   // Increased from 0.3 for more intensity
-      max: 0.8,          // Reduced from 1.0 to make colors more intense
-      gradient: {
-        0.0: '#313695',
-        0.1: '#4575b4', 
-        0.2: '#74add1',
-        0.3: '#abd9e9',
-        0.4: '#e0f3f8',
-        0.5: '#ffffcc',
-        0.6: '#fee090',
-        0.7: '#fdae61',
-        0.8: '#f46d43',
-        0.9: '#d73027',
-        1.0: '#a50026'
-      }
-    });
-    
-    // Add to map
-    heatLayer.addTo(map);
-    
-    // Cleanup function
-    return () => {
-      if (map.hasLayer(heatLayer)) {
-        map.removeLayer(heatLayer);
-      }
-    };
-  }, [map, locations]);
-  
-  return null;
+// Heatmap data preparation helper
+const prepareHeatmapPoints = (locations: LocationData[]) => {
+  return locations
+    .filter(loc => {
+      const lat = Number(loc.latitude)
+      const lng = Number(loc.longitude)
+      return !isNaN(lat) && !isNaN(lng)
+    })
+    .map(loc => ({
+      lat: Number(loc.latitude),
+      lng: Number(loc.longitude),
+      intensity: 0.8
+    }))
 }
 
 // View mode types
@@ -300,7 +252,7 @@ type TabMode = 'map' | 'subnational';
 
 export default function AidMap() {
   const [isMapLoaded, setIsMapLoaded] = useState(false);
-  const [mapLayer, setMapLayer] = useState<MapLayerType>('streets');
+  const [mapLayer, setMapLayer] = useState<MapLayerType>('cartodb_voyager');
   const [viewMode, setViewMode] = useState<ViewMode>('markers');
   const [tabMode, setTabMode] = useState<TabMode>('map');
   const [shouldResetMap, setShouldResetMap] = useState(false);
@@ -385,13 +337,6 @@ export default function AidMap() {
     fetchSubnationalData();
   }, [statusFilter, orgFilter]);
 
-  // Memoize marker icon creation
-  const activityMarkerIcon = useMemo(() => {
-    if (typeof window === 'undefined' || !L || !isMapLoaded) {
-      return null;
-    }
-    return createActivityMarkerIcon();
-  }, [isMapLoaded]);
 
   // Load Leaflet dependencies on component mount
   useEffect(() => {
@@ -513,81 +458,30 @@ export default function AidMap() {
             <CardTitle className="flex items-center gap-2">
               <Map className="h-5 w-5" />
               Aid Map & Analysis
-              <Badge variant="secondary" className="ml-2">
-                {filteredLocations.length} locations
-              </Badge>
             </CardTitle>
             
-            <Tabs value={tabMode} onValueChange={(value: TabMode) => setTabMode(value)}>
-              <TabsList>
-                <TabsTrigger value="map" className="flex items-center gap-2">
-                  <MapPin className="h-4 w-4" />
-                  Map View
-                </TabsTrigger>
-                <TabsTrigger value="subnational" className="flex items-center gap-2">
-                  <BarChart3 className="h-4 w-4" />
-                  Sub-national Breakdown
-                </TabsTrigger>
-              </TabsList>
-            </Tabs>
+            <div className="flex justify-end">
+              <Tabs value={tabMode} onValueChange={(value: TabMode) => setTabMode(value)}>
+                <TabsList>
+                  <TabsTrigger value="map" className="flex items-center gap-2">
+                    <MapPin className="h-4 w-4" />
+                    Map View
+                  </TabsTrigger>
+                  <TabsTrigger value="subnational" className="flex items-center gap-2">
+                    <BarChart3 className="h-4 w-4" />
+                    Sub-national Breakdown
+                  </TabsTrigger>
+                </TabsList>
+              </Tabs>
+            </div>
           </div>
         </CardHeader>
         
         <CardContent>
           <Tabs value={tabMode} onValueChange={(value: TabMode) => setTabMode(value)}>
             <TabsContent value="map" className="space-y-4">
-              <div className="space-y-4">
-                {/* Map Controls */}
-                <div className="flex flex-wrap gap-4 items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Select value={viewMode} onValueChange={(value: ViewMode) => setViewMode(value)}>
-                      <SelectTrigger className="w-32">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="markers">
-                          <div className="flex items-center gap-2">
-                            <MapPin className="h-4 w-4" />
-                            Markers
-                          </div>
-                        </SelectItem>
-                        <SelectItem value="heatmap">
-                          <div className="flex items-center gap-2">
-                            <Flame className="h-4 w-4" />
-                            Heatmap
-                          </div>
-                        </SelectItem>
-                      </SelectContent>
-                    </Select>
-                    
-                    <Select value={mapLayer} onValueChange={(value: MapLayerType) => setMapLayer(value)}>
-                      <SelectTrigger className="w-32">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="streets">Streets</SelectItem>
-                        <SelectItem value="satellite">Satellite</SelectItem>
-                        <SelectItem value="terrain">Terrain</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        setShouldResetMap(true);
-                        setTimeout(() => setShouldResetMap(false), 100);
-                      }}
-                      title="Reset view to Myanmar"
-                    >
-                      <RotateCcw className="h-4 w-4 mr-1" />
-                      Reset View
-                    </Button>
-                  </div>
-                </div>
-                
-                {/* Filters */}
-                <div className="flex gap-4 mb-4">
+              {/* Filters - outside map */}
+              <div className="flex gap-4">
                   <div className="flex items-center gap-2">
                     <Filter className="h-4 w-4" />
                     <Select value={statusFilter} onValueChange={setStatusFilter}>
@@ -619,20 +513,65 @@ export default function AidMap() {
                   ))}
                 </SelectContent>
               </Select>
+                </div>
             </div>
             
-            {viewMode === 'heatmap' && (
-              <div className="flex items-center gap-2 text-sm text-gray-600">
-                <Flame className="h-4 w-4" />
-                <span>Activity density visualization</span>
-              </div>
-            )}
-          </div>
-
           {/* Map */}
-          <div className="h-[600px] w-full relative rounded-lg overflow-hidden">
+          <div className="h-[600px] w-full relative rounded-lg overflow-hidden border border-gray-200">
+            {/* Map Controls Overlay - inside map */}
+            <div className="absolute top-3 left-3 z-[1000] flex items-center gap-2">
+              <Select value={mapLayer} onValueChange={(value) => setMapLayer(value as MapLayerType)}>
+                <SelectTrigger className="w-48 bg-white shadow-md border-gray-300">
+                  <SelectValue placeholder="Select map type" />
+                </SelectTrigger>
+                <SelectContent>
+                  {Object.entries(MAP_LAYERS).map(([key, layer]) => (
+                    <SelectItem key={key} value={key}>
+                      {layer.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              <Button
+                onClick={() => {
+                  setShouldResetMap(true);
+                  setTimeout(() => setShouldResetMap(false), 100);
+                }}
+                variant="outline"
+                size="sm"
+                title="Reset to Myanmar view"
+                className="bg-white shadow-md border-gray-300"
+              >
+                <RotateCcw className="h-4 w-4" />
+              </Button>
+
+              {/* View Mode Toggle */}
+              <div className="flex bg-white rounded-md shadow-md border border-gray-300 overflow-hidden">
+                <Button
+                  onClick={() => setViewMode('markers')}
+                  variant="ghost"
+                  size="sm"
+                  title="Show markers"
+                  className={`rounded-none border-0 ${viewMode === 'markers' ? 'bg-blue-100 text-blue-700' : 'hover:bg-gray-100'}`}
+                >
+                  <CircleDot className="h-4 w-4" />
+                </Button>
+                <Button
+                  onClick={() => setViewMode('heatmap')}
+                  variant="ghost"
+                  size="sm"
+                  title="Show heatmap"
+                  className={`rounded-none border-0 border-l border-gray-300 ${viewMode === 'heatmap' ? 'bg-orange-100 text-orange-700' : 'hover:bg-gray-100'}`}
+                >
+                <Flame className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+            
             {isMapLoaded && L && useMapEventsHook ? (
               <MapContainer
+                key={`${mapLayer}-${viewMode}`}
                 ref={mapRef}
                 center={[19.5, 96.0]}
                 zoom={6}
@@ -655,88 +594,34 @@ export default function AidMap() {
                   updateWhenZooming={false}
                 />
                 
-                {viewMode === 'markers' ? (
-                  // Render markers
-                  <>
-                    {filteredLocations.map((location, index) => {
-                      if (!location.latitude || !location.longitude) return null;
-                      
-                      const position: [number, number] = [location.latitude, location.longitude];
-                      
-                      return (
-                        <Marker
-                          key={`${location.id}-${index}`}
-                          position={position}
-                          icon={activityMarkerIcon}
-                        >
-                          <Popup>
-                            <div className="text-sm max-w-sm">
-                              <div className="font-semibold mb-2 text-blue-600">
-                                {location.activity?.title || 'Unknown Activity'}
-                              </div>
-                              
-                              <div className="space-y-2">
-                                <div>
-                                  <div className="font-medium text-gray-700">Location:</div>
-                                  <div className="text-gray-600">{location.location_name}</div>
-                                  {location.address && (
-                                    <div className="text-xs text-gray-500">{location.address}</div>
-                                  )}
-                                  {location.site_type && (
-                                    <div className="text-xs text-gray-500">Type: {location.site_type}</div>
-                                  )}
-                                </div>
-                                
-                                {location.activity?.organization_name && (
-                                  <div>
-                                    <div className="font-medium text-gray-700">Organization:</div>
-                                    <div className="text-gray-600">{location.activity.organization_name}</div>
-                                  </div>
-                                )}
-                                
-                                {location.activity?.status && (
-                                  <div>
-                                    <div className="font-medium text-gray-700">Status:</div>
-                                    <Badge variant="outline" className="text-xs">
-                                      {location.activity.status}
-                                    </Badge>
-                                  </div>
-                                )}
-                                
-                                {location.description && (
-                                  <div>
-                                    <div className="font-medium text-gray-700">Description:</div>
-                                    <div className="text-xs text-gray-600">{location.description}</div>
-                                  </div>
-                                )}
-                                
-                                {(location.state_region_name || location.township_name) && (
-                                  <div>
-                                    <div className="font-medium text-gray-700">Administrative:</div>
-                                    <div className="text-xs text-gray-600 space-y-1">
-                                      {location.state_region_name && (
-                                        <div>Region: {location.state_region_name}</div>
-                                      )}
-                                      {location.township_name && (
-                                        <div>Township: {location.township_name}</div>
-                                      )}
-                                    </div>
-                                  </div>
-                                )}
-                                
-                                <div className="text-xs text-gray-400 font-mono pt-2 border-t">
-                                  {location.latitude.toFixed(6)}, {location.longitude.toFixed(6)}
-                                </div>
-                              </div>
-                            </div>
-                          </Popup>
-                        </Marker>
-                      );
-                    })}
-                  </>
-                ) : (
-                  // Render heatmap
-                  <HeatmapLayer locations={filteredLocations} />
+                {/* Markers Mode */}
+                {viewMode === 'markers' && filteredLocations.length > 0 && (
+                  <AidMapMarkersLayer locations={filteredLocations} />
+                )}
+
+                {/* Heatmap Mode */}
+                {viewMode === 'heatmap' && filteredLocations.length > 0 && (
+                  <HeatmapLayer 
+                    points={prepareHeatmapPoints(filteredLocations)}
+                    options={{
+                      radius: 30,
+                      blur: 20,
+                      maxZoom: 12,
+                      max: 1.0,
+                      minOpacity: 0.5,
+                      gradient: {
+                        0.2: '#313695',
+                        0.3: '#4575b4', 
+                        0.4: '#74add1',
+                        0.5: '#abd9e9',
+                        0.6: '#ffffbf',
+                        0.7: '#fee090',
+                        0.8: '#fdae61',
+                        0.9: '#f46d43',
+                        1.0: '#d73027'
+                      }
+                    }}
+                  />
                 )}
                 
                 <MapBounds locations={filteredLocations} />
@@ -763,8 +648,7 @@ export default function AidMap() {
                 </div>
               </div>
             )}
-            </div>
-              </div>
+          </div>
             </TabsContent>
             
             <TabsContent value="subnational" className="space-y-4">

@@ -13,6 +13,7 @@ import { Download, ChevronLeft, ChevronRight } from "lucide-react";
 import { PlannedDisbursementsTable } from "@/components/planned-disbursements/PlannedDisbursementsTable";
 import { BulkActionToolbar } from "@/components/ui/bulk-action-toolbar";
 import { BulkDeleteDialog } from "@/components/dialogs/bulk-delete-dialog";
+import { YearlyTotalsBarChart, SingleSeriesDataPoint } from "@/components/charts/YearlyTotalsBarChart";
 
 export default function PlannedDisbursementsPage() {
   const router = useRouter();
@@ -37,6 +38,10 @@ export default function PlannedDisbursementsPage() {
     dateFrom: "",
     dateTo: "",
   });
+
+  // Yearly summary state for chart
+  const [yearlySummary, setYearlySummary] = useState<SingleSeriesDataPoint[]>([]);
+  const [yearlySummaryLoading, setYearlySummaryLoading] = useState(true);
 
   // Load saved page limit preference
   useEffect(() => {
@@ -98,6 +103,31 @@ export default function PlannedDisbursementsPage() {
       setLoading(false);
     }
   };
+
+  // Fetch yearly summary when filters change
+  useEffect(() => {
+    const fetchYearlySummary = async () => {
+      setYearlySummaryLoading(true);
+      try {
+        const params = new URLSearchParams();
+        if (filters.type !== 'all') params.append('type', filters.type);
+        if (filters.organization !== 'all') params.append('organization', filters.organization);
+        if (searchQuery) params.append('search', searchQuery);
+
+        const response = await fetch(`/api/planned-disbursements/yearly-summary?${params.toString()}`);
+        if (response.ok) {
+          const data = await response.json();
+          setYearlySummary(data.years || []);
+        }
+      } catch (error) {
+        console.error('Error fetching yearly summary:', error);
+      } finally {
+        setYearlySummaryLoading(false);
+      }
+    };
+
+    fetchYearlySummary();
+  }, [filters, searchQuery]);
 
   // Reset to page 1 when filters change
   useEffect(() => {
@@ -335,6 +365,17 @@ export default function PlannedDisbursementsPage() {
           </p>
         </div>
 
+        {/* Yearly Summary Chart */}
+        <YearlyTotalsBarChart
+          title="Planned Disbursement Totals by Year"
+          description="Yearly planned disbursement totals in USD (filtered)"
+          loading={yearlySummaryLoading}
+          singleSeriesData={yearlySummary}
+          singleSeriesColor="#06b6d4"
+          singleSeriesLabel="Planned Disbursement"
+          height={280}
+        />
+
         {/* Planned Disbursements Table */}
         {loading && disbursements.length === 0 ? (
           <div className="bg-white rounded-md shadow-sm border border-gray-200 p-8 text-center">
@@ -367,7 +408,7 @@ export default function PlannedDisbursementsPage() {
         )}
 
         {/* Pagination */}
-        {!loading && totalDisbursements > pageLimit && (
+        {!loading && totalDisbursements > 0 && (
           <Card>
             <CardContent className="p-4">
               <div className="flex items-center justify-between">

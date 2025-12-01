@@ -70,7 +70,7 @@ export function CurrencyCombobox({
   
   return (
     <Popover open={open} onOpenChange={handleOpenChange}>
-      <PopoverTrigger>
+      <PopoverTrigger asChild>
         <Button
           variant="outline"
           role="combobox"

@@ -1095,7 +1095,7 @@ export default function TransactionModal({
                     <InfoTooltip text="IATI transaction type code, name, and description." />
                   </Label>
                   <Popover open={transactionTypePopoverOpen} onOpenChange={setTransactionTypePopoverOpen}>
-                    <PopoverTrigger className="w-full">
+                    <PopoverTrigger asChild className="w-full">
                       <Button
                         variant="outline"
                         className="w-full flex justify-between items-center"

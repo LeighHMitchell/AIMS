@@ -94,7 +94,7 @@ export function SimplePhoneInput({
     <div className={cn("flex w-full items-stretch", className)}>
       {/* Country Selector */}
       <Popover open={open} onOpenChange={setOpen}>
-        <PopoverTrigger>
+        <PopoverTrigger asChild>
           <button
             type="button"
             role="combobox"

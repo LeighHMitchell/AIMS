@@ -189,7 +189,7 @@ export function HierarchicalSectorSelect({
   return (
     <div className={cn("w-full", className)}>
       <Popover open={open} onOpenChange={setOpen}>
-        <PopoverTrigger>
+        <PopoverTrigger asChild>
           <Button
             variant="outline"
             role="combobox"

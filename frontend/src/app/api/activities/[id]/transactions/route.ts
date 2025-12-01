@@ -27,6 +27,20 @@ export async function GET(
     const { searchParams } = new URL(request.url);
     const includeLinked = searchParams.get('includeLinked') !== 'false'; // Default to true
     
+    // Fetch activity defaults for inherited field calculations
+    const { data: activityData, error: activityError } = await getSupabaseAdmin()
+      .from('activities')
+      .select('default_finance_type, default_aid_type, default_flow_type, default_tied_status')
+      .eq('id', activityId)
+      .single();
+    
+    if (activityError) {
+      console.error('[AIMS] Error fetching activity defaults:', activityError);
+      // Continue without defaults - will just show empty for inherited fields
+    }
+    
+    const activityDefaults = activityData || {};
+    
     // Fetch own transactions
     const { data: ownTransactions, error } = await getSupabaseAdmin()
       .from('transactions')
@@ -58,13 +72,23 @@ export async function GET(
       );
     }
 
-    // Transform own transactions with source classification
+    // Transform own transactions with source classification and computed inherited fields
     let allTransactions = (ownTransactions || []).map((t: any) => ({
       ...t,
       transaction_source: 'own' as const,
       // Map organization type from joined data if not already present
       provider_org_type: t.provider_org_type || t.provider_organization?.type,
-      receiver_org_type: t.receiver_org_type || t.receiver_organization?.type
+      receiver_org_type: t.receiver_org_type || t.receiver_organization?.type,
+      // Add effective values (transaction value or inherited from activity default)
+      effective_finance_type: t.finance_type || activityDefaults.default_finance_type || null,
+      effective_aid_type: t.aid_type || activityDefaults.default_aid_type || null,
+      effective_flow_type: t.flow_type || activityDefaults.default_flow_type || null,
+      effective_tied_status: t.tied_status || activityDefaults.default_tied_status || null,
+      // Add inherited flags (true if value comes from activity default, not transaction)
+      finance_type_inherited: !t.finance_type && !!activityDefaults.default_finance_type,
+      aid_type_inherited: !t.aid_type && !!activityDefaults.default_aid_type,
+      flow_type_inherited: !t.flow_type && !!activityDefaults.default_flow_type,
+      tied_status_inherited: !t.tied_status && !!activityDefaults.default_tied_status,
     }));
 
     // Fetch linked transactions if requested
@@ -90,7 +114,7 @@ export async function GET(
           });
 
           if (linkedActivityIds.size > 0) {
-            // Fetch transactions from linked activities
+            // Fetch transactions from linked activities (including activity defaults for inheritance)
             const { data: linkedTransactions, error: linkedError } = await getSupabaseAdmin()
               .from('transactions')
               .select(`
@@ -98,7 +122,11 @@ export async function GET(
                 activity:activities!activity_id (
                   id,
                   title_narrative,
-                  iati_identifier
+                  iati_identifier,
+                  default_finance_type,
+                  default_aid_type,
+                  default_flow_type,
+                  default_tied_status
                 ),
                 provider_organization:organizations!provider_org_id (
                   id,
@@ -122,7 +150,7 @@ export async function GET(
             if (linkedError) {
               console.error('[AIMS] Error fetching linked transactions:', linkedError);
             } else if (linkedTransactions) {
-              // Add linked transactions with proper classification
+              // Add linked transactions with proper classification and inherited fields
               const formattedLinkedTransactions = linkedTransactions.map((t: any) => ({
                 ...t,
                 transaction_source: 'linked' as const,
@@ -132,7 +160,17 @@ export async function GET(
                 acceptance_status: t.acceptance_status || 'pending' as const,
                 // Map organization type from joined data if not already present
                 provider_org_type: t.provider_org_type || t.provider_organization?.type,
-                receiver_org_type: t.receiver_org_type || t.receiver_organization?.type
+                receiver_org_type: t.receiver_org_type || t.receiver_organization?.type,
+                // Add effective values (transaction value or inherited from linked activity's defaults)
+                effective_finance_type: t.finance_type || t.activity?.default_finance_type || null,
+                effective_aid_type: t.aid_type || t.activity?.default_aid_type || null,
+                effective_flow_type: t.flow_type || t.activity?.default_flow_type || null,
+                effective_tied_status: t.tied_status || t.activity?.default_tied_status || null,
+                // Add inherited flags (true if value comes from activity default, not transaction)
+                finance_type_inherited: !t.finance_type && !!t.activity?.default_finance_type,
+                aid_type_inherited: !t.aid_type && !!t.activity?.default_aid_type,
+                flow_type_inherited: !t.flow_type && !!t.activity?.default_flow_type,
+                tied_status_inherited: !t.tied_status && !!t.activity?.default_tied_status,
               }));
               
               allTransactions = [...allTransactions, ...formattedLinkedTransactions];
@@ -225,24 +263,33 @@ export async function POST(
       providerOrgId || body.provider_org_id
     );
     
+    // Normalize empty string dates to null (PostgreSQL DATE columns don't accept empty strings)
+    const normalizedTransactionDate = body.transaction_date && body.transaction_date.trim() !== '' 
+      ? body.transaction_date 
+      : null;
+    const normalizedValueDate = body.value_date && body.value_date.trim() !== '' 
+      ? body.value_date 
+      : null;
+    
     // Resolve value_date (use provided or fallback to transaction_date)
     const resolvedValueDate = resolveValueDate(
-      body.value_date,
-      body.transaction_date
+      normalizedValueDate,
+      normalizedTransactionDate || ''
     );
     
     // Prepare transaction data
     const transactionData = {
       activity_id: activityId,
       transaction_type: body.transaction_type,
-      transaction_date: body.transaction_date,
+      transaction_date: normalizedTransactionDate,
       value: parseFloat(body.value) || 0,
       currency: resolvedCurrency,
       status: body.status || 'draft',
       description: body.description || null,
       
       // Value date handling - only store if different from transaction_date
-      value_date: resolvedValueDate !== body.transaction_date 
+      // Also handle case where both are null/empty
+      value_date: resolvedValueDate && resolvedValueDate !== normalizedTransactionDate 
         ? resolvedValueDate
         : null,
       

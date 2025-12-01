@@ -142,23 +142,41 @@ export async function POST(
       body.period_start
     );
 
-    // Calculate USD value
+    // Calculate USD value - support manual exchange rate override
     let usdValue = null;
-    if (resolvedCurrency !== 'USD') {
+    let exchangeRateUsed = null;
+    let usdConvertible = true;
+    const isManualRate = body.exchange_rate_manual === true;
+
+    if (resolvedCurrency === 'USD') {
+      // USD currency - no conversion needed
+      usdValue = body.value;
+      exchangeRateUsed = 1.0;
+    } else if (isManualRate && body.exchange_rate_used && body.usd_value != null) {
+      // Use manually provided exchange rate
+      usdValue = body.usd_value;
+      exchangeRateUsed = body.exchange_rate_used;
+      console.log(`[POST /api/activities/[id]/budgets] Using manual exchange rate: ${body.value} ${resolvedCurrency} → $${usdValue} USD (rate: ${exchangeRateUsed})`);
+    } else {
+      // Fetch exchange rate from API
       try {
         const result = await fixedCurrencyConverter.convertToUSD(
           body.value,
           resolvedCurrency,
           new Date(resolvedValueDate)
         );
-        usdValue = result.usd_amount;
-        console.log(`[POST /api/activities/[id]/budgets] Converted ${body.value} ${resolvedCurrency} → $${usdValue} USD`);
+        if (result.success && result.usd_amount != null) {
+          usdValue = result.usd_amount;
+          exchangeRateUsed = result.exchange_rate;
+          console.log(`[POST /api/activities/[id]/budgets] Converted ${body.value} ${resolvedCurrency} → $${usdValue} USD (rate: ${exchangeRateUsed})`);
+        } else {
+          usdConvertible = false;
+          console.warn('[POST /api/activities/[id]/budgets] Currency conversion failed:', result.error);
+        }
       } catch (error) {
+        usdConvertible = false;
         console.error('[POST /api/activities/[id]/budgets] Error converting to USD:', error);
-        // Continue without USD value rather than failing
       }
-    } else {
-      usdValue = body.value;
     }
 
     const budgetData = {
@@ -171,6 +189,10 @@ export async function POST(
       currency: resolvedCurrency,
       value_date: resolvedValueDate,
       usd_value: usdValue,
+      exchange_rate_used: exchangeRateUsed,
+      usd_conversion_date: new Date().toISOString(),
+      usd_convertible: usdConvertible,
+      exchange_rate_manual: isManualRate,
       budget_lines: body.budget_lines || []
     };
 
@@ -224,22 +246,42 @@ export async function PUT(
       }
     }
 
-    // Calculate USD value if currency/value/value_date changed
+    // Calculate USD value - support manual exchange rate override
     let usdValue = body.usd_value;
+    let exchangeRateUsed = body.exchange_rate_used;
+    let usdConvertible = true;
+    const isManualRate = body.exchange_rate_manual === true;
+
     if (body.value && body.currency && body.value_date) {
-      if (body.currency !== 'USD') {
+      if (body.currency === 'USD') {
+        // USD currency - no conversion needed
+        usdValue = body.value;
+        exchangeRateUsed = 1.0;
+      } else if (isManualRate && body.exchange_rate_used && body.usd_value != null) {
+        // Use manually provided exchange rate
+        usdValue = body.usd_value;
+        exchangeRateUsed = body.exchange_rate_used;
+        console.log(`[PUT /api/activities/[id]/budgets] Using manual exchange rate: ${body.value} ${body.currency} → $${usdValue} USD (rate: ${exchangeRateUsed})`);
+      } else {
+        // Fetch exchange rate from API
         try {
           const result = await fixedCurrencyConverter.convertToUSD(
             body.value,
             body.currency,
             new Date(body.value_date)
           );
-          usdValue = result.usd_amount;
+          if (result.success && result.usd_amount != null) {
+            usdValue = result.usd_amount;
+            exchangeRateUsed = result.exchange_rate;
+            console.log(`[PUT /api/activities/[id]/budgets] Converted ${body.value} ${body.currency} → $${usdValue} USD (rate: ${exchangeRateUsed})`);
+          } else {
+            usdConvertible = false;
+            console.warn('[PUT /api/activities/[id]/budgets] Currency conversion failed:', result.error);
+          }
         } catch (error) {
-          console.error('Error converting to USD:', error);
+          usdConvertible = false;
+          console.error('[PUT /api/activities/[id]/budgets] Error converting to USD:', error);
         }
-      } else {
-        usdValue = body.value;
       }
     }
 
@@ -252,6 +294,10 @@ export async function PUT(
     if (body.currency) updateData.currency = body.currency;
     if (body.value_date) updateData.value_date = body.value_date;
     if (usdValue !== undefined) updateData.usd_value = usdValue;
+    if (exchangeRateUsed !== undefined) updateData.exchange_rate_used = exchangeRateUsed;
+    updateData.usd_conversion_date = new Date().toISOString();
+    updateData.usd_convertible = usdConvertible;
+    updateData.exchange_rate_manual = isManualRate;
     if (body.budget_lines !== undefined) updateData.budget_lines = body.budget_lines;
 
     const { data: budget, error } = await supabase

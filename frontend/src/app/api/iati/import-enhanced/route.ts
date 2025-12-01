@@ -158,20 +158,27 @@ export async function POST(request: NextRequest) {
 
         // Insert or update loan terms
         if (financingTerms.loanTerms) {
+          const loanTermsData: any = {
+            activity_id: activityDbId,
+            rate_1: financingTerms.loanTerms.rate_1,
+            rate_2: financingTerms.loanTerms.rate_2,
+            repayment_type_code: financingTerms.loanTerms.repayment_type_code,
+            repayment_plan_code: financingTerms.loanTerms.repayment_plan_code,
+            commitment_date: financingTerms.loanTerms.commitment_date,
+            repayment_first_date: financingTerms.loanTerms.repayment_first_date,
+            repayment_final_date: financingTerms.loanTerms.repayment_final_date,
+            other_flags: financingTerms.other_flags || [],
+            updated_at: new Date().toISOString()
+          };
+          
+          // Add channel code if present
+          if (financingTerms.channel_code) {
+            loanTermsData.channel_code = financingTerms.channel_code;
+          }
+          
           const { error: loanTermsError } = await getSupabaseAdmin()
             .from('activity_financing_terms')
-            .upsert({
-              activity_id: activityDbId,
-              rate_1: financingTerms.loanTerms.rate_1,
-              rate_2: financingTerms.loanTerms.rate_2,
-              repayment_type_code: financingTerms.loanTerms.repayment_type_code,
-              repayment_plan_code: financingTerms.loanTerms.repayment_plan_code,
-              commitment_date: financingTerms.loanTerms.commitment_date,
-              repayment_first_date: financingTerms.loanTerms.repayment_first_date,
-              repayment_final_date: financingTerms.loanTerms.repayment_final_date,
-              other_flags: financingTerms.other_flags || [],
-              updated_at: new Date().toISOString()
-            }, {
+            .upsert(loanTermsData, {
               onConflict: 'activity_id'
             });
 

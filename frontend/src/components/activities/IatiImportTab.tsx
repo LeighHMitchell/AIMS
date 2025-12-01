@@ -39,6 +39,7 @@ import { getActivityStatusByCode } from '@/data/activity-status-types';
 import financeTypesData from '@/data/finance-types.json';
 import flowTypesData from '@/data/flow-types.json';
 import aidTypesData from '@/data/aid-types.json';
+import sectorGroupData from '@/data/SectorGroup.json';
 import { ExternalPublisherModal } from '@/components/import/ExternalPublisherModal';
 import { ImportValidationReport } from './results/ImportValidationReport';
 import { ImportResultsDisplay } from './ImportResultsDisplay';
@@ -81,6 +82,8 @@ import {
   Loader2,
   Search,
   Building2,
+  ArrowLeftRight,
+  DownloadCloud,
 } from 'lucide-react';
 
 interface IatiImportTabProps {
@@ -208,6 +211,22 @@ interface ParsedField {
   }; // Conditions data from XML
   isLocationItem?: boolean; // True for location items
   locationData?: any; // The actual location data object
+  isRecipientCountryItem?: boolean; // True for individual recipient country items
+  recipientCountryData?: {
+    code: string;
+    name: string;
+    percentage?: number;
+    narrative?: string;
+  }; // Individual country data
+  isRecipientRegionItem?: boolean; // True for individual recipient region items
+  recipientRegionData?: {
+    code: string;
+    name: string;
+    percentage?: number;
+    vocabulary?: string;
+    vocabularyUri?: string;
+    narrative?: string;
+  }; // Individual region data
   isFssItem?: boolean; // True for FSS import field
   fssData?: any; // The actual FSS data object
   isCrsField?: boolean; // True for CRS/DAC reporting field
@@ -427,6 +446,10 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
   const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
   const [exceedsFiveLines, setExceedsFiveLines] = useState(false);
   const descriptionRef = React.useRef<HTMLSpanElement>(null);
+  
+  // Track if component is mounted to prevent state updates after unmount (fixes StrictMode race condition)
+  const isMountedRef = React.useRef(true);
+  
   const [financialData, setFinancialData] = useState<{
     totalBudget?: number;
     totalPlannedDisbursement?: number;
@@ -445,6 +468,29 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
 
   // Add state for parsed participating orgs from XML
   const [parsedParticipatingOrgs, setParsedParticipatingOrgs] = useState<any[]>([]);
+
+  // Debug: Track component mount/unmount
+  React.useEffect(() => {
+    isMountedRef.current = true;
+    console.log('[IATI Search Card] 🔄 Component mounted:', activity.iatiIdentifier);
+    return () => {
+      isMountedRef.current = false;
+      console.log('[IATI Search Card] 🔄 Component unmounting:', activity.iatiIdentifier);
+    };
+  }, [activity.iatiIdentifier]);
+  
+  // Debug: Log when financialData state changes
+  React.useEffect(() => {
+    console.log('[IATI Search Card] 💾 financialData state changed:', {
+      iatiId: activity.iatiIdentifier,
+      loading: financialData.loading,
+      budgetCount: financialData.budgetCount,
+      commitmentCount: financialData.commitmentCount,
+      disbursementCount: financialData.disbursementCount,
+      transactionTypesCount: financialData.transactionTypes ? Object.keys(financialData.transactionTypes).length : 0,
+      currency: financialData.currency
+    });
+  }, [financialData, activity.iatiIdentifier]);
 
   // Use parsed participating orgs from XML if available, otherwise fall back to search API data
   const participatingOrgsToUse = parsedParticipatingOrgs.length > 0 
@@ -717,30 +763,80 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
 
   // Fetch and calculate financial totals from XML on mount
   useEffect(() => {
+    console.log('[IATI Search Card] 📊 useEffect triggered for:', activity.iatiIdentifier, {
+      loading: financialData.loading,
+      hasTotalBudget: financialData.totalBudget !== undefined,
+      hasTransactionTypes: !!financialData.transactionTypes,
+      currentState: {
+        budgetCount: financialData.budgetCount,
+        commitmentCount: financialData.commitmentCount,
+        disbursementCount: financialData.disbursementCount
+      }
+    });
+    
     if (financialData.loading) {
+      console.log('[IATI Search Card] ⏳ Skipping - already loading');
       return;
     }
     
     // Skip if we already have data (check if loading is false and we have at least one value)
     if (!financialData.loading && (financialData.totalBudget !== undefined || financialData.totalPlannedDisbursement !== undefined || financialData.totalOutgoingCommitment !== undefined || financialData.totalDisbursement !== undefined)) {
+      console.log('[IATI Search Card] ✅ Skipping - already have data');
       return;
     }
 
+    console.log('[IATI Search Card] 🚀 Starting fetch for:', activity.iatiIdentifier);
+
     const fetchFinancialData = async () => {
+      // Check if component is still mounted before setting loading state
+      if (!isMountedRef.current) return;
       setFinancialData({ loading: true });
       
       try {
+        console.log('[IATI Search Card] 📡 Fetching XML for:', activity.iatiIdentifier);
         const response = await fetch(`/api/iati/activity/${encodeURIComponent(activity.iatiIdentifier)}`);
+        
+        console.log('[IATI Search Card] 📡 Fetch response:', { 
+          ok: response.ok, 
+          status: response.status,
+          iatiId: activity.iatiIdentifier 
+        });
+        
+        // Check if component is still mounted after fetch
+        if (!isMountedRef.current) {
+          console.log('[IATI Search Card] ⚠️ Component unmounted after fetch, skipping');
+          return;
+        }
+        
         if (!response.ok) {
-          console.warn('[IATI Search Card] Could not fetch financial data, using search API values');
-          setFinancialData({ loading: false });
+          console.warn('[IATI Search Card] ❌ Could not fetch financial data (status:', response.status, '), preserving existing data');
+          if (isMountedRef.current) {
+            // Preserve existing data on error - don't overwrite with empty values
+            setFinancialData(prev => ({ ...prev, loading: false }));
+          }
           return;
         }
 
         const data = await response.json();
+        
+        console.log('[IATI Search Card] 📦 Received data:', { 
+          hasXml: !!data.xml, 
+          xmlLength: data.xml?.length,
+          iatiId: activity.iatiIdentifier 
+        });
+        
+        // Check if component is still mounted after parsing JSON
+        if (!isMountedRef.current) {
+          console.log('[IATI Search Card] ⚠️ Component unmounted after JSON parse, skipping');
+          return;
+        }
+        
         if (!data.xml) {
-          console.warn('[IATI Search Card] No XML data received');
-          setFinancialData({ loading: false });
+          console.warn('[IATI Search Card] ❌ No XML data received, preserving existing data');
+          if (isMountedRef.current) {
+            // Preserve existing data when no XML received
+            setFinancialData(prev => ({ ...prev, loading: false }));
+          }
           return;
         }
 
@@ -750,7 +846,7 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
 
         // Extract participating orgs from parsed XML (these are correctly aligned)
         if (parsedActivity.participatingOrgs && parsedActivity.participatingOrgs.length > 0) {
-          setParsedParticipatingOrgs(parsedActivity.participatingOrgs);
+          if (isMountedRef.current) setParsedParticipatingOrgs(parsedActivity.participatingOrgs);
         }
 
         // Calculate totals and counts
@@ -791,6 +887,21 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
             if (budget.value && typeof budget.value === 'number') {
               totalBudget += budget.value;
             }
+          });
+          console.log('[IATI Search Card] 🔍 DIAGNOSTIC - Budget parsing:', {
+            budgetCount,
+            totalBudget,
+            sampleBudgets: parsedActivity.budgets.slice(0, 3).map((b: any) => ({
+              value: b.value,
+              currency: b.currency,
+              period: b.period
+            }))
+          });
+        } else {
+          console.log('[IATI Search Card] 🔍 DIAGNOSTIC - No budgets found in parsed activity:', {
+            hasBudgets: !!parsedActivity.budgets,
+            isArray: Array.isArray(parsedActivity.budgets),
+            budgetsValue: parsedActivity.budgets
           });
         }
 
@@ -892,6 +1003,21 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
           });
         }
 
+        // Check if component is still mounted before final state update
+        if (!isMountedRef.current) {
+          console.log('[IATI Search Card] Component unmounted, skipping state update');
+          return;
+        }
+
+        console.log('[IATI Search Card] ✅ Setting financial data:', {
+          budgetCount,
+          plannedDisbursementCount,
+          commitmentCount,
+          disbursementCount,
+          transactionTypesCount: Object.keys(transactionTypes).length,
+          currency: defaultCurrency
+        });
+
         setFinancialData({
           totalBudget: totalBudget >= 0 ? totalBudget : undefined,
           totalPlannedDisbursement: totalPlannedDisbursement >= 0 ? totalPlannedDisbursement : undefined,
@@ -907,7 +1033,10 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
         });
       } catch (error) {
         console.error('[IATI Search Card] Error fetching financial data:', error);
-        setFinancialData({ loading: false });
+        if (isMountedRef.current) {
+          // Preserve existing data on exception
+          setFinancialData(prev => ({ ...prev, loading: false }));
+        }
       }
     };
 
@@ -996,7 +1125,10 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
                 {isLoading ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
                 ) : (
-                  'Import'
+                  <>
+                    <DownloadCloud className="h-4 w-4 mr-2" />
+                    Import
+                  </>
                 )}
               </Button>
             </div>
@@ -1166,14 +1298,16 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
                                             {refDisplay.normalized}
                                           </code>
                                           {!refDisplay.isValid && (
-                                            <Tooltip>
-                                              <TooltipTrigger asChild>
-                                                <span className="text-red-500 text-xs cursor-help shrink-0">⚠</span>
-                                              </TooltipTrigger>
-                                              <TooltipContent>
-                                                <p className="text-xs">Invalid IATI organization identifier format</p>
-                                              </TooltipContent>
-                                            </Tooltip>
+                                            <TooltipProvider>
+                                              <Tooltip>
+                                                <TooltipTrigger asChild>
+                                                  <span className="text-red-500 text-xs cursor-help shrink-0">⚠</span>
+                                                </TooltipTrigger>
+                                                <TooltipContent>
+                                                  <p className="text-xs">Invalid IATI organization identifier format</p>
+                                                </TooltipContent>
+                                              </Tooltip>
+                                            </TooltipProvider>
                                           )}
                                         </>
                                       )}
@@ -3757,17 +3891,59 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
       }
 
       if (parsedActivity.crsChannelCode && parsedActivity.financingTerms) {
+        // Get channel code from financing terms (primary) or participating orgs (fallback)
+        // The channel code from <crs-add>/<channel-code> is stored in activity_financing_terms.channel_code
+        const currentChannelCode = fetchedLoanTerms?.channel_code || null;
+        
+        // Build currentCrsData from fetched loan terms, loan statuses, and other flags
+        const currentLoanStatuses = fetchedActivityData.loanStatuses || [];
+        const currentOtherFlags = fetchedLoanTerms?.other_flags 
+          ? (typeof fetchedLoanTerms.other_flags === 'string' 
+              ? JSON.parse(fetchedLoanTerms.other_flags) 
+              : fetchedLoanTerms.other_flags)
+          : [];
+        
+        // Check if we have any current CRS data saved
+        const hasCurrentCrsData = currentChannelCode || fetchedLoanTerms || currentLoanStatuses.length > 0;
+        
+        // Build the currentCrsData object
+        const currentCrsData = hasCurrentCrsData ? {
+          channel_code: currentChannelCode,
+          loanTerms: fetchedLoanTerms ? {
+            rate_1: fetchedLoanTerms.rate_1,
+            rate_2: fetchedLoanTerms.rate_2,
+            repayment_type_code: fetchedLoanTerms.repayment_type_code,
+            repayment_plan_code: fetchedLoanTerms.repayment_plan_code,
+            commitment_date: fetchedLoanTerms.commitment_date,
+            repayment_first_date: fetchedLoanTerms.repayment_first_date,
+            repayment_final_date: fetchedLoanTerms.repayment_final_date
+          } : null,
+          loanStatuses: currentLoanStatuses,
+          otherFlags: currentOtherFlags
+        } : null;
+        
+        // Build current value summary
+        const currentValueSummary = currentChannelCode || (hasCurrentCrsData ? 'CRS data saved' : null);
+        
+        // Determine if there's a conflict (import differs from current)
+        const hasConflict = hasCurrentCrsData && (
+          currentChannelCode !== parsedActivity.crsChannelCode ||
+          (fetchedLoanTerms?.rate_1 || null) !== (parsedActivity.financingTerms?.loanTerms?.rate_1 || null) ||
+          (fetchedLoanTerms?.rate_2 || null) !== (parsedActivity.financingTerms?.loanTerms?.rate_2 || null)
+        );
+        
         fields.push({
           fieldName: 'DAC CRS Reporting',
           iatiPath: 'iati-activity/crs-add',
-          currentValue: null, // This field is not stored in the current system
+          currentValue: currentValueSummary,
           importValue: parsedActivity.crsChannelCode,
-          selected: false, // Don't auto-select as it's optional
-          hasConflict: false,
+          selected: !hasCurrentCrsData, // Auto-select if no current data
+          hasConflict: hasConflict,
           tab: 'finances',
           description: 'DAC CRS Reporting (optional)',
           isCrsField: true,
-          crsData: parsedActivity.financingTerms
+          crsData: parsedActivity.financingTerms,
+          currentCrsData: currentCrsData
         });
       }
 
@@ -4723,7 +4899,10 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
               // Compare key fields
               // Database uses 'value' column, not 'amount'
               const typeMatch = String(t.transaction_type) === String(transaction.type);
-              const dateMatch = t.transaction_date === transaction.date;
+              // Date matching: normalize null/undefined/empty to compare equivalently
+              const dbDate = t.transaction_date || '';
+              const xmlDate = transaction.date || '';
+              const dateMatch = dbDate === xmlDate;
               const amountMatch = Number(t.value || t.amount) === Number(transaction.value);
               const currencyMatch = (t.currency || 'USD') === (transaction.currency || parsedActivity.defaultCurrency || 'USD');
               
@@ -4763,7 +4942,7 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
           };
 
           fields.push({
-            fieldName: `Transaction`,
+            fieldName: `Transaction ${transIndex + 1}`,
             iatiPath: `iati-activity/transaction[${transIndex + 1}]`,
             currentValue: currentTransactionValue,
             importValue: importTransactionValue, // Use object instead of transactionSummary string
@@ -4812,105 +4991,147 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
         return allowedFields.some(allowed => fieldType.toLowerCase().includes(allowed));
       };
       
-      // Always show recipient countries field if there's current data or import data (but only if not filtered out)
-      const countryInfo = shouldShowField('recipient-country') && parsedActivity.recipientCountries && parsedActivity.recipientCountries.length > 0
-        ? parsedActivity.recipientCountries.map(c => {
-            const countryData = IATI_COUNTRIES.find(country => country.code === c.code);
-            const countryName = countryData ? countryData.name : (c.narrative || c.code);
-            return {
-              code: c.code,
-              name: countryName,
-              vocabulary: 'A4 ISO Country'
+      // === RECIPIENT COUNTRIES - Individual items ===
+      if (shouldShowField('recipient-country') && parsedActivity.recipientCountries && parsedActivity.recipientCountries.length > 0) {
+        parsedActivity.recipientCountries.forEach((country: any, countryIndex: number) => {
+          const countryData = IATI_COUNTRIES.find(c => c.code === country.code);
+          const countryName = countryData ? countryData.name : (country.narrative || country.code);
+          const percentage = country.percentage;
+          
+          // Get matching current country if exists
+          const currentCountry = fetchedActivityData.recipient_countries?.[countryIndex];
+          let currentValue = null;
+          if (currentCountry) {
+            const currentCountryData = IATI_COUNTRIES.find(c => c.code === currentCountry.country?.code);
+            const currentCountryName = currentCountryData ? currentCountryData.name : (currentCountry.country?.name || currentCountry.country?.code);
+            currentValue = {
+              code: currentCountry.country?.code,
+              name: currentCountryName,
+              percentage: currentCountry.percentage
             };
-          })
-        : null;
-      
-      const currentCountryInfo = fetchedActivityData.recipient_countries && fetchedActivityData.recipient_countries.length > 0
-        ? fetchedActivityData.recipient_countries.map(c => {
-            const countryCode = c.country?.code;
-            const countryData = IATI_COUNTRIES.find(country => country.code === countryCode);
-            const countryName = countryData ? countryData.name : (c.country?.name || countryCode);
-            return {
-              code: countryCode,
-              name: countryName,
-              vocabulary: 'A4 ISO Country'
-            };
-          })
-        : null;
-      console.log('[IATI Import Debug] Current country info:', currentCountryInfo);
-      console.log('[IATI Import Debug] Current activity data recipient_countries:', fetchedActivityData.recipient_countries);
-      
-      // Only add the field if there's either current data or import data
-      // For snippet imports, ONLY show if the import has this data (not just current data)
-      if (currentCountryInfo || countryInfo) {
-        // For snippet imports, skip this field if there's no import value
-        if (isSnippetImport && !countryInfo) {
-          // Skip - this field wasn't in the snippet
-        } else {
+          }
+          
+          // Create import value display
+          const importValue = (
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="inline-flex items-center rounded bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-700">
+                {country.code}
+              </span>
+              <span className="text-sm font-medium text-gray-900">
+                {countryName}
+              </span>
+              {percentage !== undefined && (
+                <span className="text-sm text-gray-500">
+                  ({percentage}%)
+                </span>
+              )}
+            </div>
+          );
+          
+          // Skip if snippet import and no import data
+          if (isSnippetImport && !country.code) {
+            return;
+          }
+          
           fields.push({
-            fieldName: 'Recipient Countries',
-            iatiPath: 'iati-activity/recipient-country',
-            currentValue: currentCountryInfo,
-            importValue: countryInfo,
-            selected: isFieldAllowedByPreferences('iati-activity/recipient-country') && shouldSelectField(currentCountryInfo, countryInfo),
-            hasConflict: hasConflict(currentCountryInfo, countryInfo),
+            fieldName: `Recipient Country ${countryIndex + 1}`,
+            iatiPath: `iati-activity/recipient-country[${countryIndex + 1}]`,
+            currentValue: currentValue,
+            importValue: importValue,
+            selected: isFieldAllowedByPreferences('iati-activity/recipient-country'),
+            hasConflict: false,
             tab: 'locations',
-            description: 'Countries where activity takes place with percentage allocations (vocabulary: A4)'
+            description: `<recipient-country code="${country.code || ''}"${percentage !== undefined ? ` percentage="${percentage}"` : ''} />`,
+            isRecipientCountryItem: true,
+            recipientCountryData: {
+              code: country.code,
+              name: countryName,
+              percentage: percentage,
+              narrative: country.narrative
+            }
           });
-        }
+        });
       }
 
-      // Always show recipient regions field if there's current data or import data (but only if not filtered out)
-      const standardRegions = shouldShowField('recipient-region') && parsedActivity.recipientRegions ? parsedActivity.recipientRegions.filter(r => r.vocabulary !== '99') : [];
-      const customRegions = shouldShowField('custom-geography') && parsedActivity.recipientRegions ? parsedActivity.recipientRegions.filter(r => r.vocabulary === '99') : [];
+      // === RECIPIENT REGIONS - Individual items ===
+      const standardRegions = shouldShowField('recipient-region') && parsedActivity.recipientRegions 
+        ? parsedActivity.recipientRegions.filter(r => r.vocabulary !== '99') 
+        : [];
+      const customRegions = shouldShowField('custom-geography') && parsedActivity.recipientRegions 
+        ? parsedActivity.recipientRegions.filter(r => r.vocabulary === '99') 
+        : [];
       
-      // Standard regions
-      const regionInfo = shouldShowField('recipient-region') && standardRegions.length > 0
-        ? standardRegions.map(r => {
-            // Look up the region name from our regions data
-            const regionData = IATI_REGIONS.find(region => region.code === r.code);
-            const regionName = regionData ? regionData.name : (r.narrative || r.code);
-            const vocab = r.vocabulary || '1';
-            const vocabName = vocab === '1' ? 'OECD DAC' : vocab === '2' ? 'UN' : 'Custom';
-            return {
-              code: r.code,
-              name: `${regionName}${r.percentage ? ` (${r.percentage}%)` : ''}`,
-              vocabulary: `${vocab} ${vocabName}`
+      if (standardRegions.length > 0) {
+        standardRegions.forEach((region: any, regionIndex: number) => {
+          const regionData = IATI_REGIONS.find(r => r.code === region.code);
+          const regionName = regionData ? regionData.name : (region.narrative || region.code);
+          const percentage = region.percentage;
+          const vocab = region.vocabulary || '1';
+          const vocabName = vocab === '1' ? 'OECD DAC' : vocab === '2' ? 'UN' : `Vocab ${vocab}`;
+          
+          // Get matching current region if exists (only standard regions)
+          const currentRegions = fetchedActivityData.recipient_regions?.filter(r => r.vocabulary !== '99') || [];
+          const currentRegion = currentRegions[regionIndex];
+          let currentValue = null;
+          if (currentRegion) {
+            const currentRegionData = IATI_REGIONS.find(r => r.code === currentRegion.region?.code);
+            const currentRegionName = currentRegionData ? currentRegionData.name : (currentRegion.region?.name || currentRegion.region?.code);
+            const currentVocab = currentRegion.vocabulary || '1';
+            const currentVocabName = currentVocab === '1' ? 'OECD DAC' : currentVocab === '2' ? 'UN' : `Vocab ${currentVocab}`;
+            currentValue = {
+              code: currentRegion.region?.code,
+              name: currentRegionName,
+              percentage: currentRegion.percentage,
+              vocabulary: currentVocab,
+              vocabularyName: currentVocabName
             };
-          })
-        : null;
-      
-      const currentRegionInfo = fetchedActivityData.recipient_regions && fetchedActivityData.recipient_regions.length > 0
-        ? fetchedActivityData.recipient_regions.map(r => {
-            const regionCode = r.region?.code;
-            const regionData = IATI_REGIONS.find(region => region.code === regionCode);
-            const regionName = regionData ? regionData.name : (r.region?.name || regionCode);
-            const vocab = r.vocabulary || '1';
-            const vocabName = vocab === '1' ? 'OECD DAC' : vocab === '2' ? 'UN' : 'Custom';
-            return {
-              code: regionCode,
-              name: `${regionName}${r.percentage ? ` (${r.percentage}%)` : ''}`,
-              vocabulary: `${vocab} ${vocabName}`
-            };
-          })
-        : null;
-      
-      if (currentRegionInfo || regionInfo) {
-        // For snippet imports, skip this field if there's no import value
-        if (isSnippetImport && !regionInfo) {
-          // Skip - this field wasn't in the snippet
-        } else {
+          }
+          
+          // Create import value display
+          const importValue = (
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="inline-flex items-center rounded bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-700">
+                {region.code}
+              </span>
+              <span className="text-sm font-medium text-gray-900">
+                {regionName}
+              </span>
+              {percentage !== undefined && (
+                <span className="text-sm text-gray-500">
+                  ({percentage}%)
+                </span>
+              )}
+              <span className="text-xs text-gray-400">
+                {vocabName}
+              </span>
+            </div>
+          );
+          
+          // Skip if snippet import and no import data
+          if (isSnippetImport && !region.code) {
+            return;
+          }
+          
           fields.push({
-            fieldName: 'Recipient Regions',
-            iatiPath: 'iati-activity/recipient-region',
-            currentValue: currentRegionInfo,
-            importValue: regionInfo,
-            selected: isFieldAllowedByPreferences('iati-activity/recipient-region') && shouldSelectField(currentRegionInfo, regionInfo),
-            hasConflict: hasConflict(currentRegionInfo, regionInfo),
+            fieldName: `Recipient Region ${regionIndex + 1}`,
+            iatiPath: `iati-activity/recipient-region[${regionIndex + 1}]`,
+            currentValue: currentValue,
+            importValue: importValue,
+            selected: isFieldAllowedByPreferences('iati-activity/recipient-region'),
+            hasConflict: false,
             tab: 'locations',
-            description: 'Standard regions where activity takes place with percentage allocations'
+            description: `<recipient-region code="${region.code || ''}" vocabulary="${vocab}"${percentage !== undefined ? ` percentage="${percentage}"` : ''} />`,
+            isRecipientRegionItem: true,
+            recipientRegionData: {
+              code: region.code,
+              name: regionName,
+              percentage: percentage,
+              vocabulary: vocab,
+              vocabularyUri: region.vocabularyUri,
+              narrative: region.narrative
+            }
           });
-        }
+        });
       }
       
       // Custom geographies
@@ -4975,6 +5196,15 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
           const locationCode = location.ref || `LOC${locIndex + 1}`;
           const coordinates = location.point?.pos ? location.point.pos : '';
           
+          // Parse coordinates into latitude and longitude
+          let latitude: string | undefined;
+          let longitude: string | undefined;
+          if (coordinates) {
+            const [lat, lon] = coordinates.split(' ');
+            latitude = lat;
+            longitude = lon;
+          }
+          
           // Create inline styled location display matching other geographical fields
           const locationSummary = (
             <div className="flex flex-wrap items-center gap-2">
@@ -4997,46 +5227,39 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
             </div>
           );
           
+          // Transform location data to match expected format in IatiImportFieldsTable
+          const transformedLocationData = {
+            ...location,
+            name: locationName,
+            latitude,
+            longitude,
+            country_code: location.ref,
+            location_type_code: location.locationClass
+          };
+          
           fields.push({
             fieldName: `Location ${locIndex + 1}`,
             iatiPath: `iati-activity/location[${locIndex + 1}]`,
             currentValue: (() => {
-            // Get current location at this index - this will be evaluated when displayed
-            console.log('[IatiImportTab] Debug - locIndex:', locIndex, 'fetchedActivityData.locations:', fetchedActivityData.locations);
-            const currentLocation = fetchedActivityData.locations && fetchedActivityData.locations[locIndex];
-            console.log('[IatiImportTab] Debug - currentLocation:', currentLocation);
-            if (!currentLocation) return null;
-            
-            // Format current location to match the import value format
-            const currentLocationName = currentLocation.location_name || 'Unnamed Location';
-            const currentLocationCode = currentLocation.location_ref || currentLocation.country_code || `LOC${locIndex + 1}`;
-            const currentCoordinates = currentLocation.latitude && currentLocation.longitude 
-              ? `${currentLocation.latitude} ${currentLocation.longitude}` 
-              : '';
-            
-            return (
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="inline-flex items-center rounded bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-700">
-                  {currentLocationCode}
-                </span>
-                <span className="text-sm font-medium text-gray-900">
-                  {currentLocationName}
-                </span>
-                {currentCoordinates && (
-                  <span className="inline-flex items-center rounded bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-700">
-                    {currentCoordinates}
-                  </span>
-                )}
-              </div>
-            );
-          })(),
+              const currentLocation = fetchedActivityData.locations && fetchedActivityData.locations[locIndex];
+              if (!currentLocation) return null;
+              
+              // Return plain object matching IatiImportFieldsTable expected format
+              return {
+                name: currentLocation.location_name || 'Unnamed Location',
+                latitude: currentLocation.latitude,
+                longitude: currentLocation.longitude,
+                country_code: currentLocation.location_ref || currentLocation.country_code,
+                location_type_code: currentLocation.location_class
+              };
+            })(),
             importValue: locationSummary,
             selected: false,
             hasConflict: false,
             tab: 'locations',
             description: location.description || location.activityDescription || 'Activity location with coordinates and metadata',
             isLocationItem: true,
-            locationData: location
+            locationData: transformedLocationData
           });
         });
       }
@@ -5299,27 +5522,8 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
 
       console.log('[IATI Import Debug] Moving to contacts section...');
       // === CONTACTS ===
-
-      if (parsedActivity.contactInfo && parsedActivity.contactInfo.length > 0) {
-        // Get current value from database if exists
-        let currentContactsValue = null;
-        if (fetchedContacts && fetchedContacts.length > 0) {
-          currentContactsValue = `${fetchedContacts.length} existing contact(s)`;
-        }
-        const importContactsValue = `${parsedActivity.contactInfo.length} contact(s)`;
-
-        fields.push({
-          fieldName: 'Contact Information',
-          iatiPath: 'iati-activity/contact-info',
-          currentValue: currentContactsValue,
-          importValue: importContactsValue,
-          selected: isFieldAllowedByPreferences('iati-activity/contact-info'),
-          hasConflict: false,
-          tab: 'contacts',
-          description: `${parsedActivity.contactInfo.length} contact(s) found in XML`,
-          category: 'contacts'
-        });
-      }
+      // Individual contact fields are created below (Contact 1, Contact 2, etc.)
+      // No need for a summary field since individual contacts show all details
       
       // === CONDITIONS === (handled once below with structured conditionsData and auto-selected)
       
@@ -5332,34 +5536,8 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
       // No need for a summary field since individual planned disbursements show all details
       
       // === HUMANITARIAN SCOPE ===
-
-      if (parsedActivity.humanitarianScopes && parsedActivity.humanitarianScopes.length > 0) {
-        // Get current value from database if exists
-        let currentHSValue = null;
-        if (fetchedHumanitarianScopes && fetchedHumanitarianScopes.length > 0) {
-          currentHSValue = fetchedHumanitarianScopes.map((scope: any) => {
-            const narrativeText = scope.narratives?.[0]?.text || scope.narrative || scope.code;
-            return `${scope.code} (${scope.vocabulary || '1-2'}): ${narrativeText}`;
-          }).join(', ');
-        }
-
-        const hsSummary = parsedActivity.humanitarianScopes.map((scope: any) => {
-          const narrativeText = scope.narratives?.[0]?.text || scope.code;
-          return `${scope.code} (${scope.vocabulary || '1-2'}): ${narrativeText}`;
-        }).join(', ');
-
-        fields.push({
-          fieldName: 'Humanitarian Scope',
-          iatiPath: 'iati-activity/humanitarian-scope',
-          currentValue: currentHSValue,
-          importValue: hsSummary,
-          selected: isFieldAllowedByPreferences('iati-activity/humanitarian-scope'),
-          hasConflict: false,
-          tab: 'humanitarian',
-          description: `${parsedActivity.humanitarianScopes.length} humanitarian scope(s) found in XML`,
-          category: 'humanitarian'
-        });
-      }
+      // Individual Humanitarian Scope fields (Humanitarian Scope 1, 2, etc.) are created below
+      // after the main parsing loop, so we don't create a summary field here
       
       // === DOCUMENT LINKS ===
 
@@ -5451,25 +5629,8 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
       }
       
       // === LOCATIONS ===
-      
-      if (parsedActivity.locations && parsedActivity.locations.length > 0) {
-        const currentLocsValue = 'Check Locations tab for existing locations';
-        const locsSummary = parsedActivity.locations.map((loc: any) => 
-          `${loc.name || loc.ref || 'Unnamed location'}`
-        ).join(', ');
-        
-        fields.push({
-          fieldName: 'Locations',
-          iatiPath: 'iati-activity/location',
-          currentValue: currentLocsValue,
-          importValue: locsSummary,
-          selected: isFieldAllowedByPreferences('iati-activity/location'),
-          hasConflict: false,
-          tab: 'locations',
-          description: `${parsedActivity.locations.length} location(s) found in XML`,
-          category: 'geography'
-        });
-      }
+      // Note: Individual "Location 1", "Location 2" fields are created earlier in the Locations section.
+      // The grouped "Locations" field has been removed to avoid redundancy.
       
       // === FINANCING TERMS ===
       // Note: Individual financing term fields (Loan Terms, Loan Status, OECD CRS Flags) 
@@ -5478,30 +5639,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
       
       // === PARTNERS TAB ===
       
-      if (parsedActivity.reportingOrg) {
-        // Get current reporting org from activity data
-        const currentReportingOrg = fetchedActivityData ? {
-          name: fetchedActivityData['created_by_org_name' as keyof typeof fetchedActivityData] || null,
-          acronym: fetchedActivityData['created_by_org_acronym' as keyof typeof fetchedActivityData] || null
-        } : null;
-
-        fields.push({
-          fieldName: 'Reporting Organization',
-          iatiPath: 'iati-activity/reporting-org',
-          currentValue: currentReportingOrg,
-          importValue: {
-            name: parsedActivity.reportingOrg.narrative || parsedActivity.reportingOrg.ref,
-            ref: parsedActivity.reportingOrg.ref || null,
-            narrative: parsedActivity.reportingOrg.narrative || null,
-            type: parsedActivity.reportingOrg.type || null
-          },
-          selected: isFieldAllowedByPreferences('iati-activity/reporting-org'),
-          hasConflict: false,
-          tab: 'reporting_org',
-          description: 'Organization reporting this activity'
-        });
-      }
-
       if (parsedActivity.participatingOrgs && parsedActivity.participatingOrgs.length > 0) {
         parsedActivity.participatingOrgs.forEach((org: any, index: number) => {
           const orgName = org.narrative || org.ref || 'Unknown Organization';
@@ -5840,7 +5977,7 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
           );
           
           fields.push({
-            fieldName: `Contact`,
+            fieldName: `Contact ${index + 1}`,
             iatiPath: `iati-activity/contact-info[${index + 1}]`,
             currentValue: currentContactValue,
             importValue: {
@@ -6484,15 +6621,15 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
       codeLength: s.code?.length
     })));
     
-    // Filter to only include 3-digit DAC 5 Digit (vocabulary=1) sectors that need refinement
-    // vocabulary=2 (DAC 3 Digit) codes are CORRECT as 3-digit and should NOT be refined
-    const sectorsNeedingRefinement = importedSectors.filter(s => 
-      s.code && s.code.length === 3 && /^\d{3}$/.test(s.code) && 
-      (s.vocabulary === '1' || !s.vocabulary) // Exclude vocabulary=2
+    // Include all 3-digit numeric sectors - users can choose to refine any of them
+    const sectorsToRefine = importedSectors.filter(s => 
+      s.code && s.code.length === 3 && /^\d{3}$/.test(s.code)
     );
     
+    console.log('[Sector Refinement] Sectors to refine:', sectorsToRefine);
+    
     setSectorRefinementData({
-      originalSectors: sectorsNeedingRefinement,
+      originalSectors: sectorsToRefine,
       refinedSectors: []
     });
     setShowSectorRefinement(true);
@@ -7716,8 +7853,7 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
             }
             break;
           case 'Contacts':
-          case 'Contact Information':
-            // Handle contact info import
+            // Handle contact info import (legacy support)
             if (parsedActivity.contactInfo && parsedActivity.contactInfo.length > 0) {
               // Use importedContacts to match existing handler at line 4160
               if (!updateData.importedContacts) updateData.importedContacts = [];
@@ -7840,6 +7976,21 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
                 document_date: doc.document_date
               }));
               console.log(`[IATI Import] Adding ${parsedActivity.document_links.length} document links for import`);
+            }
+            break;
+          case 'DAC CRS Reporting':
+            // Handle full DAC CRS Reporting import (includes all financing terms data)
+            console.log('[XML Import DEBUG] DAC CRS Reporting case triggered!');
+            if (parsedActivity.financingTerms) {
+              updateData._importFinancingTerms = true;
+              updateData.financingTermsData = {
+                loanTerms: parsedActivity.financingTerms.loanTerms,
+                otherFlags: parsedActivity.financingTerms.other_flags,
+                loanStatuses: parsedActivity.financingTerms.loanStatuses,
+                channelCode: parsedActivity.financingTerms.channel_code || parsedActivity.crsChannelCode
+              };
+              console.log('[IATI Import] Adding DAC CRS Reporting for import, channel code:', 
+                parsedActivity.financingTerms.channel_code || parsedActivity.crsChannelCode);
             }
             break;
           case 'Loan Terms':
@@ -8129,6 +8280,48 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
                 updateData.importedLocations.push(parsedActivity.locations[locationIndex]);
               }
               console.log(`[IATI Import] Adding location ${locationIndex + 1} for import`);
+            } else if (field.fieldName.startsWith('Recipient Country ') && field.isRecipientCountryItem) {
+              // Collect individual recipient country data for import
+              if (!updateData.importedRecipientCountries) updateData.importedRecipientCountries = [];
+              if (field.recipientCountryData) {
+                const countryData = IATI_COUNTRIES.find(c => c.code === field.recipientCountryData.code);
+                const countryName = countryData ? countryData.name : (field.recipientCountryData.narrative || field.recipientCountryData.code);
+                
+                updateData.importedRecipientCountries.push({
+                  id: `country-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+                  country: {
+                    code: field.recipientCountryData.code,
+                    name: countryName,
+                    iso2: field.recipientCountryData.code
+                  },
+                  percentage: field.recipientCountryData.percentage || 0,
+                  vocabulary: 'A4',
+                  vocabularyUri: null,
+                  narrative: field.recipientCountryData.narrative || null
+                });
+                console.log(`[IATI Import] Adding recipient country: ${field.recipientCountryData.code}`);
+              }
+            } else if (field.fieldName.startsWith('Recipient Region ') && field.isRecipientRegionItem) {
+              // Collect individual recipient region data for import
+              if (!updateData.importedRecipientRegions) updateData.importedRecipientRegions = [];
+              if (field.recipientRegionData) {
+                const regionData = IATI_REGIONS.find(r => r.code === field.recipientRegionData.code);
+                const regionName = regionData ? regionData.name : (field.recipientRegionData.narrative || field.recipientRegionData.code);
+                
+                updateData.importedRecipientRegions.push({
+                  id: `region-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+                  region: {
+                    code: field.recipientRegionData.code,
+                    name: regionName,
+                    withdrawn: false
+                  },
+                  percentage: field.recipientRegionData.percentage || 0,
+                  vocabulary: field.recipientRegionData.vocabulary || '1',
+                  vocabularyUri: field.recipientRegionData.vocabularyUri || null,
+                  narrative: field.recipientRegionData.narrative || null
+                });
+                console.log(`[IATI Import] Adding recipient region: ${field.recipientRegionData.code}`);
+              }
             } else if (field.tab === 'contacts' || field.fieldName.includes('Contact')) {
               // Collect contact data for import
               if (!updateData.importedContacts) updateData.importedContacts = [];
@@ -8275,8 +8468,8 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
             collaboration_type: !!updateData.collaboration_type,
             default_finance_type: !!updateData.default_finance_type,
             capital_spend_percentage: updateData.capital_spend_percentage !== undefined,
-            recipient_countries: !!updateData.recipient_countries,
-            recipient_regions: !!updateData.recipient_regions,
+            recipient_countries: !!(updateData.importedRecipientCountries || updateData.recipient_countries),
+            recipient_regions: !!(updateData.importedRecipientRegions || updateData.recipient_regions),
             custom_geographies: !!updateData.custom_geographies,
             default_currency: !!updateData.default_currency,
             default_tied_status: !!updateData.default_tied_status,
@@ -8319,8 +8512,8 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
             document_links: updateData.documentLinksData || parsedActivity?.document_links,
             conditions: updateData.importedConditions || parsedActivity?.conditions,
             relatedActivities: updateData.importedRelatedActivities || parsedActivity?.relatedActivities,
-            recipient_countries: updateData.recipient_countries || parsedActivity?.recipient_countries,
-            recipient_regions: updateData.recipient_regions || parsedActivity?.recipient_regions,
+            recipient_countries: updateData.importedRecipientCountries || updateData.recipient_countries || parsedActivity?.recipient_countries,
+            recipient_regions: updateData.importedRecipientRegions || updateData.recipient_regions || parsedActivity?.recipient_regions,
             custom_geographies: updateData.custom_geographies || parsedActivity?.custom_geographies,
           }
         };
@@ -8342,28 +8535,45 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
           }),
         });
 
-        // If the server-side /import-iati endpoint handled transactions, record that
-        if (importRequestBody.fields.transactions && response.ok) {
+        console.log('[IATI Import] API Response status:', response.status);
+        console.log('[IATI Import] API Response ok:', response.ok);
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error('[IATI Import] API Error response:', errorText);
+          throw new Error(`Failed to update activity: ${response.statusText}`);
+        }
+
+        // Parse response JSON to check import results
+        const result = await response.json();
+        console.log('[IATI Import] API response data:', result);
+
+        // If the server-side /import-iati endpoint actually added transactions, record that
+        // Check transactions_added to ensure transactions were actually imported, not just requested
+        if (importRequestBody.fields.transactions && result?.fields_updated?.includes('transactions')) {
           didServerSideTransactionImport = true;
+          console.log('[IATI Import] Server-side transaction import confirmed:', result.summary.transactions_added, 'transactions added');
+        } else if (importRequestBody.fields.transactions) {
+          console.log('[IATI Import] Transactions were requested but none added server-side, will process client-side');
         }
         
         // If the server-side /import-iati endpoint handled related activities, record that
-        if (importRequestBody.fields.related_activities && response.ok) {
+        if (importRequestBody.fields.related_activities) {
           didServerSideRelatedActivitiesImport = true;
         }
       }
 
-      console.log('[IATI Import] API Response status:', response.status);
-      console.log('[IATI Import] API Response ok:', response.ok);
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('[IATI Import] API Error response:', errorText);
-        throw new Error(`Failed to update activity: ${response.statusText}`);
-      }
-
       // Handle import-as-reporting-org response
       if (selectedImportMode === 'import_as_reporting_org') {
+        console.log('[IATI Import] API Response status:', response.status);
+        console.log('[IATI Import] API Response ok:', response.ok);
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error('[IATI Import] API Error response:', errorText);
+          throw new Error(`Failed to update activity: ${response.statusText}`);
+        }
+
         const result = await response.json();
         console.log('[IATI Import] Import as reporting org result:', result);
 
@@ -8726,6 +8936,7 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
               const locationData: any = {
                 location_type: locationType,
                 location_name: loc.name || 'Unnamed Location',
+                location_ref: loc.ref,  // Save the ref attribute (e.g., "AF-KAN")
                 description: loc.description,
                 location_description: loc.description,
                 activity_location_description: loc.activityDescription,
@@ -10419,6 +10630,12 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
             activity_id: activityId
           };
           
+          // Add channel code if provided (from <crs-add>/<channel-code>)
+          if (ftData.channelCode) {
+            financingTermsData.channel_code = ftData.channelCode;
+            console.log('[IATI Import] Adding channel code:', ftData.channelCode);
+          }
+          
           // Add loan terms fields if provided
           if (ftData.loanTerms) {
             financingTermsData.rate_1 = ftData.loanTerms.rate_1 || null;
@@ -10911,8 +11128,15 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
               saveKey = 'recipient_regions';
               break;
             default:
-              // For other fields, use a generic key
-              saveKey = field.fieldName.toLowerCase().replace(/\s+/g, '_');
+              // Handle individual Recipient Country / Region fields
+              if (field.fieldName.startsWith('Recipient Country ')) {
+                saveKey = 'recipient_countries';
+              } else if (field.fieldName.startsWith('Recipient Region ')) {
+                saveKey = 'recipient_regions';
+              } else {
+                // For other fields, use a generic key
+                saveKey = field.fieldName.toLowerCase().replace(/\s+/g, '_');
+              }
           }
           
           if (saveKey) {
@@ -11760,17 +11984,19 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
                     <span className="text-xs text-gray-500">Ref:</span>
                     <span className="text-xs text-gray-600 truncate max-w-32">{field.currentValue.ref}</span>
                     {field.importValue?.wasCorrected && (
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <span className="text-yellow-600 cursor-help">⚠️</span>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>Corrected from misaligned XML import</p>
-                          {field.importValue.original_ref && (
-                            <p className="text-xs mt-1">Original: {field.importValue.original_ref}</p>
-                          )}
-                        </TooltipContent>
-                      </Tooltip>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <span className="text-yellow-600 cursor-help">⚠️</span>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Corrected from misaligned XML import</p>
+                            {field.importValue.original_ref && (
+                              <p className="text-xs mt-1">Original: {field.importValue.original_ref}</p>
+                            )}
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
                     )}
                   </div>
                 )}
@@ -11974,17 +12200,19 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
                 <div className="flex items-center gap-1">
                   <span className="text-xs font-mono text-gray-600 bg-gray-100 px-1.5 py-0.5 rounded truncate max-w-48">{field.importValue.ref}</span>
                   {field.importValue.wasCorrected && (
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <span className="text-yellow-600 cursor-help">⚠️</span>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>Corrected from misaligned XML import</p>
-                        {field.importValue.original_ref && (
-                          <p className="text-xs mt-1">Original: {field.importValue.original_ref}</p>
-                        )}
-                      </TooltipContent>
-                    </Tooltip>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <span className="text-yellow-600 cursor-help">⚠️</span>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Corrected from misaligned XML import</p>
+                          {field.importValue.original_ref && (
+                            <p className="text-xs mt-1">Original: {field.importValue.original_ref}</p>
+                          )}
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
                   )}
                 </div>
               )}
@@ -12972,7 +13200,7 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
               onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#0f4552'}
               onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#135667'}
             >
-              <Database className="h-4 w-4 mr-2" />
+              <DownloadCloud className="h-4 w-4 mr-2" />
               Import Selected Fields
             </Button>
           </div>
@@ -13040,6 +13268,7 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
                   ref: parsedActivity.reporting_org.ref,
                   acronym: parsedActivity.reporting_org.acronym
                 } : undefined}
+                onSectorRefinement={handleSectorRefinement}
               />
             </CardContent>
           </Card>
@@ -13937,6 +14166,103 @@ const PortalDropdown = ({ sector, sectorsGroup, originalIndex, isOpen, onToggle,
   );
 };
 
+// Styled subsector dropdown component for the refinement modal
+interface SubsectorDropdownProps {
+  value: string;
+  options: Array<{ code: string; name: string }>;
+  onSelect: (code: string) => void;
+}
+
+const SubsectorDropdown = ({ value, options, onSelect }: SubsectorDropdownProps) => {
+  const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState('');
+  
+  const selectedOption = options.find(opt => opt.code === value);
+  
+  const filteredOptions = options.filter(opt => {
+    if (!search) return true;
+    const query = search.toLowerCase();
+    return opt.code.toLowerCase().includes(query) || 
+           opt.name.toLowerCase().includes(query);
+  });
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button
+          variant="outline"
+          role="combobox"
+          aria-expanded={open}
+          className="w-full justify-between h-10 text-left font-normal hover:bg-gray-50"
+        >
+          {selectedOption ? (
+            <span className="flex items-center gap-2 truncate text-left">
+              <span className="text-xs font-mono text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded">
+                {selectedOption.code}
+              </span>
+              <span className="truncate text-sm text-left">{selectedOption.name}</span>
+            </span>
+          ) : (
+            <span className="text-gray-400 text-left">Select subsector...</span>
+          )}
+          <ChevronsUpDown className="ml-auto h-4 w-4 shrink-0 opacity-50" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-[var(--radix-popover-trigger-width)] min-w-[650px] p-0" align="start">
+        <Command>
+          <div className="flex items-center border-b px-3">
+            <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
+            <input
+              placeholder="Search subsectors..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="flex h-10 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-gray-400"
+            />
+            {search && (
+              <button
+                onClick={() => setSearch('')}
+                className="h-4 w-4 rounded hover:bg-gray-200 flex items-center justify-center"
+              >
+                <X className="h-3 w-3" />
+              </button>
+            )}
+          </div>
+          <CommandList className="max-h-[280px]">
+            {filteredOptions.length === 0 ? (
+              <div className="py-6 text-center text-sm text-gray-500">
+                No subsectors found.
+              </div>
+            ) : (
+              <CommandGroup>
+                {filteredOptions.map((option) => (
+                  <CommandItem
+                    key={option.code}
+                    value={option.code}
+                    onSelect={() => {
+                      onSelect(option.code);
+                      setOpen(false);
+                      setSearch('');
+                    }}
+                    className="flex items-center gap-2 py-2.5 cursor-pointer"
+                  >
+                    <Check
+                      className={`h-4 w-4 ${value === option.code ? 'opacity-100' : 'opacity-0'}`}
+                    />
+                    <span className="text-xs font-mono text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded">
+                      {option.code}
+                    </span>
+                    <span className="text-sm">{option.name}</span>
+                  </CommandItem>
+                ))}
+              </CommandGroup>
+            )}
+          </CommandList>
+        </Command>
+      </PopoverContent>
+    </Popover>
+  );
+};
+
 interface SectorRefinementModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -13944,296 +14270,96 @@ interface SectorRefinementModalProps {
   onSave: (refinedSectors: any[]) => void;
 }
 const SectorRefinementModal = ({ isOpen, onClose, originalSectors, onSave }: SectorRefinementModalProps) => {
-  const [refinedSectors, setRefinedSectors] = useState<any[]>([]);
-  const [totalPercentage, setTotalPercentage] = useState(0);
-  const [openPopoverId, setOpenPopoverId] = useState<string | null>(null);
-  
-  // Separate DAC and non-DAC sectors
-  const dacSectors = refinedSectors.filter(sector => sector.isValid && /^\d{5}$/.test(sector.code));
-  const nonDacSectors = refinedSectors.filter(sector => !sector.isValid || !/^\d{5}$/.test(sector.code));
-  
-  // Calculate total percentage only for DAC sectors
-  const dacTotalPercentage = dacSectors.reduce((sum, s) => sum + (s.percentage || 0), 0);
+  const [mappings, setMappings] = useState<Array<{
+    id: string;
+    originalCode: string;
+    originalName: string;
+    originalPercentage: number;
+    selectedCode: string;
+    selectedName: string;
+    percentage: number;
+    availableSubsectors: Array<{ code: string; name: string }>;
+  }>>([]);
 
-  // IATI DAC sector reference data - comprehensive mapping
-  const getSubsectorsFor3DigitCode = (threeDigitCode: string) => {
-    const subsectorMap: Record<string, any[]> = {
-      // SOCIAL INFRASTRUCTURE & SERVICES
-      '111': [ // Education, Level Unspecified
-        { code: '11110', name: 'Education policy and administrative management' },
-        { code: '11120', name: 'Education facilities and training' },
-        { code: '11130', name: 'Teacher training' },
-        { code: '11182', name: 'Educational research' }
-      ],
-      '112': [ // Basic Education
-        { code: '11220', name: 'Primary education' },
-        { code: '11230', name: 'Basic life skills for adults' },
-        { code: '11240', name: 'Early childhood education' }
-      ],
-      '113': [ // Secondary Education
-        { code: '11320', name: 'Secondary education' },
-        { code: '11330', name: 'Vocational training' }
-      ],
-      '114': [ // Post-Secondary Education
-        { code: '11420', name: 'Higher education' },
-        { code: '11430', name: 'Advanced technical and managerial training' }
-      ],
-      '121': [ // Health, General
-        { code: '12110', name: 'Health policy and administrative management' },
-        { code: '12181', name: 'Medical education/training' },
-        { code: '12182', name: 'Medical research' },
-        { code: '12191', name: 'Medical services' }
-      ],
-      '122': [ // Basic Health
-        { code: '12220', name: 'Basic health care' },
-        { code: '12230', name: 'Basic health infrastructure' },
-        { code: '12240', name: 'Basic nutrition' },
-        { code: '12250', name: 'Infectious disease control' },
-        { code: '12261', name: 'Health education' },
-        { code: '12281', name: 'Health personnel development' }
-      ],
-      '130': [ // Population Policies/Programmes & Reproductive Health
-        { code: '13010', name: 'Population policy and administrative management' },
-        { code: '13020', name: 'Reproductive health care' },
-        { code: '13030', name: 'Family planning' },
-        { code: '13040', name: 'STD control including HIV/AIDS' },
-        { code: '13081', name: 'Personnel development for population and reproductive health' }
-      ],
-      '140': [ // Water Supply & Sanitation
-        { code: '14010', name: 'Water sector policy and administrative management' },
-        { code: '14015', name: 'Water resources conservation (including data collection)' },
-        { code: '14020', name: 'Water supply and sanitation - large systems' },
-        { code: '14030', name: 'Basic drinking water supply and basic sanitation' },
-        { code: '14040', name: 'River development' },
-        { code: '14050', name: 'Waste management/disposal' },
-        { code: '14081', name: 'Education and training in water supply and sanitation' }
-      ],
-      '151': [ // Government & Civil Society-general
-        { code: '15110', name: 'Public sector policy and administrative management' },
-        { code: '15111', name: 'Public finance management (PFM)' },
-        { code: '15112', name: 'Decentralisation and support to subnational government' },
-        { code: '15113', name: 'Anti-corruption organisations and institutions' },
-        { code: '15130', name: 'Legal and judicial development' },
-        { code: '15150', name: 'Democratic participation and civil society' },
-        { code: '15160', name: 'Human rights' },
-        { code: '15170', name: "Women's rights organisations and movements" },
-        { code: '15180', name: 'Ending violence against women and girls' }
-      ],
-      '152': [ // Conflict, Peace & Security
-        { code: '15210', name: 'Security system management and reform' },
-        { code: '15220', name: 'Civilian peace-building, conflict prevention and resolution' },
-        { code: '15230', name: 'Participation in international peacekeeping operations' },
-        { code: '15240', name: 'Reintegration and SALW control' },
-        { code: '15250', name: 'Removal of land mines and explosive remnants of war' },
-        { code: '15261', name: 'Child soldiers (prevention and demobilisation)' }
-      ],
-      '160': [ // Other Social Infrastructure & Services
-        { code: '16010', name: 'Social Protection' },
-        { code: '16020', name: 'Employment creation' },
-        { code: '16030', name: 'Housing policy and administrative management' },
-        { code: '16040', name: 'Low-cost housing' },
-        { code: '16050', name: 'Multisector aid for basic social services' },
-        { code: '16061', name: 'Culture and recreation' },
-        { code: '16062', name: 'Statistical capacity building' },
-        { code: '16063', name: 'Narcotics control' },
-        { code: '16064', name: 'Social mitigation of HIV/AIDS' }
-      ],
-      
-      // ECONOMIC INFRASTRUCTURE & SERVICES
-      '210': [ // Transport & Storage
-        { code: '21010', name: 'Transport policy and administrative management' },
-        { code: '21020', name: 'Road transport' },
-        { code: '21030', name: 'Rail transport' },
-        { code: '21040', name: 'Water transport' },
-        { code: '21050', name: 'Air transport' },
-        { code: '21061', name: 'Storage' },
-        { code: '21081', name: 'Education and training in transport and storage' }
-      ],
-      '220': [ // Communications
-        { code: '22010', name: 'Communications policy and administrative management' },
-        { code: '22020', name: 'Telecommunications' },
-        { code: '22030', name: 'Radio/television/print media' },
-        { code: '22040', name: 'Information and communication technology (ICT)' }
-      ],
-      '230': [ // Energy
-        { code: '23010', name: 'Energy policy and administrative management' },
-        { code: '23020', name: 'Power generation/non-renewable sources' },
-        { code: '23030', name: 'Power generation/renewable sources' },
-        { code: '23040', name: 'Electrical transmission/ distribution' },
-        { code: '23050', name: 'Gas distribution' },
-        { code: '23061', name: 'Oil-fired power plants' },
-        { code: '23062', name: 'Gas-fired power plants' },
-        { code: '23063', name: 'Coal-fired power plants' },
-        { code: '23064', name: 'Nuclear power plants' },
-        { code: '23065', name: 'Hydro-electric power plants' },
-        { code: '23066', name: 'Geothermal energy' },
-        { code: '23067', name: 'Solar energy' },
-        { code: '23068', name: 'Wind power' },
-        { code: '23069', name: 'Ocean power' },
-        { code: '23070', name: 'Biomass' },
-        { code: '23081', name: 'Energy education/training' },
-        { code: '23082', name: 'Energy research' }
-      ],
-      '240': [ // Banking & Financial Services
-        { code: '24010', name: 'Financial policy and administrative management' },
-        { code: '24020', name: 'Monetary institutions' },
-        { code: '24030', name: 'Formal sector financial intermediaries' },
-        { code: '24040', name: 'Informal/semi-formal financial intermediaries' },
-        { code: '24050', name: 'Remittance facilitation, promotion and optimisation' },
-        { code: '24081', name: 'Education/training in banking and financial services' }
-      ],
-      '250': [ // Business & Other Services
-        { code: '25010', name: 'Business support services and institutions' },
-        { code: '25020', name: 'Privatisation' },
-        { code: '25030', name: 'Business development services' },
-        { code: '25040', name: 'Responsible business conduct' }
-      ],
-      
-      // PRODUCTION SECTORS
-      '311': [ // Agriculture
-        { code: '31110', name: 'Agricultural policy and administrative management' },
-        { code: '31120', name: 'Agricultural development' },
-        { code: '31130', name: 'Agricultural land resources' },
-        { code: '31140', name: 'Agricultural water resources' },
-        { code: '31150', name: 'Agricultural inputs' },
-        { code: '31161', name: 'Food crop production' },
-        { code: '31162', name: 'Industrial crops/export crops' },
-        { code: '31163', name: 'Livestock' },
-        { code: '31164', name: 'Agrarian reform' },
-        { code: '31165', name: 'Agricultural alternative development' },
-        { code: '31166', name: 'Agricultural extension' },
-        { code: '31181', name: 'Agricultural education/training' },
-        { code: '31182', name: 'Agricultural research' },
-        { code: '31191', name: 'Agricultural services' },
-        { code: '31192', name: 'Plant and post-harvest protection and pest control' },
-        { code: '31193', name: 'Agricultural financial services' },
-        { code: '31194', name: 'Agricultural co-operatives' },
-        { code: '31195', name: 'Livestock/veterinary services' }
-      ],
-      '312': [ // Forestry
-        { code: '31210', name: 'Forestry policy and administrative management' },
-        { code: '31220', name: 'Forestry development' },
-        { code: '31261', name: 'Fuelwood/charcoal' },
-        { code: '31281', name: 'Forestry education/training' },
-        { code: '31282', name: 'Forestry research' },
-        { code: '31291', name: 'Forestry services' }
-      ],
-      '313': [ // Fishing
-        { code: '31310', name: 'Fishing policy and administrative management' },
-        { code: '31320', name: 'Fishery development' },
-        { code: '31381', name: 'Fishery education/training' },
-        { code: '31382', name: 'Fishery research' },
-        { code: '31391', name: 'Fishery services' }
-      ],
-      '321': [ // Industry
-        { code: '32110', name: 'Industrial policy and administrative management' },
-        { code: '32120', name: 'Industrial development' },
-        { code: '32130', name: 'Small and medium-sized enterprises (SME) development' },
-        { code: '32140', name: 'Cottage industries and handicraft' },
-        { code: '32161', name: 'Agro-industries' },
-        { code: '32162', name: 'Forest industries' },
-        { code: '32163', name: 'Textiles, leather and substitutes' },
-        { code: '32164', name: 'Chemicals' },
-        { code: '32165', name: 'Fertilizer plants' },
-        { code: '32166', name: 'Cement/lime/plaster' },
-        { code: '32167', name: 'Energy manufacturing' },
-        { code: '32168', name: 'Pharmaceutical production' },
-        { code: '32169', name: 'Basic metal industries' },
-        { code: '32170', name: 'Non-ferrous metal industries' },
-        { code: '32171', name: 'Engineering' },
-        { code: '32172', name: 'Transport equipment industry' },
-        { code: '32182', name: 'Technological research and development' }
-      ],
-      '322': [ // Mineral Resources & Mining
-        { code: '32210', name: 'Mineral/mining policy and administrative management' },
-        { code: '32220', name: 'Mineral prospection and exploration' },
-        { code: '32261', name: 'Coal' },
-        { code: '32262', name: 'Oil and gas (upstream)' },
-        { code: '32263', name: 'Ferrous metals' },
-        { code: '32264', name: 'Nonferrous metals' },
-        { code: '32265', name: 'Precious metals/materials' },
-        { code: '32266', name: 'Industrial minerals' },
-        { code: '32267', name: 'Fertilizer minerals' },
-        { code: '32268', name: 'Offshore minerals' }
-      ],
-      '323': [ // Construction
-        { code: '32310', name: 'Construction policy and administrative management' }
-      ],
-      '331': [ // Trade Policies & Regulations
-        { code: '33110', name: 'Trade policy and administrative management' },
-        { code: '33120', name: 'Trade facilitation' },
-        { code: '33130', name: 'Regional trade agreements (RTAs)' },
-        { code: '33140', name: 'Multilateral trade negotiations' },
-        { code: '33150', name: 'Trade-related adjustment' },
-        { code: '33181', name: 'Trade education/training' }
-      ],
-      '332': [ // Tourism
-        { code: '33210', name: 'Tourism policy and administrative management' }
-      ],
-      
-      // MULTI-SECTOR / CROSS-CUTTING
-      '410': [ // General Environment Protection
-        { code: '41010', name: 'Environmental policy and administrative management' },
-        { code: '41020', name: 'Biosphere protection' },
-        { code: '41030', name: 'Bio-diversity' },
-        { code: '41040', name: 'Site preservation' },
-        { code: '41050', name: 'Flood prevention/control' },
-        { code: '41081', name: 'Environmental education/training' },
-        { code: '41082', name: 'Environmental research' }
-      ],
-      '430': [ // Other Multisector
-        { code: '43010', name: 'Multisector aid' },
-        { code: '43030', name: 'Urban development and management' },
-        { code: '43040', name: 'Rural development' },
-        { code: '43050', name: 'Non-agricultural alternative development' },
-        { code: '43081', name: 'Multisector education/training' },
-        { code: '43082', name: 'Research/scientific institutions' }
-      ],
-      
-      // COMMODITY AID / GENERAL PROGRAMME ASSISTANCE
-      '520': [ // Development Food Assistance
-        { code: '52010', name: 'Food assistance' }
-      ],
-      '530': [ // Other Commodity Assistance
-        { code: '53030', name: 'Import support (capital goods)' },
-        { code: '53040', name: 'Import support (commodities)' }
-      ],
-      
-      // ACTION RELATING TO DEBT
-      '600': [ // Action Relating to Debt
-        { code: '60010', name: 'Action relating to debt' },
-        { code: '60020', name: 'Debt forgiveness' },
-        { code: '60030', name: 'Relief of multilateral debt' },
-        { code: '60040', name: 'Rescheduling and refinancing' },
-        { code: '60061', name: 'Debt for development swap' },
-        { code: '60062', name: 'Other debt swap' },
-        { code: '60063', name: 'Debt buy-back' }
-      ],
-      
-      // HUMANITARIAN AID
-      '720': [ // Emergency Response
-        { code: '72010', name: 'Material relief assistance and services' },
-        { code: '72040', name: 'Emergency food assistance' },
-        { code: '72050', name: 'Relief co-ordination and support services' }
-      ],
-      '730': [ // Reconstruction Relief & Rehabilitation
-        { code: '73010', name: 'Reconstruction relief and rehabilitation' }
-      ],
-      '740': [ // Disaster Prevention & Preparedness
-        { code: '74010', name: 'Disaster prevention and preparedness' },
-        { code: '74020', name: 'Multi-hazard response preparedness' }
-      ],
-      
-      // UNALLOCATED / UNSPECIFIED
-      '998': [ // Unallocated / Unspecified
-        { code: '99810', name: 'Sectors not specified' },
-        { code: '99820', name: 'Promotion of development awareness' }
-      ]
+  // Get sector category name from 3-digit code
+  const getSectorCategoryName = (code: string): string => {
+    const categoryNames: Record<string, string> = {
+      '111': 'Education, Level Unspecified',
+      '112': 'Basic Education',
+      '113': 'Secondary Education',
+      '114': 'Post-Secondary Education',
+      '121': 'Health, General',
+      '122': 'Basic Health',
+      '130': 'Population & Reproductive Health',
+      '140': 'Water Supply & Sanitation',
+      '151': 'Government & Civil Society',
+      '152': 'Conflict, Peace & Security',
+      '160': 'Other Social Infrastructure',
+      '210': 'Transport & Storage',
+      '220': 'Communications',
+      '230': 'Energy',
+      '240': 'Banking & Financial Services',
+      '250': 'Business & Other Services',
+      '311': 'Agriculture',
+      '312': 'Forestry',
+      '313': 'Fishing',
+      '321': 'Industry',
+      '322': 'Mineral Resources & Mining',
+      '323': 'Construction',
+      '331': 'Trade Policies & Regulations',
+      '332': 'Tourism',
+      '410': 'General Environment Protection',
+      '430': 'Other Multisector',
+      '520': 'Development Food Assistance',
+      '530': 'Other Commodity Assistance',
+      '600': 'Action Relating to Debt',
+      '720': 'Emergency Response',
+      '730': 'Reconstruction Relief',
+      '740': 'Disaster Prevention & Preparedness',
+      '998': 'Unallocated / Unspecified'
     };
+    return categoryNames[code] || `Sector ${code}`;
+  };
+
+  // Get all subsectors for a 3-digit category code from the full DAC sector data
+  const getSubsectorsFor3DigitCode = (threeDigitCode: string): Array<{ code: string; name: string }> => {
+    // First try to find subsectors by exact category code match
+    let subsectors = sectorGroupData.data
+      .filter((sector: any) => sector['codeforiati:category-code'] === threeDigitCode)
+      .filter((sector: any) => sector.status === 'active')
+      .map((sector: any) => ({
+        code: sector.code,
+        name: sector.name
+      }))
+      .sort((a: any, b: any) => a.code.localeCompare(b.code));
     
-    // Return the subsectors for the given code, or create generic ones if not found
-    if (subsectorMap[threeDigitCode]) {
-      return subsectorMap[threeDigitCode];
+    // If no exact match, try matching by group code (for parent categories like 230 Energy)
+    if (subsectors.length === 0) {
+      subsectors = sectorGroupData.data
+        .filter((sector: any) => sector['codeforiati:group-code'] === threeDigitCode)
+        .filter((sector: any) => sector.status === 'active')
+        .map((sector: any) => ({
+          code: sector.code,
+          name: sector.name
+        }))
+        .sort((a: any, b: any) => a.code.localeCompare(b.code));
+    }
+    
+    // If still no match, try matching sectors whose code starts with the 3-digit code
+    if (subsectors.length === 0) {
+      subsectors = sectorGroupData.data
+        .filter((sector: any) => sector.code.startsWith(threeDigitCode))
+        .filter((sector: any) => sector.status === 'active')
+        .map((sector: any) => ({
+          code: sector.code,
+          name: sector.name
+        }))
+        .sort((a: any, b: any) => a.code.localeCompare(b.code));
+    }
+    
+    // Return the filtered subsectors, or a generic fallback if none found
+    if (subsectors.length > 0) {
+      return subsectors;
     }
     
     // Create generic subsectors for unknown codes
@@ -14245,502 +14371,421 @@ const SectorRefinementModal = ({ isOpen, onClose, originalSectors, onSave }: Sec
     ];
   };
 
-  // Sector validation functions
-  const isValidSectorCode = (code: string): boolean => {
-    if (!code) return false;
-    // 3-digit codes should be numeric
-    if (code.length === 3) return /^\d{3}$/.test(code);
-    // 5-digit codes should be numeric
-    if (code.length === 5) return /^\d{5}$/.test(code);
-    return false;
-  };
+  // Calculate total percentage
+  const totalPercentage = mappings.reduce((sum, m) => sum + (m.percentage || 0), 0);
 
-  const normalizePercentages = (sectors: any[]): any[] => {
-    const totalPercentage = sectors.reduce((sum, s) => sum + (s.percentage || 0), 0);
-    
-    if (totalPercentage === 0) {
-      // Equal distribution if no percentages provided
-      const equalPercentage = Math.round((100 / sectors.length) * 100) / 100;
-      return sectors.map(s => ({ ...s, percentage: equalPercentage }));
-    }
-    
-    if (Math.abs(totalPercentage - 100) > 0.01) {
-      // Normalize to 100%
-      const factor = 100 / totalPercentage;
-      return sectors.map(s => ({
-        ...s,
-        percentage: Math.round((s.percentage || 0) * factor * 100) / 100
-      }));
-    }
-    
-    return sectors;
-  };
-
-  const detectSectorIssues = (sectors: any[]): string[] => {
-    const issues: string[] = [];
-    
-    // Only check percentage total for DAC sectors
-    const dacSectors = sectors.filter(s => s.isValid && /^\d{5}$/.test(s.code));
-    const total = dacSectors.reduce((sum, s) => sum + (s.percentage || 0), 0);
-    if (Math.abs(total - 100) > 0.01) {
-      issues.push(`Sector percentages total ${total.toFixed(1)}% instead of 100%`);
-    }
-    
-    // Check for zero percentages in DAC sectors only
-    const zeroPercentages = dacSectors.filter(s => (s.percentage || 0) === 0);
-    if (zeroPercentages.length > 0 && dacSectors.length > 1) {
-      issues.push(`${zeroPercentages.length} sector(s) have 0% allocation`);
-    }
-    
-    return issues;
-  };
-
+  // Initialize mappings when modal opens
   useEffect(() => {
     if (isOpen && originalSectors.length > 0) {
-      console.log('[SectorRefinement] Initializing with original sectors:', originalSectors);
-      
-      // Process original sectors with validation
-      const processedSectors = originalSectors.map(sector => {
-        console.log('[SectorRefinement] Processing sector:', sector);
+      console.log('[SectorRefinementModal] Initializing with sectors:', originalSectors);
+      const initialMappings = originalSectors.map(sector => {
+        const code = sector.code || '';
+        const is5Digit = code.length === 5 && /^\d{5}$/.test(code);
+        const is3Digit = code.length === 3 && /^\d{3}$/.test(code);
         
-        if (!isValidSectorCode(sector.code)) {
-          console.warn('[SectorRefinement] Invalid sector code detected:', sector.code);
+        // For 5-digit codes, extract the 3-digit category (first 3 digits)
+        const categoryCode = is5Digit ? code.substring(0, 3) : code;
+        const subsectors = getSubsectorsFor3DigitCode(categoryCode);
+        
+        // For 5-digit codes, use the existing code; for 3-digit, use first subsector
+        let selectedCode = code;
+        let selectedName = sector.name || '';
+        
+        if (is3Digit) {
+          // 3-digit code: default to first subsector
+          const firstSubsector = subsectors[0];
+          selectedCode = firstSubsector?.code || `${code}10`;
+          selectedName = firstSubsector?.name || `${code} - General`;
+        } else if (is5Digit) {
+          // 5-digit code: find matching subsector for the name
+          const matchingSubsector = subsectors.find(s => s.code === code);
+          if (matchingSubsector) {
+            selectedName = matchingSubsector.name;
+          }
         }
         
-        if (sector.code && sector.code.length === 3) {
-          const subsectors = getSubsectorsFor3DigitCode(sector.code);
-          console.log('[SectorRefinement] Found', subsectors.length, 'subsectors for code:', sector.code);
-          
-          // Default to first subsector for this category
-          return {
-            originalCode: sector.code,
-            originalPercentage: sector.percentage || 0,
-            code: subsectors[0]?.code || `${sector.code}10`,
-            name: subsectors[0]?.name || `${sector.code} - Default subsector`,
-            percentage: sector.percentage || 0,
-            availableSubsectors: subsectors,
-            needsRefinement: true,
-            isValid: isValidSectorCode(sector.code),
-            id: crypto.randomUUID() // Add unique ID for React keys
-          };
-        }
-        
-        // If already 5-digit or other format, keep as is but validate
+        console.log('[SectorRefinementModal] Processing sector:', code, 'Category:', categoryCode, 'Found subsectors:', subsectors.length);
         return {
-          originalCode: sector.code,
+          id: crypto.randomUUID(),
+          originalCode: categoryCode,
+          originalName: getSectorCategoryName(categoryCode),
           originalPercentage: sector.percentage || 0,
-          code: sector.code,
-          name: sector.narrative || sector.name || `Unknown sector ${sector.code}`,
+          selectedCode: selectedCode,
+          selectedName: selectedName,
           percentage: sector.percentage || 0,
-          availableSubsectors: [],
-          needsRefinement: false,
-          isValid: isValidSectorCode(sector.code),
-          id: crypto.randomUUID() // Add unique ID for React keys
+          availableSubsectors: subsectors
         };
       });
-      
-      // Normalize percentages if needed
-      const normalizedSectors = normalizePercentages(processedSectors);
-      console.log('[SectorRefinement] Normalized sectors:', normalizedSectors);
-      
-      setRefinedSectors(normalizedSectors);
-      calculateTotal(normalizedSectors);
-      
-      // Detect and log issues
-      const issues = detectSectorIssues(normalizedSectors);
-      if (issues.length > 0) {
-        console.warn('[SectorRefinement] Detected issues:', issues);
-      }
+      console.log('[SectorRefinementModal] Created mappings:', initialMappings);
+      setMappings(initialMappings);
     }
   }, [isOpen, originalSectors]);
 
-  const calculateTotal = (sectors: any[]) => {
-    // Only calculate total for DAC sectors (valid 5-digit codes)
-    const dacSectors = sectors.filter(sector => sector.isValid && /^\d{5}$/.test(sector.code));
-    const total = dacSectors.reduce((sum, sector) => sum + (sector.percentage || 0), 0);
-    console.log('[Calculate Total] DAC sectors:', dacSectors.length, 'Total:', total);
-    setTotalPercentage(total);
-  };
-
-  const handleSectorChange = (index: number, field: string, value: any) => {
-    const updated = [...refinedSectors];
-    if (field === 'code') {
-      // When code changes, update the name too
-      const selectedSubsector = updated[index].availableSubsectors.find((s: any) => s.code === value);
-      updated[index].code = value;
-      updated[index].name = selectedSubsector?.name || value;
-      updated[index].isValid = isValidSectorCode(value);
-    } else {
-      updated[index][field] = value;
-    }
-    
-    setRefinedSectors(updated);
-    if (field === 'percentage') {
-      calculateTotal(updated);
-    }
-  };
-
-  const handleAddSubsector = (originalCode: string, originalPercentage: number) => {
-    const availableSubsectors = getSubsectorsFor3DigitCode(originalCode);
-    
-    // Find an unused subsector (one that's not already selected for this original code)
-    const existingSectorCodes = refinedSectors
-      .filter(s => s.originalCode === originalCode)
-      .map(s => s.code);
-    
-    const unusedSubsector = availableSubsectors.find(sub => !existingSectorCodes.includes(sub.code));
-    
-    if (unusedSubsector) {
-      const newSector = {
-        originalCode: originalCode,
-        originalPercentage: originalPercentage,
-        code: unusedSubsector.code,
-        name: unusedSubsector.name,
-        percentage: 0, // User will need to set this
-        availableSubsectors: availableSubsectors,
-        needsRefinement: true,
-        isValid: isValidSectorCode(unusedSubsector.code),
-        id: crypto.randomUUID() // Add unique ID for React keys
-      };
-      
-      setRefinedSectors([...refinedSectors, newSector]);
-    }
-  };
-
-  const handleRemoveSubsector = (index: number) => {
-    const updated = refinedSectors.filter((_, i) => i !== index);
-    setRefinedSectors(updated);
-    calculateTotal(updated);
-  };
-
-  const handleDistributeEqually = (originalCode: string) => {
-    const sectorsForOriginal = refinedSectors.filter(s => s.originalCode === originalCode && s.isValid);
-    const originalSector = refinedSectors.find(s => s.originalCode === originalCode);
-    
-    if (sectorsForOriginal.length > 0 && originalSector) {
-      const equalPercentage = Math.round((originalSector.originalPercentage / sectorsForOriginal.length) * 100) / 100;
-      
-      const updated = refinedSectors.map(s => {
-        if (s.originalCode === originalCode && s.isValid) {
-          return { ...s, percentage: equalPercentage };
-        }
-        return s;
-      });
-      
-      setRefinedSectors(updated);
-      calculateTotal(updated);
-    }
-  };
-
-  const handleNormalizePercentages = () => {
-    // Only normalize DAC sectors
-    const dacSectors = refinedSectors.filter(sector => sector.isValid && /^\d{5}$/.test(sector.code));
-    const nonDacSectors = refinedSectors.filter(sector => !sector.isValid || !/^\d{5}$/.test(sector.code));
-    
-    const normalizedDacSectors = normalizePercentages(dacSectors);
-    const normalized = [...normalizedDacSectors, ...nonDacSectors];
-    
-    setRefinedSectors(normalized);
-    calculateTotal(normalized);
-  };
-
-  const handleEqualDistribution = () => {
-    // Only distribute equally among DAC sectors
-    const dacSectors = refinedSectors.filter(sector => sector.isValid && /^\d{5}$/.test(sector.code));
-    console.log('[Distribute Equally] DAC sectors found:', dacSectors.length, dacSectors);
-    
-    if (dacSectors.length === 0) return;
-    
-    // Calculate base percentage and remainder to ensure exact 100% total
-    const basePercentage = Math.floor((100 / dacSectors.length) * 100) / 100; // Round down to 2 decimal places
-    const remainder = 100 - (basePercentage * dacSectors.length);
-    
-    console.log('[Distribute Equally] Base percentage:', basePercentage, 'Remainder:', remainder);
-    
-    let dacSectorIndex = 0;
-    const updated = refinedSectors.map(s => {
-      // Only update percentage for DAC sectors
-      if (s.isValid && /^\d{5}$/.test(s.code)) {
-        // Add remainder to only the first sector to ensure exact 100%
-        const extraAmount = dacSectorIndex === 0 ? remainder : 0;
-        const finalPercentage = Math.round((basePercentage + extraAmount) * 100) / 100; // Round to 2 decimal places
-        dacSectorIndex++;
-        
-        console.log('[Distribute Equally] Sector', s.code, 'gets percentage:', finalPercentage);
-        return { ...s, percentage: finalPercentage };
+  // Handle subsector selection change
+  const handleSubsectorChange = (id: string, code: string) => {
+    setMappings(prev => prev.map(m => {
+      if (m.id === id) {
+        const subsector = m.availableSubsectors.find(s => s.code === code);
+        return {
+          ...m,
+          selectedCode: code,
+          selectedName: subsector?.name || code
+        };
       }
-      return s; // Keep non-DAC sectors unchanged
-    });
-    
-    console.log('[Distribute Equally] Updated sectors:', updated);
-    setRefinedSectors(updated);
-    
-    // Use setTimeout to ensure state update happens before calculation
-    setTimeout(() => {
-      calculateTotal(updated);
-    }, 0);
+      return m;
+    }));
   };
 
+  // Handle percentage change
+  const handlePercentageChange = (id: string, value: number) => {
+    setMappings(prev => prev.map(m => 
+      m.id === id ? { ...m, percentage: value } : m
+    ));
+  };
+
+  // Distribute percentages equally
+  const handleDistributeEqually = () => {
+    if (mappings.length === 0) return;
+    const equalPercentage = Math.round((100 / mappings.length) * 100) / 100;
+    const remainder = 100 - (equalPercentage * mappings.length);
+    
+    setMappings(prev => prev.map((m, idx) => ({
+      ...m,
+      percentage: idx === 0 ? equalPercentage + remainder : equalPercentage
+    })));
+  };
+
+  // Add another subsector mapping for splitting
+  const handleAddSplit = (originalCode: string) => {
+    const existing = mappings.find(m => m.originalCode === originalCode);
+    if (!existing) return;
+    
+    const usedCodes = mappings.filter(m => m.originalCode === originalCode).map(m => m.selectedCode);
+    const availableSubsector = existing.availableSubsectors.find(s => !usedCodes.includes(s.code));
+    
+    if (availableSubsector) {
+      setMappings(prev => [...prev, {
+        id: crypto.randomUUID(),
+        originalCode: originalCode,
+        originalName: existing.originalName,
+        originalPercentage: existing.originalPercentage,
+        selectedCode: availableSubsector.code,
+        selectedName: availableSubsector.name,
+        percentage: 0,
+        availableSubsectors: existing.availableSubsectors
+      }]);
+    }
+  };
+
+  // Remove a split
+  const handleRemoveSplit = (id: string) => {
+    setMappings(prev => prev.filter(m => m.id !== id));
+  };
+
+  // Quick split handler for preset percentages
+  const handleQuickSplit = (originalCode: string, percentages: number[]) => {
+    const existing = mappings.find(m => m.originalCode === originalCode);
+    if (!existing) return;
+    
+    setMappings(prev => {
+      const sectorItems = prev.filter(m => m.originalCode === originalCode);
+      const currentCount = sectorItems.length;
+      const neededCount = percentages.length;
+      
+      // Create new mappings if we need more
+      const newMappings: typeof mappings = [];
+      const usedCodes = new Set(sectorItems.map(m => m.selectedCode));
+      
+      if (neededCount > currentCount) {
+        for (let i = currentCount; i < neededCount; i++) {
+          const availableSubsector = existing.availableSubsectors.find(s => !usedCodes.has(s.code));
+          if (availableSubsector) {
+            newMappings.push({
+              id: crypto.randomUUID(),
+              originalCode: originalCode,
+              originalName: existing.originalName,
+              originalPercentage: existing.originalPercentage,
+              selectedCode: availableSubsector.code,
+              selectedName: availableSubsector.name,
+              percentage: 0,
+              availableSubsectors: existing.availableSubsectors
+            });
+            usedCodes.add(availableSubsector.code);
+          }
+        }
+      }
+      
+      // Combine existing and new items, then assign percentages
+      const allSectorItems = [...sectorItems, ...newMappings];
+      const allOtherItems = prev.filter(m => m.originalCode !== originalCode);
+      
+      // Update percentages for all sector items
+      const updatedSectorItems = allSectorItems.map((item, idx) => ({
+        ...item,
+        percentage: idx < percentages.length ? percentages[idx] : item.percentage
+      }));
+      
+      return [...allOtherItems, ...updatedSectorItems];
+    });
+  };
+
+  // Save the refined sectors
   const handleSave = () => {
     if (Math.abs(totalPercentage - 100) > 0.01) {
-      toast.error('Sector percentages must total 100%');
+      toast.error('Percentages must total 100%');
       return;
     }
+    
+    const refinedSectors = mappings.map(m => ({
+      code: m.selectedCode,
+      name: m.selectedName,
+      percentage: m.percentage,
+      originalCode: m.originalCode,
+      isValid: true
+    }));
+    
     onSave(refinedSectors);
+    onClose();
   };
+
+  // Group mappings by original code for display
+  const groupedMappings = mappings.reduce((acc, m) => {
+    if (!acc[m.originalCode]) acc[m.originalCode] = [];
+    acc[m.originalCode].push(m);
+    return acc;
+  }, {} as Record<string, typeof mappings>);
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+      <DialogContent className="max-w-3xl">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Settings className="h-5 w-5" />
-            Refine Sector Classifications
+            Map Sectors to Subsectors
           </DialogTitle>
           <DialogDescription>
-            This activity has 3-digit sector categories from imported data. Please select specific 5-digit sub-sectors 
-            and reallocate percentages. The total must equal 100%.
+            Select specific 5-digit subsectors for each 3-digit category. You can split allocations across multiple subsectors.
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4">
-          {/* Progress indicator and controls */}
-          <div className="bg-gray-50 p-3 rounded-lg space-y-3">
-            <div className="flex justify-between items-center">
-              <span className="text-sm font-medium text-gray-700">
-                Total Percentage (DAC Sectors Only): 
-              </span>
-              <div className="flex items-center gap-3">
-                <span className={`font-bold ${
-                  Math.abs(totalPercentage - 100) < 0.01 
-                    ? 'text-gray-800' 
-                    : 'text-gray-600'
-                }`}>
-                  {totalPercentage.toFixed(1)}%
-                </span>
-                <div className="flex gap-1">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={handleEqualDistribution}
-                    className="text-xs px-2 py-1 bg-gray-100 text-gray-700 border-gray-300 hover:bg-gray-200"
-                  >
-                    Distribute Equally
-                  </Button>
-                </div>
-              </div>
-            </div>
-            
-            <div className="w-full bg-gray-100 rounded-full h-1">
-              <div 
-                className={`h-1 rounded-full transition-all ${
-                  Math.abs(totalPercentage - 100) < 0.01 
-                    ? 'bg-gray-300' 
-                    : 'bg-gray-400'
-                }`}
-                style={{ width: `${Math.min(totalPercentage, 100)}%` }}
-              />
-            </div>
-            
-          </div>
+        <div className="space-y-6 py-4">
+          {/* Sector cards - table layout */}
+          <div className="space-y-6 max-h-[400px] overflow-y-auto pr-2">
+            {Object.entries(groupedMappings).map(([originalCode, items], cardIndex) => {
+              // Calculate remaining percentage for this sector
+              const allocatedPercentage = items.reduce((sum, m) => sum + (m.percentage || 0), 0);
+              const remainingPercentage = items[0].originalPercentage - allocatedPercentage;
+              const isExact = Math.abs(remainingPercentage) < 0.01;
+              const isOverAllocated = remainingPercentage < 0;
+              const hasValidationIssue = !isExact;
 
-          {/* Refinement table */}
-          <div className="border rounded-lg overflow-hidden">
-            <table className="w-full">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">
-                    Original (3-digit)
-                  </th>
-                  <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">
-                    Refined (5-digit)
-                  </th>
-                  <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase w-24">
-                    %
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200">
-                {/* Group sectors by original code */}
-                {Object.entries(
-                  dacSectors.reduce((groups: Record<string, any[]>, sector: any) => {
-                    const originalCode = sector.originalCode;
-                    if (!groups[originalCode]) groups[originalCode] = [];
-                    groups[originalCode].push(sector);
-                    return groups;
-                  }, {} as Record<string, any[]>)
-                ).map(([originalCode, sectorsGroup]: [string, any[]]) => (
-                  <React.Fragment key={originalCode}>
-                    {sectorsGroup.map((sector: any, groupIndex: number) => {
-                      const originalIndex = refinedSectors.findIndex(s => s === sector);
-                      const isFirstInGroup = groupIndex === 0;
-                      const availableSubsectors = getSubsectorsFor3DigitCode(originalCode);
-                      const usedCodes = sectorsGroup.map((s: any) => s.code);
-                      const hasUnusedSubsectors = availableSubsectors.some(sub => !usedCodes.includes(sub.code));
-                      
-                      return (
-                        <tr key={sector.id || originalIndex} className="bg-white">
-                          {/* Original Code Column - only show for first row of each group */}
-                          <td className="px-3 py-3">
-                            {isFirstInGroup && (
-                              <div className="text-sm">
-                                <div className="font-mono text-xs text-gray-600">
-                                  {sector.originalCode}
+              return (
+                <div key={originalCode}>
+                  <div 
+                    className={`border rounded-lg p-5 bg-white transition-all duration-200 ${
+                      hasValidationIssue 
+                        ? 'border-amber-300 bg-amber-50/30' 
+                        : 'border-gray-200'
+                    }`}
+                  >
+                    {/* Original sector header */}
+                    <div className="flex items-center gap-3 mb-4 pb-3 border-b border-gray-200">
+                      <div className="flex items-center gap-2">
+                        <code className="text-sm font-mono bg-gray-100 px-2 py-0.5 rounded">{originalCode}</code>
+                        <span className="text-sm font-medium text-gray-700">{items[0].originalName}</span>
+                      </div>
+                      <div className="flex items-center gap-2 ml-auto">
+                        <Badge variant="secondary" className="text-xs">
+                          Original: {items[0].originalPercentage}%
+                        </Badge>
+                        {isExact ? (
+                          <CheckCircle className="h-4 w-4 text-green-600 transition-colors duration-200" />
+                        ) : isOverAllocated ? (
+                          <Badge variant="outline" className="text-xs text-red-600 border-red-600 transition-colors duration-200 flex items-center gap-1">
+                            <AlertCircle className="h-3 w-3" />
+                            Over by: {Math.abs(remainingPercentage).toFixed(0)}%
+                          </Badge>
+                        ) : (
+                          <Badge variant="outline" className="text-xs text-amber-600 border-amber-600 transition-colors duration-200 flex items-center gap-1">
+                            <AlertCircle className="h-3 w-3" />
+                            Remaining: {remainingPercentage.toFixed(0)}%
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Validation message */}
+                    {hasValidationIssue && (
+                      <div className="mb-4 p-2 bg-amber-50 border border-amber-200 rounded-md">
+                        <div className="flex items-center gap-2 text-xs text-amber-800">
+                          <AlertCircle className="h-4 w-4 flex-shrink-0" />
+                          <span>
+                            {isOverAllocated 
+                              ? `Subsectors total ${allocatedPercentage.toFixed(0)}%, which exceeds the original ${items[0].originalPercentage}% allocation.`
+                              : `Subsectors total ${allocatedPercentage.toFixed(0)}%, leaving ${remainingPercentage.toFixed(0)}% unallocated.`
+                            }
+                          </span>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Table layout for subsector selections */}
+                    <div className="space-y-2">
+                      <table className="w-full">
+                        <thead>
+                          <tr className="border-b border-gray-200">
+                            <th className="text-left text-xs font-medium text-gray-500 pb-2 px-1">Subsector</th>
+                            <th className="text-center text-xs font-medium text-gray-500 pb-2 px-1 w-28">Percentage</th>
+                            <th className="w-10"></th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {items.map((mapping, idx) => (
+                            <tr key={mapping.id} className="border-b border-gray-100 last:border-b-0 animate-in fade-in slide-in-from-top-2">
+                              <td className="py-2 px-1 align-middle">
+                                <SubsectorDropdown
+                                  value={mapping.selectedCode}
+                                  options={mapping.availableSubsectors}
+                                  onSelect={(code) => handleSubsectorChange(mapping.id, code)}
+                                />
+                              </td>
+                              <td className="py-2 px-1 align-middle">
+                                <div className="flex items-center justify-center gap-1">
+                                  <Input
+                                    type="number"
+                                    min="0"
+                                    max="100"
+                                    step="1"
+                                    value={mapping.percentage || ''}
+                                    onChange={(e) => handlePercentageChange(mapping.id, parseFloat(e.target.value) || 0)}
+                                    className="w-20 text-center"
+                                    placeholder="0"
+                                  />
+                                  <span className="text-sm text-gray-500">%</span>
                                 </div>
-                                <div className="text-gray-500 text-xs">
-                                  {sector.originalPercentage}% original
-                                </div>
-                              </div>
-                            )}
-                          </td>
-                          
-                          {/* Refined Sector Column */}
-                          <td className="px-3 py-3">
-                            <div className="space-y-2">
-                              <div className="flex items-center gap-2">
-                                <div className="flex-1">
-                                  {sector.availableSubsectors.length > 0 ? (
-                                    <PortalDropdown
-                                      sector={sector}
-                                      sectorsGroup={sectorsGroup}
-                                      originalIndex={originalIndex}
-                                      isOpen={openPopoverId === sector.id}
-                                      onToggle={() => setOpenPopoverId(openPopoverId === sector.id ? null : sector.id)}
-                                      onSelect={(code) => {
-                                        handleSectorChange(originalIndex, 'code', code);
-                                        setOpenPopoverId(null);
-                                      }}
-                                    />
-                                  ) : (
-                                    <div className="text-sm text-gray-500 italic">
-                                      No subsectors available
-                                    </div>
-                                  )}
-                                </div>
-                                
-                                {/* Remove button - only show if there are multiple subsectors for this original code */}
-                                {sectorsGroup.length > 1 && (
+                              </td>
+                              <td className="py-2 px-1 align-middle">
+                                {items.length > 1 && (
                                   <Button
-                                    type="button"
                                     variant="ghost"
                                     size="sm"
-                                    onClick={() => handleRemoveSubsector(originalIndex)}
-                                    className="h-8 w-8 p-0 text-gray-400 hover:text-red-600"
+                                    onClick={() => handleRemoveSplit(mapping.id)}
+                                    className="h-8 w-8 p-0 text-gray-400 hover:text-red-600 transition-colors duration-200"
                                   >
                                     <Trash2 className="h-4 w-4" />
                                   </Button>
                                 )}
-                              </div>
-                              
-                              {/* Add Subsector button - show for the last row of each group and if there are unused subsectors */}
-                              {groupIndex === sectorsGroup.length - 1 && hasUnusedSubsectors && (
-                                <div className="flex justify-start">
-                                  <Button
-                                    type="button"
-                                    variant="default"
-                                    size="sm"
-                                    onClick={() => handleAddSubsector(originalCode, sector.originalPercentage)}
-                                    className="h-8 px-3 text-xs bg-blue-600 hover:bg-blue-700 text-white"
-                                  >
-                                    <Plus className="h-3 w-3 mr-1" />
-                                    Add Subsector
-                                  </Button>
-                                </div>
-                              )}
-                            </div>
-                          </td>
-                          
-                          {/* Percentage Column */}
-                          <td className="px-3 py-3">
-                            <div className="space-y-2">
-                              <div className="flex items-center h-10">
-                                <Input
-                                  type="number"
-                                  min="0"
-                                  max="100"
-                                  step="0.1"
-                                  value={sector.percentage || ''}
-                                  onChange={(e) => handleSectorChange(originalIndex, 'percentage', parseFloat(e.target.value) || 0)}
-                                  className="w-20 text-sm"
-                                  placeholder="0"
-                                />
-                              </div>
-                              {/* Empty space to match the Add Subsector button space */}
-                              {groupIndex === sectorsGroup.length - 1 && hasUnusedSubsectors && (
-                                <div className="h-8"></div>
-                              )}
-                            </div>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </React.Fragment>
-                ))}
-                
-                {/* Non-DAC Sectors (Locked) */}
-                {nonDacSectors.length > 0 && (
-                  <>
-                    <tr className="bg-gray-100">
-                      <td colSpan={3} className="px-3 py-2">
-                        <div className="flex items-center gap-2 text-xs font-medium text-gray-600 uppercase tracking-wide">
-                          <Lock className="h-3 w-3" />
-                          Non-DAC Sectors
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+
+                      {/* Preset split buttons - show when sector has 2+ items */}
+                      {items.length >= 2 && (
+                        <div className="flex flex-wrap gap-2 pt-2 border-t border-gray-100 mt-2">
+                          <span className="text-xs text-gray-500 self-center mr-1">Quick splits:</span>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleQuickSplit(originalCode, [50, 50])}
+                            className="text-xs h-7"
+                          >
+                            50/50
+                          </Button>
+                          {(items.length >= 3 || items[0].availableSubsectors.length >= 3) && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleQuickSplit(originalCode, [33, 33, 34])}
+                              className="text-xs h-7"
+                            >
+                              33/33/34
+                            </Button>
+                          )}
+                          {(items.length >= 4 || items[0].availableSubsectors.length >= 4) && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleQuickSplit(originalCode, [25, 25, 25, 25])}
+                              className="text-xs h-7"
+                            >
+                              25/25/25/25
+                            </Button>
+                          )}
                         </div>
-                      </td>
-                    </tr>
-                    {nonDacSectors.map((sector, index) => {
-                      const originalIndex = refinedSectors.findIndex(s => s === sector);
-                      return (
-                        <tr key={originalIndex} className="bg-gray-50">
-                          <td className="px-3 py-3">
-                            <div className="text-sm">
-                              <div className="font-mono text-xs text-gray-500">
-                                {sector.originalCode}
-                              </div>
-                              <div className="text-gray-400 text-xs">
-                                {sector.originalPercentage}% original
-                              </div>
-                            </div>
-                          </td>
-                          <td className="px-3 py-3">
-                            <div className="text-sm">
-                              <div className="flex items-center gap-2 mb-1">
-                                <span className="text-xs font-mono text-gray-400 bg-gray-200 px-1.5 py-0.5 rounded">{sector.code}</span>
-                                <span className="font-medium text-gray-500">{sector.name}</span>
-                              </div>
-                            </div>
-                          </td>
-                          <td className="px-3 py-3">
-                            <Input
-                              type="number"
-                              min="0"
-                              max="100"
-                              step="0.1"
-                              value={sector.percentage}
-                              disabled
-                              className="w-full text-xs bg-gray-100 text-gray-500"
-                            />
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </>
-                )}
-              </tbody>
-            </table>
+                      )}
+
+                      {/* Add split button */}
+                      {items[0].availableSubsectors.length > items.length && (
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleAddSplit(originalCode)}
+                                className="text-xs text-blue-600 hover:text-blue-700 hover:bg-blue-50 transition-colors duration-200 mt-2"
+                              >
+                                <Plus className="h-3 w-3 mr-1" />
+                                Split across multiple subsectors
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>Add another subsector to split this allocation</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      )}
+                    </div>
+                  </div>
+                  {cardIndex < Object.entries(groupedMappings).length - 1 && (
+                    <Separator className="my-4" />
+                  )}
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Total percentage bar - at bottom */}
+          <div className="flex items-center justify-between bg-gray-50 p-3 rounded-lg border border-gray-200">
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-medium text-gray-700">Total:</span>
+              <span className="text-sm font-semibold text-gray-900">
+                {totalPercentage.toFixed(0)}%
+              </span>
+              {Math.abs(totalPercentage - 100) < 0.01 ? (
+                <CheckCircle className="h-4 w-4 text-green-600" />
+              ) : (
+                <span className="text-xs text-amber-600 flex items-center gap-1">
+                  <AlertCircle className="h-3 w-3" />
+                  (must equal 100%)
+                </span>
+              )}
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleDistributeEqually}
+              className="text-xs"
+            >
+              <ArrowLeftRight className="h-3 w-3 mr-1" />
+              Distribute Equally
+            </Button>
           </div>
         </div>
 
-        <DialogFooter>
-          <Button variant="outline" onClick={onClose} className="bg-gray-100 text-gray-700 border-gray-300 hover:bg-gray-200">
+        <DialogFooter className="gap-2">
+          <Button variant="outline" onClick={onClose}>
             Cancel
           </Button>
           <Button 
             onClick={handleSave}
             disabled={Math.abs(totalPercentage - 100) > 0.01}
-            className="bg-blue-600 text-white hover:bg-blue-700 disabled:bg-gray-400"
+            className="bg-blue-600 hover:bg-blue-700"
           >
-            Save Refined Sectors
+            <CheckCircle className="h-4 w-4 mr-2" />
+            Apply Mapping
           </Button>
         </DialogFooter>
       </DialogContent>

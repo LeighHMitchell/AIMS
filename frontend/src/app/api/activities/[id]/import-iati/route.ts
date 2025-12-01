@@ -3,6 +3,7 @@ import { getSupabaseAdmin } from '@/lib/supabase';
 import { fixedCurrencyConverter } from '@/lib/currency-converter-fixed';
 import { getOrCreateOrganization } from '@/lib/organization-helpers';
 import { validatePolicyMarkerSignificance } from '@/lib/policy-marker-validation';
+import { sanitizeIatiDescription } from '@/lib/sanitize';
 
 interface ImportRequest {
   fields: Record<string, boolean>;
@@ -215,6 +216,14 @@ export async function POST(
       hierarchy: 'hierarchy'
     };
     
+    // Description fields that need HTML sanitization
+    const descriptionFields = [
+      'description_narrative',
+      'description_objectives',
+      'description_target_groups',
+      'description_other'
+    ];
+
     // Process simple fields
     Object.entries(fieldMappings).forEach(([iatiField, dbField]) => {
       if (fields[iatiField] && iati_data[iatiField] !== undefined) {
@@ -224,6 +233,11 @@ export async function POST(
         let value = iati_data[iatiField];
         if (value && typeof value === 'object' && value.date) {
           value = value.date;
+        }
+        
+        // Sanitize HTML in description fields
+        if (descriptionFields.includes(iatiField) && typeof value === 'string') {
+          value = sanitizeIatiDescription(value);
         }
         
         updateData[dbField] = value;
@@ -1340,15 +1354,18 @@ export async function POST(
       }
 
       // Create a set of existing transaction signatures
+      // Normalize dates to handle null/empty consistently
       const existingSignatures = new Set(
         (existingTransactions || []).map((t: ExistingTransaction) =>
-          `${t.transaction_type}-${t.transaction_date}-${t.value}-${t.currency}`
+          `${t.transaction_type}-${t.transaction_date || ''}-${t.value}-${t.currency}`
         )
       );
 
       // Filter out duplicate transactions
       const newTransactions = (iati_data.transactions || []).filter((t: IATITransaction) => {
-        const signature = `${t.type}-${t.date}-${t.value}-${t.currency || 'USD'}`;
+        // Normalize empty dates for consistent matching
+        const normalizedDate = t.date && t.date.trim() !== '' ? t.date : '';
+        const signature = `${t.type}-${normalizedDate}-${t.value}-${t.currency || 'USD'}`;
         return !existingSignatures.has(signature);
       });
 
@@ -1490,10 +1507,13 @@ export async function POST(
             continue;
           }
           
+          // Normalize empty string dates to null (PostgreSQL DATE columns don't accept empty strings)
+          const normalizedDate = t.date && t.date.trim() !== '' ? t.date : null;
+          
           validTransactions.push({
             activity_id: activityId,
             transaction_type: t.type,
-            transaction_date: t.date,
+            transaction_date: normalizedDate,
             value: t.value,
             currency: resolvedCurrency,
             status: 'actual', // IATI transactions are actual
@@ -1516,7 +1536,7 @@ export async function POST(
             receiver_activity_uuid: receiverActivityUuid,
             
             // IATI fields
-            aid_type: t.aidType,
+            aid_type: typeof t.aidType === 'object' ? t.aidType?.code : t.aidType,
             finance_type: t.financeType,
             tied_status: t.tiedStatus,
             flow_type: t.flowType,
@@ -2111,7 +2131,7 @@ export async function POST(
       try {
         // Upsert loan terms if present
         if (iati_data.financingTerms.loanTerms) {
-          const loanTermsData = {
+          const loanTermsData: any = {
             activity_id: activityId,
             rate_1: iati_data.financingTerms.loanTerms.rate_1,
             rate_2: iati_data.financingTerms.loanTerms.rate_2,
@@ -2122,6 +2142,11 @@ export async function POST(
             repayment_final_date: iati_data.financingTerms.loanTerms.repayment_final_date,
             other_flags: iati_data.financingTerms.other_flags || []
           };
+          
+          // Add channel code if present
+          if (iati_data.financingTerms.channel_code) {
+            loanTermsData.channel_code = iati_data.financingTerms.channel_code;
+          }
 
           const { error: loanTermsError } = await supabase
             .from('activity_financing_terms')

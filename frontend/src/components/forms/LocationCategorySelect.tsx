@@ -44,7 +44,7 @@ export function LocationCategorySelect({
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger>
+      <PopoverTrigger asChild>
         <Button
           id={id}
           variant="outline"

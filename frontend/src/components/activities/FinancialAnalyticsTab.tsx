@@ -21,7 +21,7 @@ import {
 } from 'recharts'
 import { format, parseISO, getYear, getMonth, startOfMonth } from 'date-fns'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
-import { Loader2, AlertCircle, TrendingUp, DollarSign, BarChart3, TrendingUpIcon, LineChart as LineChartIcon, Table as TableIcon, ChevronDown, Download, FileImage, Camera } from 'lucide-react'
+import { AlertCircle, TrendingUp, DollarSign, BarChart3, TrendingUpIcon, LineChart as LineChartIcon, Table as TableIcon, ChevronDown, Download, FileImage, Camera } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -37,6 +37,7 @@ import {
 import { HelpTextTooltip } from '@/components/ui/help-text-tooltip'
 import { Switch } from '@/components/ui/switch'
 import { Label } from '@/components/ui/label'
+import { FinancialAnalyticsSkeleton } from './TabSkeletons'
 import { 
   splitBudgetAcrossYears, 
   splitPlannedDisbursementAcrossYears, 
@@ -242,7 +243,7 @@ interface FundingSourceSankeyProps {
   fundingTransactionType: string
 }
 
-const FundingSourceSankey: React.FC<FundingSourceSankeyProps> = ({
+export const FundingSourceSankey: React.FC<FundingSourceSankeyProps> = ({
   data,
   fundingSourceType,
   fundingTransactionType
@@ -2257,14 +2258,7 @@ export default function FinancialAnalyticsTab({
   }
 
   if (loading || isPending) {
-    return (
-      <div className="flex items-center justify-center h-96">
-        <div className="flex items-center gap-2 text-slate-500">
-          <Loader2 className="h-6 w-6 animate-spin" />
-          <span>Loading financial analytics...</span>
-        </div>
-      </div>
-    )
+    return <FinancialAnalyticsSkeleton />
   }
 
   return (

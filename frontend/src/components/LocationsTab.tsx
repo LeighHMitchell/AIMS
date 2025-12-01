@@ -241,6 +241,7 @@ export default function LocationsTab({
       <ActivityLocationsHeatmap 
         locations={locations}
         title="Activity Locations Map"
+        activityTitle={activityTitle}
       />
 
       {/* Header */}

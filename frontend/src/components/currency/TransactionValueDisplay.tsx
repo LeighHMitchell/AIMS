@@ -23,6 +23,7 @@ interface TransactionData {
   usd_convertible?: boolean;
   usd_conversion_date?: string | null;
   exchange_rate_used?: number | null;
+  exchange_rate_manual?: boolean;
 }
 
 interface TransactionValueDisplayProps {
@@ -142,12 +143,16 @@ export function TransactionValueDisplay({
         ? `1 ${transaction.currency} = ${conversionData.exchange_rate.toFixed(4)} USD`
         : '';
       
+      const isManual = transaction.exchange_rate_manual === true;
+      
       return {
         status: 'converted',
-        badge: 'Converted',
-        color: 'bg-green-100 text-green-800',
+        badge: isManual ? 'Manual' : 'Converted',
+        color: isManual ? 'bg-orange-100 text-orange-800' : 'bg-green-100 text-green-800',
         icon: <CheckCircle className="h-3 w-3" />,
-        tooltip: `Converted to USD${exchangeRateDisplay ? ` using exchange rate: ${exchangeRateDisplay}` : ''}`
+        tooltip: isManual 
+          ? `Manually entered exchange rate${exchangeRateDisplay ? `: ${exchangeRateDisplay}` : ''}`
+          : `Converted to USD${exchangeRateDisplay ? ` using exchange rate: ${exchangeRateDisplay}` : ''}`
       };
     }
 

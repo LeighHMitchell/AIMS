@@ -128,7 +128,7 @@ export function FinanceTypeFlowChart({
   const [allFinanceTypes, setAllFinanceTypes] = useState<Array<{code: string, name: string}>>([])
   const [selectedFlowTypes, setSelectedFlowTypes] = useState<string[]>(['10']) // Default to ODA (code 10)
   const [selectedFinanceTypes, setSelectedFinanceTypes] = useState<string[]>([]) // Empty = all finance types
-  const [selectedTransactionTypes, setSelectedTransactionTypes] = useState<string[]>(['3']) // Default to Disbursement (code 3)
+  const [selectedTransactionTypes, setSelectedTransactionTypes] = useState<string[]>(['1']) // Default to Incoming Commitment (code 1) - most commonly has finance type data
   const [viewMode, setViewMode] = useState<ViewMode>('bar')
   const [timeMode, setTimeMode] = useState<TimeMode>('periodic')
   
@@ -184,29 +184,13 @@ export function FinanceTypeFlowChart({
 
         const { data: transactions, error: transactionsError } = await query
 
-        console.log('[FinanceTypeFlowChart] === FETCHING TRANSACTIONS ===')
-        console.log('[FinanceTypeFlowChart] Query filters:', {
-          selectedTransactionTypes,
-          dateRange: dateRange ? { from: dateRange.from.toISOString(), to: dateRange.to.toISOString() } : 'none'
-        })
-
         if (transactionsError) {
           console.error('[FinanceTypeFlowChart] Error fetching transactions:', transactionsError)
           setError('Failed to fetch transaction data')
           return
         }
 
-        console.log('[FinanceTypeFlowChart] Transactions fetched:', transactions?.length || 0)
-        if (transactions && transactions.length > 0) {
-          console.log('[FinanceTypeFlowChart] Sample transaction:', transactions[0])
-        }
-
         if (!transactions || transactions.length === 0) {
-          console.warn('[FinanceTypeFlowChart] No transactions found with finance_type and flow_type')
-          console.warn('[FinanceTypeFlowChart] This could mean:')
-          console.warn('  1. No transactions match the transaction type filter (currently:', selectedTransactionTypes, ')')
-          console.warn('  2. No transactions have both finance_type and flow_type populated')
-          console.warn('  3. Transactions are outside the date range filter')
           setRawData([])
           setAllFlowTypes([])
           setAllFinanceTypes([])
@@ -218,22 +202,16 @@ export function FinanceTypeFlowChart({
         const processedData: any[] = []
         
         transactions.forEach((t: any) => {
-          // ONLY use USD values - try value_usd first
+          // Try value_usd first, then fall back to raw value
           let value = parseFloat(String(t.value_usd)) || 0
 
-          // Only use raw value if currency is explicitly USD and no USD conversion exists
-          if (!value && t.currency === 'USD' && t.value) {
+          // Fall back to raw value if no USD conversion exists
+          if (!value && t.value) {
             value = parseFloat(String(t.value)) || 0
           }
 
-          // Skip transactions without valid USD values
+          // Skip transactions without any valid value
           if (!value) {
-            console.warn('[FinanceTypeFlowChart] Skipping transaction without USD value:', {
-              date: t.transaction_date,
-              currency: t.currency,
-              value: t.value,
-              value_usd: t.value_usd
-            })
             return
           }
 
@@ -246,9 +224,10 @@ export function FinanceTypeFlowChart({
           
           yearAllocations.forEach(({ year, amount }) => {
             // Use actual finance_type code from database
-            const financeType = t.finance_type || 'Unknown'
-            const flowType = t.flow_type || 'Unknown'
-            const transactionType = t.transaction_type || 'Unknown'
+            const financeType = String(t.finance_type || 'Unknown')
+            const flowType = String(t.flow_type || 'Unknown')
+            // Convert to string to match selectedTransactionTypes format
+            const transactionType = String(t.transaction_type || 'Unknown')
 
             processedData.push({
               year,
@@ -265,11 +244,6 @@ export function FinanceTypeFlowChart({
         const uniqueFlowTypeCodes = Array.from(new Set(processedData.map((d: any) => d.flowType)))
         const uniqueFinanceTypeCodes = Array.from(new Set(processedData.map((d: any) => d.financeType)))
 
-        console.log('[FinanceTypeFlowChart] Flow types found in transaction data:', uniqueFlowTypeCodes)
-        console.log('[FinanceTypeFlowChart] Flow types from API:', flowTypesData.map((ft: any) => ft.code))
-        console.log('[FinanceTypeFlowChart] Finance types found in transaction data:', uniqueFinanceTypeCodes)
-        console.log('[FinanceTypeFlowChart] Finance types from API:', financeTypesData.map((ft: any) => ft.code))
-
         // Filter flow types to only include those present in the data
         const relevantFlowTypes = flowTypesData.filter((ft: any) =>
           uniqueFlowTypeCodes.includes(ft.code)
@@ -279,9 +253,6 @@ export function FinanceTypeFlowChart({
         const relevantFinanceTypes = financeTypesData.filter((ft: any) =>
           uniqueFinanceTypeCodes.includes(ft.code)
         ).sort((a: any, b: any) => a.code.localeCompare(b.code))
-
-        console.log('[FinanceTypeFlowChart] Matched flow types:', relevantFlowTypes.map((ft: any) => `${ft.code}: ${ft.name}`))
-        console.log('[FinanceTypeFlowChart] Matched finance types:', relevantFinanceTypes.map((ft: any) => `${ft.code}: ${ft.name}`))
 
         setRawData(processedData)
         setAllFlowTypes(relevantFlowTypes)
@@ -384,8 +355,6 @@ export function FinanceTypeFlowChart({
         })
       }
     }
-
-    console.log('[FinanceTypeFlowChart] Chart data sample:', dataPoints.slice(0, 5))
 
     return dataPoints
   }, [rawData, selectedFlowTypes, selectedFinanceTypes, selectedTransactionTypes, allFinanceTypes, timeMode])

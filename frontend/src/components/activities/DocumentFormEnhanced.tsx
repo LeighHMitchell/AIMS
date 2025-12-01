@@ -387,7 +387,7 @@ export function DocumentFormEnhanced({
                 <div>
                   <Label>Format (MIME Type)</Label>
                   <Popover open={formatOpen} onOpenChange={setFormatOpen}>
-                    <PopoverTrigger>
+                    <PopoverTrigger asChild>
                       <Button
                         variant="outline"
                         role="combobox"
@@ -464,7 +464,7 @@ export function DocumentFormEnhanced({
                   <div className="mt-2">
                     <Label className="text-xs text-muted-foreground">Title Language</Label>
                     <Popover open={titleLangOpen} onOpenChange={setTitleLangOpen}>
-                      <PopoverTrigger>
+                      <PopoverTrigger asChild>
                         <Button
                           variant="outline"
                           role="combobox"
@@ -519,7 +519,7 @@ export function DocumentFormEnhanced({
                   <div className="mt-2">
                     <Label className="text-xs text-muted-foreground">Description Language</Label>
                     <Popover open={descLangOpen} onOpenChange={setDescLangOpen}>
-                      <PopoverTrigger>
+                      <PopoverTrigger asChild>
                         <Button
                           variant="outline"
                           role="combobox"
@@ -565,8 +565,8 @@ export function DocumentFormEnhanced({
                 <div>
                   <Label>Document Category</Label>
                   <Popover open={categoryOpen} onOpenChange={setCategoryOpen}>
-                    <PopoverTrigger>
-                      <div className="flex flex-wrap gap-2 items-center min-h-[40px] p-2 border rounded-md">
+                    <PopoverTrigger asChild>
+                      <div className="flex flex-wrap gap-2 items-center min-h-[40px] p-2 border rounded-md cursor-pointer">
                         {selectedCategories.length > 0 ? (
                           selectedCategories.map(categoryCode => {
                             const category = DOCUMENT_CATEGORIES.find(c => c.code === categoryCode);
@@ -662,7 +662,7 @@ export function DocumentFormEnhanced({
                 <div>
                   <Label>Document Languages</Label>
                   <Popover open={languagesOpen} onOpenChange={setLanguagesOpen}>
-                    <PopoverTrigger>
+                    <PopoverTrigger asChild>
                       <Button
                         variant="outline"
                         role="combobox"

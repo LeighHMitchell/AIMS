@@ -1080,7 +1080,7 @@ export default function EnhancedActivityEditor({ activityId, initialData = {} }:
                                 {/* Owner Organisation Ref (Optional) */}
                                 <div className="space-y-1">
                                   <label className="text-sm font-medium text-gray-700">
-                                    Owner Organisation Ref <span className="text-gray-400">(Optional)</span>
+                                    Owner Organisation Ref{' '}<span className="text-gray-400">(Optional)</span>
                                   </label>
                                   <Input
                                     type="text"

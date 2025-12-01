@@ -242,7 +242,7 @@ export function DocumentForm({
                     <Label htmlFor="url">
                       URL
                       <Popover>
-                        <PopoverTrigger>
+                        <PopoverTrigger asChild>
                           <button className="ml-1">
                             <HelpCircle className="w-3 h-3 text-gray-400" />
                           </button>

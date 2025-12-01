@@ -61,7 +61,13 @@ async function fetchAllLinkedTransactions(activityIds: string[]) {
         activity:activities!activity_id (
           id,
           title_narrative,
-          iati_identifier
+          iati_identifier,
+          default_finance_type,
+          default_aid_type,
+          default_flow_type,
+          default_tied_status,
+          created_by_org_name,
+          created_by_org_acronym
         ),
         provider_organization:organizations!provider_org_id (
           id,
@@ -84,14 +90,24 @@ async function fetchAllLinkedTransactions(activityIds: string[]) {
       return [];
     }
 
-    // Add transaction source and linked activity info
+    // Add transaction source, linked activity info, and computed inherited fields
     return linkedTransactions?.map((t: any) => ({
       ...t,
       transaction_source: 'linked' as const,
       linked_from_activity_id: t.activity_id,
       linked_from_activity_title: t.activity?.title_narrative,
       linked_from_activity_iati_id: t.activity?.iati_identifier,
-      acceptance_status: 'pending' as const
+      acceptance_status: 'pending' as const,
+      // Add effective values (transaction value or inherited from activity default)
+      effective_finance_type: t.finance_type || t.activity?.default_finance_type || null,
+      effective_aid_type: t.aid_type || t.activity?.default_aid_type || null,
+      effective_flow_type: t.flow_type || t.activity?.default_flow_type || null,
+      effective_tied_status: t.tied_status || t.activity?.default_tied_status || null,
+      // Add inherited flags (true if value comes from activity default, not transaction)
+      finance_type_inherited: !t.finance_type && !!t.activity?.default_finance_type,
+      aid_type_inherited: !t.aid_type && !!t.activity?.default_aid_type,
+      flow_type_inherited: !t.flow_type && !!t.activity?.default_flow_type,
+      tied_status_inherited: !t.tied_status && !!t.activity?.default_tied_status,
     })) || [];
 
   } catch (error) {
@@ -134,7 +150,13 @@ export async function GET(request: Request) {
         activity:activities!activity_id (
           id,
           title_narrative,
-          iati_identifier
+          iati_identifier,
+          default_finance_type,
+          default_aid_type,
+          default_flow_type,
+          default_tied_status,
+          created_by_org_name,
+          created_by_org_acronym
         ),
         provider_organization:organizations!provider_org_id (
           id,
@@ -217,10 +239,20 @@ export async function GET(request: Request) {
       );
     }
 
-    // Transform own transactions with source classification
+    // Transform own transactions with source classification and computed inherited fields
     let allTransactions = (ownTransactions || []).map((t: any) => ({
       ...t,
-      transaction_source: 'own' as const
+      transaction_source: 'own' as const,
+      // Add effective values (transaction value or inherited from activity default)
+      effective_finance_type: t.finance_type || t.activity?.default_finance_type || null,
+      effective_aid_type: t.aid_type || t.activity?.default_aid_type || null,
+      effective_flow_type: t.flow_type || t.activity?.default_flow_type || null,
+      effective_tied_status: t.tied_status || t.activity?.default_tied_status || null,
+      // Add inherited flags (true if value comes from activity default, not transaction)
+      finance_type_inherited: !t.finance_type && !!t.activity?.default_finance_type,
+      aid_type_inherited: !t.aid_type && !!t.activity?.default_aid_type,
+      flow_type_inherited: !t.flow_type && !!t.activity?.default_flow_type,
+      tied_status_inherited: !t.tied_status && !!t.activity?.default_tied_status,
     }));
 
     // Fetch linked transactions if requested
@@ -379,9 +411,28 @@ async function validateIATIFields(body: any) {
 }
 
 // Helper function to perform automatic currency conversion
-async function performCurrencyConversion(transactionId: string, currency: string, value: number, valueDate: string) {
+// Supports manual exchange rate override - if manualRate is provided, skip API call
+interface CurrencyConversionOptions {
+  transactionId: string;
+  currency: string;
+  value: number;
+  valueDate: string;
+  manualRate?: number | null;
+  manualValueUsd?: number | null;
+  isManual?: boolean;
+}
+
+async function performCurrencyConversion(
+  transactionId: string, 
+  currency: string, 
+  value: number, 
+  valueDate: string,
+  manualRate?: number | null,
+  manualValueUsd?: number | null,
+  isManual?: boolean
+) {
   try {
-    console.log('[Transactions API] Starting automatic currency conversion for transaction:', transactionId);
+    console.log('[Transactions API] Starting currency conversion for transaction:', transactionId);
     
     // For USD transactions, still populate USD Value field
     if (currency === 'USD') {
@@ -394,7 +445,8 @@ async function performCurrencyConversion(transactionId: string, currency: string
           value_usd: value,
           exchange_rate_used: 1.0,
           usd_conversion_date: new Date().toISOString(),
-          usd_convertible: true
+          usd_convertible: true,
+          exchange_rate_manual: false
         })
         .eq('uuid', transactionId);
 
@@ -402,6 +454,35 @@ async function performCurrencyConversion(transactionId: string, currency: string
         console.error('[Transactions API] Error updating USD transaction fields:', updateError);
       } else {
         console.log('[Transactions API] Successfully updated USD transaction fields');
+      }
+      return;
+    }
+
+    // If manual rate is provided, use it directly
+    if (isManual && manualRate && manualValueUsd != null) {
+      console.log('[Transactions API] Using manual exchange rate:', manualRate);
+      
+      const { error: updateError } = await getSupabaseAdmin()
+        .from('transactions')
+        .update({
+          value_usd: manualValueUsd,
+          exchange_rate_used: manualRate,
+          usd_conversion_date: new Date().toISOString(),
+          usd_convertible: true,
+          exchange_rate_manual: true
+        })
+        .eq('uuid', transactionId);
+
+      if (updateError) {
+        console.error('[Transactions API] Error updating transaction with manual rate:', updateError);
+      } else {
+        console.log('[Transactions API] Successfully updated transaction with manual rate:', {
+          transactionId,
+          originalAmount: `${value} ${currency}`,
+          usdAmount: `$${manualValueUsd}`,
+          exchangeRate: manualRate,
+          manual: true
+        });
       }
       return;
     }
@@ -418,7 +499,8 @@ async function performCurrencyConversion(transactionId: string, currency: string
         .from('transactions')
         .update({
           usd_convertible: false,
-          usd_conversion_date: new Date().toISOString()
+          usd_conversion_date: new Date().toISOString(),
+          exchange_rate_manual: false
         })
         .eq('uuid', transactionId);
 
@@ -436,7 +518,8 @@ async function performCurrencyConversion(transactionId: string, currency: string
         value_usd: result.usd_amount,
         exchange_rate_used: result.exchange_rate,
         usd_conversion_date: new Date().toISOString(),
-        usd_convertible: true
+        usd_convertible: true,
+        exchange_rate_manual: false
       })
       .eq('uuid', transactionId);
 
@@ -626,7 +709,16 @@ export async function POST(request: NextRequest) {
     };
     
     // Perform currency conversion for all transactions (including USD to populate USD Value field)
-    await performCurrencyConversion(responseData.uuid, responseData.currency, responseData.value, responseData.value_date || responseData.transaction_date);
+    // Support manual exchange rate override from the request body
+    await performCurrencyConversion(
+      responseData.uuid, 
+      responseData.currency, 
+      responseData.value, 
+      responseData.value_date || responseData.transaction_date,
+      body.exchange_rate_used,
+      body.value_usd,
+      body.exchange_rate_manual
+    );
 
     return NextResponse.json(responseData, { status: 201 });
   } catch (error) {
@@ -839,7 +931,16 @@ export async function PUT(request: NextRequest) {
     };
     
     // Perform currency conversion for all transactions (including USD to populate USD Value field)
-    await performCurrencyConversion(responseData.uuid, responseData.currency, responseData.value, responseData.value_date || responseData.transaction_date);
+    // Support manual exchange rate override from the request body
+    await performCurrencyConversion(
+      responseData.uuid, 
+      responseData.currency, 
+      responseData.value, 
+      responseData.value_date || responseData.transaction_date,
+      body.exchange_rate_used,
+      body.value_usd,
+      body.exchange_rate_manual
+    );
 
     return NextResponse.json(responseData);
   } catch (error) {

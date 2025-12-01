@@ -48,7 +48,7 @@ import { HelpTextTooltip } from "@/components/ui/help-text-tooltip";
 import { 
   Plus, Download, Edit2, Trash2, AlertCircle, ArrowUp, ArrowDown, ArrowUpDown, ChevronLeft, ChevronRight, Users, Grid3X3, TableIcon, Search, MoreVertical, Edit,
   PencilLine, BookOpenCheck, BookLock, CheckCircle2, AlertTriangle, Circle, Info, ReceiptText, Handshake, Shuffle, Link2,
-  FileCheck, ShieldCheck, Globe, DatabaseZap, RefreshCw, Copy, Check, Blocks, DollarSign, Settings, ExternalLink, FileCode
+  FileCheck, ShieldCheck, Globe, DatabaseZap, RefreshCw, Copy, Check, Blocks, DollarSign, Settings, ExternalLink, FileCode, Columns3, ChevronDown
 } from "lucide-react";
 import { useUser } from "@/hooks/useUser";
 import { Transaction, TIED_STATUS_LABELS } from "@/types/transaction";
@@ -171,12 +171,33 @@ type Activity = {
   createdBy?: { id: string; name: string; role: string }; // User who created the activity
   contributors?: any[]; // Added for contributors
   
-  // Transaction summaries from API
+  // Transaction type totals from API
+  incomingCommitments?: number;
   commitments?: number;
   disbursements?: number;
   expenditures?: number;
+  interestRepayment?: number;
+  loanRepayment?: number;
+  reimbursement?: number;
+  purchaseOfEquity?: number;
+  saleOfEquity?: number;
+  creditGuarantee?: number;
+  incomingFunds?: number;
+  commitmentCancellation?: number;
   inflows?: number;
   totalTransactions?: number;
+  
+  // Flow type totals from API
+  flowTypeODA?: number;
+  flowTypeOOF?: number;
+  flowTypeNonExportOOF?: number;
+  flowTypeExportCredits?: number;
+  flowTypePrivateGrants?: number;
+  flowTypePrivateMarket?: number;
+  flowTypePrivateFDI?: number;
+  flowTypeOtherPrivate?: number;
+  flowTypeNonFlow?: number;
+  flowTypeOther?: number;
   
   // Budget summaries from API  
   totalPlannedBudgetUSD?: number;
@@ -289,6 +310,233 @@ const canUserEditActivity = (user: any, activity: Activity): boolean => {
   return false;
 };
 
+// Column configuration for the activity list table
+type ColumnId = 
+  // Default columns
+  | 'checkbox'
+  | 'title'
+  | 'activityStatus'
+  | 'publicationStatus'
+  | 'reportedBy'
+  | 'totalBudgeted'
+  | 'totalPlannedDisbursement'
+  | 'lastEdited'
+  | 'modalityClassification'
+  | 'actions'
+  // Optional default fields
+  | 'aidType'
+  | 'defaultFinanceType'
+  | 'defaultFlowType'
+  | 'defaultTiedStatus'
+  | 'defaultModality'
+  // Transaction type totals
+  | 'totalIncomingCommitments'
+  | 'totalCommitments'
+  | 'totalDisbursements'
+  | 'totalExpenditures'
+  | 'totalInterestRepayment'
+  | 'totalLoanRepayment'
+  | 'totalReimbursement'
+  | 'totalPurchaseOfEquity'
+  | 'totalSaleOfEquity'
+  | 'totalCreditGuarantee'
+  | 'totalIncomingFunds'
+  | 'totalCommitmentCancellation'
+  // Publication status columns
+  | 'isPublished'
+  | 'isValidated'
+  | 'iatiSyncStatus';
+
+interface ColumnConfig {
+  id: ColumnId;
+  label: string;
+  group: 'default' | 'activityDefaults' | 'transactionTypeTotals' | 'publicationStatuses';
+  width?: string;
+  alwaysVisible?: boolean; // For columns that can't be hidden (checkbox, actions)
+  defaultVisible?: boolean;
+  sortable?: boolean;
+  align?: 'left' | 'center' | 'right';
+}
+
+const COLUMN_CONFIGS: ColumnConfig[] = [
+  // Default columns
+  { id: 'checkbox', label: 'Select', group: 'default', width: 'w-[50px]', alwaysVisible: true, defaultVisible: true, align: 'center' },
+  { id: 'title', label: 'Activity Title', group: 'default', width: 'w-[30%]', defaultVisible: true, sortable: true, align: 'left' },
+  { id: 'activityStatus', label: 'Activity Status', group: 'default', width: 'w-[120px]', defaultVisible: true, sortable: true, align: 'left' },
+  { id: 'publicationStatus', label: 'Publication Status', group: 'default', width: 'w-[120px]', defaultVisible: true, align: 'center' },
+  { id: 'reportedBy', label: 'Reported By', group: 'default', width: 'min-w-[140px]', defaultVisible: true, sortable: true, align: 'left' },
+  { id: 'totalBudgeted', label: 'Total Budgeted', group: 'default', width: 'min-w-[120px]', defaultVisible: true, sortable: true, align: 'right' },
+  { id: 'totalPlannedDisbursement', label: 'Total Planned Disbursements', group: 'default', width: 'min-w-[100px]', defaultVisible: true, sortable: true, align: 'right' },
+  { id: 'lastEdited', label: 'Last Edited', group: 'default', width: 'min-w-[100px]', defaultVisible: true, sortable: true, align: 'right' },
+  { id: 'modalityClassification', label: 'Modality & Classification', group: 'default', width: 'w-[120px]', defaultVisible: true, align: 'center' },
+  { id: 'actions', label: 'Actions', group: 'default', width: 'w-[80px]', alwaysVisible: true, defaultVisible: true, align: 'right' },
+  
+  // Activity defaults (optional columns)
+  { id: 'aidType', label: 'Default Aid Type', group: 'activityDefaults', width: 'min-w-[150px]', defaultVisible: false, align: 'left' },
+  { id: 'defaultFinanceType', label: 'Default Finance Type', group: 'activityDefaults', width: 'min-w-[150px]', defaultVisible: false, align: 'left' },
+  { id: 'defaultFlowType', label: 'Default Flow Type', group: 'activityDefaults', width: 'min-w-[150px]', defaultVisible: false, align: 'left' },
+  { id: 'defaultTiedStatus', label: 'Default Tied Status', group: 'activityDefaults', width: 'min-w-[130px]', defaultVisible: false, align: 'left' },
+  { id: 'defaultModality', label: 'Default Modality', group: 'activityDefaults', width: 'min-w-[130px]', defaultVisible: false, align: 'left' },
+  
+  // Transaction type totals
+  { id: 'totalIncomingCommitments', label: 'Incoming Commitments', group: 'transactionTypeTotals', width: 'min-w-[120px]', defaultVisible: false, align: 'right' },
+  { id: 'totalCommitments', label: 'Outgoing Commitments', group: 'transactionTypeTotals', width: 'min-w-[120px]', defaultVisible: false, align: 'right' },
+  { id: 'totalDisbursements', label: 'Disbursements', group: 'transactionTypeTotals', width: 'min-w-[120px]', defaultVisible: false, align: 'right' },
+  { id: 'totalExpenditures', label: 'Expenditures', group: 'transactionTypeTotals', width: 'min-w-[120px]', defaultVisible: false, align: 'right' },
+  { id: 'totalInterestRepayment', label: 'Interest Repayment', group: 'transactionTypeTotals', width: 'min-w-[120px]', defaultVisible: false, align: 'right' },
+  { id: 'totalLoanRepayment', label: 'Loan Repayment', group: 'transactionTypeTotals', width: 'min-w-[120px]', defaultVisible: false, align: 'right' },
+  { id: 'totalReimbursement', label: 'Reimbursement', group: 'transactionTypeTotals', width: 'min-w-[120px]', defaultVisible: false, align: 'right' },
+  { id: 'totalPurchaseOfEquity', label: 'Purchase of Equity', group: 'transactionTypeTotals', width: 'min-w-[120px]', defaultVisible: false, align: 'right' },
+  { id: 'totalSaleOfEquity', label: 'Sale of Equity', group: 'transactionTypeTotals', width: 'min-w-[120px]', defaultVisible: false, align: 'right' },
+  { id: 'totalCreditGuarantee', label: 'Credit Guarantee', group: 'transactionTypeTotals', width: 'min-w-[120px]', defaultVisible: false, align: 'right' },
+  { id: 'totalIncomingFunds', label: 'Incoming Funds', group: 'transactionTypeTotals', width: 'min-w-[120px]', defaultVisible: false, align: 'right' },
+  { id: 'totalCommitmentCancellation', label: 'Commitment Cancellation', group: 'transactionTypeTotals', width: 'min-w-[120px]', defaultVisible: false, align: 'right' },
+  
+  // Publication status columns
+  { id: 'isPublished', label: 'Published', group: 'publicationStatuses', width: 'w-[100px]', defaultVisible: false, align: 'center' },
+  { id: 'isValidated', label: 'Validated', group: 'publicationStatuses', width: 'w-[100px]', defaultVisible: false, align: 'center' },
+  { id: 'iatiSyncStatus', label: 'IATI Synced', group: 'publicationStatuses', width: 'w-[100px]', defaultVisible: false, align: 'center' },
+];
+
+const COLUMN_GROUPS = {
+  default: 'Default Columns',
+  publicationStatuses: 'Publication Status',
+  activityDefaults: 'Activity Defaults',
+  transactionTypeTotals: 'Transaction Type Totals',
+  flowTypeTotals: 'Flow Type Totals',
+};
+
+const DEFAULT_VISIBLE_COLUMNS: ColumnId[] = COLUMN_CONFIGS
+  .filter(col => col.defaultVisible)
+  .map(col => col.id);
+
+const LOCALSTORAGE_KEY = 'aims_activity_list_visible_columns';
+
+// Column Selector Component
+interface ColumnSelectorProps {
+  visibleColumns: ColumnId[];
+  onColumnsChange: (columns: ColumnId[]) => void;
+}
+
+function ColumnSelector({ visibleColumns, onColumnsChange }: ColumnSelectorProps) {
+  const [open, setOpen] = useState(false);
+
+  const toggleColumn = (columnId: ColumnId) => {
+    const config = COLUMN_CONFIGS.find(c => c.id === columnId);
+    if (config?.alwaysVisible) return; // Can't toggle always-visible columns
+    
+    if (visibleColumns.includes(columnId)) {
+      onColumnsChange(visibleColumns.filter(id => id !== columnId));
+    } else {
+      onColumnsChange([...visibleColumns, columnId]);
+    }
+  };
+
+  const toggleGroup = (group: keyof typeof COLUMN_GROUPS) => {
+    const groupColumns = COLUMN_CONFIGS.filter(c => c.group === group && !c.alwaysVisible);
+    const allVisible = groupColumns.every(c => visibleColumns.includes(c.id));
+    
+    if (allVisible) {
+      // Hide all columns in this group
+      onColumnsChange(visibleColumns.filter(id => !groupColumns.find(c => c.id === id)));
+    } else {
+      // Show all columns in this group
+      const newColumns = [...visibleColumns];
+      groupColumns.forEach(c => {
+        if (!newColumns.includes(c.id)) {
+          newColumns.push(c.id);
+        }
+      });
+      onColumnsChange(newColumns);
+    }
+  };
+
+  const resetToDefaults = () => {
+    onColumnsChange(DEFAULT_VISIBLE_COLUMNS);
+  };
+
+  const visibleCount = visibleColumns.filter(id => {
+    const config = COLUMN_CONFIGS.find(c => c.id === id);
+    return config && !config.alwaysVisible;
+  }).length;
+
+  const totalToggleable = COLUMN_CONFIGS.filter(c => !c.alwaysVisible).length;
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button variant="outline" size="sm" className="gap-2">
+          <Columns3 className="h-4 w-4" />
+          <span className="hidden sm:inline">Columns</span>
+          <Badge variant="secondary" className="ml-1 px-1.5 py-0 text-xs">
+            {visibleCount}
+          </Badge>
+          <ChevronDown className="h-3 w-3 opacity-50" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-80 p-0" align="end">
+        <div className="p-3 border-b">
+          <div className="flex items-center justify-between">
+            <h4 className="font-medium text-sm">Visible Columns</h4>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={resetToDefaults}
+              className="h-7 text-xs"
+            >
+              Reset to defaults
+            </Button>
+          </div>
+          <p className="text-xs text-muted-foreground mt-1">
+            {visibleCount} of {totalToggleable} columns visible
+          </p>
+        </div>
+        <div className="max-h-[400px] overflow-y-auto">
+          {(Object.keys(COLUMN_GROUPS) as Array<keyof typeof COLUMN_GROUPS>).map(groupKey => {
+            const groupColumns = COLUMN_CONFIGS.filter(c => c.group === groupKey && !c.alwaysVisible);
+            if (groupColumns.length === 0) return null;
+            
+            const allVisible = groupColumns.every(c => visibleColumns.includes(c.id));
+            const someVisible = groupColumns.some(c => visibleColumns.includes(c.id));
+            
+            return (
+              <div key={groupKey} className="border-b last:border-b-0">
+                <div 
+                  className="flex items-center gap-2 px-3 py-2 bg-muted/50 cursor-pointer hover:bg-muted/80"
+                  onClick={() => toggleGroup(groupKey)}
+                >
+                  <Checkbox 
+                    checked={allVisible}
+                    // @ts-ignore - indeterminate is valid but not in types
+                    indeterminate={someVisible && !allVisible}
+                    onCheckedChange={() => toggleGroup(groupKey)}
+                  />
+                  <span className="text-sm font-medium">{COLUMN_GROUPS[groupKey]}</span>
+                </div>
+                <div className="py-1">
+                  {groupColumns.map(column => (
+                    <div
+                      key={column.id}
+                      className="flex items-center gap-2 px-3 py-1.5 hover:bg-muted/50 cursor-pointer"
+                      onClick={() => toggleColumn(column.id)}
+                    >
+                      <Checkbox 
+                        checked={visibleColumns.includes(column.id)}
+                        onCheckedChange={() => toggleColumn(column.id)}
+                      />
+                      <span className="text-sm">{column.label}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
 function ActivitiesPageContent() {
   // Enable optimization to get conditional image loading
   const enableOptimization = true;
@@ -311,6 +559,41 @@ function ActivitiesPageContent() {
     x: number;
     y: number;
   } | null>(null);
+  
+  // Column visibility state with localStorage persistence
+  const [visibleColumns, setVisibleColumns] = useState<ColumnId[]>(DEFAULT_VISIBLE_COLUMNS);
+  
+  // Load visible columns from localStorage on mount
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(LOCALSTORAGE_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved) as ColumnId[];
+        // Validate that all saved columns are valid column IDs
+        const validColumns = parsed.filter(id => 
+          COLUMN_CONFIGS.some(config => config.id === id)
+        );
+        // Ensure always-visible columns are included
+        const alwaysVisible = COLUMN_CONFIGS
+          .filter(c => c.alwaysVisible)
+          .map(c => c.id);
+        const merged = [...new Set([...alwaysVisible, ...validColumns])];
+        setVisibleColumns(merged);
+      }
+    } catch (e) {
+      console.error('Failed to load column preferences from localStorage:', e);
+    }
+  }, []);
+  
+  // Save visible columns to localStorage when they change
+  const handleColumnsChange = useCallback((newColumns: ColumnId[]) => {
+    setVisibleColumns(newColumns);
+    try {
+      localStorage.setItem(LOCALSTORAGE_KEY, JSON.stringify(newColumns));
+    } catch (e) {
+      console.error('Failed to save column preferences to localStorage:', e);
+    }
+  }, []);
   
   // Use optimized hook if enabled, otherwise fall back to original implementation
   const optimizedData = useOptimizedActivities({
@@ -1296,8 +1579,8 @@ function ActivitiesPageContent() {
 
         </div>
 
-        {/* Middle: Aid Modality Filters */}
-        <div className="flex flex-wrap items-center gap-3 lg:mx-8">
+        {/* Middle: Aid Modality Filters + Column Selector */}
+        <div className="flex items-center gap-3 lg:mx-8">
           {/* Aid Type Filter */}
           <Select value={filterAidType} onValueChange={setFilterAidType}>
               <SelectTrigger className="w-[180px]">
@@ -1330,12 +1613,18 @@ function ActivitiesPageContent() {
               </SelectContent>
             </Select>
 
-
+            {/* Column Selector - Only visible in table view */}
+            {viewMode === 'table' && (
+              <ColumnSelector 
+                visibleColumns={visibleColumns} 
+                onColumnsChange={handleColumnsChange} 
+              />
+            )}
             
         </div>
 
         {/* Right Side: View Toggle + Results Count - Fixed width */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 flex-shrink-0 lg:ml-auto">
+        <div className="flex flex-row items-center gap-4 flex-shrink-0 lg:ml-auto">
           {/* View Mode Toggle */}
           <div className="flex items-center">
             <Button
@@ -1406,9 +1695,10 @@ function ActivitiesPageContent() {
       ) : viewMode === 'table' ? (
         <div className="bg-white rounded-md shadow-sm border border-gray-200 overflow-hidden fade-in">
           <div className="overflow-x-auto">
-            <table className="w-full table-fixed border-collapse min-w-[1300px] activities-table">
+            <table className="w-full table-auto border-collapse activities-table">
               <thead className="bg-muted/50 border-b border-border">
                 <tr>
+                  {/* Checkbox column - always visible */}
                   <th className="h-12 px-4 py-3 text-center align-middle w-[50px]">
                     <div className="flex items-center justify-center">
                       <Checkbox
@@ -1419,91 +1709,282 @@ function ActivitiesPageContent() {
                       />
                     </div>
                   </th>
-                  <th 
-                    className="h-12 px-4 py-3 text-left align-middle text-sm font-medium text-muted-foreground cursor-pointer hover:bg-muted/80 transition-colors w-[30%]"
-                    onClick={() => handleSort('title')}
-                  >
-                    <div className="flex items-center gap-1">
-                      <span>Activity Title</span>
-                      {getSortIcon('title')}
-                    </div>
-                  </th>
-                  <th 
-                    className="h-12 px-4 py-3 text-left align-middle text-sm font-medium text-muted-foreground cursor-pointer hover:bg-muted/80 transition-colors w-[120px]"
-                    onClick={() => handleSort('activityStatus')}
-                  >
-                    <div className="flex items-center gap-1">
-                      <span>Activity Status</span>
-                      {getSortIcon('activityStatus')}
-                    </div>
-                  </th>
-                  <th className="h-12 px-4 py-3 text-center align-middle text-sm font-medium text-muted-foreground w-[120px]">
-                    Publication Status
-                  </th>
-                  <th 
-                    className="h-12 px-4 py-3 text-left align-middle text-sm font-medium text-muted-foreground cursor-pointer hover:bg-muted/80 transition-colors min-w-[140px]"
-                    onClick={() => handleSort('createdBy')}
-                  >
-                    <div className="flex items-center gap-1">
-                      <span>Reported by</span>
-                      {getSortIcon('createdBy')}
-                    </div>
-                  </th>
-                  <th 
-                    className="h-12 px-4 py-3 text-right align-middle text-sm font-medium text-muted-foreground cursor-pointer hover:bg-muted/80 transition-colors min-w-[120px]"
-                    onClick={() => handleSort('commitments')}
-                  >
-                    <div className="flex items-center justify-end gap-1">
-                      <span>Total Budgeted</span>
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Info className="inline h-4 w-4 text-muted-foreground" />
-                          </TooltipTrigger>
-                          <TooltipContent className="max-w-xs border border-gray-200 bg-white shadow-lg text-left">
-                            <p className="text-sm text-gray-600 font-normal">
-                              Total budget amount across all budget entries for this activity. All values are displayed in USD.
-                            </p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-                      {getSortIcon('commitments')}
-                    </div>
-                  </th>
-                  <th 
-                    className="h-12 px-4 py-3 text-right align-middle text-sm font-medium text-muted-foreground cursor-pointer hover:bg-muted/80 transition-colors min-w-[100px]"
-                    onClick={() => handleSort('plannedDisbursements')}
-                  >
-                    <div className="flex items-center justify-end gap-1">
-                      <span>Total Planned Disbursements</span>
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Info className="inline h-4 w-4 text-muted-foreground" />
-                          </TooltipTrigger>
-                          <TooltipContent className="max-w-xs border border-gray-200 bg-white shadow-lg text-left">
-                            <p className="text-sm text-gray-600 font-normal">
-                              Total value of all planned disbursements for this activity. All values are displayed in USD.
-                            </p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-                      {getSortIcon('plannedDisbursements')}
-                    </div>
-                  </th>
-
-                  <th 
-                    className="h-12 px-4 py-3 text-right align-middle text-sm font-medium text-muted-foreground cursor-pointer hover:bg-muted/80 transition-colors min-w-[100px]"
-                    onClick={() => handleSort('updatedAt')}
-                  >
-                    <div className="flex items-center justify-end gap-1">
-                      <span>Last Edited</span>
-                      {getSortIcon('updatedAt')}
-                    </div>
-                  </th>
-                  <th className="h-12 px-4 py-3 text-center align-middle text-sm font-medium text-muted-foreground w-[120px]">
-                    Modality & Classification
-                  </th>
+                  
+                  {/* Activity Title */}
+                  {visibleColumns.includes('title') && (
+                    <th 
+                      className="h-12 px-4 py-3 text-left align-middle text-sm font-medium text-muted-foreground cursor-pointer hover:bg-muted/80 transition-colors min-w-[250px]"
+                      onClick={() => handleSort('title')}
+                    >
+                      <div className="flex items-center gap-1">
+                        <span>Activity Title</span>
+                        {getSortIcon('title')}
+                      </div>
+                    </th>
+                  )}
+                  
+                  {/* Activity Status */}
+                  {visibleColumns.includes('activityStatus') && (
+                    <th 
+                      className="h-12 px-4 py-3 text-left align-middle text-sm font-medium text-muted-foreground cursor-pointer hover:bg-muted/80 transition-colors w-[120px]"
+                      onClick={() => handleSort('activityStatus')}
+                    >
+                      <div className="flex items-center gap-1">
+                        <span>Activity Status</span>
+                        {getSortIcon('activityStatus')}
+                      </div>
+                    </th>
+                  )}
+                  
+                  {/* Publication Status */}
+                  {visibleColumns.includes('publicationStatus') && (
+                    <th className="h-12 px-4 py-3 text-center align-middle text-sm font-medium text-muted-foreground w-[120px]">
+                      Publication Status
+                    </th>
+                  )}
+                  
+                  {/* Reported By */}
+                  {visibleColumns.includes('reportedBy') && (
+                    <th 
+                      className="h-12 px-4 py-3 text-left align-middle text-sm font-medium text-muted-foreground cursor-pointer hover:bg-muted/80 transition-colors min-w-[140px]"
+                      onClick={() => handleSort('createdBy')}
+                    >
+                      <div className="flex items-center gap-1">
+                        <span>Reported by</span>
+                        {getSortIcon('createdBy')}
+                      </div>
+                    </th>
+                  )}
+                  
+                  {/* Total Budgeted */}
+                  {visibleColumns.includes('totalBudgeted') && (
+                    <th 
+                      className="h-12 px-4 py-3 text-right align-middle text-sm font-medium text-muted-foreground cursor-pointer hover:bg-muted/80 transition-colors min-w-[120px]"
+                      onClick={() => handleSort('commitments')}
+                    >
+                      <div className="flex items-center justify-end gap-1">
+                        <span>Total Budgeted</span>
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Info className="inline h-4 w-4 text-muted-foreground" />
+                            </TooltipTrigger>
+                            <TooltipContent className="max-w-xs border border-gray-200 bg-white shadow-lg text-left">
+                              <p className="text-sm text-gray-600 font-normal">
+                                Total budget amount across all budget entries for this activity. All values are displayed in USD.
+                              </p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                        {getSortIcon('commitments')}
+                      </div>
+                    </th>
+                  )}
+                  
+                  {/* Total Planned Disbursements */}
+                  {visibleColumns.includes('totalPlannedDisbursement') && (
+                    <th 
+                      className="h-12 px-4 py-3 text-right align-middle text-sm font-medium text-muted-foreground cursor-pointer hover:bg-muted/80 transition-colors min-w-[100px]"
+                      onClick={() => handleSort('plannedDisbursements')}
+                    >
+                      <div className="flex items-center justify-end gap-1">
+                        <span>Total Planned Disbursements</span>
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Info className="inline h-4 w-4 text-muted-foreground" />
+                            </TooltipTrigger>
+                            <TooltipContent className="max-w-xs border border-gray-200 bg-white shadow-lg text-left">
+                              <p className="text-sm text-gray-600 font-normal">
+                                Total value of all planned disbursements for this activity. All values are displayed in USD.
+                              </p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                        {getSortIcon('plannedDisbursements')}
+                      </div>
+                    </th>
+                  )}
+                  
+                  {/* Last Edited */}
+                  {visibleColumns.includes('lastEdited') && (
+                    <th 
+                      className="h-12 px-4 py-3 text-right align-middle text-sm font-medium text-muted-foreground cursor-pointer hover:bg-muted/80 transition-colors min-w-[100px]"
+                      onClick={() => handleSort('updatedAt')}
+                    >
+                      <div className="flex items-center justify-end gap-1">
+                        <span>Last Edited</span>
+                        {getSortIcon('updatedAt')}
+                      </div>
+                    </th>
+                  )}
+                  
+                  {/* Modality & Classification */}
+                  {visibleColumns.includes('modalityClassification') && (
+                    <th className="h-12 px-4 py-3 text-center align-middle text-sm font-medium text-muted-foreground w-[120px]">
+                      Modality & Classification
+                    </th>
+                  )}
+                  
+                  {/* Optional Activity Defaults Columns */}
+                  {visibleColumns.includes('aidType') && (
+                    <th className="h-12 px-4 py-3 text-left align-middle text-sm font-medium text-muted-foreground min-w-[150px]">
+                      Default Aid Type
+                    </th>
+                  )}
+                  {visibleColumns.includes('defaultFinanceType') && (
+                    <th className="h-12 px-4 py-3 text-left align-middle text-sm font-medium text-muted-foreground min-w-[150px]">
+                      Default Finance Type
+                    </th>
+                  )}
+                  {visibleColumns.includes('defaultFlowType') && (
+                    <th className="h-12 px-4 py-3 text-left align-middle text-sm font-medium text-muted-foreground min-w-[150px]">
+                      Default Flow Type
+                    </th>
+                  )}
+                  {visibleColumns.includes('defaultTiedStatus') && (
+                    <th className="h-12 px-4 py-3 text-left align-middle text-sm font-medium text-muted-foreground min-w-[130px]">
+                      Default Tied Status
+                    </th>
+                  )}
+                  {visibleColumns.includes('defaultModality') && (
+                    <th className="h-12 px-4 py-3 text-left align-middle text-sm font-medium text-muted-foreground min-w-[130px]">
+                      Default Modality
+                    </th>
+                  )}
+                  
+                  {/* Transaction Type Total Columns */}
+                  {visibleColumns.includes('totalIncomingCommitments') && (
+                    <th className="h-12 px-4 py-3 text-right align-middle text-sm font-medium text-muted-foreground min-w-[120px]">
+                      Incoming Commitments
+                    </th>
+                  )}
+                  {visibleColumns.includes('totalCommitments') && (
+                    <th className="h-12 px-4 py-3 text-right align-middle text-sm font-medium text-muted-foreground min-w-[120px]">
+                      Outgoing Commitments
+                    </th>
+                  )}
+                  {visibleColumns.includes('totalDisbursements') && (
+                    <th className="h-12 px-4 py-3 text-right align-middle text-sm font-medium text-muted-foreground min-w-[120px]">
+                      Disbursements
+                    </th>
+                  )}
+                  {visibleColumns.includes('totalExpenditures') && (
+                    <th className="h-12 px-4 py-3 text-right align-middle text-sm font-medium text-muted-foreground min-w-[120px]">
+                      Expenditures
+                    </th>
+                  )}
+                  {visibleColumns.includes('totalInterestRepayment') && (
+                    <th className="h-12 px-4 py-3 text-right align-middle text-sm font-medium text-muted-foreground min-w-[120px]">
+                      Interest Repayment
+                    </th>
+                  )}
+                  {visibleColumns.includes('totalLoanRepayment') && (
+                    <th className="h-12 px-4 py-3 text-right align-middle text-sm font-medium text-muted-foreground min-w-[120px]">
+                      Loan Repayment
+                    </th>
+                  )}
+                  {visibleColumns.includes('totalReimbursement') && (
+                    <th className="h-12 px-4 py-3 text-right align-middle text-sm font-medium text-muted-foreground min-w-[120px]">
+                      Reimbursement
+                    </th>
+                  )}
+                  {visibleColumns.includes('totalPurchaseOfEquity') && (
+                    <th className="h-12 px-4 py-3 text-right align-middle text-sm font-medium text-muted-foreground min-w-[120px]">
+                      Purchase of Equity
+                    </th>
+                  )}
+                  {visibleColumns.includes('totalSaleOfEquity') && (
+                    <th className="h-12 px-4 py-3 text-right align-middle text-sm font-medium text-muted-foreground min-w-[120px]">
+                      Sale of Equity
+                    </th>
+                  )}
+                  {visibleColumns.includes('totalCreditGuarantee') && (
+                    <th className="h-12 px-4 py-3 text-right align-middle text-sm font-medium text-muted-foreground min-w-[120px]">
+                      Credit Guarantee
+                    </th>
+                  )}
+                  {visibleColumns.includes('totalIncomingFunds') && (
+                    <th className="h-12 px-4 py-3 text-right align-middle text-sm font-medium text-muted-foreground min-w-[120px]">
+                      Incoming Funds
+                    </th>
+                  )}
+                  {visibleColumns.includes('totalCommitmentCancellation') && (
+                    <th className="h-12 px-4 py-3 text-right align-middle text-sm font-medium text-muted-foreground min-w-[120px]">
+                      Commitment Cancellation
+                    </th>
+                  )}
+                  
+                  {/* Flow Type Total Columns */}
+                  {visibleColumns.includes('flowTypeODATotal') && (
+                    <th className="h-12 px-4 py-3 text-right align-middle text-sm font-medium text-muted-foreground min-w-[120px]">
+                      ODA Total
+                    </th>
+                  )}
+                  {visibleColumns.includes('flowTypeOOFTotal') && (
+                    <th className="h-12 px-4 py-3 text-right align-middle text-sm font-medium text-muted-foreground min-w-[120px]">
+                      OOF Total
+                    </th>
+                  )}
+                  {visibleColumns.includes('flowTypeNonExportOOFTotal') && (
+                    <th className="h-12 px-4 py-3 text-right align-middle text-sm font-medium text-muted-foreground min-w-[120px]">
+                      Non-export OOF
+                    </th>
+                  )}
+                  {visibleColumns.includes('flowTypeExportCreditsTotal') && (
+                    <th className="h-12 px-4 py-3 text-right align-middle text-sm font-medium text-muted-foreground min-w-[120px]">
+                      Export Credits
+                    </th>
+                  )}
+                  {visibleColumns.includes('flowTypePrivateGrantsTotal') && (
+                    <th className="h-12 px-4 py-3 text-right align-middle text-sm font-medium text-muted-foreground min-w-[120px]">
+                      Private Grants
+                    </th>
+                  )}
+                  {visibleColumns.includes('flowTypePrivateMarketTotal') && (
+                    <th className="h-12 px-4 py-3 text-right align-middle text-sm font-medium text-muted-foreground min-w-[120px]">
+                      Private Market
+                    </th>
+                  )}
+                  {visibleColumns.includes('flowTypePrivateFDITotal') && (
+                    <th className="h-12 px-4 py-3 text-right align-middle text-sm font-medium text-muted-foreground min-w-[120px]">
+                      Private FDI
+                    </th>
+                  )}
+                  {visibleColumns.includes('flowTypeOtherPrivateTotal') && (
+                    <th className="h-12 px-4 py-3 text-right align-middle text-sm font-medium text-muted-foreground min-w-[120px]">
+                      Other Private
+                    </th>
+                  )}
+                  {visibleColumns.includes('flowTypeNonFlowTotal') && (
+                    <th className="h-12 px-4 py-3 text-right align-middle text-sm font-medium text-muted-foreground min-w-[120px]">
+                      Non-flow
+                    </th>
+                  )}
+                  {visibleColumns.includes('flowTypeOtherTotal') && (
+                    <th className="h-12 px-4 py-3 text-right align-middle text-sm font-medium text-muted-foreground min-w-[120px]">
+                      Other Flows
+                    </th>
+                  )}
+                  
+                  {/* Publication Status Columns */}
+                  {visibleColumns.includes('isPublished') && (
+                    <th className="h-12 px-4 py-3 text-center align-middle text-sm font-medium text-muted-foreground w-[100px]">
+                      Published
+                    </th>
+                  )}
+                  {visibleColumns.includes('isValidated') && (
+                    <th className="h-12 px-4 py-3 text-center align-middle text-sm font-medium text-muted-foreground w-[100px]">
+                      Validated
+                    </th>
+                  )}
+                  {visibleColumns.includes('iatiSyncStatus') && (
+                    <th className="h-12 px-4 py-3 text-center align-middle text-sm font-medium text-muted-foreground w-[100px]">
+                      IATI Synced
+                    </th>
+                  )}
+                  
+                  {/* Actions column - always visible */}
                   <th className="h-12 px-4 py-3 text-right align-middle text-sm font-medium text-muted-foreground w-[80px]">
                     Actions
                   </th>
@@ -1525,6 +2006,7 @@ function ActivitiesPageContent() {
                       key={activity.id}
                       className={`group hover:bg-muted transition-colors ${isSelected ? 'bg-blue-50 border-blue-200' : ''}`}
                     >
+                      {/* Checkbox cell - always visible */}
                       <td className="px-4 py-2 text-center" onClick={(e) => e.stopPropagation()}>
                         <div className="flex items-center justify-center">
                           <Checkbox
@@ -1535,6 +2017,9 @@ function ActivitiesPageContent() {
                           />
                         </div>
                       </td>
+                      
+                      {/* Activity Title cell */}
+                      {visibleColumns.includes('title') && (
                       <td className="px-4 py-2 text-sm text-foreground whitespace-normal break-words leading-tight">
                         <div 
                           className="cursor-pointer"
@@ -1567,8 +2052,8 @@ function ActivitiesPageContent() {
                         >
                           <div className="flex items-start gap-2">
                             {/* Activity Icon */}
-                            <div className="flex-shrink-0 mt-0.5">
-                              {activity.icon && activity.icon.trim() !== '' ? (
+                            {activity.icon && activity.icon.trim() !== '' && (
+                              <div className="flex-shrink-0 mt-0.5">
                                 <div className="w-6 h-6 rounded-sm overflow-hidden border border-gray-200 bg-white">
                                   <img 
                                     src={activity.icon} 
@@ -1577,23 +2062,11 @@ function ActivitiesPageContent() {
                                     onError={(e) => {
                                       const target = e.target as HTMLImageElement;
                                       target.style.display = 'none';
-                                      const parent = target.parentElement;
-                                      if (parent) {
-                                        parent.innerHTML = `
-                                          <div class="w-6 h-6 bg-blue-100 rounded-sm flex items-center justify-center">
-                                            <span class="text-blue-600 font-semibold text-xs">A</span>
-                                          </div>
-                                        `;
-                                      }
                                     }}
                                   />
                                 </div>
-                              ) : (
-                                <div className="w-6 h-6 bg-blue-100 rounded-sm flex items-center justify-center">
-                                  <span className="text-blue-600 font-semibold text-xs">A</span>
-                                </div>
-                              )}
-                            </div>
+                              </div>
+                            )}
                             
                             {/* Activity Title and Details */}
                             <div className="space-y-1 pr-2 flex-1 min-w-0">
@@ -1612,7 +2085,7 @@ function ActivitiesPageContent() {
                               >
                                 {activity.title}
                                 {activity.acronym && (
-                                  <span>
+                                  <span className="text-sm text-gray-500 font-normal">
                                     {' '}({activity.acronym})
                                     <button
                                       onClick={(e) => {
@@ -1679,9 +2152,17 @@ function ActivitiesPageContent() {
                           </div>
                         </div>
                       </td>
+                      )}
+                      
+                      {/* Activity Status cell */}
+                      {visibleColumns.includes('activityStatus') && (
                       <td className="px-4 py-2 text-sm text-foreground text-left">
                         {getActivityStatusLabel(activityStatus)}
                       </td>
+                      )}
+                      
+                      {/* Publication Status cell */}
+                      {visibleColumns.includes('publicationStatus') && (
                       <td className="px-4 py-2 text-sm text-foreground text-center">
                         <TooltipProvider>
                           <Tooltip>
@@ -1709,11 +2190,15 @@ function ActivitiesPageContent() {
                           </Tooltip>
                         </TooltipProvider>
                       </td>
+                      )}
+                      
+                      {/* Reported By cell */}
+                      {visibleColumns.includes('reportedBy') && (
                       <td className="px-4 py-2 text-sm text-foreground text-left" style={{textAlign: 'left'}}>
                         <TooltipProvider>
                           <Tooltip>
-                            <TooltipTrigger>
-                              <div className="flex items-center gap-2 text-left" style={{textAlign: 'left'}}>
+                            <TooltipTrigger asChild>
+                              <div className="flex items-center gap-2 text-left cursor-pointer" style={{textAlign: 'left'}}>
                                 {/* Organization Logo */}
                                 {(() => {
                                   const orgId = activity.reportingOrgId || activity.createdByOrg;
@@ -1776,11 +2261,15 @@ function ActivitiesPageContent() {
                           </Tooltip>
                         </TooltipProvider>
                       </td>
+                      )}
+                      
+                      {/* Total Budgeted cell */}
+                      {visibleColumns.includes('totalBudgeted') && (
                       <td className="px-4 py-2 text-sm text-foreground text-right whitespace-nowrap font-medium">
                         <TooltipProvider>
                           <Tooltip>
-                            <TooltipTrigger>
-                              <span className="text-muted-foreground">USD</span> {formatCurrency((activity as any).totalBudget || 0)}
+                            <TooltipTrigger asChild>
+                              <span className="cursor-pointer"><span className="text-muted-foreground">USD</span> {formatCurrency((activity as any).totalBudget || 0)}</span>
                             </TooltipTrigger>
                             <TooltipContent className="max-w-xs border border-gray-200 bg-white shadow-lg text-left">
                               <p className="text-sm text-gray-600 font-normal">
@@ -1790,11 +2279,15 @@ function ActivitiesPageContent() {
                           </Tooltip>
                         </TooltipProvider>
                       </td>
+                      )}
+                      
+                      {/* Total Planned Disbursements cell */}
+                      {visibleColumns.includes('totalPlannedDisbursement') && (
                       <td className="px-4 py-2 text-sm text-foreground text-right whitespace-nowrap font-medium">
                         <TooltipProvider>
                           <Tooltip>
-                            <TooltipTrigger>
-                              <span className="text-muted-foreground">USD</span> {formatCurrency((activity as any).totalPlannedDisbursementsUSD || 0)}
+                            <TooltipTrigger asChild>
+                              <span className="cursor-pointer"><span className="text-muted-foreground">USD</span> {formatCurrency((activity as any).totalPlannedDisbursementsUSD || 0)}</span>
                             </TooltipTrigger>
                             <TooltipContent className="max-w-xs border border-gray-200 bg-white shadow-lg text-left">
                               <p className="text-sm text-gray-600 font-normal">
@@ -1804,15 +2297,22 @@ function ActivitiesPageContent() {
                           </Tooltip>
                         </TooltipProvider>
                       </td>
-
+                      )}
+                      
+                      {/* Last Edited cell */}
+                      {visibleColumns.includes('lastEdited') && (
                       <td className="px-4 py-2 text-sm text-foreground whitespace-nowrap text-right">
                         {format(new Date(activity.updatedAt), "dd MMM yyyy")}
                       </td>
+                      )}
+                      
+                      {/* Modality & Classification cell */}
+                      {visibleColumns.includes('modalityClassification') && (
                       <td className="px-4 py-2 text-sm text-foreground text-center">
                         <TooltipProvider>
                           <Tooltip>
-                            <TooltipTrigger>
-                              <ReceiptText className="h-4 w-4 text-gray-500 hover:text-primary cursor-pointer mx-auto" />
+                            <TooltipTrigger asChild>
+                              <span className="cursor-pointer"><ReceiptText className="h-4 w-4 text-gray-500 hover:text-primary cursor-pointer mx-auto" /></span>
                             </TooltipTrigger>
                             <TooltipContent>
                               <div className="space-y-2 p-1">
@@ -1841,6 +2341,185 @@ function ActivitiesPageContent() {
                           </Tooltip>
                         </TooltipProvider>
                       </td>
+                      )}
+                      
+                      {/* Optional Activity Default Columns */}
+                      {visibleColumns.includes('aidType') && (
+                        <td className="px-4 py-2 text-sm text-foreground text-left">
+                          {activity.default_aid_type ? AID_TYPE_LABELS[activity.default_aid_type] || activity.default_aid_type : <span className="text-muted-foreground">—</span>}
+                        </td>
+                      )}
+                      {visibleColumns.includes('defaultFinanceType') && (
+                        <td className="px-4 py-2 text-sm text-foreground text-left">
+                          {activity.default_finance_type ? FINANCE_TYPE_LABELS[activity.default_finance_type] || activity.default_finance_type : <span className="text-muted-foreground">—</span>}
+                        </td>
+                      )}
+                      {visibleColumns.includes('defaultFlowType') && (
+                        <td className="px-4 py-2 text-sm text-foreground text-left">
+                          {activity.default_flow_type ? FLOW_TYPE_LABELS[activity.default_flow_type] || activity.default_flow_type : <span className="text-muted-foreground">—</span>}
+                        </td>
+                      )}
+                      {visibleColumns.includes('defaultTiedStatus') && (
+                        <td className="px-4 py-2 text-sm text-foreground text-left">
+                          {activity.default_tied_status ? TIED_STATUS_LABELS[activity.default_tied_status as keyof typeof TIED_STATUS_LABELS] || activity.default_tied_status : <span className="text-muted-foreground">—</span>}
+                        </td>
+                      )}
+                      {visibleColumns.includes('defaultModality') && (
+                        <td className="px-4 py-2 text-sm text-foreground text-left">
+                          {activity.default_aid_modality ? MODALITY_LABELS[activity.default_aid_modality] || activity.default_aid_modality : <span className="text-muted-foreground">—</span>}
+                        </td>
+                      )}
+                      
+                      {/* Transaction Type Total Columns */}
+                      {visibleColumns.includes('totalIncomingCommitments') && (
+                        <td className="px-4 py-2 text-sm text-foreground text-right whitespace-nowrap">
+                          <span className="text-muted-foreground">USD</span> {formatCurrency(activity.incomingCommitments || 0)}
+                        </td>
+                      )}
+                      {visibleColumns.includes('totalCommitments') && (
+                        <td className="px-4 py-2 text-sm text-foreground text-right whitespace-nowrap">
+                          <span className="text-muted-foreground">USD</span> {formatCurrency(activity.commitments || 0)}
+                        </td>
+                      )}
+                      {visibleColumns.includes('totalDisbursements') && (
+                        <td className="px-4 py-2 text-sm text-foreground text-right whitespace-nowrap">
+                          <span className="text-muted-foreground">USD</span> {formatCurrency(activity.disbursements || 0)}
+                        </td>
+                      )}
+                      {visibleColumns.includes('totalExpenditures') && (
+                        <td className="px-4 py-2 text-sm text-foreground text-right whitespace-nowrap">
+                          <span className="text-muted-foreground">USD</span> {formatCurrency(activity.expenditures || 0)}
+                        </td>
+                      )}
+                      {visibleColumns.includes('totalInterestRepayment') && (
+                        <td className="px-4 py-2 text-sm text-foreground text-right whitespace-nowrap">
+                          <span className="text-muted-foreground">USD</span> {formatCurrency(activity.interestRepayment || 0)}
+                        </td>
+                      )}
+                      {visibleColumns.includes('totalLoanRepayment') && (
+                        <td className="px-4 py-2 text-sm text-foreground text-right whitespace-nowrap">
+                          <span className="text-muted-foreground">USD</span> {formatCurrency(activity.loanRepayment || 0)}
+                        </td>
+                      )}
+                      {visibleColumns.includes('totalReimbursement') && (
+                        <td className="px-4 py-2 text-sm text-foreground text-right whitespace-nowrap">
+                          <span className="text-muted-foreground">USD</span> {formatCurrency(activity.reimbursement || 0)}
+                        </td>
+                      )}
+                      {visibleColumns.includes('totalPurchaseOfEquity') && (
+                        <td className="px-4 py-2 text-sm text-foreground text-right whitespace-nowrap">
+                          <span className="text-muted-foreground">USD</span> {formatCurrency(activity.purchaseOfEquity || 0)}
+                        </td>
+                      )}
+                      {visibleColumns.includes('totalSaleOfEquity') && (
+                        <td className="px-4 py-2 text-sm text-foreground text-right whitespace-nowrap">
+                          <span className="text-muted-foreground">USD</span> {formatCurrency(activity.saleOfEquity || 0)}
+                        </td>
+                      )}
+                      {visibleColumns.includes('totalCreditGuarantee') && (
+                        <td className="px-4 py-2 text-sm text-foreground text-right whitespace-nowrap">
+                          <span className="text-muted-foreground">USD</span> {formatCurrency(activity.creditGuarantee || 0)}
+                        </td>
+                      )}
+                      {visibleColumns.includes('totalIncomingFunds') && (
+                        <td className="px-4 py-2 text-sm text-foreground text-right whitespace-nowrap">
+                          <span className="text-muted-foreground">USD</span> {formatCurrency(activity.incomingFunds || 0)}
+                        </td>
+                      )}
+                      {visibleColumns.includes('totalCommitmentCancellation') && (
+                        <td className="px-4 py-2 text-sm text-foreground text-right whitespace-nowrap">
+                          <span className="text-muted-foreground">USD</span> {formatCurrency(activity.commitmentCancellation || 0)}
+                        </td>
+                      )}
+                      
+                      {/* Flow Type Total Columns */}
+                      {visibleColumns.includes('flowTypeODATotal') && (
+                        <td className="px-4 py-2 text-sm text-foreground text-right whitespace-nowrap">
+                          <span className="text-muted-foreground">USD</span> {formatCurrency(activity.flowTypeODA || 0)}
+                        </td>
+                      )}
+                      {visibleColumns.includes('flowTypeOOFTotal') && (
+                        <td className="px-4 py-2 text-sm text-foreground text-right whitespace-nowrap">
+                          <span className="text-muted-foreground">USD</span> {formatCurrency(activity.flowTypeOOF || 0)}
+                        </td>
+                      )}
+                      {visibleColumns.includes('flowTypeNonExportOOFTotal') && (
+                        <td className="px-4 py-2 text-sm text-foreground text-right whitespace-nowrap">
+                          <span className="text-muted-foreground">USD</span> {formatCurrency(activity.flowTypeNonExportOOF || 0)}
+                        </td>
+                      )}
+                      {visibleColumns.includes('flowTypeExportCreditsTotal') && (
+                        <td className="px-4 py-2 text-sm text-foreground text-right whitespace-nowrap">
+                          <span className="text-muted-foreground">USD</span> {formatCurrency(activity.flowTypeExportCredits || 0)}
+                        </td>
+                      )}
+                      {visibleColumns.includes('flowTypePrivateGrantsTotal') && (
+                        <td className="px-4 py-2 text-sm text-foreground text-right whitespace-nowrap">
+                          <span className="text-muted-foreground">USD</span> {formatCurrency(activity.flowTypePrivateGrants || 0)}
+                        </td>
+                      )}
+                      {visibleColumns.includes('flowTypePrivateMarketTotal') && (
+                        <td className="px-4 py-2 text-sm text-foreground text-right whitespace-nowrap">
+                          <span className="text-muted-foreground">USD</span> {formatCurrency(activity.flowTypePrivateMarket || 0)}
+                        </td>
+                      )}
+                      {visibleColumns.includes('flowTypePrivateFDITotal') && (
+                        <td className="px-4 py-2 text-sm text-foreground text-right whitespace-nowrap">
+                          <span className="text-muted-foreground">USD</span> {formatCurrency(activity.flowTypePrivateFDI || 0)}
+                        </td>
+                      )}
+                      {visibleColumns.includes('flowTypeOtherPrivateTotal') && (
+                        <td className="px-4 py-2 text-sm text-foreground text-right whitespace-nowrap">
+                          <span className="text-muted-foreground">USD</span> {formatCurrency(activity.flowTypeOtherPrivate || 0)}
+                        </td>
+                      )}
+                      {visibleColumns.includes('flowTypeNonFlowTotal') && (
+                        <td className="px-4 py-2 text-sm text-foreground text-right whitespace-nowrap">
+                          <span className="text-muted-foreground">USD</span> {formatCurrency(activity.flowTypeNonFlow || 0)}
+                        </td>
+                      )}
+                      {visibleColumns.includes('flowTypeOtherTotal') && (
+                        <td className="px-4 py-2 text-sm text-foreground text-right whitespace-nowrap">
+                          <span className="text-muted-foreground">USD</span> {formatCurrency(activity.flowTypeOther || 0)}
+                        </td>
+                      )}
+                      
+                      {/* Publication Status Cells */}
+                      {visibleColumns.includes('isPublished') && (
+                        <td className="px-4 py-2 text-sm text-foreground text-center">
+                          {publicationStatus === 'published' ? (
+                            <Badge variant="default" className="bg-green-100 text-green-800 hover:bg-green-100">Yes</Badge>
+                          ) : (
+                            <Badge variant="secondary" className="bg-gray-100 text-gray-600 hover:bg-gray-100">No</Badge>
+                          )}
+                        </td>
+                      )}
+                      {visibleColumns.includes('isValidated') && (
+                        <td className="px-4 py-2 text-sm text-foreground text-center">
+                          {submissionStatus === 'validated' ? (
+                            <Badge variant="default" className="bg-green-100 text-green-800 hover:bg-green-100">Yes</Badge>
+                          ) : submissionStatus === 'rejected' ? (
+                            <Badge variant="destructive" className="bg-red-100 text-red-800 hover:bg-red-100">Rejected</Badge>
+                          ) : (
+                            <Badge variant="secondary" className="bg-gray-100 text-gray-600 hover:bg-gray-100">Pending</Badge>
+                          )}
+                        </td>
+                      )}
+                      {visibleColumns.includes('iatiSyncStatus') && (
+                        <td className="px-4 py-2 text-sm text-foreground text-center">
+                          {activity.syncStatus === 'live' ? (
+                            <Badge variant="default" className="bg-green-100 text-green-800 hover:bg-green-100">Synced</Badge>
+                          ) : activity.syncStatus === 'pending' ? (
+                            <Badge variant="secondary" className="bg-yellow-100 text-yellow-800 hover:bg-yellow-100">Pending</Badge>
+                          ) : activity.syncStatus === 'error' ? (
+                            <Badge variant="destructive" className="bg-red-100 text-red-800 hover:bg-red-100">Error</Badge>
+                          ) : (
+                            <Badge variant="secondary" className="bg-gray-100 text-gray-600 hover:bg-gray-100">Not synced</Badge>
+                          )}
+                        </td>
+                      )}
+                      
+                      {/* Actions cell - always visible */}
                       <td className="px-4 py-2 text-sm text-foreground text-right">
                         <div className="flex items-center justify-end">
                           <DropdownMenu>

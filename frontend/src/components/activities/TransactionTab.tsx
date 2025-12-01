@@ -16,6 +16,7 @@ interface TransactionTabProps {
   onTransactionsChange?: (transactions: Transaction[]) => void;
   hideSummaryCards?: boolean;
   renderFilters?: (filters: React.ReactNode) => React.ReactPortal | null;
+  onLoadingChange?: (loading: boolean) => void;
 }
 
 export default function TransactionTab({ 
@@ -28,7 +29,8 @@ export default function TransactionTab({
   defaultFlowType,
   onTransactionsChange,
   hideSummaryCards = false,
-  renderFilters
+  renderFilters,
+  onLoadingChange
 }: TransactionTabProps) {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [organizations, setOrganizations] = useState<any[]>([]);
@@ -40,6 +42,8 @@ export default function TransactionTab({
   // Fetch transactions and reset notification tracking
   useEffect(() => {
     lastNotifiedCountRef.current = -1; // Reset notification tracking for new activity
+    setIsLoading(true);
+    onLoadingChange?.(true);
     fetchTransactions();
     fetchOrganizations();
   }, [activityId]);
@@ -66,6 +70,7 @@ export default function TransactionTab({
       toast.error("Failed to load transactions");
     } finally {
       setIsLoading(false);
+      onLoadingChange?.(false);
     }
   };
 

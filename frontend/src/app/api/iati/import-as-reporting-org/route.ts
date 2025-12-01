@@ -5,6 +5,7 @@ import { XMLParser } from 'fast-xml-parser';
 import { iatiAnalytics } from '@/lib/analytics';
 import { USER_ROLES } from '@/types/user';
 import { getOrCreateOrganization } from '@/lib/organization-helpers';
+import { sanitizeIatiDescription } from '@/lib/sanitize';
 
 export const dynamic = 'force-dynamic';
 
@@ -218,12 +219,18 @@ export async function POST(request: NextRequest) {
         // Extract default currency
         const defaultCurrency = xmlActivity['default-currency']?.['@_code'] || 'USD';
 
+        // Extract and sanitize description HTML
+        const rawDescription = extractNarrative(xmlActivity.description);
+        const sanitizedDescription = rawDescription 
+          ? sanitizeIatiDescription(rawDescription) 
+          : undefined;
+
         activities.push({
           iatiIdentifier,
           activityData: {
             iatiIdentifier,
             title: extractNarrative(xmlActivity.title) || `Imported Activity: ${iatiIdentifier}`,
-            description: extractNarrative(xmlActivity.description),
+            description: sanitizedDescription,
             activityStatus: xmlActivity['activity-status']?.['@_code'] || 'implementation',
             plannedStartDate,
             plannedEndDate,
@@ -723,7 +730,8 @@ export async function POST(request: NextRequest) {
             }
             
             if (!activityInsert.description_narrative && parsedActivity.description) {
-              activityInsert.description_narrative = parsedActivity.description;
+              // Sanitize HTML in description
+              activityInsert.description_narrative = sanitizeIatiDescription(parsedActivity.description);
             }
             if (!activityInsert.activity_status && parsedActivity.activityStatus) {
               activityInsert.activity_status = parsedActivity.activityStatus;
@@ -757,11 +765,15 @@ export async function POST(request: NextRequest) {
           }
         } else {
           // Use basic activityData (backward compatibility)
+          // Sanitize HTML in description
+          const sanitizedDesc = activityData.description 
+            ? sanitizeIatiDescription(activityData.description) 
+            : null;
           activityInsert = {
             ...activityInsert,
             title_narrative: activityData.title || `Imported Activity: ${iatiIdentifier}`,
             acronym: userProvidedAcronym || null,
-            description_narrative: activityData.description || null,
+            description_narrative: sanitizedDesc,
             activity_status: activityData.activityStatus || 'implementation',
             planned_start_date: activityData.plannedStartDate || null,
             planned_end_date: activityData.plannedEndDate || null,

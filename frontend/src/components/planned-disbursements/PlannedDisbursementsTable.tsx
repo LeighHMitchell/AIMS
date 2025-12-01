@@ -41,7 +41,6 @@ import {
 } from "@/components/ui/table";
 import { Checkbox } from "@/components/ui/checkbox";
 import { OrganizationLogo } from "@/components/ui/organization-logo";
-import { fixedCurrencyConverter } from "@/lib/currency-converter-fixed";
 
 interface PlannedDisbursement {
   id: string;
@@ -127,90 +126,51 @@ export function PlannedDisbursementsTable({
     error?: string 
   }>>({});
 
-  // Convert all planned disbursements to USD when they change
+  // Read stored USD values from database (no real-time conversion)
   useEffect(() => {
-    let cancelled = false;
-    async function convertAll() {
-      const newUsdValues: Record<string, { usd: number|null, rate: number|null, date: string, loading: boolean, error?: string }> = {};
-      for (const disbursement of disbursements) {
-        const disbursementId = disbursement.id;
-        
-        // Use amount (database field) or value (legacy/API field) - prefer amount
-        const amountValue = disbursement.amount ?? disbursement.value;
-        
-        // Check if disbursement already has USD value stored
-        const existingUsdValue = disbursement.usd_amount ?? disbursement.value_usd;
-        if (existingUsdValue != null && !isNaN(existingUsdValue)) {
-          newUsdValues[disbursementId] = {
-            usd: existingUsdValue,
-            rate: null,
-            date: disbursement.value_date || disbursement.period_start || '',
-            loading: false
-          };
-          continue;
-        }
-        
-        if (amountValue === null || amountValue === undefined || isNaN(amountValue) || !disbursement.currency || !disbursement.period_start) {
-          newUsdValues[disbursementId] = { 
-            usd: null, 
-            rate: null, 
-            date: disbursement.value_date || disbursement.period_start || '', 
-            loading: false, 
-            error: 'Missing data' 
-          };
-          continue;
-        }
-        
-        // If currency is already USD, just use the value
-        if (disbursement.currency === 'USD') {
-          newUsdValues[disbursementId] = {
-            usd: amountValue,
-            rate: 1,
-            date: disbursement.value_date || disbursement.period_start || '',
-            loading: false
-          };
-          continue;
-        }
-        
-        newUsdValues[disbursementId] = { 
-          usd: null, 
-          rate: null, 
-          date: disbursement.value_date || disbursement.period_start || '', 
-          loading: true 
+    const newUsdValues: Record<string, { usd: number|null, rate: number|null, date: string, loading: boolean, error?: string }> = {};
+    
+    for (const disbursement of disbursements) {
+      const disbursementId = disbursement.id;
+      
+      // Use amount (database field) or value (legacy/API field) - prefer amount
+      const amountValue = disbursement.amount ?? disbursement.value;
+      
+      // Check if disbursement already has USD value stored
+      const existingUsdValue = disbursement.usd_amount ?? disbursement.value_usd;
+      if (existingUsdValue != null && !isNaN(existingUsdValue)) {
+        newUsdValues[disbursementId] = {
+          usd: existingUsdValue,
+          rate: (disbursement as any).exchange_rate_used || null,
+          date: disbursement.value_date || disbursement.period_start || '',
+          loading: false
         };
-        try {
-          // Use value_date if available, otherwise period_start
-          const conversionDate = new Date(disbursement.value_date || disbursement.period_start || disbursement.period_end || new Date());
-          const result = await fixedCurrencyConverter.convertToUSD(
-            amountValue, 
-            disbursement.currency, 
-            conversionDate
-          );
-          if (!cancelled) {
-            newUsdValues[disbursementId] = {
-              usd: result.usd_amount,
-              rate: result.exchange_rate,
-              date: result.conversion_date || disbursement.value_date || disbursement.period_start || '',
-              loading: false,
-              error: result.success ? undefined : result.error || 'Conversion failed'
-            };
-          }
-        } catch (err) {
-          if (!cancelled) {
-            newUsdValues[disbursementId] = { 
-              usd: null, 
-              rate: null, 
-              date: disbursement.value_date || disbursement.period_start || '', 
-              loading: false, 
-              error: 'Conversion error' 
-            };
-          }
-        }
+        continue;
       }
-      if (!cancelled) setUsdValues(newUsdValues);
+      
+      // If currency is already USD, just use the value
+      if (disbursement.currency === 'USD' && amountValue != null && !isNaN(amountValue)) {
+        newUsdValues[disbursementId] = {
+          usd: amountValue,
+          rate: 1,
+          date: disbursement.value_date || disbursement.period_start || '',
+          loading: false
+        };
+        continue;
+      }
+      
+      // Missing data or unconverted - show as not converted (no real-time API call)
+      const isUnconvertible = (disbursement as any).usd_convertible === false;
+      newUsdValues[disbursementId] = { 
+        usd: null, 
+        rate: null, 
+        date: disbursement.value_date || disbursement.period_start || '', 
+        loading: false,
+        error: isUnconvertible ? 'Not converted' : undefined
+      };
     }
-    if (disbursements.length > 0) convertAll();
-    return () => { cancelled = true; };
+    
+    setUsdValues(newUsdValues);
   }, [disbursements]);
 
   const toggleRowExpansion = (disbursementId: string) => {

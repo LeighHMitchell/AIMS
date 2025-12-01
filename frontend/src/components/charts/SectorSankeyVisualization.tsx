@@ -36,9 +36,8 @@ interface SectorAllocation {
 interface SectorFinancialData {
   code: string;
   budget?: number;
-  commitment?: number;
   plannedDisbursement?: number;
-  actualDisbursement?: number;
+  transactionTypes?: Record<string, number>; // Dynamic: { '3': 5000, '4': 2000 }
 }
 
 interface Props {
@@ -49,6 +48,7 @@ interface Props {
   showControls?: boolean; // Whether to show view mode and metric controls
   defaultView?: ViewMode; // Default view mode
   defaultMetric?: MetricMode; // Default metric mode
+  barGroupingMode?: BarGroupingMode; // Bar chart grouping mode (controlled from outside)
 }
 
 interface CustomSankeyNode {
@@ -81,6 +81,23 @@ interface CustomSankeyLink {
 
 type ViewMode = 'sankey' | 'table' | 'pie' | 'bar';
 type MetricMode = 'percentage' | 'budget' | 'planned' | 'actual';
+type BarGroupingMode = 'sector' | 'category' | 'group';
+
+// Transaction type labels for dynamic columns
+const TRANSACTION_TYPE_LABELS: Record<string, string> = {
+  '1': 'Incoming Commitment',
+  '2': 'Outgoing Commitment',
+  '3': 'Disbursement',
+  '4': 'Expenditure',
+  '5': 'Interest Repayment',
+  '6': 'Loan Repayment',
+  '7': 'Reimbursement',
+  '8': 'Purchase of Equity',
+  '9': 'Sale of Equity',
+  '11': 'Credit Guarantee',
+  '12': 'Incoming Funds',
+  '13': 'Commitment Cancellation'
+};
 
 // Extended color palette for unique colors per segment (same as sunburst)
 const BASE_COLORS = [
@@ -156,13 +173,18 @@ export default function SectorSankeyVisualization({
   className = '',
   showControls = true,
   defaultView = 'sankey',
-  defaultMetric = 'percentage'
+  defaultMetric = 'percentage',
+  barGroupingMode: externalBarGroupingMode
 }: Props) {
   const svgRef = useRef<SVGSVGElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [containerSize, setContainerSize] = useState({ width: 800, height: 600 });
   const [viewMode, setViewMode] = useState<ViewMode>(defaultView);
   const [metricMode, setMetricMode] = useState<MetricMode>('percentage');
+  const [internalBarGroupingMode, setBarGroupingMode] = useState<BarGroupingMode>('group');
+  
+  // Use external bar grouping mode if provided, otherwise use internal state
+  const barGroupingMode = externalBarGroupingMode ?? internalBarGroupingMode;
 
   // Update view mode when defaultView prop changes
   useEffect(() => {
@@ -395,6 +417,108 @@ export default function SectorSankeyVisualization({
     }).filter(d => d.displayValue > 0);
   }, [allocations, financialData, metricMode]);
 
+  // Get stacked bar data based on grouping mode
+  const stackedBarData = useMemo(() => {
+    if (barGroupingMode === 'sector') {
+      // Return 5-digit subsectors with their colors
+      return displayData.map((d, i) => {
+        const sectorData = sectorGroupData.data.find((s: any) => s.code === d.code);
+        const categoryCode = sectorData?.['codeforiati:category-code'] || d.code.substring(0, 3);
+        return {
+          code: d.code,
+          name: d.name,
+          value: d.displayValue,
+          categoryCode,
+          color: BASE_COLORS[i % BASE_COLORS.length]
+        };
+      }).sort((a, b) => b.value - a.value);
+    } else if (barGroupingMode === 'category') {
+      // Group by 3-digit sector
+      const categoryMap = new Map<string, {
+        code: string;
+        name: string;
+        value: number;
+        sectors: { code: string; name: string; value: number }[];
+      }>();
+
+      displayData.forEach(d => {
+        const sectorData = sectorGroupData.data.find((s: any) => s.code === d.code);
+        const categoryCode = sectorData?.['codeforiati:category-code'] || d.code.substring(0, 3);
+        const categoryName = sectorData?.['codeforiati:category-name'] || `Sector ${categoryCode}`;
+
+        if (!categoryMap.has(categoryCode)) {
+          categoryMap.set(categoryCode, {
+            code: categoryCode,
+            name: categoryName,
+            value: 0,
+            sectors: []
+          });
+        }
+
+        const category = categoryMap.get(categoryCode)!;
+        category.value += d.displayValue;
+        category.sectors.push({
+          code: d.code,
+          name: d.name,
+          value: d.displayValue
+        });
+      });
+
+      return Array.from(categoryMap.values())
+        .map((cat, i) => ({
+          code: cat.code,
+          name: cat.name,
+          value: cat.value,
+          categoryCode: cat.code,
+          color: BASE_COLORS[i % BASE_COLORS.length],
+          sectors: cat.sectors
+        }))
+        .sort((a, b) => b.value - a.value);
+    } else {
+      // Group by 2-digit sector category (group)
+      const groupMap = new Map<string, {
+        code: string;
+        name: string;
+        value: number;
+        sectors: { code: string; name: string; value: number }[];
+      }>();
+
+      displayData.forEach(d => {
+        const sectorData = sectorGroupData.data.find((s: any) => s.code === d.code);
+        const groupCode = sectorData?.['codeforiati:group-code'] || d.code.substring(0, 2) + '0';
+        const groupName = sectorData?.['codeforiati:group-name'] || `Sector Category ${groupCode}`;
+
+        if (!groupMap.has(groupCode)) {
+          groupMap.set(groupCode, {
+            code: groupCode,
+            name: groupName,
+            value: 0,
+            sectors: []
+          });
+        }
+
+        const group = groupMap.get(groupCode)!;
+        group.value += d.displayValue;
+        group.sectors.push({
+          code: d.code,
+          name: d.name,
+          value: d.displayValue
+        });
+      });
+
+      return Array.from(groupMap.values())
+        .map((grp, i) => ({
+          code: grp.code,
+          name: grp.name,
+          value: grp.value,
+          categoryCode: grp.code,
+          color: BASE_COLORS[i % BASE_COLORS.length],
+          sectors: grp.sectors
+        }))
+        .sort((a, b) => b.value - a.value);
+    }
+  }, [displayData, barGroupingMode]);
+
   // Get total for current metric
   const currentTotal = useMemo(() => {
     if (metricMode === 'percentage') {
@@ -506,6 +630,59 @@ export default function SectorSankeyVisualization({
       .style('opacity', 0);
 
     const format = d3.format('.1f');
+    
+    // Helper to format currency for tooltips
+    const formatTooltipCurrency = (v: number) => {
+      if (v === 0) return '$0';
+      if (v >= 1000000) return '$' + (v / 1000000).toFixed(2) + 'm';
+      if (v >= 1000) return '$' + (v / 1000).toFixed(2) + 'k';
+      return '$' + v.toFixed(0);
+    };
+    
+    // Helper to get financial data for a node (aggregated for category/sector)
+    const getNodeFinancials = (nodeId: string, level: string) => {
+      const code = nodeId.replace(/^(cat-|sec-|sub-)/, '');
+      
+      if (level === 'subsector') {
+        return financialData.find(f => f.code === code);
+      }
+      
+      // For category/sector, aggregate from child subsectors
+      // Find all subsectors that belong to this category/sector
+      const relevantSubsectors = allocations.filter(a => {
+        const sectorInfo = sectorGroupData.data.find((s: any) => s.code === a.code);
+        if (!sectorInfo) return false;
+        
+        if (level === 'category') {
+          return sectorInfo['codeforiati:group-code'] === code;
+        } else if (level === 'sector') {
+          return sectorInfo['codeforiati:category-code'] === code;
+        }
+        return false;
+      });
+      
+      // Aggregate financial data
+      const aggregated = {
+        budget: 0,
+        plannedDisbursement: 0,
+        transactionTypes: {} as Record<string, number>
+      };
+      
+      relevantSubsectors.forEach(sub => {
+        const fin = financialData.find(f => f.code === sub.code);
+        if (fin) {
+          aggregated.budget += fin.budget || 0;
+          aggregated.plannedDisbursement += fin.plannedDisbursement || 0;
+          if (fin.transactionTypes) {
+            Object.entries(fin.transactionTypes).forEach(([type, amount]) => {
+              aggregated.transactionTypes[type] = (aggregated.transactionTypes[type] || 0) + amount;
+            });
+          }
+        }
+      });
+      
+      return aggregated;
+    };
 
     // Draw nodes
     const node = g.append('g')
@@ -530,9 +707,31 @@ export default function SectorSankeyVisualization({
         tooltip.style('opacity', 1);
 
         const code = d.id.replace(/^(cat-|sec-|sub-)/, '');
+        const fin = getNodeFinancials(d.id, d.level);
+        
+        // Build financial details HTML
+        let financialHtml = '';
+        if (fin) {
+          const details: string[] = [];
+          if (fin.budget) details.push(`Budget: ${formatTooltipCurrency(fin.budget)}`);
+          if (fin.plannedDisbursement) details.push(`Planned: ${formatTooltipCurrency(fin.plannedDisbursement)}`);
+          if (fin.transactionTypes) {
+            Object.entries(fin.transactionTypes).forEach(([type, amount]) => {
+              if (amount > 0) {
+                const label = TRANSACTION_TYPE_LABELS[type] || `Type ${type}`;
+                details.push(`${label}: ${formatTooltipCurrency(amount)}`);
+              }
+            });
+          }
+          if (details.length > 0) {
+            financialHtml = `<div class="mt-2 pt-2 border-t border-slate-600 text-xs space-y-1">${details.map(d => `<div>${d}</div>`).join('')}</div>`;
+          }
+        }
+        
         tooltip.html(`
           <div class="font-semibold">${code ? `<span class="font-mono">${code}</span> - ` : ''}${d.name}</div>
           <div class="text-lg font-bold mt-1 text-gray-300">${format(d.value)}%</div>
+          ${financialHtml}
         `)
           .style('left', (event.pageX + 10) + 'px')
           .style('top', (event.pageY - 10) + 'px');
@@ -807,30 +1006,38 @@ export default function SectorSankeyVisualization({
     };
   }, [allocations, financialData, containerSize, viewMode, currentTotal, metricMode, onSegmentClick]);
 
-  // Render Bar Chart
+  // Render Stacked Bar Chart
   useEffect(() => {
-    if (!svgRef.current || displayData.length === 0 || viewMode !== 'bar') return;
+    if (!svgRef.current || stackedBarData.length === 0 || viewMode !== 'bar') return;
 
     const svg = d3.select(svgRef.current);
     svg.selectAll('*').remove();
 
     const { width, height } = containerSize;
-    const margin = { top: 20, right: 30, bottom: 40, left: 300 };
+    const barHeight = 80;
+    const margin = { top: 30, right: 60, bottom: 40, left: 60 };
     const innerWidth = width - margin.left - margin.right;
-    const innerHeight = height - margin.top - margin.bottom;
+    const innerHeight = barHeight;
 
     const g = svg.append('g')
       .attr('transform', `translate(${margin.left},${margin.top})`);
 
-    const sortedData = [...displayData].sort((a, b) => b.displayValue - a.displayValue);
+    // Calculate total value and cumulative positions
+    const total = stackedBarData.reduce((sum, d) => sum + d.value, 0);
+    let cumulative = 0;
+    const segments = stackedBarData.map(d => {
+      const segment = {
+        ...d,
+        start: cumulative,
+        end: cumulative + d.value
+      };
+      cumulative += d.value;
+      return segment;
+    });
 
-    const yScale = d3.scaleBand()
-      .domain(sortedData.map(d => d.name))
-      .range([0, innerHeight])
-      .padding(0.3);
-
+    // Scale for x-axis (0 to total)
     const xScale = d3.scaleLinear()
-      .domain([0, d3.max(sortedData, d => d.displayValue) || 0])
+      .domain([0, total])
       .range([0, innerWidth]);
 
     const tooltip = d3.select('body')
@@ -838,30 +1045,35 @@ export default function SectorSankeyVisualization({
       .attr('class', 'absolute bg-slate-800 text-white px-3 py-2 rounded shadow-lg text-sm pointer-events-none z-50')
       .style('opacity', 0);
 
-    const format = d3.format(',.0f'); // Always format as whole numbers
+    const format = d3.format(',.0f');
     const isPercentage = metricMode === 'percentage';
 
-    // Add bars
-    g.selectAll('.bar')
-      .data(sortedData)
+    // Draw stacked bar segments
+    g.selectAll('.bar-segment')
+      .data(segments)
       .enter()
       .append('rect')
-      .attr('class', 'bar')
-      .attr('x', 0)
-      .attr('y', d => yScale(d.name) || 0)
-      .attr('width', d => xScale(d.displayValue))
-      .attr('height', yScale.bandwidth())
-      .attr('fill', (d, i) => BASE_COLORS[i % BASE_COLORS.length])
-      .attr('rx', 4)
+      .attr('class', 'bar-segment')
+      .attr('x', d => xScale(d.start))
+      .attr('y', 0)
+      .attr('width', d => Math.max(1, xScale(d.end) - xScale(d.start)))
+      .attr('height', innerHeight)
+      .attr('fill', d => d.color)
+      .attr('stroke', '#fff')
+      .attr('stroke-width', 1)
       .style('cursor', 'pointer')
       .on('mouseover', function(event, d) {
         d3.select(this).style('filter', 'brightness(1.2)');
         tooltip.style('opacity', 1);
-        const percentage = (d.displayValue / currentTotal * 100).toFixed(0);
+        const percentage = (d.value / total * 100).toFixed(1);
+        const sectors = 'sectors' in d ? (d.sectors as { code: string; name: string; value: number }[] | undefined) : undefined;
+        const sectorsInfo = sectors && sectors.length > 0 ? 
+          `<div class="text-xs text-gray-300 mt-1">Includes ${sectors.length} sector${sectors.length > 1 ? 's' : ''}</div>` : '';
         tooltip.html(`
           <div class="font-semibold">${d.code} - ${d.name}</div>
-          <div class="text-lg font-bold mt-1">${isPercentage ? format(d.displayValue) + '%' : '$' + format(d.displayValue)}</div>
+          <div class="text-lg font-bold mt-1">${isPercentage ? format(d.value) + '%' : '$' + format(d.value)}</div>
           <div class="text-xs text-gray-300">${percentage}% of total</div>
+          ${sectorsInfo}
         `)
           .style('left', (event.pageX + 10) + 'px')
           .style('top', (event.pageY - 10) + 'px');
@@ -872,89 +1084,86 @@ export default function SectorSankeyVisualization({
       })
       .on('click', function(event, d) {
         if (onSegmentClick) {
-          onSegmentClick(d.code, 'subsector');
+          const level = barGroupingMode === 'group' ? 'category' : 
+                       barGroupingMode === 'category' ? 'sector' : 'subsector';
+          onSegmentClick(d.code, level);
         }
       });
 
-    // Add value labels
-    g.selectAll('.label')
-      .data(sortedData)
-      .enter()
-      .append('text')
-      .attr('class', 'label')
-      .attr('x', d => xScale(d.displayValue) + 5)
-      .attr('y', d => (yScale(d.name) || 0) + yScale.bandwidth() / 2)
-      .attr('dy', '0.35em')
-      .attr('font-size', '11px')
-      .attr('fill', '#374151')
-      .text(d => isPercentage ? format(d.displayValue) + '%' : '$' + format(d.displayValue));
-
-    // Add y-axis labels with wrapping
-    const wrapText = (text: string, maxWidth: number) => {
-      const words = text.split(/\s+/);
-      const lines: string[] = [];
-      let currentLine = '';
-
-      words.forEach(word => {
-        const testLine = currentLine ? currentLine + ' ' + word : word;
-        // Rough estimate: 6 pixels per character
-        if (testLine.length * 6 > maxWidth && currentLine) {
-          lines.push(currentLine);
-          currentLine = word;
-        } else {
-          currentLine = testLine;
-        }
-      });
-
-      if (currentLine) {
-        lines.push(currentLine);
+    // Add code and name labels on segments (only if wide enough)
+    segments.forEach(d => {
+      const segmentWidth = xScale(d.end) - xScale(d.start);
+      const segmentX = xScale(d.start) + segmentWidth / 2;
+      
+      // Only show label if segment is wide enough
+      if (segmentWidth < 50) return;
+      
+      const labelGroup = g.append('g')
+        .attr('class', 'segment-label-group')
+        .style('pointer-events', 'none');
+      
+      // Code badge dimensions
+      const codeText = d.code;
+      const codeWidth = codeText.length * 7 + 8;
+      const codeHeight = 16;
+      
+      // Truncate name based on available space
+      const availableWidth = segmentWidth - codeWidth - 16; // Leave padding
+      const maxNameChars = Math.floor(availableWidth / 6);
+      let nameText = d.name;
+      if (maxNameChars < 3) {
+        nameText = ''; // Don't show name if not enough space
+      } else if (nameText.length > maxNameChars) {
+        nameText = nameText.substring(0, maxNameChars - 2) + '..';
       }
+      
+      // Calculate total label width
+      const totalWidth = codeWidth + (nameText ? nameText.length * 6 + 8 : 0);
+      const startX = segmentX - totalWidth / 2;
+      
+      // Add code background rect
+      labelGroup.append('rect')
+        .attr('x', startX)
+        .attr('y', innerHeight / 2 - codeHeight / 2)
+        .attr('width', codeWidth)
+        .attr('height', codeHeight)
+        .attr('rx', 3)
+        .attr('fill', 'rgba(100, 116, 139, 0.95)'); // slate-500
+      
+      // Add code text
+      labelGroup.append('text')
+        .attr('x', startX + codeWidth / 2)
+        .attr('y', innerHeight / 2)
+        .attr('dy', '0.35em')
+        .attr('text-anchor', 'middle')
+        .attr('font-size', '10px')
+        .attr('font-family', 'ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace')
+        .attr('font-weight', '600')
+        .attr('fill', '#fff')
+        .text(codeText);
+      
+      // Add name text if there's space
+      if (nameText) {
+        labelGroup.append('text')
+          .attr('x', startX + codeWidth + 6)
+          .attr('y', innerHeight / 2)
+          .attr('dy', '0.35em')
+          .attr('text-anchor', 'start')
+          .attr('font-size', '11px')
+          .attr('font-weight', '500')
+          .attr('fill', '#fff')
+          .text(nameText);
+      }
+    });
 
-      return lines;
-    };
-
-    g.selectAll('.y-label-group')
-      .data(sortedData)
-      .enter()
-      .append('g')
-      .attr('class', 'y-label-group')
-      .attr('transform', d => `translate(-10, ${(yScale(d.name) || 0) + yScale.bandwidth() / 2})`)
-      .style('cursor', 'pointer')
-      .on('click', function(event, d) {
-        if (onSegmentClick) {
-          onSegmentClick(d.code, 'subsector');
-        }
-      })
-      .each(function(d) {
-        const group = d3.select(this);
-        const lines = wrapText(d.name, 280);
-        const lineHeight = 12;
-        const yOffset = -(lines.length - 1) * lineHeight / 2;
-
-        lines.forEach((line, i) => {
-          group.append('text')
-            .attr('x', 0)
-            .attr('y', yOffset + i * lineHeight)
-            .attr('text-anchor', 'end')
-            .attr('font-size', '11px')
-            .attr('fill', '#374151')
-            .text(line);
-        });
-      });
-
-    // Add x-axis with formatted labels
+    // Add x-axis with percentage marks
     const formatXAxis = (value: number) => {
       if (isPercentage) {
         return value.toFixed(0) + '%';
       } else {
-        // Format currency values
-        if (value >= 1000000) {
-          return '$' + (value / 1000000).toFixed(0) + 'm';
-        } else if (value >= 1000) {
-          return '$' + (value / 1000).toFixed(0) + 'k';
-        } else {
-          return '$' + value.toFixed(0);
-        }
+        if (value >= 1000000) return '$' + (value / 1000000).toFixed(0) + 'm';
+        if (value >= 1000) return '$' + (value / 1000).toFixed(0) + 'k';
+        return '$' + value.toFixed(0);
       }
     };
 
@@ -963,7 +1172,7 @@ export default function SectorSankeyVisualization({
       .tickFormat(formatXAxis as any);
 
     g.append('g')
-      .attr('transform', `translate(0,${innerHeight})`)
+      .attr('transform', `translate(0,${innerHeight + 10})`)
       .call(xAxis)
       .selectAll('text')
       .attr('font-size', '11px')
@@ -972,24 +1181,39 @@ export default function SectorSankeyVisualization({
     return () => {
       tooltip.remove();
     };
-  }, [displayData, containerSize, viewMode, currentTotal, metricMode, onSegmentClick]);
+  }, [stackedBarData, containerSize, viewMode, metricMode, onSegmentClick, barGroupingMode]);
 
   const totalPercentage = useMemo(() => {
     return allocations.reduce((sum, allocation) => sum + allocation.percentage, 0);
   }, [allocations]);
 
   const handleExportCSV = useCallback(() => {
+    // Get all unique transaction types
+    const allTransactionTypes = new Set<string>();
+    financialData.forEach(f => {
+      if (f.transactionTypes) {
+        Object.keys(f.transactionTypes).forEach(type => allTransactionTypes.add(type));
+      }
+    });
+    const transactionTypeArray = Array.from(allTransactionTypes).sort();
+    
     const csvData = allocations.map(allocation => {
       const financial = financialData.find(f => f.code === allocation.code);
-      return {
+      const row: Record<string, string | number> = {
         'Sector Code': allocation.code,
         'Sector Name': allocation.name,
         'Percentage': allocation.percentage,
         'Budget (USD)': financial?.budget || 0,
-        'Commitment (USD)': financial?.commitment || 0,
         'Planned Disbursement (USD)': financial?.plannedDisbursement || 0,
-        'Actual Disbursement (USD)': financial?.actualDisbursement || 0
       };
+      
+      // Add dynamic transaction type columns
+      transactionTypeArray.forEach(type => {
+        const label = TRANSACTION_TYPE_LABELS[type] || `Type ${type}`;
+        row[`${label} (USD)`] = (financial?.transactionTypes && financial.transactionTypes[type]) || 0;
+      });
+      
+      return row;
     });
     exportToCSV(csvData, 'sector-allocations');
   }, [allocations, financialData]);
@@ -1002,13 +1226,44 @@ export default function SectorSankeyVisualization({
 
   const renderTable = () => {
     const formatPercentage = (v: number) => v.toFixed(0) + '%';
+    
+    const formatCurrency = (v: number) => {
+      if (v === 0) return '$0';
+      if (v >= 1000000) return '$' + (v / 1000000).toFixed(2) + 'm';
+      if (v >= 1000) return '$' + (v / 1000).toFixed(2) + 'k';
+      return '$' + v.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+    };
+
+    // Get all unique transaction types across all sectors
+    const allTransactionTypes = new Set<string>();
+    financialData.forEach(f => {
+      if (f.transactionTypes) {
+        Object.keys(f.transactionTypes).forEach(type => allTransactionTypes.add(type));
+      }
+    });
+    const transactionTypeArray = Array.from(allTransactionTypes).sort();
 
     // Calculate total percentage
     const totalPercentage = allocations.reduce((sum, a) => sum + a.percentage, 0);
 
-    // Build table data with hierarchy information
+    // Calculate financial totals
+    const financialTotals = {
+      budget: financialData.reduce((sum, f) => sum + (f.budget || 0), 0),
+      plannedDisbursement: financialData.reduce((sum, f) => sum + (f.plannedDisbursement || 0), 0),
+    };
+    
+    // Calculate transaction type totals
+    const transactionTypeTotals: Record<string, number> = {};
+    transactionTypeArray.forEach(type => {
+      transactionTypeTotals[type] = financialData.reduce((sum, f) => {
+        return sum + ((f.transactionTypes && f.transactionTypes[type]) || 0);
+      }, 0);
+    });
+
+    // Build table data with hierarchy information and financial data
     const tableData = allocations.map(allocation => {
       const sectorData = sectorGroupData.data.find((s: any) => s.code === allocation.code);
+      const financial = financialData.find(f => f.code === allocation.code);
 
       let category = '';
       let sector = '';
@@ -1031,7 +1286,12 @@ export default function SectorSankeyVisualization({
         category,
         sector,
         subsector,
-        allocation
+        allocation,
+        financial: financial || {
+          budget: 0,
+          plannedDisbursement: 0,
+          transactionTypes: {}
+        }
       };
     });
 
@@ -1043,12 +1303,27 @@ export default function SectorSankeyVisualization({
               <TableHead>Sector Category</TableHead>
               <TableHead>Sector</TableHead>
               <TableHead>Sub-sector</TableHead>
-              <TableHead className="text-right w-[80px]">%</TableHead>
+              <TableHead className="text-right">%</TableHead>
+              <TableHead className="text-right">Budget</TableHead>
+              <TableHead className="text-right">Planned Disbursement</TableHead>
+              {transactionTypeArray.map(type => (
+                <TableHead key={type} className="text-right">
+                  {TRANSACTION_TYPE_LABELS[type] || `Type ${type}`}
+                </TableHead>
+              ))}
             </TableRow>
           </TableHeader>
           <TableBody>
             {tableData
-              .sort((a, b) => b.allocation.percentage - a.allocation.percentage)
+              .sort((a, b) => {
+                // Sort by the selected metric mode
+                if (metricMode === 'budget') {
+                  return (b.financial.budget || 0) - (a.financial.budget || 0);
+                } else if (metricMode === 'planned') {
+                  return (b.financial.plannedDisbursement || 0) - (a.financial.plannedDisbursement || 0);
+                }
+                return b.allocation.percentage - a.allocation.percentage;
+              })
               .map((row, index) => {
                 // Extract codes and names for styling
                 const categoryParts = row.category.split(' ');
@@ -1062,6 +1337,10 @@ export default function SectorSankeyVisualization({
                 const subsectorParts = row.subsector.split(' ');
                 const subsectorCode = subsectorParts[0];
                 const subsectorName = subsectorParts.slice(1).join(' ');
+
+                // Highlight the column based on metric mode
+                const highlightBudget = metricMode === 'budget';
+                const highlightPlanned = metricMode === 'planned';
 
                 return (
                   <TableRow key={index}>
@@ -1086,12 +1365,34 @@ export default function SectorSankeyVisualization({
                       <span className="font-medium">{subsectorName}</span>
                     </TableCell>
                     <TableCell className="text-right font-semibold">{formatPercentage(row.allocation.percentage)}</TableCell>
+                    <TableCell className={`text-right font-medium ${highlightBudget ? 'bg-blue-50 font-semibold' : ''}`}>
+                      {formatCurrency(row.financial.budget || 0)}
+                    </TableCell>
+                    <TableCell className={`text-right font-medium ${highlightPlanned ? 'bg-blue-50 font-semibold' : ''}`}>
+                      {formatCurrency(row.financial.plannedDisbursement || 0)}
+                    </TableCell>
+                    {transactionTypeArray.map(type => (
+                      <TableCell key={type} className="text-right font-medium">
+                        {formatCurrency((row.financial.transactionTypes && row.financial.transactionTypes[type]) || 0)}
+                      </TableCell>
+                    ))}
                   </TableRow>
                 );
               })}
             <TableRow className="font-semibold bg-slate-50 border-t-2">
               <TableCell colSpan={3}>Total</TableCell>
               <TableCell className="text-right">{formatPercentage(totalPercentage)}</TableCell>
+              <TableCell className={`text-right ${metricMode === 'budget' ? 'bg-blue-50' : ''}`}>
+                {formatCurrency(financialTotals.budget)}
+              </TableCell>
+              <TableCell className={`text-right ${metricMode === 'planned' ? 'bg-blue-50' : ''}`}>
+                {formatCurrency(financialTotals.plannedDisbursement)}
+              </TableCell>
+              {transactionTypeArray.map(type => (
+                <TableCell key={type} className="text-right">
+                  {formatCurrency(transactionTypeTotals[type] || 0)}
+                </TableCell>
+              ))}
             </TableRow>
           </TableBody>
         </Table>
@@ -1155,7 +1456,35 @@ export default function SectorSankeyVisualization({
               </TabsList>
             </Tabs>
 
-            {/* Metric selector removed: percentage-only view */}
+            {/* Bar grouping buttons - only show when bar view is active */}
+            {viewMode === 'bar' && (
+              <div className="flex gap-1 border rounded-lg p-1 bg-white">
+                <Button
+                  variant={barGroupingMode === 'group' ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => setBarGroupingMode('group')}
+                  className="h-7 text-xs px-3"
+                >
+                  Sector Category
+                </Button>
+                <Button
+                  variant={barGroupingMode === 'category' ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => setBarGroupingMode('category')}
+                  className="h-7 text-xs px-3"
+                >
+                  Sector
+                </Button>
+                <Button
+                  variant={barGroupingMode === 'sector' ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => setBarGroupingMode('sector')}
+                  className="h-7 text-xs px-3"
+                >
+                  Sub Sector
+                </Button>
+              </div>
+            )}
           </div>
 
           <div className="flex items-center gap-2">
@@ -1191,8 +1520,10 @@ export default function SectorSankeyVisualization({
           <svg ref={svgRef} className="w-full h-full" />
         </div>
       ) : viewMode === 'bar' ? (
-        <div className="w-full" style={{ height: '600px' }}>
-          <svg ref={svgRef} className="w-full h-full" />
+        <div className="w-full">
+          <div style={{ height: '180px' }}>
+            <svg ref={svgRef} className="w-full h-full" />
+          </div>
         </div>
       ) : (
         renderTable()

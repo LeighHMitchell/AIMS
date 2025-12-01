@@ -35,6 +35,7 @@ interface Feedback {
   created_at: string;
   updated_at: string;
   resolved_at: string | null;
+  archived_at: string | null;
   user?: {
     id: string;
     email: string;
@@ -405,9 +406,9 @@ export function FeedbackManagement() {
       if (sortField === 'user') {
         aValue = getUserDisplayName(a.user);
         bValue = getUserDisplayName(b.user);
-      } else if (sortField === 'created_at' || sortField === 'updated_at') {
-        aValue = new Date(aValue).getTime();
-        bValue = new Date(bValue).getTime();
+      } else if (sortField === 'created_at' || sortField === 'updated_at' || sortField === 'archived_at') {
+        aValue = aValue ? new Date(aValue).getTime() : 0;
+        bValue = bValue ? new Date(bValue).getTime() : 0;
       }
       
       // Handle null/undefined values
@@ -645,6 +646,17 @@ export function FeedbackManagement() {
                       {getSortIcon('created_at', sortField, sortDirection)}
                     </div>
                   </TableHead>
+                  {showArchived && (
+                    <TableHead 
+                      className="cursor-pointer hover:bg-gray-50 select-none"
+                      onClick={() => handleSort('archived_at')}
+                    >
+                      <div className="flex items-center gap-2">
+                        Archived
+                        {getSortIcon('archived_at', sortField, sortDirection)}
+                      </div>
+                    </TableHead>
+                  )}
                   <TableHead className="w-[200px]">Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -781,6 +793,15 @@ export function FeedbackManagement() {
                           {formatDistanceToNow(new Date(item.created_at), { addSuffix: true })}
                         </div>
                       </TableCell>
+                      {showArchived && (
+                        <TableCell>
+                          <div className="text-sm text-gray-500">
+                            {item.archived_at 
+                              ? formatDistanceToNow(new Date(item.archived_at), { addSuffix: true })
+                              : '-'}
+                          </div>
+                        </TableCell>
+                      )}
                       <TableCell>
                         <div className="flex gap-1">
                           <Button

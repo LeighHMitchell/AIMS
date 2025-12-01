@@ -9,7 +9,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Badge } from "@/components/ui/badge";
-import { ChevronDown, Calendar, DollarSign, Building2, Globe, Tag, Info, X, CheckCircle, Loader2, AlertTriangle } from "lucide-react";
+import { ChevronDown, Calendar, DollarSign, Building2, Globe, Tag, Info, X, CheckCircle, Loader2, AlertTriangle, Lock, Unlock, RefreshCw } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { fixedCurrencyConverter } from "@/lib/currency-converter-fixed";
 import { format } from "date-fns";
 import { OrganizationCombobox } from "@/components/ui/organization-combobox";
 import { ActivityCombobox } from "@/components/ui/activity-combobox";
@@ -111,6 +113,12 @@ export default function TransactionForm({
   const [transactionTypePopoverOpen, setTransactionTypePopoverOpen] = useState(false);
   const [statusPopoverOpen, setStatusPopoverOpen] = useState(false);
   
+  // Exchange rate state
+  const [exchangeRateManual, setExchangeRateManual] = useState(transaction?.exchange_rate_manual ?? false);
+  const [exchangeRateUsed, setExchangeRateUsed] = useState<number | null>(transaction?.exchange_rate_used ?? null);
+  const [isLoadingRate, setIsLoadingRate] = useState(false);
+  const [rateError, setRateError] = useState<string | null>(null);
+  
   // Debug logging to see what transaction data we're getting
   useEffect(() => {
     if (transaction) {
@@ -128,6 +136,74 @@ export default function TransactionForm({
       return format(new Date(), 'yyyy-MM-dd');
     }
   };
+
+  // Fetch exchange rate from API
+  const fetchExchangeRate = async () => {
+    const currency = formData.currency;
+    if (!currency || currency === 'USD') {
+      setExchangeRateUsed(1);
+      setRateError(null);
+      return;
+    }
+
+    const valueDate = formData.value_date || formData.transaction_date;
+    if (!valueDate) {
+      setRateError('Please set a transaction date first');
+      return;
+    }
+
+    setIsLoadingRate(true);
+    setRateError(null);
+
+    try {
+      const result = await fixedCurrencyConverter.convertToUSD(
+        1, // Just get the rate for 1 unit
+        currency,
+        new Date(valueDate)
+      );
+
+      if (result.success && result.exchange_rate) {
+        setExchangeRateUsed(result.exchange_rate);
+        setRateError(null);
+        console.log(`[TransactionForm] Fetched exchange rate: 1 ${currency} = ${result.exchange_rate} USD`);
+      } else {
+        setRateError(result.error || 'Failed to fetch exchange rate');
+        setExchangeRateUsed(null);
+      }
+    } catch (err) {
+      console.error('[TransactionForm] Error fetching exchange rate:', err);
+      setRateError('Failed to fetch exchange rate');
+      setExchangeRateUsed(null);
+    } finally {
+      setIsLoadingRate(false);
+    }
+  };
+
+  // Calculate USD value
+  const calculatedUsdValue = formData.value && exchangeRateUsed 
+    ? Math.round(formData.value * exchangeRateUsed * 100) / 100 
+    : null;
+
+  // Auto-fetch exchange rate when currency or date changes (only if not manual)
+  useEffect(() => {
+    if (!exchangeRateManual && formData.currency && formData.currency !== 'USD') {
+      const valueDate = formData.value_date || formData.transaction_date;
+      if (valueDate) {
+        fetchExchangeRate();
+      }
+    } else if (formData.currency === 'USD') {
+      setExchangeRateUsed(1);
+      setRateError(null);
+    }
+  }, [formData.currency, formData.value_date, formData.transaction_date, exchangeRateManual]);
+
+  // Initialize exchange rate from transaction when editing
+  useEffect(() => {
+    if (transaction) {
+      setExchangeRateManual(transaction.exchange_rate_manual ?? false);
+      setExchangeRateUsed(transaction.exchange_rate_used ?? null);
+    }
+  }, [transaction]);
 
   // Helper function to find organization ID by IATI reference
   const findOrgIdByRef = (ref: string) => {
@@ -249,6 +325,18 @@ export default function TransactionForm({
       // Include field if it exists and is not undefined (empty strings are valid)
       if (value !== undefined) {
         payload[key] = value;
+      }
+    }
+    
+    // Add exchange rate fields
+    if (exchangeRateManual !== undefined) {
+      payload.exchange_rate_manual = exchangeRateManual;
+    }
+    if (exchangeRateUsed !== null) {
+      payload.exchange_rate_used = exchangeRateUsed;
+      // Calculate and include the USD value
+      if (formData.value && exchangeRateUsed) {
+        payload.value_usd = Math.round(formData.value * exchangeRateUsed * 100) / 100;
       }
     }
     // Set organization details when org is selected
@@ -503,7 +591,7 @@ export default function TransactionForm({
                 Transaction Type <span className="text-red-500">*</span>
               </Label>
               <Popover open={transactionTypePopoverOpen} onOpenChange={setTransactionTypePopoverOpen}>
-                <PopoverTrigger>
+                <PopoverTrigger asChild>
                   <Button
                     variant="outline"
                     role="combobox"
@@ -686,6 +774,109 @@ export default function TransactionForm({
               {renderFieldIcon("value_date")}
             </div>
           </div>
+
+          {/* USD Conversion Section */}
+          {formData.currency && formData.currency !== 'USD' && (
+            <Card className="border border-green-200 bg-green-50/50">
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-sm flex items-center gap-2">
+                    <DollarSign className="h-4 w-4 text-green-600" />
+                    USD Conversion
+                  </CardTitle>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-muted-foreground">
+                      {exchangeRateManual ? 'Manual' : 'API Rate'}
+                    </span>
+                    <Switch 
+                      checked={!exchangeRateManual}
+                      onCheckedChange={(checked) => {
+                        setExchangeRateManual(!checked);
+                        if (checked) {
+                          // Switching to API rate - fetch fresh rate
+                          fetchExchangeRate();
+                        }
+                      }}
+                    />
+                    {exchangeRateManual ? (
+                      <Unlock className="h-4 w-4 text-orange-500" />
+                    ) : (
+                      <Lock className="h-4 w-4 text-green-600" />
+                    )}
+                  </div>
+                </div>
+                <CardDescription className="text-xs">
+                  {exchangeRateManual 
+                    ? 'Enter your own exchange rate below'
+                    : 'Exchange rate is automatically fetched based on value date'
+                  }
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  {/* Exchange Rate */}
+                  <div className="space-y-2">
+                    <Label htmlFor="exchange_rate" className="flex items-center gap-2">
+                      Exchange Rate
+                      {!exchangeRateManual && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="h-6 w-6 p-0"
+                          onClick={fetchExchangeRate}
+                          disabled={isLoadingRate}
+                        >
+                          <RefreshCw className={`h-3 w-3 ${isLoadingRate ? 'animate-spin' : ''}`} />
+                        </Button>
+                      )}
+                    </Label>
+                    <div className="relative">
+                      <Input
+                        id="exchange_rate"
+                        type="number"
+                        step="0.000001"
+                        value={exchangeRateUsed || ''}
+                        onChange={(e) => {
+                          const value = parseFloat(e.target.value);
+                          setExchangeRateUsed(isNaN(value) ? null : value);
+                        }}
+                        disabled={!exchangeRateManual || isLoadingRate}
+                        className={!exchangeRateManual ? 'bg-gray-100' : ''}
+                        placeholder={isLoadingRate ? 'Loading...' : 'Enter rate'}
+                      />
+                      {isLoadingRate && (
+                        <Loader2 className="absolute right-3 top-3 h-4 w-4 animate-spin text-muted-foreground" />
+                      )}
+                    </div>
+                    {exchangeRateUsed && (
+                      <p className="text-xs text-muted-foreground">
+                        1 {formData.currency} = {exchangeRateUsed.toFixed(6)} USD
+                      </p>
+                    )}
+                    {rateError && (
+                      <p className="text-xs text-red-500">{rateError}</p>
+                    )}
+                  </div>
+
+                  {/* Calculated USD Value */}
+                  <div className="space-y-2">
+                    <Label>USD Value</Label>
+                    <div className="h-10 px-3 py-2 border rounded-md bg-gray-100 flex items-center font-medium text-green-700">
+                      {calculatedUsdValue !== null ? (
+                        <>$ {calculatedUsdValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</>
+                      ) : (
+                        <span className="text-muted-foreground">—</span>
+                      )}
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Calculated from {formData.currency} {formData.value?.toLocaleString() || 0}
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
 
 

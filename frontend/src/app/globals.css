@@ -234,15 +234,15 @@ select:focus {
 }
 
 .leaflet-popup-pane {
-  z-index: 10 !important;
+  z-index: 700 !important;
 }
 
 .leaflet-tooltip-pane {
-  z-index: 10 !important;
+  z-index: 650 !important;
 }
 
 .leaflet-marker-pane {
-  z-index: 10 !important;
+  z-index: 600 !important;
 }
 
 /* Prevent map overflow in containers */
@@ -253,12 +253,9 @@ select:focus {
 
 /* Prevent blur effects on map elements */
 .leaflet-marker-icon,
-.leaflet-marker-shadow,
-.leaflet-popup,
-.leaflet-tooltip {
+.leaflet-marker-shadow {
   filter: none !important;
   backdrop-filter: none !important;
-  transform: none !important;
 }
 
 /* Enhanced map interactions - CRITICAL for scrolling/panning */
@@ -635,35 +632,52 @@ body:has([data-radix-dialog-content]) {
   margin: 0 auto !important;
 }
 
-/* Force marker visibility */
+/* Heatmap tooltip styling */
+.heatmap-tooltip {
+  background: rgba(255, 255, 255, 0.9) !important;
+  border: 2px solid #f97316 !important;
+  border-radius: 50% !important;
+  padding: 4px 8px !important;
+  font-weight: bold !important;
+  color: #ea580c !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2) !important;
+}
+
+.heatmap-tooltip::before {
+  display: none !important;
+}
+
+/* Location marker tooltip styling */
+.location-tooltip {
+  background: white !important;
+  border: 1px solid #e5e7eb !important;
+  border-radius: 8px !important;
+  padding: 8px 12px !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+}
+
+.location-tooltip::before {
+  border-top-color: white !important;
+}
+
+/* Leaflet popup styling */
+.leaflet-popup-content-wrapper {
+  border-radius: 8px !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2) !important;
+}
+
+.leaflet-popup-content {
+  margin: 12px 16px !important;
+}
+
+/* Clean marker styles */
 .leaflet-marker-pane {
-  z-index: 9999 !important;
+  z-index: 600 !important;
 }
 
 .leaflet-marker-icon {
-  z-index: 9999 !important;
   opacity: 1 !important;
   visibility: visible !important;
-  display: block !important;
-  position: relative !important;
-}
-
-/* Only apply debug styles to non-SVG markers */
-.leaflet-marker-icon:not([src*="svg"]) {
-  background-color: red !important;
-  border: 3px solid yellow !important;
-  box-shadow: 0 0 20px rgba(255, 0, 0, 0.8) !important;
-}
-
-/* Custom marker styles */
-.custom-pin-marker {
-  background: transparent !important;
-  border: none !important;
-}
-
-.fallback-marker {
-  background: transparent !important;
-  border: none !important;
 }
 
 /* Force left alignment for Reported by column in activities table */

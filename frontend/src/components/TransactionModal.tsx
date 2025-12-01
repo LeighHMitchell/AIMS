@@ -1298,7 +1298,7 @@ export default function TransactionModal({
                     Transaction Type
                   </LabelWithInfoAndSave>
                   <Popover open={transactionTypePopoverOpen} onOpenChange={setTransactionTypePopoverOpen}>
-                    <PopoverTrigger className="w-full">
+                    <PopoverTrigger asChild className="w-full">
                       <Button
                         variant="outline"
                         className="w-full flex justify-between items-center"

@@ -5,6 +5,8 @@ import { useParams, useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
 import Image from "next/image"
 import { MainLayout } from "@/components/layout/main-layout"
+import { SafeHtml } from "@/components/ui/safe-html"
+import { htmlToPlainText } from "@/lib/sanitize"
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -105,6 +107,7 @@ import {
   TooltipTrigger
 } from "@/components/ui/tooltip"
 import { Skeleton } from "@/components/ui/skeleton"
+import { BudgetsSkeleton, PlannedDisbursementsSkeleton, TransactionsSkeleton } from "@/components/activities/TabSkeletons"
 import { v4 as uuidv4 } from 'uuid'
 import { BarChart as RechartsBarChart, Bar, XAxis, YAxis, Tooltip as RechartsTooltip2, ResponsiveContainer, Cell, PieChart as RechartsPieChart, Pie, Legend } from 'recharts'
 import { ChevronDown, ChevronUp, ChevronRight, BarChart3 as BarChart3Icon, GitBranch, Printer, FileImage } from 'lucide-react'
@@ -313,6 +316,26 @@ function formatCurrencyShort(value: number): string {
   return `${sign}$${value.toFixed(2)}`;
 }
 
+// Helper to safely extract USD value from transaction without mixing currencies
+function getTransactionUSDValueSync(t: any): number {
+  // Check stored USD values (explicitly check for null/undefined)
+  if (t.value_usd != null && !isNaN(Number(t.value_usd))) {
+    return Number(t.value_usd);
+  }
+  if (t.value_USD != null && !isNaN(Number(t.value_USD))) {
+    return Number(t.value_USD);
+  }
+  if (t.usd_value != null && !isNaN(Number(t.usd_value))) {
+    return Number(t.usd_value);
+  }
+  // Only use original value if currency is USD
+  if (t.currency === 'USD' && t.value != null && Number(t.value) > 0) {
+    return Number(t.value);
+  }
+  // Return 0 for non-USD transactions without USD conversion (never mix currencies)
+  return 0;
+}
+
 // Helper function to get activity scope label from code
 function getActivityScopeLabel(code: string | undefined): string | null {
   if (!code) return null;
@@ -360,6 +383,9 @@ export default function ActivityDetailPage() {
   const [isBudgetsOpen, setIsBudgetsOpen] = useState(true)
   const [isPlannedOpen, setIsPlannedOpen] = useState(true)
   const [isTransactionsOpen, setIsTransactionsOpen] = useState(true)
+  const [budgetsLoading, setBudgetsLoading] = useState(true)
+  const [plannedLoading, setPlannedLoading] = useState(true)
+  const [transactionsLoading, setTransactionsLoading] = useState(true)
   const router = useRouter()
   const { user } = useUser()
   const searchParams = useSearchParams()
@@ -384,6 +410,15 @@ export default function ActivityDetailPage() {
       setActiveTab(tabParam);
     }
   }, [searchParams]);
+
+  // Reset loading states when activity changes or when finances tab is opened
+  useEffect(() => {
+    if (activity?.id && activeTab === "finances") {
+      setBudgetsLoading(true);
+      setPlannedLoading(true);
+      setTransactionsLoading(true);
+    }
+  }, [activity?.id, activeTab]);
 
   // Handle tab change with URL synchronization
   const handleTabChange = (tabValue: string) => {
@@ -468,6 +503,7 @@ export default function ActivityDetailPage() {
   const [sectorFlowView, setSectorFlowView] = useState<'flow' | 'distribution'>('flow')
   const [sectorViewMode, setSectorViewMode] = useState<'sankey' | 'pie' | 'bar' | 'table'>('sankey')
   const [sectorMetricMode, setSectorMetricMode] = useState<'percentage' | 'budget' | 'planned' | 'actual'>('percentage')
+  const [sectorBarGroupingMode, setSectorBarGroupingMode] = useState<'sector' | 'category' | 'group'>('group')
 
   const [partners, setPartners] = useState<Partner[]>([])
   const [allPartners, setAllPartners] = useState<Partner[]>([])
@@ -1021,14 +1057,36 @@ export default function ActivityDetailPage() {
   // Calculate financial data by sector based on percentage allocation (reactive to state changes) - must be before early returns
   const sectorFinancialData = React.useMemo(() => {
     if (!activity?.sectors) return [];
-    return activity.sectors.map((sector: any) => ({
-      code: sector.sector_code || sector.code,
-      budget: totalBudgeted * ((sector.percentage || 0) / 100),
-      commitment: financials.totalCommitment * ((sector.percentage || 0) / 100),
-      plannedDisbursement: totalPlannedDisbursements * ((sector.percentage || 0) / 100),
-      actualDisbursement: totalActualSpending * ((sector.percentage || 0) / 100)
-    }));
-  }, [activity?.sectors, totalBudgeted, financials.totalCommitment, totalPlannedDisbursements, totalActualSpending]);
+    
+    // Group transactions by type and sum values
+    const transactions = activity?.transactions || [];
+    const transactionTypeBreakdown: Record<string, number> = {};
+    
+    transactions.forEach((t: any) => {
+      const type = t.transaction_type;
+      if (type) {
+        const value = t.value_usd ?? t.value ?? 0;
+        transactionTypeBreakdown[type] = (transactionTypeBreakdown[type] || 0) + value;
+      }
+    });
+    
+    return activity.sectors.map((sector: any) => {
+      const sectorPercentage = (sector.percentage || 0) / 100;
+      
+      // Build transaction type breakdown for this sector
+      const sectorTransactionTypes: Record<string, number> = {};
+      Object.entries(transactionTypeBreakdown).forEach(([type, amount]) => {
+        sectorTransactionTypes[type] = amount * sectorPercentage;
+      });
+      
+      return {
+        code: sector.sector_code || sector.code,
+        budget: totalBudgeted * sectorPercentage,
+        plannedDisbursement: totalPlannedDisbursements * sectorPercentage,
+        transactionTypes: sectorTransactionTypes
+      };
+    });
+  }, [activity?.sectors, activity?.transactions, totalBudgeted, totalPlannedDisbursements]);
 
   const handleIconChange = useCallback(async (newIcon: string | null) => {
     const currentActivity = activityRef.current
@@ -1485,10 +1543,10 @@ export default function ActivityDetailPage() {
             ) : null}
             
             <CardContent className="p-8">
-              <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+              <div className="grid grid-cols-1 lg:grid-cols-4 gap-12">
                 {/* Main Content - Columns 1-3 */}
                 <div className="lg:col-span-3">
-                  <div className="flex items-start gap-4">
+                  <div className="flex items-start gap-8">
                     {/* Left Column: Icon/Logo, Locations, Defaults, Tags */}
                     {((activity.icon || localIcon) || 
                       (countryAllocations.length > 0 || regionAllocations.length > 0) || 
@@ -1540,44 +1598,27 @@ export default function ActivityDetailPage() {
                               {activity.hierarchy && (
                                 <div className="text-slate-600">
                                   <div className="text-slate-500 mb-1">Hierarchy:</div>
-                                  <div className="flex items-center gap-1.5">
-                                    <code className="text-xs px-1.5 py-0.5 bg-slate-100 text-slate-700 rounded font-mono whitespace-nowrap flex-shrink-0">
-                                      {activity.hierarchy}
-                                    </code>
-                                    <span className="font-medium text-slate-900 break-words min-w-0">
-                                      {getHierarchyLabel(activity.hierarchy) || `Level ${activity.hierarchy}`}
-                                    </span>
+                                  <div className="font-medium text-slate-900 break-words">
+                                    {getHierarchyLabel(activity.hierarchy) || `Level ${activity.hierarchy}`}
                                   </div>
                                 </div>
                               )}
                               {activity.collaborationType && (
                                 <div className="text-slate-600">
                                   <div className="text-slate-500 mb-1">Collaboration Type:</div>
-                                  <div className="flex items-center gap-1.5">
-                                    <code className="text-xs px-1.5 py-0.5 bg-slate-100 text-slate-700 rounded font-mono whitespace-nowrap flex-shrink-0">
-                                      {activity.collaborationType}
-                                    </code>
-                                    <span className="font-medium text-slate-900 break-words min-w-0">
-                                      {getCollaborationTypeLabel(activity.collaborationType) || activity.collaborationType}
-                                    </span>
+                                  <div className="font-medium text-slate-900 break-words">
+                                    {getCollaborationTypeLabel(activity.collaborationType) || activity.collaborationType}
                                   </div>
                                 </div>
                               )}
                               {activity.defaultFlowType && (
                                 <div className="text-slate-600">
                                   <div className="text-slate-500 mb-1">Default Flow Type:</div>
-                                  <div className="flex items-center gap-1.5">
+                                  <div className="font-medium text-slate-900 break-words">
                                     {activity.defaultFlowType === '0' || activity.defaultFlowType === 0 ? (
-                                      <span className="text-slate-400 italic text-sm">Blank</span>
+                                      <span className="text-slate-400 italic text-sm font-normal">Blank</span>
                                     ) : (
-                                      <>
-                                        <code className="text-xs px-1.5 py-0.5 bg-slate-100 text-slate-700 rounded font-mono whitespace-nowrap flex-shrink-0">
-                                          {activity.defaultFlowType}
-                                        </code>
-                                        <span className="font-medium text-slate-900 break-words min-w-0">
-                                          {FLOW_TYPE_LABELS[activity.defaultFlowType] || activity.defaultFlowType}
-                                        </span>
-                                      </>
+                                      FLOW_TYPE_LABELS[activity.defaultFlowType] || activity.defaultFlowType
                                     )}
                                   </div>
                                 </div>
@@ -1585,18 +1626,11 @@ export default function ActivityDetailPage() {
                               {activity.defaultFinanceType && (
                                 <div className="text-slate-600">
                                   <div className="text-slate-500 mb-1">Default Finance Type:</div>
-                                  <div className="flex items-center gap-1.5">
+                                  <div className="font-medium text-slate-900 break-words">
                                     {activity.defaultFinanceType === '0' || activity.defaultFinanceType === 0 ? (
-                                      <span className="text-slate-400 italic text-sm">Blank</span>
+                                      <span className="text-slate-400 italic text-sm font-normal">Blank</span>
                                     ) : (
-                                      <>
-                                        <code className="text-xs px-1.5 py-0.5 bg-slate-100 text-slate-700 rounded font-mono whitespace-nowrap flex-shrink-0">
-                                          {activity.defaultFinanceType}
-                                        </code>
-                                        <span className="font-medium text-slate-900 break-words min-w-0">
-                                          {FINANCE_TYPE_LABELS[activity.defaultFinanceType] || activity.defaultFinanceType}
-                                        </span>
-                                      </>
+                                      FINANCE_TYPE_LABELS[activity.defaultFinanceType] || activity.defaultFinanceType
                                     )}
                                   </div>
                                 </div>
@@ -1604,18 +1638,11 @@ export default function ActivityDetailPage() {
                               {activity.defaultAidType && (
                                 <div className="text-slate-600">
                                   <div className="text-slate-500 mb-1">Default Aid Type:</div>
-                                  <div className="flex items-center gap-1.5">
+                                  <div className="font-medium text-slate-900 break-words">
                                     {activity.defaultAidType === '0' || activity.defaultAidType === 0 ? (
-                                      <span className="text-slate-400 italic text-sm">Blank</span>
+                                      <span className="text-slate-400 italic text-sm font-normal">Blank</span>
                                     ) : (
-                                      <>
-                                        <code className="text-xs px-1.5 py-0.5 bg-slate-100 text-slate-700 rounded font-mono whitespace-nowrap flex-shrink-0">
-                                          {activity.defaultAidType}
-                                        </code>
-                                        <span className="font-medium text-slate-900 break-words min-w-0">
-                                          {AID_TYPE_LABELS[activity.defaultAidType] || activity.defaultAidType}
-                                        </span>
-                                      </>
+                                      AID_TYPE_LABELS[activity.defaultAidType] || activity.defaultAidType
                                     )}
                                   </div>
                                 </div>
@@ -1623,18 +1650,11 @@ export default function ActivityDetailPage() {
                               {activity.defaultTiedStatus && (
                                 <div className="text-slate-600">
                                   <div className="text-slate-500 mb-1">Default Tied Status:</div>
-                                  <div className="flex items-center gap-1.5">
+                                  <div className="font-medium text-slate-900 break-words">
                                     {activity.defaultTiedStatus === '0' || activity.defaultTiedStatus === 0 ? (
-                                      <span className="text-slate-400 italic text-sm">Blank</span>
+                                      <span className="text-slate-400 italic text-sm font-normal">Blank</span>
                                     ) : (
-                                      <>
-                                        <code className="text-xs px-1.5 py-0.5 bg-slate-100 text-slate-700 rounded font-mono whitespace-nowrap flex-shrink-0">
-                                          {activity.defaultTiedStatus}
-                                        </code>
-                                        <span className="font-medium text-slate-900 break-words min-w-0">
-                                          {TIED_STATUS_LABELS[activity.defaultTiedStatus as keyof typeof TIED_STATUS_LABELS] || activity.defaultTiedStatus}
-                                        </span>
-                                      </>
+                                      TIED_STATUS_LABELS[activity.defaultTiedStatus as keyof typeof TIED_STATUS_LABELS] || activity.defaultTiedStatus
                                     )}
                                   </div>
                                 </div>
@@ -1642,18 +1662,11 @@ export default function ActivityDetailPage() {
                               {activity.activityScope && (
                                 <div className="text-slate-600">
                                   <div className="text-slate-500 mb-1">Scope:</div>
-                                  <div className="flex items-center gap-1.5">
+                                  <div className="font-medium text-slate-900 break-words">
                                     {activity.activityScope === '0' || activity.activityScope === 0 ? (
-                                      <span className="text-slate-400 italic text-sm">Blank</span>
+                                      <span className="text-slate-400 italic text-sm font-normal">Blank</span>
                                     ) : (
-                                      <>
-                                        <code className="text-xs px-1.5 py-0.5 bg-slate-100 text-slate-700 rounded font-mono whitespace-nowrap flex-shrink-0">
-                                          {activity.activityScope}
-                                        </code>
-                                        <span className="font-medium text-slate-900 break-words min-w-0">
-                                          {getActivityScopeLabel(activity.activityScope) || activity.activityScope}
-                                        </span>
-                                      </>
+                                      getActivityScopeLabel(activity.activityScope) || activity.activityScope
                                     )}
                                   </div>
                                 </div>
@@ -1677,7 +1690,7 @@ export default function ActivityDetailPage() {
                     {/* Activity Info */}
                     <div className="flex-1">
                       <h1 className="text-3xl font-bold text-slate-900 mb-3 group">
-                        {activity.title}{activity.acronym && ` (${activity.acronym})`}{' '}
+                        {activity.title}{activity.acronym && <span className="text-lg text-slate-500"> ({activity.acronym})</span>}{' '}
                         <button
                           onClick={() => copyToClipboard(activity.title || '', 'activityTitle')}
                           className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:text-slate-700 inline-flex items-center align-middle"
@@ -1895,10 +1908,17 @@ export default function ActivityDetailPage() {
                           {/* General Description */}
                           {description && (
                             <div ref={descriptionRef} className="mt-3">
-                              <p className="text-slate-600 leading-relaxed whitespace-pre-wrap">
-                                {descDisplay}
-                                {descNeedsTruncation && '...'}
-                              </p>
+                              {isDescriptionExpanded ? (
+                                <SafeHtml 
+                                  html={description} 
+                                  className="text-slate-600 leading-relaxed"
+                                />
+                              ) : (
+                                <p className="text-slate-600 leading-relaxed whitespace-pre-wrap">
+                                  {htmlToPlainText(descDisplay)}
+                                  {descNeedsTruncation && '...'}
+                                </p>
+                              )}
                             </div>
                           )}
 
@@ -1908,10 +1928,17 @@ export default function ActivityDetailPage() {
                               <h4 className="text-sm font-medium text-slate-700 mb-2">
                                 Objectives
                               </h4>
-                              <p className="text-slate-600 leading-relaxed whitespace-pre-wrap">
-                                {objDisplay}
-                                {objNeedsTruncation && '...'}
-                              </p>
+                              {isDescriptionExpanded ? (
+                                <SafeHtml 
+                                  html={objectives} 
+                                  className="text-slate-600 leading-relaxed"
+                                />
+                              ) : (
+                                <p className="text-slate-600 leading-relaxed whitespace-pre-wrap">
+                                  {htmlToPlainText(objDisplay)}
+                                  {objNeedsTruncation && '...'}
+                                </p>
+                              )}
                             </div>
                           )}
 
@@ -1921,10 +1948,17 @@ export default function ActivityDetailPage() {
                               <h4 className="text-sm font-medium text-slate-700 mb-2">
                                 Target Groups
                               </h4>
-                              <p className="text-slate-600 leading-relaxed whitespace-pre-wrap">
-                                {tgDisplay}
-                                {tgNeedsTruncation && '...'}
-                              </p>
+                              {isDescriptionExpanded ? (
+                                <SafeHtml 
+                                  html={targetGroups} 
+                                  className="text-slate-600 leading-relaxed"
+                                />
+                              ) : (
+                                <p className="text-slate-600 leading-relaxed whitespace-pre-wrap">
+                                  {htmlToPlainText(tgDisplay)}
+                                  {tgNeedsTruncation && '...'}
+                                </p>
+                              )}
                             </div>
                           )}
 
@@ -1934,10 +1968,17 @@ export default function ActivityDetailPage() {
                               <h4 className="text-sm font-medium text-slate-700 mb-2">
                                 Other
                               </h4>
-                              <p className="text-slate-600 leading-relaxed whitespace-pre-wrap">
-                                {otherDisplay}
-                                {otherNeedsTruncation && '...'}
-                              </p>
+                              {isDescriptionExpanded ? (
+                                <SafeHtml 
+                                  html={other} 
+                                  className="text-slate-600 leading-relaxed"
+                                />
+                              ) : (
+                                <p className="text-slate-600 leading-relaxed whitespace-pre-wrap">
+                                  {htmlToPlainText(otherDisplay)}
+                                  {otherNeedsTruncation && '...'}
+                                </p>
+                              )}
                             </div>
                           )}
 
@@ -2555,12 +2596,12 @@ export default function ActivityDetailPage() {
                       transactions.forEach((t: any) => {
                         if (t.transaction_date) {
                           const year = new Date(t.transaction_date).getFullYear()
-                          const value = parseFloat(t.value) || 0
+                          const usdValue = getTransactionUSDValueSync(t)
 
-                          if (t.transaction_type === '3') {
-                            disbursementsByYearMap.set(year, (disbursementsByYearMap.get(year) || 0) + value)
-                          } else if (t.transaction_type === '4') {
-                            expendituresByYearMap.set(year, (expendituresByYearMap.get(year) || 0) + value)
+                          if (normalizeTransactionType(t.transaction_type) === '3') {
+                            disbursementsByYearMap.set(year, (disbursementsByYearMap.get(year) || 0) + usdValue)
+                          } else if (normalizeTransactionType(t.transaction_type) === '4') {
+                            expendituresByYearMap.set(year, (expendituresByYearMap.get(year) || 0) + usdValue)
                           }
                         }
                       })
@@ -2621,17 +2662,17 @@ export default function ActivityDetailPage() {
                     }
                   })
 
-                  // Process transactions
+                  // Process transactions - use USD values for consistency with hero cards
                   const transactions = activity?.transactions || []
                   transactions.forEach((t: any) => {
                     if (t.transaction_date) {
                       const year = new Date(t.transaction_date).getFullYear()
-                      const value = parseFloat(t.value) || 0
+                      const usdValue = getTransactionUSDValueSync(t)
 
-                      if (t.transaction_type === '3') { // Disbursement
-                        disbursementsByYearMap.set(year, (disbursementsByYearMap.get(year) || 0) + value)
-                      } else if (t.transaction_type === '4') { // Expenditure
-                        expendituresByYearMap.set(year, (expendituresByYearMap.get(year) || 0) + value)
+                      if (normalizeTransactionType(t.transaction_type) === '3') { // Disbursement
+                        disbursementsByYearMap.set(year, (disbursementsByYearMap.get(year) || 0) + usdValue)
+                      } else if (normalizeTransactionType(t.transaction_type) === '4') { // Expenditure
+                        expendituresByYearMap.set(year, (expendituresByYearMap.get(year) || 0) + usdValue)
                       }
                     }
                   })
@@ -2889,21 +2930,25 @@ export default function ActivityDetailPage() {
                     </div>
                     {isBudgetsOpen && (
                       <div className="p-4">
-                        <ActivityBudgetsTab
-                          activityId={activity.id}
-                          startDate={activity.plannedStartDate || activity.actualStartDate || ""}
-                          endDate={activity.plannedEndDate || activity.actualEndDate || ""}
-                          defaultCurrency="USD"
-                          hideSummaryCards={true}
-                          readOnly={true}
-                          renderFilters={(filters) => {
-                            const container = document.getElementById('budget-filters-container');
-                            if (container) {
-                              return ReactDOM.createPortal(filters, container);
-                            }
-                            return null;
-                          }}
-                        />
+                        <div className={budgetsLoading ? "hidden" : ""}>
+                          <ActivityBudgetsTab
+                            activityId={activity.id}
+                            startDate={activity.plannedStartDate || activity.actualStartDate || ""}
+                            endDate={activity.plannedEndDate || activity.actualEndDate || ""}
+                            defaultCurrency="USD"
+                            hideSummaryCards={true}
+                            readOnly={true}
+                            onLoadingChange={setBudgetsLoading}
+                            renderFilters={(filters) => {
+                              const container = document.getElementById('budget-filters-container');
+                              if (container) {
+                                return ReactDOM.createPortal(filters, container);
+                              }
+                              return null;
+                            }}
+                          />
+                        </div>
+                        {budgetsLoading && <BudgetsSkeleton />}
                       </div>
                     )}
                   </div>
@@ -2930,22 +2975,26 @@ export default function ActivityDetailPage() {
                     </div>
                     {isPlannedOpen && (
                       <div className="p-4">
-                        <PlannedDisbursementsTab
-                          activityId={activity.id}
-                          startDate={activity.plannedStartDate || activity.actualStartDate || ""}
-                          endDate={activity.plannedEndDate || activity.actualEndDate || ""}
-                          defaultCurrency="USD"
-                          readOnly={true}
-                          onDisbursementsChange={setPlannedDisbursements}
-                          hideSummaryCards={true}
-                          renderFilters={(filters) => {
-                            const container = document.getElementById('planned-filters-container');
-                            if (container) {
-                              return ReactDOM.createPortal(filters, container);
-                            }
-                            return null;
-                          }}
-                        />
+                        <div className={plannedLoading ? "hidden" : ""}>
+                          <PlannedDisbursementsTab
+                            activityId={activity.id}
+                            startDate={activity.plannedStartDate || activity.actualStartDate || ""}
+                            endDate={activity.plannedEndDate || activity.actualEndDate || ""}
+                            defaultCurrency="USD"
+                            readOnly={true}
+                            onDisbursementsChange={setPlannedDisbursements}
+                            hideSummaryCards={true}
+                            onLoadingChange={setPlannedLoading}
+                            renderFilters={(filters) => {
+                              const container = document.getElementById('planned-filters-container');
+                              if (container) {
+                                return ReactDOM.createPortal(filters, container);
+                              }
+                              return null;
+                            }}
+                          />
+                        </div>
+                        {plannedLoading && <PlannedDisbursementsSkeleton />}
                       </div>
                     )}
                   </div>
@@ -2966,29 +3015,33 @@ export default function ActivityDetailPage() {
                           </div>
                         </button>
                         {isTransactionsOpen && (
-                          <div id="transaction-filters-container" />
+                          <div id="transaction-filters-container" className="flex items-center gap-2 flex-wrap" />
                         )}
                       </div>
                     </div>
                     {isTransactionsOpen && (
                       <div className="p-4">
-                        <TransactionTab 
-                          activityId={activity.id} 
-                          readOnly={true}
-                          defaultFinanceType={activity.defaultFinanceType}
-                          defaultAidType={activity.defaultAidType}
-                          defaultCurrency={activity.defaultCurrency}
-                          defaultTiedStatus={activity.defaultTiedStatus}
-                          defaultFlowType={activity.defaultFlowType}
-                          hideSummaryCards={true}
-                          renderFilters={(filters) => {
-                            const container = document.getElementById('transaction-filters-container');
-                            if (container) {
-                              return ReactDOM.createPortal(filters, container);
-                            }
-                            return null;
-                          }}
-                        />
+                        <div className={transactionsLoading ? "hidden" : ""}>
+                          <TransactionTab 
+                            activityId={activity.id} 
+                            readOnly={true}
+                            defaultFinanceType={activity.defaultFinanceType}
+                            defaultAidType={activity.defaultAidType}
+                            defaultCurrency={activity.defaultCurrency}
+                            defaultTiedStatus={activity.defaultTiedStatus}
+                            defaultFlowType={activity.defaultFlowType}
+                            hideSummaryCards={true}
+                            onLoadingChange={setTransactionsLoading}
+                            renderFilters={(filters) => {
+                              const container = document.getElementById('transaction-filters-container');
+                              if (container) {
+                                return ReactDOM.createPortal(filters, container);
+                              }
+                              return null;
+                            }}
+                          />
+                        </div>
+                        {transactionsLoading && <TransactionsSkeleton />}
                       </div>
                     )}
                   </div>
@@ -3068,41 +3121,35 @@ export default function ActivityDetailPage() {
                                 </Button>
                               </div>
 
-                              {/* Metric Buttons */}
-                              <div className="flex gap-1 border rounded-lg p-1 bg-white">
-                                <Button
-                                  variant={sectorMetricMode === 'percentage' ? 'default' : 'ghost'}
-                                  size="sm"
-                                  onClick={() => setSectorMetricMode('percentage')}
-                                  className="h-8"
-                                >
-                                  %
-                                </Button>
-                                <Button
-                                  variant={sectorMetricMode === 'budget' ? 'default' : 'ghost'}
-                                  size="sm"
-                                  onClick={() => setSectorMetricMode('budget')}
-                                  className="h-8"
-                                >
-                                  Budget
-                                </Button>
-                                <Button
-                                  variant={sectorMetricMode === 'planned' ? 'default' : 'ghost'}
-                                  size="sm"
-                                  onClick={() => setSectorMetricMode('planned')}
-                                  className="h-8"
-                                >
-                                  Planned
-                                </Button>
-                                <Button
-                                  variant={sectorMetricMode === 'actual' ? 'default' : 'ghost'}
-                                  size="sm"
-                                  onClick={() => setSectorMetricMode('actual')}
-                                  className="h-8"
-                                >
-                                  Actual
-                                </Button>
-                              </div>
+                              {/* Bar grouping buttons - only show when bar view is active */}
+                              {sectorViewMode === 'bar' && (
+                                <div className="flex gap-1 border rounded-lg p-1 bg-white">
+                                  <Button
+                                    variant={sectorBarGroupingMode === 'group' ? 'default' : 'ghost'}
+                                    size="sm"
+                                    onClick={() => setSectorBarGroupingMode('group')}
+                                    className="h-7 text-xs px-3"
+                                  >
+                                    Sector Category
+                                  </Button>
+                                  <Button
+                                    variant={sectorBarGroupingMode === 'category' ? 'default' : 'ghost'}
+                                    size="sm"
+                                    onClick={() => setSectorBarGroupingMode('category')}
+                                    className="h-7 text-xs px-3"
+                                  >
+                                    Sector
+                                  </Button>
+                                  <Button
+                                    variant={sectorBarGroupingMode === 'sector' ? 'default' : 'ghost'}
+                                    size="sm"
+                                    onClick={() => setSectorBarGroupingMode('sector')}
+                                    className="h-7 text-xs px-3"
+                                  >
+                                    Sub Sector
+                                  </Button>
+                                </div>
+                              )}
 
                               {/* Export Buttons */}
                               <div className="flex gap-1">
@@ -3110,17 +3157,48 @@ export default function ActivityDetailPage() {
                                   variant="outline"
                                   size="sm"
                                   onClick={() => {
+                                    // Transaction type labels
+                                    const TRANSACTION_TYPE_LABELS: Record<string, string> = {
+                                      '1': 'Incoming Commitment',
+                                      '2': 'Outgoing Commitment',
+                                      '3': 'Disbursement',
+                                      '4': 'Expenditure',
+                                      '5': 'Interest Repayment',
+                                      '6': 'Loan Repayment',
+                                      '7': 'Reimbursement',
+                                      '8': 'Purchase of Equity',
+                                      '9': 'Sale of Equity',
+                                      '11': 'Credit Guarantee',
+                                      '12': 'Incoming Funds',
+                                      '13': 'Commitment Cancellation'
+                                    };
+                                    
+                                    // Get all unique transaction types
+                                    const allTransactionTypes = new Set<string>();
+                                    sectorFinancialData.forEach((f: any) => {
+                                      if (f.transactionTypes) {
+                                        Object.keys(f.transactionTypes).forEach((type: string) => allTransactionTypes.add(type));
+                                      }
+                                    });
+                                    const transactionTypeArray = Array.from(allTransactionTypes).sort();
+                                    
                                     const csvData = activity.sectors.map((allocation: any) => {
                                       const financial = sectorFinancialData.find((f: any) => f.code === (allocation.sector_code || allocation.code));
-                                      return {
+                                      const row: Record<string, string | number> = {
                                         'Sector Code': allocation.sector_code || allocation.code,
                                         'Sector Name': allocation.sector_name || allocation.name,
                                         'Percentage': allocation.percentage,
                                         'Budget (USD)': financial?.budget || 0,
-                                        'Commitment (USD)': financial?.commitment || 0,
                                         'Planned Disbursement (USD)': financial?.plannedDisbursement || 0,
-                                        'Actual Disbursement (USD)': financial?.actualDisbursement || 0
                                       };
+                                      
+                                      // Add dynamic transaction type columns
+                                      transactionTypeArray.forEach((type: string) => {
+                                        const label = TRANSACTION_TYPE_LABELS[type] || `Type ${type}`;
+                                        row[`${label} (USD)`] = (financial?.transactionTypes && financial.transactionTypes[type]) || 0;
+                                      });
+                                      
+                                      return row;
                                     });
                                     const csvContent = [
                                       Object.keys(csvData[0]).join(','),
@@ -3174,6 +3252,7 @@ export default function ActivityDetailPage() {
                               showControls={false}
                               defaultView={sectorViewMode}
                               defaultMetric={sectorMetricMode}
+                              barGroupingMode={sectorBarGroupingMode}
                             />
                           </div>
                         </CardContent>
@@ -3202,33 +3281,35 @@ export default function ActivityDetailPage() {
                     let totalDisbursed = 0;
                     let totalExpended = 0;
 
-                    // From planned disbursements
+                    // From planned disbursements - use USD values
                     plannedDisbursements.forEach((pd: any) => {
                       if (pd.provider_org_id === orgId || pd.provider_org_name === orgName) {
-                        totalPlanned += (pd.usdAmount || (pd.currency === 'USD' ? pd.amount : 0) || 0);
+                        // Use usd_amount or usdAmount (check both field name variations)
+                        const usdValue = pd.usd_amount || pd.usdAmount || (pd.currency === 'USD' ? pd.amount : 0) || 0;
+                        totalPlanned += usdValue;
                       }
                     });
 
-                    // From transactions
+                    // From transactions - use USD values for consistency
                     if (activity?.transactions) {
                       activity.transactions.forEach((t: any) => {
-                        const value = parseFloat(t.value) || 0;
+                        const usdValue = getTransactionUSDValueSync(t);
                         
                         // Provider (outgoing funds)
                         if (t.provider_org_id === orgId || t.provider_org_name === orgName) {
-                          if (t.transaction_type === '3') { // Disbursement
-                            totalDisbursed += value;
-                          } else if (t.transaction_type === '4') { // Expenditure
-                            totalExpended += value;
+                          if (normalizeTransactionType(t.transaction_type) === '3') { // Disbursement
+                            totalDisbursed += usdValue;
+                          } else if (normalizeTransactionType(t.transaction_type) === '4') { // Expenditure
+                            totalExpended += usdValue;
                           }
                         }
                         
                         // Receiver (incoming funds)
                         if (t.receiver_org_id === orgId || t.receiver_org_name === orgName) {
-                          if (t.transaction_type === '3') { // Disbursement
-                            totalDisbursed += value;
-                          } else if (t.transaction_type === '4') { // Expenditure
-                            totalExpended += value;
+                          if (normalizeTransactionType(t.transaction_type) === '3') { // Disbursement
+                            totalDisbursed += usdValue;
+                          } else if (normalizeTransactionType(t.transaction_type) === '4') { // Expenditure
+                            totalExpended += usdValue;
                           }
                         }
                       });
@@ -4103,85 +4184,161 @@ export default function ActivityDetailPage() {
                 {activeTab === "geography" && (
                   <>
                 {/* Country/Region Allocation Chart - Hero Card */}
-                {(countryAllocations.length > 0 || regionAllocations.length > 0) && (
-                  <Card className="border-slate-200">
-                    <CardHeader>
-                      <CardTitle className="text-slate-900 flex items-center gap-2">
-                        <Globe className="h-5 w-5" />
-                        Country & Region Allocation
-                      </CardTitle>
-                      <CardDescription>
-                        Percentage breakdown of activity allocation by country and region
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent className="p-6">
-                      <div className="space-y-4">
-                        {/* Countries */}
-                        {countryAllocations.map((alloc: any, index: number) => {
-                          const percentage = alloc.percentage || 0;
-                          const countryName = alloc.country?.name || alloc.country?.code || 'Unknown Country';
-                          const countryCode = alloc.country?.code || '';
-                          return (
-                            <div key={`country-${index}`} className="space-y-1.5">
-                              <div className="flex items-center justify-between text-sm">
-                                <div className="flex items-center gap-2 min-w-0 flex-1">
-                                  <span className="font-medium text-slate-900 truncate">{countryName}</span>
-                                  {countryCode && (
-                                    <span className="text-xs font-mono bg-slate-100 px-1.5 py-0.5 rounded text-slate-600 flex-shrink-0">
-                                      {countryCode}
-                                    </span>
-                                  )}
-                                </div>
-                                <span className="font-semibold text-slate-900 ml-2 flex-shrink-0">{percentage.toFixed(1)}%</span>
-                              </div>
-                              <div className="w-full bg-slate-200 rounded-full h-6 overflow-hidden">
-                                <div
-                                  className="h-full bg-blue-600 transition-all duration-500 rounded-full flex items-center justify-end pr-2"
-                                  style={{ width: `${Math.min(percentage, 100)}%` }}
-                                >
-                                  {percentage > 5 && (
-                                    <span className="text-xs font-medium text-white">{percentage.toFixed(1)}%</span>
-                                  )}
-                                </div>
-                              </div>
+                {(countryAllocations.length > 0 || regionAllocations.length > 0) && (() => {
+                  // Color palette for countries and regions - vibrant and distinct
+                  const colorPalette = [
+                    { bg: 'bg-blue-600', hex: '#2563eb' },
+                    { bg: 'bg-emerald-500', hex: '#10b981' },
+                    { bg: 'bg-amber-500', hex: '#f59e0b' },
+                    { bg: 'bg-rose-500', hex: '#f43f5e' },
+                    { bg: 'bg-violet-500', hex: '#8b5cf6' },
+                    { bg: 'bg-cyan-500', hex: '#06b6d4' },
+                    { bg: 'bg-orange-500', hex: '#f97316' },
+                    { bg: 'bg-pink-500', hex: '#ec4899' },
+                    { bg: 'bg-teal-500', hex: '#14b8a6' },
+                    { bg: 'bg-indigo-500', hex: '#6366f1' },
+                    { bg: 'bg-lime-500', hex: '#84cc16' },
+                    { bg: 'bg-fuchsia-500', hex: '#d946ef' },
+                  ];
+
+                  // Combine countries and regions into a single list with colors
+                  const allAllocations = [
+                    ...countryAllocations.map((alloc: any, index: number) => ({
+                      type: 'country' as const,
+                      name: alloc.country?.name || alloc.country?.code || 'Unknown Country',
+                      code: alloc.country?.code || '',
+                      percentage: alloc.percentage || 0,
+                      color: colorPalette[index % colorPalette.length],
+                    })),
+                    ...regionAllocations.map((alloc: any, index: number) => ({
+                      type: 'region' as const,
+                      name: alloc.region?.name || alloc.region?.code || 'Unknown Region',
+                      code: alloc.region?.code || '',
+                      percentage: alloc.percentage || 0,
+                      color: colorPalette[(countryAllocations.length + index) % colorPalette.length],
+                    })),
+                  ];
+
+                  const totalPercentage = allAllocations.reduce((sum, a) => sum + a.percentage, 0);
+
+                  return (
+                    <Card className="border-slate-200">
+                      <CardHeader>
+                        <CardTitle className="text-slate-900 flex items-center gap-2">
+                          <Globe className="h-5 w-5" />
+                          Country & Region Allocation
+                        </CardTitle>
+                        <CardDescription>
+                          Percentage breakdown of activity allocation by country and region
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent className="p-6">
+                        <div className="space-y-4">
+                          {/* Stacked Bar */}
+                          <TooltipProvider delayDuration={0}>
+                            <div className="w-full bg-slate-200 rounded-lg h-10 overflow-hidden flex">
+                              {allAllocations.map((alloc, index) => {
+                                // Calculate width based on proportion of total or use percentage directly
+                                const widthPercent = totalPercentage > 0 
+                                  ? (alloc.percentage / totalPercentage) * 100 
+                                  : alloc.percentage;
+                                
+                                return (
+                                  <Tooltip key={`${alloc.type}-${index}`}>
+                                    <TooltipTrigger asChild>
+                                      <div
+                                        className={`h-full ${alloc.color.bg} transition-all duration-500 flex items-center justify-center relative cursor-pointer hover:brightness-110`}
+                                        style={{ 
+                                          width: `${widthPercent}%`,
+                                          minWidth: alloc.percentage > 0 ? '2px' : '0',
+                                        }}
+                                      >
+                                        {widthPercent > 8 && (
+                                          <span className="text-xs font-semibold text-white drop-shadow-sm truncate px-1">
+                                            {alloc.percentage.toFixed(0)}%
+                                          </span>
+                                        )}
+                                      </div>
+                                    </TooltipTrigger>
+                                    <TooltipContent 
+                                      side="top" 
+                                      className="bg-slate-900 text-white border-slate-700 px-3 py-2 shadow-xl"
+                                    >
+                                      <div className="space-y-1.5">
+                                        <div className="flex items-center gap-2">
+                                          <div 
+                                            className="w-3 h-3 rounded-sm flex-shrink-0"
+                                            style={{ backgroundColor: alloc.color.hex }}
+                                          />
+                                          <span className="font-semibold text-sm">{alloc.name}</span>
+                                        </div>
+                                        <div className="flex items-center gap-2 text-xs text-slate-300">
+                                          {alloc.code && (
+                                            <span className="font-mono bg-slate-700 px-1.5 py-0.5 rounded">
+                                              {alloc.code}
+                                            </span>
+                                          )}
+                                          <span className={`px-1.5 py-0.5 rounded ${alloc.type === 'country' ? 'bg-blue-600' : 'bg-green-600'}`}>
+                                            {alloc.type === 'country' ? 'Country' : 'Region'}
+                                          </span>
+                                        </div>
+                                        <div className="text-lg font-bold text-white pt-1 border-t border-slate-700">
+                                          {alloc.percentage.toFixed(1)}%
+                                        </div>
+                                      </div>
+                                    </TooltipContent>
+                                  </Tooltip>
+                                );
+                              })}
                             </div>
-                          );
-                        })}
-                        {/* Regions */}
-                        {regionAllocations.map((alloc: any, index: number) => {
-                          const percentage = alloc.percentage || 0;
-                          const regionName = alloc.region?.name || alloc.region?.code || 'Unknown Region';
-                          const regionCode = alloc.region?.code || '';
-                          return (
-                            <div key={`region-${index}`} className="space-y-1.5">
-                              <div className="flex items-center justify-between text-sm">
-                                <div className="flex items-center gap-2 min-w-0 flex-1">
-                                  <span className="font-medium text-slate-900 truncate">{regionName}</span>
-                                  {regionCode && (
-                                    <span className="text-xs font-mono bg-slate-100 px-1.5 py-0.5 rounded text-slate-600 flex-shrink-0">
-                                      {regionCode}
-                                    </span>
-                                  )}
-                                </div>
-                                <span className="font-semibold text-slate-900 ml-2 flex-shrink-0">{percentage.toFixed(1)}%</span>
+                          </TooltipProvider>
+
+                          {/* Legend */}
+                          <div className="flex flex-wrap gap-3 mt-4">
+                            {allAllocations.map((alloc, index) => (
+                              <div 
+                                key={`legend-${alloc.type}-${index}`}
+                                className="flex items-center gap-2 bg-slate-50 rounded-md px-3 py-1.5 border border-slate-100"
+                              >
+                                <div 
+                                  className="w-3 h-3 rounded-sm flex-shrink-0"
+                                  style={{ backgroundColor: alloc.color.hex }}
+                                />
+                                <span className="text-sm text-slate-700 font-medium truncate max-w-[150px]" title={alloc.name}>
+                                  {alloc.name}
+                                </span>
+                                {alloc.code && (
+                                  <span className="text-xs font-mono bg-slate-200 px-1.5 py-0.5 rounded text-slate-600">
+                                    {alloc.code}
+                                  </span>
+                                )}
+                                <span className="text-sm font-semibold text-slate-900">
+                                  {alloc.percentage.toFixed(1)}%
+                                </span>
+                                <span className={`text-xs px-1.5 py-0.5 rounded ${alloc.type === 'country' ? 'bg-blue-100 text-blue-700' : 'bg-green-100 text-green-700'}`}>
+                                  {alloc.type === 'country' ? 'Country' : 'Region'}
+                                </span>
                               </div>
-                              <div className="w-full bg-slate-200 rounded-full h-6 overflow-hidden">
-                                <div
-                                  className="h-full bg-green-600 transition-all duration-500 rounded-full flex items-center justify-end pr-2"
-                                  style={{ width: `${Math.min(percentage, 100)}%` }}
-                                >
-                                  {percentage > 5 && (
-                                    <span className="text-xs font-medium text-white">{percentage.toFixed(1)}%</span>
-                                  )}
-                                </div>
-                              </div>
+                            ))}
+                          </div>
+
+                          {/* Total indicator */}
+                          {totalPercentage !== 100 && (
+                            <div className="text-xs text-slate-500 flex items-center gap-1 mt-2">
+                              <span>Total allocation:</span>
+                              <span className={`font-semibold ${totalPercentage === 100 ? 'text-green-600' : 'text-amber-600'}`}>
+                                {totalPercentage.toFixed(1)}%
+                              </span>
+                              {totalPercentage !== 100 && (
+                                <span className="text-amber-600">(expected: 100%)</span>
+                              )}
                             </div>
-                          );
-                        })}
-                      </div>
-                    </CardContent>
-                  </Card>
-                )}
+                          )}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })()}
                 {/* Top Section: 4-column layout - Map (2 cols) + Location Cards (2 cols) */}
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                   {/* Map Section - Takes first 2 columns */}

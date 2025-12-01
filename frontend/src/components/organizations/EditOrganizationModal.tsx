@@ -53,152 +53,7 @@ import { IATIDocumentManager } from './IATIDocumentManager'
 import IATIImportPreferences from './IATIImportPreferences'
 import { HelpTextTooltip } from '@/components/ui/help-text-tooltip'
 import { StringArrayInput } from '@/components/ui/string-array-input'
-
-// ISO 3166-1 alpha-2 country codes with names
-const ISO_COUNTRIES = [
-  { code: 'MM', name: 'Myanmar' },
-  { code: 'AF', name: 'Afghanistan' },
-  { code: 'AL', name: 'Albania' },
-  { code: 'DZ', name: 'Algeria' },
-  { code: 'AD', name: 'Andorra' },
-  { code: 'AO', name: 'Angola' },
-  { code: 'AG', name: 'Antigua and Barbuda' },
-  { code: 'AR', name: 'Argentina' },
-  { code: 'AM', name: 'Armenia' },
-  { code: 'AU', name: 'Australia' },
-  { code: 'AT', name: 'Austria' },
-  { code: 'AZ', name: 'Azerbaijan' },
-  { code: 'BS', name: 'Bahamas' },
-  { code: 'BH', name: 'Bahrain' },
-  { code: 'BD', name: 'Bangladesh' },
-  { code: 'BB', name: 'Barbados' },
-  { code: 'BY', name: 'Belarus' },
-  { code: 'BE', name: 'Belgium' },
-  { code: 'BZ', name: 'Belize' },
-  { code: 'BJ', name: 'Benin' },
-  { code: 'BT', name: 'Bhutan' },
-  { code: 'BO', name: 'Bolivia' },
-  { code: 'BA', name: 'Bosnia and Herzegovina' },
-  { code: 'BW', name: 'Botswana' },
-  { code: 'BR', name: 'Brazil' },
-  { code: 'BN', name: 'Brunei Darussalam' },
-  { code: 'BG', name: 'Bulgaria' },
-  { code: 'BF', name: 'Burkina Faso' },
-  { code: 'BI', name: 'Burundi' },
-  { code: 'KH', name: 'Cambodia' },
-  { code: 'CM', name: 'Cameroon' },
-  { code: 'CA', name: 'Canada' },
-  { code: 'TD', name: 'Chad' },
-  { code: 'CL', name: 'Chile' },
-  { code: 'CN', name: 'China' },
-  { code: 'CO', name: 'Colombia' },
-  { code: 'CR', name: 'Costa Rica' },
-  { code: 'HR', name: 'Croatia' },
-  { code: 'CU', name: 'Cuba' },
-  { code: 'CY', name: 'Cyprus' },
-  { code: 'CZ', name: 'Czech Republic' },
-  { code: 'DK', name: 'Denmark' },
-  { code: 'EC', name: 'Ecuador' },
-  { code: 'EG', name: 'Egypt' },
-  { code: 'SV', name: 'El Salvador' },
-  { code: 'EE', name: 'Estonia' },
-  { code: 'ET', name: 'Ethiopia' },
-  { code: 'FJ', name: 'Fiji' },
-  { code: 'FI', name: 'Finland' },
-  { code: 'FR', name: 'France' },
-  { code: 'DE', name: 'Germany' },
-  { code: 'GH', name: 'Ghana' },
-  { code: 'GR', name: 'Greece' },
-  { code: 'GT', name: 'Guatemala' },
-  { code: 'HT', name: 'Haiti' },
-  { code: 'HN', name: 'Honduras' },
-  { code: 'HU', name: 'Hungary' },
-  { code: 'IS', name: 'Iceland' },
-  { code: 'IN', name: 'India' },
-  { code: 'ID', name: 'Indonesia' },
-  { code: 'IR', name: 'Iran' },
-  { code: 'IQ', name: 'Iraq' },
-  { code: 'IE', name: 'Ireland' },
-  { code: 'IL', name: 'Israel' },
-  { code: 'IT', name: 'Italy' },
-  { code: 'JM', name: 'Jamaica' },
-  { code: 'JP', name: 'Japan' },
-  { code: 'JO', name: 'Jordan' },
-  { code: 'KZ', name: 'Kazakhstan' },
-  { code: 'KE', name: 'Kenya' },
-  { code: 'KR', name: 'Korea, Republic of' },
-  { code: 'KW', name: 'Kuwait' },
-  { code: 'LA', name: 'Laos' },
-  { code: 'LV', name: 'Latvia' },
-  { code: 'LB', name: 'Lebanon' },
-  { code: 'LR', name: 'Liberia' },
-  { code: 'LY', name: 'Libya' },
-  { code: 'LT', name: 'Lithuania' },
-  { code: 'LU', name: 'Luxembourg' },
-  { code: 'MY', name: 'Malaysia' },
-  { code: 'MV', name: 'Maldives' },
-  { code: 'ML', name: 'Mali' },
-  { code: 'MT', name: 'Malta' },
-  { code: 'MX', name: 'Mexico' },
-  { code: 'MD', name: 'Moldova' },
-  { code: 'MN', name: 'Mongolia' },
-  { code: 'ME', name: 'Montenegro' },
-  { code: 'MA', name: 'Morocco' },
-  { code: 'MZ', name: 'Mozambique' },
-  { code: 'NA', name: 'Namibia' },
-  { code: 'NP', name: 'Nepal' },
-  { code: 'NL', name: 'Netherlands' },
-  { code: 'NZ', name: 'New Zealand' },
-  { code: 'NI', name: 'Nicaragua' },
-  { code: 'NE', name: 'Niger' },
-  { code: 'NG', name: 'Nigeria' },
-  { code: 'NO', name: 'Norway' },
-  { code: 'OM', name: 'Oman' },
-  { code: 'PK', name: 'Pakistan' },
-  { code: 'PA', name: 'Panama' },
-  { code: 'PG', name: 'Papua New Guinea' },
-  { code: 'PY', name: 'Paraguay' },
-  { code: 'PE', name: 'Peru' },
-  { code: 'PH', name: 'Philippines' },
-  { code: 'PL', name: 'Poland' },
-  { code: 'PT', name: 'Portugal' },
-  { code: 'QA', name: 'Qatar' },
-  { code: 'RO', name: 'Romania' },
-  { code: 'RU', name: 'Russian Federation' },
-  { code: 'RW', name: 'Rwanda' },
-  { code: 'SA', name: 'Saudi Arabia' },
-  { code: 'SN', name: 'Senegal' },
-  { code: 'RS', name: 'Serbia' },
-  { code: 'SG', name: 'Singapore' },
-  { code: 'SK', name: 'Slovakia' },
-  { code: 'SI', name: 'Slovenia' },
-  { code: 'ZA', name: 'South Africa' },
-  { code: 'ES', name: 'Spain' },
-  { code: 'LK', name: 'Sri Lanka' },
-  { code: 'SD', name: 'Sudan' },
-  { code: 'SE', name: 'Sweden' },
-  { code: 'CH', name: 'Switzerland' },
-  { code: 'SY', name: 'Syria' },
-  { code: 'TW', name: 'Taiwan' },
-  { code: 'TZ', name: 'Tanzania' },
-  { code: 'TH', name: 'Thailand' },
-  { code: 'TL', name: 'Timor-Leste' },
-  { code: 'TG', name: 'Togo' },
-  { code: 'TT', name: 'Trinidad and Tobago' },
-  { code: 'TN', name: 'Tunisia' },
-  { code: 'TR', name: 'Turkey' },
-  { code: 'UG', name: 'Uganda' },
-  { code: 'UA', name: 'Ukraine' },
-  { code: 'AE', name: 'United Arab Emirates' },
-  { code: 'GB', name: 'United Kingdom' },
-  { code: 'US', name: 'United States' },
-  { code: 'UY', name: 'Uruguay' },
-  { code: 'VE', name: 'Venezuela' },
-  { code: 'VN', name: 'Vietnam' },
-  { code: 'YE', name: 'Yemen' },
-  { code: 'ZM', name: 'Zambia' },
-  { code: 'ZW', name: 'Zimbabwe' }
-]
+import { IATI_COUNTRIES } from '@/data/iati-countries'
 
 const REGIONAL_OPTIONS = [
   { code: '998', name: 'Global or Regional', isRegion: true }
@@ -206,8 +61,8 @@ const REGIONAL_OPTIONS = [
 
 // Combine all options for validation
 const ALL_COUNTRY_AND_REGION_CODES = [
-  ...ISO_COUNTRIES.map(c => c.code),
-  ...ISO_COUNTRIES.map(c => c.name),
+  ...IATI_COUNTRIES.map(c => c.code),
+  ...IATI_COUNTRIES.map(c => c.name),
   ...REGIONAL_OPTIONS.map(r => r.code),
   ...REGIONAL_OPTIONS.map(r => r.name),
   'Myanmar', 'Burma', 'Rwanda',
@@ -811,12 +666,18 @@ export function EditOrganizationModal({
                     <SelectValue placeholder="Select country or region">
                       {formData.country_represented && (
                         <div className="flex items-center gap-2">
-                          {ISO_COUNTRIES.find(c => c.name === formData.country_represented) && (
-                            <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
-                              {ISO_COUNTRIES.find(c => c.name === formData.country_represented)?.code}
-                        </span>
-                          )}
-                          <span>{formData.country_represented}</span>
+                          {(() => {
+                            const country = IATI_COUNTRIES.find(c => c.name === formData.country_represented)
+                            if (country) {
+                              return (
+                                <>
+                                  <Flag code={country.code} className="h-4 w-6 object-cover rounded" />
+                                  <span>{formData.country_represented}</span>
+                                </>
+                              )
+                            }
+                            return <span>{formData.country_represented}</span>
+                          })()}
                         </div>
                       )}
                     </SelectValue>
@@ -840,9 +701,11 @@ export function EditOrganizationModal({
                         region.name.toLowerCase().includes(searchLower) ||
                         region.code.toLowerCase().includes(searchLower)
                       )
-                      const filteredCountries = ISO_COUNTRIES.filter(country =>
-                        country.name.toLowerCase().includes(searchLower) ||
-                        country.code.toLowerCase().includes(searchLower)
+                      const filteredCountries = IATI_COUNTRIES.filter(country =>
+                        !country.withdrawn && (
+                          country.name.toLowerCase().includes(searchLower) ||
+                          country.code.toLowerCase().includes(searchLower)
+                        )
                       )
 
                       return (
@@ -871,9 +734,7 @@ export function EditOrganizationModal({
                               {filteredCountries.map((country) => (
                                 <SelectItem key={country.code} value={country.name}>
                                   <div className="flex items-center gap-2">
-                                    <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
-                                      {country.code}
-                                    </span>
+                                    <Flag code={country.code} className="h-4 w-6 object-cover rounded flex-shrink-0" />
                                     <span>{country.name}</span>
                                   </div>
                                 </SelectItem>

@@ -2,6 +2,7 @@ import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { SafeHtml } from '@/components/ui/safe-html';
 import { fetchBasicActivityWithCache, invalidateActivityCache } from '@/lib/activity-cache';
 import { getSectorInfo, getCleanSectorName, getSectorInfoFlexible } from '@/lib/dac-sector-utils';
 import { normaliseOrgRef, isValidIatiRef, getOrgRefDisplay } from '@/lib/org-ref-normalizer';
@@ -74,6 +75,7 @@ import {
   ClipboardPaste,
   Loader2,
   Search,
+  DownloadCloud,
 } from 'lucide-react';
 
 interface IatiImportTabProps {
@@ -542,7 +544,10 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
                 {isLoading ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
                 ) : (
-                  'Import'
+                  <>
+                    <DownloadCloud className="h-4 w-4 mr-2" />
+                    Import
+                  </>
                 )}
               </Button>
             </div>
@@ -669,9 +674,11 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
             {activity.description && (
               <div className="col-span-1 min-w-0 max-w-full overflow-hidden">
                 <span className="text-slate-600 font-medium">Description:</span>
-                <div className="mt-0.5 text-slate-900 whitespace-pre-wrap break-words max-w-full overflow-wrap-anywhere" style={{ wordBreak: 'break-word', overflowWrap: 'anywhere' }}>
-                  {activity.description.replace(/<[^>]*>/g, '')}
-                </div>
+                <SafeHtml 
+                  html={activity.description} 
+                  className="mt-0.5 text-slate-900 break-words max-w-full" 
+                  style={{ wordBreak: 'break-word', overflowWrap: 'anywhere' }}
+                />
               </div>
             )}
 
@@ -3530,26 +3537,8 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
       // No need for a summary field since individual planned disbursements show all details
       
       // === HUMANITARIAN SCOPE ===
-      
-      if (parsedActivity.humanitarianScopes && parsedActivity.humanitarianScopes.length > 0) {
-        const currentHSValue = parsedActivity.humanitarian ? 'Humanitarian activity' : 'Not marked as humanitarian';
-        const hsSummary = parsedActivity.humanitarianScopes.map((scope: any) => {
-          const narrativeText = scope.narratives?.[0]?.text || scope.code;
-          return `${scope.code} (${scope.vocabulary || '1-2'}): ${narrativeText}`;
-        }).join(', ');
-        
-        fields.push({
-          fieldName: 'Humanitarian Scope',
-          iatiPath: 'iati-activity/humanitarian-scope',
-          currentValue: currentHSValue,
-          importValue: hsSummary,
-          selected: isFieldAllowedByPreferences('iati-activity/humanitarian-scope'),
-          hasConflict: false,
-          tab: 'humanitarian',
-          description: `${parsedActivity.humanitarianScopes.length} humanitarian scope(s) found in XML`,
-          category: 'humanitarian'
-        });
-      }
+      // Individual Humanitarian Scope fields (Humanitarian Scope 1, 2, etc.) are created below
+      // after the main parsing loop, so we don't create a summary field here
       
       // === DOCUMENT LINKS ===
       
@@ -3597,30 +3586,6 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
       // No need for a grouped field here - the detailed fields are more informative.
       
       // === PARTNERS TAB ===
-      
-      if (parsedActivity.reportingOrg) {
-        // Get current reporting org from activity data
-        const currentReportingOrg = currentActivityData ? {
-          name: currentActivityData['created_by_org_name' as keyof typeof currentActivityData] || null,
-          acronym: currentActivityData['created_by_org_acronym' as keyof typeof currentActivityData] || null
-        } : null;
-
-        fields.push({
-          fieldName: 'Reporting Organization',
-          iatiPath: 'iati-activity/reporting-org',
-          currentValue: currentReportingOrg,
-          importValue: {
-            name: parsedActivity.reportingOrg.narrative || parsedActivity.reportingOrg.ref,
-            ref: parsedActivity.reportingOrg.ref || null,
-            narrative: parsedActivity.reportingOrg.narrative || null,
-            type: parsedActivity.reportingOrg.type || null
-          },
-          selected: isFieldAllowedByPreferences('iati-activity/reporting-org'),
-          hasConflict: false,
-          tab: 'reporting_org',
-          description: 'Organization reporting this activity'
-        });
-      }
 
       if (parsedActivity.participatingOrgs && parsedActivity.participatingOrgs.length > 0) {
         parsedActivity.participatingOrgs.forEach((org: any, index: number) => {
@@ -5185,6 +5150,21 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
                 document_date: doc.document_date
               }));
               console.log(`[XML Import] Adding ${parsedActivity.document_links.length} document links for import`);
+            }
+            break;
+          case 'DAC CRS Reporting':
+            // Handle full DAC CRS Reporting import (includes all financing terms data)
+            console.log('[XML Import DEBUG] DAC CRS Reporting case triggered!');
+            if (parsedActivity.financingTerms) {
+              updateData._importFinancingTerms = true;
+              updateData.financingTermsData = {
+                loanTerms: parsedActivity.financingTerms.loanTerms,
+                otherFlags: parsedActivity.financingTerms.other_flags,
+                loanStatuses: parsedActivity.financingTerms.loanStatuses,
+                channelCode: parsedActivity.financingTerms.channel_code || parsedActivity.crsChannelCode
+              };
+              console.log('[XML Import] Adding DAC CRS Reporting for import, channel code:', 
+                parsedActivity.financingTerms.channel_code || parsedActivity.crsChannelCode);
             }
             break;
           case 'Loan Terms':
@@ -7353,6 +7333,12 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
           const financingTermsData: any = {
             activity_id: activityId
           };
+          
+          // Add channel code if provided (from <crs-add>/<channel-code>)
+          if (ftData.channelCode) {
+            financingTermsData.channel_code = ftData.channelCode;
+            console.log('[XML Import] Adding channel code:', ftData.channelCode);
+          }
           
           // Add loan terms fields if provided
           if (ftData.loanTerms) {
@@ -9597,7 +9583,7 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
               disabled={parsedFields.filter(f => f.selected).length === 0}
               className="bg-blue-600 hover:bg-blue-700"
             >
-              <Database className="h-4 w-4 mr-2" />
+              <DownloadCloud className="h-4 w-4 mr-2" />
               Import Selected Fields
             </Button>
           </div>

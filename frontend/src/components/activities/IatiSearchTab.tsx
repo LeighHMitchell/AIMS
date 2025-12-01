@@ -10,7 +10,9 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
-import { Search, Loader2, AlertCircle, Calendar, DollarSign, CheckCircle2, ArrowLeft, FileText, Check, ChevronsUpDown, Copy, Network, PieChart, MapPinned, Building2, ChevronDown, ChevronUp, ExternalLink } from "lucide-react"
+import { SafeHtml } from "@/components/ui/safe-html"
+import { htmlToPlainText } from "@/lib/sanitize"
+import { Search, Loader2, AlertCircle, Calendar, DollarSign, CheckCircle2, ArrowLeft, FileText, Check, ChevronsUpDown, Copy, Network, PieChart, MapPinned, Building2, ChevronDown, ChevronUp, ExternalLink, DownloadCloud } from "lucide-react"
 import { countries } from "@/data/countries"
 import { CountryCombobox } from "@/components/ui/country-combobox"
 import { toast } from "sonner"
@@ -684,7 +686,7 @@ export default function IatiSearchTab({ activityId }: IatiSearchTabProps) {
             <div className="space-y-2">
               <Label htmlFor="reporting-org">Reporting Organization (IATI Identifier)</Label>
               <Popover open={orgPopoverOpen} onOpenChange={setOrgPopoverOpen}>
-                <PopoverTrigger className="w-full">
+                <PopoverTrigger asChild className="w-full">
                   <Button
                     variant="outline"
                     role="combobox"
@@ -877,6 +879,7 @@ export default function IatiSearchTab({ activityId }: IatiSearchTabProps) {
                               }}
                               className="shrink-0"
                             >
+                              <DownloadCloud className="h-4 w-4 mr-2" />
                               Import
                             </Button>
                           </div>
@@ -1044,7 +1047,7 @@ export default function IatiSearchTab({ activityId }: IatiSearchTabProps) {
                         <div className="grid grid-cols-3 gap-x-6 gap-y-3 text-xs">
                           {/* Description spans across all 3 columns with truncation */}
                           {activity.description && (() => {
-                            const cleanDescription = activity.description.replace(/<[^>]*>/g, '')
+                            const cleanDescription = htmlToPlainText(activity.description)
                             const isExpanded = isDescriptionExpanded(activity.iatiIdentifier)
                             const shouldTruncate = cleanDescription.length > 200
                             const displayText = shouldTruncate && !isExpanded
@@ -1054,8 +1057,12 @@ export default function IatiSearchTab({ activityId }: IatiSearchTabProps) {
                             return (
                               <div className="col-span-3">
                                 <span className="text-slate-600 font-medium">Description:</span>
-                                <div className="mt-0.5 text-slate-900 whitespace-pre-wrap">
-                                  {displayText}
+                                <div className="mt-0.5 text-slate-900">
+                                  {isExpanded ? (
+                                    <SafeHtml html={activity.description} />
+                                  ) : (
+                                    <span className="whitespace-pre-wrap">{displayText}</span>
+                                  )}
                                   {shouldTruncate && (
                                     <button
                                       onClick={(e) => {

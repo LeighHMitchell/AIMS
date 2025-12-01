@@ -4,19 +4,19 @@ import React, { useState, useMemo, useRef, useEffect } from 'react'
 import dynamic from 'next/dynamic'
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { MapPin, Download, Layers } from 'lucide-react'
+import { MapPin, Download, RotateCcw, CircleDot, Flame } from 'lucide-react'
 import { HelpTextTooltip } from "@/components/ui/help-text-tooltip"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import html2canvas from 'html2canvas'
 import { toast } from "sonner"
 import type { LocationSchema } from '@/lib/schemas/location'
 
-// Dynamically import the Google Maps component (client-side only)
-const ActivityLocationsGoogleMap = dynamic(() => import('./ActivityLocationsGoogleMap'), {
+// Dynamically import the Leaflet map component (client-side only)
+const ActivityLocationsMapView = dynamic(() => import('./ActivityLocationsMapView'), {
   ssr: false,
   loading: () => (
     <div className="flex h-96 items-center justify-center bg-muted text-sm text-muted-foreground">
-      Loading Google Maps...
+      Loading map...
     </div>
   ),
 })
@@ -33,9 +33,12 @@ interface Location {
 interface ActivityLocationsHeatmapProps {
   locations: Location[]
   title?: string
+  activityTitle?: string
 }
 
-type MapLayerKey = 'osm_standard' | 'osm_humanitarian' | 'cyclosm' | 'opentopo' | 'satellite_esri'
+type ViewMode = 'markers' | 'heatmap'
+
+type MapLayerKey = 'cartodb_voyager' | 'osm_standard' | 'osm_humanitarian' | 'cyclosm' | 'opentopo' | 'satellite_esri'
 
 interface MapLayerConfig {
   name: string
@@ -45,6 +48,12 @@ interface MapLayerConfig {
 }
 
 const MAP_LAYERS: Record<MapLayerKey, MapLayerConfig> = {
+  cartodb_voyager: {
+    name: 'Streets (CartoDB Voyager)',
+    url: 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
+    attribution: '© OpenStreetMap contributors, © CARTO',
+    category: 'Streets'
+  },
   osm_standard: {
     name: 'OpenStreetMap Standard',
     url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
@@ -83,11 +92,19 @@ const DEFAULT_ZOOM = 6
 
 export default function ActivityLocationsHeatmap({ 
   locations = [],
-  title = "Activity Locations Map"
+  title = "Activity Locations Map",
+  activityTitle
 }: ActivityLocationsHeatmapProps) {
-  const [currentLayer, setCurrentLayer] = useState<MapLayerKey>('osm_standard')
+  const [currentLayer, setCurrentLayer] = useState<MapLayerKey>('cartodb_voyager')
   const [isExporting, setIsExporting] = useState(false)
+  const [mapKey, setMapKey] = useState(0)
+  const [viewMode, setViewMode] = useState<ViewMode>('markers')
   const mapContainerRef = useRef<HTMLDivElement>(null)
+
+  // Reset map to Myanmar view
+  const handleResetView = () => {
+    setMapKey(prev => prev + 1)
+  }
 
   // Load saved layer preference
   useEffect(() => {
@@ -95,6 +112,9 @@ export default function ActivityLocationsHeatmap({
       const savedLayer = localStorage.getItem(LAYER_PREFERENCE_KEY) as MapLayerKey
       if (savedLayer && Object.keys(MAP_LAYERS).includes(savedLayer)) {
         setCurrentLayer(savedLayer)
+      } else {
+        // Default to CartoDB Voyager if no saved preference
+        setCurrentLayer('cartodb_voyager')
       }
     }
   }, [])
@@ -117,28 +137,9 @@ export default function ActivityLocationsHeatmap({
     )
   }, [locations])
 
-  // Calculate map center and bounds
-  const { mapCenter, mapZoom } = useMemo(() => {
-    if (validLocations.length === 0) {
-      return { mapCenter: DEFAULT_CENTER, mapZoom: DEFAULT_ZOOM }
-    }
-
-    if (validLocations.length === 1) {
-      return {
-        mapCenter: [Number(validLocations[0].latitude), Number(validLocations[0].longitude)] as [number, number],
-        mapZoom: 12
-      }
-    }
-
-    // Calculate center from all locations
-    const latSum = validLocations.reduce((sum, loc) => sum + Number(loc.latitude), 0)
-    const lngSum = validLocations.reduce((sum, loc) => sum + Number(loc.longitude), 0)
-    
-    return {
-      mapCenter: [latSum / validLocations.length, lngSum / validLocations.length] as [number, number],
-      mapZoom: 7
-    }
-  }, [validLocations])
+  // Always use Myanmar as default view
+  const mapCenter = DEFAULT_CENTER
+  const mapZoom = DEFAULT_ZOOM
 
   // Export map to JPEG
   const exportToJPEG = async () => {
@@ -185,20 +186,38 @@ export default function ActivityLocationsHeatmap({
   return (
     <Card className="w-full">
       <CardHeader>
-        <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-2">
-            <MapPin className="h-5 w-5" />
-            {title}
-            <HelpTextTooltip content="Google Maps showing activity locations with subnational heatmap. Regions are colored based on activity density. Click markers for details. Use map type selector for satellite/terrain views." />
-          </CardTitle>
-          <div className="flex items-center gap-3">
-            <span className="text-sm text-gray-600">
-              {validLocations.length} {validLocations.length === 1 ? 'location' : 'locations'}
-            </span>
-            
-            <span className="text-xs text-gray-500 bg-green-50 px-2 py-1 rounded border border-green-200">
-              📍 Using Google Maps
-            </span>
+        <CardTitle className="flex items-center gap-2">
+          <MapPin className="h-5 w-5" />
+          {title}
+          <HelpTextTooltip content="Interactive map showing activity locations. Click markers for details. Use the layer selector to switch between different map styles." />
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="p-4">
+        <div ref={mapContainerRef} className="relative w-full h-[500px] rounded-lg overflow-hidden border border-gray-200">
+          {/* Map Controls Overlay */}
+          <div className="absolute top-3 left-3 z-[1000] flex items-center gap-2">
+            <Select value={currentLayer} onValueChange={(value) => handleLayerChange(value as MapLayerKey)}>
+              <SelectTrigger className="w-48 bg-white shadow-md border-gray-300">
+                <SelectValue placeholder="Select map type" />
+              </SelectTrigger>
+              <SelectContent>
+                {Object.entries(MAP_LAYERS).map(([key, layer]) => (
+                  <SelectItem key={key} value={key}>
+                    {layer.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <Button
+              onClick={handleResetView}
+              variant="outline"
+              size="sm"
+              title="Reset to Myanmar view"
+              className="bg-white shadow-md border-gray-300"
+            >
+              <RotateCcw className="h-4 w-4" />
+            </Button>
 
             <Button
               onClick={exportToJPEG}
@@ -206,87 +225,45 @@ export default function ActivityLocationsHeatmap({
               variant="outline"
               size="sm"
               title={isExporting ? 'Exporting...' : 'Export JPEG'}
+              className="bg-white shadow-md border-gray-300"
             >
               <Download className="h-4 w-4" />
             </Button>
+
+            {/* View Mode Toggle */}
+            <div className="flex bg-white rounded-md shadow-md border border-gray-300 overflow-hidden">
+              <Button
+                onClick={() => setViewMode('markers')}
+                variant="ghost"
+                size="sm"
+                title="Show markers"
+                className={`rounded-none border-0 ${viewMode === 'markers' ? 'bg-blue-100 text-blue-700' : 'hover:bg-gray-100'}`}
+              >
+                <CircleDot className="h-4 w-4" />
+              </Button>
+              <Button
+                onClick={() => setViewMode('heatmap')}
+                variant="ghost"
+                size="sm"
+                title="Show heatmap"
+                className={`rounded-none border-0 border-l border-gray-300 ${viewMode === 'heatmap' ? 'bg-orange-100 text-orange-700' : 'hover:bg-gray-100'}`}
+              >
+                <Flame className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
-        </div>
-      </CardHeader>
-      <CardContent className="p-4">
-        <div ref={mapContainerRef} className="w-full h-[500px] rounded-lg overflow-hidden border border-gray-200">
-          <ActivityLocationsGoogleMap
+
+          <ActivityLocationsMapView
+            key={`${mapKey}-${viewMode}`}
             locations={validLocations}
             mapCenter={mapCenter}
             mapZoom={mapZoom}
+            currentLayer={currentLayer}
+            layerUrl={MAP_LAYERS[currentLayer].url}
+            layerAttribution={MAP_LAYERS[currentLayer].attribution}
+            viewMode={viewMode}
+            activityTitle={activityTitle}
           />
-        </div>
-        
-        {/* Map Legend */}
-        <div className="mt-4 space-y-3">
-          {/* Visual Elements Guide */}
-          <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
-            <div className="text-xs font-semibold text-blue-900 mb-2">Map Shows:</div>
-            <div className="flex items-center gap-4 flex-wrap text-xs text-blue-800">
-              <div className="flex items-center gap-2">
-                <div className="relative w-6 h-8">
-                  <div style={{
-                    width: '20px',
-                    height: '20px',
-                    background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
-                    border: '2px solid white',
-                    borderRadius: '50% 50% 50% 0',
-                    transform: 'rotate(-45deg)',
-                    boxShadow: '0 2px 6px rgba(0,0,0,0.3)',
-                    position: 'absolute',
-                    left: '3px',
-                    top: '2px'
-                  }}></div>
-                  <div style={{
-                    width: '8px',
-                    height: '8px',
-                    background: 'white',
-                    borderRadius: '50%',
-                    position: 'absolute',
-                    left: '9px',
-                    top: '7px',
-                    zIndex: 1
-                  }}></div>
-                </div>
-                <span className="font-medium">{validLocations.length} Red Pins on Map (Individual Locations)</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-4 rounded" style={{ backgroundColor: 'rgba(59, 130, 246, 0.6)' }}></div>
-                <span className="font-medium">Colored Regions = Subnational Density</span>
-              </div>
-            </div>
-          </div>
-          
-          {/* Choropleth Legend */}
-          <div className="p-3 bg-gray-50 rounded-lg border border-gray-200">
-            <div className="text-xs font-semibold text-gray-700 mb-2">Regional Activity Density (Choropleth)</div>
-            <div className="flex items-center gap-4 flex-wrap text-xs text-gray-600">
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-4 rounded" style={{ backgroundColor: 'rgba(226, 232, 240, 0.5)' }}></div>
-                <span>0 locations</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-4 rounded" style={{ backgroundColor: 'rgba(96, 165, 250, 0.6)' }}></div>
-                <span>1-2 locations</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-4 rounded" style={{ backgroundColor: 'rgba(251, 146, 60, 0.65)' }}></div>
-                <span>3-4 locations</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-4 rounded" style={{ backgroundColor: 'rgba(239, 68, 68, 0.7)' }}></div>
-                <span>5-6 locations</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-4 rounded" style={{ backgroundColor: 'rgba(185, 28, 28, 0.75)' }}></div>
-                <span>7+ locations</span>
-              </div>
-            </div>
-          </div>
         </div>
       </CardContent>
     </Card>

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
+import { sanitizeIatiDescription } from "@/lib/sanitize"
 
 // Force dynamic rendering - critical for production
 export const dynamic = 'force-dynamic';
@@ -584,12 +585,18 @@ export async function POST(request: NextRequest) {
                 }
               }
               
+              // Extract and sanitize description HTML
+              const rawDescription = Array.isArray(activity.description_narrative)
+                ? activity.description_narrative[0]
+                : activity.description_narrative;
+              const sanitizedDescription = rawDescription 
+                ? sanitizeIatiDescription(rawDescription) 
+                : undefined;
+
               activities.push({
                 iatiIdentifier: iatiId,
                 title,
-                description: Array.isArray(activity.description_narrative)
-                  ? activity.description_narrative[0]
-                  : activity.description_narrative || undefined,
+                description: sanitizedDescription,
                 reportingOrg: Array.isArray(activity.reporting_org_narrative)
                   ? activity.reporting_org_narrative[0]
                   : activity.reporting_org_narrative || undefined,

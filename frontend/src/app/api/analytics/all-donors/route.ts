@@ -140,24 +140,47 @@ export async function GET(request: Request) {
 
     // 3. AGGREGATE TOTAL ACTUAL DISBURSEMENTS BY PROVIDER ORG
     console.log('[AllDonors API] Fetching actual disbursements...')
+    // Fetch transactions with their activity info to get reporting org as fallback
     const { data: transactions, error: txError } = await supabase
       .from('transactions')
-      .select('provider_org_id, value_usd, transaction_date')
+      .select('provider_org_id, value, value_usd, currency, transaction_date, activity_id')
       .eq('transaction_type', '3') // Disbursement
       .eq('status', 'actual')
       .gte('transaction_date', dateFrom)
       .lte('transaction_date', dateTo)
-      .not('provider_org_id', 'is', null)
 
     if (txError) {
       console.error('[AllDonors API] Error fetching transactions:', txError)
     }
 
-    // Aggregate disbursements by provider org
+    // If transactions exist but don't have provider_org_id, use activity's reporting org
+    // First, get a map of activity_id -> reporting_org_id for transactions without provider
+    const txsWithoutProvider = transactions?.filter((tx: any) => !tx.provider_org_id) || []
+    const activityIdsForTx = [...new Set(txsWithoutProvider.map((tx: any) => tx.activity_id).filter(Boolean))]
+    
+    let activityToReportingOrgForTx = new Map<string, string>()
+    if (activityIdsForTx.length > 0) {
+      const { data: txActivities } = await supabase
+        .from('activities')
+        .select('id, reporting_org_id')
+        .in('id', activityIdsForTx)
+      
+      activityToReportingOrgForTx = new Map(txActivities?.map((a: any) => [a.id, a.reporting_org_id]) || [])
+    }
+
+    // Aggregate disbursements by provider org (or reporting org as fallback)
+    // Use value_usd if available, otherwise fall back to value (treating as USD)
     transactions?.forEach((tx: any) => {
-      const providerOrgId = tx.provider_org_id
-      const txValue = parseFloat(tx.value_usd) || 0
-      if (isNaN(txValue)) return
+      // Use provider_org_id if available, otherwise fall back to activity's reporting_org
+      const providerOrgId = tx.provider_org_id || activityToReportingOrgForTx.get(tx.activity_id)
+      if (!providerOrgId) return
+      
+      // Try value_usd first, then fall back to value
+      let txValue = parseFloat(tx.value_usd) || 0
+      if (!txValue && tx.value) {
+        txValue = parseFloat(tx.value) || 0
+      }
+      if (isNaN(txValue) || txValue === 0) return
 
       const orgInfo = orgMap.get(providerOrgId)
       if (!orgInfo) return
@@ -178,8 +201,6 @@ export async function GET(request: Request) {
       donor.totalActualDisbursement += txValue
     })
 
-    console.log('[AllDonors API] Actual disbursements aggregated:', donorData.size)
-
     // Convert to array and filter by org type if specified
     let donorsArray = Array.from(donorData.values())
 
@@ -189,8 +210,6 @@ export async function GET(request: Request) {
 
     // Sort by total actual disbursement (descending)
     donorsArray.sort((a, b) => b.totalActualDisbursement - a.totalActualDisbursement)
-
-    console.log('[AllDonors API] Final donor count:', donorsArray.length)
 
     return NextResponse.json({
       success: true,

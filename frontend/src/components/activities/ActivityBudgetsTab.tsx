@@ -45,8 +45,9 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { BUDGET_TYPES } from '@/data/budget-type';
 import { BUDGET_STATUSES } from '@/data/budget-status';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { ChevronsUpDown, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Trash2 as TrashIcon, ArrowUp, ArrowDown, ArrowUpDown } from 'lucide-react';
+import { ChevronsUpDown, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Trash2 as TrashIcon, ArrowUp, ArrowDown, ArrowUpDown, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
+import { fixedCurrencyConverter } from '@/lib/currency-converter-fixed';
 import { exportToCSV } from '@/lib/csv-export';
 import { BulkActionToolbar } from '@/components/ui/bulk-action-toolbar';
 
@@ -126,6 +127,7 @@ interface ActivityBudgetsTabProps {
   hideSummaryCards?: boolean;
   readOnly?: boolean;
   renderFilters?: (filters: React.ReactNode) => React.ReactNode;
+  onLoadingChange?: (loading: boolean) => void;
 }
 
 // Granularity types removed - users can now create any period length they want
@@ -248,7 +250,8 @@ export default function ActivityBudgetsTab({
   onBudgetsChange,
   hideSummaryCards = false,
   readOnly = false,
-  renderFilters
+  renderFilters,
+  onLoadingChange
 }: ActivityBudgetsTabProps) {
   console.log('[ActivityBudgetsTab] Component mounted with:', { activityId, startDate, endDate, defaultCurrency });
 
@@ -278,6 +281,12 @@ export default function ActivityBudgetsTab({
   const [currencyPopoverOpen, setCurrencyPopoverOpen] = useState(false);
   const [showAdvancedFields, setShowAdvancedFields] = useState(false);
   const [isEditingValue, setIsEditingValue] = useState(false);
+  
+  // Exchange rate state for modal
+  const [modalExchangeRateManual, setModalExchangeRateManual] = useState(false);
+  const [modalExchangeRate, setModalExchangeRate] = useState<number | null>(null);
+  const [isLoadingModalRate, setIsLoadingModalRate] = useState(false);
+  const [modalRateError, setModalRateError] = useState<string | null>(null);
   
   // Sorting state
   const [sortColumn, setSortColumn] = useState<string | null>(null);
@@ -410,6 +419,7 @@ export default function ActivityBudgetsTab({
     const fetchData = async () => {
       try {
         setLoading(true);
+        onLoadingChange?.(true);
         setError(null);
         console.log('[ActivityBudgetsTab] Fetching budgets for activity:', activityId);
 
@@ -451,10 +461,11 @@ export default function ActivityBudgetsTab({
         setError(err.message || 'Failed to load budget data');
       } finally {
         setLoading(false);
+        onLoadingChange?.(false);
       }
     };
     fetchData();
-  }, [activityId, defaultCurrency]);
+  }, [activityId, defaultCurrency, onLoadingChange]);
 
   // Notify parent component when budgets change (only after initial load)
   useEffect(() => {
@@ -1281,6 +1292,80 @@ export default function ActivityBudgetsTab({
     });
   }, []);
 
+  // Fetch exchange rate for modal
+  const fetchModalExchangeRate = useCallback(async () => {
+    if (!modalBudget) return;
+    
+    const currency = modalBudget.currency;
+    if (!currency || currency === 'USD') {
+      setModalExchangeRate(1);
+      setModalRateError(null);
+      return;
+    }
+
+    const valueDate = modalBudget.value_date || modalBudget.period_start;
+    if (!valueDate) {
+      setModalRateError('Please set a value date or period start first');
+      return;
+    }
+
+    setIsLoadingModalRate(true);
+    setModalRateError(null);
+
+    try {
+      const result = await fixedCurrencyConverter.convertToUSD(
+        1,
+        currency,
+        new Date(valueDate)
+      );
+
+      if (result.success && result.exchange_rate) {
+        setModalExchangeRate(result.exchange_rate);
+        setModalRateError(null);
+        console.log(`[ActivityBudgetsTab] Fetched exchange rate: 1 ${currency} = ${result.exchange_rate} USD`);
+      } else {
+        setModalRateError(result.error || 'Failed to fetch exchange rate');
+        setModalExchangeRate(null);
+      }
+    } catch (err) {
+      console.error('[ActivityBudgetsTab] Error fetching exchange rate:', err);
+      setModalRateError('Failed to fetch exchange rate');
+      setModalExchangeRate(null);
+    } finally {
+      setIsLoadingModalRate(false);
+    }
+  }, [modalBudget]);
+
+  // Calculate modal USD value
+  const modalCalculatedUsdValue = modalBudget?.value && modalExchangeRate 
+    ? Math.round(modalBudget.value * modalExchangeRate * 100) / 100 
+    : null;
+
+  // Auto-fetch exchange rate when currency or date changes in modal (only if not manual)
+  useEffect(() => {
+    if (!modalExchangeRateManual && modalBudget?.currency && modalBudget.currency !== 'USD') {
+      const valueDate = modalBudget.value_date || modalBudget.period_start;
+      if (valueDate) {
+        fetchModalExchangeRate();
+      }
+    } else if (modalBudget?.currency === 'USD') {
+      setModalExchangeRate(1);
+      setModalRateError(null);
+    }
+  }, [modalBudget?.currency, modalBudget?.value_date, modalBudget?.period_start, modalExchangeRateManual, fetchModalExchangeRate]);
+
+  // Reset exchange rate state when modal opens
+  useEffect(() => {
+    if (showModal && modalBudget) {
+      // Check if existing budget has manual rate
+      const existingManual = (modalBudget as any).exchange_rate_manual ?? false;
+      const existingRate = (modalBudget as any).exchange_rate_used ?? null;
+      setModalExchangeRateManual(existingManual);
+      setModalExchangeRate(existingRate);
+      setModalRateError(null);
+    }
+  }, [showModal, modalBudget?.id]);
+
   // Validate and save budget
   const saveBudget = useCallback(async () => {
     if (!modalBudget) return;
@@ -1309,12 +1394,20 @@ export default function ActivityBudgetsTab({
     }
 
     try {
+      // Prepare budget data with exchange rate fields
+      const budgetPayload = {
+        ...modalBudget,
+        exchange_rate_manual: modalExchangeRateManual,
+        exchange_rate_used: modalExchangeRate,
+        usd_value: modalCalculatedUsdValue
+      };
+
       if (modalBudget.id) {
         // Update existing budget
         const response = await fetch(`/api/activities/${activityId}/budgets`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(modalBudget)
+          body: JSON.stringify(budgetPayload)
         });
 
         if (!response.ok) {
@@ -1330,7 +1423,7 @@ export default function ActivityBudgetsTab({
         const response = await fetch(`/api/activities/${activityId}/budgets`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(modalBudget)
+          body: JSON.stringify(budgetPayload)
         });
 
         if (!response.ok) {
@@ -1353,7 +1446,7 @@ export default function ActivityBudgetsTab({
       console.error('Error saving budget:', error);
       toast.error(error instanceof Error ? error.message : 'Failed to save budget');
     }
-  }, [modalBudget, activityId]);
+  }, [modalBudget, activityId, modalExchangeRateManual, modalExchangeRate, modalCalculatedUsdValue]);
 
   // Granularity change handlers removed - users can now create any period length they want
 
@@ -1537,7 +1630,7 @@ export default function ActivityBudgetsTab({
           )}
           
           {/* Budgets Table */}
-          <Card data-budgets-tab className="border-0">
+          <Card data-budgets-tab className="border-0 shadow-none">
         <CardHeader>
           <div className="flex items-center justify-between">
             {!hideSummaryCards && (
@@ -1797,7 +1890,7 @@ export default function ActivityBudgetsTab({
             </div>
           )}
         </CardHeader>
-        <CardContent>
+        <CardContent className="border-0 shadow-none">
 
           {/* Copy Budget Dialog */}
           <Dialog open={showCopyDialog} onOpenChange={(open) => {
@@ -2130,9 +2223,14 @@ export default function ActivityBudgetsTab({
                                   </div>
                                   <div className="flex items-start gap-2 ml-auto">
                                     <span className="text-muted-foreground">USD Value:</span>
-                                    <div className="text-right">
+                                    <div className="text-right flex items-center gap-1">
                                       {usdValues[budget.id || `${budget.period_start}-${budget.period_end}`]?.usd != null ? (
-                                        <span className="font-medium"><span className="text-muted-foreground">USD</span> {usdValues[budget.id || `${budget.period_start}-${budget.period_end}`].usd?.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</span>
+                                        <>
+                                          <span className="font-medium"><span className="text-muted-foreground">USD</span> {usdValues[budget.id || `${budget.period_start}-${budget.period_end}`].usd?.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</span>
+                                          {(budget as any).exchange_rate_manual && (
+                                            <Badge variant="outline" className="ml-1 text-[10px] px-1 py-0 h-4 bg-orange-50 text-orange-600 border-orange-200">Manual</Badge>
+                                          )}
+                                        </>
                                       ) : (
                                         <span className="text-gray-400">—</span>
                                       )}
@@ -2628,6 +2726,100 @@ export default function ActivityBudgetsTab({
                   )}
                 </div>
               </div>
+
+              {/* USD Conversion Section */}
+              {modalBudget.currency && modalBudget.currency !== 'USD' && (
+                <div className="border border-green-200 bg-green-50/50 rounded-lg p-4 space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <DollarSign className="h-4 w-4 text-green-600" />
+                      <Label className="text-sm font-medium">USD Conversion</Label>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-muted-foreground">
+                        {modalExchangeRateManual ? 'Manual' : 'API Rate'}
+                      </span>
+                      <Switch 
+                        checked={!modalExchangeRateManual}
+                        onCheckedChange={(checked) => {
+                          setModalExchangeRateManual(!checked);
+                          if (checked) {
+                            fetchModalExchangeRate();
+                          }
+                        }}
+                      />
+                      {modalExchangeRateManual ? (
+                        <Unlock className="h-4 w-4 text-orange-500" />
+                      ) : (
+                        <Lock className="h-4 w-4 text-green-600" />
+                      )}
+                    </div>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    {modalExchangeRateManual 
+                      ? 'Enter your own exchange rate below'
+                      : 'Exchange rate is automatically fetched based on value date'
+                    }
+                  </p>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label className="flex items-center gap-2 text-sm">
+                        Exchange Rate
+                        {!modalExchangeRateManual && (
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            className="h-6 w-6 p-0"
+                            onClick={fetchModalExchangeRate}
+                            disabled={isLoadingModalRate}
+                          >
+                            <RefreshCw className={`h-3 w-3 ${isLoadingModalRate ? 'animate-spin' : ''}`} />
+                          </Button>
+                        )}
+                      </Label>
+                      <div className="relative">
+                        <Input
+                          type="number"
+                          step="0.000001"
+                          value={modalExchangeRate || ''}
+                          onChange={(e) => {
+                            const value = parseFloat(e.target.value);
+                            setModalExchangeRate(isNaN(value) ? null : value);
+                          }}
+                          disabled={!modalExchangeRateManual || isLoadingModalRate}
+                          className={!modalExchangeRateManual ? 'bg-gray-100' : ''}
+                          placeholder={isLoadingModalRate ? 'Loading...' : 'Enter rate'}
+                        />
+                        {isLoadingModalRate && (
+                          <Loader2 className="absolute right-3 top-3 h-4 w-4 animate-spin text-muted-foreground" />
+                        )}
+                      </div>
+                      {modalExchangeRate && (
+                        <p className="text-xs text-muted-foreground">
+                          1 {modalBudget.currency} = {modalExchangeRate.toFixed(6)} USD
+                        </p>
+                      )}
+                      {modalRateError && (
+                        <p className="text-xs text-red-500">{modalRateError}</p>
+                      )}
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-sm">USD Value</Label>
+                      <div className="h-10 px-3 py-2 border rounded-md bg-gray-100 flex items-center font-medium text-green-700">
+                        {modalCalculatedUsdValue !== null ? (
+                          <>$ {modalCalculatedUsdValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</>
+                        ) : (
+                          <span className="text-muted-foreground">—</span>
+                        )}
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        Calculated from {modalBudget.currency} {modalBudget.value?.toLocaleString() || 0}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* Advanced IATI Fields - Budget Lines */}
               <div 

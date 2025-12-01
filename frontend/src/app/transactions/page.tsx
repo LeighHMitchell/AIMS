@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { MainLayout } from "@/components/layout/main-layout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,7 +9,10 @@ import { Card, CardContent } from "@/components/ui/card";
 import { useRouter } from "next/navigation";
 import { format } from "date-fns";
 import { toast } from "sonner";
-import { Download, ChevronUp, ChevronDown, ChevronsUpDown, Frown, ChevronLeft, ChevronRight } from "lucide-react";
+import { Download, ChevronUp, ChevronDown, ChevronsUpDown, Frown, ChevronLeft, ChevronRight, Columns3 } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Badge } from "@/components/ui/badge";
 import { TransactionTable } from "@/components/transactions/TransactionTable";
 import { useTransactions } from "@/hooks/useTransactions";
 import { TRANSACTION_TYPE_LABELS, Transaction } from "@/types/transaction";
@@ -18,6 +21,7 @@ import { TransactionsListSkeleton } from "@/components/skeletons";
 import { useCurrencyConverter } from "@/hooks/useCurrencyConverter";
 import { BulkActionToolbar } from "@/components/ui/bulk-action-toolbar";
 import { BulkDeleteDialog } from "@/components/dialogs/bulk-delete-dialog";
+import { YearlyTotalsBarChart, MultiSeriesDataPoint } from "@/components/charts/YearlyTotalsBarChart";
 
 type FilterState = {
   transactionType: string;
@@ -30,6 +34,221 @@ type FilterState = {
   status: string;
   transactionSource: string;
 };
+
+// Column configuration for the transaction list table
+export type TransactionColumnId = 
+  // Always visible
+  | 'checkbox' | 'actions'
+  // Default visible
+  | 'activity' | 'transactionDate' | 'transactionType' | 'organizations' 
+  | 'amount' | 'valueDate' | 'usdValue' | 'financeType'
+  // Activity Context (optional)
+  | 'activityId' | 'iatiIdentifier' | 'reportingOrg'
+  // Transaction Details (optional)
+  | 'currency' | 'transactionUuid' | 'transactionReference'
+  // Status Indicators (optional)
+  | 'linkedStatus' | 'acceptanceStatus' | 'validatedStatus'
+  // Classification (optional, gray if inherited)
+  | 'aidType' | 'flowType' | 'tiedStatus' | 'humanitarian'
+  // Organization Details (optional)
+  | 'providerActivity' | 'receiverActivity'
+  // Additional Details (optional)
+  | 'description' | 'disbursementChannel';
+
+interface TransactionColumnConfig {
+  id: TransactionColumnId;
+  label: string;
+  group: 'default' | 'activityContext' | 'transactionDetails' | 'statusIndicators' 
+       | 'classification' | 'organizationDetails' | 'additionalDetails';
+  width?: string;
+  alwaysVisible?: boolean;
+  defaultVisible?: boolean;
+  sortable?: boolean;
+  align?: 'left' | 'center' | 'right';
+}
+
+const TRANSACTION_COLUMN_CONFIGS: TransactionColumnConfig[] = [
+  // Default columns (8 default visible + 2 always visible)
+  { id: 'checkbox', label: 'Select', group: 'default', alwaysVisible: true, defaultVisible: true },
+  { id: 'activity', label: 'Activity', group: 'default', defaultVisible: true, sortable: true },
+  { id: 'transactionDate', label: 'Date', group: 'default', defaultVisible: true, sortable: true },
+  { id: 'transactionType', label: 'Type', group: 'default', defaultVisible: true, sortable: true },
+  { id: 'organizations', label: 'Provider → Receiver', group: 'default', defaultVisible: true, sortable: true },
+  { id: 'amount', label: 'Amount', group: 'default', defaultVisible: true, sortable: true, align: 'right' },
+  { id: 'valueDate', label: 'Value Date', group: 'default', defaultVisible: true, sortable: true },
+  { id: 'usdValue', label: 'USD Value', group: 'default', defaultVisible: true, sortable: true, align: 'right' },
+  { id: 'financeType', label: 'Finance Type', group: 'default', defaultVisible: true },
+  { id: 'actions', label: 'Actions', group: 'default', alwaysVisible: true, defaultVisible: true },
+  
+  // Activity Context
+  { id: 'activityId', label: 'Activity ID', group: 'activityContext', defaultVisible: false },
+  { id: 'iatiIdentifier', label: 'IATI Identifier', group: 'activityContext', defaultVisible: false },
+  { id: 'reportingOrg', label: 'Reporting Org', group: 'activityContext', defaultVisible: false },
+  
+  // Transaction Details
+  { id: 'currency', label: 'Currency', group: 'transactionDetails', defaultVisible: false },
+  { id: 'transactionUuid', label: 'Transaction UUID', group: 'transactionDetails', defaultVisible: false },
+  { id: 'transactionReference', label: 'Transaction Reference', group: 'transactionDetails', defaultVisible: false },
+  
+  // Status Indicators
+  { id: 'linkedStatus', label: 'Linked Status', group: 'statusIndicators', defaultVisible: false },
+  { id: 'acceptanceStatus', label: 'Acceptance Status', group: 'statusIndicators', defaultVisible: false },
+  { id: 'validatedStatus', label: 'Validated', group: 'statusIndicators', defaultVisible: false },
+  
+  // Classification (gray if inherited)
+  { id: 'aidType', label: 'Aid Type', group: 'classification', defaultVisible: false },
+  { id: 'flowType', label: 'Flow Type', group: 'classification', defaultVisible: false },
+  { id: 'tiedStatus', label: 'Tied Status', group: 'classification', defaultVisible: false },
+  { id: 'humanitarian', label: 'Humanitarian', group: 'classification', defaultVisible: false },
+  
+  // Organization Details
+  { id: 'providerActivity', label: 'Provider Activity', group: 'organizationDetails', defaultVisible: false },
+  { id: 'receiverActivity', label: 'Receiver Activity', group: 'organizationDetails', defaultVisible: false },
+  
+  // Additional Details
+  { id: 'description', label: 'Description', group: 'additionalDetails', defaultVisible: false },
+  { id: 'disbursementChannel', label: 'Disbursement Channel', group: 'additionalDetails', defaultVisible: false },
+];
+
+const TRANSACTION_COLUMN_GROUPS = {
+  default: 'Default Columns',
+  activityContext: 'Activity Context',
+  transactionDetails: 'Transaction Details',
+  statusIndicators: 'Status Indicators',
+  classification: 'Classification',
+  organizationDetails: 'Organization Details',
+  additionalDetails: 'Additional Details',
+};
+
+const DEFAULT_VISIBLE_TRANSACTION_COLUMNS: TransactionColumnId[] = 
+  TRANSACTION_COLUMN_CONFIGS.filter(col => col.defaultVisible).map(col => col.id);
+
+const TRANSACTION_COLUMNS_LOCALSTORAGE_KEY = 'aims_transaction_list_visible_columns';
+
+// Column Selector Component
+interface TransactionColumnSelectorProps {
+  visibleColumns: TransactionColumnId[];
+  onColumnsChange: (columns: TransactionColumnId[]) => void;
+}
+
+function TransactionColumnSelector({ visibleColumns, onColumnsChange }: TransactionColumnSelectorProps) {
+  const [open, setOpen] = useState(false);
+
+  const toggleColumn = (columnId: TransactionColumnId) => {
+    const config = TRANSACTION_COLUMN_CONFIGS.find(c => c.id === columnId);
+    if (config?.alwaysVisible) return; // Can't toggle always-visible columns
+    
+    if (visibleColumns.includes(columnId)) {
+      onColumnsChange(visibleColumns.filter(id => id !== columnId));
+    } else {
+      onColumnsChange([...visibleColumns, columnId]);
+    }
+  };
+
+  const toggleGroup = (group: keyof typeof TRANSACTION_COLUMN_GROUPS) => {
+    const groupColumns = TRANSACTION_COLUMN_CONFIGS.filter(c => c.group === group && !c.alwaysVisible);
+    const allVisible = groupColumns.every(c => visibleColumns.includes(c.id));
+    
+    if (allVisible) {
+      // Hide all columns in this group
+      onColumnsChange(visibleColumns.filter(id => !groupColumns.find(c => c.id === id)));
+    } else {
+      // Show all columns in this group
+      const newColumns = [...visibleColumns];
+      groupColumns.forEach(c => {
+        if (!newColumns.includes(c.id)) {
+          newColumns.push(c.id);
+        }
+      });
+      onColumnsChange(newColumns);
+    }
+  };
+
+  const resetToDefaults = () => {
+    onColumnsChange(DEFAULT_VISIBLE_TRANSACTION_COLUMNS);
+  };
+
+  const visibleCount = visibleColumns.filter(id => {
+    const config = TRANSACTION_COLUMN_CONFIGS.find(c => c.id === id);
+    return config && !config.alwaysVisible;
+  }).length;
+
+  const totalToggleable = TRANSACTION_COLUMN_CONFIGS.filter(c => !c.alwaysVisible).length;
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button variant="outline" size="sm" className="gap-2">
+          <Columns3 className="h-4 w-4" />
+          <span className="hidden sm:inline">Columns</span>
+          <Badge variant="secondary" className="ml-1 px-1.5 py-0 text-xs">
+            {visibleCount}
+          </Badge>
+          <ChevronDown className="h-3 w-3 opacity-50" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-80 p-0 z-[100]" align="end" sideOffset={5}>
+        <div className="p-3 border-b">
+          <div className="flex items-center justify-between">
+            <h4 className="font-medium text-sm">Visible Columns</h4>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={resetToDefaults}
+              className="h-7 text-xs"
+            >
+              Reset to defaults
+            </Button>
+          </div>
+          <p className="text-xs text-muted-foreground mt-1">
+            {visibleCount} of {totalToggleable} columns visible
+          </p>
+        </div>
+        <div className="max-h-[400px] overflow-y-auto">
+          {(Object.keys(TRANSACTION_COLUMN_GROUPS) as Array<keyof typeof TRANSACTION_COLUMN_GROUPS>).map(groupKey => {
+            const groupColumns = TRANSACTION_COLUMN_CONFIGS.filter(c => c.group === groupKey && !c.alwaysVisible);
+            if (groupColumns.length === 0) return null;
+            
+            const allVisible = groupColumns.every(c => visibleColumns.includes(c.id));
+            const someVisible = groupColumns.some(c => visibleColumns.includes(c.id));
+            
+            return (
+              <div key={groupKey} className="border-b last:border-b-0">
+                <div 
+                  className="flex items-center gap-2 px-3 py-2 bg-muted/50 cursor-pointer hover:bg-muted/80"
+                  onClick={() => toggleGroup(groupKey)}
+                >
+                  <Checkbox 
+                    checked={allVisible}
+                    // @ts-ignore - indeterminate is valid but not in types
+                    indeterminate={someVisible && !allVisible}
+                    onCheckedChange={() => toggleGroup(groupKey)}
+                  />
+                  <span className="text-sm font-medium">{TRANSACTION_COLUMN_GROUPS[groupKey]}</span>
+                </div>
+                <div className="py-1">
+                  {groupColumns.map(column => (
+                    <div
+                      key={column.id}
+                      className="flex items-center gap-2 px-3 py-1.5 hover:bg-muted/50 cursor-pointer"
+                      onClick={() => toggleColumn(column.id)}
+                    >
+                      <Checkbox 
+                        checked={visibleColumns.includes(column.id)}
+                        onCheckedChange={() => toggleColumn(column.id)}
+                      />
+                      <span className="text-sm">{column.label}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
+}
 
 export default function TransactionsPage() {
   const router = useRouter();
@@ -51,6 +270,9 @@ export default function TransactionsPage() {
   const [isBulkAccepting, setIsBulkAccepting] = useState(false);
   const [isBulkRejecting, setIsBulkRejecting] = useState(false);
   
+  // Column visibility state with localStorage persistence
+  const [visibleColumns, setVisibleColumns] = useState<TransactionColumnId[]>(DEFAULT_VISIBLE_TRANSACTION_COLUMNS);
+  
   const [filters, setFilters] = useState<FilterState>({
     transactionType: "all",
     aidType: "all",
@@ -62,6 +284,10 @@ export default function TransactionsPage() {
     status: "all",
     transactionSource: "all",
   });
+
+  // Yearly summary state for chart
+  const [yearlySummary, setYearlySummary] = useState<MultiSeriesDataPoint[]>([]);
+  const [yearlySummaryLoading, setYearlySummaryLoading] = useState(true);
 
   // Use the custom hook to fetch transactions (without sorting - we'll sort client-side)
   const { transactions, loading, error, refetch, deleteTransaction, addTransaction, acceptTransaction, rejectTransaction } = useTransactions({
@@ -86,9 +312,39 @@ export default function TransactionsPage() {
       }
     }
 
+    // Load visible columns from localStorage
+    try {
+      const savedColumns = localStorage.getItem(TRANSACTION_COLUMNS_LOCALSTORAGE_KEY);
+      if (savedColumns) {
+        const parsed = JSON.parse(savedColumns) as TransactionColumnId[];
+        // Validate that all saved columns are valid column IDs
+        const validColumns = parsed.filter(id => 
+          TRANSACTION_COLUMN_CONFIGS.some(config => config.id === id)
+        );
+        // Ensure always-visible columns are included
+        const alwaysVisible = TRANSACTION_COLUMN_CONFIGS
+          .filter(c => c.alwaysVisible)
+          .map(c => c.id);
+        const merged = [...new Set([...alwaysVisible, ...validColumns])];
+        setVisibleColumns(merged);
+      }
+    } catch (e) {
+      console.error('Failed to load column preferences from localStorage:', e);
+    }
+
     // Fetch organizations and finance types for filter dropdowns
     fetchOrganizations();
     fetchFinanceTypes();
+  }, []);
+
+  // Save visible columns to localStorage when they change
+  const handleColumnsChange = useCallback((newColumns: TransactionColumnId[]) => {
+    setVisibleColumns(newColumns);
+    try {
+      localStorage.setItem(TRANSACTION_COLUMNS_LOCALSTORAGE_KEY, JSON.stringify(newColumns));
+    } catch (e) {
+      console.error('Failed to save column preferences to localStorage:', e);
+    }
   }, []);
 
   const fetchOrganizations = async () => {
@@ -114,6 +370,36 @@ export default function TransactionsPage() {
       console.error('Error fetching finance types:', error);
     }
   };
+
+  // Fetch yearly summary when filters change
+  useEffect(() => {
+    const fetchYearlySummary = async () => {
+      setYearlySummaryLoading(true);
+      try {
+        const params = new URLSearchParams();
+        if (filters.transactionType !== 'all') params.append('transactionType', filters.transactionType);
+        if (filters.status !== 'all') params.append('status', filters.status);
+        if (filters.organization !== 'all') params.append('organization', filters.organization);
+        if (filters.financeType !== 'all') params.append('financeType', filters.financeType);
+        if (filters.flowType !== 'all') params.append('flowType', filters.flowType);
+        if (filters.dateFrom) params.append('dateFrom', filters.dateFrom);
+        if (filters.dateTo) params.append('dateTo', filters.dateTo);
+        if (searchQuery) params.append('search', searchQuery);
+
+        const response = await fetch(`/api/transactions/yearly-summary?${params.toString()}`);
+        if (response.ok) {
+          const data = await response.json();
+          setYearlySummary(data.years || []);
+        }
+      } catch (error) {
+        console.error('Error fetching yearly summary:', error);
+      } finally {
+        setYearlySummaryLoading(false);
+      }
+    };
+
+    fetchYearlySummary();
+  }, [filters, searchQuery]);
 
   // Reset to page 1 when filters change (but not when sorting changes)
   useEffect(() => {
@@ -583,117 +869,119 @@ export default function TransactionsPage() {
         </div>
 
         {/* Search, Filters, and View Controls - All in One Row */}
-        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 py-4 bg-slate-50 rounded-lg px-4">
-          {/* Left Side: Search + Filters + Page Size */}
-          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 flex-1">
-            {/* Search Input */}
-            <div className="w-full sm:w-auto sm:min-w-[240px] lg:min-w-[300px]">
-              <Input
-                placeholder="Search transactions..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full"
-              />
-            </div>
-            
-            {/* Status Filters */}
-            <div className="flex flex-wrap items-center gap-3">
-              <Select value={filters.transactionType} onValueChange={(value) => setFilters({...filters, transactionType: value})}>
-                <SelectTrigger className="w-[140px]">
-                  <SelectValue placeholder="Transaction Type" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Types</SelectItem>
-                  <SelectItem value="1">Incoming Commitment</SelectItem>
-                  <SelectItem value="2">Outgoing Commitment</SelectItem>
-                  <SelectItem value="3">Disbursement</SelectItem>
-                  <SelectItem value="4">Expenditure</SelectItem>
-                  <SelectItem value="5">Interest Repayment</SelectItem>
-                  <SelectItem value="6">Loan Repayment</SelectItem>
-                  <SelectItem value="7">Reimbursement</SelectItem>
-                  <SelectItem value="8">Purchase of Equity</SelectItem>
-                  <SelectItem value="9">Sale of Equity</SelectItem>
-                  <SelectItem value="11">Credit Guarantee</SelectItem>
-                  <SelectItem value="12">Incoming Funds</SelectItem>
-                  <SelectItem value="13">Commitment Cancellation</SelectItem>
-                </SelectContent>
-              </Select>
-              <Select value={filters.status} onValueChange={(value) => setFilters({...filters, status: value})}>
-                <SelectTrigger className="w-[140px]">
-                  <SelectValue placeholder="Status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Status</SelectItem>
-                  <SelectItem value="draft">Draft</SelectItem>
-                  <SelectItem value="submitted">Submitted</SelectItem>
-                  <SelectItem value="validated">Validated</SelectItem>
-                  <SelectItem value="rejected">Rejected</SelectItem>
-                  <SelectItem value="actual">Actual</SelectItem>
-                </SelectContent>
-              </Select>
-              <Select value={filters.organization} onValueChange={(value) => setFilters({...filters, organization: value})}>
-                <SelectTrigger className="w-[140px]">
-                  <SelectValue placeholder="Organization" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Organizations</SelectItem>
-                  {organizations.map((org) => (
-                    <SelectItem key={org.id} value={org.id}>
-                      {org.name && org.acronym && org.name !== org.acronym
-                        ? `${org.name} (${org.acronym})`
-                        : org.name || org.acronym}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Select value={filters.financeType} onValueChange={(value) => setFilters({...filters, financeType: value})}>
-                <SelectTrigger className="w-[200px]">
-                  <SelectValue placeholder="Finance Type">
-                    {filters.financeType === "all" ? "All Finance Types" :
-                     financeTypes.find(ft => ft.code === filters.financeType) ? (
-                       <span className="flex items-center gap-2">
-                         <code className="px-1.5 py-0.5 rounded bg-slate-100 text-slate-700 font-mono text-xs">
-                           {filters.financeType}
-                         </code>
-                         <span className="text-sm truncate">
-                           {financeTypes.find(ft => ft.code === filters.financeType)?.name}
-                         </span>
+        <div className="flex items-center justify-between gap-4 py-4 bg-slate-50 rounded-lg px-4 overflow-visible relative z-[50]">
+          {/* Left Side: Search */}
+          <div className="flex-shrink-0">
+            <Input
+              placeholder="Search transactions..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-[200px]"
+            />
+          </div>
+          
+          {/* Center: Filters */}
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <Select value={filters.transactionType} onValueChange={(value) => setFilters({...filters, transactionType: value})}>
+              <SelectTrigger className="w-[120px]">
+                <SelectValue placeholder="Type" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Types</SelectItem>
+                <SelectItem value="1">Incoming Commitment</SelectItem>
+                <SelectItem value="2">Outgoing Commitment</SelectItem>
+                <SelectItem value="3">Disbursement</SelectItem>
+                <SelectItem value="4">Expenditure</SelectItem>
+                <SelectItem value="5">Interest Repayment</SelectItem>
+                <SelectItem value="6">Loan Repayment</SelectItem>
+                <SelectItem value="7">Reimbursement</SelectItem>
+                <SelectItem value="8">Purchase of Equity</SelectItem>
+                <SelectItem value="9">Sale of Equity</SelectItem>
+                <SelectItem value="11">Credit Guarantee</SelectItem>
+                <SelectItem value="12">Incoming Funds</SelectItem>
+                <SelectItem value="13">Commitment Cancellation</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={filters.status} onValueChange={(value) => setFilters({...filters, status: value})}>
+              <SelectTrigger className="w-[110px]">
+                <SelectValue placeholder="Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Status</SelectItem>
+                <SelectItem value="draft">Draft</SelectItem>
+                <SelectItem value="submitted">Submitted</SelectItem>
+                <SelectItem value="validated">Validated</SelectItem>
+                <SelectItem value="rejected">Rejected</SelectItem>
+                <SelectItem value="actual">Actual</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={filters.organization} onValueChange={(value) => setFilters({...filters, organization: value})}>
+              <SelectTrigger className="w-[120px]">
+                <SelectValue placeholder="Organization" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Orgs</SelectItem>
+                {organizations.map((org) => (
+                  <SelectItem key={org.id} value={org.id}>
+                    {org.name && org.acronym && org.name !== org.acronym
+                      ? `${org.name} (${org.acronym})`
+                      : org.name || org.acronym}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={filters.financeType} onValueChange={(value) => setFilters({...filters, financeType: value})}>
+              <SelectTrigger className="w-[160px]">
+                <SelectValue placeholder="Finance Type">
+                  {filters.financeType === "all" ? "All Finance Types" :
+                   financeTypes.find(ft => ft.code === filters.financeType) ? (
+                     <span className="flex items-center gap-1">
+                       <code className="px-1 py-0.5 rounded bg-slate-100 text-slate-700 font-mono text-xs">
+                         {filters.financeType}
+                       </code>
+                       <span className="text-sm truncate">
+                         {financeTypes.find(ft => ft.code === filters.financeType)?.name}
                        </span>
-                     ) : "Finance Type"
-                    }
-                  </SelectValue>
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Finance Types</SelectItem>
-                  {financeTypes.map((ft) => (
-                    <SelectItem key={ft.code} value={ft.code}>
-                      <span className="flex items-center gap-2">
-                        <code className="px-1.5 py-0.5 rounded bg-slate-100 text-slate-700 font-mono text-xs">
-                          {ft.code}
-                        </code>
-                        <span className="text-sm">{ft.name}</span>
-                      </span>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Select value={filters.transactionSource} onValueChange={(value) => setFilters({...filters, transactionSource: value})}>
-                <SelectTrigger className="w-[140px]">
-                  <SelectValue placeholder="Source" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Transactions</SelectItem>
-                  <SelectItem value="own">My Transactions</SelectItem>
-                  <SelectItem value="linked">Linked Transactions</SelectItem>
-                  <SelectItem value="pending_acceptance">Pending Acceptance</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+                     </span>
+                   ) : "Finance Type"
+                  }
+                </SelectValue>
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Finance Types</SelectItem>
+                {financeTypes.map((ft) => (
+                  <SelectItem key={ft.code} value={ft.code}>
+                    <span className="flex items-center gap-2">
+                      <code className="px-1.5 py-0.5 rounded bg-slate-100 text-slate-700 font-mono text-xs">
+                        {ft.code}
+                      </code>
+                      <span className="text-sm">{ft.name}</span>
+                    </span>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={filters.transactionSource} onValueChange={(value) => setFilters({...filters, transactionSource: value})}>
+              <SelectTrigger className="w-[120px]">
+                <SelectValue placeholder="Source" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Sources</SelectItem>
+                <SelectItem value="own">My Transactions</SelectItem>
+                <SelectItem value="linked">Linked</SelectItem>
+                <SelectItem value="pending_acceptance">Pending</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
-          {/* Right Side: Results Count */}
-          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-            {/* Results Summary */}
+          {/* Right Side: Column Selector + Results Count */}
+          <div className="flex items-center gap-3 flex-shrink-0">
+            <div className="relative z-[200]">
+              <TransactionColumnSelector 
+                visibleColumns={visibleColumns} 
+                onColumnsChange={handleColumnsChange} 
+              />
+            </div>
             <p className="text-sm text-slate-600 whitespace-nowrap">
               {(transactions?.total || 0) === 0
                 ? "No transactions"
@@ -708,6 +996,15 @@ export default function TransactionsPage() {
             ⚠️ Showing {transactions?.total || 0} items may affect performance
           </div>
         )}
+
+        {/* Yearly Summary Chart */}
+        <YearlyTotalsBarChart
+          title="Transaction Totals by Year"
+          description="Yearly totals by transaction type (filtered)"
+          loading={yearlySummaryLoading}
+          multiSeriesData={yearlySummary}
+          height={280}
+        />
 
         {/* Transactions Table */}
         {loading || (transactions?.total || 0) === 0 ? (
@@ -748,13 +1045,14 @@ export default function TransactionsPage() {
                 selectedIds={selectedTransactionIds}
                 onSelectAll={handleSelectAll}
                 onSelectTransaction={handleSelectTransaction}
+                visibleColumns={visibleColumns}
               />
             </div>
           </div>
         )}
 
         {/* Pagination */}
-        {!loading && totalTransactions > pageLimit && (
+        {!loading && totalTransactions > 0 && (
           <Card>
             <CardContent className="p-4">
               <div className="flex items-center justify-between">

@@ -7,7 +7,8 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Plus, Trash2, Edit, Download, DollarSign, AlertCircle, FileText, ChevronLeft, ChevronRight, TrendingUp, TrendingDown, CheckCircle, Loader2 } from "lucide-react";
+import { Plus, Trash2, Edit, Download, DollarSign, AlertCircle, FileText, ChevronLeft, ChevronRight, TrendingUp, TrendingDown, CheckCircle, Loader2, Columns3, ChevronDown } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { format } from "date-fns";
@@ -64,6 +65,186 @@ const DISBURSEMENT_CHANNELS: Record<string, string> = {
   '3': 'Cash to recipient',
   '4': 'Aid in kind'
 };
+
+// Column configuration for the activity editor transaction manager
+// This is a subset of TransactionTable columns relevant to the activity context
+type ActivityEditorColumnId = 
+  | 'checkbox' | 'actions'
+  | 'transactionDate' | 'transactionType' | 'organizations' 
+  | 'amount' | 'valueDate' | 'usdValue' | 'financeType'
+  | 'activityId' | 'iatiIdentifier' | 'reportingOrg'
+  | 'currency' | 'linkedStatus' | 'acceptanceStatus'
+  | 'aidType' | 'flowType' | 'tiedStatus' | 'humanitarian';
+
+interface ActivityEditorColumnConfig {
+  id: ActivityEditorColumnId;
+  label: string;
+  group: 'default' | 'activityContext' | 'classification';
+  defaultVisible?: boolean;
+  alwaysVisible?: boolean;
+}
+
+const ACTIVITY_EDITOR_COLUMN_CONFIGS: ActivityEditorColumnConfig[] = [
+  // Always visible
+  { id: 'checkbox', label: 'Select', group: 'default', alwaysVisible: true, defaultVisible: true },
+  
+  // Default columns (visible by default for activity editor)
+  { id: 'transactionDate', label: 'Date', group: 'default', defaultVisible: true },
+  { id: 'transactionType', label: 'Type', group: 'default', defaultVisible: true },
+  { id: 'organizations', label: 'Provider → Receiver', group: 'default', defaultVisible: true },
+  { id: 'amount', label: 'Amount', group: 'default', defaultVisible: true },
+  { id: 'valueDate', label: 'Value Date', group: 'default', defaultVisible: true },
+  { id: 'usdValue', label: 'USD Value', group: 'default', defaultVisible: true },
+  { id: 'financeType', label: 'Finance Type', group: 'default', defaultVisible: true },
+  { id: 'linkedStatus', label: 'Linked', group: 'default', defaultVisible: false },
+  { id: 'acceptanceStatus', label: 'Acceptance', group: 'default', defaultVisible: false },
+  
+  // Activity context columns (optional)
+  { id: 'activityId', label: 'Activity ID', group: 'activityContext', defaultVisible: false },
+  { id: 'iatiIdentifier', label: 'IATI Identifier', group: 'activityContext', defaultVisible: false },
+  { id: 'reportingOrg', label: 'Reporting Org', group: 'activityContext', defaultVisible: false },
+  
+  // Classification columns (optional)
+  { id: 'currency', label: 'Currency', group: 'classification', defaultVisible: false },
+  { id: 'aidType', label: 'Aid Type', group: 'classification', defaultVisible: false },
+  { id: 'flowType', label: 'Flow Type', group: 'classification', defaultVisible: false },
+  { id: 'tiedStatus', label: 'Tied Status', group: 'classification', defaultVisible: false },
+  { id: 'humanitarian', label: 'Humanitarian', group: 'classification', defaultVisible: false },
+  
+  // Actions always visible
+  { id: 'actions', label: 'Actions', group: 'default', alwaysVisible: true, defaultVisible: true },
+];
+
+const ACTIVITY_EDITOR_COLUMN_GROUPS = {
+  default: 'Default Columns',
+  activityContext: 'Activity Context',
+  classification: 'Classification',
+};
+
+const DEFAULT_VISIBLE_ACTIVITY_EDITOR_COLUMNS: ActivityEditorColumnId[] = 
+  ACTIVITY_EDITOR_COLUMN_CONFIGS.filter(col => col.defaultVisible || col.alwaysVisible).map(col => col.id);
+
+const ACTIVITY_EDITOR_COLUMNS_LOCALSTORAGE_KEY = 'aims_activity_editor_transaction_visible_columns';
+
+// Column Selector Component for Activity Editor
+interface ActivityEditorColumnSelectorProps {
+  visibleColumns: ActivityEditorColumnId[];
+  onColumnsChange: (columns: ActivityEditorColumnId[]) => void;
+}
+
+function ActivityEditorColumnSelector({ visibleColumns, onColumnsChange }: ActivityEditorColumnSelectorProps) {
+  const [open, setOpen] = useState(false);
+
+  const toggleColumn = (columnId: ActivityEditorColumnId) => {
+    const config = ACTIVITY_EDITOR_COLUMN_CONFIGS.find(c => c.id === columnId);
+    if (config?.alwaysVisible) return;
+    
+    if (visibleColumns.includes(columnId)) {
+      onColumnsChange(visibleColumns.filter(id => id !== columnId));
+    } else {
+      onColumnsChange([...visibleColumns, columnId]);
+    }
+  };
+
+  const toggleGroup = (group: keyof typeof ACTIVITY_EDITOR_COLUMN_GROUPS) => {
+    const groupColumns = ACTIVITY_EDITOR_COLUMN_CONFIGS.filter(c => c.group === group && !c.alwaysVisible);
+    const allVisible = groupColumns.every(c => visibleColumns.includes(c.id));
+    
+    if (allVisible) {
+      onColumnsChange(visibleColumns.filter(id => !groupColumns.find(c => c.id === id)));
+    } else {
+      const newColumns = [...visibleColumns];
+      groupColumns.forEach(c => {
+        if (!newColumns.includes(c.id)) {
+          newColumns.push(c.id);
+        }
+      });
+      onColumnsChange(newColumns);
+    }
+  };
+
+  const resetToDefaults = () => {
+    onColumnsChange(DEFAULT_VISIBLE_ACTIVITY_EDITOR_COLUMNS);
+  };
+
+  const selectableColumns = ACTIVITY_EDITOR_COLUMN_CONFIGS.filter(c => !c.alwaysVisible);
+  const visibleCount = visibleColumns.filter(id => !ACTIVITY_EDITOR_COLUMN_CONFIGS.find(c => c.id === id)?.alwaysVisible).length;
+  const totalColumns = selectableColumns.length;
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button variant="outline" size="sm" className="gap-2">
+          <Columns3 className="h-4 w-4" />
+          <span className="hidden sm:inline">Columns</span>
+          <Badge variant="secondary" className="ml-1 px-1.5 py-0 text-xs">
+            {visibleCount}
+          </Badge>
+          <ChevronDown className="h-3 w-3 opacity-50" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-72 p-0 z-[200]" align="end" sideOffset={5}>
+        <div className="p-3 border-b">
+          <div className="flex items-center justify-between">
+            <h4 className="font-medium text-sm">Visible Columns</h4>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={resetToDefaults}
+              className="h-7 text-xs"
+            >
+              Reset to defaults
+            </Button>
+          </div>
+          <p className="text-xs text-muted-foreground mt-1">
+            {visibleCount} of {totalColumns} columns visible
+          </p>
+        </div>
+        <div className="max-h-[350px] overflow-y-auto">
+          {(Object.keys(ACTIVITY_EDITOR_COLUMN_GROUPS) as Array<keyof typeof ACTIVITY_EDITOR_COLUMN_GROUPS>).map(groupKey => {
+            const groupColumns = ACTIVITY_EDITOR_COLUMN_CONFIGS.filter(c => c.group === groupKey && !c.alwaysVisible);
+            if (groupColumns.length === 0) return null;
+            
+            const allVisible = groupColumns.every(c => visibleColumns.includes(c.id));
+            const someVisible = groupColumns.some(c => visibleColumns.includes(c.id));
+            
+            return (
+              <div key={groupKey} className="border-b last:border-b-0">
+                <div 
+                  className="flex items-center gap-2 px-3 py-2 bg-muted/50 cursor-pointer hover:bg-muted/80"
+                  onClick={() => toggleGroup(groupKey)}
+                >
+                  <Checkbox 
+                    checked={allVisible}
+                    // @ts-ignore - indeterminate is valid but not in types
+                    indeterminate={someVisible && !allVisible}
+                    onCheckedChange={() => toggleGroup(groupKey)}
+                  />
+                  <span className="text-sm font-medium">{ACTIVITY_EDITOR_COLUMN_GROUPS[groupKey]}</span>
+                </div>
+                <div className="py-1">
+                  {groupColumns.map(column => (
+                    <div
+                      key={column.id}
+                      className="flex items-center gap-2 px-3 py-1.5 hover:bg-muted/50 cursor-pointer"
+                      onClick={() => toggleColumn(column.id)}
+                    >
+                      <Checkbox 
+                        checked={visibleColumns.includes(column.id)}
+                        onCheckedChange={() => toggleColumn(column.id)}
+                      />
+                      <span className="text-sm">{column.label}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
+}
 
 // Hero Card Component
 interface HeroCardProps {
@@ -144,6 +325,28 @@ export default function TransactionsManager({
   // Bulk selection state
   const [selectedTransactionIds, setSelectedTransactionIds] = useState<Set<string>>(new Set());
   const [isBulkDeleting, setIsBulkDeleting] = useState(false);
+  
+  // Column visibility state with localStorage persistence
+  const [visibleColumns, setVisibleColumns] = useState<ActivityEditorColumnId[]>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem(ACTIVITY_EDITOR_COLUMNS_LOCALSTORAGE_KEY);
+      if (saved) {
+        try {
+          return JSON.parse(saved);
+        } catch {
+          return DEFAULT_VISIBLE_ACTIVITY_EDITOR_COLUMNS;
+        }
+      }
+    }
+    return DEFAULT_VISIBLE_ACTIVITY_EDITOR_COLUMNS;
+  });
+  
+  // Save column visibility to localStorage
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(ACTIVITY_EDITOR_COLUMNS_LOCALSTORAGE_KEY, JSON.stringify(visibleColumns));
+    }
+  }, [visibleColumns]);
   
   // Track last notified transaction count to prevent infinite loops
   const lastNotifiedCountRef = React.useRef<number>(-1);
@@ -804,6 +1007,15 @@ export default function TransactionsManager({
                   </Label>
                 </div>
               )}
+              
+              {/* Column Selector */}
+              <div className="relative z-[200]">
+                <ActivityEditorColumnSelector 
+                  visibleColumns={visibleColumns} 
+                  onColumnsChange={setVisibleColumns} 
+                />
+              </div>
+              
               <Button onClick={() => setShowAddDialog(true)}>
                 <Plus className="h-4 w-4 mr-1" />
                 Add Transaction
@@ -890,6 +1102,7 @@ export default function TransactionsManager({
                 onSelectTransaction={handleSelectTransaction}
                 groupedView={groupedView}
                 onGroupedViewChange={setGroupedView}
+                visibleColumns={visibleColumns as any}
               />
 
               {/* Pagination Controls */}

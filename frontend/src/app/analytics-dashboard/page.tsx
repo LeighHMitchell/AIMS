@@ -58,6 +58,7 @@ import { CumulativeSpendingOverTime } from '@/components/analytics/CumulativeSpe
 import { PlannedVsActualDisbursements } from '@/components/analytics/PlannedVsActualDisbursements'
 import { FundingSourceBreakdown } from '@/components/analytics/FundingSourceBreakdown'
 import { FinanceTypeFlowChart } from '@/components/analytics/FinanceTypeFlowChart'
+import { AllActivitiesFundingSourceBreakdown } from '@/components/analytics/AllActivitiesFundingSourceBreakdown'
 
 // Top 10 charts
 import { Top10TotalFinancialValueChart } from '@/components/analytics/Top10TotalFinancialValueChart'
@@ -619,6 +620,14 @@ export default function AnalyticsDashboardPage() {
                       dateRange={dateRange}
                       refreshKey={refreshKey}
                       onDataChange={setDonorsData}
+                    />
+                  </div>
+
+                  {/* Funding Source Breakdown - Full Width Below All Donors */}
+                  <div className="mb-6">
+                    <AllActivitiesFundingSourceBreakdown
+                      dateRange={dateRange}
+                      refreshKey={refreshKey}
                     />
                   </div>
                 </TabsContent>

@@ -1,9 +1,10 @@
 /**
  * HTML Sanitization Utility
  * Provides secure HTML sanitization to prevent XSS attacks
+ * Uses isomorphic-dompurify for server-side and client-side support
  */
 
-import DOMPurify from 'dompurify';
+import DOMPurify from 'isomorphic-dompurify';
 
 // Safe HTML tags and attributes for rich text content
 const RICH_TEXT_CONFIG = {
@@ -23,8 +24,21 @@ const MINIMAL_CONFIG = {
 
 // No HTML allowed - strips all tags
 const TEXT_ONLY_CONFIG = {
-  ALLOWED_TAGS: [],
-  ALLOWED_ATTR: []
+  ALLOWED_TAGS: [] as string[],
+  ALLOWED_ATTR: [] as string[]
+};
+
+// IATI description config - allows common IATI formatting tags
+// More permissive than minimal but controlled for descriptions
+const IATI_DESCRIPTION_CONFIG = {
+  ALLOWED_TAGS: [
+    'p', 'br', 'strong', 'b', 'em', 'i', 'u',
+    'ul', 'ol', 'li',
+    'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
+    'blockquote', 'a', 'span', 'div'
+  ],
+  ALLOWED_ATTR: ['href', 'title', 'class'],
+  ALLOWED_URI_REGEXP: /^https?:\/\//
 };
 
 /**
@@ -33,13 +47,6 @@ const TEXT_ONLY_CONFIG = {
  */
 export function sanitizeRichText(html: string): string {
   if (!html) return '';
-  
-  // Only run on client-side where DOMPurify can access the DOM
-  if (typeof window === 'undefined') {
-    // Server-side fallback - strip all HTML
-    return html.replace(/<[^>]*>/g, '');
-  }
-  
   return DOMPurify.sanitize(html, RICH_TEXT_CONFIG);
 }
 
@@ -49,11 +56,6 @@ export function sanitizeRichText(html: string): string {
  */
 export function sanitizeMinimal(html: string): string {
   if (!html) return '';
-  
-  if (typeof window === 'undefined') {
-    return html.replace(/<[^>]*>/g, '');
-  }
-  
   return DOMPurify.sanitize(html, MINIMAL_CONFIG);
 }
 
@@ -63,12 +65,59 @@ export function sanitizeMinimal(html: string): string {
  */
 export function sanitizeTextOnly(html: string): string {
   if (!html) return '';
-  
-  if (typeof window === 'undefined') {
-    return html.replace(/<[^>]*>/g, '');
-  }
-  
   return DOMPurify.sanitize(html, TEXT_ONLY_CONFIG);
+}
+
+/**
+ * Sanitize IATI description content
+ * Preserves formatting commonly found in IATI activity descriptions
+ * while removing potentially dangerous content
+ */
+export function sanitizeIatiDescription(html: string): string {
+  if (!html) return '';
+  
+  // First decode common HTML entities that may appear in IATI data
+  let decoded = html
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'");
+  
+  // Sanitize the HTML
+  return DOMPurify.sanitize(decoded, IATI_DESCRIPTION_CONFIG);
+}
+
+/**
+ * Convert HTML to plain text, preserving some structure
+ * Useful for previews or contexts where HTML rendering isn't appropriate
+ */
+export function htmlToPlainText(html: string): string {
+  if (!html) return '';
+  
+  // First sanitize to remove any dangerous content
+  const sanitized = sanitizeIatiDescription(html);
+  
+  // Convert block elements to newlines
+  let text = sanitized
+    .replace(/<\/p>/gi, '\n\n')
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<\/li>/gi, '\n')
+    .replace(/<\/h[1-6]>/gi, '\n\n')
+    .replace(/<\/div>/gi, '\n')
+    .replace(/<\/blockquote>/gi, '\n\n');
+  
+  // Strip remaining HTML tags
+  text = DOMPurify.sanitize(text, TEXT_ONLY_CONFIG);
+  
+  // Clean up excessive whitespace
+  text = text
+    .replace(/\n{3,}/g, '\n\n')
+    .replace(/[ \t]+/g, ' ')
+    .trim();
+  
+  return text;
 }
 
 /**
@@ -96,7 +145,7 @@ export function sanitizeUrl(url: string): string {
 /**
  * Create a safe HTML string for React dangerouslySetInnerHTML
  */
-export function createSafeHTML(html: string, level: 'rich' | 'minimal' | 'text' = 'minimal') {
+export function createSafeHTML(html: string, level: 'rich' | 'minimal' | 'text' | 'iati' = 'minimal') {
   let sanitized: string;
   
   switch (level) {
@@ -105,6 +154,9 @@ export function createSafeHTML(html: string, level: 'rich' | 'minimal' | 'text' 
       break;
     case 'text':
       sanitized = sanitizeTextOnly(html);
+      break;
+    case 'iati':
+      sanitized = sanitizeIatiDescription(html);
       break;
     default:
       sanitized = sanitizeMinimal(html);

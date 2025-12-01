@@ -4,6 +4,7 @@
 
 import { validateAndCorrectParticipatingOrgs } from './iati-participating-org-xml';
 import { extractAcronymFromTitle } from './text-utils';
+import { sanitizeIatiDescription } from './sanitize';
 
 export interface ActivityMetadata {
   index: number;
@@ -470,6 +471,7 @@ export class IATIXMLParser {
 
   /**
    * Extract text content from an element, handling multiple narrative elements
+   * HTML content is sanitized to preserve safe formatting while preventing XSS
    */
   private extractNarrative(element: Element | null): string | undefined {
     if (!element) return undefined;
@@ -482,15 +484,20 @@ export class IATIXMLParser {
         const narrative = narratives[i];
         const lang = narrative.getAttribute('xml:lang');
         if (!lang || lang === 'en') {
-          return narrative.textContent?.trim() || undefined;
+          // Use innerHTML to preserve HTML formatting, then sanitize
+          const rawContent = narrative.innerHTML?.trim() || narrative.textContent?.trim();
+          return rawContent ? sanitizeIatiDescription(rawContent) : undefined;
         }
       }
       // If no English, return first narrative
-      return narratives[0].textContent?.trim() || undefined;
+      const firstNarrative = narratives[0];
+      const rawContent = firstNarrative.innerHTML?.trim() || firstNarrative.textContent?.trim();
+      return rawContent ? sanitizeIatiDescription(rawContent) : undefined;
     }
 
-    // If no narrative child, check if element itself has text content
-    return element.textContent?.trim() || undefined;
+    // If no narrative child, check if element itself has text/HTML content
+    const rawContent = element.innerHTML?.trim() || element.textContent?.trim();
+    return rawContent ? sanitizeIatiDescription(rawContent) : undefined;
   }
 
   /**

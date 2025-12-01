@@ -212,4 +212,216 @@ export function GenericTabSkeleton() {
       </div>
     </div>
   );
+}
+
+// Transactions Tab Skeleton
+export function TransactionsSkeleton() {
+  return (
+    <div className="space-y-4">
+      {/* Table Skeleton */}
+      <div className="rounded-md border">
+        <div className="p-4 border-b flex justify-between items-center">
+          <Skeleton className="h-6 w-48" />
+          <Skeleton className="h-9 w-32 rounded" />
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr className="border-b">
+                {['Type', 'Date', 'Provider', 'Receiver', 'Amount', 'Currency', 'USD Value', 'Actions'].map((header, i) => (
+                  <th key={i} className="p-4 text-left">
+                    <Skeleton className="h-4 w-20" />
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {[...Array(5)].map((_, i) => (
+                <tr key={i} className="border-b">
+                  {[...Array(8)].map((_, j) => (
+                    <td key={j} className="p-4">
+                      <Skeleton className="h-4 w-full" />
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Budgets Tab Skeleton
+export function BudgetsSkeleton() {
+  return (
+    <div className="space-y-4">
+      {/* Table Skeleton */}
+      <div className="rounded-md border">
+        <div className="p-4 border-b flex justify-between items-center">
+          <Skeleton className="h-6 w-48" />
+          <Skeleton className="h-9 w-40 rounded" />
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr className="border-b">
+                {['Period', 'Type', 'Status', 'Amount', 'Value Date', 'USD Value', 'Actions'].map((header, i) => (
+                  <th key={i} className="p-4 text-left">
+                    <Skeleton className="h-4 w-16" />
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {[...Array(4)].map((_, i) => (
+                <tr key={i} className="border-b">
+                  {[...Array(7)].map((_, j) => (
+                    <td key={j} className="p-4">
+                      <Skeleton className="h-4 w-full" />
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Planned Disbursements Tab Skeleton
+export function PlannedDisbursementsSkeleton() {
+  return (
+    <div className="space-y-4">
+      {/* Table Skeleton */}
+      <div className="rounded-md">
+        <div className="p-4 border-b flex justify-between items-center">
+          <Skeleton className="h-6 w-48" />
+          <Skeleton className="h-9 w-40 rounded" />
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr className="border-b">
+                {['Period', 'Status', 'Provider → Receiver', 'Amount', 'Value Date', 'USD Value', 'Actions'].map((header, i) => (
+                  <th key={i} className="p-4 text-left">
+                    <Skeleton className="h-4 w-20" />
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {[...Array(4)].map((_, i) => (
+                <tr key={i} className="border-b">
+                  {[...Array(7)].map((_, j) => (
+                    <td key={j} className="p-4">
+                      <Skeleton className="h-4 w-full" />
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Financial Analytics Tab Skeleton
+export function FinancialAnalyticsSkeleton() {
+  return (
+    <div className="space-y-6">
+      {/* First Card - Financial Overview */}
+      <div className="bg-white rounded-lg border border-slate-200 shadow-sm">
+        <div className="p-6 border-b border-slate-200">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div className="space-y-2">
+              <Skeleton className="h-6 w-64 bg-gray-200" />
+              <Skeleton className="h-4 w-96 bg-gray-100" />
+            </div>
+            <div className="flex items-center gap-2 flex-wrap">
+              {/* Toggle buttons */}
+              <Skeleton className="h-8 w-32 bg-gray-100 rounded-lg" />
+              <Skeleton className="h-8 w-36 bg-gray-100 rounded-lg" />
+              {/* Chart type buttons */}
+              <div className="flex gap-1">
+                {[...Array(5)].map((_, i) => (
+                  <Skeleton key={i} className="h-8 w-20 bg-gray-100 rounded" />
+                ))}
+              </div>
+              {/* Export buttons */}
+              <div className="flex gap-1">
+                <Skeleton className="h-8 w-8 bg-gray-100 rounded" />
+                <Skeleton className="h-8 w-8 bg-gray-100 rounded" />
+              </div>
+            </div>
+          </div>
+        </div>
+        <div className="p-6">
+          {/* Chart area */}
+          <Skeleton className="h-[500px] w-full bg-gray-50 rounded" />
+        </div>
+      </div>
+
+      {/* Second Card - Budget vs Actual */}
+      <div className="bg-white rounded-lg border border-slate-200 shadow-sm">
+        <div className="p-6 border-b border-slate-200">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div className="space-y-2">
+              <Skeleton className="h-6 w-72 bg-gray-200" />
+              <Skeleton className="h-4 w-80 bg-gray-100" />
+            </div>
+            <div className="flex items-center gap-2 flex-wrap">
+              {/* Toggle buttons */}
+              <Skeleton className="h-8 w-32 bg-gray-100 rounded-lg" />
+              {/* Chart type buttons */}
+              <div className="flex gap-1">
+                {[...Array(4)].map((_, i) => (
+                  <Skeleton key={i} className="h-8 w-20 bg-gray-100 rounded" />
+                ))}
+              </div>
+              {/* Export buttons */}
+              <div className="flex gap-1">
+                <Skeleton className="h-8 w-8 bg-gray-100 rounded" />
+                <Skeleton className="h-8 w-8 bg-gray-100 rounded" />
+              </div>
+            </div>
+          </div>
+        </div>
+        <div className="p-6">
+          {/* Chart area */}
+          <Skeleton className="h-[400px] w-full bg-gray-50 rounded" />
+        </div>
+      </div>
+
+      {/* Third Card - Funding Source Breakdown */}
+      <div className="bg-white rounded-lg border border-slate-200 shadow-sm">
+        <div className="p-6 border-b border-slate-200">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div className="space-y-2">
+              <Skeleton className="h-6 w-56 bg-gray-200" />
+              <Skeleton className="h-4 w-64 bg-gray-100" />
+            </div>
+            <div className="flex items-center gap-2 flex-wrap">
+              {/* Chart/Table toggle */}
+              <Skeleton className="h-8 w-24 bg-gray-100 rounded-lg" />
+              {/* Export buttons */}
+              <div className="flex gap-1">
+                <Skeleton className="h-8 w-8 bg-gray-100 rounded" />
+                <Skeleton className="h-8 w-8 bg-gray-100 rounded" />
+              </div>
+            </div>
+          </div>
+        </div>
+        <div className="p-6">
+          {/* Chart/Sankey area */}
+          <Skeleton className="h-[500px] w-full bg-gray-50 rounded" />
+        </div>
+      </div>
+    </div>
+  );
 } 

@@ -15,6 +15,7 @@ import { useBudgets } from "@/hooks/useBudgets";
 import { Budget, BudgetFilter } from "@/types/budget";
 import { BulkActionToolbar } from "@/components/ui/bulk-action-toolbar";
 import { BulkDeleteDialog } from "@/components/dialogs/bulk-delete-dialog";
+import { YearlyTotalsBarChart, SingleSeriesDataPoint } from "@/components/charts/YearlyTotalsBarChart";
 
 export default function BudgetsPage() {
   const router = useRouter();
@@ -37,6 +38,10 @@ export default function BudgetsPage() {
     dateFrom: "",
     dateTo: "",
   });
+
+  // Yearly summary state for chart
+  const [yearlySummary, setYearlySummary] = useState<SingleSeriesDataPoint[]>([]);
+  const [yearlySummaryLoading, setYearlySummaryLoading] = useState(true);
 
   // Use the custom hook to fetch budgets
   const { budgets, loading, error, refetch, deleteBudget, addBudget } = useBudgets({
@@ -70,6 +75,32 @@ export default function BudgetsPage() {
       console.error('Error fetching organizations:', error);
     }
   };
+
+  // Fetch yearly summary when filters change
+  useEffect(() => {
+    const fetchYearlySummary = async () => {
+      setYearlySummaryLoading(true);
+      try {
+        const params = new URLSearchParams();
+        if (filters.type !== 'all') params.append('type', filters.type);
+        if (filters.status !== 'all') params.append('status', filters.status);
+        if (filters.organization !== 'all') params.append('organization', filters.organization);
+        if (searchQuery) params.append('search', searchQuery);
+
+        const response = await fetch(`/api/budgets/yearly-summary?${params.toString()}`);
+        if (response.ok) {
+          const data = await response.json();
+          setYearlySummary(data.years || []);
+        }
+      } catch (error) {
+        console.error('Error fetching yearly summary:', error);
+      } finally {
+        setYearlySummaryLoading(false);
+      }
+    };
+
+    fetchYearlySummary();
+  }, [filters, searchQuery]);
 
   // Reset to page 1 when filters change
   useEffect(() => {
@@ -385,6 +416,17 @@ export default function BudgetsPage() {
           </div>
         </div>
 
+        {/* Yearly Summary Chart */}
+        <YearlyTotalsBarChart
+          title="Budget Totals by Year"
+          description="Yearly budget totals in USD (filtered)"
+          loading={yearlySummaryLoading}
+          singleSeriesData={yearlySummary}
+          singleSeriesColor="#6366f1"
+          singleSeriesLabel="Budget"
+          height={280}
+        />
+
         {/* Budgets Table */}
         {loading && sortedBudgets.length === 0 && !searchQuery ? (
           <div className="bg-white rounded-md shadow-sm border border-gray-200 p-8 text-center">
@@ -429,7 +471,7 @@ export default function BudgetsPage() {
         )}
 
         {/* Pagination */}
-        {!loading && totalBudgets > pageLimit && (
+        {!loading && totalBudgets > 0 && (
           <Card>
             <CardContent className="p-4">
               <div className="flex items-center justify-between">

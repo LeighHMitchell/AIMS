@@ -535,6 +535,14 @@ export async function PUT(request: NextRequest) {
     } else if (status === 'open' || status === 'in_progress') {
       updateData.resolved_at = null;
     }
+    
+    // Set archived_at when status is changed to 'closed' (archived)
+    if (status === 'closed') {
+      updateData.archived_at = new Date().toISOString();
+    } else if (status === 'open' || status === 'in_progress' || status === 'resolved') {
+      // Clear archived_at when restoring from archive
+      updateData.archived_at = null;
+    }
 
     console.log('[AIMS Feedback API] Attempting to update feedback with data:', updateData);
     

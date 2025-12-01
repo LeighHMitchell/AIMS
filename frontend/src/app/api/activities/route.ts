@@ -1904,10 +1904,10 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Fetch transaction summaries for all activities
+    // Fetch transaction summaries for all activities (including flow_type for flow type totals)
     const { data: transactionSummaries, error: transError } = await getSupabaseAdmin()
       .from('transactions')
-      .select('activity_id, transaction_type, value, value_usd, status')
+      .select('activity_id, transaction_type, value, value_usd, status, flow_type')
       .in('activity_id', activities?.map((a: any) => a.id) || [])
       // Remove status filter to include all transactions for financial totals
 
@@ -1915,35 +1915,127 @@ export async function GET(request: NextRequest) {
       console.error('[AIMS] Error fetching transaction summaries:', transError);
     }
 
-    // Calculate commitments and disbursements for each activity
+    // Create a map of activity_id -> default_flow_type for inheritance
+    const activityFlowTypeMap = new Map();
+    activities?.forEach((activity: any) => {
+      if (activity.default_flow_type) {
+        activityFlowTypeMap.set(activity.id, activity.default_flow_type);
+      }
+    });
+
+    // Calculate transaction totals by type and flow type for each activity
     const activityTransactionMap = new Map();
     
     if (transactionSummaries) {
       transactionSummaries.forEach((transaction: any) => {
         if (!activityTransactionMap.has(transaction.activity_id)) {
           activityTransactionMap.set(transaction.activity_id, {
-            commitments: 0,
-            disbursements: 0,
-            expenditures: 0,
-            totalTransactions: 0
+            // Transaction type totals
+            incomingCommitments: 0,      // Type 1
+            commitments: 0,              // Type 2 (Outgoing Commitment)
+            disbursements: 0,            // Type 3
+            expenditures: 0,             // Type 4
+            interestRepayment: 0,        // Type 5
+            loanRepayment: 0,            // Type 6
+            reimbursement: 0,            // Type 7
+            purchaseOfEquity: 0,         // Type 8
+            saleOfEquity: 0,             // Type 9
+            creditGuarantee: 0,          // Type 11
+            incomingFunds: 0,            // Type 12
+            commitmentCancellation: 0,   // Type 13
+            totalTransactions: 0,
+            // Flow type totals
+            flowTypeODA: 0,              // Flow Type 10
+            flowTypeOOF: 0,              // Flow Type 20
+            flowTypeNonExportOOF: 0,     // Flow Type 21
+            flowTypeExportCredits: 0,    // Flow Type 22
+            flowTypePrivateGrants: 0,    // Flow Type 30
+            flowTypePrivateMarket: 0,    // Flow Type 35
+            flowTypePrivateFDI: 0,       // Flow Type 36
+            flowTypeOtherPrivate: 0,     // Flow Type 37
+            flowTypeNonFlow: 0,          // Flow Type 40
+            flowTypeOther: 0             // Flow Type 50
           });
         }
         
         const summary = activityTransactionMap.get(transaction.activity_id);
         summary.totalTransactions += 1;
+        const valueUsd = transaction.value_usd || 0;
         
         // Map transaction types to summaries
-        // Type 2 = Outgoing Commitment
-        // Type 3 = Disbursement
-        // Type 4 = Expenditure
-        // Only count actual transactions (status filter already applied in query)
-        // Use USD converted value for aggregation
-        if (transaction.transaction_type === '2') {
-          summary.commitments += transaction.value_usd || 0;
-        } else if (transaction.transaction_type === '3') {
-          summary.disbursements += transaction.value_usd || 0;
-        } else if (transaction.transaction_type === '4') {
-          summary.expenditures += transaction.value_usd || 0;
+        switch (transaction.transaction_type) {
+          case '1':
+            summary.incomingCommitments += valueUsd;
+            break;
+          case '2':
+            summary.commitments += valueUsd;
+            break;
+          case '3':
+            summary.disbursements += valueUsd;
+            break;
+          case '4':
+            summary.expenditures += valueUsd;
+            break;
+          case '5':
+            summary.interestRepayment += valueUsd;
+            break;
+          case '6':
+            summary.loanRepayment += valueUsd;
+            break;
+          case '7':
+            summary.reimbursement += valueUsd;
+            break;
+          case '8':
+            summary.purchaseOfEquity += valueUsd;
+            break;
+          case '9':
+            summary.saleOfEquity += valueUsd;
+            break;
+          case '11':
+            summary.creditGuarantee += valueUsd;
+            break;
+          case '12':
+            summary.incomingFunds += valueUsd;
+            break;
+          case '13':
+            summary.commitmentCancellation += valueUsd;
+            break;
+        }
+        
+        // Map flow types to summaries - use effective flow type (transaction flow_type or activity default)
+        const effectiveFlowType = transaction.flow_type || activityFlowTypeMap.get(transaction.activity_id);
+        
+        switch (effectiveFlowType) {
+          case '10':
+            summary.flowTypeODA += valueUsd;
+            break;
+          case '20':
+            summary.flowTypeOOF += valueUsd;
+            break;
+          case '21':
+            summary.flowTypeNonExportOOF += valueUsd;
+            break;
+          case '22':
+            summary.flowTypeExportCredits += valueUsd;
+            break;
+          case '30':
+            summary.flowTypePrivateGrants += valueUsd;
+            break;
+          case '35':
+            summary.flowTypePrivateMarket += valueUsd;
+            break;
+          case '36':
+            summary.flowTypePrivateFDI += valueUsd;
+            break;
+          case '37':
+            summary.flowTypeOtherPrivate += valueUsd;
+            break;
+          case '40':
+            summary.flowTypeNonFlow += valueUsd;
+            break;
+          case '50':
+            summary.flowTypeOther += valueUsd;
+            break;
         }
       });
     }
@@ -2010,10 +2102,32 @@ export async function GET(request: NextRequest) {
       
       return {
         ...activity,
+        // Transaction type totals
+        incomingCommitments: transactionSummary?.incomingCommitments || 0,
         commitments: transactionSummary?.commitments || 0,
         disbursements: transactionSummary?.disbursements || 0,
         expenditures: transactionSummary?.expenditures || 0,
+        interestRepayment: transactionSummary?.interestRepayment || 0,
+        loanRepayment: transactionSummary?.loanRepayment || 0,
+        reimbursement: transactionSummary?.reimbursement || 0,
+        purchaseOfEquity: transactionSummary?.purchaseOfEquity || 0,
+        saleOfEquity: transactionSummary?.saleOfEquity || 0,
+        creditGuarantee: transactionSummary?.creditGuarantee || 0,
+        incomingFunds: transactionSummary?.incomingFunds || 0,
+        commitmentCancellation: transactionSummary?.commitmentCancellation || 0,
         totalTransactions: transactionSummary?.totalTransactions || 0,
+        // Flow type totals
+        flowTypeODA: transactionSummary?.flowTypeODA || 0,
+        flowTypeOOF: transactionSummary?.flowTypeOOF || 0,
+        flowTypeNonExportOOF: transactionSummary?.flowTypeNonExportOOF || 0,
+        flowTypeExportCredits: transactionSummary?.flowTypeExportCredits || 0,
+        flowTypePrivateGrants: transactionSummary?.flowTypePrivateGrants || 0,
+        flowTypePrivateMarket: transactionSummary?.flowTypePrivateMarket || 0,
+        flowTypePrivateFDI: transactionSummary?.flowTypePrivateFDI || 0,
+        flowTypeOtherPrivate: transactionSummary?.flowTypeOtherPrivate || 0,
+        flowTypeNonFlow: transactionSummary?.flowTypeNonFlow || 0,
+        flowTypeOther: transactionSummary?.flowTypeOther || 0,
+        // Budget summaries
         totalPlannedBudgetUSD: budgetSummary?.totalPlannedBudgetUSD || 0,
         totalPlannedDisbursementsUSD: plannedDisbursementSummary?.totalPlannedDisbursementsUSD || 0,
         totalDisbursementsAndExpenditureUSD: (transactionSummary?.disbursements || 0) + (transactionSummary?.expenditures || 0)
@@ -2213,6 +2327,8 @@ export async function GET(request: NextRequest) {
       defaultCurrency: activity.default_currency,
       defaultTiedStatus: activity.default_tied_status,
       flowType: activity.default_flow_type,
+      default_aid_modality: activity.default_aid_modality,
+      default_aid_modality_override: activity.default_aid_modality_override,
       general_info: activity.general_info || {},
       reportingOrgId: activity.reporting_org_id,
       hierarchy: activity.hierarchy,

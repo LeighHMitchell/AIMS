@@ -2138,7 +2138,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
                   isSaved={otherIdentifiersAutosave.state.isPersistentlySaved}
                   className="text-gray-700"
                 >
-                  Owner Organisation Ref <span className="text-gray-400">(Optional)</span>
+                  Owner Organisation Ref{' '}<span className="text-gray-400">(Optional)</span>
                 </LabelSaveIndicator>
                 <Input
                   type="text"
@@ -4324,7 +4324,7 @@ function NewActivityPageContent() {
         <aside className="w-80 flex-shrink-0 bg-white overflow-y-auto pb-24">
           {/* Activity Metadata Summary - Only show when editing */}
           {isEditing && general.id && (
-            <div className="bg-white border-b border-gray-200 p-4">
+            <div className="bg-white p-4">
               <div className="space-y-2 text-sm">
                 <div className="mb-3">
                   <div className="flex items-center gap-1">
@@ -4333,7 +4333,8 @@ function NewActivityPageContent() {
                       className="text-lg font-semibold text-gray-900 leading-tight cursor-pointer transition-opacity duration-200 hover:opacity-80"
                       title={`View activity profile: ${general.title || 'Untitled Activity'}${general.acronym ? ` (${general.acronym})` : ''}`}
                     >
-                      {`${general.title || 'Untitled Activity'}${general.acronym ? ` (${general.acronym})` : ''}`}
+                      {general.title || 'Untitled Activity'}
+                      {general.acronym && <span className="text-sm text-gray-500"> ({general.acronym})</span>}
                     </Link>
                     <button
                       onClick={(e) => {
@@ -4353,21 +4354,22 @@ function NewActivityPageContent() {
                       {general.partner_id && (
                         <div className="text-xs">
                           <span className="text-gray-600">Activity ID: </span>
-                          <code className="px-1.5 py-0.5 bg-gray-100 text-gray-700 rounded font-mono">
+                          <code className="inline px-1.5 py-0.5 bg-gray-100 text-gray-700 rounded font-mono break-all" style={{ boxDecorationBreak: 'clone', WebkitBoxDecorationBreak: 'clone' as const }}>
                             {general.partner_id}
                           </code>
                         </div>
                       )}
                       {general.iatiIdentifier && (
-                        <div className="text-xs inline-flex items-center">
-                          <code className="px-1.5 py-0.5 bg-gray-100 text-gray-700 rounded font-mono">
+                        <div className="text-xs">
+                          <code className="inline px-1.5 py-0.5 bg-gray-100 text-gray-700 rounded font-mono break-all" style={{ boxDecorationBreak: 'clone', WebkitBoxDecorationBreak: 'clone' as const }}>
                             {general.iatiIdentifier}
-                          </code>&nbsp;<button
+                          </code>
+                          <button
                             onClick={() => {
                               navigator.clipboard.writeText(general.iatiIdentifier);
                               toast.success('IATI ID copied to clipboard');
                             }}
-                            className="flex-shrink-0 p-1 hover:bg-gray-100 rounded transition-colors inline-flex items-center"
+                            className="ml-1 p-1 hover:bg-gray-100 rounded transition-colors inline-flex items-center align-middle"
                             title="Copy IATI ID"
                           >
                             <Copy className="h-3 w-3 text-gray-600" />
