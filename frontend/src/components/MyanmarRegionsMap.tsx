@@ -5,7 +5,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { MapPin, Download } from 'lucide-react'
 import { HelpTextTooltip } from "@/components/ui/help-text-tooltip"
-import html2canvas from 'html2canvas'
 import { toast } from "sonner"
 
 interface MyanmarRegionsMapProps {
@@ -176,6 +175,8 @@ export default function MyanmarRegionsMap({
 
     setIsExporting(true)
     try {
+      // Dynamically import html2canvas to avoid SSR issues
+      const html2canvas = (await import('html2canvas')).default
       const canvas = await html2canvas(mapContainerRef.current, {
         backgroundColor: '#ffffff',
         scale: 2, // Higher quality
