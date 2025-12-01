@@ -1,5 +1,5 @@
 import React, { Suspense } from 'react';
-import dynamic from 'next/dynamic';
+import dynamicImport from 'next/dynamic';
 import { MainLayout } from '@/components/layout/main-layout';
 import { MapSkeleton } from '@/components/ui/skeleton-loader';
 
@@ -7,7 +7,7 @@ import { MapSkeleton } from '@/components/ui/skeleton-loader';
 export const dynamic = 'force-dynamic';
 
 // Dynamic import AidMap to avoid SSR issues with Leaflet
-const AidMap = dynamic(() => import('@/components/AidMap'), { 
+const AidMap = dynamicImport(() => import('@/components/AidMap'), { 
   ssr: false,
   loading: () => <MapSkeleton height="600px" />
 });
