@@ -55,7 +55,7 @@ const nextConfig = {
               "style-src 'self' 'unsafe-inline'",
               "img-src 'self' data: blob: https:",
               "font-src 'self' data:",
-              "connect-src 'self' https://lhiayyjwkjkjkxvhcenw.supabase.co https://*.supabase.co https://api.fxratesapi.com https://api.exchangerate-api.com https://api.exchangerate.host https://api.iatistandard.org",
+              "connect-src 'self' https://lhiayyjwkjkjkxvhcenw.supabase.co https://*.supabase.co https://api.fxratesapi.com https://api.exchangerate-api.com https://api.exchangerate.host https://api.iatistandard.org https://nominatim.openstreetmap.org",
               "frame-src 'self'",
               "object-src 'none'",
               "base-uri 'self'",

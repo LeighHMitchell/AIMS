@@ -21,6 +21,7 @@ import dynamic from 'next/dynamic';
 import { Skeleton } from '@/components/ui/skeleton-loader';
 import { EnhancedSubnationalBreakdown } from '@/components/activities/EnhancedSubnationalBreakdown';
 import { SectorHierarchyFilter, SectorFilterSelection, matchesSectorFilter } from '@/components/maps/SectorHierarchyFilter';
+import { MapSearch } from '@/components/maps/MapSearch';
 import { ACTIVITY_STATUS_GROUPS } from '@/data/activity-status-types';
 
 // Dynamic import for MyanmarRegionsMap to avoid SSR issues
@@ -291,6 +292,29 @@ export default function AidMap() {
   });
   const mapRef = useRef<any>(null);
 
+  // Handler for location search
+  const handleLocationSearch = useCallback((lat: number, lng: number, name: string, type: string) => {
+    if (!mapRef.current) return;
+
+    // Determine zoom level based on location type
+    let zoomLevel = 10;
+    if (type === 'city' || type === 'town' || type === 'village' || type === 'hamlet') {
+      zoomLevel = 12;
+    } else if (type === 'administrative' || type === 'state' || type === 'region' || type === 'province') {
+      zoomLevel = 9;
+    } else if (type === 'country') {
+      zoomLevel = 6;
+    }
+
+    // Fly to location with smooth animation
+    mapRef.current.flyTo([lat, lng], zoomLevel, {
+      duration: 1.5,
+      easeLinearity: 0.25
+    });
+
+    console.log(`[MapSearch] Flying to ${name} (${lat}, ${lng}) at zoom ${zoomLevel}`);
+  }, []);
+
   // State for locations data
   const [locations, setLocations] = useState<LocationData[]>([]);
   const [loading, setLoading] = useState(true);
@@ -526,9 +550,9 @@ export default function AidMap() {
           <Tabs value={tabMode} onValueChange={(value: TabMode) => setTabMode(value)}>
             <TabsContent value="map" className="space-y-4">
           {/* Map */}
-          <div className="h-[600px] w-full relative rounded-lg overflow-hidden border border-gray-200">
+          <div className="h-[85vh] min-h-[700px] w-full relative rounded-lg overflow-hidden border border-gray-200">
             {/* Filters - top left */}
-            <div className="absolute top-3 left-3 z-[1000] flex items-center gap-2">
+            <div className="absolute top-3 left-3 z-[1000] flex items-center gap-2 flex-wrap max-w-[1200px]">
               <Select value={statusFilter} onValueChange={setStatusFilter}>
                 <SelectTrigger className="w-[280px] bg-white shadow-md border-gray-300">
                   <SelectValue placeholder="Filter by status" />
@@ -568,6 +592,15 @@ export default function AidMap() {
                 selected={sectorFilter}
                 onChange={setSectorFilter}
                 className="w-[280px] bg-white shadow-md border-gray-300"
+              />
+            </div>
+            
+            {/* Search bar - bottom left */}
+            <div className="absolute bottom-3 left-3 z-[1000]">
+              <MapSearch
+                onLocationSelect={handleLocationSearch}
+                className="w-[320px]"
+                placeholder="Search location..."
               />
             </div>
             
@@ -716,7 +749,7 @@ export default function AidMap() {
                 
                 {subnationalLoading ? (
                   <div className="space-y-4">
-                    <div className="h-[600px] w-full bg-gray-100 rounded-lg flex items-center justify-center">
+                    <div className="h-[85vh] min-h-[700px] w-full bg-gray-100 rounded-lg flex items-center justify-center">
                       <div className="text-center">
                         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto mb-2"></div>
                         <div className="text-sm text-gray-600">Loading sub-national breakdown data...</div>
@@ -726,7 +759,7 @@ export default function AidMap() {
                 ) : Object.keys(regionBreakdowns || {}).length > 0 ? (
                   <>
                     {/* Myanmar Admin Map */}
-                    <div className="h-[600px] w-full">
+                    <div className="h-[85vh] min-h-[700px] w-full">
                       <MyanmarRegionsMap 
                         breakdowns={regionBreakdowns}
                         onRegionClick={(regionName) => {
