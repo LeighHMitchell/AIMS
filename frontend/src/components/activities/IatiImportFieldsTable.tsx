@@ -1766,12 +1766,24 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
       
       // Compare using the locationData
       const importData = field.locationData;
+      
+      // Primary match: coordinates (most reliable)
+      const currentLat = parseFloat(currentValue.latitude);
+      const currentLon = parseFloat(currentValue.longitude);
+      const importLat = parseFloat(importData.latitude);
+      const importLon = parseFloat(importData.longitude);
+      
+      if (!isNaN(currentLat) && !isNaN(currentLon) && !isNaN(importLat) && !isNaN(importLon)) {
+        // Allow small floating-point tolerance
+        const coordsMatch = Math.abs(currentLat - importLat) < 0.0001 && 
+                            Math.abs(currentLon - importLon) < 0.0001;
+        if (coordsMatch) return true;
+      }
+      
+      // Fallback: ref match only (don't require name match as well)
       const currentRef = String(currentValue.country_code || currentValue.ref || currentValue.location_ref || '').trim();
       const importRef = String(importData.country_code || importData.ref || '').trim();
-      const refMatch = currentRef === importRef;
-      const nameMatch = String(currentValue.name || currentValue.location_name || '').trim() === String(importData.name || '').trim();
-      
-      return refMatch && nameMatch;
+      return currentRef !== '' && currentRef === importRef;
     }
 
     // Special handling for individual Recipient Country items
@@ -1868,8 +1880,9 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
 
     // Special handling for budget objects
     if (field?.itemType === 'budget' && typeof currentValue === 'object' && typeof importValue === 'object' && currentValue !== null && importValue !== null) {
-      const typeMatch = String(currentValue.type) === String(importValue.type);
-      const statusMatch = String(currentValue.status) === String(importValue.status);
+      // Normalize type and status with defaults ('1' is the default for both)
+      const typeMatch = String(currentValue.type || '1') === String(importValue.type || '1');
+      const statusMatch = String(currentValue.status || '1') === String(importValue.status || '1');
       const startMatch = (currentValue.period?.start || currentValue.start) === (importValue.period?.start || importValue.start);
       const endMatch = (currentValue.period?.end || currentValue.end) === (importValue.period?.end || importValue.end);
       const valueMatch = currentValue.value !== undefined && importValue.value !== undefined &&
@@ -1904,8 +1917,19 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
       const valueMatch = currentValue.value !== undefined && itemData.value !== undefined &&
         Math.abs(Number(currentValue.value) - Number(itemData.value)) < 0.01;
       const currencyMatch = (currentValue.currency || 'USD').toUpperCase() === (itemData.currency || 'USD').toUpperCase();
-      const providerRefMatch = normalizeOrgRef(currentValue.provider_org_ref) === normalizeOrgRef(itemData.providerOrg?.ref);
-      const receiverRefMatch = normalizeOrgRef(currentValue.receiver_org_ref) === normalizeOrgRef(itemData.receiverOrg?.ref);
+      
+      // Org ref matching - be lenient: if both are null/empty, match; if both have values, compare
+      const currProviderRef = normalizeOrgRef(currentValue.provider_org_ref);
+      const impProviderRef = normalizeOrgRef(itemData.providerOrg?.ref);
+      const providerRefMatch = (currProviderRef === null && impProviderRef === null) || 
+                               (currProviderRef === impProviderRef) ||
+                               (currProviderRef === null || impProviderRef === null); // Allow match if one is empty
+      
+      const currReceiverRef = normalizeOrgRef(currentValue.receiver_org_ref);
+      const impReceiverRef = normalizeOrgRef(itemData.receiverOrg?.ref);
+      const receiverRefMatch = (currReceiverRef === null && impReceiverRef === null) || 
+                               (currReceiverRef === impReceiverRef) ||
+                               (currReceiverRef === null || impReceiverRef === null); // Allow match if one is empty
       
       return typeMatch && startMatch && endMatch && valueMatch && currencyMatch && providerRefMatch && receiverRefMatch;
     }
@@ -1934,39 +1958,64 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
 
     // Special handling for document link fields
     // importValue is the title string, currentValue is an object with url, title, etc.
-    if (field?.itemType === 'document' && typeof currentValue === 'object' && currentValue !== null && typeof importValue === 'string') {
-      const currentTitle = currentValue.title || '';
-      const importTitle = importValue || '';
-      // Compare titles (case-insensitive, trimmed)
-      return currentTitle.toLowerCase().trim() === importTitle.toLowerCase().trim();
+    if (field?.itemType === 'document' && typeof currentValue === 'object' && currentValue !== null) {
+      // Primary match: URL (most reliable identifier)
+      const currentUrl = String(currentValue.url || '').trim().toLowerCase();
+      const importUrl = String(field.itemData?.url || '').trim().toLowerCase();
+      
+      if (currentUrl && importUrl && currentUrl === importUrl) return true;
+      
+      // Fallback: match by title (case-insensitive)
+      const currentTitle = String(currentValue.title || '').trim().toLowerCase();
+      const importTitle = String(typeof importValue === 'string' ? importValue : '').trim().toLowerCase();
+      return currentTitle !== '' && importTitle !== '' && currentTitle === importTitle;
     }
 
-    // Special handling for Contact fields - compare all contact fields
+    // Special handling for Contact fields - relaxed matching for better results
     if ((field.fieldName && field.fieldName.includes('Contact')) || field?.tab === 'contacts') {
       if (typeof currentValue === 'object' && typeof importValue === 'object' && currentValue !== null && importValue !== null) {
         // Normalize values for comparison (handle null, undefined, empty strings)
         const normalize = (val: any) => {
-          if (val === null || val === undefined || val === '') return null;
-          return String(val).trim();
+          if (val === null || val === undefined || val === '') return '';
+          return String(val).trim().toLowerCase();
         };
         
-        // Compare all contact fields
-        const typeMatch = normalize(currentValue.type) === normalize(importValue.type);
-        const orgMatch = normalize(currentValue.organization) === normalize(importValue.organization);
-        const personMatch = normalize(currentValue.personName) === normalize(importValue.personName);
-        const jobTitleMatch = normalize(currentValue.jobTitle) === normalize(importValue.jobTitle);
-        const deptMatch = normalize(currentValue.department) === normalize(importValue.department);
-        const emailMatch = normalize(currentValue.email) === normalize(importValue.email);
-        // Handle phone field name differences (currentValue uses telephone, importValue uses telephone)
-        const currentPhone = normalize(currentValue.telephone || currentValue.phone || currentValue.phoneNumber);
-        const importPhone = normalize(importValue.telephone || importValue.phone || importValue.phoneNumber);
-        const phoneMatch = currentPhone === importPhone;
-        const websiteMatch = normalize(currentValue.website) === normalize(importValue.website);
-        const addressMatch = normalize(currentValue.mailingAddress) === normalize(importValue.mailingAddress);
+        // Compare fields - allow partial data matches (empty fields are treated as matching)
+        const compareField = (currVal: any, impVal: any) => {
+          const curr = normalize(currVal);
+          const imp = normalize(impVal);
+          // If both empty, it's a match
+          if (curr === '' && imp === '') return true;
+          // If only one is empty, still consider it a match (allow partial data)
+          if (curr === '' || imp === '') return true;
+          return curr === imp;
+        };
         
-        // All fields must match
-        return typeMatch && orgMatch && personMatch && jobTitleMatch && deptMatch && 
-               emailMatch && phoneMatch && websiteMatch && addressMatch;
+        // Type must match (or both be empty/default)
+        const typeMatch = normalize(currentValue.type) === normalize(importValue.type) ||
+                          (normalize(currentValue.type) === '' || normalize(currentValue.type) === '1') &&
+                          (normalize(importValue.type) === '' || normalize(importValue.type) === '1');
+        
+        // Check key identifying fields
+        const emailMatch = compareField(currentValue.email, importValue.email);
+        const personMatch = compareField(currentValue.personName, importValue.personName);
+        const orgMatch = compareField(currentValue.organization, importValue.organization);
+        
+        // Type and at least one identifier must match for it to be considered a match
+        // This is more lenient than requiring ALL fields to match exactly
+        const currEmail = normalize(currentValue.email);
+        const impEmail = normalize(importValue.email);
+        const currPerson = normalize(currentValue.personName);
+        const impPerson = normalize(importValue.personName);
+        const currOrg = normalize(currentValue.organization);
+        const impOrg = normalize(importValue.organization);
+        
+        // If we have matching non-empty identifiers, it's a match
+        const hasMatchingEmail = currEmail !== '' && impEmail !== '' && currEmail === impEmail;
+        const hasMatchingPerson = currPerson !== '' && impPerson !== '' && currPerson === impPerson;
+        const hasMatchingOrg = currOrg !== '' && impOrg !== '' && currOrg === impOrg;
+        
+        return typeMatch && (hasMatchingEmail || hasMatchingPerson || hasMatchingOrg);
       }
       return false;
     }

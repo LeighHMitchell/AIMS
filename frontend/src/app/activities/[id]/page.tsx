@@ -67,7 +67,8 @@ import {
   Target,
   ArrowUpDown,
   ArrowUp,
-  ArrowDown
+  ArrowDown,
+  LayoutGrid
 } from "lucide-react"
 import { toast } from "sonner"
 import { Transaction } from "@/types/transaction"
@@ -411,14 +412,8 @@ export default function ActivityDetailPage() {
     }
   }, [searchParams]);
 
-  // Reset loading states when activity changes or when finances tab is opened
-  useEffect(() => {
-    if (activity?.id && activeTab === "finances") {
-      setBudgetsLoading(true);
-      setPlannedLoading(true);
-      setTransactionsLoading(true);
-    }
-  }, [activity?.id, activeTab]);
+  // Loading states are now managed by child components via onLoadingChange callbacks
+  // Removing the reset useEffect prevents unnecessary re-renders when switching tabs
 
   // Handle tab change with URL synchronization
   const handleTabChange = (tabValue: string) => {
@@ -501,6 +496,7 @@ export default function ActivityDetailPage() {
   const [disbursementProgressView, setDisbursementProgressView] = useState<'chart' | 'table'>('chart')
   const [sectorBreakdownView, setSectorBreakdownView] = useState<'chart' | 'table'>('chart')
   const [sectorFlowView, setSectorFlowView] = useState<'flow' | 'distribution'>('flow')
+  const [locationsView, setLocationsView] = useState<'cards' | 'table'>('cards')
   const [sectorViewMode, setSectorViewMode] = useState<'sankey' | 'pie' | 'bar' | 'table'>('sankey')
   const [sectorMetricMode, setSectorMetricMode] = useState<'percentage' | 'budget' | 'planned' | 'actual'>('percentage')
   const [sectorBarGroupingMode, setSectorBarGroupingMode] = useState<'sector' | 'category' | 'group'>('group')
@@ -547,7 +543,7 @@ export default function ActivityDetailPage() {
       forceActivityCacheRefresh(Array.isArray(params.id) ? params.id[0] : params.id);
       fetchActivity(true)
       loadAllPartners();
-      fetchBudgets();
+      // fetchBudgets() removed - ActivityBudgetsTab handles fetching via onBudgetsChange callback
       fetchParticipatingOrgs();
       fetchPlannedDisbursements();
       fetchDocuments();
@@ -2035,7 +2031,7 @@ export default function ActivityDetailPage() {
                                 <img 
                                   src={reportingOrg.logo} 
                                   alt={`${reportingOrg.name} logo`}
-                                  className="w-10 h-10 rounded object-cover border border-slate-200"
+                                  className="w-10 h-10 rounded object-cover"
                                 />
                               </div>
                             )}
@@ -2085,7 +2081,7 @@ export default function ActivityDetailPage() {
                                       <img 
                                         src={org.organization.logo} 
                                         alt={`${org.organization.name} logo`}
-                                        className="w-10 h-10 rounded object-cover border border-slate-200"
+                                        className="w-10 h-10 rounded object-cover"
                                       />
                                     </div>
                                   )}
@@ -2939,6 +2935,7 @@ export default function ActivityDetailPage() {
                             hideSummaryCards={true}
                             readOnly={true}
                             onLoadingChange={setBudgetsLoading}
+                            onBudgetsChange={setBudgets}
                             renderFilters={(filters) => {
                               const container = document.getElementById('budget-filters-container');
                               if (container) {
@@ -3481,7 +3478,7 @@ export default function ActivityDetailPage() {
                                         <img
                                           src={reportingOrg.logo}
                                           alt={reportingOrg.name || 'Organization logo'}
-                                          className="w-10 h-10 rounded object-cover border border-slate-200"
+                                          className="w-10 h-10 rounded object-cover"
                                           onError={(e) => {
                                             (e.target as HTMLImageElement).style.display = 'none';
                                           }}
@@ -3616,7 +3613,7 @@ export default function ActivityDetailPage() {
                                     <img
                                       src={org.organization.logo}
                                             alt={org.organization.name || 'Organization logo'}
-                                            className="w-10 h-10 rounded object-cover border border-slate-200"
+                                            className="w-10 h-10 rounded object-cover"
                                             onError={(e) => {
                                               (e.target as HTMLImageElement).style.display = 'none';
                                             }}
@@ -4185,20 +4182,16 @@ export default function ActivityDetailPage() {
                   <>
                 {/* Country/Region Allocation Chart - Hero Card */}
                 {(countryAllocations.length > 0 || regionAllocations.length > 0) && (() => {
-                  // Color palette for countries and regions - vibrant and distinct
+                  // Dark blue/slate color palette
                   const colorPalette = [
+                    { bg: 'bg-slate-800', hex: '#1e293b' },
+                    { bg: 'bg-slate-700', hex: '#334155' },
+                    { bg: 'bg-slate-600', hex: '#475569' },
+                    { bg: 'bg-blue-900', hex: '#1e3a5f' },
+                    { bg: 'bg-blue-800', hex: '#1e40af' },
+                    { bg: 'bg-blue-700', hex: '#1d4ed8' },
+                    { bg: 'bg-slate-500', hex: '#64748b' },
                     { bg: 'bg-blue-600', hex: '#2563eb' },
-                    { bg: 'bg-emerald-500', hex: '#10b981' },
-                    { bg: 'bg-amber-500', hex: '#f59e0b' },
-                    { bg: 'bg-rose-500', hex: '#f43f5e' },
-                    { bg: 'bg-violet-500', hex: '#8b5cf6' },
-                    { bg: 'bg-cyan-500', hex: '#06b6d4' },
-                    { bg: 'bg-orange-500', hex: '#f97316' },
-                    { bg: 'bg-pink-500', hex: '#ec4899' },
-                    { bg: 'bg-teal-500', hex: '#14b8a6' },
-                    { bg: 'bg-indigo-500', hex: '#6366f1' },
-                    { bg: 'bg-lime-500', hex: '#84cc16' },
-                    { bg: 'bg-fuchsia-500', hex: '#d946ef' },
                   ];
 
                   // Combine countries and regions into a single list with colors
@@ -4220,6 +4213,7 @@ export default function ActivityDetailPage() {
                   ];
 
                   const totalPercentage = allAllocations.reduce((sum, a) => sum + a.percentage, 0);
+                  const unallocatedPercentage = Math.max(0, 100 - totalPercentage);
 
                   return (
                     <Card className="border-slate-200">
@@ -4233,108 +4227,80 @@ export default function ActivityDetailPage() {
                         </CardDescription>
                       </CardHeader>
                       <CardContent className="p-6">
-                        <div className="space-y-4">
-                          {/* Stacked Bar */}
-                          <TooltipProvider delayDuration={0}>
-                            <div className="w-full bg-slate-200 rounded-lg h-10 overflow-hidden flex">
-                              {allAllocations.map((alloc, index) => {
-                                // Calculate width based on proportion of total or use percentage directly
-                                const widthPercent = totalPercentage > 0 
-                                  ? (alloc.percentage / totalPercentage) * 100 
-                                  : alloc.percentage;
-                                
-                                return (
-                                  <Tooltip key={`${alloc.type}-${index}`}>
-                                    <TooltipTrigger asChild>
-                                      <div
-                                        className={`h-full ${alloc.color.bg} transition-all duration-500 flex items-center justify-center relative cursor-pointer hover:brightness-110`}
-                                        style={{ 
-                                          width: `${widthPercent}%`,
-                                          minWidth: alloc.percentage > 0 ? '2px' : '0',
-                                        }}
-                                      >
-                                        {widthPercent > 8 && (
-                                          <span className="text-xs font-semibold text-white drop-shadow-sm truncate px-1">
-                                            {alloc.percentage.toFixed(0)}%
-                                          </span>
-                                        )}
-                                      </div>
-                                    </TooltipTrigger>
-                                    <TooltipContent 
-                                      side="top" 
-                                      className="bg-slate-900 text-white border-slate-700 px-3 py-2 shadow-xl"
-                                    >
-                                      <div className="space-y-1.5">
-                                        <div className="flex items-center gap-2">
-                                          <div 
-                                            className="w-3 h-3 rounded-sm flex-shrink-0"
-                                            style={{ backgroundColor: alloc.color.hex }}
-                                          />
-                                          <span className="font-semibold text-sm">{alloc.name}</span>
-                                        </div>
-                                        <div className="flex items-center gap-2 text-xs text-slate-300">
-                                          {alloc.code && (
-                                            <span className="font-mono bg-slate-700 px-1.5 py-0.5 rounded">
-                                              {alloc.code}
-                                            </span>
-                                          )}
-                                          <span className={`px-1.5 py-0.5 rounded ${alloc.type === 'country' ? 'bg-blue-600' : 'bg-green-600'}`}>
-                                            {alloc.type === 'country' ? 'Country' : 'Region'}
-                                          </span>
-                                        </div>
-                                        <div className="text-lg font-bold text-white pt-1 border-t border-slate-700">
-                                          {alloc.percentage.toFixed(1)}%
-                                        </div>
-                                      </div>
-                                    </TooltipContent>
-                                  </Tooltip>
-                                );
-                              })}
-                            </div>
-                          </TooltipProvider>
-
-                          {/* Legend */}
-                          <div className="flex flex-wrap gap-3 mt-4">
+                        {/* Stacked Bar with labels */}
+                        <TooltipProvider delayDuration={0}>
+                          <div className="w-full bg-slate-100 rounded-lg h-12 overflow-hidden flex">
                             {allAllocations.map((alloc, index) => (
-                              <div 
-                                key={`legend-${alloc.type}-${index}`}
-                                className="flex items-center gap-2 bg-slate-50 rounded-md px-3 py-1.5 border border-slate-100"
-                              >
-                                <div 
-                                  className="w-3 h-3 rounded-sm flex-shrink-0"
-                                  style={{ backgroundColor: alloc.color.hex }}
-                                />
-                                <span className="text-sm text-slate-700 font-medium truncate max-w-[150px]" title={alloc.name}>
-                                  {alloc.name}
-                                </span>
-                                {alloc.code && (
-                                  <span className="text-xs font-mono bg-slate-200 px-1.5 py-0.5 rounded text-slate-600">
-                                    {alloc.code}
-                                  </span>
-                                )}
-                                <span className="text-sm font-semibold text-slate-900">
-                                  {alloc.percentage.toFixed(1)}%
-                                </span>
-                                <span className={`text-xs px-1.5 py-0.5 rounded ${alloc.type === 'country' ? 'bg-blue-100 text-blue-700' : 'bg-green-100 text-green-700'}`}>
-                                  {alloc.type === 'country' ? 'Country' : 'Region'}
-                                </span>
-                              </div>
+                              <Tooltip key={`${alloc.type}-${index}`}>
+                                <TooltipTrigger asChild>
+                                  <div
+                                    className="h-full transition-all duration-500 flex items-center justify-center relative cursor-pointer hover:brightness-110"
+                                    style={{ 
+                                      width: `${alloc.percentage}%`,
+                                      minWidth: alloc.percentage > 0 ? '2px' : '0',
+                                      backgroundColor: alloc.color.hex,
+                                    }}
+                                  >
+                                    {alloc.percentage >= 12 && (
+                                      <span className="text-xs font-medium text-white drop-shadow-sm truncate px-2">
+                                        {alloc.name}
+                                      </span>
+                                    )}
+                                  </div>
+                                </TooltipTrigger>
+                                <TooltipContent 
+                                  side="top" 
+                                  className="bg-slate-900 text-white border-slate-700 px-3 py-2 shadow-xl"
+                                >
+                                  <div className="space-y-1.5">
+                                    <div className="font-semibold text-sm">{alloc.name}</div>
+                                    <div className="flex items-center gap-2 text-xs text-slate-300">
+                                      {alloc.code && (
+                                        <span className="font-mono bg-slate-700 px-1.5 py-0.5 rounded">
+                                          {alloc.code}
+                                        </span>
+                                      )}
+                                      <span className={`px-1.5 py-0.5 rounded ${alloc.type === 'country' ? 'bg-slate-600' : 'bg-slate-500'}`}>
+                                        {alloc.type === 'country' ? 'Country' : 'Region'}
+                                      </span>
+                                    </div>
+                                    <div className="text-lg font-bold text-white pt-1 border-t border-slate-700">
+                                      {alloc.percentage.toFixed(1)}%
+                                    </div>
+                                  </div>
+                                </TooltipContent>
+                              </Tooltip>
                             ))}
+                            {/* Unallocated section */}
+                            {unallocatedPercentage > 0 && (
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <div
+                                    className="h-full bg-slate-200 transition-all duration-500 flex items-center justify-center cursor-pointer hover:bg-slate-300"
+                                    style={{ width: `${unallocatedPercentage}%` }}
+                                  >
+                                    {unallocatedPercentage >= 12 && (
+                                      <span className="text-xs font-medium text-slate-500 truncate px-2">
+                                        Unallocated
+                                      </span>
+                                    )}
+                                  </div>
+                                </TooltipTrigger>
+                                <TooltipContent 
+                                  side="top" 
+                                  className="bg-slate-900 text-white border-slate-700 px-3 py-2 shadow-xl"
+                                >
+                                  <div className="space-y-1">
+                                    <div className="font-semibold text-sm">Unallocated</div>
+                                    <div className="text-lg font-bold text-white">
+                                      {unallocatedPercentage.toFixed(1)}%
+                                    </div>
+                                  </div>
+                                </TooltipContent>
+                              </Tooltip>
+                            )}
                           </div>
-
-                          {/* Total indicator */}
-                          {totalPercentage !== 100 && (
-                            <div className="text-xs text-slate-500 flex items-center gap-1 mt-2">
-                              <span>Total allocation:</span>
-                              <span className={`font-semibold ${totalPercentage === 100 ? 'text-green-600' : 'text-amber-600'}`}>
-                                {totalPercentage.toFixed(1)}%
-                              </span>
-                              {totalPercentage !== 100 && (
-                                <span className="text-amber-600">(expected: 100%)</span>
-                              )}
-                            </div>
-                          )}
-                        </div>
+                        </TooltipProvider>
                       </CardContent>
                     </Card>
                   );
@@ -4388,56 +4354,121 @@ export default function ActivityDetailPage() {
                   <div className="md:col-span-2">
                     <Card className="border-slate-200 h-full">
                       <CardHeader>
-                        <CardTitle className="text-slate-900 flex items-center gap-2">
-                          <MapPin className="h-5 w-5" />
-                          Activity Locations
-                        </CardTitle>
-                        <CardDescription>
-                          {allActivityLocations.length} location{allActivityLocations.length !== 1 ? 's' : ''} found
-                        </CardDescription>
+                        <div className="flex items-center justify-between">
+                          <CardTitle className="text-slate-900 flex items-center gap-2">
+                            <MapPin className="h-5 w-5" />
+                            Activity Locations
+                          </CardTitle>
+                          {allActivityLocations.length > 0 && (
+                            <div className="flex items-center gap-1 border rounded-md p-1">
+                              <Button
+                                variant={locationsView === 'cards' ? 'secondary' : 'ghost'}
+                                size="sm"
+                                onClick={() => setLocationsView('cards')}
+                                className="h-7 px-2"
+                              >
+                                <LayoutGrid className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant={locationsView === 'table' ? 'secondary' : 'ghost'}
+                                size="sm"
+                                onClick={() => setLocationsView('table')}
+                                className="h-7 px-2"
+                              >
+                                <TableIcon className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          )}
+                        </div>
                       </CardHeader>
                       <CardContent>
                         {allActivityLocations.length > 0 ? (
-                          <div className="space-y-4 max-h-[28rem] overflow-y-auto pr-2">
-                            {allActivityLocations.map((location) => {
-                              // Convert location to LocationSchema format
-                              const locationSchema: LocationSchema = {
-                                id: location.id,
-                                location_name: location.location_name || 'Unnamed Location',
-                                latitude: location.latitude,
-                                longitude: location.longitude,
-                                description: location.description || location.location_description,
-                                location_description: location.location_description,
-                                activity_location_description: location.activity_location_description,
-                                address: location.address,
-                                address_line1: location.address_line1,
-                                address_line2: location.address_line2,
-                                city: location.city,
-                                postal_code: location.postal_code,
-                                site_type: location.site_type,
-                                state_region_code: location.state_region_code,
-                                state_region_name: location.state_region_name,
-                                township_code: location.township_code,
-                                township_name: location.township_name,
-                                district_code: location.district_code,
-                                district_name: location.district_name,
-                                village_name: location.village_name,
-                                country_code: location.country_code || 'MM',
-                                location_type: location.location_type || 'site',
-                              };
+                          locationsView === 'cards' ? (
+                            <div className="space-y-4 max-h-[28rem] overflow-y-auto pr-2">
+                              {allActivityLocations.map((location) => {
+                                // Convert location to LocationSchema format
+                                const locationSchema: LocationSchema = {
+                                  id: location.id,
+                                  location_name: location.location_name || 'Unnamed Location',
+                                  latitude: location.latitude,
+                                  longitude: location.longitude,
+                                  description: location.description || location.location_description,
+                                  location_description: location.location_description,
+                                  activity_location_description: location.activity_location_description,
+                                  address: location.address,
+                                  address_line1: location.address_line1,
+                                  address_line2: location.address_line2,
+                                  city: location.city,
+                                  postal_code: location.postal_code,
+                                  site_type: location.site_type,
+                                  state_region_code: location.state_region_code,
+                                  state_region_name: location.state_region_name,
+                                  township_code: location.township_code,
+                                  township_name: location.township_name,
+                                  district_code: location.district_code,
+                                  district_name: location.district_name,
+                                  village_name: location.village_name,
+                                  country_code: location.country_code || 'MM',
+                                  location_type: location.location_type || 'site',
+                                };
 
-                              return (
-                                <LocationCard
-                                  key={location.id}
-                                  location={locationSchema}
-                                  onEdit={() => {}}
-                                  onDelete={() => {}}
-                                  onDuplicate={() => {}}
-                                  canEdit={false}
-                                />
-                              );
-                            })}
-                          </div>
+                                return (
+                                  <LocationCard
+                                    key={location.id}
+                                    location={locationSchema}
+                                    onEdit={() => {}}
+                                    onDelete={() => {}}
+                                    onDuplicate={() => {}}
+                                    canEdit={false}
+                                  />
+                                );
+                              })}
+                            </div>
+                          ) : (
+                            <div className="max-h-[28rem] overflow-y-auto">
+                              <Table>
+                                <TableHeader>
+                                  <TableRow>
+                                    <TableHead>Name</TableHead>
+                                    <TableHead>Coordinates</TableHead>
+                                    <TableHead>Location</TableHead>
+                                    <TableHead>Description</TableHead>
+                                  </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                  {allActivityLocations.map((location) => {
+                                    const formatAddress = () => {
+                                      const parts = [];
+                                      if (location.township_name) parts.push(location.township_name);
+                                      if (location.city) parts.push(location.city);
+                                      if (location.state_region_name) parts.push(location.state_region_name);
+                                      if (location.country_code) parts.push(location.country_code);
+                                      return parts.join(', ') || 'N/A';
+                                    };
+                                    
+                                    return (
+                                      <TableRow key={location.id}>
+                                        <TableCell className="font-medium">
+                                          {location.location_name || 'Unnamed Location'}
+                                        </TableCell>
+                                        <TableCell className="text-muted-foreground text-sm">
+                                          {location.latitude && location.longitude 
+                                            ? `${location.latitude.toFixed(4)}, ${location.longitude.toFixed(4)}`
+                                            : 'N/A'}
+                                        </TableCell>
+                                        <TableCell className="text-sm">
+                                          {formatAddress()}
+                                        </TableCell>
+                                        <TableCell className="text-sm text-muted-foreground max-w-[200px] truncate">
+                                          {location.location_description || location.description || '-'}
+                                        </TableCell>
+                                      </TableRow>
+                                    );
+                                  })}
+                                </TableBody>
+                              </Table>
+                            </div>
+                          )
                         ) : (
                           <div className="text-center py-12">
                             <MapPin className="h-12 w-12 text-slate-300 mx-auto mb-4" />

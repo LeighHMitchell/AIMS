@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useMemo } from 'react'
+import React, { useMemo, useId, useState, useEffect } from 'react'
 import { MapContainer, TileLayer } from 'react-leaflet'
 import dynamic from 'next/dynamic'
 import 'leaflet/dist/leaflet.css'
@@ -47,6 +47,20 @@ export default function ActivityLocationsMapView({
   viewMode = 'markers',
   activityTitle,
 }: ActivityLocationsMapViewProps) {
+  // Generate a unique instance ID for this component mount
+  const instanceId = useId()
+  
+  // Track if component is mounted to avoid Leaflet initialization issues
+  const [isMounted, setIsMounted] = useState(false)
+  
+  useEffect(() => {
+    // Small delay to ensure DOM is ready
+    const timer = setTimeout(() => setIsMounted(true), 50)
+    return () => {
+      clearTimeout(timer)
+      setIsMounted(false)
+    }
+  }, [])
 
   // Filter valid locations
   const validLocations = useMemo(() => {
@@ -66,15 +80,24 @@ export default function ActivityLocationsMapView({
     }))
   }, [validLocations])
 
+  // Don't render until mounted to avoid SSR/hydration issues
+  if (!isMounted) {
+    return (
+      <div style={{ height: '100%', width: '100%' }} className="flex items-center justify-center bg-slate-50">
+        <div className="text-slate-400 text-sm">Loading map...</div>
+      </div>
+    )
+  }
+
   return (
     <MapContainer
+      key={`map-${instanceId}-${currentLayer}-${viewMode}`}
       center={mapCenter}
       zoom={mapZoom}
       style={{ height: '100%', width: '100%' }}
       scrollWheelZoom={true}
       minZoom={5}
       maxZoom={18}
-      key={`${currentLayer}-${viewMode}`}
     >
       <TileLayer
         url={layerUrl}

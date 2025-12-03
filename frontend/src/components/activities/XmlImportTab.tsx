@@ -4334,7 +4334,7 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
   }, [iatiSearchFilters]);
 
   // Handle External Publisher modal choice
-  const handleExternalPublisherChoice = async (choice: 'reference' | 'fork' | 'merge') => {
+  const handleExternalPublisherChoice = async (choice: 'merge' | 'import_as_reporting_org') => {
     console.log('[External Publisher] User chose:', choice);
     console.log('[External Publisher] Current state:', {
       parsedFieldsCount: parsedFields.length,
@@ -4344,16 +4344,11 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
     });
     setShowExternalPublisherModal(false);
     
-    if (choice === 'reference') {
-      // Just store as a reference without importing
-      toast.info('Reference mode selected. Activity will be stored as external reference.');
-    } else {
-      // For fork or merge, the fields are already parsed and preview is already showing
-      // Ensure the import status is set correctly
-      console.log('[External Publisher] Ensuring preview mode is active');
-      setImportStatus({ stage: 'previewing', progress: 100 });
-      toast.success(`Proceeding with ${choice}. Review and select fields to import below.`);
-    }
+    // For merge, the fields are already parsed and preview is already showing
+    // Ensure the import status is set correctly
+    console.log('[External Publisher] Ensuring preview mode is active');
+    setImportStatus({ stage: 'previewing', progress: 100 });
+    toast.success(`Proceeding with ${choice}. Review and select fields to import below.`);
   };
 
   const handleSelectIatiActivity = async (activity: any) => {

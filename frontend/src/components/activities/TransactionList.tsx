@@ -1230,10 +1230,11 @@ export default function TransactionList({
             )}
             {hideSummaryCards && <div />}
             
-            {/* Right side: Filters and Actions - All on same row */}
-            <div className={`flex items-center gap-2 flex-wrap ${hideSummaryCards ? 'hidden' : ''}`}>
+            {/* Right side: Filters and Actions - All on same row (only show when hideSummaryCards is false) */}
+            {!hideSummaryCards && (
+            <div className="flex items-center gap-2 flex-nowrap flex-1 justify-end">
               {/* Transaction Type Filter */}
-              {!hideSummaryCards && transactions.length > 0 && (
+              {transactions.length > 0 && (
                 <Select value={transactionTypeFilter} onValueChange={setTransactionTypeFilter}>
                   <SelectTrigger className="w-[180px] h-9">
                     <SelectValue placeholder="Transaction Type" />
@@ -1253,7 +1254,7 @@ export default function TransactionList({
               )}
               
               {/* Finance Type Filter */}
-              {!hideSummaryCards && transactions.length > 0 && (
+              {transactions.length > 0 && (
                 <Select value={financeTypeFilter} onValueChange={setFinanceTypeFilter}>
                   <SelectTrigger className="w-[180px] h-9">
                     <SelectValue placeholder="Finance Type" />
@@ -1273,7 +1274,7 @@ export default function TransactionList({
               )}
               
               {/* Grouped View Toggle */}
-              {!hideSummaryCards && transactions.length > 0 && (
+              {transactions.length > 0 && (
                 <div className="flex items-center gap-2 px-3 py-1.5 border rounded-md bg-background">
                   <Switch
                     id="grouped-view"
@@ -1287,7 +1288,7 @@ export default function TransactionList({
               )}
               
               {/* Expand/Collapse All */}
-              {!hideSummaryCards && transactions.length > 0 && !groupedView && expandedRows.size > 0 ? (
+              {transactions.length > 0 && !groupedView && expandedRows.size > 0 ? (
                 <Button 
                   variant="outline" 
                   size="sm" 
@@ -1297,7 +1298,7 @@ export default function TransactionList({
                   <ChevronUp className="h-4 w-4 mr-1" />
                   Collapse All
                 </Button>
-              ) : !hideSummaryCards && transactions.length > 0 && !groupedView ? (
+              ) : transactions.length > 0 && !groupedView ? (
                 <Button 
                   variant="outline" 
                   size="sm" 
@@ -1309,8 +1310,16 @@ export default function TransactionList({
                 </Button>
               ) : null}
               
-              {/* Export Button */}
-              {!hideSummaryCards && transactions.length > 0 && (
+              {/* Column Selector - always visible */}
+              <div className="relative z-[200]">
+                <ActivityTransactionColumnSelector 
+                  visibleColumns={visibleColumns} 
+                  onColumnsChange={setVisibleColumns} 
+                />
+              </div>
+              
+              {/* Export Button - always visible */}
+              {transactions.length > 0 && (
                 <Button variant="outline" size="sm" onClick={handleExport}>
                   <Download className="h-4 w-4 mr-1" />
                   Export
@@ -1325,114 +1334,13 @@ export default function TransactionList({
                 </Button>
               )}
             </div>
+            )}
           </div>
         </CardHeader>
         
-        {/* Filters shown inline when hideSummaryCards is false (regular view) */}
-        {!hideSummaryCards && (
-          <div className="px-6 pb-4 border-b">
-            <div className="flex items-center gap-2 flex-wrap">
-              {/* Transaction Type Filter - only show when transactions exist */}
-              {transactions.length > 0 && (
-                <Select value={transactionTypeFilter} onValueChange={setTransactionTypeFilter}>
-                  <SelectTrigger className="w-[140px] h-9">
-                    <SelectValue placeholder="Transaction Type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Transaction Types</SelectItem>
-                    {uniqueTransactionTypes.map(type => (
-                      <SelectItem key={type} value={type}>
-                        <span className="flex items-center gap-2">
-                          <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{type}</span>
-                          <span>{TRANSACTION_TYPE_LABELS[type as keyof typeof TRANSACTION_TYPE_LABELS] || type}</span>
-                        </span>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              )}
-              
-              {/* Finance Type Filter - only show when transactions exist */}
-              {transactions.length > 0 && (
-                <Select value={financeTypeFilter} onValueChange={setFinanceTypeFilter}>
-                  <SelectTrigger className="w-[140px] h-9">
-                    <SelectValue placeholder="Finance Type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Finance Types</SelectItem>
-                    {uniqueFinanceTypes.map(type => (
-                      <SelectItem key={type} value={type}>
-                        <span className="flex items-center gap-2">
-                          <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{type}</span>
-                          <span>{FINANCE_TYPE_LABELS[type] || type}</span>
-                        </span>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              )}
-              
-              {/* Grouped View Toggle - only show when transactions exist */}
-              {transactions.length > 0 && (
-                <div className="flex items-center gap-2 px-3 py-1.5 border rounded-md bg-background">
-                  <Switch
-                    id="grouped-view-inline"
-                    checked={groupedView}
-                    onCheckedChange={setGroupedView}
-                  />
-                  <Label htmlFor="grouped-view-inline" className="text-sm cursor-pointer whitespace-nowrap">
-                    Grouped View
-                  </Label>
-                </div>
-              )}
-              
-              {/* Expand/Collapse All - only show when transactions exist */}
-              {transactions.length > 0 && (
-                expandedRows.size > 0 ? (
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    onClick={collapseAllRows}
-                    title={groupedView ? "Not available in grouped view" : "Collapse all expanded rows"}
-                    disabled={groupedView}
-                  >
-                    <ChevronUp className="h-4 w-4 mr-1" />
-                    Collapse All
-                  </Button>
-                ) : (
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    onClick={expandAllRows}
-                    title={groupedView ? "Not available in grouped view" : "Expand all rows"}
-                    disabled={groupedView}
-                  >
-                    <ChevronDown className="h-4 w-4 mr-1" />
-                    Expand All
-                  </Button>
-                )
-              )}
-              
-              {/* Column Selector - always visible */}
-              <div className="relative z-[200]">
-                <ActivityTransactionColumnSelector 
-                  visibleColumns={visibleColumns} 
-                  onColumnsChange={setVisibleColumns} 
-                />
-              </div>
-              
-              {/* Export Button - always visible */}
-              <Button variant="outline" size="sm" onClick={handleExport}>
-                <Download className="h-4 w-4 mr-1" />
-                Export
-              </Button>
-            </div>
-          </div>
-        )}
-        
         {/* Filters for when hideSummaryCards is true - portaled to Activity Profile Page */}
         {isMounted && hideSummaryCards && renderFilters?.(
-          <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex items-center gap-2 flex-nowrap">
             {/* Transaction Type Filter - only show when transactions exist */}
             {transactions.length > 0 && (
               <Select value={transactionTypeFilter} onValueChange={setTransactionTypeFilter}>

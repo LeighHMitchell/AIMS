@@ -3470,10 +3470,10 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
       };
 
       const hasConflict = (currentValue: any, importValue: any): boolean => {
-        // Normalization helper
+        // Normalization helper - collapse multiple whitespace characters for better comparison
         const normalize = (val: any) => {
           if (val === null || val === undefined) return '';
-          return String(val).trim();
+          return String(val).trim().replace(/\s+/g, ' ');
         };
 
         // Get comparison value (prefer code if available)
@@ -5312,16 +5312,36 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
             fieldName: `Location ${locIndex + 1}`,
             iatiPath: `iati-activity/location[${locIndex + 1}]`,
             currentValue: (() => {
-              const currentLocation = fetchedActivityData.locations && fetchedActivityData.locations[locIndex];
-              if (!currentLocation) return null;
+              const currentLocations = fetchedActivityData.locations || [];
+              
+              // Parse import coordinates for comparison
+              const importLat = parseFloat(String(latitude));
+              const importLon = parseFloat(String(longitude));
+              
+              // Find by coordinates instead of index for more reliable matching
+              const matchingLocation = currentLocations.find((loc: any) => {
+                const locLat = parseFloat(loc.latitude);
+                const locLon = parseFloat(loc.longitude);
+                if (!isNaN(locLat) && !isNaN(locLon) && !isNaN(importLat) && !isNaN(importLon)) {
+                  const coordsMatch = Math.abs(locLat - importLat) < 0.0001 &&
+                                      Math.abs(locLon - importLon) < 0.0001;
+                  if (coordsMatch) return true;
+                }
+                // Fallback to ref match
+                const locRef = String(loc.location_ref || loc.country_code || '').trim();
+                const importRef = String(location.ref || '').trim();
+                return locRef !== '' && locRef === importRef;
+              });
+              
+              if (!matchingLocation) return null;
               
               // Return plain object matching IatiImportFieldsTable expected format
               return {
-                name: currentLocation.location_name || 'Unnamed Location',
-                latitude: currentLocation.latitude,
-                longitude: currentLocation.longitude,
-                country_code: currentLocation.location_ref || currentLocation.country_code,
-                location_type_code: currentLocation.location_class
+                name: matchingLocation.location_name || 'Unnamed Location',
+                latitude: matchingLocation.latitude,
+                longitude: matchingLocation.longitude,
+                country_code: matchingLocation.location_ref || matchingLocation.country_code,
+                location_type_code: matchingLocation.location_class
               };
             })(),
             importValue: locationSummary,
@@ -5699,19 +5719,23 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
           let currentValue = null;
           let hasConflict = false;
 
-          // Match by IATI ref first, then by narrative/name and role
+          // Match by IATI ref first, then by narrative/name - relaxed matching for better results
           const matchedOrg = currentParticipatingOrgs.find((current: any) => {
             const refMatch = org.ref && (
               current.iati_org_ref === org.ref || 
               current.organization?.iati_org_id === org.ref
             );
             const nameMatch = org.narrative && (
-              current.narrative === org.narrative ||
-              current.organization?.name === org.narrative
+              current.narrative?.toLowerCase() === org.narrative?.toLowerCase() ||
+              current.organization?.name?.toLowerCase() === org.narrative?.toLowerCase()
             );
-            const roleMatch = org.role && String(current.iati_role_code) === String(org.role);
+            const roleMatch = String(current.iati_role_code || '') === String(org.role || '');
             
-            return (refMatch || nameMatch) && roleMatch;
+            // Prioritize: exact match with role > ref match only > name match only
+            // This allows matching even when role codes differ or aren't set
+            if ((refMatch || nameMatch) && roleMatch) return true;
+            if (refMatch) return true; // ref match is reliable even without role
+            return false;
           });
 
           if (matchedOrg) {
@@ -6729,7 +6753,7 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
   }, [iatiSearchFilters]);
 
   // Handle External Publisher modal choice
-  const handleExternalPublisherChoice = async (choice: 'reference' | 'fork' | 'merge' | 'import_as_reporting_org') => {
+  const handleExternalPublisherChoice = async (choice: 'merge' | 'import_as_reporting_org') => {
     console.log('[External Publisher] User chose:', choice);
     console.log('[External Publisher] Current state:', {
       parsedFieldsCount: parsedFields.length,
@@ -6739,10 +6763,7 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
     });
     setShowExternalPublisherModal(false);
 
-    if (choice === 'reference') {
-      // Just store as a reference without importing
-      toast.info('Reference mode selected. Activity will be stored as external reference.');
-    } else if (choice === 'import_as_reporting_org') {
+    if (choice === 'import_as_reporting_org') {
       // Import under original publisher - show reporting org selection modal first
       console.log('[External Publisher] ✅ Setting import mode to import_as_reporting_org');
       setSelectedImportMode('import_as_reporting_org');

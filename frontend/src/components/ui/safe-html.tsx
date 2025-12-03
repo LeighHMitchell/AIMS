@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { forwardRef } from 'react';
 import { sanitizeIatiDescription, sanitizeRichText, sanitizeMinimal, sanitizeTextOnly } from '@/lib/sanitize';
 import { cn } from '@/lib/utils';
 
@@ -28,14 +28,15 @@ interface SafeHtmlProps {
 /**
  * SafeHtml component for rendering sanitized HTML content
  * Uses DOMPurify to sanitize HTML before rendering with dangerouslySetInnerHTML
+ * Supports ref forwarding for use with asChild in Radix UI components
  */
-export function SafeHtml({ 
+export const SafeHtml = forwardRef<HTMLElement, SafeHtmlProps>(({ 
   html, 
   level = 'iati', 
   className,
-  as: Component = 'div',
+  as = 'div',
   style
-}: SafeHtmlProps) {
+}, ref) => {
   if (!html) return null;
 
   let sanitized: string;
@@ -70,14 +71,22 @@ export function SafeHtml({
     className
   );
 
-  return (
-    <Component
-      className={baseStyles}
-      style={style}
-      dangerouslySetInnerHTML={{ __html: sanitized }}
-    />
-  );
-}
+  const commonProps = {
+    className: baseStyles,
+    style,
+    dangerouslySetInnerHTML: { __html: sanitized }
+  };
+
+  if (as === 'span') {
+    return <span ref={ref as React.Ref<HTMLSpanElement>} {...commonProps} />;
+  }
+  if (as === 'p') {
+    return <p ref={ref as React.Ref<HTMLParagraphElement>} {...commonProps} />;
+  }
+  return <div ref={ref as React.Ref<HTMLDivElement>} {...commonProps} />;
+});
+
+SafeHtml.displayName = 'SafeHtml';
 
 export default SafeHtml;
 

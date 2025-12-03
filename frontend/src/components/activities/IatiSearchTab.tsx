@@ -380,33 +380,15 @@ export default function IatiSearchTab({ activityId }: IatiSearchTabProps) {
   }
   
   // Handle external publisher choice
-  const handleExternalPublisherChoice = async (choice: 'reference' | 'fork' | 'merge') => {
+  const handleExternalPublisherChoice = async (choice: 'merge' | 'import_as_reporting_org') => {
     devLog("[IATI Search] User chose:", choice)
     devLog("[IATI Search] ImportedXml available:", !!importedXml, "Length:", importedXml?.length || 0)
     devLog("[IATI Search] External publisher meta:", externalPublisherMeta)
     
     setShowExternalPublisherModal(false)
     
-    if (choice === 'reference') {
-      // Just save as a reference without importing fields
-      try {
-        const response = await fetch(`/api/activities/${activityId}`, {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            iati_identifier: externalPublisherMeta.iatiId,
-            external_reference: true
-          })
-        })
-        
-        if (response.ok) {
-          toast.success('External activity referenced successfully')
-        }
-      } catch (error) {
-        toast.error('Failed to save reference')
-      }
-    } else if (choice === 'fork' || choice === 'merge') {
-      // Both fork and merge go to IATI Import tab, but merge will auto-parse
+    if (choice === 'merge') {
+      // Merge goes to IATI Import tab and will auto-parse
       // Check if we have the XML
       if (!importedXml) {
         prodError('[IATI Search] No imported XML available!')
@@ -414,8 +396,7 @@ export default function IatiSearchTab({ activityId }: IatiSearchTabProps) {
         return
       }
       
-      const actionText = choice === 'fork' ? 'Forking' : 'Merging'
-      devLog('[IATI Search] Proceeding with', actionText, 'XML length:', importedXml.length)
+      devLog('[IATI Search] Proceeding with Merging, XML length:', importedXml.length)
       
       // Store XML data for the IATI Import tab using localStorage (persists across page reloads)
       localStorage.setItem('iati_import_xml', importedXml)

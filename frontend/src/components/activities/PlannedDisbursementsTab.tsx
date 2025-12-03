@@ -177,6 +177,7 @@ export default function PlannedDisbursementsTab({
 }: PlannedDisbursementsTabProps) {
   const [disbursements, setDisbursements] = useState<PlannedDisbursement[]>([]);
   const [organizations, setOrganizations] = useState<Organization[]>([]);
+  const [organizationsLoaded, setOrganizationsLoaded] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [savingId, setSavingId] = useState<string | null>(null);
@@ -271,8 +272,33 @@ export default function PlannedDisbursementsTab({
     setExpandedRows(new Set());
   };
 
+  // Lazy-load organizations only when modal is opened (for autocomplete)
+  const fetchOrganizationsIfNeeded = async () => {
+    if (organizationsLoaded) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('organizations')
+        .select('id, name, code, acronym, type, Organisation_Type_Code, Organisation_Type_Name, iati_org_id, logo, country')
+        .order('name');
+
+      if (error) throw error;
+
+      console.log('[PlannedDisbursementsTab] Fetched organizations with logos:', 
+        data?.filter(org => org.logo).map(org => ({ name: org.name, hasLogo: !!org.logo }))
+      );
+
+      setOrganizations(data || []);
+      setOrganizationsLoaded(true);
+    } catch (err) {
+      console.error('Error fetching organizations:', err);
+    }
+  };
+
   // Handler to open modal for add/edit
   const openModal = (disbursement?: PlannedDisbursement) => {
+    // Lazy-load organizations only when modal is opened
+    fetchOrganizationsIfNeeded();
     const newDisbursement = disbursement ? { ...disbursement } : {
       activity_id: activityId,
       amount: 0,
@@ -623,29 +649,7 @@ export default function PlannedDisbursementsTab({
     setShowModal(true);
   }, [disbursements, activityId, defaultCurrency, startDate, endDate]);
 
-  // Fetch organizations for autocomplete
-  useEffect(() => {
-    const fetchOrganizations = async () => {
-      try {
-        const { data, error } = await supabase
-          .from('organizations')
-          .select('id, name, code, acronym, type, Organisation_Type_Code, Organisation_Type_Name, iati_org_id, logo, country')
-          .order('name');
-
-        if (error) throw error;
-
-        console.log('[PlannedDisbursementsTab] Fetched organizations with logos:', 
-          data?.filter(org => org.logo).map(org => ({ name: org.name, hasLogo: !!org.logo }))
-        );
-
-        setOrganizations(data || []);
-      } catch (err) {
-        console.error('Error fetching organizations:', err);
-      }
-    };
-
-    fetchOrganizations();
-  }, []);
+  // Organizations are now lazy-loaded in fetchOrganizationsIfNeeded() when modal opens
 
   // Fetch disbursements for this activity
   useEffect(() => {

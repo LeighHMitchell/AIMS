@@ -11,9 +11,7 @@ import { Label } from '@/components/ui/label';
 import { 
   HelpCircle, 
   AlertTriangle, 
-  ExternalLink, 
   Copy, 
-  GitBranch,
   Merge,
   Info,
   Building2
@@ -42,12 +40,6 @@ const iatiImportStrings = {
   'summary.notProvided': 'Not provided',
   'noPublisher.banner': 'You have no publisher identifiers set up. All activities will be treated as external.',
   duplicateWarning: 'Warning: An activity with this IATI identifier already exists in your system.',
-  'option.reference.title': 'Link as Reference',
-  'option.reference.help': 'Add this activity as a read-only reference. It will not count towards your totals.',
-  'option.reference.tooltip': 'Use this option to add the selected activity as a read-only reference. The activity will remain external and cannot be edited. It will not contribute to your organisation\'s budgets, commitments, or disbursement totals. This is useful if you need contextual information without duplicating data.',
-  'option.fork.title': 'Fork as Local Draft',
-  'option.fork.help': 'Create an editable copy under your organisation. You must assign a new IATI identifier.',
-  'option.fork.tooltip': 'Create an editable copy of the activity under your organisation. You must assign a new, unique IATI Activity Identifier before publishing. The forked version becomes your responsibility to maintain and will be counted in your organisation\'s totals.',
   'option.merge.title': 'Merge into Current Activity',
   'option.merge.help': 'Link this external record to the activity you are currently editing.',
   'option.merge.tooltip': 'Attach the external activity record directly to the one you are editing. This creates a link between the two datasets, allowing you to maintain your own reporting while showing its connection to the external activity (for example, a donor\'s parent record or an implementing partner\'s sub-activity).',
@@ -75,7 +67,7 @@ export interface ExternalPublisherModalProps {
   userRole?: string; // User role for permission checking
   userId?: string; // User ID for API calls
   xmlContent?: string; // XML content for import_as_reporting_org option
-  onChoose: (choice: 'reference' | 'fork' | 'merge' | 'import_as_reporting_org', targetActivityId?: string) => void;
+  onChoose: (choice: 'merge' | 'import_as_reporting_org', targetActivityId?: string) => void;
   currentActivityId?: string; // The activity being edited
   currentActivityIatiId?: string; // The IATI ID of the current activity
   existingActivity?: {
@@ -85,7 +77,7 @@ export interface ExternalPublisherModalProps {
   } | null;
 }
 
-type ImportOption = 'reference' | 'fork' | 'merge' | 'import_as_reporting_org';
+type ImportOption = 'merge' | 'import_as_reporting_org';
 
 interface ParsedField {
   fieldName: string;
@@ -1142,75 +1134,7 @@ export function ExternalPublisherModal({
         <div className="space-y-4">
           <RadioGroup value={selectedOption || ''} onValueChange={handleOptionChange}>
             
-            {/* Option 1: Reference */}
-            <div className="bg-background border border-border rounded-lg p-6 space-y-4 hover:border-gray-300 transition-colors">
-              <div className="flex items-start space-x-3">
-                <RadioGroupItem value="reference" id="reference" className="mt-1" />
-                <div className="flex-1 space-y-2">
-                  <Label htmlFor="reference" className="text-base font-medium cursor-pointer flex items-center gap-2">
-                    <ExternalLink className="h-4 w-4" />
-                    {iatiImportStrings['option.reference.title']}
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-5 w-5 p-0 rounded-full hover:bg-gray-100 focus:bg-gray-100"
-                          type="button"
-                          aria-label="Show examples"
-                        >
-                          <HelpCircle className="h-3 w-3" />
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent side="top" align="center" className="max-w-sm">
-                        <p className="text-xs">
-                          {iatiImportStrings['option.reference.tooltip']}
-                        </p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </Label>
-                  <p className="text-sm text-gray-600">
-                    {iatiImportStrings['option.reference.help']}
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* Option 2: Fork */}
-            <div className="bg-background border border-border rounded-lg p-6 space-y-4 hover:border-gray-300 transition-colors">
-              <div className="flex items-start space-x-3">
-                <RadioGroupItem value="fork" id="fork" className="mt-1" />
-                <div className="flex-1 space-y-2">
-                  <Label htmlFor="fork" className="text-base font-medium cursor-pointer flex items-center gap-2">
-                    <GitBranch className="h-4 w-4" />
-                    {iatiImportStrings['option.fork.title']}
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-5 w-5 p-0 rounded-full hover:bg-gray-100 focus:bg-gray-100"
-                          type="button"
-                          aria-label="Show examples"
-                        >
-                          <HelpCircle className="h-3 w-3" />
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent side="top" align="center" className="max-w-sm">
-                        <p className="text-xs">
-                          {iatiImportStrings['option.fork.tooltip']}
-                        </p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </Label>
-                  <p className="text-sm text-gray-600">
-                    {iatiImportStrings['option.fork.help']}
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* Option 3: Merge */}
+            {/* Option 1: Merge */}
             <div className="bg-background border border-border rounded-lg p-6 space-y-4 hover:border-gray-300 transition-colors relative">
               <div className="flex items-start space-x-3">
                 <RadioGroupItem value="merge" id="merge" className="mt-1" />
@@ -1244,7 +1168,7 @@ export function ExternalPublisherModal({
               </div>
             </div>
 
-            {/* Option 4: Import as Reporting Org (Super/Government only) */}
+            {/* Option 2: Import as Reporting Org (Super/Government only) */}
             {(userRole === USER_ROLES.SUPER_USER || userRole === 'admin' || 
               userRole === USER_ROLES.GOV_PARTNER_TIER_1 || userRole === USER_ROLES.GOV_PARTNER_TIER_2) && (
               <div className="bg-background border border-border rounded-lg p-6 space-y-4 hover:border-gray-300 transition-colors relative">

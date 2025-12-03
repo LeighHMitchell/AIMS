@@ -67,6 +67,7 @@ import { BulkActionToolbar } from "@/components/ui/bulk-action-toolbar";
 import { BulkDeleteDialog } from "@/components/dialogs/bulk-delete-dialog";
 import dynamic from 'next/dynamic';
 import { SectorFilterSelection, matchesSectorFilter } from "@/components/maps/SectorHierarchyFilter";
+import { SafeHtml } from '@/components/ui/safe-html';
 
 // Dynamically import SectorHierarchyFilter to avoid hydration issues
 const SectorHierarchyFilter = dynamic(
@@ -330,7 +331,8 @@ const formatOrganisationList = (orgs: string[]): { display: string; full: string
 // Shows first 120 characters with ellipsis, full text in tooltip
 const truncateDescription = (text: string | null | undefined, maxLength: number = 120): { display: string; full: string | null } => {
   if (!text) return { display: '—', full: null };
-  if (text.length <= maxLength) return { display: text, full: null };
+  // Always return full text for tooltip, even if not truncated
+  if (text.length <= maxLength) return { display: text, full: text };
   return { display: text.slice(0, maxLength) + '…', full: text };
 };
 
@@ -2160,9 +2162,11 @@ function ActivitiesPageContent() {
                       {/* Activity Title cell */}
                       {visibleColumns.includes('title') && (
                       <td className="px-4 py-2 text-sm text-foreground whitespace-normal break-words leading-tight">
-                        <div 
-                          className="cursor-pointer"
-                          onClick={async () => {
+                        <a 
+                          href={`/activities/${activity.id}`}
+                          className="cursor-pointer block"
+                          onClick={async (e) => {
+                            e.preventDefault();
                             // Verify activity exists before navigating (lightweight check)
                             try {
                               const checkRes = await fetch(`/api/activities/${activity.id}?fields=id`, {
@@ -2212,15 +2216,6 @@ function ActivitiesPageContent() {
                               <h3 
                                 className="font-medium text-foreground leading-tight line-clamp-2" 
                                 title={activity.title}
-                                onContextMenu={(e) => {
-                                  e.preventDefault();
-                                  e.stopPropagation();
-                                  setContextMenu({
-                                    activityId: activity.id,
-                                    x: e.clientX,
-                                    y: e.clientY,
-                                  });
-                                }}
                               >
                                 {activity.title}
                                 {activity.acronym && (
@@ -2289,7 +2284,7 @@ function ActivitiesPageContent() {
                             )}
                           </div>
                           </div>
-                        </div>
+                        </a>
                       </td>
                       )}
                       
@@ -2773,13 +2768,13 @@ function ActivitiesPageContent() {
                               <TooltipProvider>
                                 <Tooltip>
                                   <TooltipTrigger asChild>
-                                    <span className="cursor-pointer line-clamp-2">{truncated.display}</span>
+                                    <SafeHtml html={truncated.display} level="iati" as="span" className="cursor-pointer line-clamp-2" />
                                   </TooltipTrigger>
                                   {truncated.full && (
                                     <TooltipContent className="max-w-md bg-white border shadow-lg p-3">
                                       <div className="space-y-1">
                                         <p className="font-medium text-xs text-muted-foreground mb-2">Activity Description – General</p>
-                                        <p className="text-sm whitespace-pre-wrap">{truncated.full}</p>
+                                        <SafeHtml html={truncated.full} level="iati" className="text-sm" />
                                       </div>
                                     </TooltipContent>
                                   )}
@@ -2797,13 +2792,13 @@ function ActivitiesPageContent() {
                               <TooltipProvider>
                                 <Tooltip>
                                   <TooltipTrigger asChild>
-                                    <span className="cursor-pointer line-clamp-2">{truncated.display}</span>
+                                    <SafeHtml html={truncated.display} level="iati" as="span" className="cursor-pointer line-clamp-2" />
                                   </TooltipTrigger>
                                   {truncated.full && (
                                     <TooltipContent className="max-w-md bg-white border shadow-lg p-3">
                                       <div className="space-y-1">
                                         <p className="font-medium text-xs text-muted-foreground mb-2">Activity Description – Objectives</p>
-                                        <p className="text-sm whitespace-pre-wrap">{truncated.full}</p>
+                                        <SafeHtml html={truncated.full} level="iati" className="text-sm" />
                                       </div>
                                     </TooltipContent>
                                   )}
@@ -2821,13 +2816,13 @@ function ActivitiesPageContent() {
                               <TooltipProvider>
                                 <Tooltip>
                                   <TooltipTrigger asChild>
-                                    <span className="cursor-pointer line-clamp-2">{truncated.display}</span>
+                                    <SafeHtml html={truncated.display} level="iati" as="span" className="cursor-pointer line-clamp-2" />
                                   </TooltipTrigger>
                                   {truncated.full && (
                                     <TooltipContent className="max-w-md bg-white border shadow-lg p-3">
                                       <div className="space-y-1">
                                         <p className="font-medium text-xs text-muted-foreground mb-2">Activity Description – Target Groups</p>
-                                        <p className="text-sm whitespace-pre-wrap">{truncated.full}</p>
+                                        <SafeHtml html={truncated.full} level="iati" className="text-sm" />
                                       </div>
                                     </TooltipContent>
                                   )}
@@ -2845,13 +2840,13 @@ function ActivitiesPageContent() {
                               <TooltipProvider>
                                 <Tooltip>
                                   <TooltipTrigger asChild>
-                                    <span className="cursor-pointer line-clamp-2">{truncated.display}</span>
+                                    <SafeHtml html={truncated.display} level="iati" as="span" className="cursor-pointer line-clamp-2" />
                                   </TooltipTrigger>
                                   {truncated.full && (
                                     <TooltipContent className="max-w-md bg-white border shadow-lg p-3">
                                       <div className="space-y-1">
                                         <p className="font-medium text-xs text-muted-foreground mb-2">Activity Description – Other</p>
-                                        <p className="text-sm whitespace-pre-wrap">{truncated.full}</p>
+                                        <SafeHtml html={truncated.full} level="iati" className="text-sm" />
                                       </div>
                                     </TooltipContent>
                                   )}

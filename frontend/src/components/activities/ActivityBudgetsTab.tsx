@@ -253,9 +253,12 @@ export default function ActivityBudgetsTab({
   renderFilters,
   onLoadingChange
 }: ActivityBudgetsTabProps) {
-  console.log('[ActivityBudgetsTab] Component mounted with:', { activityId, startDate, endDate, defaultCurrency });
-
   const [budgets, setBudgets] = useState<ActivityBudget[]>([]);
+  
+  // Log only on mount or when key props change (not on every render)
+  useEffect(() => {
+    console.log('[ActivityBudgetsTab] Component mounted with:', { activityId, startDate, endDate, defaultCurrency });
+  }, [activityId, startDate, endDate, defaultCurrency]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [usdValues, setUsdValues] = useState<Record<string, { usd: number|null, rate: number|null, date: string, loading: boolean, error?: string }>>({});
@@ -1630,7 +1633,7 @@ export default function ActivityBudgetsTab({
           )}
           
           {/* Budgets Table */}
-          <Card data-budgets-tab className="border shadow-sm">
+          <Card data-budgets-tab>
         <CardHeader>
           <div className="flex items-center justify-between">
             {!hideSummaryCards && (

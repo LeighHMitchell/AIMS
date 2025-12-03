@@ -530,11 +530,10 @@ export default function TransactionModal({
   // Count items for each Advanced IATI Fields section
   const singleValueFieldsCount = useMemo(() => {
     let count = 0;
-    if (formData.sector_code) count++;
     if (formData.recipient_country_code) count++;
     if (formData.recipient_region_code) count++;
     return count;
-  }, [formData.sector_code, formData.recipient_country_code, formData.recipient_region_code]);
+  }, [formData.recipient_country_code, formData.recipient_region_code]);
   
   const multipleSectorsCount = useMemo(() => {
     return formData.sectors?.length || 0;
@@ -571,7 +570,6 @@ export default function TransactionModal({
   // NEW: Autosave hooks for IATI fields
   const providerActivityAutosave = useTransactionFieldAutosave({ transactionId, fieldName: 'provider_org_activity_id', userId: user?.id });
   const receiverActivityAutosave = useTransactionFieldAutosave({ transactionId, fieldName: 'receiver_org_activity_id', userId: user?.id });
-  const sectorCodeAutosave = useTransactionFieldAutosave({ transactionId, fieldName: 'sector_code', userId: user?.id });
   const recipientCountryAutosave = useTransactionFieldAutosave({ transactionId, fieldName: 'recipient_country_code', userId: user?.id });
   const recipientRegionAutosave = useTransactionFieldAutosave({ transactionId, fieldName: 'recipient_region_code', userId: user?.id });
 
@@ -2314,7 +2312,7 @@ export default function TransactionModal({
                   >
                     <div className="flex items-center gap-2">
                       <ChevronDown className={cn("h-4 w-4 transition-transform", showSingleValueFields && "rotate-180")} />
-                      <span className="text-sm font-medium text-gray-700">Geographic & Sector Targeting (Single Values)</span>
+                      <span className="text-sm font-medium text-gray-700">Geographic Targeting (Single Values)</span>
                       {singleValueFieldsCount > 0 && (
                         <Badge variant="secondary" className="text-xs">{singleValueFieldsCount}</Badge>
                       )}
@@ -2324,52 +2322,10 @@ export default function TransactionModal({
                 <CollapsibleContent className="pt-3">
                   <div className="space-y-4 p-4 bg-gray-50/50 rounded-lg border">
                     <p className="text-xs text-gray-600">
-                      Use these fields for single-value targeting, or use the multi-element sections below for IATI-compliant percentage allocations.
+                      Use these fields for single-value geographic targeting, or use the multi-element sections below for IATI-compliant percentage allocations.
                     </p>
                     
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {/* Sector Code */}
-                      <div className="space-y-2">
-                        <LabelWithInfoAndSave 
-                          helpText="OECD DAC 5-digit sector code (e.g., 11220 for Primary education)"
-                          isSaving={sectorCodeAutosave.isSaving}
-                          isSaved={sectorCodeAutosave.isSaved}
-                          hasValue={!!formData.sector_code}
-                        >
-                          Sector Code
-                        </LabelWithInfoAndSave>
-                        <Input
-                          value={formData.sector_code || ''}
-                          onChange={e => {
-                            setFormData({...formData, sector_code: e.target.value});
-                            sectorCodeAutosave.triggerFieldSave(e.target.value);
-                          }}
-                          placeholder="e.g., 11220"
-                          maxLength={5}
-                        />
-                      </div>
-                      
-                      {/* Sector Vocabulary */}
-                      <div className="space-y-2">
-                        <Label>Sector Vocabulary</Label>
-                        <Select 
-                          value={formData.sector_vocabulary || '1'}
-                          onValueChange={(v) => {
-                            setFormData({...formData, sector_vocabulary: v});
-                          }}
-                        >
-                          <SelectTrigger>
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="1">1 - DAC 5-digit</SelectItem>
-                            <SelectItem value="2">2 - DAC 3-digit</SelectItem>
-                            <SelectItem value="3">3 - COFOG</SelectItem>
-                            <SelectItem value="7">7 - SDMX</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      
                       {/* Recipient Country Code */}
                       <div className="space-y-2">
                         <LabelWithInfoAndSave 
@@ -2434,7 +2390,7 @@ export default function TransactionModal({
                 </CollapsibleContent>
               </Collapsible>
 
-              {/* Multiple Sectors */}
+              {/* Transaction Level Sector Classifications */}
               <Collapsible open={showMultipleSectors} onOpenChange={setShowMultipleSectors}>
                 <CollapsibleTrigger asChild>
                   <button
@@ -2443,8 +2399,7 @@ export default function TransactionModal({
                   >
                     <div className="flex items-center gap-2">
                       <ChevronDown className={cn("h-4 w-4 transition-transform", showMultipleSectors && "rotate-180")} />
-                      <span className="text-sm font-medium text-gray-700">Multiple Sectors</span>
-                      <Badge variant="outline" className="text-xs">IATI Compliant</Badge>
+                      <span className="text-sm font-medium text-gray-700">Transaction Level Sector Classifications</span>
                       {multipleSectorsCount > 0 && (
                         <Badge variant="secondary" className="text-xs">{multipleSectorsCount}</Badge>
                       )}
@@ -2477,7 +2432,6 @@ export default function TransactionModal({
                     <div className="flex items-center gap-2">
                       <ChevronDown className={cn("h-4 w-4 transition-transform", showMultipleAidTypes && "rotate-180")} />
                       <span className="text-sm font-medium text-gray-700">Multiple Aid Types</span>
-                      <Badge variant="outline" className="text-xs">IATI Compliant</Badge>
                       {multipleAidTypesCount > 0 && (
                         <Badge variant="secondary" className="text-xs">{multipleAidTypesCount}</Badge>
                       )}
@@ -2509,7 +2463,6 @@ export default function TransactionModal({
                     <div className="flex items-center gap-2">
                       <ChevronDown className={cn("h-4 w-4 transition-transform", showGeographicTargeting && "rotate-180")} />
                       <span className="text-sm font-medium text-gray-700">Geographic Targeting (Multiple)</span>
-                      <Badge variant="outline" className="text-xs">IATI Compliant</Badge>
                       {geographicTargetingCount > 0 && (
                         <Badge variant="secondary" className="text-xs">{geographicTargetingCount}</Badge>
                       )}

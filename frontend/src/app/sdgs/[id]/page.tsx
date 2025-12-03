@@ -565,7 +565,7 @@ export default function SDGProfilePage() {
                             <img
                               src={org.logo}
                               alt={org.name}
-                              className="w-12 h-12 rounded object-cover border border-slate-200 flex-shrink-0"
+                              className="w-12 h-12 rounded object-cover flex-shrink-0"
                             />
                           )}
                           <div className="flex-1 min-w-0">
