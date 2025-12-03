@@ -2917,9 +2917,9 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
             })
             .catch((error) => console.warn('[IATI Import Debug] Failed to fetch budgets:', error)),
 
-          // Fetch transactions (with timeout)
+          // Fetch transactions (with timeout and cache-busting)
           Promise.race([
-            fetch(`/api/activities/${activityId}/transactions`),
+            fetch(`/api/activities/${activityId}/transactions?_=${Date.now()}`),
             new Promise((_, reject) => setTimeout(() => reject(new Error('Transaction fetch timeout')), 5000))
           ])
             .then(async (res: any) => {
@@ -2927,6 +2927,8 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
                 fetchedTransactions = await res.json();
                 setCurrentTransactions(fetchedTransactions);
                 console.log(`[IATI Import Debug] Fetched ${fetchedTransactions.length} current transactions`);
+              } else {
+                console.warn(`[IATI Import Debug] Transactions fetch returned ${res.status}`);
               }
             })
             .catch((error) => {
@@ -2960,8 +2962,8 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
             })
             .catch((error) => console.warn('[IATI Import Debug] Failed to fetch country budget items:', error)),
 
-          // Fetch humanitarian scopes
-          fetch(`/api/activities/${activityId}/humanitarian`)
+          // Fetch humanitarian scopes (with cache-busting)
+          fetch(`/api/activities/${activityId}/humanitarian?_=${Date.now()}`)
             .then(async (res) => {
               if (res.ok) {
                 const hsResponse = await res.json();
@@ -2969,6 +2971,8 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
                 fetchedHumanitarianScopes = hsResponse.humanitarian_scopes || [];
                 setCurrentHumanitarianScopes(fetchedHumanitarianScopes);
                 console.log(`[IATI Import Debug] Fetched ${fetchedHumanitarianScopes.length} current humanitarian scopes`);
+              } else {
+                console.warn(`[IATI Import Debug] Humanitarian scopes fetch returned ${res.status}`);
               }
             })
             .catch((error) => console.warn('[IATI Import Debug] Failed to fetch humanitarian scopes:', error)),
@@ -3077,23 +3081,27 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
             })
             .catch((error: any) => console.warn('[IATI Import Debug] Failed to fetch loan terms:', error)),
 
-          // Fetch policy markers for current value comparison
-          fetch(`/api/activities/${activityId}/policy-markers`)
+          // Fetch policy markers for current value comparison (with cache-busting)
+          fetch(`/api/activities/${activityId}/policy-markers?_=${Date.now()}`)
             .then(async (res) => {
               if (res.ok) {
                 fetchedPolicyMarkers = await res.json();
                 fetchedActivityData.policyMarkers = fetchedPolicyMarkers;
                 console.log(`[IATI Import Debug] Fetched ${fetchedPolicyMarkers.length} current policy markers`);
+              } else {
+                console.warn(`[IATI Import Debug] Policy markers fetch returned ${res.status}`);
               }
             })
             .catch((error) => console.warn('[IATI Import Debug] Failed to fetch policy markers:', error)),
 
-          // Fetch tags for current value comparison
-          fetch(`/api/activities/${activityId}/tags`)
+          // Fetch tags for current value comparison (with cache-busting)
+          fetch(`/api/activities/${activityId}/tags?_=${Date.now()}`)
             .then(async (res) => {
               if (res.ok) {
                 fetchedActivityData.tags = await res.json();
                 console.log(`[IATI Import Debug] Fetched ${fetchedActivityData.tags?.length || 0} current tags`);
+              } else {
+                console.warn(`[IATI Import Debug] Tags fetch returned ${res.status}`);
               }
             })
             .catch((error) => console.warn('[IATI Import Debug] Failed to fetch tags:', error)),
@@ -3483,6 +3491,14 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
 
       // Create fields from parsed data organized by tabs
       console.log('[IATI Import Debug] Starting field creation process...');
+      console.log('[IATI Import Debug] 🔍 Pre-field-creation data check:', {
+        policyMarkersCount: fetchedActivityData?.policyMarkers?.length || 0,
+        tagsCount: fetchedActivityData?.tags?.length || 0,
+        humanitarianScopesCount: fetchedHumanitarianScopes?.length || 0,
+        transactionsCount: fetchedTransactions?.length || 0,
+        policyMarkersData: fetchedActivityData?.policyMarkers?.slice(0, 2),
+        tagsData: fetchedActivityData?.tags?.slice(0, 2)
+      });
       let fields: ParsedField[] = [];
       
       // Check if this is a snippet import and what type
