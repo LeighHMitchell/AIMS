@@ -2918,21 +2918,22 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
             .catch((error) => console.warn('[IATI Import Debug] Failed to fetch budgets:', error)),
 
           // Fetch transactions (with timeout and cache-busting)
+          // Increased timeout to 15 seconds - transaction API fetches linked transactions too
           Promise.race([
             fetch(`/api/activities/${activityId}/transactions?_=${Date.now()}`),
-            new Promise((_, reject) => setTimeout(() => reject(new Error('Transaction fetch timeout')), 5000))
+            new Promise((_, reject) => setTimeout(() => reject(new Error('Transaction fetch timeout')), 15000))
           ])
             .then(async (res: any) => {
               if (res.ok) {
                 fetchedTransactions = await res.json();
                 setCurrentTransactions(fetchedTransactions);
-                console.log(`[IATI Import Debug] Fetched ${fetchedTransactions.length} current transactions`);
+                console.log(`[IATI Import Debug] ✅ Fetched ${fetchedTransactions.length} current transactions`);
               } else {
-                console.warn(`[IATI Import Debug] Transactions fetch returned ${res.status}`);
+                console.warn(`[IATI Import Debug] ⚠️ Transactions fetch returned ${res.status}`);
               }
             })
             .catch((error) => {
-              console.warn('[IATI Import Debug] Failed to fetch transactions (skipping):', error.message);
+              console.warn('[IATI Import Debug] ❌ Failed to fetch transactions (skipping):', error.message);
               // Set empty array so we don't block
               fetchedTransactions = [];
               setCurrentTransactions([]);
