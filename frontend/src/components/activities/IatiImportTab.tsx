@@ -3006,35 +3006,41 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
             })
             .catch((error) => console.warn('[IATI Import Debug] Failed to fetch contacts:', error)),
 
-          // Fetch results
-          fetch(`/api/activities/${activityId}/results`)
+          // Fetch results (with cache-busting)
+          fetch(`/api/activities/${activityId}/results?_=${Date.now()}`)
             .then(async (res) => {
               if (res.ok) {
                 const response = await res.json();
                 fetchedResults = response.results || [];
                 setCurrentResults(fetchedResults);
                 console.log(`[IATI Import Debug] Fetched ${fetchedResults.length} current results`);
+              } else {
+                console.warn(`[IATI Import Debug] Results fetch returned ${res.status}`);
               }
             })
             .catch((error) => console.warn('[IATI Import Debug] Failed to fetch results:', error)),
 
-          // Fetch locations
-          fetch(`/api/activities/${activityId}/locations`)
+          // Fetch locations (with cache-busting)
+          fetch(`/api/activities/${activityId}/locations?_=${Date.now()}`)
             .then(async (res) => {
               if (res.ok) {
                 const locationsData = await res.json();
                 fetchedActivityData.locations = locationsData.locations || [];
                 console.log(`[IATI Import Debug] Fetched ${fetchedActivityData.locations.length} current locations`);
+              } else {
+                console.warn(`[IATI Import Debug] Locations fetch returned ${res.status}`);
               }
             })
             .catch((error) => console.warn('[IATI Import Debug] Failed to fetch locations:', error)),
 
-          // Fetch participating organizations
-          fetch(`/api/activities/${activityId}/participating-organizations`)
+          // Fetch participating organizations (with cache-busting)
+          fetch(`/api/activities/${activityId}/participating-organizations?_=${Date.now()}`)
             .then(async (res) => {
               if (res.ok) {
                 fetchedActivityData.participatingOrgs = await res.json();
                 console.log(`[IATI Import Debug] Fetched ${fetchedActivityData.participatingOrgs.length} current participating orgs`);
+              } else {
+                console.warn(`[IATI Import Debug] Participating orgs fetch returned ${res.status}`);
               }
             })
             .catch((error) => console.warn('[IATI Import Debug] Failed to fetch participating orgs:', error)),
@@ -3106,12 +3112,14 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
             })
             .catch((error) => console.warn('[IATI Import Debug] Failed to fetch tags:', error)),
 
-          // Fetch related activities for current value comparison
-          fetch(`/api/activities/${activityId}/related-activities`)
+          // Fetch related activities for current value comparison (with cache-busting)
+          fetch(`/api/activities/${activityId}/related-activities?_=${Date.now()}`)
             .then(async (res) => {
               if (res.ok) {
                 fetchedActivityData.relatedActivities = await res.json();
                 console.log(`[IATI Import Debug] Fetched ${fetchedActivityData.relatedActivities?.length || 0} current related activities`);
+              } else {
+                console.warn(`[IATI Import Debug] Related activities fetch returned ${res.status}`);
               }
             })
             .catch((error) => console.warn('[IATI Import Debug] Failed to fetch related activities:', error))
