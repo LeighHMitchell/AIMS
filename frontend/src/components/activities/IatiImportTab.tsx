@@ -2475,8 +2475,9 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
           const hsResponse = await fetch(`/api/activities/${activityId}/humanitarian`);
           if (hsResponse.ok) {
             const hs = await hsResponse.json();
-            setCurrentHumanitarianScopes(hs);
-            console.log(`[IatiImportTab] Fetched ${hs.length} current humanitarian scopes`);
+            // API returns { humanitarian, humanitarian_scopes } - extract the array
+            setCurrentHumanitarianScopes(hs.humanitarian_scopes || []);
+            console.log(`[IatiImportTab] Fetched ${hs.humanitarian_scopes?.length || 0} current humanitarian scopes`);
           }
         } catch (error) {
           console.warn('[IatiImportTab] Failed to fetch humanitarian scopes:', error);
@@ -8522,6 +8523,7 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
             contactInfo: updateData.importedContacts || parsedActivity?.contactInfo,
             participating_orgs: updateData.importedParticipatingOrgs || parsedActivity?.participatingOrgs,
             humanitarianScopes: updateData.humanitarianScopesData || parsedActivity?.humanitarianScopes,
+            humanitarian: updateData.humanitarian ?? parsedActivity?.humanitarian,
             results: parsedActivity?.results,
             document_links: updateData.documentLinksData || parsedActivity?.document_links,
             conditions: updateData.importedConditions || parsedActivity?.conditions,
@@ -11659,7 +11661,8 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
           const hsResponse = await fetch(`/api/activities/${activityId}/humanitarian`);
           if (hsResponse.ok) {
             const hs = await hsResponse.json();
-            setCurrentHumanitarianScopes(hs);
+            // API returns { humanitarian, humanitarian_scopes } - extract the array
+            setCurrentHumanitarianScopes(hs.humanitarian_scopes || []);
           }
         } catch (error) {
           console.warn('[IATI Import] Failed to fetch humanitarian scopes:', error);

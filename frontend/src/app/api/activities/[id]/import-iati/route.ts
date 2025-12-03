@@ -1998,10 +1998,13 @@ export async function POST(
     if (fields.humanitarian_scopes && iati_data.humanitarianScopes) {
       console.log('[IATI Import] Updating humanitarian scopes');
       
-      // Update humanitarian flag on activity
+      // Update humanitarian flag on activity - handle boolean, string '1', 'true', or true values
+      const humanitarianValue = iati_data.humanitarian === true || 
+                                iati_data.humanitarian === 'true' || 
+                                iati_data.humanitarian === '1';
       await supabase
         .from('activities')
-        .update({ humanitarian: iati_data.humanitarian || false })
+        .update({ humanitarian: humanitarianValue })
         .eq('id', activityId);
       
       // Clear existing humanitarian scopes
