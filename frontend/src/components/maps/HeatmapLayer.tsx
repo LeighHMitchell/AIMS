@@ -86,3 +86,4 @@ export default function HeatmapLayer({ points, options = {} }: HeatmapLayerProps
   return null
 }
 
+

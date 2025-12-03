@@ -9,7 +9,7 @@
  * - Multiple recipient regions
  */
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -18,7 +18,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
-import { Plus, Trash2, AlertCircle, CheckCircle, Info, Check, ChevronsUpDown, Search } from "lucide-react";
+import { Plus, Trash2, AlertCircle, CheckCircle, Info, Check, ChevronsUpDown, Search, Sparkles } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { 
   TransactionSector, 
@@ -28,6 +28,27 @@ import {
 } from "@/types/transaction";
 import { cn } from "@/lib/utils";
 import aidTypesData from "@/data/aid-types.json";
+import { SectorSelect, getSectorLabel, getSectorDescription } from "@/components/forms/SectorSelect";
+import dacSectorsData from "@/data/dac-sectors.json";
+
+// Helper to get full sector info from DAC sectors data
+interface SectorInfo {
+  code: string;
+  name: string;
+  description: string;
+  category?: string;
+}
+
+const getSectorInfo = (code: string): SectorInfo => {
+  const sectors = dacSectorsData as { [key: string]: Array<{ code: string; name: string; description: string }> };
+  for (const [category, sectorList] of Object.entries(sectors)) {
+    const sector = sectorList.find(s => s.code === code);
+    if (sector) {
+      return { ...sector, category };
+    }
+  }
+  return { code, name: `Sector ${code}`, description: '', category: 'Unknown' };
+};
 
 interface AidType {
   code: string;
@@ -37,7 +58,7 @@ interface AidType {
 }
 
 // ============================================================================
-// SECTOR MANAGER
+// SECTOR MANAGER - Enhanced with SectorSelect and rich UI
 // ============================================================================
 
 interface SectorManagerProps {
@@ -53,201 +74,247 @@ export function TransactionSectorManager({
   allowPercentages = true,
   className 
 }: SectorManagerProps) {
-  const [newSector, setNewSector] = useState<Partial<TransactionSector>>({
-    vocabulary: '1'
-  });
-
-  const totalPercentage = sectors.reduce((sum, s) => sum + (s.percentage || 0), 0);
-  const hasPercentages = sectors.some(s => s.percentage !== undefined);
+  // Track selected sector codes for the SectorSelect component
+  const selectedSectorCodes = useMemo(() => sectors.map(s => s.code), [sectors]);
+  
+  // Validation calculations
+  const totalPercentage = useMemo(() => 
+    sectors.reduce((sum, s) => sum + (s.percentage || 0), 0), 
+    [sectors]
+  );
+  const hasPercentages = sectors.some(s => s.percentage !== undefined && s.percentage > 0);
   const hasPercentageError = allowPercentages && hasPercentages && Math.abs(totalPercentage - 100) > 0.01;
   const isComplete = hasPercentages && Math.abs(totalPercentage - 100) <= 0.01;
+  const remainingPercentage = Math.max(0, 100 - totalPercentage);
 
-  const addSector = () => {
-    if (!newSector.code || newSector.code.trim() === '') {
-      return;
-    }
+  // Handle sector selection from SectorSelect
+  const handleSectorSelectChange = useCallback((newCodes: string[]) => {
+    // Find newly added codes
+    const existingCodes = new Set(sectors.map(s => s.code));
+    const addedCodes = newCodes.filter(code => !existingCodes.has(code));
+    const removedCodes = new Set(sectors.map(s => s.code).filter(code => !newCodes.includes(code)));
     
-    const sectorToAdd: TransactionSector = {
-      code: newSector.code.trim(),
-      vocabulary: newSector.vocabulary || '1',
-      percentage: allowPercentages ? newSector.percentage : undefined,
-      narrative: newSector.narrative?.trim(),
-    };
+    // Create new sectors array
+    let updatedSectors = sectors.filter(s => !removedCodes.has(s.code));
     
-    onSectorsChange([...sectors, sectorToAdd]);
-    setNewSector({ vocabulary: '1' });
-  };
+    // Add new sectors with suggested percentage
+    addedCodes.forEach(code => {
+      const sectorInfo = getSectorInfo(code);
+      const suggestedPercentage = updatedSectors.length === 0 ? 100 : Math.min(remainingPercentage, 10);
+      
+      updatedSectors.push({
+        code,
+        vocabulary: '1', // Default to DAC 5-digit
+        percentage: allowPercentages ? suggestedPercentage : undefined,
+        narrative: sectorInfo.name
+      });
+    });
+    
+    onSectorsChange(updatedSectors);
+  }, [sectors, onSectorsChange, allowPercentages, remainingPercentage]);
 
-  const removeSector = (index: number) => {
-    onSectorsChange(sectors.filter((_, i) => i !== index));
-  };
-
-  const updateSector = (index: number, updates: Partial<TransactionSector>) => {
+  // Update percentage for a specific sector
+  const updatePercentage = useCallback((index: number, percentage: number) => {
     const updated = sectors.map((sector, i) => 
-      i === index ? { ...sector, ...updates } : sector
+      i === index ? { ...sector, percentage: Math.max(0, Math.min(100, percentage)) } : sector
     );
     onSectorsChange(updated);
-  };
+  }, [sectors, onSectorsChange]);
+
+  // Remove a sector by index
+  const removeSector = useCallback((index: number) => {
+    onSectorsChange(sectors.filter((_, i) => i !== index));
+  }, [sectors, onSectorsChange]);
+
+  // Distribute percentages equally
+  const distributeEqually = useCallback(() => {
+    if (sectors.length === 0) return;
+    
+    const equalShare = 100 / sectors.length;
+    const updated = sectors.map(s => ({
+      ...s,
+      percentage: parseFloat(equalShare.toFixed(2))
+    }));
+    
+    // Handle rounding errors to ensure total equals exactly 100%
+    const total = updated.reduce((sum, s) => sum + (s.percentage || 0), 0);
+    if (total !== 100 && updated.length > 0) {
+      updated[0].percentage = (updated[0].percentage || 0) + (100 - total);
+      updated[0].percentage = parseFloat(updated[0].percentage.toFixed(2));
+    }
+    
+    onSectorsChange(updated);
+  }, [sectors, onSectorsChange]);
+
+  // Clear all sectors
+  const clearAll = useCallback(() => {
+    onSectorsChange([]);
+  }, [onSectorsChange]);
 
   return (
     <div className={cn("space-y-4", className)}>
-      <div className="flex items-center justify-between">
+      {/* Header with status badges */}
+      <div className="flex items-center justify-between flex-wrap gap-2">
         <div className="flex items-center gap-2">
           <Label className="text-sm font-medium">Transaction Sectors</Label>
-          <Info className="h-4 w-4 text-muted-foreground cursor-help" title="IATI allows multiple sectors per transaction" />
+          <Info className="h-4 w-4 text-muted-foreground cursor-help" title="IATI allows multiple sectors per transaction with percentage allocations" />
         </div>
-        {hasPercentages && (
-          <div className="flex items-center gap-2">
-            {hasPercentageError && (
-              <Badge variant="destructive" className="text-xs">
-                <AlertCircle className="h-3 w-3 mr-1" />
-                Must sum to 100%
-              </Badge>
-            )}
-            {isComplete && (
-              <Badge variant="default" className="text-xs bg-green-600">
-                <CheckCircle className="h-3 w-3 mr-1" />
-                {totalPercentage.toFixed(1)}%
-              </Badge>
-            )}
-            {!isComplete && !hasPercentageError && (
-              <Badge variant="secondary" className="text-xs">
-                {totalPercentage.toFixed(1)}%
-              </Badge>
-            )}
-          </div>
-        )}
+        <div className="flex items-center gap-2">
+          {sectors.length > 0 && (
+            <Badge variant="outline" className="text-xs">
+              {sectors.length} sector{sectors.length !== 1 ? 's' : ''}
+            </Badge>
+          )}
+          {hasPercentages && (
+            <>
+              {hasPercentageError && (
+                <Badge variant="destructive" className="text-xs">
+                  <AlertCircle className="h-3 w-3 mr-1" />
+                  {totalPercentage.toFixed(1)}% (must be 100%)
+                </Badge>
+              )}
+              {isComplete && (
+                <Badge variant="default" className="text-xs bg-green-600">
+                  <CheckCircle className="h-3 w-3 mr-1" />
+                  100%
+                </Badge>
+              )}
+              {!isComplete && !hasPercentageError && sectors.length > 0 && (
+                <Badge variant="secondary" className="text-xs">
+                  {totalPercentage.toFixed(1)}%
+                </Badge>
+              )}
+            </>
+          )}
+        </div>
       </div>
-      
-      {/* Existing sectors */}
+
+      {/* Sector Selection Dropdown */}
       <div className="space-y-2">
-        {sectors.map((sector, index) => (
-          <Card key={index} className="p-3">
+        <Label className="text-xs text-muted-foreground">Select sectors to add</Label>
+        <SectorSelect
+          value={selectedSectorCodes}
+          onValueChange={handleSectorSelectChange}
+          placeholder="Search and select DAC sectors..."
+          variant="hierarchical"
+          maxSelections={15}
+        />
+      </div>
+
+      {/* Selected Sectors List */}
+      {sectors.length > 0 && (
+        <div className="space-y-3">
+          {/* Action buttons */}
+          <div className="flex items-center justify-end">
             <div className="flex items-center gap-2">
-              <div className="flex-1 grid grid-cols-3 gap-2">
-                <div>
-                  <Input
-                    placeholder="Code"
-                    value={sector.code}
-                    onChange={(e) => updateSector(index, { code: e.target.value })}
-                    className="h-8"
-                  />
-                </div>
-                <div>
-                  <Select 
-                    value={sector.vocabulary || '1'}
-                    onValueChange={(v) => updateSector(index, { vocabulary: v })}
-                  >
-                    <SelectTrigger className="h-8">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="1">DAC 5-digit</SelectItem>
-                      <SelectItem value="2">DAC 3-digit</SelectItem>
-                      <SelectItem value="3">COFOG</SelectItem>
-                      <SelectItem value="7">SDMX</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                {allowPercentages && (
-                  <div className="flex items-center gap-1">
-                    <Input
-                      type="number"
-                      placeholder="%"
-                      min="0"
-                      max="100"
-                      step="0.1"
-                      value={sector.percentage || ''}
-                      onChange={(e) => updateSector(index, { 
-                        percentage: e.target.value ? parseFloat(e.target.value) : undefined 
-                      })}
-                      className="h-8"
-                    />
-                    <span className="text-xs text-muted-foreground">%</span>
-                  </div>
-                )}
-              </div>
-              <Button
+              {sectors.length > 1 && allowPercentages && (
+                <Button 
+                  type="button"
+                  variant="default" 
+                  size="sm"
+                  onClick={distributeEqually}
+                  className="text-xs h-7 bg-blue-600 hover:bg-blue-700 text-white"
+                >
+                  <Sparkles className="h-3 w-3 mr-1" />
+                  Distribute Equally
+                </Button>
+              )}
+              <Button 
                 type="button"
-                variant="ghost"
+                variant="outline" 
                 size="sm"
-                onClick={() => removeSector(index)}
-                className="h-8 w-8 p-0"
+                onClick={clearAll}
+                className="text-xs h-7 text-red-600 border-red-200 hover:bg-red-50 hover:text-red-600"
               >
-                <Trash2 className="h-4 w-4" />
+                <Trash2 className="h-3 w-3 mr-1" />
+                Clear All
               </Button>
             </div>
-            {sector.narrative && (
-              <div className="mt-2 text-xs text-muted-foreground">
-                {sector.narrative}
-              </div>
-            )}
-          </Card>
-        ))}
-      </div>
-      
-      {/* Add new sector */}
-      <Card className="p-3 bg-muted/30">
-        <div className="space-y-2">
-          <div className="grid grid-cols-3 gap-2">
-            <Input
-              placeholder="Sector code (e.g., 11220)"
-              value={newSector.code || ''}
-              onChange={(e) => setNewSector({ ...newSector, code: e.target.value })}
-              className="h-8"
-            />
-            <Select 
-              value={newSector.vocabulary || '1'}
-              onValueChange={(v) => setNewSector({ ...newSector, vocabulary: v })}
-            >
-              <SelectTrigger className="h-8">
-                <SelectValue placeholder="Vocabulary" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="1">DAC 5-digit</SelectItem>
-                <SelectItem value="2">DAC 3-digit</SelectItem>
-                <SelectItem value="3">COFOG</SelectItem>
-                <SelectItem value="7">SDMX</SelectItem>
-              </SelectContent>
-            </Select>
-            {allowPercentages && (
-              <div className="flex items-center gap-1">
-                <Input
-                  type="number"
-                  placeholder="Percentage"
-                  min="0"
-                  max="100"
-                  step="0.1"
-                  value={newSector.percentage || ''}
-                  onChange={(e) => setNewSector({ 
-                    ...newSector, 
-                    percentage: e.target.value ? parseFloat(e.target.value) : undefined 
-                  })}
-                  className="h-8"
-                />
-                <span className="text-xs text-muted-foreground">%</span>
-              </div>
-            )}
           </div>
-          <Input
-            placeholder="Narrative (optional)"
-            value={newSector.narrative || ''}
-            onChange={(e) => setNewSector({ ...newSector, narrative: e.target.value })}
-            className="h-8"
-          />
-          <Button 
-            type="button" 
-            onClick={addSector} 
-            size="sm"
-            className="w-full"
-            disabled={!newSector.code}
-          >
-            <Plus className="h-4 w-4 mr-1" />
-            Add Sector
-          </Button>
+
+          {/* Sector cards */}
+          <div className="space-y-2">
+            {sectors.map((sector, index) => {
+              const sectorInfo = getSectorInfo(sector.code);
+              // Extract just the sector name without the code prefix
+              const sectorNameOnly = sectorInfo.name.replace(/^\d+\s*[-–]\s*/, '');
+              // Parse category to separate code and name
+              const categoryMatch = sectorInfo.category?.match(/^(\d+)\s*[-–]\s*(.+)$/);
+              const categoryCode = categoryMatch ? categoryMatch[1] : '';
+              const categoryName = categoryMatch ? categoryMatch[2] : sectorInfo.category || '';
+              
+              return (
+                <Card key={`${sector.code}-${index}`} className="p-3 hover:bg-gray-50 transition-colors">
+                  <div className="flex items-start gap-3">
+                    {/* Sector info */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <Badge variant="secondary" className="text-xs font-mono shrink-0">
+                          {sector.code}
+                        </Badge>
+                        <span className="text-sm font-medium text-gray-900 truncate">
+                          {sectorNameOnly}
+                        </span>
+                      </div>
+                      {sectorInfo.category && (
+                        <div className="flex items-center gap-1.5 mt-1.5">
+                          {categoryCode && (
+                            <span className="text-xs font-mono bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded">
+                              {categoryCode}
+                            </span>
+                          )}
+                          <span className="text-xs text-gray-500">
+                            {categoryName}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                    
+                    {/* Percentage input */}
+                    {allowPercentages && (
+                      <div className="flex items-center gap-1 shrink-0">
+                        <Input
+                          type="number"
+                          min="0"
+                          max="100"
+                          step="0.1"
+                          value={sector.percentage ?? ''}
+                          onChange={(e) => updatePercentage(index, parseFloat(e.target.value) || 0)}
+                          className="w-20 h-8 text-sm text-center"
+                          placeholder="0"
+                        />
+                        <span className="text-xs text-muted-foreground">%</span>
+                      </div>
+                    )}
+                    
+                    {/* Remove button */}
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => removeSector(index)}
+                      className="h-8 w-8 p-0 text-red-500 hover:text-red-700 hover:bg-red-50 shrink-0"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </Card>
+              );
+            })}
+          </div>
         </div>
-      </Card>
+      )}
+
+      {/* Empty state */}
+      {sectors.length === 0 && (
+        <div className="text-center py-6 text-muted-foreground border rounded-lg border-dashed">
+          <Info className="h-8 w-8 mx-auto mb-2 opacity-50" />
+          <p className="text-sm">No sectors selected</p>
+          <p className="text-xs mt-1">Use the dropdown above to add sectors</p>
+        </div>
+      )}
       
+      {/* Validation error */}
       {hasPercentageError && (
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />

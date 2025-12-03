@@ -389,7 +389,12 @@ export default function TransactionModal({
   const [computedClassification, setComputedClassification] = useState("");
   const [manualClassification, setManualClassification] = useState("");
   const [showValueDate, setShowValueDate] = useState(false);
-  const [showAdvancedIATI, setShowAdvancedIATI] = useState(false);
+  
+  // Individual collapsible states for Advanced IATI Fields sections
+  const [showSingleValueFields, setShowSingleValueFields] = useState(false);
+  const [showMultipleSectors, setShowMultipleSectors] = useState(false);
+  const [showMultipleAidTypes, setShowMultipleAidTypes] = useState(false);
+  const [showGeographicTargeting, setShowGeographicTargeting] = useState(false);
   
   // Document upload state
   const [documents, setDocuments] = useState<TransactionDocument[]>([]);
@@ -506,9 +511,12 @@ export default function TransactionModal({
   // Keep Advanced IATI Fields collapsed by default
   // Auto-open logic removed - user preference is to keep it collapsed
   useEffect(() => {
-    // Reset to collapsed when modal opens
+    // Reset all collapsible sections to collapsed when modal opens
     if (open) {
-      setShowAdvancedIATI(false);
+      setShowSingleValueFields(false);
+      setShowMultipleSectors(false);
+      setShowMultipleAidTypes(false);
+      setShowGeographicTargeting(false);
     }
   }, [open]);
 
@@ -519,22 +527,26 @@ export default function TransactionModal({
     }
   }, [open]);
 
-  // Count populated advanced IATI fields
-  const countAdvancedFields = () => {
+  // Count items for each Advanced IATI Fields section
+  const singleValueFieldsCount = useMemo(() => {
     let count = 0;
     if (formData.sector_code) count++;
-    if (formData.sectors && formData.sectors.length > 0) count++;
     if (formData.recipient_country_code) count++;
-    if (formData.recipient_countries && formData.recipient_countries.length > 0) count++;
     if (formData.recipient_region_code) count++;
-    if (formData.recipient_regions && formData.recipient_regions.length > 0) count++;
-    if (formData.aid_types && formData.aid_types.length > 0) count++;
-    if (formData.provider_org_activity_id) count++;
-    if (formData.receiver_org_activity_id) count++;
     return count;
-  };
-
-  const advancedFieldsCount = countAdvancedFields();
+  }, [formData.sector_code, formData.recipient_country_code, formData.recipient_region_code]);
+  
+  const multipleSectorsCount = useMemo(() => {
+    return formData.sectors?.length || 0;
+  }, [formData.sectors]);
+  
+  const multipleAidTypesCount = useMemo(() => {
+    return formData.aid_types?.length || 0;
+  }, [formData.aid_types]);
+  
+  const geographicTargetingCount = useMemo(() => {
+    return (formData.recipient_countries?.length || 0) + (formData.recipient_regions?.length || 0);
+  }, [formData.recipient_countries, formData.recipient_regions]);
 
   // Autosave hooks for field-level saving
   const transactionId = transaction?.uuid || transaction?.id || '';
@@ -2289,38 +2301,28 @@ export default function TransactionModal({
               )}
             </div>
 
-            {/* Advanced IATI Fields Section */}
-            <div className="space-y-4">
-              <Collapsible open={showAdvancedIATI} onOpenChange={setShowAdvancedIATI}>
-                <button
-                  onClick={() => setShowAdvancedIATI(!showAdvancedIATI)}
-                  className="flex items-center gap-1 text-slate-600 hover:text-slate-900 text-sm font-medium transition-colors"
-                  type="button"
-                >
-                  {showAdvancedIATI ? (
-                    <>
-                      Hide Advanced IATI Fields
-                      <ChevronDown className="h-4 w-4 rotate-180" />
-                    </>
-                  ) : (
-                    <>
-                      Show Advanced IATI Fields
-                      {advancedFieldsCount > 0 && (
-                        <Badge variant="secondary" className="ml-1 text-xs">
-                          {advancedFieldsCount}
-                        </Badge>
+            {/* Advanced IATI Fields Section - Individual Collapsibles */}
+            <div className="space-y-3">
+              <h3 className="text-sm font-semibold text-gray-700">Advanced IATI Fields</h3>
+              
+              {/* Single-Value Geographic & Sector Fields */}
+              <Collapsible open={showSingleValueFields} onOpenChange={setShowSingleValueFields}>
+                <CollapsibleTrigger asChild>
+                  <button
+                    className="flex items-center justify-between w-full p-3 bg-gray-50 hover:bg-gray-100 rounded-lg border transition-colors text-left"
+                    type="button"
+                  >
+                    <div className="flex items-center gap-2">
+                      <ChevronDown className={cn("h-4 w-4 transition-transform", showSingleValueFields && "rotate-180")} />
+                      <span className="text-sm font-medium text-gray-700">Geographic & Sector Targeting (Single Values)</span>
+                      {singleValueFieldsCount > 0 && (
+                        <Badge variant="secondary" className="text-xs">{singleValueFieldsCount}</Badge>
                       )}
-                      <ChevronDown className="h-4 w-4" />
-                    </>
-                  )}
-                </button>
-                
-                <CollapsibleContent className="space-y-6 pt-4">
-                  {/* Single-Value Geographic & Sector Fields */}
-                  <div className="space-y-4 p-4 bg-gray-50 rounded-lg border">
-                    <h4 className="text-sm font-semibold text-gray-900">
-                      Geographic & Sector Targeting (Single Values)
-                    </h4>
+                    </div>
+                  </button>
+                </CollapsibleTrigger>
+                <CollapsibleContent className="pt-3">
+                  <div className="space-y-4 p-4 bg-gray-50/50 rounded-lg border">
                     <p className="text-xs text-gray-600">
                       Use these fields for single-value targeting, or use the multi-element sections below for IATI-compliant percentage allocations.
                     </p>
@@ -2429,15 +2431,28 @@ export default function TransactionModal({
                       </div>
                     </div>
                   </div>
+                </CollapsibleContent>
+              </Collapsible>
 
-                  <Separator className="my-6" />
-
-                  {/* Multiple Sectors */}
-                  <div className="space-y-4">
-                    <h4 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
-                      Multiple Sectors 
+              {/* Multiple Sectors */}
+              <Collapsible open={showMultipleSectors} onOpenChange={setShowMultipleSectors}>
+                <CollapsibleTrigger asChild>
+                  <button
+                    className="flex items-center justify-between w-full p-3 bg-gray-50 hover:bg-gray-100 rounded-lg border transition-colors text-left"
+                    type="button"
+                  >
+                    <div className="flex items-center gap-2">
+                      <ChevronDown className={cn("h-4 w-4 transition-transform", showMultipleSectors && "rotate-180")} />
+                      <span className="text-sm font-medium text-gray-700">Multiple Sectors</span>
                       <Badge variant="outline" className="text-xs">IATI Compliant</Badge>
-                    </h4>
+                      {multipleSectorsCount > 0 && (
+                        <Badge variant="secondary" className="text-xs">{multipleSectorsCount}</Badge>
+                      )}
+                    </div>
+                  </button>
+                </CollapsibleTrigger>
+                <CollapsibleContent className="pt-3">
+                  <div className="space-y-4 p-4 bg-gray-50/50 rounded-lg border">
                     <p className="text-xs text-gray-600">
                       Add multiple sectors with percentage allocations. Percentages must sum to 100%.
                     </p>
@@ -2449,15 +2464,28 @@ export default function TransactionModal({
                       allowPercentages={true}
                     />
                   </div>
+                </CollapsibleContent>
+              </Collapsible>
 
-                  <Separator className="my-6" />
-
-                  {/* Multiple Aid Types */}
-                  <div className="space-y-4">
-                    <h4 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
-                      Multiple Aid Types
+              {/* Multiple Aid Types */}
+              <Collapsible open={showMultipleAidTypes} onOpenChange={setShowMultipleAidTypes}>
+                <CollapsibleTrigger asChild>
+                  <button
+                    className="flex items-center justify-between w-full p-3 bg-gray-50 hover:bg-gray-100 rounded-lg border transition-colors text-left"
+                    type="button"
+                  >
+                    <div className="flex items-center gap-2">
+                      <ChevronDown className={cn("h-4 w-4 transition-transform", showMultipleAidTypes && "rotate-180")} />
+                      <span className="text-sm font-medium text-gray-700">Multiple Aid Types</span>
                       <Badge variant="outline" className="text-xs">IATI Compliant</Badge>
-                    </h4>
+                      {multipleAidTypesCount > 0 && (
+                        <Badge variant="secondary" className="text-xs">{multipleAidTypesCount}</Badge>
+                      )}
+                    </div>
+                  </button>
+                </CollapsibleTrigger>
+                <CollapsibleContent className="pt-3">
+                  <div className="space-y-4 p-4 bg-gray-50/50 rounded-lg border">
                     <p className="text-xs text-gray-600">
                       Specify multiple aid type classifications with different vocabularies.
                     </p>
@@ -2468,15 +2496,28 @@ export default function TransactionModal({
                       }}
                     />
                   </div>
+                </CollapsibleContent>
+              </Collapsible>
 
-                  <Separator className="my-6" />
-
-                  {/* Multiple Recipient Countries OR Regions */}
-                  <div className="space-y-4">
-                    <h4 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
-                      Geographic Targeting (Multiple)
+              {/* Geographic Targeting (Multiple) */}
+              <Collapsible open={showGeographicTargeting} onOpenChange={setShowGeographicTargeting}>
+                <CollapsibleTrigger asChild>
+                  <button
+                    className="flex items-center justify-between w-full p-3 bg-gray-50 hover:bg-gray-100 rounded-lg border transition-colors text-left"
+                    type="button"
+                  >
+                    <div className="flex items-center gap-2">
+                      <ChevronDown className={cn("h-4 w-4 transition-transform", showGeographicTargeting && "rotate-180")} />
+                      <span className="text-sm font-medium text-gray-700">Geographic Targeting (Multiple)</span>
                       <Badge variant="outline" className="text-xs">IATI Compliant</Badge>
-                    </h4>
+                      {geographicTargetingCount > 0 && (
+                        <Badge variant="secondary" className="text-xs">{geographicTargetingCount}</Badge>
+                      )}
+                    </div>
+                  </button>
+                </CollapsibleTrigger>
+                <CollapsibleContent className="pt-3">
+                  <div className="space-y-4 p-4 bg-gray-50/50 rounded-lg border">
                     <Alert>
                       <Info className="h-4 w-4" />
                       <AlertDescription className="text-xs">

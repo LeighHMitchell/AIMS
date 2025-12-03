@@ -22,6 +22,7 @@ import { useCurrencyConverter } from "@/hooks/useCurrencyConverter";
 import { BulkActionToolbar } from "@/components/ui/bulk-action-toolbar";
 import { BulkDeleteDialog } from "@/components/dialogs/bulk-delete-dialog";
 import { YearlyTotalsBarChart, MultiSeriesDataPoint } from "@/components/charts/YearlyTotalsBarChart";
+import { useLoadingBar } from "@/hooks/useLoadingBar";
 
 type FilterState = {
   transactionType: string;
@@ -300,6 +301,18 @@ export default function TransactionsPage() {
 
   // Currency converter hook
   const { convertTransaction, isConverting, convertingIds, error: conversionError } = useCurrencyConverter();
+  
+  // Global loading bar for top-of-screen progress indicator
+  const { startLoading, stopLoading } = useLoadingBar();
+  
+  // Show/hide global loading bar based on loading state
+  useEffect(() => {
+    if (loading && transactions.data.length === 0) {
+      startLoading();
+    } else {
+      stopLoading();
+    }
+  }, [loading, transactions.data.length, startLoading, stopLoading]);
 
   // Load saved page limit preference and fetch organizations on mount
   useEffect(() => {

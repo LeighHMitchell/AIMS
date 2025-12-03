@@ -48,6 +48,7 @@ const AttributionControl = dynamic(
 // Dynamic import for new marker and heatmap layers
 const AidMapMarkersLayer = dynamic(() => import('./maps/AidMapMarkersLayer'), { ssr: false });
 const HeatmapLayer = dynamic(() => import('./maps/HeatmapLayer'), { ssr: false });
+const MapFlyTo = dynamic(() => import('./maps/MapFlyTo'), { ssr: false });
 
 // Import Leaflet and fix SSR issues
 let L: any = null;
@@ -291,10 +292,13 @@ export default function AidMap() {
     subSectors: [],
   });
   const mapRef = useRef<any>(null);
+  
+  // State for fly-to target (used by MapFlyTo component inside MapContainer)
+  const [flyToTarget, setFlyToTarget] = useState<{ lat: number; lng: number; zoom: number } | null>(null);
 
   // Handler for location search
   const handleLocationSearch = useCallback((lat: number, lng: number, name: string, type: string) => {
-    if (!mapRef.current) return;
+    console.log('[MapSearch] handleLocationSearch called:', { lat, lng, name, type });
 
     // Determine zoom level based on location type
     let zoomLevel = 10;
@@ -306,13 +310,9 @@ export default function AidMap() {
       zoomLevel = 6;
     }
 
-    // Fly to location with smooth animation
-    mapRef.current.flyTo([lat, lng], zoomLevel, {
-      duration: 1.5,
-      easeLinearity: 0.25
-    });
-
-    console.log(`[MapSearch] Flying to ${name} (${lat}, ${lng}) at zoom ${zoomLevel}`);
+    // Set the fly-to target - MapFlyTo component inside MapContainer will handle the actual flyTo
+    console.log(`[MapSearch] Setting flyTo target: ${name} (${lat}, ${lng}) at zoom ${zoomLevel}`);
+    setFlyToTarget({ lat, lng, zoom: zoomLevel });
   }, []);
 
   // State for locations data
@@ -551,11 +551,12 @@ export default function AidMap() {
             <TabsContent value="map" className="space-y-4">
           {/* Map */}
           <div className="h-[85vh] min-h-[700px] w-full relative rounded-lg overflow-hidden border border-gray-200">
-            {/* Filters - top left */}
-            <div className="absolute top-3 left-3 z-[1000] flex items-center gap-2 flex-wrap max-w-[1200px]">
+            {/* All Controls - single top row */}
+            <div className="absolute top-3 left-3 right-3 z-[1000] flex items-center gap-1.5">
+              {/* Filters */}
               <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-[280px] bg-white shadow-md border-gray-300">
-                  <SelectValue placeholder="Filter by status" />
+                <SelectTrigger className="w-[120px] bg-white shadow-md border-gray-300 text-xs h-9">
+                  <SelectValue placeholder="Status" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Statuses</SelectItem>
@@ -575,8 +576,8 @@ export default function AidMap() {
               </Select>
               
               <Select value={orgFilter} onValueChange={setOrgFilter}>
-                <SelectTrigger className="w-[280px] bg-white shadow-md border-gray-300">
-                  <SelectValue placeholder="Filter by organization" />
+                <SelectTrigger className="w-[130px] bg-white shadow-md border-gray-300 text-xs h-9">
+                  <SelectValue placeholder="Organization" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Organizations</SelectItem>
@@ -591,73 +592,74 @@ export default function AidMap() {
               <SectorHierarchyFilter
                 selected={sectorFilter}
                 onChange={setSectorFilter}
-                className="w-[280px] bg-white shadow-md border-gray-300"
+                className="w-[130px] bg-white shadow-md border-gray-300 h-9 text-xs"
               />
-            </div>
-            
-            {/* Search bar - bottom left */}
-            <div className="absolute bottom-3 left-3 z-[1000]">
+              
+              {/* Search */}
               <MapSearch
                 onLocationSelect={handleLocationSearch}
-                className="w-[320px]"
-                placeholder="Search location..."
+                className="w-[160px]"
+                placeholder="Search..."
               />
-            </div>
-            
-            {/* Map Controls - top right */}
-            <div className="absolute top-3 right-3 z-[1000] flex items-center gap-2">
-              <Select value={mapLayer} onValueChange={(value) => setMapLayer(value as MapLayerType)}>
-                <SelectTrigger className="w-48 bg-white shadow-md border-gray-300">
-                  <SelectValue placeholder="Select map type" />
-                </SelectTrigger>
-                <SelectContent>
-                  {Object.entries(MAP_LAYERS).map(([key, layer]) => (
-                    <SelectItem key={key} value={key}>
-                      {layer.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              
+              {/* Spacer to push map controls to the right */}
+              <div className="flex-1" />
+              
+              {/* Map Controls - grouped with more spacing */}
+              <div className="flex items-center gap-2 shrink-0">
+                <Select value={mapLayer} onValueChange={(value) => setMapLayer(value as MapLayerType)}>
+                  <SelectTrigger className="w-[150px] bg-white shadow-md border-gray-300 text-xs h-9">
+                    <SelectValue placeholder="Map type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Object.entries(MAP_LAYERS).map(([key, layer]) => (
+                      <SelectItem key={key} value={key}>
+                        {layer.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
 
-              <Button
-                onClick={() => {
-                  setShouldResetMap(true);
-                  setTimeout(() => setShouldResetMap(false), 100);
-                }}
-                variant="outline"
-                size="sm"
-                title="Reset to Myanmar view"
-                className="bg-white shadow-md border-gray-300"
-              >
-                <RotateCcw className="h-4 w-4" />
-              </Button>
+                <Button
+                  onClick={() => {
+                    setShouldResetMap(true);
+                    setTimeout(() => setShouldResetMap(false), 100);
+                  }}
+                  variant="outline"
+                  size="sm"
+                  title="Reset to Myanmar view"
+                  className="bg-white shadow-md border-gray-300 h-9 w-9 p-0"
+                >
+                  <RotateCcw className="h-4 w-4" />
+                </Button>
 
-              {/* View Mode Toggle */}
-              <div className="flex bg-white rounded-md shadow-md border border-gray-300 overflow-hidden">
-                <Button
-                  onClick={() => setViewMode('markers')}
-                  variant="ghost"
-                  size="sm"
-                  title="Show markers"
-                  className={`rounded-none border-0 ${viewMode === 'markers' ? 'bg-blue-100 text-blue-700' : 'hover:bg-gray-100'}`}
-                >
-                  <CircleDot className="h-4 w-4" />
-                </Button>
-                <Button
-                  onClick={() => setViewMode('heatmap')}
-                  variant="ghost"
-                  size="sm"
-                  title="Show heatmap"
-                  className={`rounded-none border-0 border-l border-gray-300 ${viewMode === 'heatmap' ? 'bg-orange-100 text-orange-700' : 'hover:bg-gray-100'}`}
-                >
-                  <Flame className="h-4 w-4" />
-                </Button>
+                {/* View Mode Toggle */}
+                <div className="flex bg-white rounded-md shadow-md border border-gray-300 overflow-hidden">
+                  <Button
+                    onClick={() => setViewMode('markers')}
+                    variant="ghost"
+                    size="sm"
+                    title="Show markers"
+                    className={`rounded-none border-0 h-9 w-9 p-0 ${viewMode === 'markers' ? 'bg-blue-100 text-blue-700' : 'hover:bg-gray-100'}`}
+                  >
+                    <CircleDot className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    onClick={() => setViewMode('heatmap')}
+                    variant="ghost"
+                    size="sm"
+                    title="Show heatmap"
+                    className={`rounded-none border-0 border-l border-gray-300 h-9 w-9 p-0 ${viewMode === 'heatmap' ? 'bg-orange-100 text-orange-700' : 'hover:bg-gray-100'}`}
+                  >
+                    <Flame className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
             </div>
             
             {isMapLoaded && L && useMapEventsHook ? (
               <MapContainer
-                key={`${mapLayer}-${viewMode}`}
+                key={mapLayer}
                 ref={mapRef}
                 center={[19.5, 96.0]}
                 zoom={6}
@@ -717,6 +719,10 @@ export default function AidMap() {
                 <MapBounds locations={filteredLocations} />
                 <MapReset shouldReset={shouldResetMap} locations={filteredLocations} />
                 <MapInitializer />
+                <MapFlyTo 
+                  target={flyToTarget} 
+                  onComplete={() => setFlyToTarget(null)} 
+                />
               </MapContainer>
             ) : (
               <div className="flex items-center justify-center h-full bg-gray-50">

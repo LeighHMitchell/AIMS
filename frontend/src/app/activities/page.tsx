@@ -17,6 +17,7 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { usePreCache } from "@/hooks/use-pre-cached-data";
 import { useOptimizedActivities } from "@/hooks/use-optimized-activities";
+import { useLoadingBar } from "@/hooks/useLoadingBar";
 import { AsyncErrorBoundary } from "@/components/errors/AsyncErrorBoundary";
 import { PerformanceMetrics } from "@/components/optimization/OptimizedActivityList";
 import { MainLayout } from "@/components/layout/main-layout";
@@ -64,6 +65,14 @@ import { CurrencyTooltip, InfoIconTooltip } from '@/components/ui/currency-toolt
 import { Checkbox } from "@/components/ui/checkbox";
 import { BulkActionToolbar } from "@/components/ui/bulk-action-toolbar";
 import { BulkDeleteDialog } from "@/components/dialogs/bulk-delete-dialog";
+import dynamic from 'next/dynamic';
+import { SectorFilterSelection, matchesSectorFilter } from "@/components/maps/SectorHierarchyFilter";
+
+// Dynamically import SectorHierarchyFilter to avoid hydration issues
+const SectorHierarchyFilter = dynamic(
+  () => import("@/components/maps/SectorHierarchyFilter").then(mod => mod.SectorHierarchyFilter),
+  { ssr: false }
+);
 
 // Aid Type mappings (simplified)
 const AID_TYPE_LABELS: Record<string, string> = {
@@ -226,6 +235,18 @@ type Activity = {
   default_aid_modality?: string;
   default_aid_modality_override?: boolean;
   tied_status?: string; // Legacy field
+  
+  // Participating organisation arrays (by role)
+  fundingOrgs?: string[];
+  extendingOrgs?: string[];
+  implementingOrgs?: string[];
+  accountableOrgs?: string[];
+  
+  // Description fields (IATI description types)
+  description_general?: string;
+  description_objectives?: string;
+  description_target_groups?: string;
+  description_other?: string;
 };
 
 type SortField = 'title' | 'partnerId' | 'createdBy' | 'commitments' | 'disbursements' | 'plannedDisbursements' | 'createdAt' | 'updatedAt' | 'activityStatus';
@@ -293,6 +314,26 @@ const formatCurrency = (amount: number): string => {
   }
 };
 
+// Helper function to format organisation list for display
+// Shows condensed view: "Name 1, Name 2 + X more" if more than 2
+const formatOrganisationList = (orgs: string[]): { display: string; full: string[] } => {
+  if (!orgs || orgs.length === 0) return { display: '—', full: [] };
+  if (orgs.length === 1) return { display: orgs[0], full: orgs };
+  if (orgs.length === 2) return { display: `${orgs[0]}, ${orgs[1]}`, full: orgs };
+  return { 
+    display: `${orgs[0]}, ${orgs[1]} + ${orgs.length - 2} more`, 
+    full: orgs 
+  };
+};
+
+// Helper function to truncate description text for display
+// Shows first 120 characters with ellipsis, full text in tooltip
+const truncateDescription = (text: string | null | undefined, maxLength: number = 120): { display: string; full: string | null } => {
+  if (!text) return { display: '—', full: null };
+  if (text.length <= maxLength) return { display: text, full: null };
+  return { display: text.slice(0, maxLength) + '…', full: text };
+};
+
 // Helper function to check if user can edit an activity
 const canUserEditActivity = (user: any, activity: Activity): boolean => {
   if (!user) return false;
@@ -345,12 +386,22 @@ type ColumnId =
   // Publication status columns
   | 'isPublished'
   | 'isValidated'
-  | 'iatiSyncStatus';
+  | 'iatiSyncStatus'
+  // Participating organisation columns
+  | 'fundingOrganisations'
+  | 'extendingOrganisations'
+  | 'implementingOrganisations'
+  | 'accountableOrganisations'
+  // Description columns
+  | 'descriptionGeneral'
+  | 'descriptionObjectives'
+  | 'descriptionTargetGroups'
+  | 'descriptionOther';
 
 interface ColumnConfig {
   id: ColumnId;
   label: string;
-  group: 'default' | 'activityDefaults' | 'transactionTypeTotals' | 'publicationStatuses';
+  group: 'default' | 'activityDefaults' | 'transactionTypeTotals' | 'publicationStatuses' | 'participatingOrgs' | 'descriptions';
   width?: string;
   alwaysVisible?: boolean; // For columns that can't be hidden (checkbox, actions)
   defaultVisible?: boolean;
@@ -396,6 +447,18 @@ const COLUMN_CONFIGS: ColumnConfig[] = [
   { id: 'isPublished', label: 'Published', group: 'publicationStatuses', width: 'w-[100px]', defaultVisible: false, align: 'center' },
   { id: 'isValidated', label: 'Validated', group: 'publicationStatuses', width: 'w-[100px]', defaultVisible: false, align: 'center' },
   { id: 'iatiSyncStatus', label: 'IATI Synced', group: 'publicationStatuses', width: 'w-[100px]', defaultVisible: false, align: 'center' },
+  
+  // Participating organisation columns
+  { id: 'fundingOrganisations', label: 'Funding Organisations', group: 'participatingOrgs', width: 'min-w-[180px]', defaultVisible: false, align: 'left' },
+  { id: 'extendingOrganisations', label: 'Extending Organisations', group: 'participatingOrgs', width: 'min-w-[180px]', defaultVisible: false, align: 'left' },
+  { id: 'implementingOrganisations', label: 'Implementing Organisations', group: 'participatingOrgs', width: 'min-w-[180px]', defaultVisible: true, align: 'left' },
+  { id: 'accountableOrganisations', label: 'Accountable Organisations', group: 'participatingOrgs', width: 'min-w-[180px]', defaultVisible: false, align: 'left' },
+  
+  // Description columns
+  { id: 'descriptionGeneral', label: 'Activity Description – General', group: 'descriptions', width: 'min-w-[200px]', defaultVisible: false, align: 'left' },
+  { id: 'descriptionObjectives', label: 'Activity Description – Objectives', group: 'descriptions', width: 'min-w-[200px]', defaultVisible: false, align: 'left' },
+  { id: 'descriptionTargetGroups', label: 'Activity Description – Target Groups', group: 'descriptions', width: 'min-w-[200px]', defaultVisible: false, align: 'left' },
+  { id: 'descriptionOther', label: 'Activity Description – Other', group: 'descriptions', width: 'min-w-[200px]', defaultVisible: false, align: 'left' },
 ];
 
 const COLUMN_GROUPS = {
@@ -404,6 +467,8 @@ const COLUMN_GROUPS = {
   activityDefaults: 'Activity Defaults',
   transactionTypeTotals: 'Transaction Type Totals',
   flowTypeTotals: 'Flow Type Totals',
+  participatingOrgs: 'Participating Organisations',
+  descriptions: 'Descriptions',
 };
 
 const DEFAULT_VISIBLE_COLUMNS: ColumnId[] = COLUMN_CONFIGS
@@ -560,6 +625,13 @@ function ActivitiesPageContent() {
     y: number;
   } | null>(null);
   
+  // Sector filter state (hierarchical filter like Map & Analysis page)
+  const [sectorFilter, setSectorFilter] = useState<SectorFilterSelection>({
+    sectorCategories: [],
+    sectors: [],
+    subSectors: [],
+  });
+  
   // Column visibility state with localStorage persistence
   const [visibleColumns, setVisibleColumns] = useState<ColumnId[]>(DEFAULT_VISIBLE_COLUMNS);
   
@@ -625,6 +697,9 @@ function ActivitiesPageContent() {
   // Debounced empty-state flag to avoid flicker (skeleton → empty → list)
   const [showEmptyState, setShowEmptyState] = useState(false);
   const emptyTimerRef = useRef<NodeJS.Timeout | null>(null);
+  
+  // Global loading bar for top-of-screen progress indicator
+  const { startLoading, stopLoading } = useLoadingBar();
   
   // Use optimization mode to get conditional image loading
   const usingOptimization = enableOptimization;
@@ -890,6 +965,16 @@ function ActivitiesPageContent() {
       }
     }
   }, [loading, userLoading, isInitialLoad]);
+
+  // Show/hide global loading bar based on loading state
+  useEffect(() => {
+    const isPageLoading = loading || userLoading || !hasLoadedOnce || isInitialLoad;
+    if (isPageLoading) {
+      startLoading();
+    } else {
+      stopLoading();
+    }
+  }, [loading, userLoading, hasLoadedOnce, isInitialLoad, startLoading, stopLoading]);
 
   // NOTE: debounced empty-state effect moved below where dependent variables are initialized
 
@@ -1225,10 +1310,24 @@ function ActivitiesPageContent() {
   };
 
   // Client-side filtering for legacy implementation only
-  // Optimized implementation handles filtering on server-side
+  // Optimized implementation handles most filtering on server-side, but sector filter is client-side
   const filteredActivities = useMemo(() => {
+    // Check if sector filter is active
+    const hasSectorFilter = 
+      sectorFilter.sectorCategories.length > 0 || 
+      sectorFilter.sectors.length > 0 || 
+      sectorFilter.subSectors.length > 0;
+    
     if (usingOptimization) {
-      // Server-side filtering already applied
+      // Server-side filtering already applied for most filters
+      // Apply sector filter client-side if active
+      if (hasSectorFilter) {
+        return activities.filter(activity => {
+          const activitySectors = activity.sectors || [];
+          const sectorCodes = activitySectors.map((s: any) => s.code || s.sector_code);
+          return matchesSectorFilter(sectorCodes, sectorFilter);
+        });
+      }
       return activities;
     }
     
@@ -1246,9 +1345,17 @@ function ActivitiesPageContent() {
         (filterValidation === "rejected" && submissionStatus === "rejected") ||
         (filterValidation === "pending" && !["validated", "rejected"].includes(submissionStatus));
       
-      return matchesActivityStatus && matchesValidationStatus;
+      // Apply sector filter
+      let matchesSectorSelection = true;
+      if (hasSectorFilter) {
+        const activitySectors = activity.sectors || [];
+        const sectorCodes = activitySectors.map((s: any) => s.code || s.sector_code);
+        matchesSectorSelection = matchesSectorFilter(sectorCodes, sectorFilter);
+      }
+      
+      return matchesActivityStatus && matchesValidationStatus && matchesSectorSelection;
     });
-  }, [usingOptimization, activities, filterStatus, filterValidation]);
+  }, [usingOptimization, activities, filterStatus, filterValidation, sectorFilter]);
 
   // Pre-compute creator organization strings for all filtered activities
   // This cache eliminates repeated lookups during rendering and sorting
@@ -1540,123 +1647,111 @@ function ActivitiesPageContent() {
       </div>
 
       {/* Filters and View Controls - All in One Row */}
-      <div className="flex flex-col lg:flex-row lg:items-center py-4 bg-slate-50 rounded-lg px-4">
-        {/* Left Side: Primary Status Filters */}
-        <div className="flex flex-wrap items-center gap-3">
-            <ActivityStatusFilterSelect
-              value={filterStatus}
-              onValueChange={setFilterStatus}
-              placeholder="Status"
-              className="w-[180px]"
-            />
+      <div className="flex items-center gap-1.5 py-2 bg-slate-50 rounded-lg px-2 border border-gray-200">
+        {/* Status Filter */}
+        <ActivityStatusFilterSelect
+          value={filterStatus}
+          onValueChange={setFilterStatus}
+          placeholder="Status"
+          className="w-[120px]"
+        />
 
-            <Select value={filterValidation} onValueChange={setFilterValidation}>
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Validation" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Validation Types</SelectItem>
-                <SelectItem value="validated">Validated</SelectItem>
-                <SelectItem value="rejected">Rejected</SelectItem>
-                <SelectItem value="pending">Not Validated</SelectItem>
-              </SelectContent>
-            </Select>
+        {/* Validation Filter */}
+        <Select value={filterValidation} onValueChange={setFilterValidation}>
+          <SelectTrigger className="w-[115px] h-9">
+            <SelectValue placeholder="Validation" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Validation</SelectItem>
+            <SelectItem value="validated">Validated</SelectItem>
+            <SelectItem value="rejected">Rejected</SelectItem>
+            <SelectItem value="pending">Not Validated</SelectItem>
+          </SelectContent>
+        </Select>
 
-            {/* Reported By Filter */}
-            <Select value={filterReportedBy} onValueChange={setFilterReportedBy}>
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Organisation" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Organisations</SelectItem>
-                {organizations.map((org) => (
-                  <SelectItem key={org.id} value={org.id}>
-                    {org.acronym || org.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+        {/* Reported By Filter */}
+        <Select value={filterReportedBy} onValueChange={setFilterReportedBy}>
+          <SelectTrigger className="w-[130px] h-9">
+            <SelectValue placeholder="Organisation" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Organisations</SelectItem>
+            {organizations.map((org) => (
+              <SelectItem key={org.id} value={org.id}>
+                {org.acronym || org.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
 
-        </div>
+        {/* Sector Filter */}
+        <SectorHierarchyFilter
+          selected={sectorFilter}
+          onChange={setSectorFilter}
+          className="w-[120px]"
+        />
 
-        {/* Middle: Aid Modality Filters + Column Selector */}
-        <div className="flex items-center gap-3 lg:mx-8">
-          {/* Aid Type Filter */}
-          <Select value={filterAidType} onValueChange={setFilterAidType}>
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Aid Type" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Aid Types</SelectItem>
-                {Object.entries(AID_TYPE_LABELS).map(([code, label]) => (
-                  <SelectItem key={code} value={code}>
-                    <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded mr-2">{code}</span>
-                    {label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+        {/* Aid Type Filter */}
+        <Select value={filterAidType} onValueChange={setFilterAidType}>
+          <SelectTrigger className="w-[115px] h-9">
+            <SelectValue placeholder="Aid Type" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Aid Types</SelectItem>
+            {Object.entries(AID_TYPE_LABELS).map(([code, label]) => (
+              <SelectItem key={code} value={code}>
+                <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded mr-2">{code}</span>
+                {label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
 
-            {/* Flow Type Filter */}
-            <Select value={filterFlowType} onValueChange={setFilterFlowType}>
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Flow Type" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Flow Types</SelectItem>
-                {Object.entries(FLOW_TYPE_LABELS).map(([code, label]) => (
-                  <SelectItem key={code} value={code}>
-                    <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded mr-2">{code}</span>
-                    {label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+        {/* Flow Type Filter */}
+        <Select value={filterFlowType} onValueChange={setFilterFlowType}>
+          <SelectTrigger className="w-[115px] h-9">
+            <SelectValue placeholder="Flow Type" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Flow Types</SelectItem>
+            {Object.entries(FLOW_TYPE_LABELS).map(([code, label]) => (
+              <SelectItem key={code} value={code}>
+                <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded mr-2">{code}</span>
+                {label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
 
-            {/* Column Selector - Only visible in table view */}
-            {viewMode === 'table' && (
-              <ColumnSelector 
-                visibleColumns={visibleColumns} 
-                onColumnsChange={handleColumnsChange} 
-              />
-            )}
-            
-        </div>
+        {/* Column Selector - Only visible in table view */}
+        {viewMode === 'table' && (
+          <ColumnSelector 
+            visibleColumns={visibleColumns} 
+            onColumnsChange={handleColumnsChange} 
+          />
+        )}
 
-        {/* Right Side: View Toggle + Results Count - Fixed width */}
-        <div className="flex flex-row items-center gap-4 flex-shrink-0 lg:ml-auto">
-          {/* View Mode Toggle */}
-          <div className="flex items-center">
-            <Button
-              variant={viewMode === 'table' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setViewMode('table')}
-              className="rounded-r-none"
-            >
-              <TableIcon className="h-4 w-4" />
-            </Button>
-            <Button
-              variant={viewMode === 'card' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setViewMode('card')}
-              className="rounded-l-none"
-            >
-              <Grid3X3 className="h-4 w-4" />
-            </Button>
-          </div>
-          
-          {/* Results Summary */}
-          <div className="flex flex-col items-end gap-1">
-            {loading || userLoading || !hasLoadedOnce || isInitialLoad ? (
-              <Skeleton className="h-4 w-32" />
-            ) : (
-              <p className="text-sm text-slate-600 whitespace-nowrap">
-                {showEmptyState
-                  ? "No activities"
-                  : `${totalActivities} ${totalActivities === 1 ? 'activity' : 'activities'}`}
-              </p>
-            )}
-          </div>
+        {/* Spacer to push view toggle to the right */}
+        <div className="flex-1 min-w-[8px]" />
+
+        {/* View Mode Toggle */}
+        <div className="flex items-center flex-shrink-0">
+          <Button
+            variant={viewMode === 'table' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setViewMode('table')}
+            className="rounded-r-none h-9"
+          >
+            <TableIcon className="h-4 w-4" />
+          </Button>
+          <Button
+            variant={viewMode === 'card' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setViewMode('card')}
+            className="rounded-l-none h-9"
+          >
+            <Grid3X3 className="h-4 w-4" />
+          </Button>
         </div>
       </div>
       
@@ -1693,7 +1788,7 @@ function ActivitiesPageContent() {
           </div>
         </div>
       ) : viewMode === 'table' ? (
-        <div className="bg-white rounded-md shadow-sm border border-gray-200 overflow-hidden fade-in">
+        <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden fade-in">
           <div className="overflow-x-auto">
             <table className="w-full table-auto border-collapse activities-table">
               <thead className="bg-muted/50 border-b border-border">
@@ -1981,6 +2076,50 @@ function ActivitiesPageContent() {
                   {visibleColumns.includes('iatiSyncStatus') && (
                     <th className="h-12 px-4 py-3 text-center align-middle text-sm font-medium text-muted-foreground w-[100px]">
                       IATI Synced
+                    </th>
+                  )}
+                  
+                  {/* Participating Organisation Columns */}
+                  {visibleColumns.includes('fundingOrganisations') && (
+                    <th className="h-12 px-4 py-3 text-left align-middle text-sm font-medium text-muted-foreground min-w-[180px]">
+                      Funding Organisations
+                    </th>
+                  )}
+                  {visibleColumns.includes('extendingOrganisations') && (
+                    <th className="h-12 px-4 py-3 text-left align-middle text-sm font-medium text-muted-foreground min-w-[180px]">
+                      Extending Organisations
+                    </th>
+                  )}
+                  {visibleColumns.includes('implementingOrganisations') && (
+                    <th className="h-12 px-4 py-3 text-left align-middle text-sm font-medium text-muted-foreground min-w-[180px]">
+                      Implementing Organisations
+                    </th>
+                  )}
+                  {visibleColumns.includes('accountableOrganisations') && (
+                    <th className="h-12 px-4 py-3 text-left align-middle text-sm font-medium text-muted-foreground min-w-[180px]">
+                      Accountable Organisations
+                    </th>
+                  )}
+                  
+                  {/* Description Columns */}
+                  {visibleColumns.includes('descriptionGeneral') && (
+                    <th className="h-12 px-4 py-3 text-left align-middle text-sm font-medium text-muted-foreground min-w-[200px]">
+                      Activity Description – General
+                    </th>
+                  )}
+                  {visibleColumns.includes('descriptionObjectives') && (
+                    <th className="h-12 px-4 py-3 text-left align-middle text-sm font-medium text-muted-foreground min-w-[200px]">
+                      Activity Description – Objectives
+                    </th>
+                  )}
+                  {visibleColumns.includes('descriptionTargetGroups') && (
+                    <th className="h-12 px-4 py-3 text-left align-middle text-sm font-medium text-muted-foreground min-w-[200px]">
+                      Activity Description – Target Groups
+                    </th>
+                  )}
+                  {visibleColumns.includes('descriptionOther') && (
+                    <th className="h-12 px-4 py-3 text-left align-middle text-sm font-medium text-muted-foreground min-w-[200px]">
+                      Activity Description – Other
                     </th>
                   )}
                   
@@ -2519,6 +2658,210 @@ function ActivitiesPageContent() {
                         </td>
                       )}
                       
+                      {/* Participating Organisation Columns */}
+                      {visibleColumns.includes('fundingOrganisations') && (
+                        <td className="px-4 py-2 text-sm text-foreground text-left">
+                          {(() => {
+                            const formatted = formatOrganisationList(activity.fundingOrgs || []);
+                            return (
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <span className="cursor-pointer line-clamp-2">{formatted.display}</span>
+                                  </TooltipTrigger>
+                                  {formatted.full.length > 2 && (
+                                    <TooltipContent className="max-w-sm bg-white border shadow-lg p-3">
+                                      <div className="space-y-1">
+                                        <p className="font-medium text-xs text-muted-foreground mb-2">Funding Organisations ({formatted.full.length})</p>
+                                        {formatted.full.map((org, i) => (
+                                          <div key={i} className="text-sm">{org}</div>
+                                        ))}
+                                      </div>
+                                    </TooltipContent>
+                                  )}
+                                </Tooltip>
+                              </TooltipProvider>
+                            );
+                          })()}
+                        </td>
+                      )}
+                      {visibleColumns.includes('extendingOrganisations') && (
+                        <td className="px-4 py-2 text-sm text-foreground text-left">
+                          {(() => {
+                            const formatted = formatOrganisationList(activity.extendingOrgs || []);
+                            return (
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <span className="cursor-pointer line-clamp-2">{formatted.display}</span>
+                                  </TooltipTrigger>
+                                  {formatted.full.length > 2 && (
+                                    <TooltipContent className="max-w-sm bg-white border shadow-lg p-3">
+                                      <div className="space-y-1">
+                                        <p className="font-medium text-xs text-muted-foreground mb-2">Extending Organisations ({formatted.full.length})</p>
+                                        {formatted.full.map((org, i) => (
+                                          <div key={i} className="text-sm">{org}</div>
+                                        ))}
+                                      </div>
+                                    </TooltipContent>
+                                  )}
+                                </Tooltip>
+                              </TooltipProvider>
+                            );
+                          })()}
+                        </td>
+                      )}
+                      {visibleColumns.includes('implementingOrganisations') && (
+                        <td className="px-4 py-2 text-sm text-foreground text-left">
+                          {(() => {
+                            const formatted = formatOrganisationList(activity.implementingOrgs || []);
+                            return (
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <span className="cursor-pointer line-clamp-2">{formatted.display}</span>
+                                  </TooltipTrigger>
+                                  {formatted.full.length > 2 && (
+                                    <TooltipContent className="max-w-sm bg-white border shadow-lg p-3">
+                                      <div className="space-y-1">
+                                        <p className="font-medium text-xs text-muted-foreground mb-2">Implementing Organisations ({formatted.full.length})</p>
+                                        {formatted.full.map((org, i) => (
+                                          <div key={i} className="text-sm">{org}</div>
+                                        ))}
+                                      </div>
+                                    </TooltipContent>
+                                  )}
+                                </Tooltip>
+                              </TooltipProvider>
+                            );
+                          })()}
+                        </td>
+                      )}
+                      {visibleColumns.includes('accountableOrganisations') && (
+                        <td className="px-4 py-2 text-sm text-foreground text-left">
+                          {(() => {
+                            const formatted = formatOrganisationList(activity.accountableOrgs || []);
+                            return (
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <span className="cursor-pointer line-clamp-2">{formatted.display}</span>
+                                  </TooltipTrigger>
+                                  {formatted.full.length > 2 && (
+                                    <TooltipContent className="max-w-sm bg-white border shadow-lg p-3">
+                                      <div className="space-y-1">
+                                        <p className="font-medium text-xs text-muted-foreground mb-2">Accountable Organisations ({formatted.full.length})</p>
+                                        {formatted.full.map((org, i) => (
+                                          <div key={i} className="text-sm">{org}</div>
+                                        ))}
+                                      </div>
+                                    </TooltipContent>
+                                  )}
+                                </Tooltip>
+                              </TooltipProvider>
+                            );
+                          })()}
+                        </td>
+                      )}
+                      
+                      {/* Description Cells */}
+                      {visibleColumns.includes('descriptionGeneral') && (
+                        <td className="px-4 py-2 text-sm text-foreground text-left">
+                          {(() => {
+                            const truncated = truncateDescription(activity.description_general);
+                            return (
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <span className="cursor-pointer line-clamp-2">{truncated.display}</span>
+                                  </TooltipTrigger>
+                                  {truncated.full && (
+                                    <TooltipContent className="max-w-md bg-white border shadow-lg p-3">
+                                      <div className="space-y-1">
+                                        <p className="font-medium text-xs text-muted-foreground mb-2">Activity Description – General</p>
+                                        <p className="text-sm whitespace-pre-wrap">{truncated.full}</p>
+                                      </div>
+                                    </TooltipContent>
+                                  )}
+                                </Tooltip>
+                              </TooltipProvider>
+                            );
+                          })()}
+                        </td>
+                      )}
+                      {visibleColumns.includes('descriptionObjectives') && (
+                        <td className="px-4 py-2 text-sm text-foreground text-left">
+                          {(() => {
+                            const truncated = truncateDescription(activity.description_objectives);
+                            return (
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <span className="cursor-pointer line-clamp-2">{truncated.display}</span>
+                                  </TooltipTrigger>
+                                  {truncated.full && (
+                                    <TooltipContent className="max-w-md bg-white border shadow-lg p-3">
+                                      <div className="space-y-1">
+                                        <p className="font-medium text-xs text-muted-foreground mb-2">Activity Description – Objectives</p>
+                                        <p className="text-sm whitespace-pre-wrap">{truncated.full}</p>
+                                      </div>
+                                    </TooltipContent>
+                                  )}
+                                </Tooltip>
+                              </TooltipProvider>
+                            );
+                          })()}
+                        </td>
+                      )}
+                      {visibleColumns.includes('descriptionTargetGroups') && (
+                        <td className="px-4 py-2 text-sm text-foreground text-left">
+                          {(() => {
+                            const truncated = truncateDescription(activity.description_target_groups);
+                            return (
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <span className="cursor-pointer line-clamp-2">{truncated.display}</span>
+                                  </TooltipTrigger>
+                                  {truncated.full && (
+                                    <TooltipContent className="max-w-md bg-white border shadow-lg p-3">
+                                      <div className="space-y-1">
+                                        <p className="font-medium text-xs text-muted-foreground mb-2">Activity Description – Target Groups</p>
+                                        <p className="text-sm whitespace-pre-wrap">{truncated.full}</p>
+                                      </div>
+                                    </TooltipContent>
+                                  )}
+                                </Tooltip>
+                              </TooltipProvider>
+                            );
+                          })()}
+                        </td>
+                      )}
+                      {visibleColumns.includes('descriptionOther') && (
+                        <td className="px-4 py-2 text-sm text-foreground text-left">
+                          {(() => {
+                            const truncated = truncateDescription(activity.description_other);
+                            return (
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <span className="cursor-pointer line-clamp-2">{truncated.display}</span>
+                                  </TooltipTrigger>
+                                  {truncated.full && (
+                                    <TooltipContent className="max-w-md bg-white border shadow-lg p-3">
+                                      <div className="space-y-1">
+                                        <p className="font-medium text-xs text-muted-foreground mb-2">Activity Description – Other</p>
+                                        <p className="text-sm whitespace-pre-wrap">{truncated.full}</p>
+                                      </div>
+                                    </TooltipContent>
+                                  )}
+                                </Tooltip>
+                              </TooltipProvider>
+                            );
+                          })()}
+                        </td>
+                      )}
+                      
                       {/* Actions cell - always visible */}
                       <td className="px-4 py-2 text-sm text-foreground text-right">
                         <div className="flex items-center justify-end">
@@ -2609,12 +2952,11 @@ function ActivitiesPageContent() {
 
       {/* Pagination */}
       {!isShowingAll && totalActivities > 0 && (
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div className="text-sm text-gray-600">
-                Showing {Math.min(startIndex + 1, totalActivities)} to {Math.min(endIndex, totalActivities)} of {totalActivities} activities
-              </div>
+        <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-4">
+          <div className="flex items-center justify-between">
+            <div className="text-sm text-gray-600">
+              Showing {Math.min(startIndex + 1, totalActivities)} to {Math.min(endIndex, totalActivities)} of {totalActivities} activities
+            </div>
               
               <div className="flex items-center gap-2">
                 <Button
@@ -2712,10 +3054,9 @@ function ActivitiesPageContent() {
                     <SelectItem value="100">100</SelectItem>
                   </SelectContent>
                 </Select>
-              </div>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       )}
 
       {/* Delete Confirmation Dialog */}

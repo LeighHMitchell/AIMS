@@ -1630,7 +1630,7 @@ export default function ActivityBudgetsTab({
           )}
           
           {/* Budgets Table */}
-          <Card data-budgets-tab className="border-0 shadow-none">
+          <Card data-budgets-tab className="border shadow-sm">
         <CardHeader>
           <div className="flex items-center justify-between">
             {!hideSummaryCards && (
@@ -1890,7 +1890,7 @@ export default function ActivityBudgetsTab({
             </div>
           )}
         </CardHeader>
-        <CardContent className="border-0 shadow-none">
+        <CardContent>
 
           {/* Copy Budget Dialog */}
           <Dialog open={showCopyDialog} onOpenChange={(open) => {

@@ -38,6 +38,9 @@ import SectorSunburstVisualization from '@/components/charts/SectorSunburstVisua
 
 import SectorSankeyVisualization from '@/components/charts/SectorSankeyVisualization';
 import { toast } from 'sonner';
+import { SectorAllocationModeToggle } from '@/components/activities/SectorAllocationModeToggle';
+import { useSectorAllocationMode, SectorAllocationMode } from '@/hooks/use-sector-allocation-mode';
+import { Lock, ExternalLink } from 'lucide-react';
 
 interface Sector {
   code: string;
@@ -75,6 +78,8 @@ interface ImprovedSectorAllocationFormProps {
   onCompletionStatusChange?: (completion: { isComplete: boolean; isInProgress: boolean; isSaved: boolean }) => void;
   allowPublish?: boolean;
   activityId?: string;
+  onModeChange?: (mode: SectorAllocationMode) => void;
+  onNavigateToTransactions?: () => void;
 }
 
 // Color mapping for sector categories - using gray/slate palette to match sunburst chart
@@ -248,7 +253,9 @@ export default function ImprovedSectorAllocationForm({
   onValidationChange,
   onCompletionStatusChange,
   allowPublish = true,
-  activityId
+  activityId,
+  onModeChange,
+  onNavigateToTransactions
 }: ImprovedSectorAllocationFormProps) {
   console.log('[ImprovedSectorAllocationForm] Component mounted with:', {
     allocationsCount: allocations.length,
@@ -256,6 +263,15 @@ export default function ImprovedSectorAllocationForm({
     hasCompletionCallback: !!onCompletionStatusChange
   });
   const { user } = useUser();
+  
+  // Sector allocation mode (activity vs transaction level)
+  const sectorMode = useSectorAllocationMode({
+    activityId: activityId || '',
+    onModeChange
+  });
+  
+  const isTransactionMode = sectorMode.mode === 'transaction';
+  const isLocked = isTransactionMode;
   // Multi-select: get all selected sector codes
   const selectedSectors = allocations.map(a => a.code);
   const sectorsAutosave = useSectorsAutosave(activityId, user?.id);
@@ -893,6 +909,48 @@ export default function ImprovedSectorAllocationForm({
 
   return (
     <div className="space-y-6">
+      {/* Mode Toggle Header */}
+      {activityId && (
+        <div className="flex items-center justify-between pb-2 border-b">
+          <div className="flex-1">
+            <SectorAllocationModeToggle
+              activityId={activityId}
+              onModeChange={onModeChange}
+              disabled={sectorMode.isSwitching}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Locked State Alert for Transaction Mode */}
+      {isLocked && (
+        <Alert className="bg-amber-50 border-amber-200">
+          <Lock className="h-4 w-4 text-amber-600" />
+          <AlertDescription className="text-amber-800">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="font-medium">Sector allocation is managed at the transaction level</p>
+                <p className="text-sm mt-1">
+                  The breakdown below shows the weighted average across all transactions.
+                  To edit sectors, go to individual transactions.
+                </p>
+              </div>
+              {onNavigateToTransactions && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={onNavigateToTransactions}
+                  className="ml-4 whitespace-nowrap border-amber-300 text-amber-700 hover:bg-amber-100"
+                >
+                  <ExternalLink className="h-3 w-3 mr-1" />
+                  View Transactions
+                </Button>
+              )}
+            </div>
+          </AlertDescription>
+        </Alert>
+      )}
+
       {/* Hero Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
         <TooltipProvider>
@@ -992,6 +1050,7 @@ export default function ImprovedSectorAllocationForm({
               className="w-full"
               variant="hierarchical"
               maxSelections={15}
+              disabled={isLocked}
             />
           </CardContent>
         </Card>
@@ -1004,7 +1063,7 @@ export default function ImprovedSectorAllocationForm({
                 <CardTitle className="text-base">Selected Sectors</CardTitle>
                 <div className="flex items-center gap-2">
                   {/* Distribute Equally Button only if more than one allocation */}
-                  {allocations.length > 1 && (
+                  {allocations.length > 1 && !isLocked && (
                     <TooltipProvider>
                       <Tooltip>
                         <TooltipTrigger asChild>
@@ -1013,6 +1072,7 @@ export default function ImprovedSectorAllocationForm({
                             size="sm"
                             onClick={distributeEqually}
                             className="text-xs bg-blue-600 hover:bg-blue-700 text-white"
+                            disabled={isLocked}
                           >
                             <Sparkles className="h-3 w-3 mr-1" />
                             Distribute Equally
@@ -1024,24 +1084,27 @@ export default function ImprovedSectorAllocationForm({
                       </Tooltip>
                     </TooltipProvider>
                   )}
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          onClick={clearAll}
-                          className="text-xs text-red-600 border-red-200 hover:bg-red-50 hover:text-red-600 active:text-red-600 focus-visible:text-red-600"
-                        >
-                          <Trash2 className="h-3 w-3 mr-1" />
-                          Clear All
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>Remove all sector allocations</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
+                  {!isLocked && (
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={clearAll}
+                            className="text-xs text-red-600 border-red-200 hover:bg-red-50 hover:text-red-600 active:text-red-600 focus-visible:text-red-600"
+                            disabled={isLocked}
+                          >
+                            <Trash2 className="h-3 w-3 mr-1" />
+                            Clear All
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Remove all sector allocations</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  )}
                 </div>
               </div>
             </CardHeader>
@@ -1222,9 +1285,11 @@ export default function ImprovedSectorAllocationForm({
                                         step="0.001"
                                         value={formatPercentageDisplay(allocation.percentage || 0)}
                                         onChange={(e) => updatePercentage(allocation.id, parseFloat(e.target.value) || 0)}
+                                        disabled={isLocked}
                                         className={cn(
                                           "w-24 h-8 text-sm text-center font-mono p-2",
-                                          allocation.percentage === 0 && "border-red-300"
+                                          allocation.percentage === 0 && "border-red-300",
+                                          isLocked && "bg-gray-100 cursor-not-allowed"
                                         )}
                                       />
                                     </div>
@@ -1274,14 +1339,16 @@ export default function ImprovedSectorAllocationForm({
                           
                           {/* Action - Delete Button */}
                           <TableCell className="py-2 text-center">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => removeSector(allocation.id)}
-                              className="h-6 w-6 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
-                            >
-                              <Trash2 className="h-3 w-3" />
-                            </Button>
+                            {!isLocked && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => removeSector(allocation.id)}
+                                className="h-6 w-6 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
+                              >
+                                <Trash2 className="h-3 w-3" />
+                              </Button>
+                            )}
                           </TableCell>
                         </TableRow>
                       );

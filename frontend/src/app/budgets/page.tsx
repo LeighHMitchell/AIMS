@@ -16,6 +16,7 @@ import { Budget, BudgetFilter } from "@/types/budget";
 import { BulkActionToolbar } from "@/components/ui/bulk-action-toolbar";
 import { BulkDeleteDialog } from "@/components/dialogs/bulk-delete-dialog";
 import { YearlyTotalsBarChart, SingleSeriesDataPoint } from "@/components/charts/YearlyTotalsBarChart";
+import { useLoadingBar } from "@/hooks/useLoadingBar";
 
 export default function BudgetsPage() {
   const router = useRouter();
@@ -50,6 +51,18 @@ export default function BudgetsPage() {
     page: currentPage,
     limit: pageLimit,
   });
+  
+  // Global loading bar for top-of-screen progress indicator
+  const { startLoading, stopLoading } = useLoadingBar();
+  
+  // Show/hide global loading bar based on loading state
+  useEffect(() => {
+    if (loading && (!budgets.budgets || budgets.budgets.length === 0)) {
+      startLoading();
+    } else {
+      stopLoading();
+    }
+  }, [loading, budgets.budgets, startLoading, stopLoading]);
 
   // Load saved page limit preference and fetch organizations on mount
   useEffect(() => {

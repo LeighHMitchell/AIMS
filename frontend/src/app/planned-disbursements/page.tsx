@@ -14,6 +14,7 @@ import { PlannedDisbursementsTable } from "@/components/planned-disbursements/Pl
 import { BulkActionToolbar } from "@/components/ui/bulk-action-toolbar";
 import { BulkDeleteDialog } from "@/components/dialogs/bulk-delete-dialog";
 import { YearlyTotalsBarChart, SingleSeriesDataPoint } from "@/components/charts/YearlyTotalsBarChart";
+import { useLoadingBar } from "@/hooks/useLoadingBar";
 
 export default function PlannedDisbursementsPage() {
   const router = useRouter();
@@ -42,6 +43,18 @@ export default function PlannedDisbursementsPage() {
   // Yearly summary state for chart
   const [yearlySummary, setYearlySummary] = useState<SingleSeriesDataPoint[]>([]);
   const [yearlySummaryLoading, setYearlySummaryLoading] = useState(true);
+  
+  // Global loading bar for top-of-screen progress indicator
+  const { startLoading, stopLoading } = useLoadingBar();
+  
+  // Show/hide global loading bar based on loading state
+  useEffect(() => {
+    if (loading && disbursements.length === 0) {
+      startLoading();
+    } else {
+      stopLoading();
+    }
+  }, [loading, disbursements.length, startLoading, stopLoading]);
 
   // Load saved page limit preference
   useEffect(() => {

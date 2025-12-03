@@ -70,7 +70,7 @@ export function ActivityStatusFilterSelect({
 }: ActivityStatusFilterSelectProps) {
   return (
     <Select value={value} onValueChange={onValueChange} disabled={disabled}>
-      <SelectTrigger className={className}>
+      <SelectTrigger className={`h-9 ${className || ''}`}>
         <SelectValue placeholder={placeholder} />
       </SelectTrigger>
       <SelectContent>

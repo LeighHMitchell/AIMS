@@ -74,18 +74,19 @@ USING (
         AND (
             -- User created the activity
             a.created_by = auth.uid() OR 
-            -- User belongs to the activity's organization (using correct table name)
+            -- User belongs to the activity's organization
             EXISTS (
                 SELECT 1 FROM user_organizations uo
                 WHERE uo.user_id = auth.uid()
                 AND uo.organization_id = a.reporting_org_id
             ) OR
-            -- User is a contributor to the activity
+            -- User's organization is a contributor to the activity
             EXISTS (
                 SELECT 1 FROM activity_contributors ac
+                JOIN user_organizations uo ON uo.organization_id = ac.organization_id
                 WHERE ac.activity_id = a.id 
-                AND ac.user_id = auth.uid()
-                AND ac.role IN ('editor', 'admin', 'viewer')
+                AND uo.user_id = auth.uid()
+                AND ac.status = 'accepted'
             )
         )
         AND transaction_sector_lines.deleted_at IS NULL
@@ -110,12 +111,14 @@ USING (
                 AND uo.organization_id = a.reporting_org_id
                 AND uo.role IN ('admin', 'editor')
             ) OR
-            -- User is an accepted contributor with edit permissions
+            -- User's organization is an accepted contributor with edit permissions
             EXISTS (
                 SELECT 1 FROM activity_contributors ac
+                JOIN user_organizations uo ON uo.organization_id = ac.organization_id
                 WHERE ac.activity_id = a.id 
-                AND ac.user_id = auth.uid()
-                AND ac.role IN ('editor', 'admin')
+                AND uo.user_id = auth.uid()
+                AND ac.status = 'accepted'
+                AND ac.can_edit_own_data = true
             )
         )
         AND transaction_sector_lines.deleted_at IS NULL
@@ -132,6 +135,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
+DROP TRIGGER IF EXISTS trigger_transaction_sector_lines_updated_at ON transaction_sector_lines;
 CREATE TRIGGER trigger_transaction_sector_lines_updated_at
     BEFORE UPDATE ON transaction_sector_lines
     FOR EACH ROW
@@ -147,50 +151,47 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
+DROP TRIGGER IF EXISTS trigger_transaction_sector_lines_created_by ON transaction_sector_lines;
 CREATE TRIGGER trigger_transaction_sector_lines_created_by
     BEFORE INSERT ON transaction_sector_lines
     FOR EACH ROW
     EXECUTE FUNCTION set_transaction_sector_lines_created_by();
 
--- Create view for transaction sector analytics
-CREATE OR REPLACE VIEW v_transaction_sector_analytics AS
-SELECT 
-    t.uuid as transaction_id,
-    t.activity_id,
-    t.transaction_type,
-    t.transaction_date,
-    t.value as transaction_value,
-    t.currency,
+-- Create view for transaction sector analytics (only if transactions table has the required columns)
+DO $$
+BEGIN
+    -- Check if the view already exists and drop it
+    DROP VIEW IF EXISTS v_transaction_sector_analytics;
     
-    -- Sector information (prioritize transaction-level over activity-level)
-    COALESCE(tsl.sector_code, t.sector_code) as sector_code,
-    COALESCE(tsl.sector_name, 
-        CASE WHEN t.sector_code IS NOT NULL THEN 'Legacy Sector' ELSE NULL END
-    ) as sector_name,
-    COALESCE(tsl.percentage, 
-        CASE WHEN t.sector_code IS NOT NULL THEN 100 ELSE NULL END
-    ) as sector_percentage,
-    COALESCE(
-        (t.value * tsl.percentage / 100), 
-        CASE WHEN t.sector_code IS NOT NULL THEN t.value ELSE NULL END
-    ) as sector_allocated_value,
-    
-    -- Metadata
-    CASE 
-        WHEN tsl.id IS NOT NULL THEN 'transaction' 
-        WHEN t.sector_code IS NOT NULL THEN 'legacy'
-        ELSE 'none' 
-    END as sector_source,
-    COALESCE(tsl.sector_vocabulary, t.sector_vocabulary, '1') as sector_vocabulary,
-    
-    -- Organization information
-    t.provider_org_id,
-    t.receiver_org_id,
-    t.status as transaction_status
-    
-FROM transactions t
-LEFT JOIN transaction_sector_lines tsl ON t.uuid = tsl.transaction_id AND tsl.deleted_at IS NULL
-WHERE t.status IN ('actual', 'draft');
+    -- Create the view
+    CREATE VIEW v_transaction_sector_analytics AS
+    SELECT 
+        t.uuid as transaction_id,
+        t.activity_id,
+        t.transaction_type,
+        t.transaction_date,
+        t.value as transaction_value,
+        t.currency,
+        
+        -- Sector information from transaction_sector_lines
+        tsl.sector_code,
+        tsl.sector_name,
+        tsl.percentage as sector_percentage,
+        (t.value * tsl.percentage / 100) as sector_allocated_value,
+        
+        -- Metadata
+        'transaction' as sector_source,
+        COALESCE(tsl.sector_vocabulary, '1') as sector_vocabulary,
+        
+        -- Organization information
+        t.provider_org_id,
+        t.receiver_org_id,
+        t.status as transaction_status
+        
+    FROM transactions t
+    INNER JOIN transaction_sector_lines tsl ON t.uuid = tsl.transaction_id AND tsl.deleted_at IS NULL
+    WHERE t.status IN ('actual', 'draft');
+END $$;
 
 -- Grant necessary permissions
 GRANT SELECT ON v_transaction_sector_analytics TO authenticated;
@@ -202,4 +203,4 @@ COMMENT ON COLUMN transaction_sector_lines.transaction_id IS 'References transac
 COMMENT ON COLUMN transaction_sector_lines.sector_vocabulary IS 'Sector vocabulary code: 1=DAC 5-digit, 2=DAC 3-digit, etc.';
 COMMENT ON COLUMN transaction_sector_lines.amount_minor IS 'Amount in minor currency units (cents) to avoid floating point precision issues';
 COMMENT ON COLUMN transaction_sector_lines.percentage IS 'Percentage of transaction allocated to this sector (must sum to 100% across all lines)';
-COMMENT ON VIEW v_transaction_sector_analytics IS 'Analytics view combining transaction and sector data with priority logic for reporting';
+COMMENT ON VIEW v_transaction_sector_analytics IS 'Analytics view combining transaction and sector data for reporting';

@@ -26,10 +26,13 @@ import {
   Copy,
   RotateCcw,
   HelpCircle,
-  DollarSign
+  DollarSign,
+  Lock,
+  ExternalLink
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useTransactionSectors } from '@/hooks/use-transaction-sectors';
+import { useSectorAllocationMode } from '@/hooks/use-sector-allocation-mode';
 import { SectorSelect } from '@/components/forms/SectorSelect';
 import { formatCurrency } from '@/lib/format';
 
@@ -40,6 +43,7 @@ interface TransactionSectorsTabProps {
   activityId: string;
   disabled?: boolean;
   className?: string;
+  onNavigateToActivity?: () => void;
 }
 
 export default function TransactionSectorsTab({
@@ -48,11 +52,21 @@ export default function TransactionSectorsTab({
   transactionCurrency,
   activityId,
   disabled = false,
-  className
+  className,
+  onNavigateToActivity
 }: TransactionSectorsTabProps) {
   
   const [showSectorSelect, setShowSectorSelect] = useState(false);
   const [editingLineId, setEditingLineId] = useState<string | null>(null);
+  
+  // Check if activity is in activity-level mode (which locks this tab)
+  const sectorMode = useSectorAllocationMode({
+    activityId
+  });
+  
+  const isActivityMode = sectorMode.mode === 'activity';
+  const isLocked = isActivityMode;
+  const effectiveDisabled = disabled || isLocked;
   
   const {
     sectorLines,
@@ -126,17 +140,55 @@ export default function TransactionSectorsTab({
   
   return (
     <div className={cn("space-y-6", className)}>
+      {/* Locked State Alert for Activity Mode */}
+      {isLocked && (
+        <Alert className="bg-amber-50 border-amber-200">
+          <Lock className="h-4 w-4 text-amber-600" />
+          <AlertDescription className="text-amber-800">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="font-medium">Sector allocation is managed at the activity level</p>
+                <p className="text-sm mt-1">
+                  These sectors are inherited from the activity and cannot be edited here.
+                  To edit sectors, go to the activity's Sectors tab.
+                </p>
+              </div>
+              {onNavigateToActivity && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={onNavigateToActivity}
+                  className="ml-4 whitespace-nowrap border-amber-300 text-amber-700 hover:bg-amber-100"
+                >
+                  <ExternalLink className="h-3 w-3 mr-1" />
+                  Edit Activity Sectors
+                </Button>
+              )}
+            </div>
+          </AlertDescription>
+        </Alert>
+      )}
+
       {/* Header with actions */}
       <div className="flex items-center justify-between">
         <div>
           <h3 className="text-lg font-semibold">Transaction Sectors</h3>
           <p className="text-sm text-muted-foreground">
-            Allocate this transaction across different sectors
+            {isLocked 
+              ? 'Inherited from activity sector allocation'
+              : 'Allocate this transaction across different sectors'
+            }
           </p>
         </div>
         
         <div className="flex items-center gap-2">
-          {hasUnsavedChanges && (
+          {isLocked && (
+            <Badge variant="outline" className="text-amber-600">
+              <Lock className="h-3 w-3 mr-1" />
+              Inherited
+            </Badge>
+          )}
+          {hasUnsavedChanges && !isLocked && (
             <Badge variant="outline" className="text-orange-600">
               Unsaved changes
             </Badge>
@@ -176,7 +228,7 @@ export default function TransactionSectorsTab({
               <div className="flex items-center justify-center gap-2">
                 <Button 
                   onClick={() => setShowSectorSelect(true)}
-                  disabled={disabled}
+                  disabled={effectiveDisabled}
                 >
                   <Plus className="h-4 w-4 mr-2" />
                   Add First Sector
@@ -184,7 +236,7 @@ export default function TransactionSectorsTab({
                 <Button 
                   variant="outline" 
                   onClick={handleCopyFromActivity}
-                  disabled={disabled}
+                  disabled={effectiveDisabled}
                 >
                   <Copy className="h-4 w-4 mr-2" />
                   Copy from Activity
@@ -201,35 +253,37 @@ export default function TransactionSectorsTab({
           <CardHeader className="pb-4">
             <div className="flex items-center justify-between">
               <CardTitle className="text-base">Sector Allocations</CardTitle>
-              <div className="flex items-center gap-2">
-                <Button 
-                  size="sm" 
-                  variant="outline"
-                  onClick={() => setShowSectorSelect(true)}
-                  disabled={disabled}
-                >
-                  <Plus className="h-4 w-4 mr-1" />
-                  Add Sector
-                </Button>
-                <Button 
-                  size="sm" 
-                  variant="outline"
-                  onClick={handleCopyFromActivity}
-                  disabled={disabled}
-                >
-                  <Copy className="h-4 w-4 mr-1" />
-                  Copy from Activity
-                </Button>
-                <Button 
-                  size="sm" 
-                  variant="outline"
-                  onClick={handleDistributeEqually}
-                  disabled={disabled || sectorLines.length === 0}
-                >
-                  <RotateCcw className="h-4 w-4 mr-1" />
-                  Distribute Equally
-                </Button>
-              </div>
+              {!isLocked && (
+                <div className="flex items-center gap-2">
+                  <Button 
+                    size="sm" 
+                    variant="outline"
+                    onClick={() => setShowSectorSelect(true)}
+                    disabled={effectiveDisabled}
+                  >
+                    <Plus className="h-4 w-4 mr-1" />
+                    Add Sector
+                  </Button>
+                  <Button 
+                    size="sm" 
+                    variant="outline"
+                    onClick={handleCopyFromActivity}
+                    disabled={effectiveDisabled}
+                  >
+                    <Copy className="h-4 w-4 mr-1" />
+                    Copy from Activity
+                  </Button>
+                  <Button 
+                    size="sm" 
+                    variant="outline"
+                    onClick={handleDistributeEqually}
+                    disabled={effectiveDisabled || sectorLines.length === 0}
+                  >
+                    <RotateCcw className="h-4 w-4 mr-1" />
+                    Distribute Equally
+                  </Button>
+                </div>
+              )}
             </div>
           </CardHeader>
           
@@ -267,8 +321,11 @@ export default function TransactionSectorsTab({
                             step="0.01"
                             value={line.percentage}
                             onChange={(e) => handlePercentageChange(line.id, e.target.value)}
-                            className="w-20 text-right"
-                            disabled={disabled}
+                            className={cn(
+                              "w-20 text-right",
+                              isLocked && "bg-gray-100 cursor-not-allowed"
+                            )}
+                            disabled={effectiveDisabled}
                           />
                           <span className="text-sm text-muted-foreground">%</span>
                         </div>
@@ -279,15 +336,17 @@ export default function TransactionSectorsTab({
                         </div>
                       </TableCell>
                       <TableCell>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => removeSectorLine(line.id)}
-                          disabled={disabled}
-                          className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
+                        {!isLocked && (
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => removeSectorLine(line.id)}
+                            disabled={effectiveDisabled}
+                            className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        )}
                       </TableCell>
                     </TableRow>
                   ))}
@@ -373,7 +432,7 @@ export default function TransactionSectorsTab({
       )}
       
       {/* Sector selection modal/dropdown */}
-      {showSectorSelect && (
+      {showSectorSelect && !isLocked && (
         <Card>
           <CardHeader>
             <CardTitle className="text-base">Add Sector Allocation</CardTitle>

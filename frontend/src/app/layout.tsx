@@ -1,4 +1,4 @@
-import React from "react"
+import React, { Suspense } from "react"
 import type { Metadata } from "next"
 import { Inter } from "next/font/google"
 import "./globals.css"
@@ -6,6 +6,7 @@ import { UserProvider } from "@/hooks/useUser"
 import { UserMenu } from "@/components/UserMenu"
 import { SettingsMenu } from "@/components/SettingsMenu"
 import { SystemSettingsProvider } from "@/contexts/SystemSettingsContext"
+import { LoadingBarProvider } from "@/components/providers/LoadingBarProvider"
 import { Toaster } from "sonner"
 
 const inter = Inter({ subsets: ["latin"] })
@@ -30,7 +31,11 @@ export default function RootLayout({
       <body className={inter.className}>
         <SystemSettingsProvider>
           <UserProvider>
-            {children}
+            <Suspense fallback={null}>
+              <LoadingBarProvider>
+                {children}
+              </LoadingBarProvider>
+            </Suspense>
             <Toaster 
               position="top-right" 
               richColors 

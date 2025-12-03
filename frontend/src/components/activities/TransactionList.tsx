@@ -1517,12 +1517,10 @@ export default function TransactionList({
             )}
             
             {/* Column Selector - always visible */}
-            <div className="relative z-[200]">
-              <ActivityTransactionColumnSelector 
-                visibleColumns={visibleColumns} 
-                onColumnsChange={setVisibleColumns} 
-              />
-            </div>
+            <ActivityTransactionColumnSelector 
+              visibleColumns={visibleColumns} 
+              onColumnsChange={setVisibleColumns} 
+            />
             
             {/* Export Button - always visible */}
             <Button variant="outline" size="sm" onClick={handleExport} data-export>

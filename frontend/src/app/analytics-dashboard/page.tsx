@@ -78,6 +78,12 @@ import { ActivityStatusChart } from '@/components/charts/ActivityStatusChart'
 import { TransactionTypeChart } from '@/components/charts/TransactionTypeChart'
 import { SectorAnalysisChart } from '@/components/charts/SectorAnalysisChart'
 
+// Sector Analytics components
+import { SectorFilters } from '@/components/analytics/sectors/SectorFilters'
+import { SectorBarChart } from '@/components/analytics/sectors/SectorBarChart'
+import { SectorTimeSeriesPanel } from '@/components/analytics/sectors/SectorTimeSeriesPanel'
+import { SectorAnalyticsFilters, SectorMetrics, SectorAnalyticsResponse } from '@/types/sector-analytics'
+
 interface KPIData {
   totalDisbursed: number
   commitmentsDisbursedPercent: number
@@ -158,6 +164,17 @@ export default function AnalyticsDashboardPage() {
   const [top10GovernmentValidatedData, setTop10GovernmentValidatedData] = useState<any[]>([])
   const [top10SectorFocusedData, setTop10SectorFocusedData] = useState<any[]>([])
   const [financeTypeFlowData, setFinanceTypeFlowData] = useState<any[]>([])
+
+  // Sector Analytics state
+  const [sectorAnalyticsData, setSectorAnalyticsData] = useState<SectorMetrics[]>([])
+  const [sectorAnalyticsLoading, setSectorAnalyticsLoading] = useState(false)
+  const [sectorAnalyticsFilters, setSectorAnalyticsFilters] = useState<SectorAnalyticsFilters>({
+    year: 'all',
+    organizationId: 'all',
+    vocabulary: 'DAC-5',
+    groupByLevel: '5',
+    publicationStatus: 'all'
+  })
 
   // Dropdown options for Comprehensive tab
   const [aidTypes, setAidTypes] = useState<Array<{code: string, name: string}>>([])
@@ -397,6 +414,45 @@ export default function AnalyticsDashboardPage() {
     fetchKPIData()
   }, [dateRange, refreshKey])
 
+  // Fetch Sector Analytics data
+  const fetchSectorAnalyticsData = async () => {
+    try {
+      setSectorAnalyticsLoading(true)
+      
+      const params = new URLSearchParams()
+      if (sectorAnalyticsFilters.year && sectorAnalyticsFilters.year !== 'all') {
+        params.append('year', sectorAnalyticsFilters.year)
+      }
+      if (sectorAnalyticsFilters.organizationId && sectorAnalyticsFilters.organizationId !== 'all') {
+        params.append('organizationId', sectorAnalyticsFilters.organizationId)
+      }
+      params.append('groupByLevel', sectorAnalyticsFilters.groupByLevel)
+      if (sectorAnalyticsFilters.publicationStatus) {
+        params.append('publicationStatus', sectorAnalyticsFilters.publicationStatus)
+      }
+
+      const response = await fetch(`/api/analytics/sectors-analytics?${params}`)
+      const result: SectorAnalyticsResponse = await response.json()
+
+      if (result.success) {
+        setSectorAnalyticsData(result.data || [])
+      } else {
+        console.error('[SectorAnalytics] Error:', result.error)
+        toast.error('Failed to load sector analytics')
+      }
+    } catch (error) {
+      console.error('[SectorAnalytics] Error:', error)
+      toast.error('Failed to load sector analytics')
+    } finally {
+      setSectorAnalyticsLoading(false)
+    }
+  }
+
+  // Fetch Sector Analytics when filters change
+  useEffect(() => {
+    fetchSectorAnalyticsData()
+  }, [sectorAnalyticsFilters, refreshKey])
+
   const formatCurrency = (value: number) => {
     try {
       if (value === null || value === undefined || isNaN(value) || !isFinite(value)) {
@@ -591,8 +647,9 @@ export default function AnalyticsDashboardPage() {
 
             <TabsContent value="analytics">
               <Tabs defaultValue="main" className="space-y-6">
-                <TabsList className="grid w-full grid-cols-2 max-w-md">
+                <TabsList className="grid w-full grid-cols-3 max-w-lg">
                   <TabsTrigger value="main">Main</TabsTrigger>
+                  <TabsTrigger value="sectors">Sectors</TabsTrigger>
                   <TabsTrigger value="under-development">Under Development</TabsTrigger>
                 </TabsList>
 
@@ -629,6 +686,29 @@ export default function AnalyticsDashboardPage() {
                       dateRange={dateRange}
                       refreshKey={refreshKey}
                     />
+                  </div>
+                </TabsContent>
+
+                <TabsContent value="sectors">
+                  <div className="space-y-6">
+                    {/* Sector Filters */}
+                    <SectorFilters
+                      filters={sectorAnalyticsFilters}
+                      onFiltersChange={setSectorAnalyticsFilters}
+                    />
+
+                    {/* Sector Bar Chart */}
+                    {sectorAnalyticsLoading ? (
+                      <Skeleton className="h-[500px] w-full" />
+                    ) : (
+                      <SectorBarChart 
+                        data={sectorAnalyticsData} 
+                        filters={sectorAnalyticsFilters} 
+                      />
+                    )}
+
+                    {/* Sector Time Series Panel */}
+                    <SectorTimeSeriesPanel />
                   </div>
                 </TabsContent>
 

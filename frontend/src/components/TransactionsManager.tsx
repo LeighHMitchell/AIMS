@@ -1009,12 +1009,10 @@ export default function TransactionsManager({
               )}
               
               {/* Column Selector */}
-              <div className="relative z-[200]">
-                <ActivityEditorColumnSelector 
-                  visibleColumns={visibleColumns} 
-                  onColumnsChange={setVisibleColumns} 
-                />
-              </div>
+              <ActivityEditorColumnSelector 
+                visibleColumns={visibleColumns} 
+                onColumnsChange={setVisibleColumns} 
+              />
               
               <Button onClick={() => setShowAddDialog(true)}>
                 <Plus className="h-4 w-4 mr-1" />

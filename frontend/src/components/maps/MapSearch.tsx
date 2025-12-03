@@ -97,29 +97,15 @@ export function MapSearch({ onLocationSelect, className, placeholder = "Search l
     setError(null)
 
     try {
-      // Use Nominatim API with country code bias toward Myanmar
-      const params = new URLSearchParams({
-        q: query,
-        format: 'json',
-        limit: '8',
-        addressdetails: '1',
-        countrycodes: 'MM', // Prioritize Myanmar results
-      })
-
-      const response = await fetch(
-        `https://nominatim.openstreetmap.org/search?${params}`,
-        {
-          headers: {
-            'Accept': 'application/json',
-          },
-        }
-      )
+      // Use our API route to proxy the geocoding request
+      const response = await fetch(`/api/geocode?q=${encodeURIComponent(query)}`)
 
       if (!response.ok) {
         throw new Error('Search failed')
       }
 
       const data = await response.json()
+      console.log('[MapSearch] Results:', data)
       setResults(data)
       setOpen(data.length > 0)
     } catch (err) {
@@ -147,6 +133,7 @@ export function MapSearch({ onLocationSelect, className, placeholder = "Search l
     const lng = parseFloat(result.lon)
     const zoomLevel = getZoomLevel(result.type, result.class)
     
+    console.log('[MapSearch] Selected:', result.display_name, 'at', lat, lng, 'type:', result.type)
     onLocationSelect(lat, lng, result.display_name, result.type)
     
     setSearchQuery('')
@@ -174,7 +161,7 @@ export function MapSearch({ onLocationSelect, className, placeholder = "Search l
       <PopoverTrigger asChild>
         <div className={cn("relative", className)}>
           <div className="relative flex items-center">
-            <Search className="absolute left-3 h-4 w-4 text-gray-500 pointer-events-none" />
+            <Search className="absolute left-3 h-3.5 w-3.5 text-gray-500 pointer-events-none" />
             <Input
               placeholder={placeholder}
               value={searchQuery}
@@ -185,19 +172,19 @@ export function MapSearch({ onLocationSelect, className, placeholder = "Search l
                   setOpen(true)
                 }
               }}
-              className="pl-10 pr-10 bg-white shadow-md border-gray-300"
+              className="pl-9 pr-9 bg-white shadow-md border-gray-300 h-9 text-xs"
             />
             {loading && (
-              <Loader2 className="absolute right-3 h-4 w-4 text-gray-500 animate-spin pointer-events-none" />
+              <Loader2 className="absolute right-2.5 h-3.5 w-3.5 text-gray-500 animate-spin pointer-events-none" />
             )}
             {!loading && searchQuery && (
               <Button
                 variant="ghost"
                 size="sm"
-                className="absolute right-1 h-7 w-7 p-0 hover:bg-gray-100"
+                className="absolute right-1 h-6 w-6 p-0 hover:bg-gray-100"
                 onClick={handleClear}
               >
-                <X className="h-4 w-4 text-gray-500" />
+                <X className="h-3.5 w-3.5 text-gray-500" />
               </Button>
             )}
           </div>

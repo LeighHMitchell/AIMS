@@ -81,6 +81,7 @@ import { useDescriptionAutosave, useDateFieldAutosave, useFieldAutosave } from '
 import { saveGeneralTab } from '@/lib/general-tab-service';
 import { LabelSaveIndicator, SaveIndicator } from '@/components/ui/save-indicator';
 import { getTabCompletionStatus } from "@/utils/tab-completion";
+import { useLoadingBar } from "@/hooks/useLoadingBar";
 
 // Remove test utilities import that's causing module not found error
 // if (process.env.NODE_ENV === 'development') {
@@ -2454,6 +2455,7 @@ function NewActivityPageContent() {
   const { user, isLoading: userLoading } = useUser();
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { startLoading, stopLoading } = useLoadingBar();
   
   // Modal state for activity creation
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -3112,6 +3114,20 @@ function NewActivityPageContent() {
       }
     }
   }, [userLoading, searchParams]);
+  
+  // Sync loading bar with loading state
+  useEffect(() => {
+    if (loading) {
+      startLoading();
+    } else {
+      stopLoading();
+    }
+    // Cleanup: ensure loading bar stops when component unmounts
+    return () => {
+      stopLoading();
+    };
+  }, [loading, startLoading, stopLoading]);
+  
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   
   // Navigation guard removed - all fields auto-save so no data loss on refresh

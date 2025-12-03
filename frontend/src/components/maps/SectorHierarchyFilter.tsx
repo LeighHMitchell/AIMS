@@ -226,7 +226,7 @@ export function SectorHierarchyFilter({
           variant="outline"
           role="combobox"
           aria-expanded={open}
-          className={cn('justify-between', className)}
+          className={cn('justify-between h-9', className)}
           disabled={disabled}
         >
           <div className="flex items-center gap-2 truncate">
@@ -243,7 +243,10 @@ export function SectorHierarchyFilter({
             {totalSelected > 0 && (
               <X
                 className="h-4 w-4 opacity-50 hover:opacity-100 cursor-pointer"
-                onClick={handleClear}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleClear(e);
+                }}
               />
             )}
             <ChevronsUpDown className="h-4 w-4 opacity-50" />

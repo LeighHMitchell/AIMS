@@ -60,6 +60,9 @@ export async function GET(request: NextRequest) {
         iati_identifier,
         title_narrative,
         description_narrative,
+        description_objectives,
+        description_target_groups,
+        description_other,
         acronym,
         created_by_org_name,
         created_by_org_acronym,
@@ -88,6 +91,11 @@ export async function GET(request: NextRequest) {
           sdg_target,
           contribution_percent,
           notes
+        ),
+        activity_sectors (
+          id,
+          sector_code,
+          percentage
         )
       `)
       .range(offset, offset + limit - 1);
@@ -200,6 +208,14 @@ export async function GET(request: NextRequest) {
     let budgetMap = new Map();
     const plannedDisbursementMap = new Map<string, number>();
     
+    // Declare participatingOrgsMap outside the if block so it's accessible when transforming activities
+    const participatingOrgsMap = new Map<string, {
+      funding: string[];
+      extending: string[];
+      implementing: string[];
+      accountable: string[];
+    }>();
+    
     if (activityIds.length > 0) {
       // Fetch budget totals
       const { data: budgets, error: budgetError } = await supabase
@@ -240,6 +256,156 @@ export async function GET(request: NextRequest) {
         console.log('[AIMS Optimized] Planned disbursement map:', Object.fromEntries(plannedDisbursementMap));
       } else {
         console.log('[AIMS Optimized] No planned disbursement data found');
+      }
+
+      // Fetch participating organisations for all activities
+      console.log('[AIMS Optimized] Fetching participating orgs for', activityIds.length, 'activities');
+      console.log('[AIMS Optimized] Sample activity IDs:', activityIds.slice(0, 5));
+
+      // Only fetch participating orgs if we have activity IDs
+      let participatingOrgs: any[] = [];
+      let participatingOrgsError: any = null;
+      
+      if (activityIds.length > 0) {
+        try {
+          // Try with organization join first
+          const result = await supabase
+            .from('activity_participating_organizations')
+            .select(`
+              activity_id,
+              iati_role_code,
+              role_type,
+              narrative,
+              organization_id
+            `)
+            .in('activity_id', activityIds);
+          
+          participatingOrgs = result.data || [];
+          participatingOrgsError = result.error;
+          
+          // If we got orgs, fetch organization names separately
+          if (participatingOrgs.length > 0) {
+            const orgIds = [...new Set(participatingOrgs.map(o => o.organization_id).filter(Boolean))];
+            if (orgIds.length > 0) {
+              const { data: orgsData } = await supabase
+                .from('organizations')
+                .select('id, name, acronym')
+                .in('id', orgIds);
+              
+              if (orgsData) {
+                const orgsMap = new Map(orgsData.map(o => [o.id, o]));
+                participatingOrgs = participatingOrgs.map(po => ({
+                  ...po,
+                  organizations: orgsMap.get(po.organization_id) || null
+                }));
+              }
+            }
+          }
+        } catch (err) {
+          console.error('[AIMS Optimized] Error fetching participating orgs:', err);
+          participatingOrgsError = err;
+        }
+      }
+
+      if (participatingOrgsError) {
+        console.error('[AIMS Optimized] Participating orgs fetch error:', participatingOrgsError);
+        console.error('[AIMS Optimized] Error details:', {
+          message: participatingOrgsError.message,
+          details: participatingOrgsError.details,
+          hint: participatingOrgsError.hint,
+          code: participatingOrgsError.code
+        });
+      }
+      
+      if (participatingOrgs.length > 0) {
+        console.log('[AIMS Optimized] Participating orgs fetched:', participatingOrgs.length, 'entries');
+        console.log('[AIMS Optimized] Raw participating orgs data sample:', participatingOrgs.slice(0, 3));
+        console.log('[AIMS Optimized] First org structure:', participatingOrgs[0]);
+        
+        participatingOrgs.forEach((org: any) => {
+          const activityId = org.activity_id;
+          if (!participatingOrgsMap.has(activityId)) {
+            participatingOrgsMap.set(activityId, {
+              funding: [],
+              extending: [],
+              implementing: [],
+              accountable: []
+            });
+          }
+          
+          const orgData = participatingOrgsMap.get(activityId)!;
+          
+          // Get organisation name with enhanced fallback logic
+          // Priority: narrative > organization.name (with acronym) > organization_id > placeholder
+          const orgName = org.narrative || 
+            (org.organizations?.acronym 
+              ? `${org.organizations.name} (${org.organizations.acronym})` 
+              : org.organizations?.name) ||
+            (org.organization_id ? `Org ID: ${org.organization_id.substring(0, 8)}...` : null) ||
+            'No name available';
+          
+          // Validate and handle IATI role codes with fallback to role_type
+          let roleCode = org.iati_role_code;
+          
+          // Fallback: map role_type to role code if iati_role_code is missing
+          if (!roleCode && org.role_type) {
+            const roleTypeMap: Record<string, number> = {
+              'funding': 1,
+              'government': 2,
+              'extending': 3,
+              'implementing': 4
+            };
+            roleCode = roleTypeMap[org.role_type] || 4;
+            console.log('[AIMS Optimized] Using role_type fallback:', org.role_type, '->', roleCode);
+          }
+          
+          if (!roleCode || roleCode < 1 || roleCode > 4) {
+            console.warn('[AIMS Optimized] Invalid role code for org:', { 
+              activity_id: activityId, 
+              org_name: orgName, 
+              role_code: roleCode,
+              role_type: org.role_type,
+              org_id: org.organization_id 
+            });
+            // Default to implementing if role is invalid
+            if (!orgData.implementing.includes(orgName)) {
+              orgData.implementing.push(orgName);
+            }
+            return;
+          }
+          
+          // Map IATI role codes: 1=Funding, 2=Accountable, 3=Extending, 4=Implementing
+          switch (roleCode) {
+            case 1:
+              if (!orgData.funding.includes(orgName)) orgData.funding.push(orgName);
+              break;
+            case 2:
+              if (!orgData.accountable.includes(orgName)) orgData.accountable.push(orgName);
+              break;
+            case 3:
+              if (!orgData.extending.includes(orgName)) orgData.extending.push(orgName);
+              break;
+            case 4:
+              if (!orgData.implementing.includes(orgName)) orgData.implementing.push(orgName);
+              break;
+          }
+        });
+        
+        // Debug: Check if our test activity is in the results
+        const testActivityId = activities.find(a => 
+          a.iati_identifier === 'AA-AAA-123456789-ABC123'
+        )?.id;
+        
+        if (testActivityId) {
+          console.log('[AIMS Optimized] Test activity ID found:', testActivityId);
+          if (participatingOrgsMap.has(testActivityId)) {
+            console.log('[AIMS Optimized] Test activity orgs:', participatingOrgsMap.get(testActivityId));
+          } else {
+            console.warn('[AIMS Optimized] Test activity has no participating orgs in map');
+          }
+        } else {
+          console.warn('[AIMS Optimized] Test activity AA-AAA-123456789-ABC123 not found in current page');
+        }
       }
 
       // Temporarily disable materialized view to force USD calculation
@@ -378,6 +544,10 @@ export async function GET(request: NextRequest) {
         iatiIdentifier: activity.iati_identifier,
         title: activity.title_narrative,
         description: activity.description_narrative,
+        description_general: activity.description_narrative,
+        description_objectives: activity.description_objectives,
+        description_target_groups: activity.description_target_groups,
+        description_other: activity.description_other,
         created_by_org_name: activity.created_by_org_name,
         created_by_org_acronym: activity.created_by_org_acronym,
         activityStatus: activity.activity_status,
@@ -405,7 +575,12 @@ export async function GET(request: NextRequest) {
           sdgTarget: mapping.sdg_target,
           contributionPercent: mapping.contribution_percent,
           notes: mapping.notes
-        }))
+        })),
+        // Include participating organisation arrays by role
+        fundingOrgs: participatingOrgsMap.get(activity.id)?.funding || [],
+        extendingOrgs: participatingOrgsMap.get(activity.id)?.extending || [],
+        implementingOrgs: participatingOrgsMap.get(activity.id)?.implementing || [],
+        accountableOrgs: participatingOrgsMap.get(activity.id)?.accountable || []
       };
     });
 

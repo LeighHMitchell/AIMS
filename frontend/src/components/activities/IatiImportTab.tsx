@@ -2856,6 +2856,7 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
     let fetchedLoanStatuses: any[] = [];
     let fetchedLoanTerms: any = null;
     let fetchedFss: any = null;
+    let fetchedPolicyMarkers: any[] = [];
 
     if (activityId) {
       console.log('[IATI Import Debug] Fetching latest activity data before parsing');
@@ -3073,16 +3074,47 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
                 console.log(`[IATI Import Debug] Fetched current loan terms`);
               }
             })
-            .catch((error: any) => console.warn('[IATI Import Debug] Failed to fetch loan terms:', error))
+            .catch((error: any) => console.warn('[IATI Import Debug] Failed to fetch loan terms:', error)),
+
+          // Fetch policy markers for current value comparison
+          fetch(`/api/activities/${activityId}/policy-markers`)
+            .then(async (res) => {
+              if (res.ok) {
+                fetchedPolicyMarkers = await res.json();
+                fetchedActivityData.policyMarkers = fetchedPolicyMarkers;
+                console.log(`[IATI Import Debug] Fetched ${fetchedPolicyMarkers.length} current policy markers`);
+              }
+            })
+            .catch((error) => console.warn('[IATI Import Debug] Failed to fetch policy markers:', error)),
+
+          // Fetch tags for current value comparison
+          fetch(`/api/activities/${activityId}/tags`)
+            .then(async (res) => {
+              if (res.ok) {
+                fetchedActivityData.tags = await res.json();
+                console.log(`[IATI Import Debug] Fetched ${fetchedActivityData.tags?.length || 0} current tags`);
+              }
+            })
+            .catch((error) => console.warn('[IATI Import Debug] Failed to fetch tags:', error)),
+
+          // Fetch related activities for current value comparison
+          fetch(`/api/activities/${activityId}/related-activities`)
+            .then(async (res) => {
+              if (res.ok) {
+                fetchedActivityData.relatedActivities = await res.json();
+                console.log(`[IATI Import Debug] Fetched ${fetchedActivityData.relatedActivities?.length || 0} current related activities`);
+              }
+            })
+            .catch((error) => console.warn('[IATI Import Debug] Failed to fetch related activities:', error))
         ]);
         
-        // Race against timeout to prevent hanging (5 second timeout)
+        // Race against timeout to prevent hanging (30 second timeout for production latency)
         const timeoutPromise = new Promise((resolve) => {
           setTimeout(() => {
-            console.warn('[IATI Import Debug] Fetch timeout reached, continuing with available data');
+            console.warn('[IATI Import Debug] Fetch timeout reached (30s), continuing with available data');
             // Do not change progress here; we'll advance to 20% after the race completes
             resolve(null);
-          }, 5000); // 5 second timeout
+          }, 30000); // 30 second timeout - increased from 5s to handle production latency
         });
         
         // Update progress after a short delay to show activity
@@ -3098,6 +3130,19 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
         await Promise.race([fetchPromise, timeoutPromise]);
 
         console.log('[IATI Import Debug] ✅ All parallel fetches completed successfully');
+        console.log('[IATI Import Debug] Fetched data summary:', {
+          transactions: fetchedTransactions?.length || 0,
+          budgets: fetchedBudgets?.length || 0,
+          policyMarkers: fetchedActivityData?.policyMarkers?.length || 0,
+          tags: fetchedActivityData?.tags?.length || 0,
+          participatingOrgs: fetchedActivityData?.participatingOrgs?.length || 0,
+          locations: fetchedActivityData?.locations?.length || 0,
+          results: fetchedResults?.length || 0,
+          humanitarianScopes: fetchedHumanitarianScopes?.length || 0,
+          relatedActivities: fetchedActivityData?.relatedActivities?.length || 0,
+          fss: fetchedFss ? 1 : 0,
+          countryBudgetItems: fetchedCountryBudgetItems?.length || 0
+        });
         setImportStatus({ stage: 'parsing', progress: 20 });
 
       } catch (error) {
@@ -5372,17 +5417,9 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
           return policyMarkerNames[code] || 'Unknown Policy Marker';
         };
 
-        // Fetch existing policy markers to populate current values
-        let existingPolicyMarkers = [];
-        try {
-          const policyMarkersResponse = await fetch(`/api/activities/${activityId}/policy-markers`);
-          if (policyMarkersResponse.ok) {
-            existingPolicyMarkers = await policyMarkersResponse.json();
-            console.log('[IATI Import] Fetched existing policy markers:', existingPolicyMarkers);
-          }
-        } catch (error) {
-          console.warn('[IATI Import] Failed to fetch existing policy markers:', error);
-        }
+        // Use pre-fetched policy markers from parallel fetch block for current value comparison
+        const existingPolicyMarkers = fetchedActivityData?.policyMarkers || fetchedPolicyMarkers || [];
+        console.log('[IATI Import] Using pre-fetched policy markers:', existingPolicyMarkers.length);
 
         // Create individual fields for each policy marker
         parsedActivity.policyMarkers.forEach((marker: any, index: number) => {
@@ -5463,22 +5500,9 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
       
       if (parsedActivity.tagClassifications && parsedActivity.tagClassifications.length > 0) {
         console.log('[IATI Import Debug] Found tagClassifications:', parsedActivity.tagClassifications.length);
-        // Fetch existing tags on this activity
-        let existingTags: any[] = [];
-        try {
-          console.log('[IATI Import Debug] Fetching existing tags...');
-          const tagsResponse = await fetch(`/api/activities/${activityId}/tags`);
-          if (tagsResponse.ok) {
-            existingTags = await tagsResponse.json();
-            console.log('[IATI Import] Fetched existing tags:', existingTags);
-          } else if (tagsResponse.status === 405) {
-            console.warn('[IATI Import] Tags GET endpoint not available (405), skipping conflict detection');
-          } else {
-            console.error('[IATI Import] Failed to fetch tags:', tagsResponse.status, tagsResponse.statusText);
-          }
-        } catch (error) {
-          console.warn('[IATI Import] Error fetching existing tags:', error);
-        }
+        // Use pre-fetched tags from parallel fetch block
+        const existingTags = fetchedActivityData?.tags || [];
+        console.log('[IATI Import] Using pre-fetched tags:', existingTags.length);
 
         console.log('[IATI Import Debug] Starting tag forEach loop, count:', parsedActivity.tagClassifications.length);
         // Create a separate field for each tag
@@ -5862,19 +5886,9 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
         // Get relationship type labels for display
         const { getRelationshipTypeName } = await import('@/data/iati-relationship-types');
         
-        // Fetch existing linked activities to populate currentValue (includes both internal and external links)
-        let existingLinkedActivities: any[] = [];
-        if (activityId) {
-          try {
-            const linkedResponse = await fetch(`/api/activities/${activityId}/related-activities`);
-            if (linkedResponse.ok) {
-              existingLinkedActivities = await linkedResponse.json();
-              console.log(`[IATI Import] Found ${existingLinkedActivities.length} existing related activities (including external)`);
-            }
-          } catch (error) {
-            console.warn('[IATI Import] Failed to fetch existing related activities:', error);
-          }
-        }
+        // Use pre-fetched related activities from parallel fetch block
+        const existingLinkedActivities = fetchedActivityData?.relatedActivities || [];
+        console.log(`[IATI Import] Using pre-fetched related activities: ${existingLinkedActivities.length}`);
         
         parsedActivity.relatedActivities.forEach((relatedActivity: any, index: number) => {
           const relationshipTypeLabel = getRelationshipTypeName(relatedActivity.type);
