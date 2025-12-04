@@ -10,8 +10,18 @@ import {
   CheckCircle,
   Loader2,
   RefreshCw,
-  Info
+  Info,
+  LayoutGrid,
+  Table as TableIcon
 } from 'lucide-react';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 import { toast } from 'sonner';
 
 import { useUser } from '@/hooks/useUser';
@@ -47,6 +57,7 @@ export default function LocationsTab({
   const [error, setError] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingLocation, setEditingLocation] = useState<LocationSchema | undefined>();
+  const [viewMode, setViewMode] = useState<'cards' | 'table'>('cards');
 
   // Get user for autosave
   const { user } = useUser();
@@ -248,6 +259,26 @@ export default function LocationsTab({
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <h3 className="text-lg font-semibold">Activity Locations</h3>
+          {locations.length > 0 && (
+            <div className="flex items-center gap-1 border rounded-md p-1">
+              <Button
+                variant={viewMode === 'cards' ? 'secondary' : 'ghost'}
+                size="sm"
+                onClick={() => setViewMode('cards')}
+                className="h-7 px-2"
+              >
+                <LayoutGrid className="h-4 w-4" />
+              </Button>
+              <Button
+                variant={viewMode === 'table' ? 'secondary' : 'ghost'}
+                size="sm"
+                onClick={() => setViewMode('table')}
+                className="h-7 px-2"
+              >
+                <TableIcon className="h-4 w-4" />
+              </Button>
+            </div>
+          )}
         </div>
 
         <div className="flex items-center gap-2">
@@ -280,7 +311,7 @@ export default function LocationsTab({
 
 
 
-      {/* Locations Grid */}
+      {/* Locations Display */}
       {locations.length === 0 ? (
         <div className="text-center py-12">
           <MapPin className="h-12 w-12 mx-auto mb-4 text-gray-300" />
@@ -297,7 +328,7 @@ export default function LocationsTab({
             </div>
           )}
         </div>
-      ) : (
+      ) : viewMode === 'cards' ? (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {locations.map((location) => (
             <LocationCard
@@ -309,6 +340,62 @@ export default function LocationsTab({
               canEdit={canEdit}
             />
           ))}
+        </div>
+      ) : (
+        <div className="border rounded-lg overflow-hidden">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Name</TableHead>
+                <TableHead>Coordinates</TableHead>
+                <TableHead>Location</TableHead>
+                <TableHead>Description</TableHead>
+                {canEdit && <TableHead className="w-[100px]">Actions</TableHead>}
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {locations.map((location) => {
+                const formatAddress = () => {
+                  const parts = [];
+                  if (location.township_name) parts.push(location.township_name);
+                  if (location.city) parts.push(location.city);
+                  if (location.state_region_name) parts.push(location.state_region_name);
+                  if (location.country_code) parts.push(location.country_code);
+                  return parts.join(', ') || 'N/A';
+                };
+                
+                return (
+                  <TableRow key={location.id}>
+                    <TableCell className="font-medium">
+                      {location.location_name || 'Unnamed Location'}
+                    </TableCell>
+                    <TableCell className="text-muted-foreground text-sm">
+                      {location.latitude && location.longitude 
+                        ? `${Number(location.latitude).toFixed(4)}, ${Number(location.longitude).toFixed(4)}`
+                        : 'N/A'}
+                    </TableCell>
+                    <TableCell className="text-sm">
+                      {formatAddress()}
+                    </TableCell>
+                    <TableCell className="text-sm text-muted-foreground max-w-[200px] truncate">
+                      {location.location_description || location.description || '-'}
+                    </TableCell>
+                    {canEdit && (
+                      <TableCell>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleEditLocation(location)}
+                        >
+                          Edit
+                        </Button>
+                      </TableCell>
+                    )}
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
         </div>
       )}
 

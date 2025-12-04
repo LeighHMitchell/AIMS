@@ -231,3 +231,4 @@ export function parseAggregationKey(key: string): { year: string; sectorCode: st
   return { year, sectorCode }
 }
 
+

@@ -1526,7 +1526,7 @@ export default function ActivityDetailPage() {
           </Dialog>
 
           {/* Activity Header Card */}
-          <Card className="mb-6 border-0 shadow-sm overflow-hidden">
+          <Card className="mb-6 border-0 overflow-hidden">
             {/* Banner Image */}
             {banner ? (
               <div className="w-full h-48 overflow-hidden">

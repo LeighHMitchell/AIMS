@@ -150,3 +150,4 @@ export const DEFAULT_SECTOR_COLORS: Record<string, string> = {
   'Transparency and Accountability': '#38BDF8',
 }
 
+

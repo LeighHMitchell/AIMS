@@ -147,12 +147,18 @@ export default function MarkersLayer({ locations, activityTitle }: MarkersLayerP
       layerGroupRef.current.clearLayers()
     }
 
+    // Collect valid coordinates for bounds fitting
+    const validCoords: [number, number][] = []
+
     // Add markers using CircleMarker (which positions correctly)
     locations.forEach(location => {
       const lat = Number(location.latitude)
       const lng = Number(location.longitude)
       
       if (isNaN(lat) || isNaN(lng)) return
+
+      // Collect valid coordinates for bounds
+      validCoords.push([lat, lng])
 
       // Create a nice-looking circular marker
       const marker = L.circleMarker([lat, lng], {
@@ -190,6 +196,15 @@ export default function MarkersLayer({ locations, activityTitle }: MarkersLayerP
       // Add to layer group
       layerGroupRef.current!.addLayer(marker)
     })
+
+    // Fit map bounds to show all markers
+    if (validCoords.length > 0) {
+      const bounds = L.latLngBounds(validCoords)
+      map.fitBounds(bounds, { 
+        padding: [50, 50],
+        maxZoom: 12
+      })
+    }
 
     // Cleanup
     return () => {

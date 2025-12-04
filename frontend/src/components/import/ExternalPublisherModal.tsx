@@ -14,7 +14,8 @@ import {
   Copy, 
   Merge,
   Info,
-  Building2
+  Building2,
+  ExternalLink
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { USER_ROLES } from '@/types/user';
