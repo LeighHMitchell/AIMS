@@ -469,6 +469,9 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
   // Add state for parsed participating orgs from XML
   const [parsedParticipatingOrgs, setParsedParticipatingOrgs] = useState<any[]>([]);
 
+  // Add state for parsed recipient countries from XML
+  const [parsedRecipientCountries, setParsedRecipientCountries] = useState<any[]>([]);
+
   // Debug: Track component mount/unmount
   React.useEffect(() => {
     isMountedRef.current = true;
@@ -849,6 +852,11 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
           if (isMountedRef.current) setParsedParticipatingOrgs(parsedActivity.participatingOrgs);
         }
 
+        // Extract recipient countries from parsed XML
+        if (parsedActivity.recipientCountries && parsedActivity.recipientCountries.length > 0) {
+          if (isMountedRef.current) setParsedRecipientCountries(parsedActivity.recipientCountries);
+        }
+
         // Calculate totals and counts
         let totalBudget = 0;
         let totalPlannedDisbursement = 0;
@@ -1090,13 +1098,13 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
             <div className="flex items-start justify-between gap-4 mb-3">
               {/* Activity Title and IATI ID */}
               <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 flex-wrap">
+                <div className="flex items-center gap-2 flex-nowrap">
                   <h3 className="text-lg font-semibold text-slate-900 leading-tight">
                     {activity.title || activity.title_narrative || 'Untitled Activity'}
                   </h3>
                   {activity.iatiIdentifier && (
                     <>
-                      <code className="text-[10px] font-mono bg-slate-100 px-1.5 py-0.5 rounded text-slate-600 inline-block">
+                      <code className="text-[10px] font-mono bg-slate-100 px-1.5 py-0.5 rounded text-slate-600 inline-block shrink-0">
                         {activity.iatiIdentifier}
                       </code>
                       <button
@@ -1105,7 +1113,7 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
                           navigator.clipboard.writeText(activity.iatiIdentifier);
                           toast.success("IATI ID copied to clipboard");
                         }}
-                        className="p-1 hover:bg-slate-100 rounded transition-colors"
+                        className="p-1 hover:bg-slate-100 rounded transition-colors shrink-0"
                         title="Copy IATI ID"
                       >
                         <Copy className="h-3 w-3 text-slate-500" />
@@ -1135,6 +1143,35 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
             
             {/* Essential Info - Restructured Layout */}
             <div className="space-y-4">
+              {/* Recipient Countries Section */}
+              {parsedRecipientCountries.length > 0 && (
+                <div>
+                  <div className="text-[10px] uppercase tracking-wide text-slate-500 font-semibold mb-1.5">
+                    Recipient Countries
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {parsedRecipientCountries.map((country: any, idx: number) => {
+                      const countryData = IATI_COUNTRIES.find(c => c.code === country.code);
+                      const countryName = countryData?.name || country.narrative || country.code;
+                      return (
+                        <div key={idx} className="flex items-center gap-1.5 px-2 py-1 bg-slate-50 rounded border border-slate-200">
+                          <img
+                            src={`https://flagcdn.com/w20/${country.code.toLowerCase()}.png`}
+                            alt={`${countryName} flag`}
+                            className="w-4 h-3 object-cover rounded-sm flex-shrink-0"
+                            onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                          />
+                          <code className="text-[10px] font-mono bg-slate-100 px-1.5 py-0.5 rounded text-slate-600">
+                            {country.code}
+                          </code>
+                          <span className="text-xs text-slate-900">{countryName}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
               {/* Reported by section - spans full width */}
               {activity.reportingOrg && (
                 <div>
@@ -1190,24 +1227,39 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
                           return (
                             <tr>
                               <td className="py-1.5 text-slate-600 align-top" colSpan={2}>
-                                <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs">
+                                <div className="flex h-5 items-center space-x-4 text-xs">
                                   {activity.startDateActual && (
-                                    <div className="flex items-center gap-1.5">
-                                      <span className="text-slate-500 text-[10px]">Actual Start:</span>
-                                      <span className="text-slate-800 font-medium">{formatDate(activity.startDateActual)}</span>
-                                    </div>
+                                    <>
+                                      <div className="flex items-center gap-1.5">
+                                        <span className="text-slate-500 text-[10px]">Actual Start:</span>
+                                        <span className="text-slate-800 font-medium">{formatDate(activity.startDateActual)}</span>
+                                      </div>
+                                      {(activity.startDatePlanned || activity.endDateActual || activity.endDatePlanned) && (
+                                        <Separator orientation="vertical" />
+                                      )}
+                                    </>
                                   )}
                                   {activity.startDatePlanned && (
-                                    <div className="flex items-center gap-1.5">
-                                      <span className="text-slate-500 text-[10px]">Planned Start:</span>
-                                      <span className="text-slate-600">{formatDate(activity.startDatePlanned)}</span>
-                                    </div>
+                                    <>
+                                      <div className="flex items-center gap-1.5">
+                                        <span className="text-slate-500 text-[10px]">Planned Start:</span>
+                                        <span className="text-slate-600">{formatDate(activity.startDatePlanned)}</span>
+                                      </div>
+                                      {(activity.endDateActual || activity.endDatePlanned) && (
+                                        <Separator orientation="vertical" />
+                                      )}
+                                    </>
                                   )}
                                   {activity.endDateActual && (
-                                    <div className="flex items-center gap-1.5">
-                                      <span className="text-slate-500 text-[10px]">Actual End:</span>
-                                      <span className="text-slate-800 font-medium">{formatDate(activity.endDateActual)}</span>
-                                    </div>
+                                    <>
+                                      <div className="flex items-center gap-1.5">
+                                        <span className="text-slate-500 text-[10px]">Actual End:</span>
+                                        <span className="text-slate-800 font-medium">{formatDate(activity.endDateActual)}</span>
+                                      </div>
+                                      {activity.endDatePlanned && (
+                                        <Separator orientation="vertical" />
+                                      )}
+                                    </>
                                   )}
                                   {activity.endDatePlanned && (
                                     <div className="flex items-center gap-1.5">
@@ -1275,7 +1327,7 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
                             <thead className="bg-slate-50/80 border-b border-slate-200">
                               <tr>
                                 <th className="px-2 py-1 text-[9px] uppercase tracking-wide font-semibold text-slate-600 text-left align-top">Organisation</th>
-                                <th className="px-2 py-1 text-[9px] uppercase tracking-wide font-semibold text-slate-600 text-left align-top">Role</th>
+                                <th className="px-2 py-1 text-[9px] uppercase tracking-wide font-semibold text-slate-600 text-left align-top whitespace-nowrap">Role</th>
                               </tr>
                             </thead>
                             <tbody>
@@ -1290,18 +1342,19 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
                               return (
                                 <tr key={idx} className={idx > 0 ? "border-t border-slate-200" : ""}>
                                   <td className="px-2 py-1 min-w-0">
-                                    <div className="flex items-center gap-2 flex-wrap min-w-0">
-                                      <span className="text-sm font-medium text-slate-900 break-words min-w-0">{orgName}</span>
+                                    <div className="min-w-0">
+                                      <span className="text-sm font-medium text-slate-900">{orgName}</span>
                                       {refDisplay.normalized && (
                                         <>
-                                          <code className={`text-[10px] font-mono bg-slate-100 px-1.5 py-0.5 rounded text-slate-600 inline-block shrink-0 ${!refDisplay.isValid ? 'border border-red-300' : ''}`}>
+                                          {' '}
+                                          <code className={`text-[10px] font-mono bg-slate-100 px-1.5 py-0.5 rounded text-slate-600 inline whitespace-nowrap ${!refDisplay.isValid ? 'border border-red-300' : ''}`}>
                                             {refDisplay.normalized}
                                           </code>
                                           {!refDisplay.isValid && (
                                             <TooltipProvider>
                                               <Tooltip>
                                                 <TooltipTrigger asChild>
-                                                  <span className="text-red-500 text-xs cursor-help shrink-0">⚠</span>
+                                                  <span className="text-red-500 text-xs cursor-help">⚠</span>
                                                 </TooltipTrigger>
                                                 <TooltipContent>
                                                   <p className="text-xs">Invalid IATI organization identifier format</p>
@@ -1313,7 +1366,7 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
                                       )}
                                     </div>
                                   </td>
-                                  <td className="px-2 py-1 min-w-0">
+                                  <td className="px-2 py-1 whitespace-nowrap">
                                     {orgRole && roleName ? (
                                       <div className="flex items-center gap-1.5">
                                         <code className="text-[10px] font-mono bg-slate-100 px-1.5 py-0.5 rounded text-slate-600 inline-block shrink-0">
@@ -1350,7 +1403,18 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
                           </thead>
                           <tbody>
                           {(activity.currency || activity.defaultCurrency) && (() => {
-                            const currencyCode = activity.currency || activity.defaultCurrency || '';
+                            const rawCurrency = activity.currency || activity.defaultCurrency || '';
+                            // Clean the currency code - handle arrays, comma-separated, trim whitespace
+                            let currencyCode = '';
+                            if (Array.isArray(rawCurrency)) {
+                              currencyCode = (rawCurrency[0] || '').toString().trim().toUpperCase();
+                            } else if (typeof rawCurrency === 'string') {
+                              currencyCode = rawCurrency.includes(',') 
+                                ? rawCurrency.split(',')[0].trim().toUpperCase() 
+                                : rawCurrency.trim().toUpperCase();
+                            } else {
+                              currencyCode = String(rawCurrency).trim().toUpperCase();
+                            }
                             const currency = getCurrencyByCode(currencyCode);
                             const currencyName = currency?.name || '';
                             return (
@@ -1559,12 +1623,18 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
                         </td>
                       </tr>
                       <tr className="hover:bg-slate-50/50 transition-colors">
-                        <td className="px-2 py-1 text-slate-700">Planned Disb.</td>
+                        <td className="px-2 py-1 text-slate-700">Planned Disbursements</td>
                         <td className="px-2 py-1 text-right text-slate-600">
                           {financialData.loading ? '...' : (financialData.plannedDisbursementCount ?? 0)}
                         </td>
                         <td className="px-2 py-1 text-right font-semibold text-slate-900">
                           {financialData.loading ? 'Loading...' : renderCurrency(financialData.totalPlannedDisbursement ?? 0, financialData.currency)}
+                        </td>
+                      </tr>
+                      {/* Darker separator line */}
+                      <tr>
+                        <td colSpan={3} className="px-0 py-0">
+                          <div className="border-t-2 border-slate-300"></div>
                         </td>
                       </tr>
                       {/* Display all transaction types found in XML */}
@@ -1592,29 +1662,7 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
                               </tr>
                             );
                           })
-                      ) : (
-                        // Fallback to old display for backward compatibility
-                        <>
-                          <tr className="hover:bg-slate-50/50 transition-colors">
-                            <td className="px-2 py-1 text-slate-700">Commitments</td>
-                            <td className="px-2 py-1 text-right text-slate-600">
-                              {financialData.loading ? '...' : (financialData.commitmentCount ?? 0)}
-                            </td>
-                            <td className="px-2 py-1 text-right font-semibold text-slate-900">
-                              {financialData.loading ? 'Loading...' : renderCurrency(financialData.totalOutgoingCommitment ?? 0, financialData.currency)}
-                            </td>
-                          </tr>
-                          <tr className="hover:bg-slate-50/50 transition-colors">
-                            <td className="px-2 py-1 text-slate-700">Disbursements</td>
-                            <td className="px-2 py-1 text-right text-slate-600">
-                              {financialData.loading ? '...' : (financialData.disbursementCount ?? 0)}
-                            </td>
-                            <td className="px-2 py-1 text-right font-semibold text-slate-900">
-                              {financialData.loading ? 'Loading...' : renderCurrency(financialData.totalDisbursement ?? 0, financialData.currency)}
-                            </td>
-                          </tr>
-                        </>
-                      )}
+                      ) : null}
                     </tbody>
                   </table>
                 </div>

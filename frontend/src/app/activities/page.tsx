@@ -68,6 +68,7 @@ import { BulkDeleteDialog } from "@/components/dialogs/bulk-delete-dialog";
 import dynamic from 'next/dynamic';
 import { SectorFilterSelection, matchesSectorFilter } from "@/components/maps/SectorHierarchyFilter";
 import { SafeHtml } from '@/components/ui/safe-html';
+import { Progress } from "@/components/ui/progress";
 
 // Dynamically import SectorHierarchyFilter to avoid hydration issues
 const SectorHierarchyFilter = dynamic(
@@ -353,6 +354,54 @@ const canUserEditActivity = (user: any, activity: Activity): boolean => {
   return false;
 };
 
+// Helper function to calculate time elapsed percentage between start and end dates
+const calculateTimeElapsedPercent = (activity: Activity): number | null => {
+  const startDate = activity.actualStartDate || activity.plannedStartDate;
+  const endDate = activity.plannedEndDate;
+  
+  if (!startDate || !endDate) return null;
+  
+  const start = new Date(startDate).getTime();
+  const end = new Date(endDate).getTime();
+  const now = Date.now();
+  
+  if (end <= start) return null; // Invalid date range
+  
+  const elapsed = now - start;
+  const total = end - start;
+  const percent = (elapsed / total) * 100;
+  
+  return Math.min(Math.max(0, percent), 100); // Clamp between 0-100
+};
+
+// Helper function to calculate % of committed funds spent
+const calculateCommittedSpentPercent = (activity: Activity): number | null => {
+  const committed = activity.commitments || 0;
+  if (committed === 0) return null;
+  
+  const spent = (activity.disbursements || 0) + (activity.expenditures || 0);
+  return Math.min((spent / committed) * 100, 100);
+};
+
+// Helper function to calculate % of budget spent
+const calculateBudgetSpentPercent = (activity: Activity): number | null => {
+  const budget = (activity as any).totalBudget || 0;
+  if (budget === 0) return null;
+  
+  const spent = (activity.disbursements || 0) + (activity.expenditures || 0);
+  return Math.min((spent / budget) * 100, 100);
+};
+
+// Helper function to format date as "1 January 2021"
+const formatDateLong = (dateString: string | null | undefined): string => {
+  if (!dateString) return 'N/A';
+  try {
+    return format(new Date(dateString), 'd MMMM yyyy');
+  } catch {
+    return dateString;
+  }
+};
+
 // Column configuration for the activity list table
 type ColumnId = 
   // Default columns
@@ -398,12 +447,16 @@ type ColumnId =
   | 'descriptionGeneral'
   | 'descriptionObjectives'
   | 'descriptionTargetGroups'
-  | 'descriptionOther';
+  | 'descriptionOther'
+  // Progress & Metrics columns
+  | 'timeElapsed'
+  | 'committedSpentPercent'
+  | 'budgetSpentPercent';
 
 interface ColumnConfig {
   id: ColumnId;
   label: string;
-  group: 'default' | 'activityDefaults' | 'transactionTypeTotals' | 'publicationStatuses' | 'participatingOrgs' | 'descriptions';
+  group: 'default' | 'activityDefaults' | 'transactionTypeTotals' | 'publicationStatuses' | 'participatingOrgs' | 'descriptions' | 'progressMetrics';
   width?: string;
   alwaysVisible?: boolean; // For columns that can't be hidden (checkbox, actions)
   defaultVisible?: boolean;
@@ -461,6 +514,11 @@ const COLUMN_CONFIGS: ColumnConfig[] = [
   { id: 'descriptionObjectives', label: 'Activity Description – Objectives', group: 'descriptions', width: 'min-w-[200px]', defaultVisible: false, align: 'left' },
   { id: 'descriptionTargetGroups', label: 'Activity Description – Target Groups', group: 'descriptions', width: 'min-w-[200px]', defaultVisible: false, align: 'left' },
   { id: 'descriptionOther', label: 'Activity Description – Other', group: 'descriptions', width: 'min-w-[200px]', defaultVisible: false, align: 'left' },
+  
+  // Progress & Metrics columns
+  { id: 'timeElapsed', label: 'Time Elapsed', group: 'progressMetrics', width: 'min-w-[140px]', defaultVisible: false, align: 'left' },
+  { id: 'committedSpentPercent', label: '% Committed Spent', group: 'progressMetrics', width: 'min-w-[140px]', defaultVisible: false, align: 'left' },
+  { id: 'budgetSpentPercent', label: '% Budget Spent', group: 'progressMetrics', width: 'min-w-[140px]', defaultVisible: false, align: 'left' },
 ];
 
 const COLUMN_GROUPS = {
@@ -471,6 +529,7 @@ const COLUMN_GROUPS = {
   flowTypeTotals: 'Flow Type Totals',
   participatingOrgs: 'Participating Organisations',
   descriptions: 'Descriptions',
+  progressMetrics: 'Progress & Metrics',
 };
 
 const DEFAULT_VISIBLE_COLUMNS: ColumnId[] = COLUMN_CONFIGS
@@ -2125,6 +2184,23 @@ function ActivitiesPageContent() {
                     </th>
                   )}
                   
+                  {/* Progress & Metrics columns */}
+                  {visibleColumns.includes('timeElapsed') && (
+                    <th className="h-12 px-4 py-3 text-left align-middle text-sm font-medium text-muted-foreground min-w-[140px]">
+                      Time Elapsed
+                    </th>
+                  )}
+                  {visibleColumns.includes('committedSpentPercent') && (
+                    <th className="h-12 px-4 py-3 text-left align-middle text-sm font-medium text-muted-foreground min-w-[140px]">
+                      % Committed Spent
+                    </th>
+                  )}
+                  {visibleColumns.includes('budgetSpentPercent') && (
+                    <th className="h-12 px-4 py-3 text-left align-middle text-sm font-medium text-muted-foreground min-w-[140px]">
+                      % Budget Spent
+                    </th>
+                  )}
+                  
                   {/* Actions column - always visible */}
                   <th className="h-12 px-4 py-3 text-right align-middle text-sm font-medium text-muted-foreground w-[80px]">
                     Actions
@@ -2850,6 +2926,133 @@ function ActivitiesPageContent() {
                                       </div>
                                     </TooltipContent>
                                   )}
+                                </Tooltip>
+                              </TooltipProvider>
+                            );
+                          })()}
+                        </td>
+                      )}
+                      
+                      {/* Progress & Metrics cells */}
+                      {visibleColumns.includes('timeElapsed') && (
+                        <td className="px-4 py-2 text-sm text-foreground text-left">
+                          {(() => {
+                            const percent = calculateTimeElapsedPercent(activity);
+                            if (percent === null) return <span className="text-muted-foreground">—</span>;
+                            return (
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <div className="flex flex-col items-start gap-1 cursor-pointer">
+                                      <Progress 
+                                        value={percent} 
+                                        className="h-2 w-20"
+                                      />
+                                      <span className="text-xs text-muted-foreground">{percent.toFixed(0)}%</span>
+                                    </div>
+                                  </TooltipTrigger>
+                                  <TooltipContent className="p-0 bg-white border shadow-lg">
+                                    <table className="text-sm">
+                                      <tbody>
+                                        <tr className="border-b">
+                                          <td className="px-3 py-1.5 text-muted-foreground text-left">Start</td>
+                                          <td className="px-3 py-1.5 font-medium text-right">{formatDateLong(activity.actualStartDate || activity.plannedStartDate)}</td>
+                                        </tr>
+                                        <tr className="border-b">
+                                          <td className="px-3 py-1.5 text-muted-foreground text-left">End</td>
+                                          <td className="px-3 py-1.5 font-medium text-right">{formatDateLong(activity.plannedEndDate)}</td>
+                                        </tr>
+                                        <tr>
+                                          <td className="px-3 py-1.5 text-muted-foreground text-left">Progress</td>
+                                          <td className="px-3 py-1.5 font-medium text-right">{percent.toFixed(1)}%</td>
+                                        </tr>
+                                      </tbody>
+                                    </table>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                            );
+                          })()}
+                        </td>
+                      )}
+                      
+                      {visibleColumns.includes('committedSpentPercent') && (
+                        <td className="px-4 py-2 text-sm text-foreground text-left">
+                          {(() => {
+                            const percent = calculateCommittedSpentPercent(activity);
+                            if (percent === null) return <span className="text-muted-foreground">—</span>;
+                            return (
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <div className="flex flex-col items-start gap-1 cursor-pointer">
+                                      <Progress 
+                                        value={percent} 
+                                        className="h-2 w-20"
+                                      />
+                                      <span className="text-xs text-muted-foreground">{percent.toFixed(0)}%</span>
+                                    </div>
+                                  </TooltipTrigger>
+                                  <TooltipContent className="p-0 bg-white border shadow-lg">
+                                    <table className="text-sm">
+                                      <tbody>
+                                        <tr className="border-b">
+                                          <td className="px-3 py-1.5 text-muted-foreground text-left">Committed</td>
+                                          <td className="px-3 py-1.5 font-medium text-right">USD {formatCurrency(activity.commitments || 0)}</td>
+                                        </tr>
+                                        <tr className="border-b">
+                                          <td className="px-3 py-1.5 text-muted-foreground text-left">Spent</td>
+                                          <td className="px-3 py-1.5 font-medium text-right">USD {formatCurrency((activity.disbursements || 0) + (activity.expenditures || 0))}</td>
+                                        </tr>
+                                        <tr>
+                                          <td className="px-3 py-1.5 text-muted-foreground text-left">Usage</td>
+                                          <td className="px-3 py-1.5 font-medium text-right">{percent.toFixed(1)}%</td>
+                                        </tr>
+                                      </tbody>
+                                    </table>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                            );
+                          })()}
+                        </td>
+                      )}
+                      
+                      {visibleColumns.includes('budgetSpentPercent') && (
+                        <td className="px-4 py-2 text-sm text-foreground text-left">
+                          {(() => {
+                            const percent = calculateBudgetSpentPercent(activity);
+                            if (percent === null) return <span className="text-muted-foreground">—</span>;
+                            return (
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <div className="flex flex-col items-start gap-1 cursor-pointer">
+                                      <Progress 
+                                        value={percent} 
+                                        className="h-2 w-20"
+                                      />
+                                      <span className="text-xs text-muted-foreground">{percent.toFixed(0)}%</span>
+                                    </div>
+                                  </TooltipTrigger>
+                                  <TooltipContent className="p-0 bg-white border shadow-lg">
+                                    <table className="text-sm">
+                                      <tbody>
+                                        <tr className="border-b">
+                                          <td className="px-3 py-1.5 text-muted-foreground text-left">Budget</td>
+                                          <td className="px-3 py-1.5 font-medium text-right">USD {formatCurrency((activity as any).totalBudget || 0)}</td>
+                                        </tr>
+                                        <tr className="border-b">
+                                          <td className="px-3 py-1.5 text-muted-foreground text-left">Spent</td>
+                                          <td className="px-3 py-1.5 font-medium text-right">USD {formatCurrency((activity.disbursements || 0) + (activity.expenditures || 0))}</td>
+                                        </tr>
+                                        <tr>
+                                          <td className="px-3 py-1.5 text-muted-foreground text-left">Usage</td>
+                                          <td className="px-3 py-1.5 font-medium text-right">{percent.toFixed(1)}%</td>
+                                        </tr>
+                                      </tbody>
+                                    </table>
+                                  </TooltipContent>
                                 </Tooltip>
                               </TooltipProvider>
                             );

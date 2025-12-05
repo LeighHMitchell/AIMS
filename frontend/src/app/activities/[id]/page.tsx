@@ -96,6 +96,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { ActivityProfileSkeleton } from "@/components/skeletons/ActivityProfileSkeleton"
 import ActivityBudgetsTab from "@/components/activities/ActivityBudgetsTab"
 import { ResultsTab } from "@/components/activities/ResultsTab"
+import { ResultsReadOnlyView } from "@/components/activities/ResultsReadOnlyView"
 import { CapitalSpendTab } from "@/components/activities/CapitalSpendTab"
 import { FinancingTermsTab } from "@/components/activities/FinancingTermsTab"
 import PlannedDisbursementsTab from "@/components/activities/PlannedDisbursementsTab"
@@ -2865,7 +2866,7 @@ export default function ActivityDetailPage() {
           {/* Main Content Tabs */}
           <Card className="border-0">
             <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
-              <TabsList className={`grid w-full ${(user?.role?.includes('gov_partner') || user?.role === 'super_user') ? 'grid-cols-10' : 'grid-cols-9'} bg-slate-50 border-b border-slate-200`}>
+              <TabsList className={`grid w-full ${(user?.role?.includes('gov_partner') || user?.role === 'super_user') ? 'grid-cols-11' : 'grid-cols-10'} bg-slate-50 border-b border-slate-200`}>
                 <TabsTrigger value="finances" className="data-[state=active]:bg-white data-[state=active]:text-slate-900">
                   Finances
                 </TabsTrigger>
@@ -2880,6 +2881,9 @@ export default function ActivityDetailPage() {
                 </TabsTrigger>
                 <TabsTrigger value="geography" className="data-[state=active]:bg-white data-[state=active]:text-slate-900">
                   Locations
+                </TabsTrigger>
+                <TabsTrigger value="results" className="data-[state=active]:bg-white data-[state=active]:text-slate-900">
+                  Results
                 </TabsTrigger>
                 <TabsTrigger value="sdg" className="data-[state=active]:bg-white data-[state=active]:text-slate-900">
                   SDG Alignment
@@ -4510,6 +4514,16 @@ export default function ActivityDetailPage() {
                   </Card>
                 )}
                   </>
+                )}
+              </TabsContent>
+
+              {/* Results Tab */}
+              <TabsContent value="results" className="p-6 border-0">
+                {activeTab === "results" && (
+                  <ResultsReadOnlyView
+                    activityId={activity.id}
+                    defaultLanguage="en"
+                  />
                 )}
               </TabsContent>
 

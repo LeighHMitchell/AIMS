@@ -147,8 +147,10 @@ export async function GET(request: NextRequest) {
           sectors: sectorsMap.get(location.activity_id) || [],
           totalBudget: budgetsMap.get(location.activity_id) || 0,
           totalPlannedDisbursement: pdMap.get(location.activity_id) || 0,
-          startDate: activity.actual_start_date || activity.planned_start_date,
-          endDate: activity.actual_end_date || activity.planned_end_date
+          plannedStartDate: activity.planned_start_date,
+          plannedEndDate: activity.planned_end_date,
+          actualStartDate: activity.actual_start_date,
+          actualEndDate: activity.actual_end_date
         } : null
       };
     }) || [];

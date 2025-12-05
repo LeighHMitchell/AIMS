@@ -181,8 +181,9 @@ function MapInitializer() {
         map.dragging.enable();
       }
       
-      if (map.scrollWheelZoom && !map.scrollWheelZoom.enabled()) {
-        map.scrollWheelZoom.enable();
+      // Keep scrollWheelZoom disabled so page scrolling works normally
+      if (map.scrollWheelZoom && map.scrollWheelZoom.enabled()) {
+        map.scrollWheelZoom.disable();
       }
       
       if (map.touchZoom && !map.touchZoom.enabled()) {
@@ -550,7 +551,7 @@ export default function AidMap() {
           <Tabs value={tabMode} onValueChange={(value: TabMode) => setTabMode(value)}>
             <TabsContent value="map" className="space-y-4">
           {/* Map */}
-          <div className="h-[85vh] min-h-[700px] w-full relative rounded-lg overflow-hidden border border-gray-200">
+          <div className="h-[92vh] min-h-[800px] w-full relative rounded-lg overflow-hidden border border-gray-200">
             {/* All Controls - single top row */}
             <div className="absolute top-3 left-3 right-3 z-[1000] flex items-center gap-1.5">
               {/* Filters */}
@@ -669,6 +670,7 @@ export default function AidMap() {
                 style={{ height: '100%', width: '100%' }}
                 zoomControl={false}
                 attributionControl={false}
+                scrollWheelZoom={false}
                 whenReady={() => {
                   console.log('AidMap ready');
                   setIsMapLoaded(true);

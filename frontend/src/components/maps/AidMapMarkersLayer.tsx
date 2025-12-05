@@ -41,8 +41,10 @@ interface LocationData {
     sectors?: SectorData[]
     totalBudget?: number
     totalPlannedDisbursement?: number
-    startDate?: string
-    endDate?: string
+    plannedStartDate?: string
+    plannedEndDate?: string
+    actualStartDate?: string
+    actualEndDate?: string
   } | null
 }
 
@@ -122,6 +124,15 @@ const formatCurrency = (amount?: number): string => {
   return new Intl.NumberFormat('en-US', {
     style: 'currency',
     currency: 'USD',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0
+  }).format(amount)
+}
+
+// Format number without currency symbol
+const formatNumber = (amount?: number): string => {
+  if (!amount || amount === 0) return '-'
+  return new Intl.NumberFormat('en-US', {
     minimumFractionDigits: 0,
     maximumFractionDigits: 0
   }).format(amount)
@@ -224,41 +235,128 @@ const createSectorBar = (sectors?: SectorData[]): string => {
   return barHtml
 }
 
+// Create clean sector breakdown bar (for popup)
+const createSectorBarClean = (sectors?: SectorData[]): string => {
+  if (!sectors || sectors.length === 0) return ''
+  
+  // Normalize percentages to sum to 100
+  const totalPercentage = sectors.reduce((sum, s) => sum + (s.percentage || 0), 0)
+  const normalizedSectors = sectors.map(s => ({
+    ...s,
+    normalizedPercentage: totalPercentage > 0 ? ((s.percentage || 0) / totalPercentage) * 100 : 100 / sectors.length
+  }))
+  
+  let html = `<div style="margin-bottom: 20px;">
+    <h3 style="font-size: 13px; font-weight: 700; color: #111827; margin: 0 0 8px 0;">Sector Breakdown</h3>
+    <div style="display: flex; height: 16px; border-radius: 9999px; overflow: hidden; background: #f3f4f6;">`
+  
+  normalizedSectors.forEach(sector => {
+    const color = getSectorColor(sector.categoryCode || sector.code)
+    const width = Math.max(sector.normalizedPercentage, 2) // Minimum width for visibility
+    
+    html += `<div style="width: ${width}%; background-color: ${color}; height: 100%;"></div>`
+  })
+  
+  html += `</div>
+    <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px;">`
+  
+  // Add legend items
+  normalizedSectors.slice(0, 4).forEach(sector => {
+    const color = getSectorColor(sector.categoryCode || sector.code)
+    const displayName = (sector.name || sector.categoryName || `Sector ${sector.code}`).substring(0, 25)
+    const percentage = sector.percentage || Math.round(sector.normalizedPercentage)
+    
+    html += `<div style="display: flex; align-items: center; gap: 6px; font-size: 13px;">
+      <div style="width: 12px; height: 12px; border-radius: 2px; background-color: ${color}; flex-shrink: 0;"></div>
+      <span style="color: #374151;">${displayName}${displayName.length >= 25 ? '...' : ''} (${percentage}%)</span>
+    </div>`
+  })
+  
+  if (normalizedSectors.length > 4) {
+    html += `<div style="font-size: 13px; color: #9ca3af;">+${normalizedSectors.length - 4} more</div>`
+  }
+  
+  html += `</div></div>`
+  
+  return html
+}
+
+// Create compact sector breakdown bar (for popup)
+const createSectorBarCompact = (sectors?: SectorData[]): string => {
+  if (!sectors || sectors.length === 0) return ''
+  
+  const totalPercentage = sectors.reduce((sum, s) => sum + (s.percentage || 0), 0)
+  const normalizedSectors = sectors.map(s => ({
+    ...s,
+    normalizedPercentage: totalPercentage > 0 ? ((s.percentage || 0) / totalPercentage) * 100 : 100 / sectors.length
+  }))
+  
+  let html = `<div style="margin-bottom: 16px;">
+    <h3 style="font-size: 11px; font-weight: 700; color: #111827; margin: 0 0 8px 0;">Sector Breakdown</h3>
+    <div style="display: flex; height: 12px; border-radius: 9999px; overflow: hidden; background: #f3f4f6;">`
+  
+  normalizedSectors.forEach(sector => {
+    const color = getSectorColor(sector.categoryCode || sector.code)
+    const width = Math.max(sector.normalizedPercentage, 2)
+    html += `<div style="width: ${width}%; background-color: ${color}; height: 100%;"></div>`
+  })
+  
+  html += `</div>
+    <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px;">`
+  
+  // Show only first 2 sectors in compact mode
+  normalizedSectors.slice(0, 2).forEach(sector => {
+    const color = getSectorColor(sector.categoryCode || sector.code)
+    const displayName = (sector.name || sector.categoryName || `Sector ${sector.code}`).substring(0, 20)
+    const percentage = sector.percentage || Math.round(sector.normalizedPercentage)
+    
+    html += `<div style="display: flex; align-items: center; gap: 5px; font-size: 10px;">
+      <div style="width: 10px; height: 10px; border-radius: 2px; background-color: ${color}; flex-shrink: 0;"></div>
+      <span style="color: #374151;">${displayName}${displayName.length >= 20 ? '...' : ''} (${percentage}%)</span>
+    </div>`
+  })
+  
+  if (normalizedSectors.length > 2) {
+    html += `<span style="font-size: 10px; color: #9ca3af;">+${normalizedSectors.length - 2} more</span>`
+  }
+  
+  html += `</div></div>`
+  
+  return html
+}
+
 // Create Summary View tooltip content (shown on hover)
 const createTooltipContent = (location: LocationData): string => {
-  let html = `<div style="font-family: system-ui, -apple-system, sans-serif; min-width: 250px; max-width: 320px; padding: 4px;">`
+  const statusInfo = getStatusInfo(location.activity?.status)
   
-  // Activity Title (bold, larger)
+  let html = `<div style="font-family: system-ui, -apple-system, sans-serif; width: 300px; padding: 4px;">`
+  
+  // Activity Title - with word wrap
   if (location.activity?.title) {
-    html += `<div style="font-weight: 700; font-size: 14px; color: #1e293b; margin-bottom: 8px; line-height: 1.3;">${location.activity.title}</div>`
+    html += `<div style="font-weight: 700; font-size: 14px; color: #111827; margin-bottom: 12px; line-height: 1.4; word-wrap: break-word; overflow-wrap: break-word; white-space: normal;">${location.activity.title}</div>`
   }
   
-  // Location Name
-  html += `<div style="display: flex; align-items: center; gap: 6px; margin-bottom: 6px;">
-    <span style="font-size: 16px;">📍</span>
-    <span style="font-weight: 600; font-size: 13px; color: #334155;">${location.location_name || 'Unnamed Location'}</span>
-  </div>`
+  // Divider
+  html += `<hr style="border: none; border-top: 1px solid #e5e7eb; margin: 0 0 12px 0;" />`
   
-  // Location Type
-  if (formatSiteType(location.site_type) || location.location_type) {
-    html += `<div style="display: flex; gap: 8px; margin-bottom: 4px; font-size: 12px;">
-      <span style="color: #6b7280; min-width: 70px;">Type:</span>
-      <span style="color: #374151;">${formatSiteType(location.site_type) || location.location_type || '-'}</span>
-    </div>`
-  }
+  // Details grid - consistent with popup
+  html += `<div style="display: grid; grid-template-columns: 85px 1fr; gap: 8px 10px; font-size: 11px; margin-bottom: 12px;">`
   
-  // Reporting Organisation
+  // Location
+  html += `<div style="color: #6b7280; font-weight: 500;">Location</div>
+    <div style="color: #111827;">${location.location_name || 'Unnamed'}</div>`
+  
+  // Organisation
   if (location.activity?.organization_name) {
-    html += `<div style="display: flex; gap: 8px; margin-bottom: 4px; font-size: 12px;">
-      <span style="color: #6b7280; min-width: 70px;">Organisation:</span>
-      <span style="color: #374151;">${location.activity.organization_name}</span>
-    </div>`
+    html += `<div style="color: #6b7280; font-weight: 500;">Organisation</div>
+      <div style="color: #111827;">${location.activity.organization_name}</div>`
   }
   
-  // Divider with click hint
-  html += `<div style="margin-top: 10px; padding-top: 8px; border-top: 1px solid #e5e7eb;">
-    <span style="font-size: 11px; color: #3b82f6; font-style: italic; cursor: pointer;">Click for more details →</span>
-  </div>`
+  // Status
+  html += `<div style="color: #6b7280; font-weight: 500;">Status</div>
+    <div style="color: #111827;">${statusInfo.label}</div>`
+  
+  html += `</div>`
   
   html += '</div>'
   return html
@@ -270,106 +368,78 @@ const createPopupContent = (location: LocationData): string => {
   const lng = Number(location.longitude)
   const statusInfo = getStatusInfo(location.activity?.status)
   
-  let html = `<div style="font-family: system-ui, -apple-system, sans-serif; min-width: 350px; max-width: 420px;">`
+  let html = `<div style="font-family: system-ui, -apple-system, sans-serif; min-width: 300px; max-width: 360px;">`
   
-  // Header Section - Activity Title & Location Name
-  html += `<div style="border-bottom: 2px solid #e5e7eb; padding-bottom: 12px; margin-bottom: 12px;">
-    <div style="font-weight: 700; font-size: 16px; color: #0f172a; margin-bottom: 6px; line-height: 1.3;">${location.activity?.title || 'Untitled Activity'}</div>
-    <div style="display: flex; align-items: center; gap: 6px;">
-      <span style="font-size: 18px;">📍</span>
-      <span style="font-weight: 600; font-size: 14px; color: #1e40af;">${location.location_name || 'Unnamed Location'}</span>
-    </div>
+  // Activity Overview Header
+  html += `<div style="margin-bottom: 8px;">
+    <h1 style="font-size: 16px; font-weight: 700; color: #111827; margin: 0;">Activity Overview</h1>
   </div>`
   
-  // Metadata Section
-  html += `<div style="display: grid; grid-template-columns: 110px 1fr; gap: 6px 12px; font-size: 12px; margin-bottom: 16px;">`
+  // Title Section - Activity Title only
+  html += `<div style="margin-bottom: 14px;">
+    <h2 style="font-size: 18px; font-weight: 700; color: #111827; margin: 0; line-height: 1.35;">${location.activity?.title || 'Untitled Activity'}</h2>
+  </div>`
+  
+  // Divider
+  html += `<hr style="border: none; border-top: 1px solid #e5e7eb; margin: 0 0 14px 0;" />`
+  
+  // Details Grid
+  html += `<div style="display: grid; grid-template-columns: 85px 1fr; gap: 8px 10px; font-size: 11px; margin-bottom: 16px;">`
   
   // Location Type
-  html += `<span style="color: #6b7280; font-weight: 500;">Location Type</span>
-    <span style="color: #374151;">${formatSiteType(location.site_type) || location.location_type || '-'}</span>`
-  
-  // Description
-  if (location.description) {
-    html += `<span style="color: #6b7280; font-weight: 500;">Description</span>
-      <span style="color: #374151; font-style: italic;">${location.description}</span>`
-  }
+  html += `<div style="color: #6b7280; font-weight: 500;">Location Type</div>
+    <div style="color: #111827;">${formatSiteType(location.site_type) || location.location_type || '-'}</div>`
   
   // Address
-  html += `<span style="color: #6b7280; font-weight: 500;">Address</span>
-    <span style="color: #374151;">${getFullAddress(location)}</span>`
+  html += `<div style="color: #6b7280; font-weight: 500;">Address</div>
+    <div style="color: #111827; line-height: 1.4;">${getFullAddress(location)}</div>`
   
   // Organisation
-  html += `<span style="color: #6b7280; font-weight: 500;">Organisation</span>
-    <span style="color: #374151;">${location.activity?.organization_name || '-'}</span>`
+  html += `<div style="color: #6b7280; font-weight: 500;">Organisation</div>
+    <div style="color: #111827;">${location.activity?.organization_name || '-'}</div>`
   
   // Status
-  html += `<span style="color: #6b7280; font-weight: 500;">Status</span>
-    <span style="display: inline-flex; align-items: center; gap: 4px;">
-      <span style="display: inline-block; padding: 2px 8px; border-radius: 9999px; font-size: 11px; font-weight: 500; background-color: ${statusInfo.bgColor}; color: ${statusInfo.color};">${statusInfo.label}</span>
-    </span>`
+  html += `<div style="color: #6b7280; font-weight: 500;">Status</div>
+    <div style="color: #111827;">${statusInfo.label}</div>`
   
-  // Coordinates with copy buttons
-  html += `<span style="color: #6b7280; font-weight: 500;">Coordinates</span>
-    <span style="display: flex; gap: 12px; align-items: center;">
-      <span style="display: flex; align-items: center; gap: 4px;">
-        <span style="font-family: ui-monospace, monospace; font-size: 11px; color: #374151; background: #f1f5f9; padding: 2px 6px; border-radius: 4px;">${lat.toFixed(6)}°</span>
-        <button onclick="navigator.clipboard.writeText('${lat.toFixed(6)}'); this.textContent='✓'; setTimeout(() => this.textContent='📋', 1000);" style="background: none; border: none; cursor: pointer; font-size: 12px; padding: 2px;" title="Copy latitude">📋</button>
-      </span>
-      <span style="display: flex; align-items: center; gap: 4px;">
-        <span style="font-family: ui-monospace, monospace; font-size: 11px; color: #374151; background: #f1f5f9; padding: 2px 6px; border-radius: 4px;">${lng.toFixed(6)}°</span>
-        <button onclick="navigator.clipboard.writeText('${lng.toFixed(6)}'); this.textContent='✓'; setTimeout(() => this.textContent='📋', 1000);" style="background: none; border: none; cursor: pointer; font-size: 12px; padding: 2px;" title="Copy longitude">📋</button>
-      </span>
-    </span>`
+  // Coordinates
+  html += `<div style="color: #6b7280; font-weight: 500;">Coordinates</div>
+    <div style="display: flex; align-items: center;">
+      <span style="font-family: ui-monospace, monospace; font-size: 10px; color: #374151; background: #f3f4f6; padding: 4px 8px; border-radius: 4px;">${lat.toFixed(6)}°, ${lng.toFixed(6)}°</span>
+      <button onclick="event.stopPropagation(); event.preventDefault(); navigator.clipboard.writeText('${lat.toFixed(6)}, ${lng.toFixed(6)}'); this.innerHTML='<span style=\\'font-size:9px;color:#059669;\\'>Copied</span>'; setTimeout(() => this.innerHTML='<svg width=\\'12\\' height=\\'12\\' viewBox=\\'0 0 24 24\\' fill=\\'none\\' stroke=\\'currentColor\\' stroke-width=\\'2\\'><rect x=\\'9\\' y=\\'9\\' width=\\'13\\' height=\\'13\\' rx=\\'2\\'/><path d=\\'M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1\\'/></svg>', 2000);" style="margin-left: 6px; padding: 2px; background: none; border: none; cursor: pointer; color: #9ca3af; display: flex;" title="Copy">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+      </button>
+    </div>`
   
   html += `</div>`
   
-  // Sector Breakdown Bar
-  html += createSectorBar(location.activity?.sectors)
+  // Sector Breakdown
+  html += createSectorBarCompact(location.activity?.sectors)
   
-  // Financial Summary Section
-  html += `<div style="margin-top: 16px; padding-top: 12px; border-top: 1px solid #e5e7eb;">
-    <div style="font-size: 11px; font-weight: 600; color: #374151; margin-bottom: 8px;">Financial Summary</div>
-    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">`
-  
-  // Total Budgeted
-  html += `<div style="background: #f8fafc; padding: 8px 12px; border-radius: 6px;">
-    <div style="font-size: 10px; color: #6b7280; margin-bottom: 2px;">Total Budgeted</div>
-    <div style="font-size: 14px; font-weight: 600; color: #1e293b;">${formatCurrency(location.activity?.totalBudget)}</div>
-  </div>`
-  
-  // Total Planned Disbursement
-  html += `<div style="background: #f8fafc; padding: 8px 12px; border-radius: 6px;">
-    <div style="font-size: 10px; color: #6b7280; margin-bottom: 2px;">Planned Disbursement</div>
-    <div style="font-size: 14px; font-weight: 600; color: #1e293b;">${formatCurrency(location.activity?.totalPlannedDisbursement)}</div>
-  </div>`
-  
-  html += `</div>`
-  
-  // Dates
-  html += `<div style="display: flex; justify-content: space-between; margin-top: 8px; font-size: 11px;">
-    <div>
-      <span style="color: #6b7280;">Start: </span>
-      <span style="color: #374151; font-weight: 500;">${formatDate(location.activity?.startDate)}</span>
-    </div>
-    <div>
-      <span style="color: #6b7280;">End: </span>
-      <span style="color: #374151; font-weight: 500;">${formatDate(location.activity?.endDate)}</span>
+  // Financial Summary
+  html += `<div style="margin-bottom: 16px;">
+    <h3 style="font-size: 11px; font-weight: 700; color: #111827; margin: 0 0 8px 0;">Financial Summary</h3>
+    <div style="border: 1px solid #e5e7eb; border-radius: 6px; overflow: hidden; font-size: 11px;">
+      <div style="display: flex; justify-content: space-between; padding: 10px 12px; border-bottom: 1px solid #f3f4f6;">
+        <span style="color: #374151;">Total Budgeted</span>
+        <span style="font-weight: 700; color: #111827;">${formatNumber(location.activity?.totalBudget)}</span>
+      </div>
+      <div style="display: flex; justify-content: space-between; padding: 10px 12px; background: rgba(249, 250, 251, 0.5);">
+        <span style="color: #374151;">Total Planned Disbursements</span>
+        <span style="font-weight: 700; color: #111827;">${formatNumber(location.activity?.totalPlannedDisbursement)}</span>
+      </div>
     </div>
   </div>`
   
-  html += `</div>`
-  
-  // Export to CSV button
-  const csvData = encodeURIComponent(generateCSVData(location))
-  html += `<div style="margin-top: 16px; padding-top: 12px; border-top: 1px solid #e5e7eb; display: flex; justify-content: flex-end;">
-    <a href="data:text/csv;charset=utf-8,${csvData}" 
-       download="location_${location.id}.csv"
-       style="display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; background: #1e293b; color: white; font-size: 11px; font-weight: 500; border-radius: 6px; text-decoration: none; cursor: pointer;"
-       onmouseover="this.style.background='#334155'" 
-       onmouseout="this.style.background='#1e293b'">
-      <span>📥</span>
-      Export to CSV
-    </a>
+  // Project Timeline
+  html += `<div>
+    <h3 style="font-size: 11px; font-weight: 700; color: #111827; margin: 0 0 8px 0;">Project Timeline</h3>
+    <div style="font-size: 10px; display: grid; grid-template-columns: 1fr 1fr; gap: 6px 16px;">
+      <div style="color: #4b5563;">Planned Start: <span style="font-weight: 600; color: #111827;">${formatDate(location.activity?.plannedStartDate)}</span></div>
+      <div style="color: #4b5563;">Planned End: <span style="font-weight: 600; color: #111827;">${formatDate(location.activity?.plannedEndDate)}</span></div>
+      <div style="color: #4b5563;">Actual Start: <span style="font-weight: 600; color: #111827;">${formatDate(location.activity?.actualStartDate)}</span></div>
+      <div style="color: #4b5563;">Actual End: <span style="font-weight: 600; color: #111827;">${location.activity?.actualEndDate ? formatDate(location.activity.actualEndDate) : 'N/A'}</span></div>
+    </div>
   </div>`
   
   html += '</div>'
@@ -394,8 +464,10 @@ const generateCSVData = (location: LocationData): string => {
     ['Status', getStatusInfo(location.activity?.status).label],
     ['Total Budget (USD)', location.activity?.totalBudget?.toString() || ''],
     ['Total Planned Disbursement (USD)', location.activity?.totalPlannedDisbursement?.toString() || ''],
-    ['Start Date', location.activity?.startDate || ''],
-    ['End Date', location.activity?.endDate || ''],
+    ['Planned Start Date', location.activity?.plannedStartDate || ''],
+    ['Planned End Date', location.activity?.plannedEndDate || ''],
+    ['Actual Start Date', location.activity?.actualStartDate || ''],
+    ['Actual End Date', location.activity?.actualEndDate || ''],
     ['State/Region', location.state_region_name || ''],
     ['Township', location.township_name || ''],
     ['District', location.district_name || ''],
@@ -465,7 +537,19 @@ export default function AidMapMarkersLayer({ locations }: AidMapMarkersLayerProp
       // Add popup to outer marker (Expanded View)
       marker.bindPopup(createPopupContent(location), {
         maxWidth: 450,
-        className: 'location-popup'
+        className: 'location-popup',
+        autoPan: false // Disable auto-pan, we'll handle it ourselves
+      })
+      
+      // Pan map so marker is at bottom middle when popup opens
+      marker.on('popupopen', () => {
+        const mapSize = map.getSize()
+        const markerPoint = map.latLngToContainerPoint([lat, lng])
+        // Calculate new center: move marker to bottom 25% of map
+        const targetY = mapSize.y * 0.75
+        const offsetY = markerPoint.y - targetY
+        const newCenter = map.containerPointToLatLng([mapSize.x / 2, mapSize.y / 2 + offsetY])
+        map.panTo(newCenter, { animate: true, duration: 0.3 })
       })
       
       // Add both to layer group
