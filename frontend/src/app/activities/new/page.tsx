@@ -3490,166 +3490,162 @@ function NewActivityPageContent() {
           
           // Activity scope is now handled in general state
 
-          // Fetch budgets for tab completion status
-          try {
-            const budgetsResponse = await fetch(`/api/activities/${activityId}/budgets`);
-            if (budgetsResponse.ok) {
-              const budgetsData = await budgetsResponse.json();
-              setBudgets(budgetsData || []);
-              console.log('[AIMS] Loaded budgets for tab completion:', budgetsData?.length || 0);
-            }
-          } catch (error) {
-            console.warn('[AIMS] Failed to load budgets for tab completion:', error);
+          // BATCH FETCH: Fetch all tab completion data in parallel to avoid sequential state updates
+          // This prevents green ticks from appearing one by one on page refresh
+          console.log('[AIMS] Starting parallel fetch for tab completion data...');
+          
+          const [
+            budgetsResult,
+            budgetExceptionsResult,
+            plannedDisbursementsResult,
+            fssResult,
+            humanitarianResult,
+            transactionsResult,
+            subnationalResult,
+            contactsResult,
+            conditionsResult,
+            financingTermsResult
+          ] = await Promise.allSettled([
+            // 1. Budgets API
+            fetch(`/api/activities/${activityId}/budgets`).then(r => r.ok ? r.json() : null),
+            // 2. Budget exceptions (Supabase)
+            supabase.from('activity_budget_exceptions').select('*').eq('activity_id', activityId).single(),
+            // 3. Planned disbursements (Supabase) - using direct query due to API bug
+            supabase.from('planned_disbursements').select('*').eq('activity_id', activityId).order('period_start', { ascending: true }),
+            // 4. Forward Spend FSS API
+            fetch(`/api/activities/${activityId}/fss`).then(r => r.ok ? r.json() : null),
+            // 5. Humanitarian API
+            fetch(`/api/activities/${activityId}/humanitarian`).then(r => r.ok ? r.json() : null),
+            // 6. Transactions API
+            fetch(`/api/activities/${activityId}/transactions`).then(r => r.ok ? r.json() : null),
+            // 7. Subnational breakdown API
+            fetch(`/api/activities/${activityId}/subnational-breakdown`).then(r => r.ok ? r.json() : null),
+            // 8. Contacts API
+            fetch(`/api/activities/${activityId}/contacts`).then(r => r.ok ? r.json() : null),
+            // 9. Conditions (Supabase)
+            supabase.from('activity_conditions').select('id').eq('activity_id', activityId),
+            // 10. Financing terms (Supabase) - both tables
+            Promise.all([
+              supabase.from('activity_financing_terms').select('id, rate_1, commitment_date').eq('activity_id', activityId).maybeSingle(),
+              supabase.from('activity_loan_status').select('id').eq('activity_id', activityId)
+            ])
+          ]);
+
+          // Process all results and prepare values
+          let budgetsValue: any[] = [];
+          let budgetNotProvidedValue = false;
+          let plannedDisbursementsValue: any[] = [];
+          let forwardSpendCountValue = 0;
+          let humanitarianValue = false;
+          let humanitarianScopesValue: any[] = [];
+          let transactionsValue: any[] = [];
+          let transactionsLoadedValue = false;
+          let subnationalBreakdownsValue: Record<string, number> = {};
+          let contactsValue: any[] | undefined = undefined;
+          let conditionsCountValue = 0;
+          let financingTermsCountValue = 0;
+
+          // 1. Process budgets
+          if (budgetsResult.status === 'fulfilled' && budgetsResult.value) {
+            budgetsValue = budgetsResult.value || [];
+            console.log('[AIMS] Loaded budgets for tab completion:', budgetsValue.length);
+          } else if (budgetsResult.status === 'rejected') {
+            console.warn('[AIMS] Failed to load budgets for tab completion:', budgetsResult.reason);
           }
 
-          // Fetch budget exceptions to check "budget not provided" status
-          try {
-            const { data: budgetExceptions, error: budgetExceptionsError } = await supabase
-              .from('activity_budget_exceptions')
-              .select('*')
-              .eq('activity_id', activityId)
-              .single();
-            
+          // 2. Process budget exceptions
+          if (budgetExceptionsResult.status === 'fulfilled') {
+            const { data: budgetExceptions, error: budgetExceptionsError } = budgetExceptionsResult.value;
             if (!budgetExceptionsError && budgetExceptions) {
-              setBudgetNotProvided(true);
+              budgetNotProvidedValue = true;
               console.log('[AIMS] Found budget exception - budget not provided');
-            } else {
-              setBudgetNotProvided(false);
             }
-          } catch (error) {
-            console.warn('[AIMS] Failed to load budget exceptions for tab completion:', error);
-            setBudgetNotProvided(false);
+          } else {
+            console.warn('[AIMS] Failed to load budget exceptions for tab completion:', budgetExceptionsResult.reason);
           }
 
-          // Fetch planned disbursements for tab completion status
-          // NOTE: Using direct Supabase query instead of API endpoint because API endpoint has a bug
-          // where it returns empty array even when data exists (likely getSupabaseAdmin() issue)
-          try {
-            console.log('[AIMS] Fetching planned disbursements for activityId:', activityId);
-            const { data: disbursementsData, error: disbursementsError } = await supabase
-              .from('planned_disbursements')
-              .select('*')
-              .eq('activity_id', activityId)
-              .order('period_start', { ascending: true });
-            
+          // 3. Process planned disbursements
+          if (plannedDisbursementsResult.status === 'fulfilled') {
+            const { data: disbursementsData, error: disbursementsError } = plannedDisbursementsResult.value;
             if (disbursementsError) {
               console.error('[AIMS] Error fetching planned disbursements:', disbursementsError);
             } else {
-              setPlannedDisbursements(disbursementsData || []);
-              console.log('[AIMS] Loaded planned disbursements for tab completion:', disbursementsData?.length || 0);
+              plannedDisbursementsValue = disbursementsData || [];
+              console.log('[AIMS] Loaded planned disbursements for tab completion:', plannedDisbursementsValue.length);
             }
-          } catch (error) {
-            console.warn('[AIMS] Failed to load planned disbursements for tab completion:', error);
+          } else {
+            console.warn('[AIMS] Failed to load planned disbursements for tab completion:', plannedDisbursementsResult.reason);
           }
 
-          // Fetch Forward Spend (FSS) for tab completion status
-          try {
-            const fssResponse = await fetch(`/api/activities/${activityId}/fss`);
-            if (fssResponse.ok) {
-              const fssData = await fssResponse.json();
-              const forecastCount = fssData?.forecasts?.length || 0;
-              setForwardSpendCount(forecastCount > 0 ? 1 : 0);
-              console.log('[AIMS] Loaded Forward Spend for tab completion:', forecastCount, 'forecasts');
-            } else {
-              setForwardSpendCount(0);
-            }
-          } catch (error) {
-            console.warn('[AIMS] Failed to load Forward Spend for tab completion:', error);
-            setForwardSpendCount(0);
+          // 4. Process Forward Spend (FSS)
+          if (fssResult.status === 'fulfilled' && fssResult.value) {
+            const forecastCount = fssResult.value?.forecasts?.length || 0;
+            forwardSpendCountValue = forecastCount > 0 ? 1 : 0;
+            console.log('[AIMS] Loaded Forward Spend for tab completion:', forecastCount, 'forecasts');
+          } else if (fssResult.status === 'rejected') {
+            console.warn('[AIMS] Failed to load Forward Spend for tab completion:', fssResult.reason);
           }
 
-          // Fetch Humanitarian data for tab completion
-          try {
-            const humanitarianResponse = await fetch(`/api/activities/${activityId}/humanitarian`);
-            if (humanitarianResponse.ok) {
-              const humanitarianData = await humanitarianResponse.json();
-              setHumanitarian(humanitarianData.humanitarian || false);
-              setHumanitarianScopes(humanitarianData.humanitarian_scopes || []);
-              console.log('[AIMS] Loaded Humanitarian for tab completion:', {
-                humanitarian: humanitarianData.humanitarian,
-                scopesCount: humanitarianData.humanitarian_scopes?.length || 0
-              });
-            } else {
-              setHumanitarian(false);
-              setHumanitarianScopes([]);
-            }
-          } catch (error) {
-            console.warn('[AIMS] Failed to load Humanitarian for tab completion:', error);
-            setHumanitarian(false);
-            setHumanitarianScopes([]);
+          // 5. Process Humanitarian data
+          if (humanitarianResult.status === 'fulfilled' && humanitarianResult.value) {
+            humanitarianValue = humanitarianResult.value.humanitarian || false;
+            humanitarianScopesValue = humanitarianResult.value.humanitarian_scopes || [];
+            console.log('[AIMS] Loaded Humanitarian for tab completion:', {
+              humanitarian: humanitarianValue,
+              scopesCount: humanitarianScopesValue.length
+            });
+          } else if (humanitarianResult.status === 'rejected') {
+            console.warn('[AIMS] Failed to load Humanitarian for tab completion:', humanitarianResult.reason);
           }
 
-          // Fetch transactions for tab completion status
-          try {
-            console.log('[AIMS] Fetching transactions for activityId:', activityId);
-            const transactionsResponse = await fetch(`/api/activities/${activityId}/transactions`);
-            if (transactionsResponse.ok) {
-              const transactionsData = await transactionsResponse.json();
-              // Handle both response formats: { data: [...] } or direct array [...]
-              const transactions = Array.isArray(transactionsData) ? transactionsData : (transactionsData.data || []);
-              setTransactions(transactions);
-              setTransactionsLoaded(true);
-              console.log('[AIMS] Loaded transactions for tab completion:', transactions.length);
-            }
-          } catch (error) {
-            console.warn('[AIMS] Failed to load transactions for tab completion:', error);
+          // 6. Process transactions
+          if (transactionsResult.status === 'fulfilled' && transactionsResult.value) {
+            const transactionsData = transactionsResult.value;
+            // Handle both response formats: { data: [...] } or direct array [...]
+            transactionsValue = Array.isArray(transactionsData) ? transactionsData : (transactionsData.data || []);
+            transactionsLoadedValue = true;
+            console.log('[AIMS] Loaded transactions for tab completion:', transactionsValue.length);
+          } else if (transactionsResult.status === 'rejected') {
+            console.warn('[AIMS] Failed to load transactions for tab completion:', transactionsResult.reason);
           }
 
-          // Fetch subnational breakdown for tab completion status
-          try {
-            const subnationalResponse = await fetch(`/api/activities/${activityId}/subnational-breakdown`);
-            if (subnationalResponse.ok) {
-              const subnationalData = await subnationalResponse.json();
-              const breakdownsMap: Record<string, number> = {};
+          // 7. Process subnational breakdown
+          if (subnationalResult.status === 'fulfilled' && subnationalResult.value) {
+            const subnationalData = subnationalResult.value;
+            if (Array.isArray(subnationalData)) {
               subnationalData.forEach((item: any) => {
-                breakdownsMap[item.region_name] = item.percentage;
+                subnationalBreakdownsValue[item.region_name] = item.percentage;
               });
-              setSubnationalBreakdowns(breakdownsMap);
-              console.log('[AIMS] Loaded subnational breakdown for tab completion:', Object.keys(breakdownsMap).length, 'regions');
+              console.log('[AIMS] Loaded subnational breakdown for tab completion:', Object.keys(subnationalBreakdownsValue).length, 'regions');
             }
-          } catch (error) {
-            console.warn('[AIMS] Failed to load subnational breakdown for tab completion:', error);
+          } else if (subnationalResult.status === 'rejected') {
+            console.warn('[AIMS] Failed to load subnational breakdown for tab completion:', subnationalResult.reason);
           }
 
-          // Fetch contacts for tab completion status
-          try {
-            const contactsResponse = await fetch(`/api/activities/${activityId}/contacts`);
-            if (contactsResponse.ok) {
-              const contactsData = await contactsResponse.json();
-              setContacts(contactsData);
-              console.log('[AIMS] Loaded contacts for tab completion:', contactsData?.length || 0);
-            }
-          } catch (error) {
-            console.warn('[AIMS] Failed to load contacts for tab completion:', error);
+          // 8. Process contacts
+          if (contactsResult.status === 'fulfilled' && contactsResult.value) {
+            contactsValue = contactsResult.value;
+            console.log('[AIMS] Loaded contacts for tab completion:', contactsValue?.length || 0);
+          } else if (contactsResult.status === 'rejected') {
+            console.warn('[AIMS] Failed to load contacts for tab completion:', contactsResult.reason);
           }
 
-          // Fetch conditions for tab completion status
-          try {
-            const { data: conditionsData, error: conditionsError } = await supabase
-              .from('activity_conditions')
-              .select('id')
-              .eq('activity_id', activityId);
-            
+          // 9. Process conditions
+          if (conditionsResult.status === 'fulfilled') {
+            const { data: conditionsData, error: conditionsError } = conditionsResult.value;
             if (!conditionsError && conditionsData) {
-              console.log('[AIMS] Loaded conditions for tab completion:', conditionsData.length);
-              setConditionsCount(conditionsData.length);
+              conditionsCountValue = conditionsData.length;
+              console.log('[AIMS] Loaded conditions for tab completion:', conditionsCountValue);
             }
-          } catch (error) {
-            console.warn('[AIMS] Failed to load conditions for tab completion:', error);
+          } else {
+            console.warn('[AIMS] Failed to load conditions for tab completion:', conditionsResult.reason);
           }
 
-          // Fetch financing terms for tab completion status
-          try {
-            const { data: financingTermsData, error: financingTermsError } = await supabase
-              .from('activity_financing_terms')
-              .select('id, rate_1, commitment_date')
-              .eq('activity_id', activityId)
-              .maybeSingle();
-            
-            const { data: loanStatusData, error: loanStatusError } = await supabase
-              .from('activity_loan_status')
-              .select('id')
-              .eq('activity_id', activityId);
+          // 10. Process financing terms
+          if (financingTermsResult.status === 'fulfilled') {
+            const [financingTermsResponse, loanStatusResponse] = financingTermsResult.value;
+            const { data: financingTermsData, error: financingTermsError } = financingTermsResponse;
+            const { data: loanStatusData, error: loanStatusError } = loanStatusResponse;
             
             // Has completed data if loan terms exist with key fields OR if any loan status exists
             const hasFinancingData = 
@@ -3657,12 +3653,30 @@ function NewActivityPageContent() {
               (loanStatusData && loanStatusData.length > 0);
             
             if (!financingTermsError && !loanStatusError) {
+              financingTermsCountValue = hasFinancingData ? 1 : 0;
               console.log('[AIMS] Loaded financing terms for tab completion:', hasFinancingData);
-              setFinancingTermsCount(hasFinancingData ? 1 : 0);
             }
-          } catch (error) {
-            console.warn('[AIMS] Failed to load financing terms for tab completion:', error);
+          } else {
+            console.warn('[AIMS] Failed to load financing terms for tab completion:', financingTermsResult.reason);
           }
+
+          // BATCH STATE UPDATES: Update all state at once to trigger single re-render
+          console.log('[AIMS] Applying batched state updates for tab completion...');
+          setBudgets(budgetsValue);
+          setBudgetNotProvided(budgetNotProvidedValue);
+          setPlannedDisbursements(plannedDisbursementsValue);
+          setForwardSpendCount(forwardSpendCountValue);
+          setHumanitarian(humanitarianValue);
+          setHumanitarianScopes(humanitarianScopesValue);
+          setTransactions(transactionsValue);
+          setTransactionsLoaded(transactionsLoadedValue);
+          setSubnationalBreakdowns(subnationalBreakdownsValue);
+          if (contactsValue !== undefined) {
+            setContacts(contactsValue);
+          }
+          setConditionsCount(conditionsCountValue);
+          setFinancingTermsCount(financingTermsCountValue);
+          console.log('[AIMS] Tab completion data loaded successfully')
         } else {
           // New activity - just set some defaults
           console.log('[AIMS] Creating new activity - user:', user);

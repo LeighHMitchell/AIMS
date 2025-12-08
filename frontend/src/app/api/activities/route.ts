@@ -4,6 +4,7 @@ import { ActivityLogger } from '@/lib/activity-logger';
 import { upsertActivitySectors, validateSectorAllocation } from '@/lib/activity-sectors-helper';
 import { v4 as uuidv4 } from 'uuid';
 import { supabaseOptimized } from '@/lib/supabase-optimized';
+import { convertTransactionToUSD, addUSDFieldsToTransaction } from '@/lib/transaction-usd-helper';
 
 // Force dynamic rendering to ensure environment variables are always loaded
 export const dynamic = 'force-dynamic';
@@ -385,12 +386,31 @@ export async function POST(request: Request) {
           }
 
           // Only proceed with transactions that have organization_id
-          const validTransactions = transactionsData.filter((t: any) => t.organization_id);
-          const skippedCount = transactionsData.length - validTransactions.length;
+          const validTransactionsWithoutUSD = transactionsData.filter((t: any) => t.organization_id);
+          const skippedCount = transactionsData.length - validTransactionsWithoutUSD.length;
           
           if (skippedCount > 0) {
             console.warn(`[AIMS] Skipping ${skippedCount} transactions due to missing organization_id`);
             transactionWarnings.push(`${skippedCount} transactions skipped due to missing organization ID`);
+          }
+
+          // Add USD conversion to each transaction
+          const validTransactions: any[] = [];
+          for (const transaction of validTransactionsWithoutUSD) {
+            const usdResult = await convertTransactionToUSD(
+              transaction.value,
+              transaction.currency,
+              transaction.value_date || transaction.transaction_date || new Date().toISOString()
+            );
+            
+            if (usdResult.success) {
+              console.log(`[AIMS] USD conversion: ${transaction.value} ${transaction.currency} = $${usdResult.value_usd} USD`);
+            } else {
+              console.warn(`[AIMS] USD conversion failed: ${usdResult.error}`);
+            }
+            
+            const transactionWithUSD = addUSDFieldsToTransaction(transaction, usdResult);
+            validTransactions.push(transactionWithUSD);
           }
 
           if (validTransactions.length > 0) {
@@ -1289,12 +1309,31 @@ export async function POST(request: Request) {
       }
 
       // Only proceed with transactions that have organization_id
-      const validTransactions = transactionsData.filter((t: any) => t.organization_id);
-      const skippedCount = transactionsData.length - validTransactions.length;
+      const validTransactionsWithoutUSD = transactionsData.filter((t: any) => t.organization_id);
+      const skippedCount = transactionsData.length - validTransactionsWithoutUSD.length;
       
       if (skippedCount > 0) {
         console.warn(`[AIMS] Skipping ${skippedCount} transactions due to missing organization_id`);
         transactionWarnings.push(`${skippedCount} transactions skipped due to missing organization ID`);
+      }
+
+      // Add USD conversion to each transaction
+      const validTransactions: any[] = [];
+      for (const transaction of validTransactionsWithoutUSD) {
+        const usdResult = await convertTransactionToUSD(
+          transaction.value,
+          transaction.currency,
+          transaction.value_date || transaction.transaction_date || new Date().toISOString()
+        );
+        
+        if (usdResult.success) {
+          console.log(`[AIMS] USD conversion: ${transaction.value} ${transaction.currency} = $${usdResult.value_usd} USD`);
+        } else {
+          console.warn(`[AIMS] USD conversion failed: ${usdResult.error}`);
+        }
+        
+        const transactionWithUSD = addUSDFieldsToTransaction(transaction, usdResult);
+        validTransactions.push(transactionWithUSD);
       }
 
       if (validTransactions.length > 0) {

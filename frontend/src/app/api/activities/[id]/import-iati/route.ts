@@ -4,6 +4,8 @@ import { fixedCurrencyConverter } from '@/lib/currency-converter-fixed';
 import { getOrCreateOrganization } from '@/lib/organization-helpers';
 import { validatePolicyMarkerSignificance } from '@/lib/policy-marker-validation';
 import { sanitizeIatiDescriptionServerSafe } from '@/lib/sanitize-server';
+import { convertTransactionToUSD, addUSDFieldsToTransaction } from '@/lib/transaction-usd-helper';
+import { inferTransactionParties, ParticipatingOrg as InferenceParticipatingOrg, ReportingOrg } from '@/lib/iati/inference';
 
 interface ImportRequest {
   fields: Record<string, boolean>;
@@ -1373,6 +1375,29 @@ export async function POST(
       console.log(`[IATI Import] Found ${newTransactionsCount} new transactions out of ${iati_data.transactions.length} total`);
       
       if (newTransactions.length > 0) {
+        // Fetch participating organizations for transaction party inference
+        const { data: activityParticipatingOrgs } = await supabase
+          .from('activity_participating_organizations')
+          .select('organization_id, iati_role_code, iati_org_ref, narrative')
+          .eq('activity_id', activityId);
+        
+        // Prepare participating orgs for inference
+        const inferenceParticipatingOrgs: InferenceParticipatingOrg[] = (activityParticipatingOrgs || []).map((org: any) => ({
+          organization_id: org.organization_id,
+          iati_role_code: org.iati_role_code || 4,
+          iati_org_ref: org.iati_org_ref,
+          name: org.narrative,
+        }));
+        
+        // Prepare reporting org for inference
+        const inferenceReportingOrg: ReportingOrg = {
+          ref: currentActivity.reporting_org_ref || '',
+          organization_id: currentActivity.reporting_org_id,
+          name: currentActivity.reporting_org_name,
+        };
+        
+        console.log(`[IATI Import] Transaction inference setup: ${inferenceParticipatingOrgs.length} participating orgs, reporting org: ${inferenceReportingOrg.ref}`);
+        
         // Map organization names to IDs if needed
         const allOrgNames = new Set<string>();
         newTransactions.forEach((t: IATITransaction) => {
@@ -1510,7 +1535,44 @@ export async function POST(
           // Normalize empty string dates to null (PostgreSQL DATE columns don't accept empty strings)
           const normalizedDate = t.date && t.date.trim() !== '' ? t.date : null;
           
-          validTransactions.push({
+          // Get initial provider/receiver org IDs from the transaction data
+          const initialProviderOrgId = t.providerOrg?.ref ? 
+            (orgNameMap.get(t.providerOrg.ref) || orgNameMap.get(t.providerOrg.name || '')) : null;
+          const initialReceiverOrgId = t.receiverOrg?.ref ? 
+            (orgNameMap.get(t.receiverOrg.ref) || orgNameMap.get(t.receiverOrg.name || '')) : null;
+          
+          // Apply IATI party inference for missing provider/receiver
+          const partyInference = inferTransactionParties({
+            reportingOrg: inferenceReportingOrg,
+            participatingOrgs: inferenceParticipatingOrgs,
+            transaction: {
+              transactionType: t.type,
+              providerOrgId: initialProviderOrgId,
+              providerOrgRef: t.providerOrg?.ref,
+              receiverOrgId: initialReceiverOrgId,
+              receiverOrgRef: t.receiverOrg?.ref,
+            },
+          });
+          
+          // Use inferred values if original is missing
+          const finalProviderOrgId = initialProviderOrgId || partyInference.provider.value;
+          const finalReceiverOrgId = initialReceiverOrgId || partyInference.receiver.value;
+          
+          // Log inference results for debugging
+          if (partyInference.provider.status === 'inferred') {
+            console.log(`[IATI Import] Inferred provider org: ${partyInference.provider.name || partyInference.provider.iatiRef}`);
+          }
+          if (partyInference.receiver.status === 'inferred') {
+            console.log(`[IATI Import] Inferred receiver org: ${partyInference.receiver.name || partyInference.receiver.iatiRef}`);
+          }
+          if (partyInference.provider.status === 'ambiguous') {
+            console.log(`[IATI Import] Provider inference ambiguous for transaction type ${t.type}`);
+          }
+          if (partyInference.receiver.status === 'ambiguous') {
+            console.log(`[IATI Import] Receiver inference ambiguous for transaction type ${t.type}`);
+          }
+          
+          const transactionData = {
             activity_id: activityId,
             transaction_type: t.type,
             transaction_date: normalizedDate,
@@ -1519,19 +1581,17 @@ export async function POST(
             status: 'actual', // IATI transactions are actual
             description: t.description,
             
-            // Provider organization
-            provider_org_id: t.providerOrg?.ref ? 
-              (orgNameMap.get(t.providerOrg.ref) || orgNameMap.get(t.providerOrg.name || '')) : null,
-            provider_org_ref: t.providerOrg?.ref,
-            provider_org_name: t.providerOrg?.name,
+            // Provider organization (with inference fallback)
+            provider_org_id: finalProviderOrgId,
+            provider_org_ref: t.providerOrg?.ref || partyInference.provider.iatiRef,
+            provider_org_name: t.providerOrg?.name || partyInference.provider.name,
             provider_org_activity_id: t.providerOrg?.providerActivityId || null,
             provider_activity_uuid: providerActivityUuid,
             
-            // Receiver organization
-            receiver_org_id: t.receiverOrg?.ref ? 
-              (orgNameMap.get(t.receiverOrg.ref) || orgNameMap.get(t.receiverOrg.name || '')) : null,
-            receiver_org_ref: t.receiverOrg?.ref,
-            receiver_org_name: t.receiverOrg?.name,
+            // Receiver organization (with inference fallback)
+            receiver_org_id: finalReceiverOrgId,
+            receiver_org_ref: t.receiverOrg?.ref || partyInference.receiver.iatiRef,
+            receiver_org_name: t.receiverOrg?.name || partyInference.receiver.name,
             receiver_org_activity_id: t.receiverOrg?.receiverActivityId || null,
             receiver_activity_uuid: receiverActivityUuid,
             
@@ -1544,7 +1604,24 @@ export async function POST(
             
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString()
-          });
+          };
+          
+          // Convert to USD
+          const usdResult = await convertTransactionToUSD(
+            transactionData.value,
+            transactionData.currency,
+            transactionData.transaction_date || new Date().toISOString()
+          );
+          
+          if (usdResult.success) {
+            console.log(`[IATI Import] USD conversion: ${transactionData.value} ${transactionData.currency} = $${usdResult.value_usd} USD`);
+          } else {
+            console.warn(`[IATI Import] USD conversion failed: ${usdResult.error}`);
+          }
+          
+          // Add USD fields to transaction data
+          const transactionDataWithUSD = addUSDFieldsToTransaction(transactionData, usdResult);
+          validTransactions.push(transactionDataWithUSD);
         }
         
         // Insert only valid transactions

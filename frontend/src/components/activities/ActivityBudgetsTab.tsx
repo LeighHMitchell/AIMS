@@ -1734,9 +1734,8 @@ export default function ActivityBudgetsTab({
                       Expand All
                     </Button>
                   )}
-                  <Button variant="outline" onClick={handleExport} data-export>
-                    <Download className="h-4 w-4 mr-1" />
-                    Export
+                  <Button variant="outline" onClick={handleExport} data-export title="Export">
+                    <Download className="h-4 w-4" />
                   </Button>
                 </>
               )}
@@ -1812,9 +1811,8 @@ export default function ActivityBudgetsTab({
                       Expand All
                     </Button>
                   )}
-                  <Button variant="outline" size="sm" onClick={handleExport} data-export>
-                    <Download className="h-4 w-4 mr-1" />
-                    Export
+                  <Button variant="outline" size="sm" onClick={handleExport} data-export title="Export">
+                    <Download className="h-4 w-4" />
                   </Button>
                 </div>
               </div>
@@ -1886,9 +1884,8 @@ export default function ActivityBudgetsTab({
                   Expand All
                 </Button>
               )}
-              <Button variant="outline" size="sm" onClick={handleExport} data-export>
-                <Download className="h-4 w-4 mr-1" />
-                Export
+              <Button variant="outline" size="sm" onClick={handleExport} data-export title="Export">
+                <Download className="h-4 w-4" />
               </Button>
             </div>
           )}

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase';
 import { cleanTransactionFields, cleanBooleanValue } from '@/lib/transaction-field-cleaner';
+import { convertTransactionToUSD, addUSDFieldsToTransaction } from '@/lib/transaction-usd-helper';
 
 export async function PUT(
   request: NextRequest,
@@ -45,6 +46,43 @@ export async function PUT(
     updateData.value_date = value_date;
     updateData.transaction_reference = transactionReference;
     updateData.updated_at = new Date().toISOString();
+
+    // Perform USD conversion if value or currency fields are present
+    // This ensures USD values are always up-to-date when transactions are edited
+    if (body.value !== undefined && body.currency) {
+      const resolvedValueDate = value_date || body.transaction_date || new Date().toISOString();
+      
+      console.log(`[AIMS] Converting transaction to USD: ${body.value} ${body.currency}`);
+      const usdResult = await convertTransactionToUSD(
+        parseFloat(body.value) || 0,
+        body.currency,
+        resolvedValueDate
+      );
+
+      if (usdResult.success) {
+        console.log(`[AIMS] USD conversion successful: ${body.value} ${body.currency} = $${usdResult.value_usd} USD`);
+      } else {
+        console.warn(`[AIMS] USD conversion failed: ${usdResult.error}`);
+      }
+
+      // Add USD fields to update data
+      updateData.value_usd = usdResult.value_usd;
+      updateData.exchange_rate_used = usdResult.exchange_rate_used;
+      updateData.usd_conversion_date = usdResult.usd_conversion_date;
+      updateData.usd_convertible = usdResult.usd_convertible;
+      
+      // Check if manual exchange rate was provided
+      if (body.exchange_rate_manual !== undefined) {
+        updateData.exchange_rate_manual = body.exchange_rate_manual;
+      }
+      if (body.exchange_rate_used !== undefined && body.exchange_rate_manual) {
+        // Use the manually provided exchange rate
+        updateData.exchange_rate_used = body.exchange_rate_used;
+        if (body.value_usd !== undefined) {
+          updateData.value_usd = body.value_usd;
+        }
+      }
+    }
 
     // Smart logic for finance_type_inherited:
     // - If value unchanged and was inherited, keep as inherited

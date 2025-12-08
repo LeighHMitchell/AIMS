@@ -69,6 +69,17 @@ import dynamic from 'next/dynamic';
 import { SectorFilterSelection, matchesSectorFilter } from "@/components/maps/SectorHierarchyFilter";
 import { SafeHtml } from '@/components/ui/safe-html';
 import { Progress } from "@/components/ui/progress";
+import { 
+  calculateDurationDetailed,
+  formatDurationHuman,
+  getDurationBand,
+  calculateImplementationToDate,
+  calculateRemainingDuration,
+  calculateImplementationPercent,
+  calculateRemainingPercent,
+  DurationResult,
+  DurationBand
+} from '@/lib/date-utils';
 
 // Dynamically import SectorHierarchyFilter to avoid hydration issues
 const SectorHierarchyFilter = dynamic(
@@ -251,7 +262,7 @@ type Activity = {
   description_other?: string;
 };
 
-type SortField = 'title' | 'partnerId' | 'createdBy' | 'commitments' | 'disbursements' | 'plannedDisbursements' | 'createdAt' | 'updatedAt' | 'activityStatus';
+type SortField = 'title' | 'partnerId' | 'createdBy' | 'commitments' | 'disbursements' | 'plannedDisbursements' | 'createdAt' | 'updatedAt' | 'activityStatus' | 'actualLength' | 'totalExpectedLength' | 'implementationToDate' | 'remainingDuration' | 'durationBand' | 'plannedStartDate' | 'plannedEndDate' | 'actualStartDate' | 'actualEndDate';
 type SortOrder = 'asc' | 'desc';
 
 
@@ -451,12 +462,23 @@ type ColumnId =
   // Progress & Metrics columns
   | 'timeElapsed'
   | 'committedSpentPercent'
-  | 'budgetSpentPercent';
+  | 'budgetSpentPercent'
+  // Duration columns
+  | 'actualLength'
+  | 'totalExpectedLength'
+  | 'implementationToDate'
+  | 'remainingDuration'
+  | 'durationBand'
+  // Date columns
+  | 'plannedStartDate'
+  | 'plannedEndDate'
+  | 'actualStartDate'
+  | 'actualEndDate';
 
 interface ColumnConfig {
   id: ColumnId;
   label: string;
-  group: 'default' | 'activityDefaults' | 'transactionTypeTotals' | 'publicationStatuses' | 'participatingOrgs' | 'descriptions' | 'progressMetrics';
+  group: 'default' | 'activityDefaults' | 'transactionTypeTotals' | 'publicationStatuses' | 'participatingOrgs' | 'descriptions' | 'progressMetrics' | 'durations' | 'dates';
   width?: string;
   alwaysVisible?: boolean; // For columns that can't be hidden (checkbox, actions)
   defaultVisible?: boolean;
@@ -519,6 +541,19 @@ const COLUMN_CONFIGS: ColumnConfig[] = [
   { id: 'timeElapsed', label: 'Time Elapsed', group: 'progressMetrics', width: 'min-w-[140px]', defaultVisible: false, align: 'left' },
   { id: 'committedSpentPercent', label: '% Committed Spent', group: 'progressMetrics', width: 'min-w-[140px]', defaultVisible: false, align: 'left' },
   { id: 'budgetSpentPercent', label: '% Budget Spent', group: 'progressMetrics', width: 'min-w-[140px]', defaultVisible: false, align: 'left' },
+  
+  // Duration columns
+  { id: 'totalExpectedLength', label: 'Total Expected Length', group: 'durations', width: 'min-w-[160px]', defaultVisible: false, sortable: true, align: 'left' },
+  { id: 'implementationToDate', label: 'Implementation to Date', group: 'durations', width: 'min-w-[160px]', defaultVisible: false, sortable: true, align: 'left' },
+  { id: 'remainingDuration', label: 'Remaining Duration', group: 'durations', width: 'min-w-[160px]', defaultVisible: false, sortable: true, align: 'left' },
+  { id: 'actualLength', label: 'Actual Length', group: 'durations', width: 'min-w-[160px]', defaultVisible: false, sortable: true, align: 'left' },
+  { id: 'durationBand', label: 'Duration Band', group: 'durations', width: 'min-w-[180px]', defaultVisible: false, sortable: true, align: 'left' },
+  
+  // Date columns
+  { id: 'plannedStartDate', label: 'Planned Start Date', group: 'dates', width: 'min-w-[130px]', defaultVisible: false, sortable: true, align: 'left' },
+  { id: 'plannedEndDate', label: 'Planned End Date', group: 'dates', width: 'min-w-[130px]', defaultVisible: false, sortable: true, align: 'left' },
+  { id: 'actualStartDate', label: 'Actual Start Date', group: 'dates', width: 'min-w-[130px]', defaultVisible: false, sortable: true, align: 'left' },
+  { id: 'actualEndDate', label: 'Actual End Date', group: 'dates', width: 'min-w-[130px]', defaultVisible: false, sortable: true, align: 'left' },
 ];
 
 const COLUMN_GROUPS = {
@@ -530,6 +565,8 @@ const COLUMN_GROUPS = {
   participatingOrgs: 'Participating Organisations',
   descriptions: 'Descriptions',
   progressMetrics: 'Progress & Metrics',
+  durations: 'Activity Durations',
+  dates: 'Activity Dates',
 };
 
 const DEFAULT_VISIBLE_COLUMNS: ColumnId[] = COLUMN_CONFIGS
@@ -546,6 +583,7 @@ interface ColumnSelectorProps {
 
 function ColumnSelector({ visibleColumns, onColumnsChange }: ColumnSelectorProps) {
   const [open, setOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
   const toggleColumn = (columnId: ColumnId) => {
     const config = COLUMN_CONFIGS.find(c => c.id === columnId);
@@ -588,8 +626,20 @@ function ColumnSelector({ visibleColumns, onColumnsChange }: ColumnSelectorProps
 
   const totalToggleable = COLUMN_CONFIGS.filter(c => !c.alwaysVisible).length;
 
+  // Filter columns based on search query
+  const filteredColumns = useMemo(() => {
+    if (!searchQuery.trim()) return null; // null means show grouped view
+    const query = searchQuery.toLowerCase();
+    return COLUMN_CONFIGS.filter(c => 
+      !c.alwaysVisible && c.label.toLowerCase().includes(query)
+    );
+  }, [searchQuery]);
+
   return (
-    <Popover open={open} onOpenChange={setOpen}>
+    <Popover open={open} onOpenChange={(isOpen) => {
+      setOpen(isOpen);
+      if (!isOpen) setSearchQuery(''); // Clear search when closing
+    }}>
       <PopoverTrigger asChild>
         <Button variant="outline" size="sm" className="gap-2">
           <Columns3 className="h-4 w-4" />
@@ -616,47 +666,85 @@ function ColumnSelector({ visibleColumns, onColumnsChange }: ColumnSelectorProps
           <p className="text-xs text-muted-foreground mt-1">
             {visibleCount} of {totalToggleable} columns visible
           </p>
+          <div className="relative mt-2">
+            <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search columns..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-8 h-8 text-sm"
+            />
+          </div>
         </div>
         <div className="max-h-[400px] overflow-y-auto">
-          {(Object.keys(COLUMN_GROUPS) as Array<keyof typeof COLUMN_GROUPS>).map(groupKey => {
-            const groupColumns = COLUMN_CONFIGS.filter(c => c.group === groupKey && !c.alwaysVisible);
-            if (groupColumns.length === 0) return null;
-            
-            const allVisible = groupColumns.every(c => visibleColumns.includes(c.id));
-            const someVisible = groupColumns.some(c => visibleColumns.includes(c.id));
-            
-            return (
-              <div key={groupKey} className="border-b last:border-b-0">
-                <div 
-                  className="flex items-center gap-2 px-3 py-2 bg-muted/50 cursor-pointer hover:bg-muted/80"
-                  onClick={() => toggleGroup(groupKey)}
-                >
-                  <Checkbox 
-                    checked={allVisible}
-                    // @ts-ignore - indeterminate is valid but not in types
-                    indeterminate={someVisible && !allVisible}
-                    onCheckedChange={() => toggleGroup(groupKey)}
-                  />
-                  <span className="text-sm font-medium">{COLUMN_GROUPS[groupKey]}</span>
-                </div>
-                <div className="py-1">
-                  {groupColumns.map(column => (
-                    <div
-                      key={column.id}
-                      className="flex items-center gap-2 px-3 py-1.5 hover:bg-muted/50 cursor-pointer"
-                      onClick={() => toggleColumn(column.id)}
-                    >
-                      <Checkbox 
-                        checked={visibleColumns.includes(column.id)}
-                        onCheckedChange={() => toggleColumn(column.id)}
-                      />
-                      <span className="text-sm">{column.label}</span>
-                    </div>
-                  ))}
-                </div>
+          {filteredColumns ? (
+            // Show flat filtered list when searching
+            filteredColumns.length === 0 ? (
+              <div className="p-3 text-sm text-muted-foreground text-center">
+                No columns match "{searchQuery}"
               </div>
-            );
-          })}
+            ) : (
+              <div className="py-1">
+                {filteredColumns.map(column => (
+                  <div
+                    key={column.id}
+                    className="flex items-center gap-2 px-3 py-1.5 hover:bg-muted/50 cursor-pointer"
+                    onClick={() => toggleColumn(column.id)}
+                  >
+                    <Checkbox 
+                      checked={visibleColumns.includes(column.id)}
+                      onCheckedChange={() => toggleColumn(column.id)}
+                    />
+                    <span className="text-sm">{column.label}</span>
+                    <span className="text-xs text-muted-foreground ml-auto">
+                      {COLUMN_GROUPS[column.group as keyof typeof COLUMN_GROUPS]}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )
+          ) : (
+            // Show grouped view when not searching
+            (Object.keys(COLUMN_GROUPS) as Array<keyof typeof COLUMN_GROUPS>).map(groupKey => {
+              const groupColumns = COLUMN_CONFIGS.filter(c => c.group === groupKey && !c.alwaysVisible);
+              if (groupColumns.length === 0) return null;
+              
+              const allVisible = groupColumns.every(c => visibleColumns.includes(c.id));
+              const someVisible = groupColumns.some(c => visibleColumns.includes(c.id));
+              
+              return (
+                <div key={groupKey} className="border-b last:border-b-0">
+                  <div 
+                    className="flex items-center gap-2 px-3 py-2 bg-muted/50 cursor-pointer hover:bg-muted/80"
+                    onClick={() => toggleGroup(groupKey)}
+                  >
+                    <Checkbox 
+                      checked={allVisible}
+                      // @ts-ignore - indeterminate is valid but not in types
+                      indeterminate={someVisible && !allVisible}
+                      onCheckedChange={() => toggleGroup(groupKey)}
+                    />
+                    <span className="text-sm font-medium">{COLUMN_GROUPS[groupKey]}</span>
+                  </div>
+                  <div className="py-1">
+                    {groupColumns.map(column => (
+                      <div
+                        key={column.id}
+                        className="flex items-center gap-2 px-3 py-1.5 hover:bg-muted/50 cursor-pointer"
+                        onClick={() => toggleColumn(column.id)}
+                      >
+                        <Checkbox 
+                          checked={visibleColumns.includes(column.id)}
+                          onCheckedChange={() => toggleColumn(column.id)}
+                        />
+                        <span className="text-sm">{column.label}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })
+          )}
         </div>
       </PopoverContent>
     </Popover>
@@ -2201,6 +2289,109 @@ function ActivitiesPageContent() {
                     </th>
                   )}
                   
+                  {/* Duration columns */}
+                  {visibleColumns.includes('totalExpectedLength') && (
+                    <th 
+                      className="h-12 px-4 py-3 text-left align-middle text-sm font-medium text-muted-foreground cursor-pointer hover:bg-muted/80 transition-colors min-w-[160px]"
+                      onClick={() => handleSort('totalExpectedLength')}
+                    >
+                      <div className="flex items-center gap-1">
+                        <span>Total Expected Length</span>
+                        {getSortIcon('totalExpectedLength')}
+                      </div>
+                    </th>
+                  )}
+                  {visibleColumns.includes('implementationToDate') && (
+                    <th 
+                      className="h-12 px-4 py-3 text-left align-middle text-sm font-medium text-muted-foreground cursor-pointer hover:bg-muted/80 transition-colors min-w-[160px]"
+                      onClick={() => handleSort('implementationToDate')}
+                    >
+                      <div className="flex items-center gap-1">
+                        <span>Implementation to Date</span>
+                        {getSortIcon('implementationToDate')}
+                      </div>
+                    </th>
+                  )}
+                  {visibleColumns.includes('remainingDuration') && (
+                    <th 
+                      className="h-12 px-4 py-3 text-left align-middle text-sm font-medium text-muted-foreground cursor-pointer hover:bg-muted/80 transition-colors min-w-[160px]"
+                      onClick={() => handleSort('remainingDuration')}
+                    >
+                      <div className="flex items-center gap-1">
+                        <span>Remaining Duration</span>
+                        {getSortIcon('remainingDuration')}
+                      </div>
+                    </th>
+                  )}
+                  {visibleColumns.includes('actualLength') && (
+                    <th 
+                      className="h-12 px-4 py-3 text-left align-middle text-sm font-medium text-muted-foreground cursor-pointer hover:bg-muted/80 transition-colors min-w-[160px]"
+                      onClick={() => handleSort('actualLength')}
+                    >
+                      <div className="flex items-center gap-1">
+                        <span>Actual Length</span>
+                        {getSortIcon('actualLength')}
+                      </div>
+                    </th>
+                  )}
+                  {visibleColumns.includes('durationBand') && (
+                    <th 
+                      className="h-12 px-4 py-3 text-left align-middle text-sm font-medium text-muted-foreground cursor-pointer hover:bg-muted/80 transition-colors min-w-[180px]"
+                      onClick={() => handleSort('durationBand')}
+                    >
+                      <div className="flex items-center gap-1">
+                        <span>Duration Band</span>
+                        {getSortIcon('durationBand')}
+                      </div>
+                    </th>
+                  )}
+                  
+                  {/* Date columns */}
+                  {visibleColumns.includes('plannedStartDate') && (
+                    <th 
+                      className="h-12 px-4 py-3 text-left align-middle text-sm font-medium text-muted-foreground cursor-pointer hover:bg-muted/80 transition-colors min-w-[130px]"
+                      onClick={() => handleSort('plannedStartDate')}
+                    >
+                      <div className="flex items-center gap-1">
+                        <span>Planned Start</span>
+                        {getSortIcon('plannedStartDate')}
+                      </div>
+                    </th>
+                  )}
+                  {visibleColumns.includes('plannedEndDate') && (
+                    <th 
+                      className="h-12 px-4 py-3 text-left align-middle text-sm font-medium text-muted-foreground cursor-pointer hover:bg-muted/80 transition-colors min-w-[130px]"
+                      onClick={() => handleSort('plannedEndDate')}
+                    >
+                      <div className="flex items-center gap-1">
+                        <span>Planned End</span>
+                        {getSortIcon('plannedEndDate')}
+                      </div>
+                    </th>
+                  )}
+                  {visibleColumns.includes('actualStartDate') && (
+                    <th 
+                      className="h-12 px-4 py-3 text-left align-middle text-sm font-medium text-muted-foreground cursor-pointer hover:bg-muted/80 transition-colors min-w-[130px]"
+                      onClick={() => handleSort('actualStartDate')}
+                    >
+                      <div className="flex items-center gap-1">
+                        <span>Actual Start</span>
+                        {getSortIcon('actualStartDate')}
+                      </div>
+                    </th>
+                  )}
+                  {visibleColumns.includes('actualEndDate') && (
+                    <th 
+                      className="h-12 px-4 py-3 text-left align-middle text-sm font-medium text-muted-foreground cursor-pointer hover:bg-muted/80 transition-colors min-w-[130px]"
+                      onClick={() => handleSort('actualEndDate')}
+                    >
+                      <div className="flex items-center gap-1">
+                        <span>Actual End</span>
+                        {getSortIcon('actualEndDate')}
+                      </div>
+                    </th>
+                  )}
+                  
                   {/* Actions column - always visible */}
                   <th className="h-12 px-4 py-3 text-right align-middle text-sm font-medium text-muted-foreground w-[80px]">
                     Actions
@@ -3057,6 +3248,162 @@ function ActivitiesPageContent() {
                               </TooltipProvider>
                             );
                           })()}
+                        </td>
+                      )}
+                      
+                      {/* Duration Cells */}
+                      {visibleColumns.includes('totalExpectedLength') && (
+                        <td className="px-4 py-2 text-sm text-foreground text-left">
+                          {(() => {
+                            const duration = calculateDurationDetailed(
+                              activity.plannedStartDate,
+                              activity.plannedEndDate
+                            );
+                            if (!duration) return <span className="text-muted-foreground">Not available</span>;
+                            return (
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <span className="cursor-pointer">{formatDurationHuman(duration)}</span>
+                                  </TooltipTrigger>
+                                  <TooltipContent className="bg-white border shadow-lg p-2">
+                                    <p className="text-sm font-medium">{duration.totalDays.toLocaleString()} days</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                            );
+                          })()}
+                        </td>
+                      )}
+
+                      {visibleColumns.includes('implementationToDate') && (
+                        <td className="px-4 py-2 text-sm text-foreground text-left">
+                          {(() => {
+                            const duration = calculateImplementationToDate(activity.actualStartDate);
+                            const percent = calculateImplementationPercent(activity.actualStartDate, activity.plannedEndDate);
+                            if (!duration) return <span className="text-muted-foreground">Not available</span>;
+                            return (
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <div className="cursor-pointer">
+                                      <span>{formatDurationHuman(duration)}</span>
+                                      {percent !== null && (
+                                        <span className="text-xs text-muted-foreground ml-1">{percent.toFixed(0)}%</span>
+                                      )}
+                                    </div>
+                                  </TooltipTrigger>
+                                  <TooltipContent className="bg-white border shadow-lg p-2">
+                                    <p className="text-sm font-medium">{duration.totalDays.toLocaleString()} days</p>
+                                    {percent !== null && <p className="text-sm text-muted-foreground">{percent.toFixed(1)}% of planned duration</p>}
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                            );
+                          })()}
+                        </td>
+                      )}
+
+                      {visibleColumns.includes('remainingDuration') && (
+                        <td className="px-4 py-2 text-sm text-foreground text-left">
+                          {(() => {
+                            const duration = calculateRemainingDuration(activity.plannedEndDate);
+                            const percent = calculateRemainingPercent(activity.plannedStartDate, activity.plannedEndDate);
+                            if (!duration) return <span className="text-muted-foreground">Not available</span>;
+                            const isOverdue = duration.totalDays === 0 && activity.plannedEndDate;
+                            return (
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <div className={`cursor-pointer ${isOverdue ? 'text-red-600 font-medium' : ''}`}>
+                                      <span>{isOverdue ? 'Overdue' : formatDurationHuman(duration)}</span>
+                                      {percent !== null && !isOverdue && (
+                                        <span className="text-xs text-muted-foreground ml-1">{percent.toFixed(0)}%</span>
+                                      )}
+                                    </div>
+                                  </TooltipTrigger>
+                                  <TooltipContent className="bg-white border shadow-lg p-2">
+                                    <p className="text-sm font-medium">{duration.totalDays.toLocaleString()} days remaining</p>
+                                    {percent !== null && <p className="text-sm text-muted-foreground">{percent.toFixed(1)}% of planned duration</p>}
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                            );
+                          })()}
+                        </td>
+                      )}
+
+                      {visibleColumns.includes('actualLength') && (
+                        <td className="px-4 py-2 text-sm text-foreground text-left">
+                          {(() => {
+                            const duration = calculateDurationDetailed(
+                              activity.actualStartDate,
+                              activity.actualEndDate
+                            );
+                            if (!duration) return <span className="text-muted-foreground">Not available</span>;
+                            return (
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <span className="cursor-pointer">{formatDurationHuman(duration)}</span>
+                                  </TooltipTrigger>
+                                  <TooltipContent className="bg-white border shadow-lg p-2">
+                                    <p className="text-sm font-medium">{duration.totalDays.toLocaleString()} days</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                            );
+                          })()}
+                        </td>
+                      )}
+
+                      {visibleColumns.includes('durationBand') && (
+                        <td className="px-4 py-2 text-sm text-foreground text-left">
+                          {(() => {
+                            const duration = calculateDurationDetailed(
+                              activity.plannedStartDate,
+                              activity.plannedEndDate
+                            );
+                            if (!duration) return <span className="text-muted-foreground">Not available</span>;
+                            const band = getDurationBand(duration.totalDays);
+                            
+                            return (
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <span className="cursor-pointer">
+                                      {band || 'Unknown'}
+                                    </span>
+                                  </TooltipTrigger>
+                                  <TooltipContent className="bg-white border shadow-lg p-2">
+                                    <p className="text-sm font-medium">{duration.totalDays.toLocaleString()} total days</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                            );
+                          })()}
+                        </td>
+                      )}
+                      
+                      {/* Date columns */}
+                      {visibleColumns.includes('plannedStartDate') && (
+                        <td className="px-4 py-2 text-sm text-foreground text-left whitespace-nowrap">
+                          {activity.plannedStartDate ? formatDateLong(activity.plannedStartDate) : <span className="text-muted-foreground">—</span>}
+                        </td>
+                      )}
+                      {visibleColumns.includes('plannedEndDate') && (
+                        <td className="px-4 py-2 text-sm text-foreground text-left whitespace-nowrap">
+                          {activity.plannedEndDate ? formatDateLong(activity.plannedEndDate) : <span className="text-muted-foreground">—</span>}
+                        </td>
+                      )}
+                      {visibleColumns.includes('actualStartDate') && (
+                        <td className="px-4 py-2 text-sm text-foreground text-left whitespace-nowrap">
+                          {activity.actualStartDate ? formatDateLong(activity.actualStartDate) : <span className="text-muted-foreground">—</span>}
+                        </td>
+                      )}
+                      {visibleColumns.includes('actualEndDate') && (
+                        <td className="px-4 py-2 text-sm text-foreground text-left whitespace-nowrap">
+                          {activity.actualEndDate ? formatDateLong(activity.actualEndDate) : <span className="text-muted-foreground">—</span>}
                         </td>
                       )}
                       

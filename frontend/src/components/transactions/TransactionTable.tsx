@@ -350,7 +350,17 @@ export function TransactionTable({
   // Helper function to check if a column is visible
   const isColumnVisible = (columnId: TransactionColumnId): boolean => {
     if (!visibleColumns) return true; // Show all if not provided (backward compat)
-    return visibleColumns.includes(columnId);
+    const isVisible = visibleColumns.includes(columnId);
+    // Debug logging for finance type column
+    if (columnId === 'financeType') {
+      console.log('[TransactionTable] financeType visibility check:', { 
+        columnId, 
+        isVisible, 
+        visibleColumns,
+        variant 
+      });
+    }
+    return isVisible;
   };
 
   // USD conversion tracking
@@ -788,8 +798,8 @@ export function TransactionTable({
               </TableHead>
             )}
             
-            {/* Finance Type */}
-            {isColumnVisible('financeType') && variant === "full" && (
+            {/* Finance Type - shown in both compact and full variants */}
+            {isColumnVisible('financeType') && (
               <TableHead className="text-sm font-medium text-foreground/90 py-3 px-4 cursor-pointer hover:bg-muted/30 transition-colors" onClick={() => onSort("finance_type")}>
                 <div className="flex items-center gap-1">
                   <span>Finance Type</span>
@@ -1352,14 +1362,14 @@ export function TransactionTable({
                   </td>
                 )}
                 
-                {/* Finance Type */}
-                {isColumnVisible('financeType') && variant === "full" && (
+                {/* Finance Type - shown in both compact and full variants, inherited values in gray */}
+                {isColumnVisible('financeType') && (
                   <td className="py-3 px-4 whitespace-nowrap">
                     {(transaction.finance_type || transaction.effective_finance_type) ? (
                         <Tooltip>
                           <TooltipTrigger asChild>
                             <span className={`text-sm font-medium cursor-help ${transaction.finance_type_inherited ? 'text-gray-400 opacity-70' : 'text-foreground'}`}>
-                              {FINANCE_TYPE_LABELS[transaction.effective_finance_type || transaction.finance_type]?.short || transaction.effective_finance_type || transaction.finance_type}
+                              {FINANCE_TYPE_LABELS[transaction.effective_finance_type || transaction.finance_type]?.full || transaction.effective_finance_type || transaction.finance_type}
                             </span>
                           </TooltipTrigger>
                           <TooltipContent side="right">
@@ -1696,7 +1706,7 @@ export function TransactionTable({
                               <TooltipTrigger asChild>
                                 <Badge variant="outline" className={`bg-muted/50 cursor-help ${transaction.finance_type_inherited ? 'opacity-70' : ''}`}>
                                   <Coins className="h-3 w-3 mr-1" />
-                                  {FINANCE_TYPE_LABELS[transaction.effective_finance_type || transaction.finance_type]?.short || transaction.effective_finance_type || transaction.finance_type}
+                                  {FINANCE_TYPE_LABELS[transaction.effective_finance_type || transaction.finance_type]?.full || transaction.effective_finance_type || transaction.finance_type}
                                 </Badge>
                               </TooltipTrigger>
                               {transaction.finance_type_inherited && (
@@ -1970,7 +1980,7 @@ export function TransactionTable({
                                     {transaction.finance_type_inherited && <span className="text-[10px] text-gray-400 italic">(inherited)</span>}
                                   </div>
                                   <span className={`text-sm font-medium ${transaction.finance_type_inherited ? 'text-gray-400' : ''}`}>
-                                    {FINANCE_TYPE_LABELS[transaction.effective_finance_type || transaction.finance_type]?.short || transaction.effective_finance_type || transaction.finance_type}
+                                    {FINANCE_TYPE_LABELS[transaction.effective_finance_type || transaction.finance_type]?.full || transaction.effective_finance_type || transaction.finance_type}
                                   </span>
                                 </div>
                               </TooltipTrigger>

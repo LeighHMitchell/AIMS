@@ -335,7 +335,7 @@ async function backfillTransactions(): Promise<ConversionStats> {
   for (const transaction of transactions) {
     try {
       const valueDate = transaction.value_date || transaction.transaction_date || new Date().toISOString().split('T')[0];
-      console.log(`Converting transaction ${transaction.id}: ${transaction.value} ${transaction.currency} on ${valueDate}`);
+      console.log(`Converting transaction ${transaction.uuid}: ${transaction.value} ${transaction.currency} on ${valueDate}`);
 
       const result = await fixedCurrencyConverter.convertToUSD(
         transaction.value,
@@ -347,12 +347,12 @@ async function backfillTransactions(): Promise<ConversionStats> {
         const { error: updateError } = await supabase
           .from('transactions')
           .update({ value_usd: result.usd_amount })
-          .eq('id', transaction.id);
+          .eq('uuid', transaction.uuid);
 
         if (updateError) {
-          console.error(`  ❌ Failed to update transaction ${transaction.id}:`, updateError.message);
+          console.error(`  ❌ Failed to update transaction ${transaction.uuid}:`, updateError.message);
           stats.failed++;
-          stats.errors.push({ id: transaction.id, error: updateError.message });
+          stats.errors.push({ id: transaction.uuid, error: updateError.message });
         } else {
           console.log(`  ✓ Converted to $${result.usd_amount} USD`);
           stats.converted++;
@@ -363,9 +363,9 @@ async function backfillTransactions(): Promise<ConversionStats> {
       }
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : 'Unknown error';
-      console.error(`  ❌ Error converting transaction ${transaction.id}:`, errorMsg);
+      console.error(`  ❌ Error converting transaction ${transaction.uuid}:`, errorMsg);
       stats.failed++;
-      stats.errors.push({ id: transaction.id, error: errorMsg });
+      stats.errors.push({ id: transaction.uuid, error: errorMsg });
     }
   }
 
@@ -382,13 +382,13 @@ async function backfillTransactions(): Promise<ConversionStats> {
       const { error: updateError } = await supabase
         .from('transactions')
         .update({ value_usd: transaction.value })
-        .eq('id', transaction.id);
+        .eq('uuid', transaction.uuid);
 
       if (updateError) {
-        console.error(`  ❌ Failed to update USD transaction ${transaction.id}:`, updateError.message);
+        console.error(`  ❌ Failed to update USD transaction ${transaction.uuid}:`, updateError.message);
         stats.failed++;
       } else {
-        console.log(`  ✓ Set USD value for transaction ${transaction.id}`);
+        console.log(`  ✓ Set USD value for transaction ${transaction.uuid}`);
         stats.converted++;
       }
     }

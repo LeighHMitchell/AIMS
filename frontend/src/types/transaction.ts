@@ -187,6 +187,16 @@ export interface Transaction {
   aid_type_vocabulary?: string;
   tied_status?: TiedStatus;
   
+  // Effective values (transaction value or inherited from activity default)
+  effective_finance_type?: FinanceType;
+  effective_aid_type?: string;
+  effective_flow_type?: FlowType;
+  effective_tied_status?: TiedStatus;
+  // Inherited flags for other classification fields
+  aid_type_inherited?: boolean;
+  flow_type_inherited?: boolean;
+  tied_status_inherited?: boolean;
+  
   // NEW: Vocabulary fields for IATI compliance
   flow_type_vocabulary?: string; // Default: '1' (OECD DAC)
   finance_type_vocabulary?: string; // Default: '1' (OECD DAC)

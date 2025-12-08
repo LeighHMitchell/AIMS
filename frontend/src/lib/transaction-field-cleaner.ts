@@ -210,6 +210,23 @@ export function cleanTransactionFields(data: any): any {
     cleaned.organization_id = cleanUUIDValue(data.organization_id);
   }
 
+  // USD conversion fields - preserve these when provided
+  if (data.value_usd !== undefined) {
+    cleaned.value_usd = data.value_usd;
+  }
+  if (data.exchange_rate_used !== undefined) {
+    cleaned.exchange_rate_used = data.exchange_rate_used;
+  }
+  if (data.usd_conversion_date !== undefined) {
+    cleaned.usd_conversion_date = data.usd_conversion_date;
+  }
+  if (data.usd_convertible !== undefined) {
+    cleaned.usd_convertible = cleanBooleanValue(data.usd_convertible);
+  }
+  if (data.exchange_rate_manual !== undefined) {
+    cleaned.exchange_rate_manual = cleanBooleanValue(data.exchange_rate_manual);
+  }
+
   return cleaned;
 }
 
@@ -224,7 +241,7 @@ export function cleanTransactionFields(data: any): any {
  */
 export function cleanFieldValue(fieldName: string, value: any): any {
   // Boolean fields
-  if (['is_humanitarian', 'finance_type_inherited', 'fx_differs'].includes(fieldName)) {
+  if (['is_humanitarian', 'finance_type_inherited', 'fx_differs', 'usd_convertible', 'exchange_rate_manual'].includes(fieldName)) {
     return value !== undefined ? cleanBooleanValue(value) : null;
   }
 
@@ -246,8 +263,13 @@ export function cleanFieldValue(fieldName: string, value: any): any {
   }
 
   // Date fields
-  if (['transaction_date', 'value_date'].includes(fieldName)) {
+  if (['transaction_date', 'value_date', 'usd_conversion_date'].includes(fieldName)) {
     return cleanDateValue(value);
+  }
+
+  // Numeric fields (preserve as-is)
+  if (['value_usd', 'exchange_rate_used'].includes(fieldName)) {
+    return value !== undefined ? value : null;
   }
 
   // Default: return value if defined, otherwise null

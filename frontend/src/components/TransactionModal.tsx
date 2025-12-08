@@ -476,12 +476,12 @@ export default function TransactionModal({
       receiver_org_activity_id: transaction?.receiver_org_activity_id || '',
       receiver_activity_uuid: transaction?.receiver_activity_uuid || undefined,
       
-      // Classifications - Use activity defaults when creating new transactions
+      // Classifications - Use effective values (which include inherited) for display, fall back to activity defaults
       disbursement_channel: transaction?.disbursement_channel || undefined,
-      flow_type: transaction?.flow_type || (safeDefaultFlowType as FlowType) || undefined,
-      finance_type: transaction?.finance_type || (safeDefaultFinanceType as FinanceType) || undefined,
-      aid_type: transaction?.aid_type || safeDefaultAidType || undefined,
-      tied_status: transaction?.tied_status || (safeDefaultTiedStatus as TiedStatus) || undefined,
+      flow_type: transaction?.effective_flow_type || transaction?.flow_type || (safeDefaultFlowType as FlowType) || undefined,
+      finance_type: transaction?.effective_finance_type || transaction?.finance_type || (safeDefaultFinanceType as FinanceType) || undefined,
+      aid_type: transaction?.effective_aid_type || transaction?.aid_type || safeDefaultAidType || undefined,
+      tied_status: transaction?.effective_tied_status || transaction?.tied_status || (safeDefaultTiedStatus as TiedStatus) || undefined,
       
       // Sector & Geography (single values)
       sector_code: transaction?.sector_code || '',
@@ -645,7 +645,17 @@ export default function TransactionModal({
       defaultAidType,
       defaultCurrency,
       defaultTiedStatus,
-      defaultFlowType
+      defaultFlowType,
+      // Debug: show effective values from transaction
+      effective_finance_type: transaction?.effective_finance_type,
+      effective_flow_type: transaction?.effective_flow_type,
+      effective_aid_type: transaction?.effective_aid_type,
+      effective_tied_status: transaction?.effective_tied_status,
+      // Debug: show raw transaction values
+      raw_finance_type: transaction?.finance_type,
+      raw_flow_type: transaction?.flow_type,
+      raw_aid_type: transaction?.aid_type,
+      raw_tied_status: transaction?.tied_status
     });
     
     if (transaction) {
@@ -681,12 +691,12 @@ export default function TransactionModal({
         receiver_org_activity_id: transaction.receiver_org_activity_id || '',
         receiver_activity_uuid: transaction.receiver_activity_uuid || undefined,
         
-        // Classifications - keep existing values when editing
+        // Classifications - use effective values (which include inherited), fall back to activity defaults
         disbursement_channel: transaction.disbursement_channel || undefined,
-        flow_type: transaction.flow_type || undefined,
-        finance_type: transaction.finance_type || undefined,
-        aid_type: transaction.aid_type || undefined,
-        tied_status: transaction.tied_status || undefined,
+        flow_type: transaction.effective_flow_type || transaction.flow_type || (defaultFlowType as FlowType) || undefined,
+        finance_type: transaction.effective_finance_type || transaction.finance_type || (defaultFinanceType as FinanceType) || undefined,
+        aid_type: transaction.effective_aid_type || transaction.aid_type || defaultAidType || undefined,
+        tied_status: transaction.effective_tied_status || transaction.tied_status || (defaultTiedStatus as TiedStatus) || undefined,
         
         // Sector & Geography (single values)
         sector_code: transaction.sector_code || '',
@@ -1640,6 +1650,7 @@ export default function TransactionModal({
                   }}
                   placeholder="Search for provider organization..."
                   organizations={organizations}
+                  fallbackRef={formData.provider_org_ref}
                 />
               </div>
 
@@ -1841,6 +1852,7 @@ export default function TransactionModal({
                   }}
                   placeholder="Search for receiver organization..."
                   organizations={organizations}
+                  fallbackRef={formData.receiver_org_ref}
                 />
               </div>
 

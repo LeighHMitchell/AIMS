@@ -124,7 +124,7 @@ const ACTIVITY_EDITOR_COLUMN_GROUPS = {
 const DEFAULT_VISIBLE_ACTIVITY_EDITOR_COLUMNS: ActivityEditorColumnId[] = 
   ACTIVITY_EDITOR_COLUMN_CONFIGS.filter(col => col.defaultVisible || col.alwaysVisible).map(col => col.id);
 
-const ACTIVITY_EDITOR_COLUMNS_LOCALSTORAGE_KEY = 'aims_activity_editor_transaction_visible_columns';
+const ACTIVITY_EDITOR_COLUMNS_LOCALSTORAGE_KEY = 'aims_activity_editor_transaction_visible_columns_v2';  // v2: Finance Type column now visible
 
 // Column Selector Component for Activity Editor
 interface ActivityEditorColumnSelectorProps {

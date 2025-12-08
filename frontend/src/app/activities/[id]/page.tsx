@@ -379,7 +379,7 @@ export default function ActivityDetailPage() {
   const id = params?.id as string
   const [loading, setLoading] = useState(true)
   const [activity, setActivity] = useState<Activity | null>(null)
-  const [budgets, setBudgets] = useState<any[]>([])
+  const [budgets, setBudgets] = useState<any[] | undefined>(undefined)
   const [activeTab, setActiveTab] = useState("finances")
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
   const [isBudgetsOpen, setIsBudgetsOpen] = useState(true)
@@ -507,7 +507,7 @@ export default function ActivityDetailPage() {
   const [sdgMappings, setSdgMappings] = useState<any[]>([])
   const [documents, setDocuments] = useState<any[]>([])
   const [participatingOrgs, setParticipatingOrgs] = useState<any[]>([])
-  const [plannedDisbursements, setPlannedDisbursements] = useState<any[]>([])
+  const [plannedDisbursements, setPlannedDisbursements] = useState<any[] | undefined>(undefined)
   const [activityLocations, setActivityLocations] = useState<any[]>([])
   const [allActivityLocations, setAllActivityLocations] = useState<any[]>([])
   const [subnationalBreakdowns, setSubnationalBreakdowns] = useState<Record<string, number>>({})
@@ -1013,7 +1013,7 @@ export default function ActivityDetailPage() {
   }, [activity]);
 
   // Calculate total planned disbursements (USD only) - must be before early returns
-  const totalPlannedDisbursements = plannedDisbursements.reduce((sum: number, pd: any) => {
+  const totalPlannedDisbursements = (plannedDisbursements || []).reduce((sum: number, pd: any) => {
     // Use usdAmount if available (primary source)
     if (pd.usdAmount != null && pd.usdAmount > 0) {
       return sum + parseFloat(pd.usdAmount);
@@ -2386,7 +2386,7 @@ export default function ActivityDetailPage() {
                     size="sm"
                     onClick={() => {
                       const budgetsByYearMap = new Map<number, number>()
-                      budgets.forEach(budget => {
+                      ;(budgets || []).forEach(budget => {
                         if (budget.period_start) {
                           const year = new Date(budget.period_start).getFullYear()
                           const usdValue = budget.usd_value || (budget.currency === 'USD' ? budget.value : 0)
@@ -2421,7 +2421,7 @@ export default function ActivityDetailPage() {
                 {(() => {
                   // Calculate budgets by year
                   const budgetsByYear = new Map<number, number>()
-                  budgets.forEach(budget => {
+                  ;(budgets || []).forEach(budget => {
                     if (budgetAllocationMethod === 'proportional' && budget.period_start && budget.period_end) {
                       // Use proportional allocation
                       const allocations = splitBudgetAcrossYears(budget)
@@ -2581,7 +2581,7 @@ export default function ActivityDetailPage() {
                       const disbursementsByYearMap = new Map<number, number>()
                       const expendituresByYearMap = new Map<number, number>()
 
-                      plannedDisbursements.forEach((pd: any) => {
+                      ;(plannedDisbursements || []).forEach((pd: any) => {
                         if (pd.period_start) {
                           const year = new Date(pd.period_start).getFullYear()
                           const usdValue = pd.usd_amount || (pd.currency === 'USD' ? pd.value : 0)
@@ -2644,7 +2644,7 @@ export default function ActivityDetailPage() {
                   const expendituresByYearMap = new Map<number, number>()
 
                   // Process planned disbursements
-                  plannedDisbursements.forEach((pd: any) => {
+                  ;(plannedDisbursements || []).forEach((pd: any) => {
                     if (budgetVsSpendAllocationMethod === 'proportional' && pd.period_start && pd.period_end) {
                       // Use proportional allocation
                       const allocations = splitPlannedDisbursementAcrossYears(pd)
@@ -3283,7 +3283,7 @@ export default function ActivityDetailPage() {
                     let totalExpended = 0;
 
                     // From planned disbursements - use USD values
-                    plannedDisbursements.forEach((pd: any) => {
+                    ;(plannedDisbursements || []).forEach((pd: any) => {
                       if (pd.provider_org_id === orgId || pd.provider_org_name === orgName) {
                         // Use usd_amount or usdAmount (check both field name variations)
                         const usdValue = pd.usd_amount || pd.usdAmount || (pd.currency === 'USD' ? pd.amount : 0) || 0;
@@ -3331,7 +3331,7 @@ export default function ActivityDetailPage() {
                     const participatingOrgNames = new Set(participatingOrgs.map(p => p.organization?.name || p.narrative).filter(Boolean));
 
                     // From planned disbursements
-                    plannedDisbursements.forEach((pd: any) => {
+                    ;(plannedDisbursements || []).forEach((pd: any) => {
                       // Check provider
                       if (pd.provider_org_name && !participatingOrgNames.has(pd.provider_org_name)) {
                         const key = pd.provider_org_id || pd.provider_org_name;

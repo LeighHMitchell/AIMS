@@ -6,6 +6,7 @@ import { iatiAnalytics } from '@/lib/analytics';
 import { USER_ROLES } from '@/types/user';
 import { getOrCreateOrganization } from '@/lib/organization-helpers';
 import { sanitizeIatiDescriptionServerSafe } from '@/lib/sanitize-server';
+import { convertTransactionToUSD, addUSDFieldsToTransaction } from '@/lib/transaction-usd-helper';
 
 export const dynamic = 'force-dynamic';
 
@@ -1232,14 +1233,14 @@ export async function POST(request: NextRequest) {
               )
             );
             
-            // Filter out duplicates and prepare transactions
-            const validTransactions = parsedActivity.transactions
-              .filter((t: any) => {
-                if (!t || t.value === undefined) return false;
-                const signature = `${t.type}-${t.date}-${t.value}-${t.currency || 'USD'}`;
-                return !existingSignatures.has(signature);
-              })
-              .map((t: any) => ({
+            // Filter out duplicates and prepare transactions with USD conversion
+            const validTransactions: any[] = [];
+            for (const t of parsedActivity.transactions) {
+              if (!t || t.value === undefined) continue;
+              const signature = `${t.type}-${t.date}-${t.value}-${t.currency || 'USD'}`;
+              if (existingSignatures.has(signature)) continue;
+              
+              const transactionData = {
                 activity_id: finalActivityId,
                 transaction_type: t.type,
                 transaction_date: t.date || null,
@@ -1260,7 +1261,25 @@ export async function POST(request: NextRequest) {
                 disbursement_channel: t.disbursementChannel || null,
                 created_at: new Date().toISOString(),
                 updated_at: new Date().toISOString()
-              }));
+              };
+              
+              // Convert to USD
+              const usdResult = await convertTransactionToUSD(
+                transactionData.value,
+                transactionData.currency,
+                transactionData.transaction_date || new Date().toISOString()
+              );
+              
+              if (usdResult.success) {
+                console.log(`[Import as Reporting Org] USD conversion: ${transactionData.value} ${transactionData.currency} = $${usdResult.value_usd} USD`);
+              } else {
+                console.warn(`[Import as Reporting Org] USD conversion failed: ${usdResult.error}`);
+              }
+              
+              // Add USD fields to transaction data
+              const transactionDataWithUSD = addUSDFieldsToTransaction(transactionData, usdResult);
+              validTransactions.push(transactionDataWithUSD);
+            }
             
             if (validTransactions.length > 0) {
               const { error: transactionsError } = await supabase
