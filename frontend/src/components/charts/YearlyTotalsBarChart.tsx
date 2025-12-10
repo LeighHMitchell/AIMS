@@ -503,12 +503,7 @@ export function YearlyTotalsBarChart({
     return (
       <Card className="bg-white border-slate-200">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <div>
-            <CardTitle className="text-lg font-semibold text-slate-900">{title}</CardTitle>
-            {description && <CardDescription>{description}</CardDescription>}
-          </div>
           <div className="flex items-center gap-2">
-            {showViewModeToggle && <ViewModeToggle />}
             <Button
               variant="ghost"
               size="sm"
@@ -517,6 +512,13 @@ export function YearlyTotalsBarChart({
             >
               {isCollapsed ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
             </Button>
+            <div>
+              <CardTitle className="text-lg font-semibold text-slate-900">{title}</CardTitle>
+              {description && <CardDescription>{description}</CardDescription>}
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            {showViewModeToggle && <ViewModeToggle />}
           </div>
         </CardHeader>
         {!isCollapsed && (
@@ -533,12 +535,7 @@ export function YearlyTotalsBarChart({
   return (
     <Card className="bg-white border-slate-200">
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <div>
-          <CardTitle className="text-lg font-semibold text-slate-900">{title}</CardTitle>
-          {description && <CardDescription>{description}</CardDescription>}
-        </div>
         <div className="flex items-center gap-2">
-          {showViewModeToggle && hasData && <ViewModeToggle />}
           <Button
             variant="ghost"
             size="sm"
@@ -547,6 +544,13 @@ export function YearlyTotalsBarChart({
           >
             {isCollapsed ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
           </Button>
+          <div>
+            <CardTitle className="text-lg font-semibold text-slate-900">{title}</CardTitle>
+            {description && <CardDescription>{description}</CardDescription>}
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          {showViewModeToggle && hasData && <ViewModeToggle />}
         </div>
       </CardHeader>
       {!isCollapsed && (

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
@@ -11,6 +11,8 @@ import {
   Trash2,
   MoreVertical,
   Calendar,
+  Columns3,
+  Search,
 } from "lucide-react";
 import { format } from "date-fns";
 import { Badge } from "@/components/ui/badge";
@@ -37,7 +39,231 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Budget, BUDGET_TYPE_LABELS, BUDGET_STATUS_LABELS, BudgetType, BudgetStatus } from "@/types/budget";
+
+// Column configuration for Budget Table
+type BudgetColumnId = 
+  | 'activity' | 'periodStart' | 'periodEnd' | 'type' 
+  | 'status' | 'value' | 'valueDate' | 'valueUsd';
+
+interface BudgetColumnConfig {
+  id: BudgetColumnId;
+  label: string;
+  group: 'default' | 'details';
+  defaultVisible?: boolean;
+  sortable?: boolean;
+  sortField?: string;
+  align?: 'left' | 'center' | 'right';
+}
+
+const BUDGET_COLUMN_CONFIGS: BudgetColumnConfig[] = [
+  { id: 'activity', label: 'Activity Title', group: 'default', defaultVisible: true, sortable: true, sortField: 'activity', align: 'left' },
+  { id: 'periodStart', label: 'Start Date', group: 'default', defaultVisible: true, sortable: true, sortField: 'period_start', align: 'left' },
+  { id: 'periodEnd', label: 'End Date', group: 'default', defaultVisible: true, sortable: true, sortField: 'period_end', align: 'left' },
+  { id: 'type', label: 'Type', group: 'default', defaultVisible: true, sortable: true, sortField: 'type', align: 'left' },
+  { id: 'status', label: 'Status', group: 'default', defaultVisible: true, sortable: true, sortField: 'status', align: 'left' },
+  { id: 'value', label: 'Currency Value', group: 'default', defaultVisible: true, sortable: true, sortField: 'value', align: 'right' },
+  { id: 'valueDate', label: 'Value Date', group: 'details', defaultVisible: false, sortable: true, sortField: 'value_date', align: 'left' },
+  { id: 'valueUsd', label: 'USD Value', group: 'default', defaultVisible: true, sortable: true, sortField: 'value_usd', align: 'right' },
+];
+
+const BUDGET_COLUMN_GROUPS = {
+  default: 'Default Columns',
+  details: 'Additional Details',
+};
+
+const DEFAULT_VISIBLE_BUDGET_COLUMNS: BudgetColumnId[] = 
+  BUDGET_COLUMN_CONFIGS.filter(col => col.defaultVisible).map(col => col.id);
+
+const BUDGET_COLUMNS_LOCALSTORAGE_KEY = 'aims_budget_table_visible_columns';
+
+// Column Selector Component for Budget Table
+interface BudgetColumnSelectorProps {
+  visibleColumns: BudgetColumnId[];
+  onColumnsChange: (columns: BudgetColumnId[]) => void;
+}
+
+function BudgetColumnSelector({ visibleColumns, onColumnsChange }: BudgetColumnSelectorProps) {
+  const [open, setOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const toggleColumn = (columnId: BudgetColumnId) => {
+    if (visibleColumns.includes(columnId)) {
+      onColumnsChange(visibleColumns.filter(id => id !== columnId));
+    } else {
+      onColumnsChange([...visibleColumns, columnId]);
+    }
+  };
+
+  const toggleGroup = (group: keyof typeof BUDGET_COLUMN_GROUPS) => {
+    const groupColumns = BUDGET_COLUMN_CONFIGS.filter(c => c.group === group);
+    const allVisible = groupColumns.every(c => visibleColumns.includes(c.id));
+    
+    if (allVisible) {
+      onColumnsChange(visibleColumns.filter(id => !groupColumns.find(c => c.id === id)));
+    } else {
+      const newColumns = [...visibleColumns];
+      groupColumns.forEach(c => {
+        if (!newColumns.includes(c.id)) {
+          newColumns.push(c.id);
+        }
+      });
+      onColumnsChange(newColumns);
+    }
+  };
+
+  const resetToDefaults = () => {
+    onColumnsChange(DEFAULT_VISIBLE_BUDGET_COLUMNS);
+  };
+
+  const selectAll = () => {
+    const allColumnIds = BUDGET_COLUMN_CONFIGS.map(c => c.id);
+    onColumnsChange(allColumnIds);
+  };
+
+  const visibleCount = visibleColumns.length;
+  const totalColumns = BUDGET_COLUMN_CONFIGS.length;
+
+  // Filter columns based on search query
+  const filteredColumns = useMemo(() => {
+    if (!searchQuery.trim()) return null; // null means show grouped view
+    const query = searchQuery.toLowerCase();
+    return BUDGET_COLUMN_CONFIGS.filter(c => 
+      c.label.toLowerCase().includes(query)
+    );
+  }, [searchQuery]);
+
+  return (
+    <Popover open={open} onOpenChange={(isOpen) => {
+      setOpen(isOpen);
+      if (!isOpen) setSearchQuery(''); // Clear search when closing
+    }}>
+      <PopoverTrigger asChild>
+        <Button variant="outline" size="sm" className="gap-2">
+          <Columns3 className="h-4 w-4" />
+          <span className="hidden sm:inline">Columns</span>
+          <Badge variant="secondary" className="ml-1 px-1.5 py-0 text-xs">
+            {visibleCount}
+          </Badge>
+          <ChevronDown className="h-3 w-3 opacity-50" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-80 p-0 z-[100]" align="end" sideOffset={5}>
+        <div className="p-3 border-b">
+          <div className="flex items-center justify-between">
+            <h4 className="font-medium text-sm">Visible Columns</h4>
+            <div className="flex items-center gap-1">
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={selectAll}
+                className="h-7 text-xs"
+              >
+                Select all
+              </Button>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={resetToDefaults}
+                className="h-7 text-xs"
+              >
+                Reset
+              </Button>
+            </div>
+          </div>
+          <p className="text-xs text-muted-foreground mt-1">
+            {visibleCount} of {totalColumns} columns visible
+          </p>
+          <div className="relative mt-2">
+            <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search columns..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-8 h-8 text-sm"
+            />
+          </div>
+        </div>
+        <div className="max-h-[400px] overflow-y-auto">
+          {filteredColumns ? (
+            // Show flat filtered list when searching
+            filteredColumns.length === 0 ? (
+              <div className="p-3 text-sm text-muted-foreground text-center">
+                No columns match "{searchQuery}"
+              </div>
+            ) : (
+              <div className="py-1">
+                {filteredColumns.map(column => (
+                  <div
+                    key={column.id}
+                    className="flex items-center gap-2 px-3 py-1.5 hover:bg-muted/50 cursor-pointer"
+                    onClick={() => toggleColumn(column.id)}
+                  >
+                    <Checkbox 
+                      checked={visibleColumns.includes(column.id)}
+                      onCheckedChange={() => toggleColumn(column.id)}
+                    />
+                    <span className="text-sm">{column.label}</span>
+                    <span className="text-xs text-muted-foreground ml-auto">
+                      {BUDGET_COLUMN_GROUPS[column.group as keyof typeof BUDGET_COLUMN_GROUPS]}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )
+          ) : (
+            // Show grouped view when not searching
+            (Object.keys(BUDGET_COLUMN_GROUPS) as Array<keyof typeof BUDGET_COLUMN_GROUPS>).map(groupKey => {
+              const groupColumns = BUDGET_COLUMN_CONFIGS.filter(c => c.group === groupKey);
+              if (groupColumns.length === 0) return null;
+              
+              const allVisible = groupColumns.every(c => visibleColumns.includes(c.id));
+              const someVisible = groupColumns.some(c => visibleColumns.includes(c.id));
+              
+              return (
+                <div key={groupKey} className="border-b last:border-b-0">
+                  <div 
+                    className="flex items-center gap-2 px-3 py-2 bg-muted/50 cursor-pointer hover:bg-muted/80"
+                    onClick={() => toggleGroup(groupKey)}
+                  >
+                    <Checkbox 
+                      checked={allVisible}
+                      // @ts-ignore - indeterminate is valid but not in types
+                      indeterminate={someVisible && !allVisible}
+                      onCheckedChange={() => toggleGroup(groupKey)}
+                    />
+                    <span className="text-sm font-medium">{BUDGET_COLUMN_GROUPS[groupKey]}</span>
+                  </div>
+                  <div className="py-1">
+                    {groupColumns.map(column => (
+                      <div
+                        key={column.id}
+                        className="flex items-center gap-2 px-3 py-1.5 hover:bg-muted/50 cursor-pointer"
+                        onClick={() => toggleColumn(column.id)}
+                      >
+                        <Checkbox 
+                          checked={visibleColumns.includes(column.id)}
+                          onCheckedChange={() => toggleColumn(column.id)}
+                        />
+                        <span className="text-sm">{column.label}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+// Export column types for parent components
+export type { BudgetColumnId };
+export { DEFAULT_VISIBLE_BUDGET_COLUMNS, BUDGET_COLUMNS_LOCALSTORAGE_KEY, BudgetColumnSelector };
 
 interface BudgetTableProps {
   budgets: Budget[];
@@ -53,6 +279,8 @@ interface BudgetTableProps {
   selectedIds?: Set<string>;
   onSelectAll?: (checked: boolean) => void;
   onSelectBudget?: (id: string, checked: boolean) => void;
+  visibleColumns?: BudgetColumnId[];
+  onColumnsChange?: (columns: BudgetColumnId[]) => void;
 }
 
 export function BudgetTable({
@@ -69,9 +297,19 @@ export function BudgetTable({
   selectedIds,
   onSelectAll,
   onSelectBudget,
+  visibleColumns = DEFAULT_VISIBLE_BUDGET_COLUMNS,
+  onColumnsChange,
 }: BudgetTableProps) {
   const router = useRouter();
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
+  
+  // Column visibility helper
+  const isColumnVisible = (columnId: BudgetColumnId) => {
+    return visibleColumns.includes(columnId);
+  };
+
+  // Calculate colspan for expanded row
+  const visibleColumnCount = visibleColumns.length + 2; // +2 for checkbox and actions columns
 
   const toggleRowExpansion = (budgetId: string) => {
     setExpandedRows(prev => {
@@ -185,78 +423,94 @@ export function BudgetTable({
                   </div>
                 )}
               </TableHead>
-              <TableHead
-                className="text-sm font-medium text-foreground/90 py-3 px-4 cursor-pointer hover:bg-muted/30 transition-colors max-w-[200px]"
-                onClick={() => onSort("activity")}
-              >
-                <div className="flex items-center gap-1">
-                  <span>Activity Title</span>
-                  {getSortIcon("activity")}
-                </div>
-              </TableHead>
-              <TableHead
-                className="text-sm font-medium text-foreground/90 py-3 px-4 cursor-pointer hover:bg-muted/30 transition-colors"
-                onClick={() => onSort("period_start")}
-              >
-                <div className="flex items-center gap-1">
-                  <span>Start Date</span>
-                  {getSortIcon("period_start")}
-                </div>
-              </TableHead>
-              <TableHead
-                className="text-sm font-medium text-foreground/90 py-3 px-4 cursor-pointer hover:bg-muted/30 transition-colors"
-                onClick={() => onSort("period_end")}
-              >
-                <div className="flex items-center gap-1">
-                  <span>End Date</span>
-                  {getSortIcon("period_end")}
-                </div>
-              </TableHead>
-              <TableHead
-                className="text-sm font-medium text-foreground/90 py-3 px-4 cursor-pointer hover:bg-muted/30 transition-colors"
-                onClick={() => onSort("type")}
-              >
-                <div className="flex items-center gap-1">
-                  <span>Type</span>
-                  {getSortIcon("type")}
-                </div>
-              </TableHead>
-              <TableHead
-                className="text-sm font-medium text-foreground/90 py-3 px-4 cursor-pointer hover:bg-muted/30 transition-colors"
-                onClick={() => onSort("status")}
-              >
-                <div className="flex items-center gap-1">
-                  <span>Status</span>
-                  {getSortIcon("status")}
-                </div>
-              </TableHead>
-              <TableHead
-                className="text-sm font-medium text-foreground/90 py-3 px-4 text-right cursor-pointer hover:bg-muted/30 transition-colors"
-                onClick={() => onSort("value")}
-              >
-                <div className="flex items-center justify-end gap-1">
-                  <span>Currency Value</span>
-                  {getSortIcon("value")}
-                </div>
-              </TableHead>
-              <TableHead
-                className="text-sm font-medium text-foreground/90 py-3 px-4 cursor-pointer hover:bg-muted/30 transition-colors"
-                onClick={() => onSort("value_date")}
-              >
-                <div className="flex items-center gap-1">
-                  <span>Value Date</span>
-                  {getSortIcon("value_date")}
-                </div>
-              </TableHead>
-              <TableHead
-                className="text-sm font-medium text-foreground/90 py-3 px-4 text-right cursor-pointer hover:bg-muted/30 transition-colors"
-                onClick={() => onSort("value_usd")}
-              >
-                <div className="flex items-center justify-end gap-1">
-                  <span>USD Value</span>
-                  {getSortIcon("value_usd")}
-                </div>
-              </TableHead>
+              {isColumnVisible('activity') && (
+                <TableHead
+                  className="text-sm font-medium text-foreground/90 py-3 px-4 cursor-pointer hover:bg-muted/30 transition-colors max-w-[200px]"
+                  onClick={() => onSort("activity")}
+                >
+                  <div className="flex items-center gap-1">
+                    <span>Activity Title</span>
+                    {getSortIcon("activity")}
+                  </div>
+                </TableHead>
+              )}
+              {isColumnVisible('periodStart') && (
+                <TableHead
+                  className="text-sm font-medium text-foreground/90 py-3 px-4 cursor-pointer hover:bg-muted/30 transition-colors"
+                  onClick={() => onSort("period_start")}
+                >
+                  <div className="flex items-center gap-1">
+                    <span>Start Date</span>
+                    {getSortIcon("period_start")}
+                  </div>
+                </TableHead>
+              )}
+              {isColumnVisible('periodEnd') && (
+                <TableHead
+                  className="text-sm font-medium text-foreground/90 py-3 px-4 cursor-pointer hover:bg-muted/30 transition-colors"
+                  onClick={() => onSort("period_end")}
+                >
+                  <div className="flex items-center gap-1">
+                    <span>End Date</span>
+                    {getSortIcon("period_end")}
+                  </div>
+                </TableHead>
+              )}
+              {isColumnVisible('type') && (
+                <TableHead
+                  className="text-sm font-medium text-foreground/90 py-3 px-4 cursor-pointer hover:bg-muted/30 transition-colors"
+                  onClick={() => onSort("type")}
+                >
+                  <div className="flex items-center gap-1">
+                    <span>Type</span>
+                    {getSortIcon("type")}
+                  </div>
+                </TableHead>
+              )}
+              {isColumnVisible('status') && (
+                <TableHead
+                  className="text-sm font-medium text-foreground/90 py-3 px-4 cursor-pointer hover:bg-muted/30 transition-colors"
+                  onClick={() => onSort("status")}
+                >
+                  <div className="flex items-center gap-1">
+                    <span>Status</span>
+                    {getSortIcon("status")}
+                  </div>
+                </TableHead>
+              )}
+              {isColumnVisible('value') && (
+                <TableHead
+                  className="text-sm font-medium text-foreground/90 py-3 px-4 text-right cursor-pointer hover:bg-muted/30 transition-colors"
+                  onClick={() => onSort("value")}
+                >
+                  <div className="flex items-center justify-end gap-1">
+                    <span>Currency Value</span>
+                    {getSortIcon("value")}
+                  </div>
+                </TableHead>
+              )}
+              {isColumnVisible('valueDate') && (
+                <TableHead
+                  className="text-sm font-medium text-foreground/90 py-3 px-4 cursor-pointer hover:bg-muted/30 transition-colors"
+                  onClick={() => onSort("value_date")}
+                >
+                  <div className="flex items-center gap-1">
+                    <span>Value Date</span>
+                    {getSortIcon("value_date")}
+                  </div>
+                </TableHead>
+              )}
+              {isColumnVisible('valueUsd') && (
+                <TableHead
+                  className="text-sm font-medium text-foreground/90 py-3 px-4 text-right cursor-pointer hover:bg-muted/30 transition-colors"
+                  onClick={() => onSort("value_usd")}
+                >
+                  <div className="flex items-center justify-end gap-1">
+                    <span>USD Value</span>
+                    {getSortIcon("value_usd")}
+                  </div>
+                </TableHead>
+              )}
               <TableHead className="text-sm font-medium text-foreground/90 py-3 px-4 text-right">
                 Actions
               </TableHead>
@@ -308,71 +562,87 @@ export function BudgetTable({
                     </td>
 
                     {/* Activity Title */}
-                    <td className="py-3 px-4 max-w-[200px]">
-                      <div
-                        className="space-y-0.5 cursor-pointer hover:opacity-75 group"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          if (budget.activity_id) {
-                            window.location.href = `/activities/${budget.activity_id}`;
-                          }
-                        }}
-                      >
-                        <div className="text-sm font-medium text-foreground line-clamp-2">
-                          {activityTitle}
-                        </div>
-                        {budget.activity?.iati_identifier && (
-                          <div className="text-xs text-muted-foreground font-mono truncate">
-                            {budget.activity.iati_identifier}
+                    {isColumnVisible('activity') && (
+                      <td className="py-3 px-4 max-w-[200px]">
+                        <div
+                          className="space-y-0.5 cursor-pointer hover:opacity-75 group"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (budget.activity_id) {
+                              window.location.href = `/activities/${budget.activity_id}`;
+                            }
+                          }}
+                        >
+                          <div className="text-sm font-medium text-foreground line-clamp-2">
+                            {activityTitle}
                           </div>
-                        )}
-                      </div>
-                    </td>
+                          {budget.activity?.iati_identifier && (
+                            <div className="text-xs text-muted-foreground font-mono truncate">
+                              {budget.activity.iati_identifier}
+                            </div>
+                          )}
+                        </div>
+                      </td>
+                    )}
 
                     {/* Start Date */}
-                    <td className="py-3 px-4 whitespace-nowrap">
-                      {formatDate(budget.period_start)}
-                    </td>
+                    {isColumnVisible('periodStart') && (
+                      <td className="py-3 px-4 whitespace-nowrap">
+                        {formatDate(budget.period_start)}
+                      </td>
+                    )}
 
                     {/* End Date */}
-                    <td className="py-3 px-4 whitespace-nowrap">
-                      {formatDate(budget.period_end)}
-                    </td>
+                    {isColumnVisible('periodEnd') && (
+                      <td className="py-3 px-4 whitespace-nowrap">
+                        {formatDate(budget.period_end)}
+                      </td>
+                    )}
 
                     {/* Type */}
-                    <td className="py-3 px-4 whitespace-nowrap">
-                      <Badge variant="outline" className="bg-muted/50">
-                        {getBudgetTypeLabel(budget.type)}
-                      </Badge>
-                    </td>
+                    {isColumnVisible('type') && (
+                      <td className="py-3 px-4 whitespace-nowrap">
+                        <Badge variant="outline" className="bg-muted/50">
+                          {getBudgetTypeLabel(budget.type)}
+                        </Badge>
+                      </td>
+                    )}
 
                     {/* Status */}
-                    <td className="py-3 px-4 whitespace-nowrap">
-                      <Badge variant="outline" className="bg-muted/50">
-                        {getBudgetStatusLabel(budget.status)}
-                      </Badge>
-                    </td>
+                    {isColumnVisible('status') && (
+                      <td className="py-3 px-4 whitespace-nowrap">
+                        <Badge variant="outline" className="bg-muted/50">
+                          {getBudgetStatusLabel(budget.status)}
+                        </Badge>
+                      </td>
+                    )}
 
                     {/* Currency Value */}
-                    <td className="py-3 px-4 text-right whitespace-nowrap">
-                      {budget.value != null ? formatCurrency(budget.value, budget.currency) : '—'}
-                    </td>
+                    {isColumnVisible('value') && (
+                      <td className="py-3 px-4 text-right whitespace-nowrap">
+                        {budget.value != null ? formatCurrency(budget.value, budget.currency) : '—'}
+                      </td>
+                    )}
 
                     {/* Value Date */}
-                    <td className="py-3 px-4 whitespace-nowrap">
-                      {formatDate(budget.value_date)}
-                    </td>
+                    {isColumnVisible('valueDate') && (
+                      <td className="py-3 px-4 whitespace-nowrap">
+                        {formatDate(budget.value_date)}
+                      </td>
+                    )}
 
                     {/* USD Value */}
-                    <td className="py-3 px-4 text-right whitespace-nowrap">
-                      {budget.value_usd != null ? (
-                        <span className="font-medium">
-                          {formatCurrency(budget.value_usd, 'USD')}
-                        </span>
-                      ) : (
-                        <span className="text-muted-foreground">—</span>
-                      )}
-                    </td>
+                    {isColumnVisible('valueUsd') && (
+                      <td className="py-3 px-4 text-right whitespace-nowrap">
+                        {budget.value_usd != null ? (
+                          <span className="font-medium">
+                            {formatCurrency(budget.value_usd, 'USD')}
+                          </span>
+                        ) : (
+                          <span className="text-muted-foreground">—</span>
+                        )}
+                      </td>
+                    )}
 
                     <td className="py-3 px-4 text-right" onClick={(e) => e.stopPropagation()}>
                       <DropdownMenu>
@@ -415,7 +685,7 @@ export function BudgetTable({
                   {/* Expanded Row Content */}
                   {isExpanded && (
                     <TableRow className="bg-slate-50/50">
-                      <td colSpan={11} className="p-6">
+                      <td colSpan={visibleColumnCount} className="p-6">
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                           {/* LEFT COLUMN */}
                           <div className="space-y-4">

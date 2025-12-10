@@ -2,6 +2,7 @@
 
 import React, { useState } from "react"
 import { useRouter } from "next/navigation"
+import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { 
   DropdownMenu,
@@ -222,9 +223,11 @@ export function TopNav({ user, canCreateActivities, isInActivityEditor = false, 
                       <span>Share Feedback</span>
                     </DropdownMenuItem>
                     {user.role === USER_ROLES.SUPER_USER && (
-                      <DropdownMenuItem onClick={() => router.push('/admin?tab=feedback')}>
-                        <Eye className="mr-2 h-4 w-4" />
-                        <span>View Feedback</span>
+                      <DropdownMenuItem asChild>
+                        <Link href="/admin?tab=feedback">
+                          <Eye className="mr-2 h-4 w-4" />
+                          <span>View Feedback</span>
+                        </Link>
                       </DropdownMenuItem>
                     )}
                   </DropdownMenuSubContent>

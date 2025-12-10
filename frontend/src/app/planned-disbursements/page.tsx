@@ -10,7 +10,13 @@ import { useRouter } from "next/navigation";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { Download, ChevronLeft, ChevronRight } from "lucide-react";
-import { PlannedDisbursementsTable } from "@/components/planned-disbursements/PlannedDisbursementsTable";
+import { 
+  PlannedDisbursementsTable, 
+  PlannedDisbursementColumnSelector,
+  DEFAULT_VISIBLE_PLANNED_DISBURSEMENT_COLUMNS,
+  PLANNED_DISBURSEMENT_COLUMNS_LOCALSTORAGE_KEY,
+  type PlannedDisbursementColumnId 
+} from "@/components/planned-disbursements/PlannedDisbursementsTable";
 import { BulkActionToolbar } from "@/components/ui/bulk-action-toolbar";
 import { BulkDeleteDialog } from "@/components/dialogs/bulk-delete-dialog";
 import { YearlyTotalsBarChart, SingleSeriesDataPoint } from "@/components/charts/YearlyTotalsBarChart";
@@ -39,6 +45,28 @@ export default function PlannedDisbursementsPage() {
     dateFrom: "",
     dateTo: "",
   });
+
+  // Column visibility state with localStorage persistence
+  const [visibleColumns, setVisibleColumns] = useState<PlannedDisbursementColumnId[]>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem(PLANNED_DISBURSEMENT_COLUMNS_LOCALSTORAGE_KEY);
+      if (saved) {
+        try {
+          return JSON.parse(saved);
+        } catch {
+          return DEFAULT_VISIBLE_PLANNED_DISBURSEMENT_COLUMNS;
+        }
+      }
+    }
+    return DEFAULT_VISIBLE_PLANNED_DISBURSEMENT_COLUMNS;
+  });
+
+  // Save column visibility to localStorage
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(PLANNED_DISBURSEMENT_COLUMNS_LOCALSTORAGE_KEY, JSON.stringify(visibleColumns));
+    }
+  }, [visibleColumns]);
 
   // Yearly summary state for chart
   const [yearlySummary, setYearlySummary] = useState<SingleSeriesDataPoint[]>([]);
@@ -370,12 +398,18 @@ export default function PlannedDisbursementsPage() {
             </div>
           </div>
 
-          {/* Results Summary */}
-          <p className="text-sm text-slate-600 whitespace-nowrap">
-            {totalDisbursements === 0
-              ? "No planned disbursements"
-              : `Showing ${startIndex + 1}–${endIndex} of ${totalDisbursements} planned disbursements`}
-          </p>
+          {/* Column Selector + Results Summary */}
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+            <PlannedDisbursementColumnSelector
+              visibleColumns={visibleColumns}
+              onColumnsChange={setVisibleColumns}
+            />
+            <p className="text-sm text-slate-600 whitespace-nowrap">
+              {totalDisbursements === 0
+                ? "No planned disbursements"
+                : `Showing ${startIndex + 1}–${endIndex} of ${totalDisbursements} planned disbursements`}
+            </p>
+          </div>
         </div>
 
         {/* Yearly Summary Chart */}
@@ -415,6 +449,8 @@ export default function PlannedDisbursementsPage() {
                 selectedIds={selectedDisbursementIds}
                 onSelectAll={handleSelectAll}
                 onSelectDisbursement={handleSelectDisbursement}
+                visibleColumns={visibleColumns}
+                onColumnsChange={setVisibleColumns}
               />
             </div>
           </div>

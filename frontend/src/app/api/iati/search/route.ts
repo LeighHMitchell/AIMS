@@ -142,10 +142,21 @@ export async function POST(request: NextRequest) {
       return str.replace(/[+\-&|!(){}[\]^"~:\\\/]/g, '\\$&')
     }
 
+    // Helper function to escape hyphens for Solr exact matching
+    // Hyphens are interpreted as NOT operators in Solr unless escaped
+    const escapeSolrHyphens = (str: string) => {
+      return str.replace(/-/g, '\\-')
+    }
+
     let searchQuery
     if (isIatiId) {
-      // Exact match for IATI identifier
-      searchQuery = `iati_identifier:"${trimmedTitle}"`
+      // Search by IATI identifier using multiple strategies for reliability:
+      // The IATI Datastore tokenizes identifiers on hyphens, so we use multiple approaches:
+      // 1. Wildcard search on the last segment (e.g., *P174951*) - most reliable
+      // 2. iati_identifier_exact for activities that have this field indexed
+      // Extract the last segment of the identifier (after the last hyphen) for wildcard search
+      const lastSegment = trimmedTitle.split('-').pop() || trimmedTitle
+      searchQuery = `iati_identifier:*${lastSegment}* OR iati_identifier_exact:"${trimmedTitle}"`
     } else {
       // Try multiple search strategies for better results
       // 1. Remove words shorter than 3 chars (except acronyms in parentheses)

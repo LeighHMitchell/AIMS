@@ -156,7 +156,7 @@ export function CommentsDrawer({ activityId, isOpen, onClose }: CommentsDrawerPr
     if (isOpen && activityId) {
       fetchComments();
     }
-  }, [isOpen, activityId]);
+  }, [isOpen, activityId, showArchived]);
 
   const fetchComments = async () => {
     if (!activityId) return;

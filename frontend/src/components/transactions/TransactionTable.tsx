@@ -51,6 +51,7 @@ import {
 } from "lucide-react";
 import { TransactionValueDisplay } from "@/components/currency/TransactionValueDisplay";
 import { OrganizationLogo } from "@/components/ui/organization-logo";
+import { OrganizationHoverCard } from "@/components/ui/organization-hover-card";
 import { TIED_STATUS_LABELS } from "@/types/transaction";
 import { TransactionColumnId } from "@/app/transactions/page";
 
@@ -931,7 +932,12 @@ export function TransactionTable({
                   name: resolvedOrg.name,
                   acronym: resolvedOrg.acronym || resolvedOrg.name,
                   logo: resolvedOrg.logo,
-                  id: resolvedOrg.id
+                  id: resolvedOrg.id,
+                  type: resolvedOrg.Organisation_Type_Name || resolvedOrg.type,
+                  country: resolvedOrg.country,
+                  iati_org_id: resolvedOrg.iati_org_id,
+                  description: resolvedOrg.description,
+                  website: resolvedOrg.website
                 };
               }
               
@@ -939,7 +945,12 @@ export function TransactionTable({
                 name: orgName || "Unknown",
                 acronym: orgAcronym || orgName || "Unknown",
                 logo: null,
-                id: null
+                id: null,
+                type: null,
+                country: null,
+                iati_org_id: orgRef || null,
+                description: null,
+                website: null
               };
             };
             
@@ -1188,28 +1199,21 @@ export function TransactionTable({
                             name={providerDisplay}
                             size="sm"
                           />
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                {provider.id ? (
-                                  <Link 
-                                    href={`/organizations/${provider.id}`}
-                                    className="text-sm hover:text-gray-700 transition-colors"
-                                    onClick={(e) => e.stopPropagation()}
-                                  >
-                                    {providerDisplay}
-                                  </Link>
-                                ) : (
-                                  <span className="text-sm">
-                                    {providerDisplay}
-                                  </span>
-                                )}
-                              </TooltipTrigger>
-                              {transaction.provider_org_ref && (
-                                <TooltipContent side="top">
-                                  <p className="text-xs">{transaction.provider_org_ref}</p>
-                                </TooltipContent>
-                              )}
-                            </Tooltip>
+                          <OrganizationHoverCard organization={provider} side="top" align="start">
+                            {provider.id ? (
+                              <Link 
+                                href={`/organizations/${provider.id}`}
+                                className="text-sm hover:text-gray-700 transition-colors cursor-pointer"
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                {providerDisplay}
+                              </Link>
+                            ) : (
+                              <span className="text-sm cursor-default">
+                                {providerDisplay}
+                              </span>
+                            )}
+                          </OrganizationHoverCard>
                         </div>
                         {transaction.provider_org_activity_id && activityDetails[transaction.provider_org_activity_id] && (
                           <div className="text-xs text-gray-500 ml-5">
@@ -1228,28 +1232,21 @@ export function TransactionTable({
                             name={receiverDisplay}
                             size="sm"
                           />
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                {receiver.id ? (
-                                  <Link 
-                                    href={`/organizations/${receiver.id}`}
-                                    className="text-sm hover:text-gray-700 transition-colors"
-                                    onClick={(e) => e.stopPropagation()}
-                                  >
-                                    {receiverDisplay}
-                                  </Link>
-                                ) : (
-                                  <span className="text-sm">
-                                    {receiverDisplay}
-                                  </span>
-                                )}
-                              </TooltipTrigger>
-                              {transaction.receiver_org_ref && (
-                                <TooltipContent side="top">
-                                  <p className="text-xs">{transaction.receiver_org_ref}</p>
-                                </TooltipContent>
-                              )}
-                            </Tooltip>
+                          <OrganizationHoverCard organization={receiver} side="top" align="start">
+                            {receiver.id ? (
+                              <Link 
+                                href={`/organizations/${receiver.id}`}
+                                className="text-sm hover:text-gray-700 transition-colors cursor-pointer"
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                {receiverDisplay}
+                              </Link>
+                            ) : (
+                              <span className="text-sm cursor-default">
+                                {receiverDisplay}
+                              </span>
+                            )}
+                          </OrganizationHoverCard>
                         </div>
                         {transaction.receiver_org_activity_id && activityDetails[transaction.receiver_org_activity_id] && (
                           <div className="text-xs text-gray-500 ml-5">
@@ -1649,7 +1646,7 @@ export function TransactionTable({
             {/* Expanded Row Content - Data-Rich Card Dashboard */}
             {isExpanded && (
               <TableRow className="bg-slate-50/50">
-                <td colSpan={variant === "full" ? 10 : 9} className="p-6">
+                <td colSpan={100} className="p-6">
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     {/* LEFT COLUMN */}
                   <div className="space-y-4">

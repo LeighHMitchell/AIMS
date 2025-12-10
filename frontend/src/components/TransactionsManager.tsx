@@ -167,6 +167,11 @@ function ActivityEditorColumnSelector({ visibleColumns, onColumnsChange }: Activ
     onColumnsChange(DEFAULT_VISIBLE_ACTIVITY_EDITOR_COLUMNS);
   };
 
+  const selectAll = () => {
+    const allColumnIds = ACTIVITY_EDITOR_COLUMN_CONFIGS.map(c => c.id);
+    onColumnsChange(allColumnIds);
+  };
+
   const selectableColumns = ACTIVITY_EDITOR_COLUMN_CONFIGS.filter(c => !c.alwaysVisible);
   const visibleCount = visibleColumns.filter(id => !ACTIVITY_EDITOR_COLUMN_CONFIGS.find(c => c.id === id)?.alwaysVisible).length;
   const totalColumns = selectableColumns.length;
@@ -187,14 +192,24 @@ function ActivityEditorColumnSelector({ visibleColumns, onColumnsChange }: Activ
         <div className="p-3 border-b">
           <div className="flex items-center justify-between">
             <h4 className="font-medium text-sm">Visible Columns</h4>
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={resetToDefaults}
-              className="h-7 text-xs"
-            >
-              Reset to defaults
-            </Button>
+            <div className="flex items-center gap-1">
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={selectAll}
+                className="h-7 text-xs"
+              >
+                Select all
+              </Button>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={resetToDefaults}
+                className="h-7 text-xs"
+              >
+                Reset
+              </Button>
+            </div>
           </div>
           <p className="text-xs text-muted-foreground mt-1">
             {visibleCount} of {totalColumns} columns visible

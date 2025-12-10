@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { SystemTotals } from '@/lib/system-totals';
 
 /**
  * Optimized Activities Hook
@@ -8,9 +9,13 @@ import { useState, useEffect, useCallback, useRef } from 'react';
  * 2. Uses optimized API endpoint with server-side pagination
  * 3. Implements request cancellation
  * 4. Caches results for better UX
+ * 5. Includes system-wide totals for portfolio percentage calculations
  * 
  * Drop-in replacement for existing activity fetching logic
  */
+
+// Re-export SystemTotals for consumers of this hook
+export type { SystemTotals } from '@/lib/system-totals';
 
 interface Activity {
   id: string;
@@ -77,6 +82,8 @@ interface UseOptimizedActivitiesReturn {
     lastQueryTime: number;
     avgQueryTime: number;
   };
+  /** System-wide totals for calculating portfolio percentage shares */
+  systemTotals: SystemTotals | null;
 }
 
 export function useOptimizedActivities(
@@ -101,6 +108,7 @@ export function useOptimizedActivities(
   const [totalPages, setTotalPages] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
+  const [systemTotals, setSystemTotals] = useState<SystemTotals | null>(null);
   
   // Sorting
   const [sortField, setSortField] = useState('updatedAt');
@@ -170,6 +178,7 @@ export function useOptimizedActivities(
         setActivities(cached.data);
         setTotalCount(cached.totalCount);
         setTotalPages(cached.totalPages);
+        setSystemTotals(cached.systemTotals || null);
         setLoading(false);
         return;
       }
@@ -246,16 +255,21 @@ export function useOptimizedActivities(
       const rawTotal = (data.pagination?.total ?? data.pagination?.totalCount ?? data.totalCount);
       const totalCount = typeof rawTotal === 'number' ? rawTotal : activities.length;
       const totalPages = data.pagination?.totalPages ?? (typeof rawTotal === 'number' ? Math.ceil(totalCount / pageSize) : 1);
+      
+      // Parse system-wide totals for portfolio percentage calculations
+      const parsedSystemTotals: SystemTotals | null = data.systemTotals || null;
 
       setActivities(activities);
       setTotalCount(totalCount);
       setTotalPages(totalPages);
+      setSystemTotals(parsedSystemTotals);
 
-      // Cache the result
+      // Cache the result (including system totals)
       cacheRef.current.set(cacheKey, {
         data: activities,
         totalCount,
         totalPages,
+        systemTotals: parsedSystemTotals,
         timestamp: Date.now()
       });
 
@@ -367,6 +381,7 @@ export function useOptimizedActivities(
     performance: {
       lastQueryTime,
       avgQueryTime
-    }
+    },
+    systemTotals
   };
 }

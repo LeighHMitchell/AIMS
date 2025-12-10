@@ -229,6 +229,7 @@ const ActivityCardWithSDG: React.FC<ActivityCardWithSDGProps> = ({
   const handleCopy = async (text: string, e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
+    e.nativeEvent.stopImmediatePropagation();
     try {
       await navigator.clipboard.writeText(text);
       // You could add a toast notification here if you have a toast system
@@ -375,10 +376,14 @@ const ActivityCardWithSDG: React.FC<ActivityCardWithSDGProps> = ({
                   </span>
                 )}
                 <button
+                  type="button"
                   onClick={(e) => {
+                    e.preventDefault();
                     e.stopPropagation();
+                    e.nativeEvent.stopImmediatePropagation();
                     navigator.clipboard.writeText(activity.acronym || activity.title);
                   }}
+                  onMouseDown={(e) => e.stopPropagation()}
                   className="ml-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:text-gray-700"
                   title={activity.acronym ? "Copy Acronym" : "Copy Activity Title"}
                 >
@@ -391,7 +396,9 @@ const ActivityCardWithSDG: React.FC<ActivityCardWithSDGProps> = ({
                 <span>{activity.partner_id || 'Activity ID not reported'}</span>
                 {activity.partner_id && (
                   <button
+                    type="button"
                     onClick={(e) => handleCopy(activity.partner_id!, e)}
+                    onMouseDown={(e) => e.stopPropagation()}
                     className="ml-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:text-gray-700"
                     title="Copy Activity ID"
                   >
@@ -401,7 +408,9 @@ const ActivityCardWithSDG: React.FC<ActivityCardWithSDGProps> = ({
                 <span className="text-slate-400 ml-2">{activity.iati_id || 'IATI Identifier not reported'}</span>
                 {activity.iati_id && (
                   <button
+                    type="button"
                     onClick={(e) => handleCopy(activity.iati_id!, e)}
+                    onMouseDown={(e) => e.stopPropagation()}
                     className="ml-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:text-gray-700"
                     title="Copy IATI Identifier"
                   >

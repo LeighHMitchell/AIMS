@@ -30,8 +30,9 @@ export async function GET(
     console.log("[IATI Activity Fetch] Fetching activity:", iatiId)
 
     // Build the correct IATI Datastore API URL for fetching XML
-    // The iatiId should be quoted in the Solr query
-    const query = `iati_identifier:"${iatiId}"`
+    // The IATI Datastore tokenizes identifiers on hyphens, so we use wildcard on last segment
+    const lastSegment = iatiId.split('-').pop() || iatiId
+    const query = `iati_identifier:*${lastSegment}* OR iati_identifier_exact:"${iatiId}"`
     const fetchUrl = `https://api.iatistandard.org/datastore/activity/iati?q=${encodeURIComponent(query)}`
 
     console.log("[IATI Activity Fetch] API URL:", fetchUrl)

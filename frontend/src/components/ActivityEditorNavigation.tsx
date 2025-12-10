@@ -161,7 +161,7 @@ export default function ActivityEditorNavigation({
               {/* Menu Items */}
               <div className="space-y-0.5 ml-3">
                 {group.sections.map((section) => {
-                  const isLocked = !activityCreated && section.id !== "general"
+                  const isLocked = !activityCreated && section.id !== "general" && section.id !== "xml-import"
                   const isActive = activeSection === section.id
                   const isComplete = tabCompletionStatus[section.id]?.isComplete || false
                   const isInProgress = tabCompletionStatus[section.id]?.isInProgress || false

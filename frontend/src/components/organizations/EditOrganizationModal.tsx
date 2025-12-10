@@ -27,7 +27,10 @@ import {
   Facebook,
   Linkedin,
   Instagram,
-  Youtube
+  Youtube,
+  Merge,
+  Building2,
+  Loader2
 } from 'lucide-react'
 import { toast } from 'sonner'
 import {
@@ -54,6 +57,17 @@ import IATIImportPreferences from './IATIImportPreferences'
 import { HelpTextTooltip } from '@/components/ui/help-text-tooltip'
 import { StringArrayInput } from '@/components/ui/string-array-input'
 import { IATI_COUNTRIES } from '@/data/iati-countries'
+import { OrganizationCombobox, Organization as ComboboxOrganization } from '@/components/ui/organization-combobox'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 
 const REGIONAL_OPTIONS = [
   { code: '998', name: 'Global or Regional', isRegion: true }
@@ -205,6 +219,10 @@ interface EditOrganizationModalProps {
   onSave?: (data: Partial<Organization>) => Promise<void>
   onSuccess?: () => void
   onDelete?: (org: Organization) => void
+  /** Pre-select an organization to merge (opens to Aliases tab) */
+  initialMergeSourceOrgId?: string
+  /** Start on a specific tab when opening */
+  initialTab?: string
 }
 
 // Drag and Drop Image Upload Component
@@ -334,19 +352,46 @@ export function EditOrganizationModal({
   onOpenChange,
   onSave,
   onSuccess,
-  onDelete
+  onDelete,
+  initialMergeSourceOrgId,
+  initialTab
 }: EditOrganizationModalProps) {
   const [formData, setFormData] = useState<Partial<Organization>>({})
   const [validationErrors, setValidationErrors] = useState<string[]>([])
   const [saving, setSaving] = useState(false)
   const [organizationTypes, setOrganizationTypes] = useState<OrganizationType[]>(DEFAULT_ORGANIZATION_TYPES)
   const [loadingTypes, setLoadingTypes] = useState(false)
-  const [activeTab, setActiveTab] = useState('basic')
+  const [activeTab, setActiveTab] = useState(initialTab || 'basic')
   const [iatiBudgets, setIatiBudgets] = useState<any[]>([])
   const [iatiDocuments, setIatiDocuments] = useState<any[]>([])
   const [showIatiImport, setShowIatiImport] = useState(false)
   const [countrySearchTerm, setCountrySearchTerm] = useState('')
   const [countrySelectOpen, setCountrySelectOpen] = useState(false)
+  
+  // Merge organization state
+  const [allOrganizations, setAllOrganizations] = useState<ComboboxOrganization[]>([])
+  const [mergeSourceOrgId, setMergeSourceOrgId] = useState<string | null>(initialMergeSourceOrgId || null)
+  const [mergePreview, setMergePreview] = useState<{
+    sourceOrg: {
+      id: string;
+      name: string;
+      acronym: string | null;
+      iati_org_id: string | null;
+      type: string | null;
+      country: string | null;
+    };
+    totals: {
+      activities: number;
+      transactions: number;
+      plannedDisbursements: number;
+      users: number;
+      otherReferences: number;
+    };
+    willAddAlias: string | null;
+  } | null>(null)
+  const [isMerging, setIsMerging] = useState(false)
+  const [showMergeConfirm, setShowMergeConfirm] = useState(false)
+  const [loadingMergePreview, setLoadingMergePreview] = useState(false)
 
   // Handle both isOpen and open props
   const modalOpen = isOpen ?? open ?? false
@@ -465,9 +510,17 @@ export function EditOrganizationModal({
       setValidationErrors([])
       setSaving(false)
     } else {
-      setActiveTab('basic') // Reset to Basic Info tab when opening
+      // If initialTab or initialMergeSourceOrgId is provided, use aliases tab
+      if (initialTab) {
+        setActiveTab(initialTab)
+      } else if (initialMergeSourceOrgId) {
+        setActiveTab('aliases')
+        setMergeSourceOrgId(initialMergeSourceOrgId)
+      } else {
+        setActiveTab('basic') // Reset to Basic Info tab when opening
+      }
     }
-  }, [modalOpen])
+  }, [modalOpen, initialTab, initialMergeSourceOrgId])
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }))
@@ -558,6 +611,141 @@ export function EditOrganizationModal({
       }
     }
   }, [formData.Organisation_Type_Code, formData.country_represented])
+
+  // Fetch all organizations for merge dropdown (only when on Aliases tab)
+  useEffect(() => {
+    if (activeTab === 'aliases' && modalOpen && organization?.id) {
+      const fetchOrganizations = async () => {
+        try {
+          const response = await fetch('/api/organizations')
+          if (response.ok) {
+            const data = await response.json()
+            // Filter out the current organization and map to ComboboxOrganization format
+            const filtered = (data || [])
+              .filter((org: any) => org.id !== organization.id)
+              .map((org: any) => ({
+                id: org.id,
+                name: org.name,
+                acronym: org.acronym,
+                type: org.type || org.Organisation_Type_Name,
+                org_type: org.org_type,
+                Organisation_Type_Code: org.Organisation_Type_Code,
+                Organisation_Type_Name: org.Organisation_Type_Name,
+                country: org.country,
+                iati_org_id: org.iati_org_id,
+                logo: org.logo,
+              }))
+            setAllOrganizations(filtered)
+          }
+        } catch (error) {
+          console.error('[EditOrgModal] Error fetching organizations for merge:', error)
+        }
+      }
+      fetchOrganizations()
+    }
+  }, [activeTab, modalOpen, organization?.id])
+
+  // Reset merge state when modal closes or tab changes
+  useEffect(() => {
+    if (!modalOpen || activeTab !== 'aliases') {
+      setMergeSourceOrgId(null)
+      setMergePreview(null)
+      setShowMergeConfirm(false)
+    }
+  }, [modalOpen, activeTab])
+
+  // Fetch merge preview when source org is selected
+  useEffect(() => {
+    if (mergeSourceOrgId && organization?.id) {
+      const fetchMergePreview = async () => {
+        setLoadingMergePreview(true)
+        try {
+          const response = await fetch(
+            `/api/organizations/merge/preview?sourceOrgId=${mergeSourceOrgId}&targetOrgId=${organization.id}`
+          )
+          if (response.ok) {
+            const preview = await response.json()
+            setMergePreview(preview)
+          } else {
+            const error = await response.json()
+            toast.error(error.error || 'Failed to load merge preview')
+            setMergeSourceOrgId(null)
+          }
+        } catch (error) {
+          console.error('[EditOrgModal] Error fetching merge preview:', error)
+          toast.error('Failed to load merge preview')
+        } finally {
+          setLoadingMergePreview(false)
+        }
+      }
+      fetchMergePreview()
+    } else {
+      setMergePreview(null)
+    }
+  }, [mergeSourceOrgId, organization?.id])
+
+  // Execute merge operation
+  const handleMerge = async () => {
+    if (!mergeSourceOrgId || !organization?.id) return
+    
+    setIsMerging(true)
+    try {
+      const response = await fetch('/api/organizations/merge', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          sourceOrgId: mergeSourceOrgId,
+          targetOrgId: organization.id,
+          mergeNameAliases: true,
+        }),
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || 'Failed to merge organizations')
+      }
+
+      const result = await response.json()
+      
+      // Update local form data with new aliases
+      const sourceIatiId = result.sourceOrg.iati_org_id
+      if (sourceIatiId) {
+        const currentAliases = formData.alias_refs || []
+        if (!currentAliases.includes(sourceIatiId)) {
+          setFormData(prev => ({
+            ...prev,
+            alias_refs: [...(prev.alias_refs || []), sourceIatiId],
+          }))
+        }
+      }
+      
+      // Remove merged org from the dropdown list
+      setAllOrganizations(prev => prev.filter(org => org.id !== mergeSourceOrgId))
+      
+      // Reset merge state
+      setMergeSourceOrgId(null)
+      setMergePreview(null)
+      setShowMergeConfirm(false)
+      
+      toast.success(
+        `Successfully merged "${result.sourceOrg.name}" into this organization. ` +
+        `Updated ${result.summary.activitiesUpdated} activities, ` +
+        `${result.summary.transactionsProviderUpdated + result.summary.transactionsReceiverUpdated} transactions.`
+      )
+      
+      // Trigger refresh if callback provided
+      if (onSuccess) {
+        onSuccess()
+      }
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to merge organizations'
+      toast.error(errorMessage)
+    } finally {
+      setIsMerging(false)
+    }
+  }
 
   const isCreating = !organization
 
@@ -1314,6 +1502,118 @@ export function EditOrganizationModal({
                 <li>Aliases are case-insensitive and whitespace is trimmed automatically</li>
               </ul>
             </div>
+
+            {/* Merge Another Organization Section */}
+            {!isCreating && (
+              <div className="border-t pt-6 space-y-4">
+                <div className="flex items-center gap-2">
+                  <Merge className="h-5 w-5 text-gray-600" />
+                  <h3 className="text-base font-semibold text-gray-900">Merge Another Organization</h3>
+                </div>
+                
+                <p className="text-sm text-gray-600">
+                  Merge a duplicate organization into this one. All activities, transactions, and references 
+                  will be transferred to this organization, and the duplicate will be deleted.
+                </p>
+
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium">Search for organization to merge</Label>
+                  <OrganizationCombobox
+                    organizations={allOrganizations}
+                    value={mergeSourceOrgId || ''}
+                    onValueChange={(value) => setMergeSourceOrgId(value || null)}
+                    placeholder="Search by name, acronym, or IATI ID..."
+                  />
+                </div>
+
+                {/* Loading state */}
+                {loadingMergePreview && (
+                  <div className="flex items-center gap-2 text-sm text-gray-500">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Loading impact preview...
+                  </div>
+                )}
+
+                {/* Merge Preview Card */}
+                {mergePreview && !loadingMergePreview && (
+                  <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 space-y-3">
+                    <div className="flex items-start gap-3">
+                      <Building2 className="h-5 w-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                      <div className="flex-1">
+                        <p className="font-medium text-amber-900">
+                          {mergePreview.sourceOrg.name}
+                          {mergePreview.sourceOrg.acronym && ` (${mergePreview.sourceOrg.acronym})`}
+                        </p>
+                        <div className="flex flex-wrap gap-2 mt-1">
+                          {mergePreview.sourceOrg.iati_org_id && (
+                            <span className="text-xs font-mono bg-amber-100 text-amber-800 px-2 py-0.5 rounded">
+                              {mergePreview.sourceOrg.iati_org_id}
+                            </span>
+                          )}
+                          {mergePreview.sourceOrg.type && (
+                            <span className="text-xs text-amber-700">
+                              {mergePreview.sourceOrg.type}
+                            </span>
+                          )}
+                          {mergePreview.sourceOrg.country && (
+                            <span className="text-xs text-amber-700">
+                              • {mergePreview.sourceOrg.country}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    <Separator className="bg-amber-200" />
+
+                    <div className="space-y-2">
+                      <p className="text-sm font-medium text-amber-900">This will reassign:</p>
+                      <ul className="text-sm text-amber-800 space-y-1">
+                        <li>• {mergePreview.totals.activities} activity reference{mergePreview.totals.activities !== 1 ? 's' : ''}</li>
+                        <li>• {mergePreview.totals.transactions} transaction{mergePreview.totals.transactions !== 1 ? 's' : ''}</li>
+                        <li>• {mergePreview.totals.plannedDisbursements} planned disbursement{mergePreview.totals.plannedDisbursements !== 1 ? 's' : ''}</li>
+                        <li>• {mergePreview.totals.users} user{mergePreview.totals.users !== 1 ? 's' : ''}</li>
+                        {mergePreview.totals.otherReferences > 0 && (
+                          <li>• {mergePreview.totals.otherReferences} other reference{mergePreview.totals.otherReferences !== 1 ? 's' : ''}</li>
+                        )}
+                      </ul>
+                      {mergePreview.willAddAlias && (
+                        <p className="text-sm text-amber-800 mt-2">
+                          The IATI ID <span className="font-mono font-medium">{mergePreview.willAddAlias}</span> will be added as an alias.
+                        </p>
+                      )}
+                    </div>
+
+                    <Button
+                      onClick={() => setShowMergeConfirm(true)}
+                      variant="destructive"
+                      className="w-full mt-2"
+                      disabled={isMerging}
+                    >
+                      {isMerging ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Merging...
+                        </>
+                      ) : (
+                        <>
+                          <Merge className="mr-2 h-4 w-4" />
+                          Merge into this Organization
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                )}
+
+                <div className="bg-gray-50 border border-gray-200 rounded-md p-3 text-sm text-gray-600">
+                  <p className="font-medium text-gray-700 mb-1">Note:</p>
+                  <p>
+                    Merging is permanent and cannot be undone. The source organization will be deleted 
+                    after all its references are transferred to this organization.
+                  </p>
+                </div>
+              </div>
+            )}
           </TabsContent>
 
           <TabsContent value="iati-prefs" className="h-full overflow-y-auto px-2 mt-4">
@@ -1388,6 +1688,59 @@ export function EditOrganizationModal({
         </DialogFooter>
       </DialogContent>
     </Dialog>
+
+    {/* Merge Confirmation Dialog */}
+    <AlertDialog open={showMergeConfirm} onOpenChange={setShowMergeConfirm}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle className="flex items-center gap-2">
+            <AlertTriangle className="h-5 w-5 text-red-500" />
+            Confirm Organization Merge
+          </AlertDialogTitle>
+          <AlertDialogDescription asChild>
+            <div className="space-y-3 text-left">
+              <p>
+                You are about to merge <strong>{mergePreview?.sourceOrg.name}</strong> into{' '}
+                <strong>{organization?.name}</strong>.
+              </p>
+              
+              <div className="bg-red-50 border border-red-200 rounded-md p-3 space-y-2">
+                <p className="font-medium text-red-800">This action will:</p>
+                <ul className="text-sm text-red-700 space-y-1">
+                  <li>• Transfer all activities, transactions, and references</li>
+                  <li>• Add the source IATI ID as an alias</li>
+                  <li>• <strong>Permanently delete</strong> the source organization</li>
+                </ul>
+              </div>
+              
+              <p className="font-medium text-red-600">
+                This action cannot be undone.
+              </p>
+            </div>
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel disabled={isMerging}>Cancel</AlertDialogCancel>
+          <AlertDialogAction
+            onClick={(e) => {
+              e.preventDefault()
+              handleMerge()
+            }}
+            disabled={isMerging}
+            className="bg-red-600 hover:bg-red-700 focus:ring-red-600"
+          >
+            {isMerging ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Merging...
+              </>
+            ) : (
+              'Yes, Merge Organizations'
+            )}
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
     </>
   )
 }

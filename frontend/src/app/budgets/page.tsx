@@ -10,7 +10,7 @@ import { useRouter } from "next/navigation";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { Download, ChevronLeft, ChevronRight } from "lucide-react";
-import { BudgetTable } from "@/components/budgets/BudgetTable";
+import { BudgetTable, BudgetColumnSelector, DEFAULT_VISIBLE_BUDGET_COLUMNS, BUDGET_COLUMNS_LOCALSTORAGE_KEY, type BudgetColumnId } from "@/components/budgets/BudgetTable";
 import { useBudgets } from "@/hooks/useBudgets";
 import { Budget, BudgetFilter } from "@/types/budget";
 import { BulkActionToolbar } from "@/components/ui/bulk-action-toolbar";
@@ -31,6 +31,28 @@ export default function BudgetsPage() {
   const [selectedBudgetIds, setSelectedBudgetIds] = useState<Set<string>>(new Set());
   const [isBulkDeleting, setIsBulkDeleting] = useState(false);
   const [showBulkDeleteDialog, setShowBulkDeleteDialog] = useState(false);
+  
+  // Column visibility state with localStorage persistence
+  const [visibleColumns, setVisibleColumns] = useState<BudgetColumnId[]>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem(BUDGET_COLUMNS_LOCALSTORAGE_KEY);
+      if (saved) {
+        try {
+          return JSON.parse(saved);
+        } catch {
+          return DEFAULT_VISIBLE_BUDGET_COLUMNS;
+        }
+      }
+    }
+    return DEFAULT_VISIBLE_BUDGET_COLUMNS;
+  });
+  
+  // Save column visibility to localStorage
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(BUDGET_COLUMNS_LOCALSTORAGE_KEY, JSON.stringify(visibleColumns));
+    }
+  }, [visibleColumns]);
 
   const [filters, setFilters] = useState<BudgetFilter>({
     type: "all",
@@ -418,8 +440,12 @@ export default function BudgetsPage() {
             </div>
           </div>
 
-          {/* Right Side: Results Count */}
+          {/* Right Side: Column Selector + Results Count */}
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+            <BudgetColumnSelector
+              visibleColumns={visibleColumns}
+              onColumnsChange={setVisibleColumns}
+            />
             {/* Results Summary */}
             <p className="text-sm text-slate-600 whitespace-nowrap">
               {totalBudgets === 0
@@ -478,6 +504,8 @@ export default function BudgetsPage() {
                 selectedIds={selectedBudgetIds}
                 onSelectAll={handleSelectAll}
                 onSelectBudget={handleSelectBudget}
+                visibleColumns={visibleColumns}
+                onColumnsChange={setVisibleColumns}
               />
             </div>
           </div>

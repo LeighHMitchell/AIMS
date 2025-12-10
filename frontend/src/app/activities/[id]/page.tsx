@@ -102,6 +102,7 @@ import { FinancingTermsTab } from "@/components/activities/FinancingTermsTab"
 import PlannedDisbursementsTab from "@/components/activities/PlannedDisbursementsTab"
 import FinancialAnalyticsTab from "@/components/activities/FinancialAnalyticsTab"
 import RelatedActivitiesTab from "@/components/activities/RelatedActivitiesTab"
+import ActivityContactsTab from "@/components/activities/ActivityContactsTab"
 import {
   Tooltip,
   TooltipContent,
@@ -2866,7 +2867,7 @@ export default function ActivityDetailPage() {
           {/* Main Content Tabs */}
           <Card className="border-0">
             <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
-              <TabsList className={`grid w-full ${(user?.role?.includes('gov_partner') || user?.role === 'super_user') ? 'grid-cols-11' : 'grid-cols-10'} bg-slate-50 border-b border-slate-200`}>
+              <TabsList className={`grid w-full ${(user?.role?.includes('gov_partner') || user?.role === 'super_user') ? 'grid-cols-12' : 'grid-cols-11'} bg-slate-50 border-b border-slate-200`}>
                 <TabsTrigger value="finances" className="data-[state=active]:bg-white data-[state=active]:text-slate-900">
                   Finances
                 </TabsTrigger>
@@ -2896,6 +2897,9 @@ export default function ActivityDetailPage() {
                 </TabsTrigger>
                 <TabsTrigger value="related-activities" className="data-[state=active]:bg-white data-[state=active]:text-slate-900">
                   Related Activities
+                </TabsTrigger>
+                <TabsTrigger value="contacts" className="data-[state=active]:bg-white data-[state=active]:text-slate-900">
+                  Contacts
                 </TabsTrigger>
                 {(user?.role?.includes('gov_partner') || user?.role === 'super_user') && (
                   <TabsTrigger value="government-inputs" className="data-[state=active]:bg-white data-[state=active]:text-slate-900">
@@ -4585,6 +4589,13 @@ export default function ActivityDetailPage() {
                     activityId={activity.id}
                     activityTitle={activity.title || 'Current Activity'}
                   />
+                )}
+              </TabsContent>
+
+              {/* Contacts Tab */}
+              <TabsContent value="contacts" className="p-6 border-0">
+                {activeTab === "contacts" && (
+                  <ActivityContactsTab activityId={activity.id} />
                 )}
               </TabsContent>
 

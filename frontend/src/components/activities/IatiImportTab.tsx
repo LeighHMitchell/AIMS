@@ -84,6 +84,7 @@ import {
   Building2,
   ArrowLeftRight,
   DownloadCloud,
+  ExternalLink,
 } from 'lucide-react';
 
 interface IatiImportTabProps {
@@ -1181,7 +1182,6 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
                         <tr>
                           <td className="py-1 text-slate-600 whitespace-nowrap align-top" colSpan={2}>
                             <div>
-                              <div className="mb-1">Organization:</div>
                               <div className="flex items-center gap-2 flex-wrap min-w-0">
                                 <span className="text-sm font-medium text-slate-900 break-words min-w-0">{activity.reportingOrg}</span>
                                 {activity.reportingOrgRef && (
@@ -1746,6 +1746,7 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
   const [debugLogs, setDebugLogs] = useState<string[]>([]);
   const [comprehensiveLog, setComprehensiveLog] = useState<string>(''); // Store comprehensive import log for copy button
   const [showDebugConsole, setShowDebugConsole] = useState(false);
+  const [newlyCreatedActivityId, setNewlyCreatedActivityId] = useState<string | null>(null); // Track new activity ID for import_as_reporting_org
   const [lastImportSummary, setLastImportSummary] = useState<any>(null); // Store import summary for results display
   const [capturedConsoleLogs, setCapturedConsoleLogs] = useState<string[]>([]); // Capture console output during import
   const [orgPreferences, setOrgPreferences] = useState<any>(null); // Organization IATI import preferences
@@ -2950,241 +2951,11 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
         setCurrentActivityData(fetchedActivityData);
 
         // Fetch all current values for comparison IN PARALLEL for better performance
+        // Using proper async/await pattern to ensure all data is populated before continuing
         console.log('[IATI Import Debug] Fetching current budgets, transactions, etc... (in parallel)');
         
-        // Add timeout to prevent hanging
-        const fetchPromise = Promise.all([
-          // Fetch budgets
-          fetch(`/api/activities/${activityId}/budgets`)
-            .then(async (res) => {
-              if (res.ok) {
-                fetchedBudgets = await res.json();
-                setCurrentBudgets(fetchedBudgets);
-                console.log(`[IATI Import Debug] Fetched ${fetchedBudgets.length} current budgets`);
-              }
-            })
-            .catch((error) => console.warn('[IATI Import Debug] Failed to fetch budgets:', error)),
-
-          // Fetch transactions (with timeout and cache-busting)
-          // Increased timeout to 15 seconds - transaction API fetches linked transactions too
-          Promise.race([
-            fetch(`/api/activities/${activityId}/transactions?_=${Date.now()}`),
-            new Promise((_, reject) => setTimeout(() => reject(new Error('Transaction fetch timeout')), 15000))
-          ])
-            .then(async (res: any) => {
-              if (res.ok) {
-                fetchedTransactions = await res.json();
-                setCurrentTransactions(fetchedTransactions);
-                console.log(`[IATI Import Debug] ✅ Fetched ${fetchedTransactions.length} current transactions`);
-              } else {
-                console.warn(`[IATI Import Debug] ⚠️ Transactions fetch returned ${res.status}`);
-              }
-            })
-            .catch((error) => {
-              console.warn('[IATI Import Debug] ❌ Failed to fetch transactions (skipping):', error.message);
-              // Set empty array so we don't block
-              fetchedTransactions = [];
-              setCurrentTransactions([]);
-            }),
-
-          // Fetch planned disbursements
-          fetch(`/api/activities/${activityId}/planned-disbursements?_=${Date.now()}`)
-            .then(async (res) => {
-              if (res.ok) {
-                fetchedPlannedDisbursements = await res.json();
-                setCurrentPlannedDisbursements(fetchedPlannedDisbursements);
-                console.log(`[IATI Import Debug] Fetched ${fetchedPlannedDisbursements.length} current planned disbursements`);
-              }
-            })
-            .catch((error) => console.warn('[IATI Import Debug] Failed to fetch planned disbursements:', error)),
-
-          // Fetch country budget items
-          fetch(`/api/activities/${activityId}/country-budget-items`)
-            .then(async (res) => {
-              if (res.ok) {
-                const cbiResponse = await res.json();
-                // API returns { country_budget_items: [...] } - extract the array
-                fetchedCountryBudgetItems = cbiResponse.country_budget_items || [];
-                setCurrentCountryBudgetItems(fetchedCountryBudgetItems);
-                console.log(`[IATI Import Debug] Fetched ${fetchedCountryBudgetItems.length} current country budget items`);
-              }
-            })
-            .catch((error) => console.warn('[IATI Import Debug] Failed to fetch country budget items:', error)),
-
-          // Fetch humanitarian scopes (with cache-busting)
-          fetch(`/api/activities/${activityId}/humanitarian?_=${Date.now()}`)
-            .then(async (res) => {
-              if (res.ok) {
-                const hsResponse = await res.json();
-                // API returns { humanitarian, humanitarian_scopes } - extract the array
-                fetchedHumanitarianScopes = hsResponse.humanitarian_scopes || [];
-                setCurrentHumanitarianScopes(fetchedHumanitarianScopes);
-                console.log(`[IATI Import Debug] Fetched ${fetchedHumanitarianScopes.length} current humanitarian scopes`);
-              } else {
-                console.warn(`[IATI Import Debug] Humanitarian scopes fetch returned ${res.status}`);
-              }
-            })
-            .catch((error) => console.warn('[IATI Import Debug] Failed to fetch humanitarian scopes:', error)),
-
-          // Fetch document links (with cache-busting)
-          fetch(`/api/activities/${activityId}/documents?_=${Date.now()}`)
-            .then(async (res) => {
-              console.log(`[IATI Import Debug] Documents fetch response status: ${res.status} for activity: ${activityId}`);
-              if (res.ok) {
-                const data = await res.json();
-                fetchedDocumentLinks = data.documents || [];
-                setCurrentDocumentLinks(fetchedDocumentLinks);
-                console.log(`[IATI Import Debug] Fetched ${fetchedDocumentLinks.length} current document links:`, 
-                  fetchedDocumentLinks.map((d: any) => ({ url: d.url, title: d.title }))
-                );
-              } else {
-                const errorText = await res.text();
-                console.error(`[IATI Import Debug] Documents fetch failed with status ${res.status}:`, errorText);
-              }
-            })
-            .catch((error) => console.warn('[IATI Import Debug] Failed to fetch document links:', error)),
-
-          // Fetch contacts
-          fetch(`/api/activities/${activityId}/contacts`)
-            .then(async (res) => {
-              if (res.ok) {
-                fetchedContacts = await res.json();
-                setCurrentContacts(fetchedContacts);
-                console.log(`[IATI Import Debug] Fetched ${fetchedContacts.length} current contacts`);
-              }
-            })
-            .catch((error) => console.warn('[IATI Import Debug] Failed to fetch contacts:', error)),
-
-          // Fetch results (with cache-busting)
-          fetch(`/api/activities/${activityId}/results?_=${Date.now()}`)
-            .then(async (res) => {
-              if (res.ok) {
-                const response = await res.json();
-                fetchedResults = response.results || [];
-                setCurrentResults(fetchedResults);
-                console.log(`[IATI Import Debug] Fetched ${fetchedResults.length} current results`);
-              } else {
-                console.warn(`[IATI Import Debug] Results fetch returned ${res.status}`);
-              }
-            })
-            .catch((error) => console.warn('[IATI Import Debug] Failed to fetch results:', error)),
-
-          // Fetch locations (with cache-busting)
-          fetch(`/api/activities/${activityId}/locations?_=${Date.now()}`)
-            .then(async (res) => {
-              if (res.ok) {
-                const locationsData = await res.json();
-                fetchedActivityData.locations = locationsData.locations || [];
-                console.log(`[IATI Import Debug] Fetched ${fetchedActivityData.locations.length} current locations`);
-              } else {
-                console.warn(`[IATI Import Debug] Locations fetch returned ${res.status}`);
-              }
-            })
-            .catch((error) => console.warn('[IATI Import Debug] Failed to fetch locations:', error)),
-
-          // Fetch participating organizations (with cache-busting)
-          fetch(`/api/activities/${activityId}/participating-organizations?_=${Date.now()}`)
-            .then(async (res) => {
-              if (res.ok) {
-                fetchedActivityData.participatingOrgs = await res.json();
-                console.log(`[IATI Import Debug] Fetched ${fetchedActivityData.participatingOrgs.length} current participating orgs`);
-              } else {
-                console.warn(`[IATI Import Debug] Participating orgs fetch returned ${res.status}`);
-              }
-            })
-            .catch((error) => console.warn('[IATI Import Debug] Failed to fetch participating orgs:', error)),
-
-          // Fetch loan statuses (financing terms)
-          supabase
-            .from('activity_loan_status')
-            .select('*')
-            .eq('activity_id', activityId)
-            .order('year', { ascending: false })
-            .then(({ data: loanStatusData, error: loanStatusError }) => {
-              if (!loanStatusError && loanStatusData) {
-                fetchedLoanStatuses = loanStatusData;
-                fetchedActivityData.loanStatuses = loanStatusData;
-                console.log(`[IATI Import Debug] Fetched ${fetchedLoanStatuses.length} current loan statuses`);
-              }
-            })
-            .catch((error) => console.warn('[IATI Import Debug] Failed to fetch loan statuses:', error)),
-
-          // Fetch FSS (Forward Spending Survey)
-          fetch(`/api/activities/${activityId}/fss`)
-            .then(async (res) => {
-              if (res.ok) {
-                fetchedFss = await res.json();
-                if (fetchedFss) {
-                  console.log(`[IATI Import Debug] Fetched current FSS with ${fetchedFss.forecasts?.length || 0} forecasts`);
-                }
-              }
-            })
-            .catch((error) => console.warn('[IATI Import Debug] Failed to fetch FSS:', error)),
-
-          // Fetch loan terms (financing terms)
-          supabase
-            .from('activity_financing_terms')
-            .select('*')
-            .eq('activity_id', activityId)
-            .maybeSingle()
-            .then(({ data: loanTermsData, error: loanTermsError }: { data: any; error: any }) => {
-              if (!loanTermsError && loanTermsData) {
-                fetchedLoanTerms = loanTermsData;
-                fetchedActivityData.loanTerms = loanTermsData;
-                console.log(`[IATI Import Debug] Fetched current loan terms`);
-              }
-            })
-            .catch((error: any) => console.warn('[IATI Import Debug] Failed to fetch loan terms:', error)),
-
-          // Fetch policy markers for current value comparison (with cache-busting)
-          fetch(`/api/activities/${activityId}/policy-markers?_=${Date.now()}`)
-            .then(async (res) => {
-              if (res.ok) {
-                fetchedPolicyMarkers = await res.json();
-                fetchedActivityData.policyMarkers = fetchedPolicyMarkers;
-                console.log(`[IATI Import Debug] Fetched ${fetchedPolicyMarkers.length} current policy markers`);
-              } else {
-                console.warn(`[IATI Import Debug] Policy markers fetch returned ${res.status}`);
-              }
-            })
-            .catch((error) => console.warn('[IATI Import Debug] Failed to fetch policy markers:', error)),
-
-          // Fetch tags for current value comparison (with cache-busting)
-          fetch(`/api/activities/${activityId}/tags?_=${Date.now()}`)
-            .then(async (res) => {
-              if (res.ok) {
-                fetchedActivityData.tags = await res.json();
-                console.log(`[IATI Import Debug] Fetched ${fetchedActivityData.tags?.length || 0} current tags`);
-              } else {
-                console.warn(`[IATI Import Debug] Tags fetch returned ${res.status}`);
-              }
-            })
-            .catch((error) => console.warn('[IATI Import Debug] Failed to fetch tags:', error)),
-
-          // Fetch related activities for current value comparison (with cache-busting)
-          fetch(`/api/activities/${activityId}/related-activities?_=${Date.now()}`)
-            .then(async (res) => {
-              if (res.ok) {
-                fetchedActivityData.relatedActivities = await res.json();
-                console.log(`[IATI Import Debug] Fetched ${fetchedActivityData.relatedActivities?.length || 0} current related activities`);
-              } else {
-                console.warn(`[IATI Import Debug] Related activities fetch returned ${res.status}`);
-              }
-            })
-            .catch((error) => console.warn('[IATI Import Debug] Failed to fetch related activities:', error))
-        ]);
-        
-        // Race against timeout to prevent hanging (30 second timeout for production latency)
-        const timeoutPromise = new Promise((resolve) => {
-          setTimeout(() => {
-            console.warn('[IATI Import Debug] Fetch timeout reached (30s), continuing with available data');
-            // Do not change progress here; we'll advance to 20% after the race completes
-            resolve(null);
-          }, 30000); // 30 second timeout - increased from 5s to handle production latency
-        });
-        
         // Update progress after a short delay to show activity
-        setTimeout(() => {
+        const progressTimeout = setTimeout(() => {
           setImportStatus(prev => {
             if (prev.stage === 'parsing' && (prev.progress || 0) < 15) {
               return { ...prev, progress: 15 };
@@ -3193,7 +2964,232 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
           });
         }, 1000);
         
-        await Promise.race([fetchPromise, timeoutPromise]);
+        // Helper function to safely fetch with timeout and cache-busting
+        const safeFetch = async (url: string, timeoutMs: number = 15000): Promise<Response | null> => {
+          const cacheBustedUrl = url.includes('?') ? `${url}&_=${Date.now()}` : `${url}?_=${Date.now()}`;
+          try {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+            const response = await fetch(cacheBustedUrl, { signal: controller.signal });
+            clearTimeout(timeoutId);
+            return response;
+          } catch (error: any) {
+            if (error.name === 'AbortError') {
+              console.warn(`[IATI Import Debug] Fetch timeout for ${url}`);
+            } else {
+              console.warn(`[IATI Import Debug] Fetch failed for ${url}:`, error.message);
+            }
+            return null;
+          }
+        };
+        
+        // Execute all fetches in parallel and wait for ALL to complete
+        const [
+          budgetsResult,
+          transactionsResult,
+          plannedDisbursementsResult,
+          countryBudgetItemsResult,
+          humanitarianResult,
+          documentsResult,
+          contactsResult,
+          resultsResult,
+          locationsResult,
+          participatingOrgsResult,
+          loanStatusResult,
+          fssResult,
+          loanTermsResult,
+          policyMarkersResult,
+          tagsResult,
+          relatedActivitiesResult
+        ] = await Promise.all([
+          // Fetch budgets
+          safeFetch(`/api/activities/${activityId}/budgets`).then(async (res) => {
+            if (res?.ok) return res.json();
+            return [];
+          }),
+          
+          // Fetch transactions
+          safeFetch(`/api/activities/${activityId}/transactions`).then(async (res) => {
+            if (res?.ok) return res.json();
+            return [];
+          }),
+          
+          // Fetch planned disbursements
+          safeFetch(`/api/activities/${activityId}/planned-disbursements`).then(async (res) => {
+            if (res?.ok) return res.json();
+            return [];
+          }),
+          
+          // Fetch country budget items
+          safeFetch(`/api/activities/${activityId}/country-budget-items`).then(async (res) => {
+            if (res?.ok) {
+              const data = await res.json();
+              return data.country_budget_items || [];
+            }
+            return [];
+          }),
+          
+          // Fetch humanitarian scopes
+          safeFetch(`/api/activities/${activityId}/humanitarian`).then(async (res) => {
+            if (res?.ok) {
+              const data = await res.json();
+              return { humanitarian: data.humanitarian, humanitarian_scopes: data.humanitarian_scopes || [] };
+            }
+            return { humanitarian: null, humanitarian_scopes: [] };
+          }),
+          
+          // Fetch document links
+          safeFetch(`/api/activities/${activityId}/documents`).then(async (res) => {
+            if (res?.ok) {
+              const data = await res.json();
+              return data.documents || [];
+            }
+            return [];
+          }),
+          
+          // Fetch contacts
+          safeFetch(`/api/activities/${activityId}/contacts`).then(async (res) => {
+            if (res?.ok) return res.json();
+            return [];
+          }),
+          
+          // Fetch results
+          safeFetch(`/api/activities/${activityId}/results`).then(async (res) => {
+            if (res?.ok) {
+              const data = await res.json();
+              return data.results || [];
+            }
+            return [];
+          }),
+          
+          // Fetch locations
+          safeFetch(`/api/activities/${activityId}/locations`).then(async (res) => {
+            if (res?.ok) {
+              const data = await res.json();
+              return data.locations || [];
+            }
+            return [];
+          }),
+          
+          // Fetch participating organizations
+          safeFetch(`/api/activities/${activityId}/participating-organizations`).then(async (res) => {
+            if (res?.ok) return res.json();
+            return [];
+          }),
+          
+          // Fetch loan statuses
+          supabase
+            .from('activity_loan_status')
+            .select('*')
+            .eq('activity_id', activityId)
+            .order('year', { ascending: false })
+            .then(({ data, error }) => {
+              if (!error && data) return data;
+              return [];
+            }),
+          
+          // Fetch FSS (Forward Spending Survey)
+          safeFetch(`/api/activities/${activityId}/fss`).then(async (res) => {
+            if (res?.ok) return res.json();
+            return null;
+          }),
+          
+          // Fetch loan terms
+          supabase
+            .from('activity_financing_terms')
+            .select('*')
+            .eq('activity_id', activityId)
+            .maybeSingle()
+            .then(({ data, error }: { data: any; error: any }) => {
+              if (!error && data) return data;
+              return null;
+            }),
+          
+          // Fetch policy markers
+          safeFetch(`/api/activities/${activityId}/policy-markers`).then(async (res) => {
+            if (res?.ok) return res.json();
+            return [];
+          }),
+          
+          // Fetch tags
+          safeFetch(`/api/activities/${activityId}/tags`).then(async (res) => {
+            if (res?.ok) return res.json();
+            return [];
+          }),
+          
+          // Fetch related activities
+          safeFetch(`/api/activities/${activityId}/related-activities`).then(async (res) => {
+            if (res?.ok) return res.json();
+            return [];
+          })
+        ]);
+        
+        // Clear progress timeout
+        clearTimeout(progressTimeout);
+        
+        // Assign all results to local variables (ensures data is populated before field building)
+        fetchedBudgets = budgetsResult || [];
+        setCurrentBudgets(fetchedBudgets);
+        console.log(`[IATI Import Debug] Fetched ${fetchedBudgets.length} current budgets`);
+        
+        fetchedTransactions = transactionsResult || [];
+        setCurrentTransactions(fetchedTransactions);
+        console.log(`[IATI Import Debug] Fetched ${fetchedTransactions.length} current transactions`);
+        
+        fetchedPlannedDisbursements = plannedDisbursementsResult || [];
+        setCurrentPlannedDisbursements(fetchedPlannedDisbursements);
+        console.log(`[IATI Import Debug] Fetched ${fetchedPlannedDisbursements.length} current planned disbursements`);
+        
+        fetchedCountryBudgetItems = countryBudgetItemsResult || [];
+        setCurrentCountryBudgetItems(fetchedCountryBudgetItems);
+        console.log(`[IATI Import Debug] Fetched ${fetchedCountryBudgetItems.length} current country budget items`);
+        
+        fetchedHumanitarianScopes = humanitarianResult?.humanitarian_scopes || [];
+        setCurrentHumanitarianScopes(fetchedHumanitarianScopes);
+        console.log(`[IATI Import Debug] Fetched ${fetchedHumanitarianScopes.length} current humanitarian scopes`);
+        
+        fetchedDocumentLinks = documentsResult || [];
+        setCurrentDocumentLinks(fetchedDocumentLinks);
+        console.log(`[IATI Import Debug] Fetched ${fetchedDocumentLinks.length} current document links`);
+        
+        fetchedContacts = contactsResult || [];
+        setCurrentContacts(fetchedContacts);
+        console.log(`[IATI Import Debug] Fetched ${fetchedContacts.length} current contacts`);
+        
+        fetchedResults = resultsResult || [];
+        setCurrentResults(fetchedResults);
+        console.log(`[IATI Import Debug] Fetched ${fetchedResults.length} current results`);
+        
+        fetchedActivityData.locations = locationsResult || [];
+        console.log(`[IATI Import Debug] Fetched ${fetchedActivityData.locations.length} current locations`);
+        
+        fetchedActivityData.participatingOrgs = participatingOrgsResult || [];
+        console.log(`[IATI Import Debug] Fetched ${fetchedActivityData.participatingOrgs.length} current participating orgs`);
+        
+        fetchedLoanStatuses = loanStatusResult || [];
+        fetchedActivityData.loanStatuses = fetchedLoanStatuses;
+        console.log(`[IATI Import Debug] Fetched ${fetchedLoanStatuses.length} current loan statuses`);
+        
+        fetchedFss = fssResult;
+        if (fetchedFss) {
+          console.log(`[IATI Import Debug] Fetched current FSS with ${fetchedFss.forecasts?.length || 0} forecasts`);
+        }
+        
+        fetchedLoanTerms = loanTermsResult;
+        fetchedActivityData.loanTerms = fetchedLoanTerms;
+        if (fetchedLoanTerms) {
+          console.log(`[IATI Import Debug] Fetched current loan terms`);
+        }
+        
+        fetchedPolicyMarkers = policyMarkersResult || [];
+        fetchedActivityData.policyMarkers = fetchedPolicyMarkers;
+        console.log(`[IATI Import Debug] Fetched ${fetchedPolicyMarkers.length} current policy markers`);
+        
+        fetchedActivityData.tags = tagsResult || [];
+        console.log(`[IATI Import Debug] Fetched ${fetchedActivityData.tags?.length || 0} current tags`);
+        
+        fetchedActivityData.relatedActivities = relatedActivitiesResult || [];
+        console.log(`[IATI Import Debug] Fetched ${fetchedActivityData.relatedActivities?.length || 0} current related activities`);
 
         console.log('[IATI Import Debug] ✅ All parallel fetches completed successfully');
         console.log('[IATI Import Debug] Fetched data summary:', {
@@ -8498,6 +8494,7 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
       }
 
       let response;
+      let effectiveActivityId = activityId; // Will be updated for new activities created via import_as_reporting_org
 
       // Check if this is an "import as reporting org" operation (external publisher import)
       console.log('[IATI Import] 🔍 Checking import mode before API call:', {
@@ -8688,59 +8685,37 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
         console.log('[IATI Import] Import as reporting org result:', result);
 
         // If activityId was provided, we're updating an existing activity
-        // Finalize immediately without confirmation modal
         if (activityId) {
-          try {
-            // Finalize the import - invalidate cache and refresh
-            await invalidateActivityCache(activityId);
-            
-            // Dispatch event to refresh MetadataTab and other components
-            window.dispatchEvent(new CustomEvent('activity-updated', { 
-              detail: { activityId } 
-            }));
-
-            setImportStatus({
-              stage: 'complete',
-              progress: 100,
-              message: 'Activity imported successfully!'
-            });
-            
-            toast.success('Reporting organisation updated!', {
-              description: 'Activity has been imported with the selected reporting organisation.',
-              duration: 5000,
-            });
-            
-            return;
-          } catch (error) {
-            console.error('[IATI Import] Error finalizing import:', error);
-            toast.error('Import completed but failed to refresh', {
-              description: 'Please refresh the page to see the updated data.'
-            });
-            return;
-          }
-        } else {
-          // Creating new activity - no confirmation needed
-          setImportStatus({
-            stage: 'complete',
-            progress: 100,
-            message: 'Activity imported successfully!'
+          // Invalidate cache and dispatch event
+          await invalidateActivityCache(activityId);
+          window.dispatchEvent(new CustomEvent('activity-updated', { 
+            detail: { activityId } 
+          }));
+          toast.success('Reporting organisation updated!', {
+            description: 'Processing additional fields...',
+            duration: 3000,
           });
-          
+          // DO NOT RETURN - continue to field processing below
+        } else {
+          // Creating new activity - capture the new ID for field processing
           const newActivityId = result.createdId || result.id || (result.count > 0 && result.importedActivities?.[0]?.id);
           
-          toast.success('Activity imported successfully!', {
-            description: 'Created new activity with selected reporting organisation. Redirecting...',
-            duration: 5000,
-          });
-
-          // Redirect to the new activity
           if (newActivityId) {
-            setTimeout(() => {
-              router.push(`/activities/new?id=${newActivityId}`);
-            }, 1500);
+            effectiveActivityId = newActivityId;
+            toast.success('Activity created!', {
+              description: 'Processing additional fields...',
+              duration: 3000,
+            });
+            // DO NOT RETURN - continue to field processing below
+          } else {
+            // No activity ID returned - cannot process additional fields
+            console.error('[IATI Import] No activity ID returned from import-as-reporting-org');
+            setImportStatus({ stage: 'complete', progress: 100 });
+            toast.warning('Activity imported but some fields may not have been processed', {
+              description: 'Unable to determine activity ID for additional field processing.'
+            });
+            return;
           }
-
-          return; // Exit early since we're redirecting
         }
       }
       // Refresh activity data to ensure subsequent imports use updated default_currency
@@ -8748,9 +8723,9 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
       console.log('[IATI Import] Current default_currency before refresh:', currentActivityData.default_currency);
       
       // Invalidate cache to force fresh fetch
-      await invalidateActivityCache(activityId);
+      await invalidateActivityCache(effectiveActivityId);
       
-      const refreshedActivity = await fetchBasicActivityWithCache(activityId);
+      const refreshedActivity = await fetchBasicActivityWithCache(effectiveActivityId);
       
       // Create fresh activity data object for immediate use (avoid async state issues)
       const freshActivityData = {
@@ -8792,7 +8767,7 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
               'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-              activityId: activityId,
+              activityId: effectiveActivityId,
               field: 'otherIdentifiers',
               value: otherIdentifiersData
             }),
@@ -8964,7 +8939,7 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
                 // Sectors are valid, proceed with import
             
             try {
-              const sectorResponse = await fetch(`/api/activities/${activityId}/sectors`, {
+              const sectorResponse = await fetch(`/api/activities/${effectiveActivityId}/sectors`, {
                 method: 'POST',
                 headers: {
                   'Content-Type': 'application/json',
@@ -9125,7 +9100,7 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
             coordinates: loc.latitude && loc.longitude ? `${loc.latitude}, ${loc.longitude}` : null
           }));
           
-          const locationsResponse = await fetch(`/api/activities/${activityId}/locations`, {
+          const locationsResponse = await fetch(`/api/activities/${effectiveActivityId}/locations`, {
             method: 'PUT',  // Changed from POST to PUT for batch import
             headers: {
               'Content-Type': 'application/json',
@@ -9169,7 +9144,7 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
         });
 
         try {
-          const fssResponse = await fetch(`/api/activities/${activityId}/import-fss`, {
+          const fssResponse = await fetch(`/api/activities/${effectiveActivityId}/import-fss`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -9213,7 +9188,7 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
         });
 
         try {
-          const docResponse = await fetch(`/api/activities/${activityId}/documents/import`, {
+          const docResponse = await fetch(`/api/activities/${effectiveActivityId}/documents/import`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -9237,7 +9212,7 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
             
             // Verify documents were actually saved by fetching them back
             try {
-              const verifyResponse = await fetch(`/api/activities/${activityId}/documents?_verify=${Date.now()}`);
+              const verifyResponse = await fetch(`/api/activities/${effectiveActivityId}/documents?_verify=${Date.now()}`);
               if (verifyResponse.ok) {
                 const verifyData = await verifyResponse.json();
                 console.log('[IATI Import] VERIFICATION - Documents in database after import:', verifyData.documents?.length || 0);
@@ -9282,7 +9257,7 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
           // Fetch existing contacts for deduplication
           let existingContacts: any[] = [];
           try {
-            const existingResponse = await fetch(`/api/activities/${activityId}/contacts`);
+            const existingResponse = await fetch(`/api/activities/${effectiveActivityId}/contacts`);
             if (existingResponse.ok) {
               existingContacts = await existingResponse.json();
             }
@@ -9307,7 +9282,7 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
               'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-              activityId: activityId,
+              activityId: effectiveActivityId,
               field: 'contacts',
               value: contactsData
             }),
@@ -9346,7 +9321,7 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
         try {
           console.log('[IATI Import] Saving humanitarian data:', updateData.importedHumanitarian);
 
-          const humanitarianResponse = await fetchWithTimeout(`/api/activities/${activityId}/humanitarian`, {
+          const humanitarianResponse = await fetchWithTimeout(`/api/activities/${effectiveActivityId}/humanitarian`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -9391,7 +9366,7 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
 
         try {
           // Clear existing budgets to avoid duplicates
-          const clearResponse = await fetchWithTimeout(`/api/activities/${activityId}/budgets`, {
+          const clearResponse = await fetchWithTimeout(`/api/activities/${effectiveActivityId}/budgets`, {
             method: 'DELETE'
           }, 10000);
           
@@ -9420,7 +9395,7 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
                 resolvedCurrency: budgetData.currency
               });
 
-              const response = await fetchWithTimeout(`/api/activities/${activityId}/budgets`, {
+              const response = await fetchWithTimeout(`/api/activities/${effectiveActivityId}/budgets`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(budgetData)
@@ -9445,7 +9420,7 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
                 
                 // Track API call
                 importSummary.apiCalls.push({
-                  endpoint: `/api/activities/${activityId}/budgets`,
+                  endpoint: `/api/activities/${effectiveActivityId}/budgets`,
                   method: 'POST',
                   status: 'SUCCESS',
                   timestamp: new Date().toISOString()
@@ -9470,7 +9445,7 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
                 
                 // Track API call
                 importSummary.apiCalls.push({
-                  endpoint: `/api/activities/${activityId}/budgets`,
+                  endpoint: `/api/activities/${effectiveActivityId}/budgets`,
                   method: 'POST',
                   status: 'FAILED',
                   error: errorText,
@@ -9542,7 +9517,7 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
 
               console.log('[IATI Import] Posting country budget item:', cbiData);
 
-              const response = await fetchWithTimeout(`/api/activities/${activityId}/country-budget-items`, {
+              const response = await fetchWithTimeout(`/api/activities/${effectiveActivityId}/country-budget-items`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(cbiData)
@@ -9566,7 +9541,7 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
             toast.success(`Country budget items imported successfully`, {
               description: `${successCount} item(s) added${errorCount > 0 ? ` (${errorCount} failed)` : ''}`
             });
-            invalidateActivityCache(activityId);
+            invalidateActivityCache(effectiveActivityId);
           } else if (errorCount > 0) {
             toast.error('Failed to import country budget items', {
               description: `All ${errorCount} item(s) failed to import`
@@ -9655,7 +9630,7 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
           }
           
           // Clear existing planned disbursements to avoid duplicates
-          const clearResponse = await fetch(`/api/activities/${activityId}/planned-disbursements`, {
+          const clearResponse = await fetch(`/api/activities/${effectiveActivityId}/planned-disbursements`, {
             method: 'DELETE'
           });
           
@@ -9715,7 +9690,7 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
                 resolvedCurrency: disbursementData.currency
               });
 
-              const response = await fetch(`/api/activities/${activityId}/planned-disbursements`, {
+              const response = await fetch(`/api/activities/${effectiveActivityId}/planned-disbursements`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(disbursementData)
@@ -9779,8 +9754,8 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
           }
           
           // First, fetch available policy markers from database to match IATI codes
-          captureConsoleLog(`[IATI Import] Fetching policy markers for activity: ${activityId}`);
-          const policyMarkersResponse = await fetch(`/api/policy-markers?activity_id=${activityId}`);
+          captureConsoleLog(`[IATI Import] Fetching policy markers for activity: ${effectiveActivityId}`);
+          const policyMarkersResponse = await fetch(`/api/policy-markers?activity_id=${effectiveActivityId}`);
           
           if (!policyMarkersResponse.ok) {
             const errorText = await policyMarkersResponse.text();
@@ -9979,7 +9954,7 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
             });
             
             captureConsoleLog(`[IATI Import] Sending policy markers to API:`, importedPolicyMarkers);
-              const importResponse = await fetch(`/api/activities/${activityId}/policy-markers`, {
+              const importResponse = await fetch(`/api/activities/${effectiveActivityId}/policy-markers`, {
                 method: 'POST',
                 headers: {
                   'Content-Type': 'application/json',
@@ -10098,7 +10073,7 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
                 console.log('[IATI Import] Tag created/found:', tag);
                 
                 // Link tag to activity
-                const linkResponse = await fetch(`/api/activities/${activityId}/tags`, {
+                const linkResponse = await fetch(`/api/activities/${effectiveActivityId}/tags`, {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json' },
                   body: JSON.stringify({ tag_id: tag.id })
@@ -10134,7 +10109,7 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
               toast.success(`${importResults.successful.length} tag(s) imported successfully`);
               
               // Invalidate cache - page will be refreshed manually by user after reviewing import results
-              invalidateActivityCache(activityId);
+              invalidateActivityCache(effectiveActivityId);
             }
             
             if (importResults.skipped.length > 0) {
@@ -10179,7 +10154,7 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
         try {
           console.log(`[IATI Import] Importing ${updateData.importedResults.length} selected result(s)...`);
           
-          const importResponse = await fetchWithTimeout(`/api/activities/${activityId}/results/import`, {
+          const importResponse = await fetchWithTimeout(`/api/activities/${effectiveActivityId}/results/import`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -10269,7 +10244,7 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
           const { error: deleteError } = await supabase
             .from('activity_conditions')
             .delete()
-            .eq('activity_id', activityId);
+            .eq('activity_id', effectiveActivityId);
           
           if (deleteError) {
             console.error('[IATI Import] Error deleting existing conditions:', deleteError);
@@ -10294,7 +10269,7 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
               return true;
             })
             .map((cond: any) => ({
-              activity_id: activityId,
+              activity_id: effectiveActivityId,
               type: cond.type || '1',
               narrative: cond.narrative,
               attached: conditionsData.attached
@@ -10320,7 +10295,7 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
             await supabase
               .from('activities')
               .update({ conditions_attached: conditionsData.attached })
-              .eq('id', activityId);
+              .eq('id', effectiveActivityId);
             
             const skippedCount = totalConditions - conditionsToInsert.length;
             if (skippedCount > 0) {
@@ -10578,7 +10553,7 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
               console.log('[IATI Import] Prepared transaction data:', transactionData);
               console.log('[IATI Import] Calling API to create transaction...');
 
-              const apiRes = await fetch(`/api/activities/${activityId}/transactions`, {
+              const apiRes = await fetch(`/api/activities/${effectiveActivityId}/transactions`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(transactionData)
@@ -10613,7 +10588,7 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
                 
                 // Track API call
                 importSummary.apiCalls.push({
-                  endpoint: `/api/activities/${activityId}/transactions`,
+                  endpoint: `/api/activities/${effectiveActivityId}/transactions`,
                   method: 'POST',
                   status: 'SUCCESS',
                   timestamp: new Date().toISOString()
@@ -10641,7 +10616,7 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
                 
                 // Track API call
                 importSummary.apiCalls.push({
-                  endpoint: `/api/activities/${activityId}/transactions`,
+                  endpoint: `/api/activities/${effectiveActivityId}/transactions`,
                   method: 'POST',
                   status: 'FAILED',
                   error: errorMsg,
@@ -10689,7 +10664,7 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
               });
             }
             
-            invalidateActivityCache(activityId);
+            invalidateActivityCache(effectiveActivityId);
           } else if (errorCount > 0) {
             toast.error('Failed to import transactions', {
               description: `All ${errorCount} transaction(s) failed to import`
@@ -11008,7 +10983,7 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
                   narrative: `Imported from XML - ${relatedActivityData.relationshipTypeLabel}`
                 };
 
-                const externalResponse = await fetch(`/api/activities/${activityId}/related-activities`, {
+                const externalResponse = await fetch(`/api/activities/${effectiveActivityId}/related-activities`, {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json' },
                   body: JSON.stringify(externalLinkData)
@@ -11051,7 +11026,7 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
                 narrative: `Imported from XML - ${relatedActivityData.relationshipTypeLabel}`
               };
 
-              const createResponse = await fetch(`/api/activities/${activityId}/linked`, {
+              const createResponse = await fetch(`/api/activities/${effectiveActivityId}/linked`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(relationshipData)
@@ -11274,7 +11249,7 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
       // Refetch planned disbursements after import to update current values in fields
       console.log('[IATI Import] Refetching planned disbursements after import to update current values...');
       try {
-        const refreshResponse = await fetch(`/api/activities/${activityId}/planned-disbursements?_=${Date.now()}`, {
+        const refreshResponse = await fetch(`/api/activities/${effectiveActivityId}/planned-disbursements?_=${Date.now()}`, {
           cache: 'no-store'
         });
         if (refreshResponse.ok) {
@@ -11447,7 +11422,7 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
         '═══════════════════════════════════════════════════════════════════',
         '📊 COMPREHENSIVE IMPORT SUMMARY - COPY THIS LOG',
         '═══════════════════════════════════════════════════════════════════',
-        `Activity ID: ${activityId}`,
+        `Activity ID: ${effectiveActivityId}`,
         `Import Started: ${importSummary.startTime}`,
         `Import Completed: ${new Date().toISOString()}`,
         `Duration: ${duration} seconds`,
@@ -11690,25 +11665,32 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
       // Set status to complete - this will trigger the results display
       setImportStatus({ stage: 'complete' });
 
+      // For new activities created via import_as_reporting_org, store the new activity ID
+      // This allows the UI to show a "View New Activity" button
+      if (selectedImportMode === 'import_as_reporting_org' && !activityId && effectiveActivityId) {
+        setNewlyCreatedActivityId(effectiveActivityId);
+        console.log('[IATI Import] New activity created via import_as_reporting_org, ID:', effectiveActivityId);
+      }
+
       // Invalidate activity cache and refetch current data to show updated values
-      console.log('[IATI Import] Invalidating activity cache and refetching current data for:', activityId);
-      invalidateActivityCache(activityId);
+      console.log('[IATI Import] Invalidating activity cache and refetching current data for:', effectiveActivityId);
+      invalidateActivityCache(effectiveActivityId);
 
       // Refetch current activity data so next import shows updated current values
       try {
-        const data = await fetchBasicActivityWithCache(activityId);
+        const data = await fetchBasicActivityWithCache(effectiveActivityId);
 
         // Also refetch planned disbursements
-        const plannedDisbursementsResponse = await fetch(`/api/activities/${activityId}/planned-disbursements`);
+        const plannedDisbursementsResponse = await fetch(`/api/activities/${effectiveActivityId}/planned-disbursements`);
         const currentDisbursements = plannedDisbursementsResponse.ok ? await plannedDisbursementsResponse.json() : [];
         setCurrentPlannedDisbursements(currentDisbursements);
 
         // Also refetch participating orgs
-        const participatingOrgsResponse = await fetch(`/api/activities/${activityId}/participating-organizations`);
+        const participatingOrgsResponse = await fetch(`/api/activities/${effectiveActivityId}/participating-organizations`);
         const currentParticipatingOrgs = participatingOrgsResponse.ok ? await participatingOrgsResponse.json() : [];
 
         // Also refetch locations
-        const locationsResponse = await fetch(`/api/activities/${activityId}/locations`);
+        const locationsResponse = await fetch(`/api/activities/${effectiveActivityId}/locations`);
         const locationsData = locationsResponse.ok ? await locationsResponse.json() : { locations: [] };
         const currentLocations = locationsData.locations || [];
 
@@ -11717,7 +11699,7 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
 
         // Fetch budgets
         try {
-          const budgetsResponse = await fetch(`/api/activities/${activityId}/budgets`);
+          const budgetsResponse = await fetch(`/api/activities/${effectiveActivityId}/budgets`);
           if (budgetsResponse.ok) {
             const budgets = await budgetsResponse.json();
             setCurrentBudgets(budgets);
@@ -11728,7 +11710,7 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
 
         // Fetch transactions
         try {
-          const transactionsResponse = await fetch(`/api/activities/${activityId}/transactions`);
+          const transactionsResponse = await fetch(`/api/activities/${effectiveActivityId}/transactions`);
           if (transactionsResponse.ok) {
             const transactions = await transactionsResponse.json();
             setCurrentTransactions(transactions);
@@ -11739,7 +11721,7 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
 
         // Fetch country budget items
         try {
-          const cbiResponse = await fetch(`/api/activities/${activityId}/country-budget-items`);
+          const cbiResponse = await fetch(`/api/activities/${effectiveActivityId}/country-budget-items`);
           if (cbiResponse.ok) {
             const cbiData = await cbiResponse.json();
             // API returns { country_budget_items: [...] } - extract the array
@@ -11752,7 +11734,7 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
 
         // Fetch humanitarian scopes
         try {
-          const hsResponse = await fetch(`/api/activities/${activityId}/humanitarian`);
+          const hsResponse = await fetch(`/api/activities/${effectiveActivityId}/humanitarian`);
           if (hsResponse.ok) {
             const hs = await hsResponse.json();
             // API returns { humanitarian, humanitarian_scopes } - extract the array
@@ -11764,7 +11746,7 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
 
         // Fetch document links
         try {
-          const docsResponse = await fetch(`/api/activities/${activityId}/documents`);
+          const docsResponse = await fetch(`/api/activities/${effectiveActivityId}/documents`);
           if (docsResponse.ok) {
             const data = await docsResponse.json();
             const docs = data.documents || [];
@@ -11776,7 +11758,7 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
 
         // Fetch contacts
         try {
-          const contactsResponse = await fetch(`/api/activities/${activityId}/contacts`);
+          const contactsResponse = await fetch(`/api/activities/${effectiveActivityId}/contacts`);
           if (contactsResponse.ok) {
             const contacts = await contactsResponse.json();
             setCurrentContacts(contacts);
@@ -11787,7 +11769,7 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
 
         // Fetch results
         try {
-          const resultsResponse = await fetch(`/api/activities/${activityId}/results`);
+          const resultsResponse = await fetch(`/api/activities/${effectiveActivityId}/results`);
           if (resultsResponse.ok) {
             const response = await resultsResponse.json();
             const results = response.results || [];
@@ -13471,6 +13453,18 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
                     <ArrowRight className="h-4 w-4 mr-2" />
                     Review Changes (Without Refresh)
                   </Button>
+                  {newlyCreatedActivityId && (
+                    <Button
+                      onClick={() => router.push(`/activities/${newlyCreatedActivityId}`)}
+                      className="text-white"
+                      style={{ backgroundColor: '#145667' }}
+                      onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#0f4552'}
+                      onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#145667'}
+                    >
+                      <ExternalLink className="h-4 w-4 mr-2" />
+                      View New Activity
+                    </Button>
+                  )}
                 </div>
               </div>
             </CardContent>

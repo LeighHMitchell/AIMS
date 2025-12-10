@@ -315,8 +315,9 @@ export async function PUT(request: NextRequest) {
     
     // Map frontend field names to database column names
     if ('country_represented' in updates) {
+      // Save to both columns for compatibility
       updates.country = updates.country_represented;
-      delete updates.country_represented;
+      // Keep country_represented in updates so it also gets saved
     }
     
     if ('Organisation_Type_Code' in updates) {

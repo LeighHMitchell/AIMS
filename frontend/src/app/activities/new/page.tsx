@@ -4101,6 +4101,49 @@ function NewActivityPageContent() {
       return;
     }
     
+    // Auto-create draft activity when navigating to IATI Import without an existing activity
+    if (value === 'xml-import' && !general.id) {
+      try {
+        const response = await fetch('/api/activities', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            title: 'Imported Activity (Draft)',
+            description: 'Activity created via IATI/XML import',
+            status: '1',
+            user_id: user?.id,
+            created_via: 'import',
+          }),
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Failed to create draft activity');
+        }
+
+        const newActivity = await response.json();
+        
+        // Update general state with the new activity ID
+        setGeneral((prev: any) => ({ 
+          ...prev, 
+          id: newActivity.id, 
+          uuid: newActivity.uuid || newActivity.id,
+          title: 'Imported Activity (Draft)',
+          description: 'Activity created via IATI/XML import',
+        }));
+        
+        toast.success('Draft activity created for import', {
+          description: 'You can now import data from IATI',
+        });
+      } catch (error) {
+        console.error('Error creating draft activity for import:', error);
+        toast.error('Failed to create draft activity', {
+          description: error instanceof Error ? error.message : 'Please try again',
+        });
+        return;
+      }
+    }
+    
     console.log('[AIMS Performance] Switching to tab:', value);
     
     setTabLoading(true);

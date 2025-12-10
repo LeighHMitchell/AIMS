@@ -1,5 +1,6 @@
 import { NextResponse, NextRequest } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase';
+import { fetchSystemTotals, SystemTotals } from '@/lib/system-totals';
 
 /**
  * Optimized Activities API
@@ -97,7 +98,11 @@ export async function GET(request: NextRequest) {
         activity_sectors (
           id,
           sector_code,
-          percentage
+          sector_name,
+          percentage,
+          category_code,
+          category_name,
+          level
         )
       `)
       .range(offset, offset + limit - 1);
@@ -156,10 +161,11 @@ export async function GET(request: NextRequest) {
     // Note: Budget and disbursement sorting will be handled client-side after data aggregation
     // since these are calculated fields from multiple tables
 
-    // Execute queries in parallel
-    const [countResult, dataResult] = await Promise.all([
+    // Execute queries in parallel, including system-wide totals for percentage calculations
+    const [countResult, dataResult, systemTotals] = await Promise.all([
       countQuery,
-      dataQuery
+      dataQuery,
+      fetchSystemTotals()
     ]);
 
     // Check for HTML error responses (Supabase 520 errors)
@@ -210,12 +216,19 @@ export async function GET(request: NextRequest) {
     let budgetMap = new Map();
     const plannedDisbursementMap = new Map<string, number>();
     
+    // Organization entry type with logo support
+    type OrgEntry = {
+      name: string;
+      acronym: string | null;
+      logo: string | null;
+    };
+    
     // Declare participatingOrgsMap outside the if block so it's accessible when transforming activities
     const participatingOrgsMap = new Map<string, {
-      funding: string[];
-      extending: string[];
-      implementing: string[];
-      accountable: string[];
+      funding: OrgEntry[];
+      extending: OrgEntry[];
+      implementing: OrgEntry[];
+      accountable: OrgEntry[];
     }>();
     
     if (activityIds.length > 0) {
@@ -291,7 +304,7 @@ export async function GET(request: NextRequest) {
             if (orgIds.length > 0) {
               const { data: orgsData } = await supabase
                 .from('organizations')
-                .select('id, name, acronym')
+                .select('id, name, acronym, logo')
                 .in('id', orgIds);
               
               if (orgsData) {
@@ -346,6 +359,16 @@ export async function GET(request: NextRequest) {
             (org.organization_id ? `Org ID: ${org.organization_id.substring(0, 8)}...` : null) ||
             'No name available';
           
+          // Create org entry object with name, acronym, and logo
+          const orgEntry: OrgEntry = {
+            name: orgName,
+            acronym: org.organizations?.acronym || null,
+            logo: org.organizations?.logo || null
+          };
+          
+          // Helper to check if org already exists in array (by name)
+          const orgExists = (arr: OrgEntry[], name: string) => arr.some(o => o.name === name);
+          
           // Validate and handle IATI role codes with fallback to role_type
           let roleCode = org.iati_role_code;
           
@@ -370,8 +393,8 @@ export async function GET(request: NextRequest) {
               org_id: org.organization_id 
             });
             // Default to implementing if role is invalid
-            if (!orgData.implementing.includes(orgName)) {
-              orgData.implementing.push(orgName);
+            if (!orgExists(orgData.implementing, orgName)) {
+              orgData.implementing.push(orgEntry);
             }
             return;
           }
@@ -379,16 +402,16 @@ export async function GET(request: NextRequest) {
           // Map IATI role codes: 1=Funding, 2=Accountable, 3=Extending, 4=Implementing
           switch (roleCode) {
             case 1:
-              if (!orgData.funding.includes(orgName)) orgData.funding.push(orgName);
+              if (!orgExists(orgData.funding, orgName)) orgData.funding.push(orgEntry);
               break;
             case 2:
-              if (!orgData.accountable.includes(orgName)) orgData.accountable.push(orgName);
+              if (!orgExists(orgData.accountable, orgName)) orgData.accountable.push(orgEntry);
               break;
             case 3:
-              if (!orgData.extending.includes(orgName)) orgData.extending.push(orgName);
+              if (!orgExists(orgData.extending, orgName)) orgData.extending.push(orgEntry);
               break;
             case 4:
-              if (!orgData.implementing.includes(orgName)) orgData.implementing.push(orgName);
+              if (!orgExists(orgData.implementing, orgName)) orgData.implementing.push(orgEntry);
               break;
           }
         });
@@ -584,7 +607,16 @@ export async function GET(request: NextRequest) {
         fundingOrgs: participatingOrgsMap.get(activity.id)?.funding || [],
         extendingOrgs: participatingOrgsMap.get(activity.id)?.extending || [],
         implementingOrgs: participatingOrgsMap.get(activity.id)?.implementing || [],
-        accountableOrgs: participatingOrgsMap.get(activity.id)?.accountable || []
+        accountableOrgs: participatingOrgsMap.get(activity.id)?.accountable || [],
+        // Include sectors for display in activity list
+        sectors: (activity.activity_sectors || []).map((sector: any) => ({
+          code: sector.sector_code,
+          name: sector.sector_name,
+          percentage: sector.percentage || 0,
+          categoryCode: sector.category_code,
+          categoryName: sector.category_name,
+          level: sector.level
+        }))
       };
     });
 
@@ -639,7 +671,7 @@ export async function GET(request: NextRequest) {
 
     console.log(`[AIMS Optimized] Fetched ${activities.length} activities in ${executionTime}ms`);
 
-    // Return paginated response
+    // Return paginated response with system-wide totals for percentage calculations
     const response = {
       activities: transformedActivities,
       data: transformedActivities,
@@ -651,6 +683,7 @@ export async function GET(request: NextRequest) {
         totalCount: totalCount ?? 0,
         totalPages: totalCount ? Math.ceil(totalCount / limit) : 1
       },
+      systemTotals,
       performance: {
         executionTimeMs: executionTime
       }

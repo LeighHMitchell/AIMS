@@ -13,7 +13,9 @@ import { DataClinicOrganizations } from "@/components/data-clinic/DataClinicOrga
 import { DataClinicTimeliness } from "@/components/data-clinic/DataClinicTimeliness";
 import { DataClinicFinancialDates } from "@/components/data-clinic/DataClinicFinancialDates";
 import { DataClinicBudgets } from "@/components/data-clinic/DataClinicBudgets";
-import { Stethoscope, Bug, RefreshCw } from "lucide-react";
+import { DataClinicFinancialCompleteness } from "@/components/data-clinic/DataClinicFinancialCompleteness";
+import { DataClinicDuplicates } from "@/components/data-clinic/DataClinicDuplicates";
+import { Stethoscope, Bug, RefreshCw, Copy } from "lucide-react";
 import { toast } from "sonner";
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
@@ -107,8 +109,13 @@ export default function DataClinicPage() {
               <TabsTrigger value="transactions">Transactions</TabsTrigger>
               <TabsTrigger value="budgets">Budgets</TabsTrigger>
               <TabsTrigger value="organizations">Organizations</TabsTrigger>
+              <TabsTrigger value="duplicates" className="flex items-center gap-1">
+                <Copy className="h-3 w-3" />
+                Duplicates
+              </TabsTrigger>
               <TabsTrigger value="timeliness">Timeliness</TabsTrigger>
               <TabsTrigger value="financial-dates">Financial Dates</TabsTrigger>
+              <TabsTrigger value="financial-completeness">Financial Completeness</TabsTrigger>
             </TabsList>
 
             <TabsContent value="activities">
@@ -127,12 +134,20 @@ export default function DataClinicPage() {
               <DataClinicOrganizations />
             </TabsContent>
 
+            <TabsContent value="duplicates">
+              <DataClinicDuplicates />
+            </TabsContent>
+
             <TabsContent value="timeliness">
               <DataClinicTimeliness />
             </TabsContent>
 
             <TabsContent value="financial-dates">
               <DataClinicFinancialDates />
+            </TabsContent>
+
+            <TabsContent value="financial-completeness">
+              <DataClinicFinancialCompleteness />
             </TabsContent>
           </Tabs>
         </div>

@@ -16,12 +16,14 @@
 
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { usePreCache } from "@/hooks/use-pre-cached-data";
-import { useOptimizedActivities } from "@/hooks/use-optimized-activities";
+import { useOptimizedActivities, SystemTotals } from "@/hooks/use-optimized-activities";
+import { calculatePortfolioShare, formatPercentage } from "@/lib/system-totals";
 import { useLoadingBar } from "@/hooks/useLoadingBar";
 import { AsyncErrorBoundary } from "@/components/errors/AsyncErrorBoundary";
 import { PerformanceMetrics } from "@/components/optimization/OptimizedActivityList";
 import { MainLayout } from "@/components/layout/main-layout";
 import { ActivityList } from "@/components/activities/ActivityList";
+import { SectorMiniBar } from "@/components/activities/SectorMiniBar";
 import {
   Card,
   CardContent,
@@ -68,6 +70,7 @@ import { BulkDeleteDialog } from "@/components/dialogs/bulk-delete-dialog";
 import dynamic from 'next/dynamic';
 import { SectorFilterSelection, matchesSectorFilter } from "@/components/maps/SectorHierarchyFilter";
 import { SafeHtml } from '@/components/ui/safe-html';
+import { OrganizationAvatarGroup } from '@/components/ui/organization-avatar-group';
 import { Progress } from "@/components/ui/progress";
 import { 
   calculateDurationDetailed,
@@ -249,11 +252,11 @@ type Activity = {
   default_aid_modality_override?: boolean;
   tied_status?: string; // Legacy field
   
-  // Participating organisation arrays (by role)
-  fundingOrgs?: string[];
-  extendingOrgs?: string[];
-  implementingOrgs?: string[];
-  accountableOrgs?: string[];
+  // Participating organisation arrays (by role) - with logo support
+  fundingOrgs?: Array<{ name: string; acronym?: string | null; logo?: string | null }>;
+  extendingOrgs?: Array<{ name: string; acronym?: string | null; logo?: string | null }>;
+  implementingOrgs?: Array<{ name: string; acronym?: string | null; logo?: string | null }>;
+  accountableOrgs?: Array<{ name: string; acronym?: string | null; logo?: string | null }>;
   
   // Description fields (IATI description types)
   description_general?: string;
@@ -463,6 +466,11 @@ type ColumnId =
   | 'timeElapsed'
   | 'committedSpentPercent'
   | 'budgetSpentPercent'
+  // Portfolio Share columns (% of system-wide totals)
+  | 'budgetShare'
+  | 'plannedDisbursementShare'
+  | 'commitmentShare'
+  | 'disbursementShare'
   // Duration columns
   | 'actualLength'
   | 'totalExpectedLength'
@@ -473,12 +481,16 @@ type ColumnId =
   | 'plannedStartDate'
   | 'plannedEndDate'
   | 'actualStartDate'
-  | 'actualEndDate';
+  | 'actualEndDate'
+  // Sector allocation columns
+  | 'sectorCategories'
+  | 'sectors'
+  | 'subSectors';
 
 interface ColumnConfig {
   id: ColumnId;
   label: string;
-  group: 'default' | 'activityDefaults' | 'transactionTypeTotals' | 'publicationStatuses' | 'participatingOrgs' | 'descriptions' | 'progressMetrics' | 'durations' | 'dates';
+  group: 'default' | 'activityDefaults' | 'transactionTypeTotals' | 'publicationStatuses' | 'participatingOrgs' | 'descriptions' | 'progressMetrics' | 'portfolioShares' | 'durations' | 'dates' | 'sectors';
   width?: string;
   alwaysVisible?: boolean; // For columns that can't be hidden (checkbox, actions)
   defaultVisible?: boolean;
@@ -497,6 +509,9 @@ const COLUMN_CONFIGS: ColumnConfig[] = [
   { id: 'totalPlannedDisbursement', label: 'Total Planned Disbursements', group: 'default', width: 'min-w-[100px]', defaultVisible: true, sortable: true, align: 'right' },
   { id: 'lastEdited', label: 'Last Edited', group: 'default', width: 'min-w-[100px]', defaultVisible: true, sortable: true, align: 'right' },
   { id: 'modalityClassification', label: 'Modality & Classification', group: 'default', width: 'w-[120px]', defaultVisible: true, align: 'center' },
+  { id: 'sectorCategories', label: 'Sector Categories', group: 'sectors', width: 'min-w-[160px]', defaultVisible: false, align: 'center' },
+  { id: 'sectors', label: 'Sectors', group: 'sectors', width: 'min-w-[160px]', defaultVisible: false, align: 'center' },
+  { id: 'subSectors', label: 'Sub-sectors', group: 'sectors', width: 'min-w-[180px]', defaultVisible: false, align: 'center' },
   { id: 'actions', label: 'Actions', group: 'default', width: 'w-[80px]', alwaysVisible: true, defaultVisible: true, align: 'right' },
   
   // Activity defaults (optional columns)
@@ -528,7 +543,7 @@ const COLUMN_CONFIGS: ColumnConfig[] = [
   // Participating organisation columns
   { id: 'fundingOrganisations', label: 'Funding Organisations', group: 'participatingOrgs', width: 'min-w-[180px]', defaultVisible: false, align: 'left' },
   { id: 'extendingOrganisations', label: 'Extending Organisations', group: 'participatingOrgs', width: 'min-w-[180px]', defaultVisible: false, align: 'left' },
-  { id: 'implementingOrganisations', label: 'Implementing Organisations', group: 'participatingOrgs', width: 'min-w-[180px]', defaultVisible: true, align: 'left' },
+  { id: 'implementingOrganisations', label: 'Implementing Organisations', group: 'participatingOrgs', width: 'min-w-[180px]', defaultVisible: false, align: 'left' },
   { id: 'accountableOrganisations', label: 'Accountable Organisations', group: 'participatingOrgs', width: 'min-w-[180px]', defaultVisible: false, align: 'left' },
   
   // Description columns
@@ -541,6 +556,12 @@ const COLUMN_CONFIGS: ColumnConfig[] = [
   { id: 'timeElapsed', label: 'Time Elapsed', group: 'progressMetrics', width: 'min-w-[140px]', defaultVisible: false, align: 'left' },
   { id: 'committedSpentPercent', label: '% Committed Spent', group: 'progressMetrics', width: 'min-w-[140px]', defaultVisible: false, align: 'left' },
   { id: 'budgetSpentPercent', label: '% Budget Spent', group: 'progressMetrics', width: 'min-w-[140px]', defaultVisible: false, align: 'left' },
+  
+  // Portfolio Share columns (% of system-wide totals)
+  { id: 'budgetShare', label: 'Budget Share', group: 'portfolioShares', width: 'min-w-[100px]', defaultVisible: false, align: 'right' },
+  { id: 'plannedDisbursementShare', label: 'Planned Disb. Share', group: 'portfolioShares', width: 'min-w-[120px]', defaultVisible: false, align: 'right' },
+  { id: 'commitmentShare', label: 'Commitment Share', group: 'portfolioShares', width: 'min-w-[120px]', defaultVisible: false, align: 'right' },
+  { id: 'disbursementShare', label: 'Disbursement Share', group: 'portfolioShares', width: 'min-w-[120px]', defaultVisible: false, align: 'right' },
   
   // Duration columns
   { id: 'totalExpectedLength', label: 'Total Expected Length', group: 'durations', width: 'min-w-[160px]', defaultVisible: false, sortable: true, align: 'left' },
@@ -558,6 +579,7 @@ const COLUMN_CONFIGS: ColumnConfig[] = [
 
 const COLUMN_GROUPS = {
   default: 'Default Columns',
+  sectors: 'Sectors',
   publicationStatuses: 'Publication Status',
   activityDefaults: 'Activity Defaults',
   transactionTypeTotals: 'Transaction Type Totals',
@@ -565,6 +587,7 @@ const COLUMN_GROUPS = {
   participatingOrgs: 'Participating Organisations',
   descriptions: 'Descriptions',
   progressMetrics: 'Progress & Metrics',
+  portfolioShares: 'Portfolio Shares',
   durations: 'Activity Durations',
   dates: 'Activity Dates',
 };
@@ -619,6 +642,11 @@ function ColumnSelector({ visibleColumns, onColumnsChange }: ColumnSelectorProps
     onColumnsChange(DEFAULT_VISIBLE_COLUMNS);
   };
 
+  const selectAll = () => {
+    const allColumnIds = COLUMN_CONFIGS.map(c => c.id);
+    onColumnsChange(allColumnIds);
+  };
+
   const visibleCount = visibleColumns.filter(id => {
     const config = COLUMN_CONFIGS.find(c => c.id === id);
     return config && !config.alwaysVisible;
@@ -654,14 +682,24 @@ function ColumnSelector({ visibleColumns, onColumnsChange }: ColumnSelectorProps
         <div className="p-3 border-b">
           <div className="flex items-center justify-between">
             <h4 className="font-medium text-sm">Visible Columns</h4>
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={resetToDefaults}
-              className="h-7 text-xs"
-            >
-              Reset to defaults
-            </Button>
+            <div className="flex items-center gap-1">
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={selectAll}
+                className="h-7 text-xs"
+              >
+                Select all
+              </Button>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={resetToDefaults}
+                className="h-7 text-xs"
+              >
+                Reset
+              </Button>
+            </div>
           </div>
           <p className="text-xs text-muted-foreground mt-1">
             {visibleCount} of {totalToggleable} columns visible
@@ -866,6 +904,7 @@ function ActivitiesPageContent() {
     setPage: optimizedData?.setPage || (() => {}),
     refetch: optimizedData?.refetch || (() => {}),
     removeActivity: optimizedData?.removeActivity || (() => {}),
+    systemTotals: optimizedData?.systemTotals || null,
     sorting: {
       sortField: optimizedData?.sorting?.sortField || 'updatedAt',
       sortOrder: optimizedData?.sorting?.sortOrder || 'desc',
@@ -889,6 +928,7 @@ function ActivitiesPageContent() {
   const activities = usingOptimization ? safeOptimizedData.activities : legacyActivities;
   const sortField = usingOptimization ? safeOptimizedData.sorting.sortField : legacySortField;
   const sortOrder = usingOptimization ? safeOptimizedData.sorting.sortOrder : legacySortOrder;
+  const systemTotals = usingOptimization ? safeOptimizedData.systemTotals : null;
   
   const loading = usingOptimization ? safeOptimizedData.loading : legacyLoading;
   const error = usingOptimization ? safeOptimizedData.error : legacyError;
@@ -2038,7 +2078,7 @@ function ActivitiesPageContent() {
                             <TooltipTrigger asChild>
                               <Info className="inline h-4 w-4 text-muted-foreground" />
                             </TooltipTrigger>
-                            <TooltipContent className="max-w-xs border border-gray-200 bg-white shadow-lg text-left">
+                            <TooltipContent className="max-w-xs border border-gray-200 bg-white shadow-lg text-left whitespace-normal">
                               <p className="text-sm text-gray-600 font-normal">
                                 Total value of all planned disbursements for this activity. All values are displayed in USD.
                               </p>
@@ -2069,7 +2109,28 @@ function ActivitiesPageContent() {
                       Modality & Classification
                     </th>
                   )}
-                  
+
+                  {/* Sector Categories */}
+                  {visibleColumns.includes('sectorCategories') && (
+                    <th className="h-12 px-4 py-3 text-center align-middle text-sm font-medium text-muted-foreground min-w-[160px]">
+                      Sector Categories
+                    </th>
+                  )}
+
+                  {/* Sectors */}
+                  {visibleColumns.includes('sectors') && (
+                    <th className="h-12 px-4 py-3 text-center align-middle text-sm font-medium text-muted-foreground min-w-[160px]">
+                      Sectors
+                    </th>
+                  )}
+
+                  {/* Sub-sectors */}
+                  {visibleColumns.includes('subSectors') && (
+                    <th className="h-12 px-4 py-3 text-center align-middle text-sm font-medium text-muted-foreground min-w-[180px]">
+                      Sub-sectors
+                    </th>
+                  )}
+
                   {/* Optional Activity Defaults Columns */}
                   {visibleColumns.includes('aidType') && (
                     <th className="h-12 px-4 py-3 text-left align-middle text-sm font-medium text-muted-foreground min-w-[150px]">
@@ -2289,6 +2350,72 @@ function ActivitiesPageContent() {
                     </th>
                   )}
                   
+                  {/* Portfolio Share columns */}
+                  {visibleColumns.includes('budgetShare') && (
+                    <th className="h-12 px-4 py-3 text-right align-middle text-sm font-medium text-muted-foreground min-w-[100px]">
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <span className="cursor-help">Budget Share</span>
+                          </TooltipTrigger>
+                          <TooltipContent className="max-w-xs border border-gray-200 bg-white shadow-lg text-left">
+                            <p className="text-sm text-gray-600 font-normal">
+                              This activity's budget as a percentage of total budget across all activities in the system.
+                            </p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </th>
+                  )}
+                  {visibleColumns.includes('plannedDisbursementShare') && (
+                    <th className="h-12 px-4 py-3 text-right align-middle text-sm font-medium text-muted-foreground min-w-[120px]">
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <span className="cursor-help">Planned Disb. Share</span>
+                          </TooltipTrigger>
+                          <TooltipContent className="max-w-xs border border-gray-200 bg-white shadow-lg text-left">
+                            <p className="text-sm text-gray-600 font-normal">
+                              This activity's planned disbursements as a percentage of total planned disbursements across all activities in the system.
+                            </p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </th>
+                  )}
+                  {visibleColumns.includes('commitmentShare') && (
+                    <th className="h-12 px-4 py-3 text-right align-middle text-sm font-medium text-muted-foreground min-w-[120px]">
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <span className="cursor-help">Commitment Share</span>
+                          </TooltipTrigger>
+                          <TooltipContent className="max-w-xs border border-gray-200 bg-white shadow-lg text-left">
+                            <p className="text-sm text-gray-600 font-normal">
+                              This activity's commitments as a percentage of total commitments across all activities in the system.
+                            </p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </th>
+                  )}
+                  {visibleColumns.includes('disbursementShare') && (
+                    <th className="h-12 px-4 py-3 text-right align-middle text-sm font-medium text-muted-foreground min-w-[120px]">
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <span className="cursor-help">Disbursement Share</span>
+                          </TooltipTrigger>
+                          <TooltipContent className="max-w-xs border border-gray-200 bg-white shadow-lg text-left">
+                            <p className="text-sm text-gray-600 font-normal">
+                              This activity's disbursements as a percentage of total disbursements across all activities in the system.
+                            </p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </th>
+                  )}
+                  
                   {/* Duration columns */}
                   {visibleColumns.includes('totalExpectedLength') && (
                     <th 
@@ -2488,23 +2615,26 @@ function ActivitiesPageContent() {
                                 {activity.acronym && (
                                   <span className="text-sm text-gray-500 font-normal">
                                     {' '}({activity.acronym})
-                                    <button
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        const fullText = `${activity.title} (${activity.acronym})`;
-                                        copyToClipboard(fullText, 'acronym', activity.id);
-                                      }}
-                                      className="ml-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:text-gray-700"
-                                      title="Copy Activity Title and Acronym"
-                                    >
-                                      {copiedId === `${activity.id}-acronym` ? (
-                                        <Check className="w-3 h-3 text-green-500" />
-                                      ) : (
-                                        <Copy className="w-3 h-3" />
-                                      )}
-                                    </button>
                                   </span>
                                 )}
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    e.preventDefault();
+                                    const textToCopy = activity.acronym 
+                                      ? `${activity.title} (${activity.acronym})` 
+                                      : activity.title;
+                                    copyToClipboard(textToCopy, 'title', activity.id);
+                                  }}
+                                  className="ml-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:text-gray-700"
+                                  title={activity.acronym ? "Copy Activity Title and Acronym" : "Copy Activity Title"}
+                                >
+                                  {copiedId === `${activity.id}-title` ? (
+                                    <Check className="w-3 h-3 text-green-500" />
+                                  ) : (
+                                    <Copy className="w-3 h-3" />
+                                  )}
+                                </button>
                               </h3>
                             {(activity.partnerId || activity.iatiIdentifier) && (
                               <div className="text-xs text-muted-foreground flex items-center gap-1 text-left overflow-hidden">
@@ -2514,6 +2644,7 @@ function ActivitiesPageContent() {
                                     <button
                                       onClick={(e) => {
                                         e.stopPropagation();
+                                        e.preventDefault();
                                         copyToClipboard(activity.partnerId!, 'partnerId', activity.id);
                                       }}
                                       className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:text-gray-700 flex-shrink-0"
@@ -2534,6 +2665,7 @@ function ActivitiesPageContent() {
                                     <button
                                       onClick={(e) => {
                                         e.stopPropagation();
+                                        e.preventDefault();
                                         copyToClipboard(activity.iatiIdentifier!, 'iatiIdentifier', activity.id);
                                       }}
                                       className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:text-gray-700 flex-shrink-0"
@@ -2690,7 +2822,7 @@ function ActivitiesPageContent() {
                             <TooltipTrigger asChild>
                               <span className="cursor-pointer"><span className="text-muted-foreground">USD</span> {formatCurrency((activity as any).totalPlannedDisbursementsUSD || 0)}</span>
                             </TooltipTrigger>
-                            <TooltipContent className="max-w-xs border border-gray-200 bg-white shadow-lg text-left">
+                            <TooltipContent className="max-w-xs border border-gray-200 bg-white shadow-lg text-left whitespace-normal">
                               <p className="text-sm text-gray-600 font-normal">
                                 Total value of all planned disbursements for this activity. All values are displayed in USD for consistency across different currencies.
                               </p>
@@ -2743,7 +2875,28 @@ function ActivitiesPageContent() {
                         </TooltipProvider>
                       </td>
                       )}
-                      
+
+                      {/* Sector Categories cell */}
+                      {visibleColumns.includes('sectorCategories') && (
+                        <td className="px-4 py-2 text-sm text-foreground">
+                          <SectorMiniBar sectors={activity.sectors} level="category" height={14} />
+                        </td>
+                      )}
+
+                      {/* Sectors cell */}
+                      {visibleColumns.includes('sectors') && (
+                        <td className="px-4 py-2 text-sm text-foreground">
+                          <SectorMiniBar sectors={activity.sectors} level="sector" height={14} />
+                        </td>
+                      )}
+
+                      {/* Sub-sectors cell */}
+                      {visibleColumns.includes('subSectors') && (
+                        <td className="px-4 py-2 text-sm text-foreground">
+                          <SectorMiniBar sectors={activity.sectors} level="subsector" height={14} />
+                        </td>
+                      )}
+
                       {/* Optional Activity Default Columns */}
                       {visibleColumns.includes('aidType') && (
                         <td className="px-4 py-2 text-sm text-foreground text-left">
@@ -2923,106 +3076,42 @@ function ActivitiesPageContent() {
                       {/* Participating Organisation Columns */}
                       {visibleColumns.includes('fundingOrganisations') && (
                         <td className="px-4 py-2 text-sm text-foreground text-left">
-                          {(() => {
-                            const formatted = formatOrganisationList(activity.fundingOrgs || []);
-                            return (
-                              <TooltipProvider>
-                                <Tooltip>
-                                  <TooltipTrigger asChild>
-                                    <span className="cursor-pointer line-clamp-2">{formatted.display}</span>
-                                  </TooltipTrigger>
-                                  {formatted.full.length > 2 && (
-                                    <TooltipContent className="max-w-sm bg-white border shadow-lg p-3">
-                                      <div className="space-y-1">
-                                        <p className="font-medium text-xs text-muted-foreground mb-2">Funding Organisations ({formatted.full.length})</p>
-                                        {formatted.full.map((org, i) => (
-                                          <div key={i} className="text-sm">{org}</div>
-                                        ))}
-                                      </div>
-                                    </TooltipContent>
-                                  )}
-                                </Tooltip>
-                              </TooltipProvider>
-                            );
-                          })()}
+                          <OrganizationAvatarGroup
+                            organizations={activity.fundingOrgs || []}
+                            maxDisplay={3}
+                            size="sm"
+                            label="Funding Organisations"
+                          />
                         </td>
                       )}
                       {visibleColumns.includes('extendingOrganisations') && (
                         <td className="px-4 py-2 text-sm text-foreground text-left">
-                          {(() => {
-                            const formatted = formatOrganisationList(activity.extendingOrgs || []);
-                            return (
-                              <TooltipProvider>
-                                <Tooltip>
-                                  <TooltipTrigger asChild>
-                                    <span className="cursor-pointer line-clamp-2">{formatted.display}</span>
-                                  </TooltipTrigger>
-                                  {formatted.full.length > 2 && (
-                                    <TooltipContent className="max-w-sm bg-white border shadow-lg p-3">
-                                      <div className="space-y-1">
-                                        <p className="font-medium text-xs text-muted-foreground mb-2">Extending Organisations ({formatted.full.length})</p>
-                                        {formatted.full.map((org, i) => (
-                                          <div key={i} className="text-sm">{org}</div>
-                                        ))}
-                                      </div>
-                                    </TooltipContent>
-                                  )}
-                                </Tooltip>
-                              </TooltipProvider>
-                            );
-                          })()}
+                          <OrganizationAvatarGroup
+                            organizations={activity.extendingOrgs || []}
+                            maxDisplay={3}
+                            size="sm"
+                            label="Extending Organisations"
+                          />
                         </td>
                       )}
                       {visibleColumns.includes('implementingOrganisations') && (
                         <td className="px-4 py-2 text-sm text-foreground text-left">
-                          {(() => {
-                            const formatted = formatOrganisationList(activity.implementingOrgs || []);
-                            return (
-                              <TooltipProvider>
-                                <Tooltip>
-                                  <TooltipTrigger asChild>
-                                    <span className="cursor-pointer line-clamp-2">{formatted.display}</span>
-                                  </TooltipTrigger>
-                                  {formatted.full.length > 2 && (
-                                    <TooltipContent className="max-w-sm bg-white border shadow-lg p-3">
-                                      <div className="space-y-1">
-                                        <p className="font-medium text-xs text-muted-foreground mb-2">Implementing Organisations ({formatted.full.length})</p>
-                                        {formatted.full.map((org, i) => (
-                                          <div key={i} className="text-sm">{org}</div>
-                                        ))}
-                                      </div>
-                                    </TooltipContent>
-                                  )}
-                                </Tooltip>
-                              </TooltipProvider>
-                            );
-                          })()}
+                          <OrganizationAvatarGroup
+                            organizations={activity.implementingOrgs || []}
+                            maxDisplay={3}
+                            size="sm"
+                            label="Implementing Organisations"
+                          />
                         </td>
                       )}
                       {visibleColumns.includes('accountableOrganisations') && (
                         <td className="px-4 py-2 text-sm text-foreground text-left">
-                          {(() => {
-                            const formatted = formatOrganisationList(activity.accountableOrgs || []);
-                            return (
-                              <TooltipProvider>
-                                <Tooltip>
-                                  <TooltipTrigger asChild>
-                                    <span className="cursor-pointer line-clamp-2">{formatted.display}</span>
-                                  </TooltipTrigger>
-                                  {formatted.full.length > 2 && (
-                                    <TooltipContent className="max-w-sm bg-white border shadow-lg p-3">
-                                      <div className="space-y-1">
-                                        <p className="font-medium text-xs text-muted-foreground mb-2">Accountable Organisations ({formatted.full.length})</p>
-                                        {formatted.full.map((org, i) => (
-                                          <div key={i} className="text-sm">{org}</div>
-                                        ))}
-                                      </div>
-                                    </TooltipContent>
-                                  )}
-                                </Tooltip>
-                              </TooltipProvider>
-                            );
-                          })()}
+                          <OrganizationAvatarGroup
+                            organizations={activity.accountableOrgs || []}
+                            maxDisplay={3}
+                            size="sm"
+                            label="Accountable Organisations"
+                          />
                         </td>
                       )}
                       
@@ -3219,8 +3308,8 @@ function ActivitiesPageContent() {
                                 <Tooltip>
                                   <TooltipTrigger asChild>
                                     <div className="flex flex-col items-start gap-1 cursor-pointer">
-                                      <Progress 
-                                        value={percent} 
+                                      <Progress
+                                        value={percent}
                                         className="h-2 w-20"
                                       />
                                       <span className="text-xs text-muted-foreground">{percent.toFixed(0)}%</span>
@@ -3250,7 +3339,97 @@ function ActivitiesPageContent() {
                           })()}
                         </td>
                       )}
-                      
+
+                      {/* Portfolio Share Cells */}
+                      {visibleColumns.includes('budgetShare') && (
+                        <td className="px-4 py-2 text-sm text-foreground text-right whitespace-nowrap">
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <span className="cursor-pointer">
+                                  {formatPercentage(calculatePortfolioShare(
+                                    (activity as any).totalBudget,
+                                    systemTotals?.totalBudget
+                                  ))}
+                                </span>
+                              </TooltipTrigger>
+                              <TooltipContent className="max-w-xs border border-gray-200 bg-white shadow-lg text-left">
+                                <p className="text-sm text-gray-600 font-normal">
+                                  Activity budget: USD {formatCurrency((activity as any).totalBudget || 0)}<br/>
+                                  System total: USD {formatCurrency(systemTotals?.totalBudget || 0)}
+                                </p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        </td>
+                      )}
+                      {visibleColumns.includes('plannedDisbursementShare') && (
+                        <td className="px-4 py-2 text-sm text-foreground text-right whitespace-nowrap">
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <span className="cursor-pointer">
+                                  {formatPercentage(calculatePortfolioShare(
+                                    (activity as any).totalPlannedDisbursementsUSD,
+                                    systemTotals?.totalPlannedDisbursements
+                                  ))}
+                                </span>
+                              </TooltipTrigger>
+                              <TooltipContent className="max-w-xs border border-gray-200 bg-white shadow-lg text-left">
+                                <p className="text-sm text-gray-600 font-normal">
+                                  Activity planned disbursements: USD {formatCurrency((activity as any).totalPlannedDisbursementsUSD || 0)}<br/>
+                                  System total: USD {formatCurrency(systemTotals?.totalPlannedDisbursements || 0)}
+                                </p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        </td>
+                      )}
+                      {visibleColumns.includes('commitmentShare') && (
+                        <td className="px-4 py-2 text-sm text-foreground text-right whitespace-nowrap">
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <span className="cursor-pointer">
+                                  {formatPercentage(calculatePortfolioShare(
+                                    activity.commitments,
+                                    systemTotals?.totalCommitments
+                                  ))}
+                                </span>
+                              </TooltipTrigger>
+                              <TooltipContent className="max-w-xs border border-gray-200 bg-white shadow-lg text-left">
+                                <p className="text-sm text-gray-600 font-normal">
+                                  Activity commitments: USD {formatCurrency(activity.commitments || 0)}<br/>
+                                  System total: USD {formatCurrency(systemTotals?.totalCommitments || 0)}
+                                </p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        </td>
+                      )}
+                      {visibleColumns.includes('disbursementShare') && (
+                        <td className="px-4 py-2 text-sm text-foreground text-right whitespace-nowrap">
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <span className="cursor-pointer">
+                                  {formatPercentage(calculatePortfolioShare(
+                                    activity.disbursements,
+                                    systemTotals?.totalDisbursements
+                                  ))}
+                                </span>
+                              </TooltipTrigger>
+                              <TooltipContent className="max-w-xs border border-gray-200 bg-white shadow-lg text-left">
+                                <p className="text-sm text-gray-600 font-normal">
+                                  Activity disbursements: USD {formatCurrency(activity.disbursements || 0)}<br/>
+                                  System total: USD {formatCurrency(systemTotals?.totalDisbursements || 0)}
+                                </p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        </td>
+                      )}
+
                       {/* Duration Cells */}
                       {visibleColumns.includes('totalExpectedLength') && (
                         <td className="px-4 py-2 text-sm text-foreground text-left">

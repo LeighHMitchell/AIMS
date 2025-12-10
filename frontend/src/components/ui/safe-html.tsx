@@ -6,7 +6,7 @@ import { cn } from '@/lib/utils';
 
 type SanitizeLevel = 'rich' | 'minimal' | 'text' | 'iati';
 
-interface SafeHtmlProps {
+interface SafeHtmlProps extends React.HTMLAttributes<HTMLElement> {
   /** The HTML string to sanitize and render */
   html: string;
   /** 
@@ -17,12 +17,8 @@ interface SafeHtmlProps {
    * - 'text': Strips all HTML
    */
   level?: SanitizeLevel;
-  /** Additional CSS classes */
-  className?: string;
   /** The HTML element to render as */
   as?: 'div' | 'span' | 'p';
-  /** Inline styles */
-  style?: React.CSSProperties;
 }
 
 /**
@@ -35,7 +31,8 @@ export const SafeHtml = forwardRef<HTMLElement, SafeHtmlProps>(({
   level = 'iati', 
   className,
   as = 'div',
-  style
+  style,
+  ...rest
 }, ref) => {
   if (!html) return null;
 
@@ -72,6 +69,7 @@ export const SafeHtml = forwardRef<HTMLElement, SafeHtmlProps>(({
   );
 
   const commonProps = {
+    ...rest,
     className: baseStyles,
     style,
     dangerouslySetInnerHTML: { __html: sanitized }

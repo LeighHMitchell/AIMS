@@ -6,6 +6,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { AlertCircle, Calendar } from "lucide-react"
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from "recharts"
 import { supabase } from "@/lib/supabase"
+import { ActivityFreshnessChart } from "./ActivityFreshnessChart"
 
 interface TimelinessData {
   year: number
@@ -282,7 +283,10 @@ export function DataClinicTimeliness() {
 
   return (
     <div className="space-y-6">
-      {/* Chart */}
+      {/* Activity Data Freshness Chart */}
+      <ActivityFreshnessChart />
+
+      {/* Activity Dates Distribution Chart */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">

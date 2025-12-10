@@ -108,3 +108,4 @@ export interface InferTransactionPartiesInput {
   /** The transaction to infer parties for */
   transaction: TransactionForInference;
 }
+
