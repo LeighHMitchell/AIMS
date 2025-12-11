@@ -27,7 +27,8 @@ import {
   Briefcase,
   Printer,
   Edit,
-  User
+  User,
+  Trash2
 } from 'lucide-react';
 import { getRoleBadgeVariant, getRoleDisplayLabel } from '@/lib/role-badge-utils';
 import { useUserRole } from '@/hooks/useUserRole';
@@ -39,6 +40,7 @@ interface PersonCardProps {
   person: RolodexPerson;
   onOrganizationClick?: (organizationId: string) => void;
   onActivityClick?: (activityId: string) => void;
+  onDelete?: (person: RolodexPerson) => void;
   compact?: boolean;
 }
 
@@ -46,6 +48,7 @@ export function PersonCard({
   person, 
   onOrganizationClick, 
   onActivityClick,
+  onDelete,
   compact = false 
 }: PersonCardProps) {
   const { isSuperUser } = useUserRole();
@@ -130,6 +133,12 @@ export function PersonCard({
     // For now, we'll just close the modal
     setIsContactEditModalOpen(false);
     // You might want to call a parent function to refresh the data
+  };
+
+  const handleDeleteContact = () => {
+    if (onDelete && person.source === 'activity_contact') {
+      onDelete(person);
+    }
   };
 
   // Helper functions for display formatting
@@ -301,6 +310,18 @@ export function PersonCard({
                   Send Email
                 </DropdownMenuItem>
               )}
+              {onDelete && person.source === 'activity_contact' && (
+                <>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem 
+                    onClick={handleDeleteContact}
+                    className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                  >
+                    <Trash2 className="mr-2 h-4 w-4" />
+                    Delete Contact
+                  </DropdownMenuItem>
+                </>
+              )}
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
@@ -370,6 +391,18 @@ export function PersonCard({
                       <Mail className="mr-2 h-4 w-4" />
                       Send Email
                     </DropdownMenuItem>
+                  )}
+                  {onDelete && person.source === 'activity_contact' && (
+                    <>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem 
+                        onClick={handleDeleteContact}
+                        className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                      >
+                        <Trash2 className="mr-2 h-4 w-4" />
+                        Delete Contact
+                      </DropdownMenuItem>
+                    </>
                   )}
                 </DropdownMenuContent>
               </DropdownMenu>

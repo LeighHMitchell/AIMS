@@ -1,12 +1,9 @@
 "use client"
 
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useEffect, useRef, useState, useCallback } from 'react'
 import * as d3 from 'd3'
-import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { ScrollArea } from '@/components/ui/scroll-area'
-import { Info, Maximize2, Minimize2, Network, X, Search, DollarSign, Calendar, ArrowRight } from 'lucide-react'
+import { Info, Maximize2, Minimize2, Network, X, ArrowRight, Shrink, Expand } from 'lucide-react'
 import { format } from 'date-fns'
 
 export interface GraphNode {
@@ -18,6 +15,8 @@ export interface GraphNode {
   totalOut?: number
   inflow?: number
   outflow?: number
+  logo?: string | null
+  acronym?: string
   x?: number
   y?: number
   fx?: number | null
@@ -29,6 +28,7 @@ export interface GraphLink {
   target: string | GraphNode
   value: number
   flowType?: 'commitment' | 'disbursement' | 'expenditure'
+  transactionType?: string // IATI transaction type code (1-13)
   aidType?: string
 }
 
@@ -63,6 +63,7 @@ interface EnhancedAidFlowGraphProps {
   dateRange?: { from: Date; to: Date }
   height?: number
   onNodeClick?: (nodeId: string) => void
+  searchQuery?: string
 }
 
 // Transaction type labels
@@ -86,19 +87,23 @@ export default function EnhancedAidFlowGraph({
   graphData,
   dateRange,
   height = 600,
-  onNodeClick
+  onNodeClick,
+  searchQuery = ''
 }: EnhancedAidFlowGraphProps) {
   const svgRef = useRef<SVGSVGElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
+  const simulationRef = useRef<d3.Simulation<GraphNode, GraphLink> | null>(null)
+  const zoomRef = useRef<d3.ZoomBehavior<SVGSVGElement, unknown> | null>(null)
   const [fullscreen, setFullscreen] = useState(false)
   const [selectedNode, setSelectedNode] = useState<GraphNode | null>(null)
+  const [selectedNodePosition, setSelectedNodePosition] = useState<{ x: number; y: number } | null>(null)
   const [hoveredNode, setHoveredNode] = useState<GraphNode | null>(null)
-  const [searchQuery, setSearchQuery] = useState('')
   const [highlightedNodeId, setHighlightedNodeId] = useState<string | null>(null)
-  const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [popupOpen, setPopupOpen] = useState(false)
   const [sidebarTransactions, setSidebarTransactions] = useState<Transaction[]>([])
   const [loadingTransactions, setLoadingTransactions] = useState(false)
   const [orgSummary, setOrgSummary] = useState<any>(null)
+  const [clusterLevel, setClusterLevel] = useState<'normal' | 'clustered' | 'spread'>('normal')
 
   // Search functionality
   useEffect(() => {
@@ -115,6 +120,90 @@ export default function EnhancedAidFlowGraph({
       setHighlightedNodeId(null)
     }
   }, [searchQuery, graphData.nodes])
+
+  // Handle clustering - bring nodes together in the center
+  const handleCluster = useCallback(() => {
+    if (!simulationRef.current || !svgRef.current || !containerRef.current) return
+    
+    const svg = d3.select(svgRef.current)
+    const container = containerRef.current
+    const width = container.clientWidth
+    const actualHeight = fullscreen ? window.innerHeight - 100 : height
+    
+    // Update simulation forces to cluster nodes together
+    simulationRef.current
+      .force('charge', d3.forceManyBody<GraphNode>().strength(-100)) // Less repulsion
+      .force('center', d3.forceCenter(width / 2, actualHeight / 2).strength(0.3)) // Stronger center pull
+      .alpha(0.8)
+      .restart()
+    
+    setClusterLevel('clustered')
+    
+    // Zoom to fit all nodes in view after a short delay
+    setTimeout(() => {
+      if (zoomRef.current && svgRef.current) {
+        svg.transition()
+          .duration(750)
+          .call(zoomRef.current.transform as any, d3.zoomIdentity.translate(width / 4, actualHeight / 4).scale(0.5))
+      }
+    }, 500)
+  }, [fullscreen, height])
+  
+  // Handle spreading - separate nodes apart
+  const handleSpread = useCallback(() => {
+    if (!simulationRef.current || !svgRef.current || !containerRef.current) return
+    
+    const svg = d3.select(svgRef.current)
+    const container = containerRef.current
+    const width = container.clientWidth
+    const actualHeight = fullscreen ? window.innerHeight - 100 : height
+    
+    // Update simulation forces to spread nodes apart
+    simulationRef.current
+      .force('charge', d3.forceManyBody<GraphNode>().strength(-800)) // More repulsion
+      .force('center', d3.forceCenter(width / 2, actualHeight / 2).strength(0.05)) // Weaker center pull
+      .alpha(0.8)
+      .restart()
+    
+    setClusterLevel('spread')
+    
+    // Reset zoom to default view
+    setTimeout(() => {
+      if (zoomRef.current && svgRef.current) {
+        svg.transition()
+          .duration(750)
+          .call(zoomRef.current.transform as any, d3.zoomIdentity)
+      }
+    }, 500)
+  }, [fullscreen, height])
+  
+  // Reset to normal layout
+  const handleResetLayout = useCallback(() => {
+    if (!simulationRef.current || !svgRef.current || !containerRef.current) return
+    
+    const svg = d3.select(svgRef.current)
+    const container = containerRef.current
+    const width = container.clientWidth
+    const actualHeight = fullscreen ? window.innerHeight - 100 : height
+    
+    // Reset to default simulation forces
+    simulationRef.current
+      .force('charge', d3.forceManyBody<GraphNode>().strength(-500))
+      .force('center', d3.forceCenter(width / 2, actualHeight / 2))
+      .alpha(0.8)
+      .restart()
+    
+    setClusterLevel('normal')
+    
+    // Reset zoom
+    setTimeout(() => {
+      if (zoomRef.current && svgRef.current) {
+        svg.transition()
+          .duration(750)
+          .call(zoomRef.current.transform as any, d3.zoomIdentity)
+      }
+    }, 500)
+  }, [fullscreen, height])
 
   // Fetch organization transactions
   const fetchOrgTransactions = async (orgId: string) => {
@@ -156,10 +245,42 @@ export default function EnhancedAidFlowGraph({
     // Setup SVG
     svg.attr('width', width).attr('height', actualHeight)
 
-    // Color scales
-    const maxValue = d3.max(graphData.links, d => d.value) || 1
-    const colorScale = d3.scaleSequential(d3.interpolateBlues)
-      .domain([0, maxValue])
+    // Create a set of valid node IDs for quick lookup
+    const validNodeIds = new Set(graphData.nodes.map(n => n.id))
+    
+    // Filter out any links that reference non-existent nodes
+    const validLinks = graphData.links.filter(link => {
+      const sourceId = typeof link.source === 'object' ? link.source.id : link.source
+      const targetId = typeof link.target === 'object' ? link.target.id : link.target
+      return validNodeIds.has(sourceId) && validNodeIds.has(targetId)
+    })
+
+    // Transaction type colors - distinct colors for each type
+    const transactionTypeColors: Record<string, string> = {
+      '1': '#22c55e',  // Incoming Commitment - Green
+      '2': '#3b82f6',  // Outgoing Commitment - Blue
+      '3': '#8b5cf6',  // Disbursement - Purple
+      '4': '#f59e0b',  // Expenditure - Amber
+      '5': '#ef4444',  // Interest Repayment - Red
+      '6': '#ec4899',  // Loan Repayment - Pink
+      '7': '#14b8a6',  // Reimbursement - Teal
+      '8': '#6366f1',  // Purchase of Equity - Indigo
+      '9': '#84cc16',  // Sale of Equity - Lime
+      '10': '#f97316', // Credit Guarantee - Orange
+      '11': '#06b6d4', // Incoming Funds - Cyan
+      '12': '#a855f7', // Outgoing Pledge - Violet
+      '13': '#10b981', // Incoming Pledge - Emerald
+      'unknown': '#64748b' // Unknown - Slate
+    }
+
+    // Get color for a link based on transaction type
+    const getLinkColor = (link: GraphLink) => {
+      const txType = link.transactionType || 'unknown'
+      return transactionTypeColors[txType] || transactionTypeColors['unknown']
+    }
+
+    // Color scales (keep for backward compatibility)
+    const maxValue = d3.max(validLinks, d => d.value) || 1
     
     // Size scales
     const maxFlow = d3.max(graphData.nodes, d => 
@@ -169,19 +290,28 @@ export default function EnhancedAidFlowGraph({
       .domain([0, maxFlow])
       .range([8, 40])
     
-    // Link width scale
+    // Link width scale - minimum width of 2px for visibility
     const linkWidthScale = d3.scaleLinear()
       .domain([0, maxValue])
-      .range([1, 10])
+      .range([2, 12])
 
-    // Create zoom behavior
+    // Create zoom behavior with filter to allow page scrolling
     const zoom = d3.zoom<SVGSVGElement, unknown>()
       .scaleExtent([0.1, 10])
+      .filter((event) => {
+        // Allow pinch-to-zoom (ctrlKey is true for pinch gestures on trackpad)
+        // Block regular wheel scrolling so page can scroll normally
+        if (event.type === 'wheel') {
+          return event.ctrlKey
+        }
+        return true
+      })
       .on('zoom', (event) => {
         g.attr('transform', event.transform.toString())
       })
 
     svg.call(zoom)
+    zoomRef.current = zoom
 
     // Create main group
     const g = svg.append('g')
@@ -189,37 +319,43 @@ export default function EnhancedAidFlowGraph({
     // Create arrow markers
     const defs = svg.append('defs')
     
-    // Create gradient for each link
-    graphData.links.forEach((link, i) => {
+    // Create gradient for each link based on transaction type
+    validLinks.forEach((link, i) => {
+      const color = getLinkColor(link)
       const gradient = defs.append('linearGradient')
         .attr('id', `gradient-${i}`)
         .attr('gradientUnits', 'userSpaceOnUse')
       
+      // Lighter version at start, full color at end
       gradient.append('stop')
         .attr('offset', '0%')
-        .attr('stop-color', colorScale(link.value * 0.3))
+        .attr('stop-color', color)
+        .attr('stop-opacity', 0.4)
       
       gradient.append('stop')
         .attr('offset', '100%')
-        .attr('stop-color', colorScale(link.value))
+        .attr('stop-color', color)
+        .attr('stop-opacity', 0.9)
     })
 
-    // Arrow markers
-    defs.append('marker')
-      .attr('id', 'arrow')
-      .attr('viewBox', '0 -5 10 10')
-      .attr('refX', 25)
-      .attr('refY', 0)
-      .attr('markerWidth', 6)
-      .attr('markerHeight', 6)
-      .attr('orient', 'auto')
-      .append('path')
-      .attr('d', 'M0,-5L10,0L0,5')
-      .attr('fill', '#64748b')
+    // Create arrow markers for each transaction type
+    Object.entries(transactionTypeColors).forEach(([txType, color]) => {
+      defs.append('marker')
+        .attr('id', `arrow-${txType}`)
+        .attr('viewBox', '0 -5 10 10')
+        .attr('refX', 25)
+        .attr('refY', 0)
+        .attr('markerWidth', 6)
+        .attr('markerHeight', 6)
+        .attr('orient', 'auto')
+        .append('path')
+        .attr('d', 'M0,-5L10,0L0,5')
+        .attr('fill', color)
+    })
 
     // Create force simulation
     const simulation = d3.forceSimulation<GraphNode>(graphData.nodes)
-      .force('link', d3.forceLink<GraphNode, GraphLink>(graphData.links)
+      .force('link', d3.forceLink<GraphNode, GraphLink>(validLinks)
         .id(d => d.id)
         .distance(150)
         .strength(0.5)
@@ -232,24 +368,44 @@ export default function EnhancedAidFlowGraph({
           (node.totalIn || node.inflow || 0) + (node.totalOut || node.outflow || 0)
         ) + 10;
       }))
+    
+    // Store simulation reference for external control
+    simulationRef.current = simulation
 
     // Create links
     const link = g.append('g')
       .attr('class', 'links')
       .selectAll('line')
-      .data(graphData.links)
+      .data(validLinks)
       .enter().append('line')
       .attr('stroke', (d, i) => `url(#gradient-${i})`)
-      .attr('stroke-width', d => linkWidthScale(d.value))
+      .attr('stroke-width', d => linkWidthScale(d.value || 1) || 2) // Default width for links without value (e.g., activity relationships)
       .attr('stroke-opacity', d => {
         const sourceId = typeof d.source === 'object' ? d.source.id : d.source
         const targetId = typeof d.target === 'object' ? d.target.id : d.target
         if (highlightedNodeId && (sourceId === highlightedNodeId || targetId === highlightedNodeId)) {
           return 1
         }
-        return 0.6
+        return 0.7
       })
-      .attr('marker-end', 'url(#arrow)')
+      .attr('marker-end', d => `url(#arrow-${d.transactionType || 'unknown'})`)
+      .style('pointer-events', 'all') // Make links interactive
+    
+    // Log link count for debugging
+    console.log('[EnhancedAidFlowGraph] Rendering links:', validLinks.length, 'nodes:', graphData.nodes.length)
+
+    // Create clipPath definitions for circular logo images
+    graphData.nodes.forEach((d, i) => {
+      if (d.logo) {
+        const r = radiusScale((d.totalIn || d.inflow || 0) + (d.totalOut || d.outflow || 0))
+        defs.append('clipPath')
+          .attr('id', `clip-${i}`)
+          .append('circle')
+          .attr('r', r)
+          .attr('cx', 0)
+          .attr('cy', 0)
+      }
+    })
 
     // Create node groups
     const node = g.append('g')
@@ -264,24 +420,37 @@ export default function EnhancedAidFlowGraph({
         .on('end', dragended)
       )
 
-    // Add circles for nodes
+    // Helper function to get node color
+    const getNodeColor = (d: GraphNode) => {
+      if (d.id === highlightedNodeId) return '#f97316'
+      if (d.type === 'donor') return '#3b82f6'
+      if (d.type === 'recipient') return '#10b981'
+      if (d.type === 'implementer') return '#f59e0b'
+      if (d.type === 'sector') return '#8b5cf6'
+      return '#64748b'
+    }
+
+    // Helper function to get initials for nodes without logos
+    const getInitials = (d: GraphNode) => {
+      if (d.acronym) return d.acronym.substring(0, 3)
+      const words = d.name.split(' ').filter(w => w.length > 0)
+      if (words.length >= 2) {
+        return (words[0][0] + words[1][0]).toUpperCase()
+      }
+      return d.name.substring(0, 2).toUpperCase()
+    }
+
+    // Add background circle (white for logos, colored for non-logos)
     node.append('circle')
       .attr('r', d => radiusScale(
         (d.totalIn || d.inflow || 0) + (d.totalOut || d.outflow || 0)
       ))
-      .attr('fill', d => {
-        if (d.id === highlightedNodeId) return '#f97316'
-        if (d.type === 'donor') return '#3b82f6'
-        if (d.type === 'recipient') return '#10b981'
-        if (d.type === 'implementer') return '#f59e0b'
-        if (d.type === 'sector') return '#8b5cf6'
-        return '#64748b'
-      })
-      .attr('stroke', d => d.id === highlightedNodeId ? '#ea580c' : '#fff')
+      .attr('fill', d => d.logo ? '#ffffff' : getNodeColor(d))
+      .attr('stroke', d => d.id === highlightedNodeId ? '#ea580c' : (d.logo ? '#e2e8f0' : '#fff'))
       .attr('stroke-width', d => d.id === highlightedNodeId ? 3 : 2)
       .attr('opacity', d => {
         if (highlightedNodeId && d.id !== highlightedNodeId) {
-          const isConnected = graphData.links.some(l => {
+          const isConnected = validLinks.some(l => {
             const sourceId = typeof l.source === 'object' ? l.source.id : l.source
             const targetId = typeof l.target === 'object' ? l.target.id : l.target
             return (sourceId === highlightedNodeId && targetId === d.id) || 
@@ -292,7 +461,33 @@ export default function EnhancedAidFlowGraph({
         return 1
       })
 
-    // Add labels that move with nodes
+    // Add logo images for nodes that have them
+    node.filter(d => !!d.logo)
+      .append('image')
+      .attr('xlink:href', d => d.logo!)
+      .attr('x', d => -radiusScale((d.totalIn || d.inflow || 0) + (d.totalOut || d.outflow || 0)))
+      .attr('y', d => -radiusScale((d.totalIn || d.inflow || 0) + (d.totalOut || d.outflow || 0)))
+      .attr('width', d => radiusScale((d.totalIn || d.inflow || 0) + (d.totalOut || d.outflow || 0)) * 2)
+      .attr('height', d => radiusScale((d.totalIn || d.inflow || 0) + (d.totalOut || d.outflow || 0)) * 2)
+      .attr('clip-path', (d, i) => `url(#clip-${graphData.nodes.indexOf(d)})`)
+      .attr('preserveAspectRatio', 'xMidYMid slice')
+      .on('error', function() {
+        // If image fails to load, hide it (fallback circle is already there)
+        d3.select(this).style('display', 'none')
+      })
+
+    // Add initials/acronym text for nodes WITHOUT logos
+    node.filter(d => !d.logo)
+      .append('text')
+      .text(d => getInitials(d))
+      .attr('text-anchor', 'middle')
+      .attr('dominant-baseline', 'central')
+      .attr('font-size', d => Math.min(radiusScale((d.totalIn || d.inflow || 0) + (d.totalOut || d.outflow || 0)) * 0.8, 14))
+      .attr('font-weight', 'bold')
+      .attr('fill', '#ffffff')
+      .style('pointer-events', 'none')
+
+    // Add labels below nodes
     const labels = node.append('text')
       .text(d => d.name.length > 20 ? d.name.substring(0, 20) + '...' : d.name)
       .attr('text-anchor', 'middle')
@@ -316,7 +511,7 @@ export default function EnhancedAidFlowGraph({
       
       // Dim unconnected nodes
       node.attr('opacity', n => {
-        const isConnected = graphData.links.some(l => {
+        const isConnected = validLinks.some(l => {
           const sourceId = typeof l.source === 'object' ? l.source.id : l.source
           const targetId = typeof l.target === 'object' ? l.target.id : l.target
           return (sourceId === d.id && targetId === n.id) || 
@@ -333,8 +528,14 @@ export default function EnhancedAidFlowGraph({
     })
     .on('click', function(event, d) {
       event.stopPropagation()
+      // Get position relative to container for the popup
+      const containerRect = container.getBoundingClientRect()
+      const x = event.clientX - containerRect.left
+      const y = event.clientY - containerRect.top
+      
       setSelectedNode(d)
-      setSidebarOpen(true)
+      setSelectedNodePosition({ x, y })
+      setPopupOpen(true)
       fetchOrgTransactions(d.id)
       if (onNodeClick) onNodeClick(d.id)
     })
@@ -391,9 +592,13 @@ export default function EnhancedAidFlowGraph({
       event.subject.fy = null
     }
 
+    // Reset cluster level when graph data changes
+    setClusterLevel('normal')
+    
     // Cleanup
     return () => {
       simulation.stop()
+      simulationRef.current = null
     }
   }, [graphData, fullscreen, height, highlightedNodeId, onNodeClick, dateRange])
 
@@ -412,20 +617,6 @@ export default function EnhancedAidFlowGraph({
 
   return (
     <div className="relative">
-      {/* Search Bar */}
-      <div className="absolute top-4 left-4 z-20 w-80">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500" />
-          <Input
-            type="text"
-            placeholder="Search organization..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10 bg-white/90 backdrop-blur"
-          />
-        </div>
-      </div>
-
       <div 
         ref={containerRef}
         className={`relative ${fullscreen ? 'fixed inset-0 z-50 bg-white p-4' : 'w-full'}`}
@@ -433,6 +624,41 @@ export default function EnhancedAidFlowGraph({
       >
         {/* Controls */}
         <div className="absolute top-4 right-4 z-10 flex gap-2">
+          {/* Cluster/Spread Controls */}
+          <div className="flex gap-1 bg-white/90 backdrop-blur rounded-lg border p-1">
+            <Button
+              variant={clusterLevel === 'clustered' ? 'default' : 'ghost'}
+              size="sm"
+              onClick={handleCluster}
+              className="h-8 px-3"
+              title="Bring nodes together"
+            >
+              <Shrink className="h-4 w-4 mr-1" />
+              <span className="text-xs">Cluster</span>
+            </Button>
+            <Button
+              variant={clusterLevel === 'spread' ? 'default' : 'ghost'}
+              size="sm"
+              onClick={handleSpread}
+              className="h-8 px-3"
+              title="Spread nodes apart"
+            >
+              <Expand className="h-4 w-4 mr-1" />
+              <span className="text-xs">Spread</span>
+            </Button>
+            {clusterLevel !== 'normal' && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleResetLayout}
+                className="h-8 px-2"
+                title="Reset to normal layout"
+              >
+                <span className="text-xs">Reset</span>
+              </Button>
+            )}
+          </div>
+          
           <Button
             variant="outline"
             size="icon"
@@ -444,27 +670,64 @@ export default function EnhancedAidFlowGraph({
         </div>
 
         {/* Legend */}
-        <div className="absolute bottom-4 left-4 z-10 bg-white/90 backdrop-blur p-3 rounded-lg border">
-          <div className="flex items-center gap-2 mb-2">
-            <Network className="h-4 w-4" />
-            <span className="text-sm font-medium">Organization Types</span>
+        <div className="absolute bottom-4 left-4 z-10 flex gap-2">
+          {/* Organization Types Legend */}
+          <div className="bg-white/90 backdrop-blur p-3 rounded-lg border">
+            <div className="flex items-center gap-2 mb-2">
+              <Network className="h-4 w-4" />
+              <span className="text-sm font-medium">Organization Types</span>
+            </div>
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full bg-blue-500"></div>
+                <span className="text-xs">Donor</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full bg-green-500"></div>
+                <span className="text-xs">Recipient</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full bg-amber-500"></div>
+                <span className="text-xs">Implementer</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full bg-purple-500"></div>
+                <span className="text-xs">Sector</span>
+              </div>
+            </div>
           </div>
-          <div className="space-y-1">
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full bg-blue-500"></div>
-              <span className="text-xs">Donor</span>
+          
+          {/* Transaction Types Legend */}
+          <div className="bg-white/90 backdrop-blur p-3 rounded-lg border">
+            <div className="flex items-center gap-2 mb-2">
+              <ArrowRight className="h-4 w-4" />
+              <span className="text-sm font-medium">Transaction Types</span>
             </div>
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full bg-green-500"></div>
-              <span className="text-xs">Recipient</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full bg-amber-500"></div>
-              <span className="text-xs">Implementer</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full bg-purple-500"></div>
-              <span className="text-xs">Sector</span>
+            <div className="grid grid-cols-2 gap-x-3 gap-y-1">
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-0.5 bg-green-500"></div>
+                <span className="text-xs">Incoming Commit.</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-0.5 bg-blue-500"></div>
+                <span className="text-xs">Outgoing Commit.</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-0.5 bg-purple-500"></div>
+                <span className="text-xs">Disbursement</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-0.5 bg-amber-500"></div>
+                <span className="text-xs">Expenditure</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-0.5 bg-cyan-500"></div>
+                <span className="text-xs">Incoming Funds</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-0.5 bg-slate-500"></div>
+                <span className="text-xs">Other</span>
+              </div>
             </div>
           </div>
         </div>
@@ -503,118 +766,89 @@ export default function EnhancedAidFlowGraph({
         {/* Help Text */}
         <div className="absolute bottom-4 right-4 flex items-center gap-2 text-xs text-slate-500">
           <Info className="h-3 w-3" />
-          <span>Drag to pan • Scroll to zoom • Click nodes for details</span>
+          <span>Drag to pan • Pinch to zoom • Click nodes for details</span>
         </div>
       </div>
 
-      {/* Transaction Sidebar */}
-      {sidebarOpen && selectedNode && (
-        <div className="fixed right-0 top-0 w-96 h-full bg-white shadow-2xl z-50 flex flex-col">
-          <div className="p-4 border-b">
-            <div className="flex items-start justify-between mb-2">
-              <div>
-                <h2 className="text-lg font-bold">{selectedNode.name}</h2>
-                <p className="text-sm text-slate-500 capitalize">{selectedNode.type || 'Organization'}</p>
+      {/* Selected Node Popup - appears near clicked node */}
+      {popupOpen && selectedNode && selectedNodePosition && (
+        <div 
+          className="absolute z-20 bg-slate-900 text-white p-4 rounded-lg shadow-xl max-w-sm"
+          style={{
+            left: Math.min(selectedNodePosition.x + 15, (containerRef.current?.clientWidth || 400) - 320),
+            top: selectedNodePosition.y + 15,
+            transform: selectedNodePosition.y > (height - 250) ? 'translateY(-100%)' : undefined
+          }}
+        >
+          {/* Close button */}
+          <button
+            onClick={() => {
+              setPopupOpen(false)
+              setSelectedNode(null)
+              setSelectedNodePosition(null)
+            }}
+            className="absolute top-2 right-2 text-slate-400 hover:text-white transition-colors"
+          >
+            <X className="h-4 w-4" />
+          </button>
+          
+          <div className="font-semibold text-sm pr-6">{selectedNode.name}</div>
+          <div className="text-xs text-slate-300 capitalize mt-1">{selectedNode.type || 'Organization'}</div>
+          
+          {/* Summary Stats */}
+          {orgSummary && (
+            <div className="grid grid-cols-2 gap-2 mt-3">
+              <div className="bg-slate-800 p-2 rounded">
+                <div className="text-xs text-green-400">Total Inflow</div>
+                <div className="font-semibold text-green-300 text-sm">
+                  {formatCurrency(orgSummary.totalInflow)}
+                </div>
               </div>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setSidebarOpen(false)}
-              >
-                <X className="h-4 w-4" />
-              </Button>
+              <div className="bg-slate-800 p-2 rounded">
+                <div className="text-xs text-red-400">Total Outflow</div>
+                <div className="font-semibold text-red-300 text-sm">
+                  {formatCurrency(orgSummary.totalOutflow)}
+                </div>
+              </div>
+              <div className="bg-slate-800 p-2 rounded">
+                <div className="text-xs text-blue-400">Transactions</div>
+                <div className="font-semibold text-blue-300 text-sm">
+                  {orgSummary.transactionCount}
+                </div>
+              </div>
+              <div className="bg-slate-800 p-2 rounded">
+                <div className="text-xs text-purple-400">Partners</div>
+                <div className="font-semibold text-purple-300 text-sm">
+                  {orgSummary.uniquePartners}
+                </div>
+              </div>
             </div>
-            
-            {orgSummary && (
-              <div className="grid grid-cols-2 gap-2 mt-4">
-                <div className="bg-green-50 p-2 rounded">
-                  <div className="text-xs text-green-600">Total Inflow</div>
-                  <div className="font-semibold text-green-700">
-                    {formatCurrency(orgSummary.totalInflow)}
-                  </div>
+          )}
+          
+          {/* Loading state */}
+          {loadingTransactions && (
+            <div className="flex items-center justify-center py-4 mt-3">
+              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white"></div>
+            </div>
+          )}
+          
+          {/* Flow summary from node data */}
+          {!orgSummary && !loadingTransactions && (
+            <div className="mt-3 pt-3 border-t border-slate-700 space-y-1">
+              {(selectedNode.totalIn || selectedNode.inflow) ? (
+                <div className="flex justify-between text-xs">
+                  <span className="text-green-400">Total Inflow:</span>
+                  <span className="font-medium">{formatCurrency(selectedNode.totalIn || selectedNode.inflow || 0)}</span>
                 </div>
-                <div className="bg-red-50 p-2 rounded">
-                  <div className="text-xs text-red-600">Total Outflow</div>
-                  <div className="font-semibold text-red-700">
-                    {formatCurrency(orgSummary.totalOutflow)}
-                  </div>
+              ) : null}
+              {(selectedNode.totalOut || selectedNode.outflow) ? (
+                <div className="flex justify-between text-xs">
+                  <span className="text-blue-400">Total Outflow:</span>
+                  <span className="font-medium">{formatCurrency(selectedNode.totalOut || selectedNode.outflow || 0)}</span>
                 </div>
-                <div className="bg-blue-50 p-2 rounded">
-                  <div className="text-xs text-blue-600">Transactions</div>
-                  <div className="font-semibold text-blue-700">
-                    {orgSummary.transactionCount}
-                  </div>
-                </div>
-                <div className="bg-purple-50 p-2 rounded">
-                  <div className="text-xs text-purple-600">Partners</div>
-                  <div className="font-semibold text-purple-700">
-                    {orgSummary.uniquePartners}
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-
-          <ScrollArea className="flex-1 p-4">
-            {loadingTransactions ? (
-              <div className="flex items-center justify-center h-32">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {sidebarTransactions.map((tx) => (
-                  <Card key={tx.id} className="p-3">
-                    <div className="flex items-start justify-between mb-2">
-                      <div className="flex-1">
-                        <div className="font-medium text-sm">{tx.activityTitle}</div>
-                        {tx.activityRef && (
-                          <div className="text-xs text-slate-500">{tx.activityRef}</div>
-                        )}
-                      </div>
-                      <div className={`text-sm font-semibold ${tx.isIncoming ? 'text-green-600' : 'text-red-600'}`}>
-                        {tx.isIncoming ? '+' : '-'}{formatCurrency(tx.value)}
-                      </div>
-                    </div>
-                    
-                    <div className="space-y-1 text-xs">
-                      <div className="flex items-center gap-2">
-                        <ArrowRight className="h-3 w-3 text-slate-400" />
-                        <span className="text-slate-600">
-                          {tx.isIncoming ? 'From' : 'To'}: {tx.partnerOrg.name || 'Unknown'}
-                        </span>
-                      </div>
-                      
-                      <div className="flex items-center gap-2">
-                        <Calendar className="h-3 w-3 text-slate-400" />
-                        <span className="text-slate-600">
-                          {format(new Date(tx.date), 'MMM d, yyyy')}
-                        </span>
-                      </div>
-                      
-                      <div className="flex items-center gap-2">
-                        <DollarSign className="h-3 w-3 text-slate-400" />
-                        <span className="text-slate-600">
-                          {TRANSACTION_TYPE_LABELS[tx.transactionType] || tx.transactionType}
-                        </span>
-                      </div>
-                      
-                      {tx.description && (
-                        <div className="mt-2 p-2 bg-slate-50 rounded text-slate-700">
-                          {tx.description}
-                        </div>
-                      )}
-                    </div>
-                  </Card>
-                ))}
-                
-                {sidebarTransactions.length === 0 && (
-                  <div className="text-center py-8 text-slate-500">
-                    No transactions found for this organization
-                  </div>
-                )}
-              </div>
-            )}
-          </ScrollArea>
+              ) : null}
+            </div>
+          )}
         </div>
       )}
     </div>

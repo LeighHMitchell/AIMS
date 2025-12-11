@@ -226,3 +226,4 @@ export function formatPercentage(
   
   return `${percentage.toFixed(decimals)}%`;
 }
+

@@ -18,10 +18,20 @@ export async function GET(request: NextRequest) {
     const dateTo = searchParams.get('dateTo');
     const search = searchParams.get('search') || '';
     
+    // Find activity IDs matching the search term (for activity title search)
+    let matchingActivityIds: string[] = [];
+    if (search) {
+      const { data: matchingActivities } = await getSupabaseAdmin()
+        .from('activities')
+        .select('id')
+        .ilike('title_narrative', `%${search}%`);
+      matchingActivityIds = matchingActivities?.map(a => a.id) || [];
+    }
+    
     // Build the query - select all fields needed for filtering and aggregation
     let query = getSupabaseAdmin()
       .from('transactions')
-      .select('uuid, transaction_date, transaction_type, value_usd, value, currency, value_date, flow_type, finance_type, status, provider_org_id, receiver_org_id, provider_org_name, receiver_org_name, description');
+      .select('uuid, activity_id, transaction_date, transaction_type, value_usd, value, currency, value_date, flow_type, finance_type, status, provider_org_id, receiver_org_id, provider_org_name, receiver_org_name, description');
     
     // Apply filters
     if (transactionType && transactionType !== 'all') {
@@ -53,14 +63,13 @@ export async function GET(request: NextRequest) {
       query = query.lte('transaction_date', dateTo);
     }
     
-    // Apply search
+    // Apply search - search org names, description, and activity title (via matching activity IDs)
     if (search) {
-      query = query.or(`
-        uuid.ilike.%${search}%,
-        provider_org_name.ilike.%${search}%,
-        receiver_org_name.ilike.%${search}%,
-        description.ilike.%${search}%
-      `);
+      if (matchingActivityIds.length > 0) {
+        query = query.or(`provider_org_name.ilike.%${search}%,receiver_org_name.ilike.%${search}%,description.ilike.%${search}%,activity_id.in.(${matchingActivityIds.join(',')})`);
+      } else {
+        query = query.or(`provider_org_name.ilike.%${search}%,receiver_org_name.ilike.%${search}%,description.ilike.%${search}%`);
+      }
     }
     
     // Execute query

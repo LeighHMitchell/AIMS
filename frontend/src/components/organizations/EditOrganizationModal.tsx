@@ -293,7 +293,7 @@ const ImageUpload: React.FC<{
       
       {preview ? (
         <div className="relative">
-          <div className={`rounded-lg overflow-hidden border-2 border-dashed border-gray-300 ${isLogo ? 'w-32 h-32' : 'w-full h-40'}`}>
+          <div className={`rounded-lg overflow-hidden border-2 border-dashed border-gray-300 ${isLogo ? 'w-32 h-40' : 'w-full h-40'}`}>
             <img 
               src={preview} 
               alt={label}
@@ -315,7 +315,7 @@ const ImageUpload: React.FC<{
           className={`border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors
             ${isDragActive ? 'border-primary bg-primary/5' : 'border-gray-300 hover:border-gray-400'}
             ${uploading ? 'opacity-50 cursor-not-allowed' : ''}
-            ${isLogo ? 'h-32' : 'h-40'}`}
+            h-40`}
         >
           <input {...getInputProps()} />
           {uploading ? (

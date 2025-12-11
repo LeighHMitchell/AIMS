@@ -11,6 +11,7 @@ export async function GET(request: NextRequest) {
     const startDate = searchParams.get('start');
     const endDate = searchParams.get('end');
     const statusFilter = searchParams.get('status') || 'both'; // 'actual', 'draft', or 'both'
+    const transactionTypeFilter = searchParams.get('transactionType') || 'all'; // specific type or 'all'
     
     // Validate date parameters
     if (!startDate || !endDate) {
@@ -46,6 +47,20 @@ export async function GET(request: NextRequest) {
       );
     }
     
+    // Determine transaction types to filter
+    const validTransactionTypes = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13'];
+    let transactionTypesToFilter: string[];
+    
+    if (transactionTypeFilter === 'all') {
+      // Include key transaction types for flow visualization:
+      // 1 = Incoming Commitment, 2 = Outgoing Commitment, 3 = Disbursement, 4 = Expenditure, 11 = Incoming Funds
+      transactionTypesToFilter = ['1', '2', '3', '4', '11'];
+    } else if (validTransactionTypes.includes(transactionTypeFilter)) {
+      transactionTypesToFilter = [transactionTypeFilter];
+    } else {
+      transactionTypesToFilter = ['1', '2', '3', '4', '11'];
+    }
+    
     const supabase = getSupabaseAdmin();
     
     if (!supabase) {
@@ -55,7 +70,25 @@ export async function GET(request: NextRequest) {
       );
     }
     
-    console.log('[Aid Flow API] Fetching data for date range:', { start: startDate, end: endDate, status: statusFilter });
+    console.log('[Aid Flow API] Fetching data for date range:', { start: startDate, end: endDate, status: statusFilter, transactionType: transactionTypeFilter });
+    
+    // Diagnostic: Count all transactions with both provider and receiver (no date filter)
+    const { count: totalWithBothOrgs } = await supabase
+      .from('transactions')
+      .select('*', { count: 'exact', head: true })
+      .not('provider_org_id', 'is', null)
+      .not('receiver_org_id', 'is', null);
+    
+    const { count: totalWithBothNames } = await supabase
+      .from('transactions')
+      .select('*', { count: 'exact', head: true })
+      .not('provider_org_name', 'is', null)
+      .not('receiver_org_name', 'is', null);
+    
+    console.log('[Aid Flow API] DIAGNOSTIC - Total transactions with both orgs (no date filter):', {
+      withBothOrgIds: totalWithBothOrgs,
+      withBothOrgNames: totalWithBothNames
+    });
     
     // Build the query
     let query = supabase
@@ -77,19 +110,18 @@ export async function GET(request: NextRequest) {
       .gte('transaction_date', startDate)
       .lte('transaction_date', endDate)
       .not('value', 'is', null)
-      .in('transaction_type', ['2', '3', '4']) // Commitments, Disbursements, Expenditures
+      .in('transaction_type', transactionTypesToFilter)
       .order('value', { ascending: false })
       .limit(5000); // Reasonable limit for performance
     
     // Apply status filter
+    // Note: We use OR conditions to also include transactions with null status
     if (statusFilter === 'actual') {
       query = query.eq('status', 'actual');
     } else if (statusFilter === 'draft') {
       query = query.eq('status', 'draft');
-    } else {
-      // 'both' - include both actual and draft
-      query = query.in('status', ['actual', 'draft']);
     }
+    // For 'both', don't filter by status at all - include all transactions
     
     // Execute the query
     const { data: transactions, error: transactionsError } = await query;
@@ -107,6 +139,25 @@ export async function GET(request: NextRequest) {
     }
     
     console.log('[Aid Flow API] Fetched transactions:', transactions?.length || 0);
+    
+    // Log transactions with specific org names for debugging
+    const relevantTransactions = (transactions || []).filter((t: any) => {
+      const providerName = (t.provider_org_name || '').toLowerCase();
+      const receiverName = (t.receiver_org_name || '').toLowerCase();
+      return providerName.includes('afd') || providerName.includes('edge') || providerName.includes('noa') ||
+             receiverName.includes('afd') || receiverName.includes('edge') || receiverName.includes('noa');
+    });
+    console.log('[Aid Flow API] Transactions involving AFD/Edge/NOA:', relevantTransactions.length);
+    if (relevantTransactions.length > 0) {
+      console.log('[Aid Flow API] Sample relevant transactions:', relevantTransactions.slice(0, 3).map((t: any) => ({
+        provider: t.provider_org_name || t.provider_org_id,
+        receiver: t.receiver_org_name || t.receiver_org_id,
+        value: t.value,
+        type: t.transaction_type,
+        status: t.status,
+        date: t.transaction_date
+      })));
+    }
     
     // Get unique organization IDs from transactions
     const orgIds = new Set<string>();
@@ -129,12 +180,12 @@ export async function GET(request: NextRequest) {
       });
     }
     
-    // Fetch organizations
+    // Fetch organizations (including logo for visualization)
     let organizations = [];
     if (orgIds.size > 0) {
       const { data: orgsData, error: orgsError } = await supabase
         .from('organizations')
-        .select('id, name, organization_type, acronym')
+        .select('id, name, acronym, logo, type')
         .in('id', Array.from(orgIds));
       
       if (orgsError) {
@@ -146,6 +197,22 @@ export async function GET(request: NextRequest) {
     
     console.log('[Aid Flow API] Fetched organizations:', organizations.length);
     
+    // Log transaction details for debugging
+    const transactionsWithBothOrgs = (transactions || []).filter((t: any) => 
+      (t.provider_org_id || t.provider_org_name) && (t.receiver_org_id || t.receiver_org_name)
+    );
+    console.log('[Aid Flow API] Transactions with both provider AND receiver:', transactionsWithBothOrgs.length);
+    
+    if (transactionsWithBothOrgs.length > 0) {
+      console.log('[Aid Flow API] Sample transaction with both orgs:', {
+        provider_org_id: transactionsWithBothOrgs[0].provider_org_id,
+        provider_org_name: transactionsWithBothOrgs[0].provider_org_name,
+        receiver_org_id: transactionsWithBothOrgs[0].receiver_org_id,
+        receiver_org_name: transactionsWithBothOrgs[0].receiver_org_name,
+        value: transactionsWithBothOrgs[0].value
+      });
+    }
+    
     // Build graph data
     const graphData = buildAidFlowGraphData(
       transactions || [],
@@ -153,8 +220,8 @@ export async function GET(request: NextRequest) {
       undefined,
       {
         limit: 100, // Top 100 organizations by flow
-        minValue: 10000, // Minimum transaction value
-        transactionTypes: ['2', '3', '4']
+        minValue: 0, // Include all transactions regardless of value
+        transactionTypes: transactionTypesToFilter
       }
     );
     

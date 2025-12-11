@@ -142,6 +142,22 @@ export async function GET(request: Request) {
     const includeLinked = searchParams.get('includeLinked') !== 'false'; // Default to true
     const transactionSource = searchParams.get('transactionSource') || 'all';
     
+    // Find activity IDs matching the search term (for activity title search)
+    let matchingActivityIds: string[] = [];
+    if (search) {
+      const { data: matchingActivities, error: activitySearchError } = await getSupabaseAdmin()
+        .from('activities')
+        .select('id')
+        .ilike('title_narrative', `%${search}%`);
+      
+      if (activitySearchError) {
+        console.error('[AIMS] Error searching activities:', activitySearchError);
+      }
+      
+      matchingActivityIds = matchingActivities?.map(a => a.id) || [];
+      console.log(`[AIMS] Search term: "${search}", found ${matchingActivityIds.length} matching activities:`, matchingActivityIds);
+    }
+    
     // Build the query
     let query = getSupabaseAdmin()
       .from('transactions')
@@ -197,14 +213,13 @@ export async function GET(request: Request) {
       query = query.lte('transaction_date', dateTo);
     }
     
-    // Apply search
+    // Apply search - search org names, description, and activity title (via matching activity IDs)
     if (search) {
-      query = query.or(`
-        id.ilike.%${search}%,
-        provider_org_name.ilike.%${search}%,
-        receiver_org_name.ilike.%${search}%,
-        description.ilike.%${search}%
-      `);
+      if (matchingActivityIds.length > 0) {
+        query = query.or(`provider_org_name.ilike.%${search}%,receiver_org_name.ilike.%${search}%,description.ilike.%${search}%,activity_id.in.(${matchingActivityIds.join(',')})`);
+      } else {
+        query = query.or(`provider_org_name.ilike.%${search}%,receiver_org_name.ilike.%${search}%,description.ilike.%${search}%`);
+      }
     }
     
     // Apply sorting
@@ -237,6 +252,11 @@ export async function GET(request: Request) {
         { error: 'Failed to fetch transactions', details: error.message },
         { status: 500 }
       );
+    }
+    
+    console.log(`[AIMS] Query returned ${ownTransactions?.length || 0} own transactions (total count: ${totalOwnCount})`);
+    if (search && ownTransactions?.length === 0) {
+      console.log(`[AIMS] No results found for search: "${search}". Activity IDs searched: ${matchingActivityIds.length > 0 ? matchingActivityIds.join(', ') : 'none'}`);
     }
 
     // Transform own transactions with source classification and computed inherited fields

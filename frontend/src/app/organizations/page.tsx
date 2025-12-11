@@ -890,7 +890,6 @@ const OrganizationCard: React.FC<{
   onTagClick: (tag: string) => void
 }> = ({ organization, onEdit, onDelete, availableTypes, onTagClick }) => {
   const router = useRouter()
-  const [showFullDescription, setShowFullDescription] = useState(false)
 
   const handleView = () => {
     router.push(`/organizations/${organization.id}`)
@@ -917,7 +916,7 @@ const OrganizationCard: React.FC<{
       onClick={handleView}
     >
       {/* Banner Image */}
-      <div className="h-32 bg-gradient-to-r from-blue-500 to-teal-600 relative overflow-hidden flex-shrink-0">
+      <div className="h-64 bg-gradient-to-r from-blue-500 to-teal-600 relative overflow-hidden flex-shrink-0">
         {organization.banner ? (
           <img 
             src={organization.banner} 
@@ -926,215 +925,16 @@ const OrganizationCard: React.FC<{
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center">
-            <Building2 className="h-16 w-16 text-white/20" />
+            <Building2 className="h-20 w-20 text-white/20" />
           </div>
         )}
         
-
-      </div>
-
-      <CardContent className="p-6 flex flex-col flex-grow relative">
-        <div className="flex flex-col space-y-4 flex-grow">
-          {/* Top section with logo and name */}
-          <div className="flex items-start gap-4">
-            {/* Logo */}
-            <div className="flex-shrink-0">
-              {organization.logo ? (
-                <img 
-                  src={organization.logo} 
-                  alt={`${organization.name} logo`}
-                  className="w-16 h-16 object-contain rounded-lg border bg-white p-1"
-                />
-              ) : (
-                <div className="w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center">
-                  <Building2 className="h-8 w-8 text-gray-400" />
-                </div>
-              )}
-            </div>
-            
-            {/* Organization Name and Details */}
-            <div className="flex-1 min-w-0">
-              <h3 className="font-semibold text-lg text-gray-900 line-clamp-2">
-                {organization.name}
-                {organization.acronym && (
-                  <span className="text-gray-900 font-semibold ml-2">({organization.acronym})</span>
-                )}
-              </h3>
-              
-              {/* IATI ID */}
-              <div className="flex items-center gap-1 mt-2">
-                {organization.iati_org_id ? (
-                  <div className="flex items-center gap-1">
-                    <code className="text-xs font-mono bg-gray-100 text-gray-700 px-2 py-1 rounded">
-                      {organization.iati_org_id}
-                    </code>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        copyToClipboard(organization.iati_org_id || '')
-                      }}
-                      className="h-5 w-5 p-0"
-                      title="Copy IATI ID"
-                    >
-                      <Copy className="h-3 w-3" />
-                    </Button>
-                  </div>
-                ) : (
-                  <p className="text-sm text-gray-500">No IATI identifier</p>
-                )}
-              </div>
-
-              {/* Location Represented and Partner Classification Pills */}
-              <div className="flex items-center gap-2 mt-1 flex-wrap">
-                {/* Location Represented Pill */}
-                {(organization.country_represented || organization.country) && (
-                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                    {organization.country_represented || organization.country}
-                  </span>
-                )}
-                
-                {/* Partner Classification Pill */}
-                {organization.Organisation_Type_Code && (
-                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                    {getPartnerClassification(organization.Organisation_Type_Code, organization.country_represented || organization.country || '')}
-                  </span>
-                )}
-                
-                {/* Default Currency Pill */}
-                {organization.default_currency && (
-                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                    {organization.default_currency}
-                  </span>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* Description */}
-          {organization.description && (
-            <div className="pt-3 border-t border-gray-200">
-              <p className={`text-sm text-gray-600 whitespace-pre-wrap ${showFullDescription ? '' : 'line-clamp-3'}`}>
-                {organization.description}
-              </p>
-              {organization.description.length > 150 && (
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    setShowFullDescription(!showFullDescription)
-                  }}
-                  className="text-xs text-blue-600 hover:text-blue-800 mt-1 font-medium"
-                >
-                  {showFullDescription ? 'Read less' : 'Read more'}
-                </button>
-              )}
-            </div>
-          )}
-
-          {/* Statistics Section - Different for Government vs Development Partners */}
-          <div className="border-t border-gray-200 pt-4">
-            <div className="p-4 space-y-3">
-            <div className="space-y-2">
-              {/* Check if this is a government partner (types 10, 11, 15) */}
-              {(['10', '11', '15'].includes(organization.Organisation_Type_Code)) ? (
-                // Government Partner Statistics
-                <>
-                  <div className="flex justify-between items-center">
-                    <span className="text-xs font-medium text-gray-500 tracking-wide">Organisation Type</span>
-                    <span className="text-sm text-gray-700 font-medium">{getOrganizationTypeLabel(organization.Organisation_Type_Code, availableTypes)}</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-xs font-medium text-gray-500 tracking-wide"># of Activities</span>
-                    <span className="text-sm text-gray-700 font-medium">{organization.activeProjects || 0}</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-xs font-medium text-gray-500 tracking-wide">Budget Allocation Received</span>
-                    <span className="text-sm text-gray-700">{formatCurrency(organization.totalBudgeted)}</span>
-                  </div>
-                </>
-              ) : (
-                // Development Partner Statistics (existing)
-                <>
-                  <div className="flex justify-between items-center">
-                    <span className="text-xs font-medium text-gray-500 tracking-wide">Activities Reported</span>
-                    <span className="text-sm text-gray-700 font-medium">{organization.activeProjects || 0}</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-xs font-medium text-gray-500 tracking-wide">Total Budgeted</span>
-                    <span className="text-sm text-gray-700">{formatCurrency(organization.totalBudgeted)}</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-xs font-medium text-gray-500 tracking-wide">Total Disbursed</span>
-                    <span className="text-sm text-gray-700">{formatCurrency(organization.totalDisbursed)}</span>
-                  </div>
-                </>
-              )}
-            </div>
-            </div>
-          </div>
-
-          {/* Contact Information */}
-          <div className="pt-3 border-t border-gray-200 space-y-2">
-            {organization.website && (
-              <div className="flex items-center gap-2">
-                <ExternalLink className="h-4 w-4 text-gray-400 flex-shrink-0" />
-                <a 
-                  href={organization.website.startsWith('http') ? organization.website : `https://${organization.website}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-sm text-blue-600 hover:text-blue-800 truncate"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  {organization.website}
-                </a>
-              </div>
-            )}
-            {organization.email && (
-              <div className="flex items-center gap-2">
-                <Mail className="h-4 w-4 text-gray-400 flex-shrink-0" />
-                <a 
-                  href={`mailto:${organization.email}`}
-                  className="text-sm text-blue-600 hover:text-blue-800 truncate"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  {organization.email}
-                </a>
-              </div>
-            )}
-            {organization.address && (
-              <div className="flex items-start gap-2">
-                <MapPin className="h-4 w-4 text-gray-400 flex-shrink-0 mt-0.5" />
-                <span className="text-sm text-gray-600 line-clamp-2">
-                  {organization.address}
-                </span>
-              </div>
-            )}
-            {organization.phone && (
-              <div className="flex items-center gap-2">
-                <Phone className="h-4 w-4 text-gray-400 flex-shrink-0" />
-                <span className="text-sm text-gray-600">
-                  {organization.phone}
-                </span>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Footer */}
-        <div className="mt-auto pt-4 border-t border-gray-100">
-          <div className="flex items-center space-x-4 text-xs text-gray-500">
-            <span>Updated {formatDate(organization.updated_at)}</span>
-            <div className="flex items-center space-x-1">
-              <Globe className="h-3 w-3" />
-              <span>Public</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Actions Dropdown - positioned at bottom right */}
+        {/* Gradient fade overlay at bottom */}
+        <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-white to-transparent" />
+        
+        {/* Actions Dropdown - overlaid on banner */}
         <div 
-          className="absolute bottom-4 right-4" 
+          className="absolute top-3 right-3" 
           onClick={(e) => e.stopPropagation()}
         >
           <DropdownMenu>
@@ -1142,9 +942,9 @@ const OrganizationCard: React.FC<{
               <Button 
                 variant="ghost" 
                 size="icon" 
-                className="h-8 w-8 bg-white hover:bg-gray-50 shadow-md border border-gray-300 rounded-full"
+                className="h-10 w-10 bg-gray-700/60 hover:bg-gray-700/80 rounded-full"
               >
-                <MoreVertical className="h-4 w-4 text-gray-600" />
+                <MoreVertical className="h-5 w-5 text-white" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
@@ -1166,6 +966,72 @@ const OrganizationCard: React.FC<{
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
+        </div>
+      </div>
+
+      <CardContent className="p-4 flex flex-col flex-grow">
+        <div className="flex flex-col space-y-3 flex-grow">
+          {/* Top section with logo and name */}
+          <div className="flex items-start gap-3">
+            {/* Logo */}
+            <div className="flex-shrink-0">
+              {organization.logo ? (
+                <img 
+                  src={organization.logo} 
+                  alt={`${organization.name} logo`}
+                  className="w-12 h-12 object-contain rounded-lg border bg-white p-1"
+                />
+              ) : (
+                <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center">
+                  <Building2 className="h-6 w-6 text-gray-400" />
+                </div>
+              )}
+            </div>
+            
+            {/* Organization Name and Details */}
+            <div className="flex-1 min-w-0">
+              <h3 className="font-semibold text-base text-gray-900 line-clamp-2">
+                {organization.name}
+                {organization.acronym && (
+                  <span className="text-gray-500 font-medium ml-1">({organization.acronym})</span>
+                )}
+              </h3>
+              
+              {/* Location and Classification Pills */}
+              <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
+                {(organization.country_represented || organization.country) && (
+                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                    {organization.country_represented || organization.country}
+                  </span>
+                )}
+                {organization.Organisation_Type_Code && (
+                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-700">
+                    {getPartnerClassification(organization.Organisation_Type_Code, organization.country_represented || organization.country || '')}
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Description - condensed to 2 lines */}
+          {organization.description && (
+            <p className="text-sm text-gray-600 line-clamp-2">
+              {organization.description}
+            </p>
+          )}
+
+          {/* Statistics Section - Compact horizontal layout */}
+          <div className="flex items-center justify-between text-sm border-t border-gray-100 pt-3 mt-auto">
+            <div className="flex items-center gap-1">
+              <Activity className="h-4 w-4 text-gray-400" />
+              <span className="text-gray-900 font-medium">{organization.activeProjects || 0}</span>
+              <span className="text-gray-500 text-xs">activities</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <DollarSign className="h-4 w-4 text-gray-400" />
+              <span className="text-gray-900 font-medium">{formatCurrency(organization.totalBudgeted)}</span>
+            </div>
+          </div>
         </div>
       </CardContent>
     </Card>

@@ -18,8 +18,10 @@ interface Transaction {
 interface Organization {
   id: string
   name: string
-  organization_type: string
+  type: string
   sector?: string
+  logo?: string | null
+  acronym?: string | null
 }
 
 interface Activity {
@@ -67,8 +69,10 @@ export function buildAidFlowGraphData(
 
   // Filter and process transactions
   const validTransactions = transactions.filter(t => {
-    // Must have a value
-    if (!t.value || parseFloat(t.value.toString()) <= minValue) return false
+    // Must have a value (allow negative values, just check it exists and meets minimum absolute value)
+    if (t.value === null || t.value === undefined) return false
+    const absValue = Math.abs(parseFloat(t.value.toString()))
+    if (absValue < minValue) return false
     
     // Must have at least one organization reference (ID or name)
     const hasProvider = t.provider_org_id || t.provider_org_name
@@ -84,6 +88,14 @@ export function buildAidFlowGraphData(
   })
 
   console.log('[buildAidFlowGraphData] Valid transactions:', validTransactions.length)
+  
+  // Count how many have both provider and receiver
+  const withBoth = validTransactions.filter(t => {
+    const hasProvider = t.provider_org_id || t.provider_org_name
+    const hasReceiver = t.receiver_org_id || t.receiver_org_name
+    return hasProvider && hasReceiver
+  })
+  console.log('[buildAidFlowGraphData] Transactions with both provider AND receiver:', withBoth.length)
 
   // Process each transaction
   validTransactions.forEach(transaction => {
@@ -119,21 +131,26 @@ export function buildAidFlowGraphData(
       receiverId = `name-${receiverName}`
     }
 
+    // Use absolute value for node sizing (so negative transactions still contribute)
+    const absValue = Math.abs(value)
+
     // Add provider node
     if (providerId && (providerOrg || providerName)) {
       if (!nodesMap.has(providerId)) {
         nodesMap.set(providerId, {
           id: providerId,
           name: providerOrg?.name || providerName || `Org ${providerId}`,
-          type: providerOrg ? mapOrgTypeToNodeType(providerOrg.organization_type) : 'donor',
+          type: providerOrg ? mapOrgTypeToNodeType(providerOrg.type) : 'donor',
           sector: providerOrg?.sector,
+          logo: providerOrg?.logo || null,
+          acronym: providerOrg?.acronym || null,
           totalIn: 0,
           totalOut: 0
         })
       }
-      // Update outflow
+      // Update outflow (use absolute value for sizing)
       const node = nodesMap.get(providerId)!
-      node.totalOut = (node.totalOut || 0) + value
+      node.totalOut = (node.totalOut || 0) + absValue
     }
 
     // Add receiver node
@@ -142,49 +159,64 @@ export function buildAidFlowGraphData(
         nodesMap.set(receiverId, {
           id: receiverId,
           name: receiverOrg?.name || receiverName || `Org ${receiverId}`,
-          type: receiverOrg ? mapOrgTypeToNodeType(receiverOrg.organization_type) : 'recipient',
+          type: receiverOrg ? mapOrgTypeToNodeType(receiverOrg.type) : 'recipient',
           sector: receiverOrg?.sector,
+          logo: receiverOrg?.logo || null,
+          acronym: receiverOrg?.acronym || null,
           totalIn: 0,
           totalOut: 0
         })
       }
-      // Update inflow
+      // Update inflow (use absolute value for sizing)
       const node = nodesMap.get(receiverId)!
-      node.totalIn = (node.totalIn || 0) + value
+      node.totalIn = (node.totalIn || 0) + absValue
     }
 
-    // Create link between organizations if both exist
-    if (providerId && receiverId && providerId !== receiverId) {
-      const linkKey = `${providerId}->${receiverId}`
+    // Create link between organizations if both nodes exist in the graph
+    // Important: Only create link if both nodes were actually added to nodesMap
+    // Use transaction type in key to create separate links per type
+    const txType = transaction.transaction_type || 'unknown'
+    if (providerId && receiverId && providerId !== receiverId && 
+        nodesMap.has(providerId) && nodesMap.has(receiverId)) {
+      // Include transaction type in the key to create separate links per type
+      const linkKey = `${providerId}->${receiverId}:${txType}`
       
       if (linksMap.has(linkKey)) {
-        // Aggregate value for existing link
+        // Aggregate value for existing link (same source, target, AND type)
         const existingLink = linksMap.get(linkKey)!
-        existingLink.value += value
+        existingLink.value += absValue
       } else {
         // Create new link
         linksMap.set(linkKey, {
           source: providerId,
           target: receiverId,
-          value: value,
+          value: absValue,
           flowType: mapTransactionTypeToFlowType(transaction.transaction_type),
+          transactionType: txType,
           aidType: transaction.aid_type
         })
       }
     }
   })
 
+  console.log('[buildAidFlowGraphData] After processing:', {
+    nodesCreated: nodesMap.size,
+    linksCreated: linksMap.size
+  })
+
   // If no nodes were created from transactions, create some from organizations directly
   if (nodesMap.size === 0 && organizations.length > 0) {
     console.log('[buildAidFlowGraphData] No nodes from transactions, using top organizations')
-    
+
     // Add top organizations as nodes
     organizations.slice(0, Math.min(20, organizations.length)).forEach(org => {
       nodesMap.set(org.id, {
         id: org.id,
         name: org.name || `Organization ${org.id}`,
-        type: mapOrgTypeToNodeType(org.organization_type),
+        type: mapOrgTypeToNodeType(org.type),
         sector: org.sector,
+        logo: org.logo || null,
+        acronym: org.acronym || null,
         totalIn: 0,
         totalOut: 0
       })

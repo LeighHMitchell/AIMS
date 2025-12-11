@@ -167,6 +167,11 @@ export interface Transaction {
   receiver_org_activity_id?: string; // IATI activity ID link (text)
   receiver_activity_uuid?: string;    // Foreign key to activities table
   
+  // Inferred flags - true if org was inferred by system, false if explicitly set by user
+  // When inferred=true, UI displays org name in gray; when false, displays in black
+  provider_org_inferred?: boolean;
+  receiver_org_inferred?: boolean;
+  
   // Transaction details
   disbursement_channel?: DisbursementChannel;
   

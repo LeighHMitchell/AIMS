@@ -255,10 +255,12 @@ function inferReceiverForIncoming(
  * Infer provider for incoming transactions
  * 
  * Priority order (only if provider is missing):
- * 1. If exactly one funding org exists (role=1) -> use it
- * 2. Else if exactly one extending org exists (role=3) -> use it
- * 3. Else if reporting org is also the only funding org -> use reporting org
- * 4. Otherwise -> ambiguous
+ * 1. If reporting org is also a funding org (by UUID match) -> use reporting org
+ *    This handles self-funding scenarios where reporting org == funding org
+ * 2. If exactly one funding org exists (role=1) -> use it
+ * 3. Else if exactly one extending org exists (role=3) -> use it
+ * 4. Else if reporting org is also the only funding org (by IATI ref) -> use reporting org
+ * 5. Otherwise -> ambiguous
  */
 function inferProviderForIncoming(
   transaction: TransactionForInference,
@@ -273,13 +275,26 @@ function inferProviderForIncoming(
     );
   }
 
-  // Rule 1: Exactly one funding organisation
   const fundingOrgs = getFundingOrgs(participatingOrgs);
+
+  // Rule 1: Reporting org is also a funding org (by UUID match)
+  // This handles self-funding scenarios where reporting_org == funding_org
+  // When an organization both reports and funds an activity, it's the provider
+  if (reportingOrg.organization_id) {
+    const reportingOrgIsFunderByUUID = fundingOrgs.some(
+      (org) => org.organization_id === reportingOrg.organization_id
+    );
+    if (reportingOrgIsFunderByUUID) {
+      return inferredFromReportingOrg(reportingOrg);
+    }
+  }
+
+  // Rule 2: Exactly one funding organisation
   if (fundingOrgs.length === 1) {
     return inferredResult(fundingOrgs[0]);
   }
 
-  // Rule 2: Exactly one extending organisation (if no single funder)
+  // Rule 3: Exactly one extending organisation (if no single funder)
   if (fundingOrgs.length === 0) {
     const extendingOrgs = getExtendingOrgs(participatingOrgs);
     if (extendingOrgs.length === 1) {
@@ -287,8 +302,8 @@ function inferProviderForIncoming(
     }
   }
 
-  // Rule 3: Reporting org is also the only funding org
-  // This handles the edge case where reporting org funds itself
+  // Rule 4: Reporting org is also the only funding org (by IATI ref)
+  // This handles the edge case where reporting org funds itself but only matched by ref
   const reportingOrgAsFunder = fundingOrgs.find((org) =>
     isReportingOrg(org, reportingOrg)
   );
@@ -358,4 +373,5 @@ export function inferTransactionParties(
     };
   }
 }
+
 

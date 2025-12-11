@@ -170,3 +170,4 @@ export function OrganizationAvatarGroup({
     </TooltipProvider>
   );
 }
+

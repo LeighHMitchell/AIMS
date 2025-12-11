@@ -437,3 +437,4 @@ export default function ActivityContactsTab({ activityId }: ActivityContactsTabP
     </div>
   );
 }
+

@@ -1049,7 +1049,7 @@ export default function TransactionsPage() {
               </div>
             </div>
           </div>
-        ) : searchQuery || filters.transactionType !== "all" || filters.status !== "all" || filters.organization !== "all" || filters.financeType !== "all" ? (
+        ) : sortedTransactions.length === 0 && (searchQuery || filters.transactionType !== "all" || filters.status !== "all" || filters.organization !== "all" || filters.financeType !== "all") ? (
           <div className="bg-white rounded-md shadow-sm border border-gray-200 p-8 text-center">
             <div className="text-slate-500">No matching transactions found</div>
           </div>

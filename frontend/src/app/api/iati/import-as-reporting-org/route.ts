@@ -10,6 +10,37 @@ import { convertTransactionToUSD, addUSDFieldsToTransaction } from '@/lib/transa
 
 export const dynamic = 'force-dynamic';
 
+// Helper function to extract code value from various formats
+function extractCodeValue(value: any): string | null {
+  if (value === null || value === undefined) return null;
+  if (typeof value === 'string') return value;
+  if (typeof value === 'number') return String(value);
+  if (typeof value === 'object') {
+    return value.code ?? value['@_code'] ?? value.value ?? null;
+  }
+  return null;
+}
+
+// Helper function to extract date value from various formats
+function extractDateValue(value: any): string | null {
+  if (value === null || value === undefined) return null;
+  if (typeof value === 'string') return value;
+  if (typeof value === 'object') {
+    return value.date ?? value['@_iso-date'] ?? value.isoDate ?? null;
+  }
+  return null;
+}
+
+// Helper function to find value from multiple possible keys
+function findValueFromKeys(data: Record<string, any>, keys: string[]): any {
+  for (const key of keys) {
+    if (data[key] !== undefined) {
+      return data[key];
+    }
+  }
+  return undefined;
+}
+
 export async function POST(request: NextRequest) {
   console.log('[Import as Reporting Org] 🚀 POST handler called');
   try {
@@ -689,33 +720,74 @@ export async function POST(request: NextRequest) {
         
         // If fields and iati_data are provided, use field selection
         if (fields && iati_data && typeof fields === 'object') {
-          // Map IATI field paths to database fields
-          const fieldMappings: Record<string, string> = {
-            'iati-activity/title/narrative': 'title_narrative',
-            'iati-activity/description[@type="1"]/narrative': 'description_narrative',
-            'iati-activity/activity-status': 'activity_status',
-            'iati-activity/activity-date[@type="1"]': 'planned_start_date',
-            'iati-activity/activity-date[@type="2"]': 'actual_start_date',
-            'iati-activity/activity-date[@type="3"]': 'planned_end_date',
-            'iati-activity/activity-date[@type="4"]': 'actual_end_date',
-            'iati-activity/default-currency': 'default_currency',
-            'iati-activity/collaboration-type': 'collaboration_type',
-            'iati-activity/activity-scope': 'activity_scope',
-            'iati-activity[@xml:lang]': 'language',
-            'iati-activity/default-aid-type': 'default_aid_type',
-            'iati-activity/default-flow-type': 'default_flow_type',
-            'iati-activity/default-finance-type': 'default_finance_type',
-            'iati-activity/default-tied-status': 'default_tied_status',
-            'iati-activity/capital-spend-percentage': 'capital_spend_percentage',
-            'iati-activity[@humanitarian]': 'humanitarian'
-          };
+          // Flexible field mappings - each field can be found under multiple possible keys
+          // This handles various publisher formats (IATI paths, snake_case, camelCase)
+          const flexibleFieldMappings: Array<{
+            dbField: string;
+            sourceKeys: string[];
+            extractFn?: (val: any) => any;
+          }> = [
+            { dbField: 'title_narrative', sourceKeys: ['iati-activity/title/narrative', 'title_narrative', 'title'] },
+            { dbField: 'description_narrative', sourceKeys: ['iati-activity/description[@type="1"]/narrative', 'description_narrative', 'description'] },
+            { dbField: 'description_objectives', sourceKeys: ['iati-activity/description[@type="2"]/narrative', 'description_objectives'] },
+            { dbField: 'description_target_groups', sourceKeys: ['iati-activity/description[@type="3"]/narrative', 'description_target_groups'] },
+            { dbField: 'activity_status', sourceKeys: ['iati-activity/activity-status', 'activity_status', 'activityStatus'], extractFn: extractCodeValue },
+            { dbField: 'planned_start_date', sourceKeys: ['iati-activity/activity-date[@type="1"]', 'planned_start_date', 'plannedStartDate', 'activity_date_start_planned'], extractFn: extractDateValue },
+            { dbField: 'actual_start_date', sourceKeys: ['iati-activity/activity-date[@type="2"]', 'actual_start_date', 'actualStartDate', 'activity_date_start_actual'], extractFn: extractDateValue },
+            { dbField: 'planned_end_date', sourceKeys: ['iati-activity/activity-date[@type="3"]', 'planned_end_date', 'plannedEndDate', 'activity_date_end_planned'], extractFn: extractDateValue },
+            { dbField: 'actual_end_date', sourceKeys: ['iati-activity/activity-date[@type="4"]', 'actual_end_date', 'actualEndDate', 'activity_date_end_actual'], extractFn: extractDateValue },
+            { dbField: 'default_currency', sourceKeys: ['iati-activity[@default-currency]', 'iati-activity/default-currency', 'default_currency', 'defaultCurrency'] },
+            { dbField: 'collaboration_type', sourceKeys: ['iati-activity/collaboration-type', 'collaboration_type', 'collaborationType'], extractFn: extractCodeValue },
+            { dbField: 'activity_scope', sourceKeys: ['iati-activity/activity-scope', 'activity_scope', 'activityScope'], extractFn: extractCodeValue },
+            { dbField: 'language', sourceKeys: ['iati-activity[@xml:lang]', 'language'] },
+            { dbField: 'default_aid_type', sourceKeys: ['iati-activity/default-aid-type', 'default_aid_type', 'defaultAidType'], extractFn: extractCodeValue },
+            { dbField: 'default_flow_type', sourceKeys: ['iati-activity/default-flow-type', 'default_flow_type', 'defaultFlowType', 'flow_type', 'flowType'], extractFn: extractCodeValue },
+            { dbField: 'default_finance_type', sourceKeys: ['iati-activity/default-finance-type', 'default_finance_type', 'defaultFinanceType'], extractFn: extractCodeValue },
+            { dbField: 'default_tied_status', sourceKeys: ['iati-activity/default-tied-status', 'default_tied_status', 'defaultTiedStatus'], extractFn: extractCodeValue },
+            { dbField: 'capital_spend_percentage', sourceKeys: ['iati-activity/capital-spend', 'iati-activity/capital-spend[@percentage]', 'iati-activity/capital-spend-percentage', 'capital_spend_percentage', 'capitalSpend', 'capitalSpendPercentage'] },
+            { dbField: 'humanitarian', sourceKeys: ['iati-activity[@humanitarian]', 'humanitarian'] },
+            { dbField: 'hierarchy', sourceKeys: ['iati-activity[@hierarchy]', 'hierarchy'] }
+          ];
 
-          // Apply selected fields
-          Object.entries(fieldMappings).forEach(([iatiPath, dbField]) => {
-            if (fields[iatiPath] && iati_data[iatiPath] !== undefined) {
-              activityInsert[dbField] = iati_data[iatiPath];
+          // Apply flexible field mappings - check multiple possible keys for each field
+          for (const mapping of flexibleFieldMappings) {
+            // #region agent log
+            if (mapping.dbField === 'capital_spend_percentage') {
+              fetch('http://127.0.0.1:7242/ingest/b4892be5-ca87-459d-a863-d3e1a440a1d9',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'import-as-reporting-org/route.ts:753',message:'Capital spend mapping check',data:{sourceKeys:mapping.sourceKeys,fieldsKeys:Object.keys(fields||{}),fieldsHasCapitalSpend:fields?.['iati-activity/capital-spend'],fieldsHasCapitalSpendAttr:fields?.['iati-activity/capital-spend[@percentage]'],fieldsHasCapitalSpendPct:fields?.['capital_spend_percentage']},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'H1'})}).catch(()=>{});
             }
-          });
+            // #endregion
+            // Check if any of the source keys are selected in fields
+            const isSelected = mapping.sourceKeys.some(key => fields[key]);
+            // #region agent log
+            if (mapping.dbField === 'capital_spend_percentage') {
+              fetch('http://127.0.0.1:7242/ingest/b4892be5-ca87-459d-a863-d3e1a440a1d9',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'import-as-reporting-org/route.ts:755',message:'Capital spend isSelected result',data:{isSelected,matchedKeys:mapping.sourceKeys.filter(key=>fields?.[key])},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'H1'})}).catch(()=>{});
+            }
+            // #endregion
+            if (!isSelected) continue;
+
+            // Find the value from any of the source keys
+            let value = findValueFromKeys(iati_data, mapping.sourceKeys);
+            // #region agent log
+            if (mapping.dbField === 'capital_spend_percentage') {
+              fetch('http://127.0.0.1:7242/ingest/b4892be5-ca87-459d-a863-d3e1a440a1d9',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'import-as-reporting-org/route.ts:759',message:'Capital spend value lookup',data:{valueFound:value,iatiDataKeys:Object.keys(iati_data||{}),iatiDataCapitalSpend:iati_data?.capital_spend_percentage,iatiDataCapitalSpendStr:iati_data?.['capital_spend_percentage']},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'H2'})}).catch(()=>{});
+            }
+            // #endregion
+            
+            // Apply extraction function if provided
+            if (value !== undefined && mapping.extractFn) {
+              value = mapping.extractFn(value);
+            }
+            
+            if (value !== undefined && value !== null) {
+              activityInsert[mapping.dbField] = value;
+              console.log(`[Import as Reporting Org] Set ${mapping.dbField} = ${value}`);
+              // #region agent log
+              if (mapping.dbField === 'capital_spend_percentage') {
+                fetch('http://127.0.0.1:7242/ingest/b4892be5-ca87-459d-a863-d3e1a440a1d9',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'import-as-reporting-org/route.ts:768',message:'Capital spend value SET SUCCESS',data:{finalValue:value,dbField:mapping.dbField},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'H3'})}).catch(()=>{});
+              }
+              // #endregion
+            }
+          }
 
           // Handle parsed activity data for complex fields
           const parsedActivity = iati_data._parsedActivity;
@@ -735,22 +807,56 @@ export async function POST(request: NextRequest) {
               activityInsert.description_narrative = sanitizeIatiDescriptionServerSafe(parsedActivity.description);
             }
             if (!activityInsert.activity_status && parsedActivity.activityStatus) {
-              activityInsert.activity_status = parsedActivity.activityStatus;
+              activityInsert.activity_status = extractCodeValue(parsedActivity.activityStatus);
             }
             if (!activityInsert.planned_start_date && parsedActivity.plannedStartDate) {
-              activityInsert.planned_start_date = parsedActivity.plannedStartDate;
+              activityInsert.planned_start_date = extractDateValue(parsedActivity.plannedStartDate);
             }
             if (!activityInsert.planned_end_date && parsedActivity.plannedEndDate) {
-              activityInsert.planned_end_date = parsedActivity.plannedEndDate;
+              activityInsert.planned_end_date = extractDateValue(parsedActivity.plannedEndDate);
             }
             if (!activityInsert.actual_start_date && parsedActivity.actualStartDate) {
-              activityInsert.actual_start_date = parsedActivity.actualStartDate;
+              activityInsert.actual_start_date = extractDateValue(parsedActivity.actualStartDate);
             }
             if (!activityInsert.actual_end_date && parsedActivity.actualEndDate) {
-              activityInsert.actual_end_date = parsedActivity.actualEndDate;
+              activityInsert.actual_end_date = extractDateValue(parsedActivity.actualEndDate);
             }
             if (!activityInsert.default_currency && parsedActivity.defaultCurrency) {
               activityInsert.default_currency = parsedActivity.defaultCurrency;
+            }
+            
+            // Classification fields fallback from parsedActivity
+            if (!activityInsert.collaboration_type && parsedActivity.collaborationType) {
+              activityInsert.collaboration_type = extractCodeValue(parsedActivity.collaborationType);
+              console.log(`[Import as Reporting Org] Set collaboration_type from parsedActivity = ${activityInsert.collaboration_type}`);
+            }
+            if (!activityInsert.default_aid_type && parsedActivity.defaultAidType) {
+              activityInsert.default_aid_type = extractCodeValue(parsedActivity.defaultAidType);
+              console.log(`[Import as Reporting Org] Set default_aid_type from parsedActivity = ${activityInsert.default_aid_type}`);
+            }
+            if (!activityInsert.default_flow_type && parsedActivity.defaultFlowType) {
+              activityInsert.default_flow_type = extractCodeValue(parsedActivity.defaultFlowType);
+              console.log(`[Import as Reporting Org] Set default_flow_type from parsedActivity = ${activityInsert.default_flow_type}`);
+            }
+            if (!activityInsert.default_finance_type && parsedActivity.defaultFinanceType) {
+              activityInsert.default_finance_type = extractCodeValue(parsedActivity.defaultFinanceType);
+              console.log(`[Import as Reporting Org] Set default_finance_type from parsedActivity = ${activityInsert.default_finance_type}`);
+            }
+            if (!activityInsert.default_tied_status && parsedActivity.defaultTiedStatus) {
+              activityInsert.default_tied_status = extractCodeValue(parsedActivity.defaultTiedStatus);
+              console.log(`[Import as Reporting Org] Set default_tied_status from parsedActivity = ${activityInsert.default_tied_status}`);
+            }
+            if (!activityInsert.activity_scope && parsedActivity.activityScope) {
+              activityInsert.activity_scope = extractCodeValue(parsedActivity.activityScope);
+              console.log(`[Import as Reporting Org] Set activity_scope from parsedActivity = ${activityInsert.activity_scope}`);
+            }
+            if (!activityInsert.hierarchy && parsedActivity.hierarchy) {
+              activityInsert.hierarchy = parsedActivity.hierarchy;
+              console.log(`[Import as Reporting Org] Set hierarchy from parsedActivity = ${activityInsert.hierarchy}`);
+            }
+            if (!activityInsert.capital_spend_percentage && parsedActivity.capitalSpendPercentage) {
+              activityInsert.capital_spend_percentage = parsedActivity.capitalSpendPercentage;
+              console.log(`[Import as Reporting Org] Set capital_spend_percentage from parsedActivity = ${activityInsert.capital_spend_percentage}`);
             }
           }
 
@@ -1396,6 +1502,587 @@ export async function POST(request: NextRequest) {
             }
           }
         }
+
+        // Handle sectors if provided
+        const sectorsData = 
+          iati_data?.sectors ||
+          parsedActivity?.sectors ||
+          [];
+
+        if (sectorsData && Array.isArray(sectorsData) && sectorsData.length > 0) {
+          console.log(`[Import as Reporting Org] Importing ${sectorsData.length} sectors`);
+          
+          // Clear existing sectors
+          await supabase
+            .from('activity_sectors')
+            .delete()
+            .eq('activity_id', finalActivityId);
+          
+          // Get sector codes from imported data
+          const sectorCodes = sectorsData.map((s: any) => s.code);
+          
+          // Get existing sectors from database
+          const { data: existingSectors } = await supabase
+            .from('sectors')
+            .select('id, code')
+            .in('code', sectorCodes);
+          
+          const existingSectorMap = new Map<string, string>(
+            (existingSectors || []).map((s: any) => [s.code, s.id])
+          );
+          
+          // Create missing sectors
+          const missingSectors = sectorsData.filter((s: any) => !existingSectorMap.has(s.code));
+          
+          if (missingSectors.length > 0) {
+            const { data: newSectors } = await supabase
+              .from('sectors')
+              .insert(
+                missingSectors.map((s: any) => ({
+                  code: s.code,
+                  name: s.name || `Sector ${s.code}`,
+                  category: s.code.substring(0, 3), // First 3 digits are category
+                  type: 'secondary'
+                }))
+              )
+              .select();
+            
+            // Add new sectors to map
+            (newSectors || []).forEach((s: any) => {
+              existingSectorMap.set(s.code, s.id);
+            });
+          }
+          
+          // Insert activity-sector relationships
+          const sectorRelations = sectorsData
+            .filter((s: any) => existingSectorMap.has(s.code))
+            .map((s: any) => ({
+              activity_id: finalActivityId,
+              sector_id: existingSectorMap.get(s.code),
+              percentage: s.percentage || 0
+            }));
+          
+          if (sectorRelations.length > 0) {
+            const { error: sectorsError } = await supabase
+              .from('activity_sectors')
+              .insert(sectorRelations);
+            
+            if (sectorsError) {
+              console.error(`[Import as Reporting Org] Error inserting sectors:`, sectorsError);
+            } else {
+              console.log(`[Import as Reporting Org] ✓ Imported ${sectorRelations.length} sectors`);
+            }
+          }
+        }
+
+        // Handle recipient countries (JSONB field on activities table)
+        const recipientCountries = 
+          iati_data?.recipient_countries ||
+          parsedActivity?.recipientCountries ||
+          [];
+
+        if (recipientCountries && Array.isArray(recipientCountries) && recipientCountries.length > 0) {
+          console.log(`[Import as Reporting Org] Processing ${recipientCountries.length} recipient countries`);
+          
+          const formattedCountries = recipientCountries.map((country: any) => ({
+            id: country.id || `country-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+            country: {
+              code: country.country?.code || country.code,
+              name: country.country?.name || country.name,
+              iso2: country.country?.iso2 || country.code,
+              withdrawn: country.country?.withdrawn || false
+            },
+            percentage: country.percentage || 0,
+            vocabulary: country.vocabulary || 'A4',
+            vocabularyUri: country.vocabularyUri || null,
+            narrative: country.narrative || null
+          }));
+          
+          const { error: countriesError } = await supabase
+            .from('activities')
+            .update({ recipient_countries: formattedCountries })
+            .eq('id', finalActivityId);
+          
+          if (countriesError) {
+            console.error(`[Import as Reporting Org] Error updating recipient countries:`, countriesError);
+          } else {
+            console.log(`[Import as Reporting Org] ✓ Processed ${formattedCountries.length} recipient countries`);
+          }
+        }
+
+        // Handle recipient regions (JSONB field on activities table)
+        const recipientRegions = 
+          iati_data?.recipient_regions ||
+          parsedActivity?.recipientRegions ||
+          [];
+
+        if (recipientRegions && Array.isArray(recipientRegions) && recipientRegions.length > 0) {
+          console.log(`[Import as Reporting Org] Processing ${recipientRegions.length} recipient regions`);
+          
+          const formattedRegions = recipientRegions.map((region: any) => ({
+            id: region.id || `region-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+            region: {
+              code: region.region?.code || region.code,
+              name: region.region?.name || region.name,
+              withdrawn: region.region?.withdrawn || false
+            },
+            percentage: region.percentage || 0,
+            vocabulary: region.vocabulary || '1',
+            vocabularyUri: region.vocabularyUri || null,
+            narrative: region.narrative || null
+          }));
+          
+          const { error: regionsError } = await supabase
+            .from('activities')
+            .update({ recipient_regions: formattedRegions })
+            .eq('id', finalActivityId);
+          
+          if (regionsError) {
+            console.error(`[Import as Reporting Org] Error updating recipient regions:`, regionsError);
+          } else {
+            console.log(`[Import as Reporting Org] ✓ Processed ${formattedRegions.length} recipient regions`);
+          }
+        }
+
+        // Handle custom geographies (vocabulary 99)
+        const customGeographies = 
+          iati_data?.custom_geographies ||
+          parsedActivity?.customGeographies ||
+          [];
+
+        if (customGeographies && Array.isArray(customGeographies) && customGeographies.length > 0) {
+          console.log(`[Import as Reporting Org] Processing ${customGeographies.length} custom geographies`);
+          
+          const formattedGeos = customGeographies.map((geo: any) => ({
+            id: geo.id || `custom-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+            name: geo.name,
+            code: geo.code,
+            percentage: geo.percentage || 0,
+            vocabulary: geo.vocabulary || '99',
+            vocabularyUri: geo.vocabularyUri || null,
+            narrative: geo.narrative || null
+          }));
+          
+          const { error: geoError } = await supabase
+            .from('activities')
+            .update({ custom_geographies: formattedGeos })
+            .eq('id', finalActivityId);
+          
+          if (geoError) {
+            console.error(`[Import as Reporting Org] Error updating custom geographies:`, geoError);
+          } else {
+            console.log(`[Import as Reporting Org] ✓ Processed ${formattedGeos.length} custom geographies`);
+          }
+        }
+
+        // Handle tags
+        const tagsData = 
+          iati_data?.tags ||
+          parsedActivity?.tagClassifications ||
+          [];
+
+        if (tagsData && Array.isArray(tagsData) && tagsData.length > 0) {
+          console.log(`[Import as Reporting Org] Processing ${tagsData.length} tags`);
+          
+          try {
+            // Clear existing activity_tags relationships
+            await supabase
+              .from('activity_tags')
+              .delete()
+              .eq('activity_id', finalActivityId);
+
+            // Insert new tags
+            for (const tag of tagsData) {
+              // Check if tag exists in tags table
+              const { data: existingTag } = await supabase
+                .from('tags')
+                .select('id')
+                .eq('code', tag.code)
+                .eq('vocabulary', tag.vocabulary || '1')
+                .maybeSingle();
+
+              let tagId = existingTag?.id;
+
+              // If tag doesn't exist, create it
+              if (!tagId) {
+                const { data: newTag, error: tagError } = await supabase
+                  .from('tags')
+                  .insert({
+                    code: tag.code,
+                    name: tag.narrative || tag.name || `Tag ${tag.code}`,
+                    vocabulary: tag.vocabulary || '1',
+                    vocabulary_uri: tag.vocabularyUri || null
+                  })
+                  .select('id')
+                  .single();
+
+                if (tagError) {
+                  console.error('[Import as Reporting Org] Error creating tag:', tagError);
+                  continue;
+                }
+
+                tagId = newTag.id;
+              }
+
+              // Create activity-tag relationship
+              await supabase
+                .from('activity_tags')
+                .insert({
+                  activity_id: finalActivityId,
+                  tag_id: tagId
+                });
+            }
+
+            console.log(`[Import as Reporting Org] ✓ Imported ${tagsData.length} tags`);
+          } catch (error) {
+            console.error('[Import as Reporting Org] Error importing tags:', error);
+          }
+        }
+
+        // Handle locations
+        const locationsData = 
+          iati_data?.locations ||
+          parsedActivity?.locations ||
+          [];
+
+        if (locationsData && Array.isArray(locationsData) && locationsData.length > 0) {
+          console.log(`[Import as Reporting Org] Importing ${locationsData.length} locations`);
+          
+          // Clear existing locations
+          await supabase
+            .from('activity_locations')
+            .delete()
+            .eq('activity_id', finalActivityId);
+          
+          // Process each location
+          const locationEntries = locationsData.map((loc: any) => {
+            // Parse coordinates if present
+            let latitude = null;
+            let longitude = null;
+            if (loc.point?.pos) {
+              const coords = loc.point.pos.split(' ');
+              if (coords.length === 2) {
+                latitude = parseFloat(coords[0]);
+                longitude = parseFloat(coords[1]);
+              }
+            }
+            
+            // Determine location type - site if has coordinates, coverage otherwise
+            const locationType = (latitude && longitude) ? 'site' : 'coverage';
+            
+            const locationEntry: any = {
+              activity_id: finalActivityId,
+              location_type: locationType,
+              location_name: loc.name || 'Unnamed Location',
+              description: loc.description,
+              location_description: loc.description,
+              activity_location_description: loc.activityDescription,
+              srs_name: loc.point?.srsName || 'http://www.opengis.net/def/crs/EPSG/0/4326',
+              
+              // IATI location reference
+              location_ref: loc.ref || undefined,
+              
+              // IATI fields
+              location_reach: loc.locationReach || undefined,
+              exactness: loc.exactness || undefined,
+              location_class: loc.locationClass || undefined,
+              feature_designation: loc.featureDesignation,
+              
+              // Gazetteer
+              location_id_vocabulary: loc.locationId?.vocabulary,
+              location_id_code: loc.locationId?.code,
+              
+              // Administrative
+              admin_vocabulary: loc.administrative?.vocabulary,
+              admin_level: loc.administrative?.level,
+              admin_code: loc.administrative?.code,
+              
+              // Metadata
+              source: 'import',
+              validation_status: 'valid',
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
+            };
+            
+            // Add coordinates if available
+            if (locationType === 'site' && latitude && longitude) {
+              locationEntry.latitude = latitude;
+              locationEntry.longitude = longitude;
+            }
+            
+            // Add coverage-specific fields
+            if (locationType === 'coverage') {
+              locationEntry.coverage_scope = 'regional';
+            }
+            
+            return locationEntry;
+          });
+          
+          if (locationEntries.length > 0) {
+            const { error: locationsError } = await supabase
+              .from('activity_locations')
+              .insert(locationEntries);
+            
+            if (locationsError) {
+              console.error(`[Import as Reporting Org] Error inserting locations:`, locationsError);
+            } else {
+              console.log(`[Import as Reporting Org] ✓ Imported ${locationEntries.length} locations`);
+            }
+          }
+        }
+
+        // Handle document links
+        const documentLinks = 
+          iati_data?.document_links ||
+          parsedActivity?.documentLinks ||
+          [];
+
+        if (documentLinks && Array.isArray(documentLinks) && documentLinks.length > 0) {
+          console.log(`[Import as Reporting Org] Importing ${documentLinks.length} document links`);
+          
+          // Get existing documents to delete their categories first
+          const { data: existingDocs } = await supabase
+            .from('activity_documents')
+            .select('id')
+            .eq('activity_id', finalActivityId);
+          
+          // Delete categories first (to avoid foreign key issues)
+          if (existingDocs && existingDocs.length > 0) {
+            const docIds = existingDocs.map(d => d.id);
+            await supabase
+              .from('activity_document_categories')
+              .delete()
+              .in('document_id', docIds);
+          }
+          
+          // Clear existing document links
+          await supabase
+            .from('activity_documents')
+            .delete()
+            .eq('activity_id', finalActivityId);
+          
+          // Insert new document links
+          let importedDocsCount = 0;
+          for (const doc of documentLinks) {
+            // Get category codes - support both new array format and legacy single category
+            const categoryCodes = doc.category_codes && Array.isArray(doc.category_codes)
+              ? doc.category_codes
+              : (doc.category_code ? [doc.category_code] : ['A01']);
+            
+            const firstCategoryCode = categoryCodes.length > 0 ? categoryCodes[0] : 'A01';
+            
+            // Ensure title is in the correct format (array of narratives)
+            const titleArray = Array.isArray(doc.title) ? doc.title : (doc.title ? [{ text: doc.title, lang: 'en' }] : [{ text: 'Document', lang: 'en' }]);
+            const descriptionArray = Array.isArray(doc.description) ? doc.description : (doc.description ? [{ text: doc.description, lang: 'en' }] : []);
+            
+            const docData = {
+              activity_id: finalActivityId,
+              format: doc.format || 'application/octet-stream',
+              url: doc.url,
+              title: titleArray,
+              description: descriptionArray,
+              category_code: firstCategoryCode,
+              language_codes: Array.isArray(doc.language_code) ? doc.language_code : [doc.language_code || 'en'],
+              document_date: doc.document_date || null,
+              is_external: true,
+              uploaded_by: null,
+              file_name: null,
+              file_size: 0,
+              file_path: null,
+              thumbnail_url: null
+            };
+            
+            // Insert document and get ID
+            const { data: insertedDoc, error: docsError } = await supabase
+              .from('activity_documents')
+              .insert(docData)
+              .select('id')
+              .single();
+            
+            if (docsError || !insertedDoc) {
+              console.error('[Import as Reporting Org] Error inserting document link:', docsError);
+              continue;
+            }
+            
+            importedDocsCount++;
+            
+            // Insert all categories into junction table
+            if (categoryCodes.length > 0) {
+              const categoryData = categoryCodes.map((code: string) => ({
+                document_id: insertedDoc.id,
+                category_code: code
+              }));
+              
+              const { error: categoryError } = await supabase
+                .from('activity_document_categories')
+                .insert(categoryData);
+              
+              if (categoryError) {
+                console.error('[Import as Reporting Org] Error inserting document categories:', categoryError);
+              }
+            }
+          }
+          
+          console.log(`[Import as Reporting Org] ✓ Imported ${importedDocsCount} document links`);
+        }
+
+        // Handle participating organizations
+        const participatingOrgsData = 
+          iati_data?.importedParticipatingOrgs ||
+          iati_data?.participating_orgs ||
+          parsedActivity?.participatingOrgs ||
+          [];
+
+        if (participatingOrgsData && participatingOrgsData.length > 0) {
+          console.log(`[Import as Reporting Org] Importing ${participatingOrgsData.length} participating organizations`);
+          
+          // Clear existing participating organizations for this activity
+          await supabase
+            .from('activity_participating_organizations')
+            .delete()
+            .eq('activity_id', finalActivityId);
+          
+          // Process each participating organization
+          const processedOrgs = [];
+          for (let index = 0; index < participatingOrgsData.length; index++) {
+            const org = participatingOrgsData[index];
+            const orgName = org.name || org.narrative || org.ref || 'Unknown Organization';
+            const orgRef = org.ref || org.validated_ref || org.original_ref || null;
+            
+            let orgId: string | null = null;
+            
+            // Try to find existing organization by IATI ID
+            if (orgRef) {
+              const { data: existingOrg } = await supabase
+                .from('organizations')
+                .select('id, name')
+                .eq('iati_org_id', orgRef)
+                .maybeSingle();
+              
+              if (existingOrg) {
+                orgId = existingOrg.id;
+                console.log(`[Import as Reporting Org] ✓ Found org by IATI ID: ${existingOrg.name}`);
+              } else {
+                // Try alias_refs
+                const { data: aliasOrgs } = await supabase
+                  .from('organizations')
+                  .select('id, name, alias_refs')
+                  .not('alias_refs', 'is', null);
+                
+                const aliasMatch = aliasOrgs?.find(o => 
+                  o.alias_refs && Array.isArray(o.alias_refs) && o.alias_refs.includes(orgRef)
+                );
+                
+                if (aliasMatch) {
+                  orgId = aliasMatch.id;
+                  console.log(`[Import as Reporting Org] ✓ Found org by alias: ${aliasMatch.name}`);
+                }
+              }
+            }
+            
+            // Try to find by name if not found by ref
+            if (!orgId && orgName && orgName !== 'Unknown Organization') {
+              const { data: nameMatch } = await supabase
+                .from('organizations')
+                .select('id, name')
+                .ilike('name', orgName)
+                .maybeSingle();
+              
+              if (nameMatch) {
+                orgId = nameMatch.id;
+                console.log(`[Import as Reporting Org] ✓ Found org by name: ${nameMatch.name}`);
+              }
+            }
+            
+            // Create organization if not found
+            if (!orgId) {
+              try {
+                const { data: newOrg, error: createError } = await supabase
+                  .from('organizations')
+                  .insert({
+                    name: orgName,
+                    iati_org_id: orgRef,
+                    alias_refs: orgRef ? [orgRef] : [],
+                    type: org.type || 'other',
+                    country: null
+                  })
+                  .select('id, name')
+                  .single();
+                
+                if (newOrg && !createError) {
+                  orgId = newOrg.id;
+                  console.log(`[Import as Reporting Org] ✓ Created new org: ${newOrg.name}`);
+                } else if (createError) {
+                  // Try to find it again (might be duplicate)
+                  if (orgRef) {
+                    const { data: existing } = await supabase
+                      .from('organizations')
+                      .select('id')
+                      .eq('iati_org_id', orgRef)
+                      .maybeSingle();
+                    if (existing) orgId = existing.id;
+                  }
+                  if (!orgId && orgName) {
+                    const { data: existing } = await supabase
+                      .from('organizations')
+                      .select('id')
+                      .ilike('name', orgName)
+                      .maybeSingle();
+                    if (existing) orgId = existing.id;
+                  }
+                }
+              } catch (err) {
+                console.error(`[Import as Reporting Org] Error creating org ${orgName}:`, err);
+              }
+            }
+            
+            if (orgId) {
+              // Map IATI role codes to our role types
+              let roleType: 'extending' | 'implementing' | 'government' | 'funding' = 'implementing';
+              const roleCode = org.role || '4';
+              if (roleCode === '1') roleType = 'funding';
+              else if (roleCode === '2') roleType = 'implementing';
+              else if (roleCode === '3') roleType = 'extending';
+              else if (roleCode === '4') roleType = 'implementing';
+              
+              const iatiRoleCode = parseInt(roleCode, 10);
+              
+              processedOrgs.push({
+                activity_id: finalActivityId,
+                organization_id: orgId,
+                role_type: roleType,
+                display_order: index,
+                iati_role_code: (iatiRoleCode >= 1 && iatiRoleCode <= 4) ? iatiRoleCode : 4,
+                iati_org_ref: orgRef,
+                org_type: org.type || null,
+                activity_id_ref: org.activityId || null,
+                crs_channel_code: org.crsChannelCode || null,
+                narrative: org.narrative || org.name || null,
+                narrative_lang: org.narrativeLang || 'en',
+                narratives: org.narratives ? JSON.stringify(org.narratives) : null,
+                org_activity_id: org.activityId || null,
+                reporting_org_ref: null,
+                secondary_reporter: false
+              });
+            } else {
+              console.warn(`[Import as Reporting Org] ⚠️  Could not resolve org: ${orgName} (ref: ${orgRef})`);
+            }
+          }
+          
+          // Insert participating organizations
+          if (processedOrgs.length > 0) {
+            const { error: insertError } = await supabase
+              .from('activity_participating_organizations')
+              .insert(processedOrgs);
+            
+            if (insertError) {
+              console.error(`[Import as Reporting Org] Error inserting participating orgs:`, insertError);
+            } else {
+              console.log(`[Import as Reporting Org] ✓ Imported ${processedOrgs.length} participating organizations`);
+            }
+          }
+        }
+
       } catch (error) {
         const errorMsg = error instanceof Error ? error.message : String(error);
         console.error(`[Import as Reporting Org] Exception importing activity ${iatiIdentifier}:`, error);

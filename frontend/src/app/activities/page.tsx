@@ -48,7 +48,7 @@ import { format } from "date-fns";
 import { toast } from "sonner";
 import { formatReportedBy, formatSubmittedBy } from "@/utils/format-helpers";
 import { HelpTextTooltip } from "@/components/ui/help-text-tooltip";
-import { 
+import {
   Plus, Download, Edit2, Trash2, AlertCircle, ArrowUp, ArrowDown, ArrowUpDown, ChevronLeft, ChevronRight, Users, Grid3X3, TableIcon, Search, MoreVertical, Edit,
   PencilLine, BookOpenCheck, BookLock, CheckCircle2, AlertTriangle, Circle, Info, ReceiptText, Handshake, Shuffle, Link2,
   FileCheck, ShieldCheck, Globe, DatabaseZap, RefreshCw, Copy, Check, Blocks, DollarSign, Settings, ExternalLink, FileCode, Columns3, ChevronDown
@@ -2699,10 +2699,8 @@ function ActivitiesPageContent() {
                       <td className="px-4 py-2 text-sm text-foreground text-center">
                         <TooltipProvider>
                           <Tooltip>
-                            <TooltipTrigger asChild>
-                              <div className="flex justify-center">
-                                <DatabaseZap className={`${publicationStatus === 'published' ? 'h-5 w-5' : 'h-4 w-4'} text-gray-500 hover:text-primary cursor-pointer`} strokeWidth={publicationStatus === 'published' ? 2.5 : 1} />
-                              </div>
+                            <TooltipTrigger>
+                              <DatabaseZap className={`${publicationStatus === 'published' ? 'h-5 w-5' : 'h-4 w-4'} text-gray-500 hover:text-primary cursor-pointer mx-auto`} strokeWidth={publicationStatus === 'published' ? 2.5 : 1} />
                             </TooltipTrigger>
                             <TooltipContent>
                               <div className="space-y-2 p-1">
@@ -2844,8 +2842,8 @@ function ActivitiesPageContent() {
                       <td className="px-4 py-2 text-sm text-foreground text-center">
                         <TooltipProvider>
                           <Tooltip>
-                            <TooltipTrigger asChild>
-                              <span className="cursor-pointer"><ReceiptText className="h-4 w-4 text-gray-500 hover:text-primary cursor-pointer mx-auto" /></span>
+                            <TooltipTrigger>
+                              <ReceiptText className="h-4 w-4 text-gray-500 hover:text-primary cursor-pointer mx-auto" />
                             </TooltipTrigger>
                             <TooltipContent>
                               <div className="space-y-2 p-1">

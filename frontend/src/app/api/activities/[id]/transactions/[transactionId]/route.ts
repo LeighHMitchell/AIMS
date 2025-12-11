@@ -105,6 +105,19 @@ export async function PUT(
       }
     }
 
+    // Smart logic for provider/receiver org inferred flags:
+    // When user explicitly saves an org, mark it as NOT inferred (black text in UI)
+    // This applies whenever user provides org_id or org_name in the update
+    if ('provider_org_id' in body || 'provider_org_name' in body) {
+      const hasProviderOrg = body.provider_org_id || body.provider_org_name;
+      updateData.provider_org_inferred = !hasProviderOrg;
+    }
+    
+    if ('receiver_org_id' in body || 'receiver_org_name' in body) {
+      const hasReceiverOrg = body.receiver_org_id || body.receiver_org_name;
+      updateData.receiver_org_inferred = !hasReceiverOrg;
+    }
+
     // Update the transaction
     const { data: updatedTransaction, error } = await getSupabaseAdmin()
       .from('transactions')

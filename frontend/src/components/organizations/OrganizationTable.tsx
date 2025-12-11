@@ -300,7 +300,7 @@ export const OrganizationTable: React.FC<OrganizationTableProps> = ({
                           </Tooltip>
                         </TooltipProvider>
                         {org.iati_org_id && (
-                          <div className="mt-1 flex items-center gap-1.5">
+                          <div className="mt-1 flex items-center gap-1">
                             <span className="text-xs font-mono bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded">
                               {org.iati_org_id}
                             </span>
@@ -309,7 +309,7 @@ export const OrganizationTable: React.FC<OrganizationTableProps> = ({
                                 e.stopPropagation();
                                 copyToClipboard(org.iati_org_id!, 'IATI ID');
                               }}
-                              className="flex-shrink-0 p-0.5 hover:bg-gray-100 rounded transition-colors"
+                              className="p-0.5 hover:bg-gray-100 rounded transition-colors"
                               title="Copy IATI ID"
                             >
                               <Copy className="h-3 w-3 text-gray-400 hover:text-gray-600" />

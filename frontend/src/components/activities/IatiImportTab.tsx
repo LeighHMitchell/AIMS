@@ -5725,7 +5725,7 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
             : (doc.title || 'Untitled');
 
           fields.push({
-            fieldName: `Document Link`,
+            fieldName: `Document Link ${docIndex + 1}`,
             iatiPath: `iati-activity/document-link[${docIndex + 1}]`,
             currentValue: currentDocValue,
             importValue: docTitle,  // Just the title for collapsed view
@@ -6340,40 +6340,84 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
             console.log('[IATI Import] Reporting org:', meta.reportingOrgRef);
             console.log('[IATI Import] User refs:', userPublisherRefs);
             
-            // Check if this IATI ID already exists
-            let existingAct = null;
-            if (meta.iatiId) {
-              try {
-                const searchResponse = await fetch(`/api/activities/search?iatiId=${encodeURIComponent(meta.iatiId)}`);
-                if (searchResponse.ok) {
-                  const searchData = await searchResponse.json();
-                  if (searchData.activities && searchData.activities.length > 0) {
-                    existingAct = searchData.activities[0];
-                  }
-                }
-              } catch (err) {
-                console.error('[IATI Import] Error checking for existing activity:', err);
-              }
-            }
+            // SIMPLIFIED: Always use import_as_reporting_org mode (skip mode selection modal)
+            console.log('[IATI Import] ✅ Automatically using import_as_reporting_org mode');
+            setSelectedImportMode('import_as_reporting_org');
             
-            // Set up modal data
+            // Store metadata for the reporting org selection modal
             setExternalPublisherMeta(meta);
-            setExistingActivity(existingAct);
-            setShowExternalPublisherModal(true);
             
-            // Fields are already parsed and ready
-            // Show the modal but also show the preview
-            setImportStatus({ stage: 'previewing', progress: 100 });
-            toast.info('External publisher detected', {
-              description: `This activity is reported by ${meta.reportingOrgName || meta.reportingOrgRef}. Please choose how to handle it before importing.`
+            // Extract reporting org data from metadata
+            const xmlOrgRef = meta.reportingOrgRef;
+            const xmlOrgName = meta.reportingOrgName;
+            
+            setXmlReportingOrgData({
+              name: xmlOrgName,
+              ref: xmlOrgRef,
+              acronym: undefined
             });
+            
+            // Fields are already parsed and ready - show preview
+            setImportStatus({ stage: 'previewing', progress: 100 });
+            
             // Dismiss loading toast
             if (loadingToastRef.current) {
               toast.dismiss(loadingToastRef.current);
               loadingToastRef.current = null;
             }
-            toast.success(`XML file parsed successfully! Found ${fields.length} importable fields.`);
-            return; // Exit here, modal is shown and preview is visible
+            
+            toast.success(`XML file parsed successfully! Found ${fields.length} importable fields.`, {
+              description: `This activity is reported by ${meta.reportingOrgName || meta.reportingOrgRef}. It will be imported under the original publisher.`
+            });
+            
+            // Fetch organizations and set up reporting org selection modal
+            try {
+              const orgsResponse = await fetch('/api/organizations');
+              if (orgsResponse.ok) {
+                const orgs = await orgsResponse.json();
+                setAvailableOrganizations(orgs || []);
+                
+                // Try to find matching organization
+                const normalizedXmlOrgRef = xmlOrgRef?.trim()?.toUpperCase() || null;
+                let matchingOrg = null;
+                
+                if (normalizedXmlOrgRef) {
+                  // Try direct match by IATI org ID
+                  matchingOrg = orgs?.find((o: any) => {
+                    if (!o || !o.iati_org_id) return false;
+                    return o.iati_org_id?.trim()?.toUpperCase() === normalizedXmlOrgRef;
+                  });
+                  
+                  // Try alias_refs if not found
+                  if (!matchingOrg) {
+                    matchingOrg = orgs?.find((o: any) => {
+                      if (!o || !o.alias_refs || !Array.isArray(o.alias_refs)) return false;
+                      return o.alias_refs.some((alias: string) => 
+                        alias?.trim()?.toUpperCase() === normalizedXmlOrgRef
+                      );
+                    });
+                  }
+                }
+                
+                if (matchingOrg) {
+                  setSelectedReportingOrgId(matchingOrg.id);
+                  console.log('[IATI Import] ✅ Auto-selected matching organization:', matchingOrg.name);
+                } else {
+                  setSelectedReportingOrgId(null);
+                  console.log('[IATI Import] ⚠️  No matching org found - user will select manually');
+                }
+                
+                // Show the reporting org selection modal
+                setTimeout(() => {
+                  setShowReportingOrgSelectionModal(true);
+                }, 100);
+              }
+            } catch (error) {
+              console.error('[IATI Import] Failed to fetch organizations:', error);
+              toast.error('Failed to load organizations. Please try again.');
+            }
+            
+            return; // Exit here - reporting org selection modal will handle the rest
           } else {
             console.log('[IATI Import] Activity is owned by user, proceeding with normal import');
             }
@@ -8514,6 +8558,11 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
             selectedFieldsMap[field.iatiPath] = true;
           }
         });
+
+        // #region agent log
+        const capitalSpendField = parsedFields.find(f => f.fieldName === 'Capital Spend Percentage');
+        fetch('http://127.0.0.1:7242/ingest/b4892be5-ca87-459d-a863-d3e1a440a1d9',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'IatiImportTab.tsx:8559',message:'Client: Building selectedFieldsMap',data:{capitalSpendField:capitalSpendField?{fieldName:capitalSpendField.fieldName,iatiPath:capitalSpendField.iatiPath,selected:capitalSpendField.selected,importValue:capitalSpendField.importValue}:null,selectedFieldsMapKeys:Object.keys(selectedFieldsMap),hasCapitalSpendKey:!!selectedFieldsMap['iati-activity/capital-spend'],hasCapitalSpendAttrKey:!!selectedFieldsMap['iati-activity/capital-spend[@percentage]'],updateDataCapitalSpend:updateData.capital_spend_percentage},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'H1-client'})}).catch(()=>{});
+        // #endregion
 
         response = await fetch('/api/iati/import-as-reporting-org', {
           method: 'POST',

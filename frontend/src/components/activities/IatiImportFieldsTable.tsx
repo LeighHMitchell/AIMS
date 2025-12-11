@@ -4,7 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
-import { AlertCircle, AlertTriangle, ArrowUpDown, ArrowUp, ArrowDown, Search, ChevronDown, ChevronRight, Copy, Check, CheckCircle2, ChevronUp, Calendar, DollarSign, Tag, FileText, ExternalLink, MapPin, Building2, Info, Lock, Settings } from 'lucide-react';
+import { AlertCircle, AlertTriangle, ArrowUpDown, ArrowUp, ArrowDown, Search, ChevronDown, ChevronRight, Copy, Check, ChevronUp, Calendar, DollarSign, Tag, FileText, ExternalLink, MapPin, Building2, Lock, Settings } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { SafeHtml } from '@/components/ui/safe-html';
 import { htmlToPlainText } from '@/lib/sanitize';
@@ -2360,7 +2360,7 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                 onClick={() => handleSort('conflict')}
               >
                 <div className="flex items-center justify-center">
-                  Conflict
+                  Status
                   <SortIndicator column="conflict" />
                 </div>
               </TableHead>
@@ -2496,52 +2496,24 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                         </TableCell>
                         <TableCell className="text-center">
                           {field.hasConflict && (
-                            <TooltipProvider>
-                              <Tooltip>
-                                <TooltipTrigger>
-                                  <AlertCircle className="h-4 w-4 text-orange-500 mx-auto" />
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                  <p>This field has conflicting values</p>
-                                </TooltipContent>
-                              </Tooltip>
-                            </TooltipProvider>
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
+                              Conflict
+                            </span>
                           )}
                           {!field.hasConflict && field.fieldName === 'Sectors' && field.description?.includes('Refined successfully') && (
-                            <TooltipProvider>
-                              <Tooltip>
-                                <TooltipTrigger>
-                                  <CheckCircle2 className="h-4 w-4 text-green-600 mx-auto" />
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                  <p>Sectors refined successfully - ready for import</p>
-                                </TooltipContent>
-                              </Tooltip>
-                            </TooltipProvider>
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                              Ready
+                            </span>
                           )}
                           {!field.hasConflict && !(field.fieldName === 'Sectors' && field.description?.includes('Refined successfully')) && isMissing && (
-                            <TooltipProvider>
-                              <Tooltip>
-                                <TooltipTrigger>
-                                  <Info className="h-4 w-4 text-blue-500 mx-auto" />
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                  <p>Current value is missing</p>
-                                </TooltipContent>
-                              </Tooltip>
-                            </TooltipProvider>
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                              New
+                            </span>
                           )}
                           {!field.hasConflict && !(field.fieldName === 'Sectors' && field.description?.includes('Refined successfully')) && !isMissing && valuesMatch(field) && (
-                            <TooltipProvider>
-                              <Tooltip>
-                                <TooltipTrigger>
-                                  <CheckCircle2 className="h-4 w-4 text-green-600 mx-auto" />
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                  <p>Current and import values match</p>
-                                </TooltipContent>
-                              </Tooltip>
-                            </TooltipProvider>
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                              Match
+                            </span>
                           )}
                         </TableCell>
                       </TableRow>

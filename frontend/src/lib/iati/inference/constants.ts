@@ -56,3 +56,4 @@ export function isOutgoingTransaction(transactionType: string): boolean {
   return !INCOMING_TRANSACTION_TYPES.has(transactionType);
 }
 
+

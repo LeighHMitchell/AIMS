@@ -1931,6 +1931,7 @@ export default function TransactionList({
                       {isColumnVisible('organizations') && (
                         <TableCell className="py-3 px-3" style={{ maxWidth: '280px' }}>
                           <div className="flex items-center gap-1.5 font-medium overflow-hidden">
+                            {/* Provider Org - gray if inferred, black if explicit */}
                             <div className="flex items-center gap-1.5 min-w-0 flex-shrink">
                               <OrganizationLogo
                                 logo={getOrgLogo(transaction.provider_org_id, transaction.provider_org_ref) || (transaction as any).provider_org_logo}
@@ -1940,18 +1941,31 @@ export default function TransactionList({
                               {getOrgId(transaction.provider_org_id, transaction.provider_org_ref) ? (
                                 <Link
                                   href={`/organizations/${getOrgId(transaction.provider_org_id, transaction.provider_org_ref)}`}
-                                  className="truncate hover:text-gray-700 transition-colors block"
+                                  className={`truncate hover:text-gray-700 transition-colors block ${transaction.provider_org_inferred ? 'text-muted-foreground' : ''}`}
                                   onClick={(e) => e.stopPropagation()}
                                 >
                                   {getOrgAcronymOrName(transaction.provider_org_id, transaction.provider_org_name, transaction.provider_org_ref) || "Unknown"}
                                 </Link>
                               ) : (
-                                <span className="truncate block">
+                                <span className={`truncate block ${transaction.provider_org_inferred ? 'text-muted-foreground' : ''}`}>
                                   {getOrgAcronymOrName(transaction.provider_org_id, transaction.provider_org_name, transaction.provider_org_ref) || "Unknown"}
                                 </span>
                               )}
+                              {transaction.provider_org_inferred && (
+                                <TooltipProvider>
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <Info className="h-3 w-3 text-muted-foreground flex-shrink-0" />
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                      <p>Inferred from activity data</p>
+                                    </TooltipContent>
+                                  </Tooltip>
+                                </TooltipProvider>
+                              )}
                             </div>
                             <span className="text-muted-foreground flex-shrink-0">→</span>
+                            {/* Receiver Org - gray if inferred, black if explicit */}
                             <div className="flex items-center gap-1.5 min-w-0 flex-shrink">
                               <OrganizationLogo
                                 logo={getOrgLogo(transaction.receiver_org_id, transaction.receiver_org_ref) || (transaction as any).receiver_org_logo}
@@ -1961,15 +1975,27 @@ export default function TransactionList({
                               {getOrgId(transaction.receiver_org_id, transaction.receiver_org_ref) ? (
                                 <Link
                                   href={`/organizations/${getOrgId(transaction.receiver_org_id, transaction.receiver_org_ref)}`}
-                                  className="truncate hover:text-gray-700 transition-colors block"
+                                  className={`truncate hover:text-gray-700 transition-colors block ${transaction.receiver_org_inferred ? 'text-muted-foreground' : ''}`}
                                   onClick={(e) => e.stopPropagation()}
                                 >
                                   {getOrgAcronymOrName(transaction.receiver_org_id, transaction.receiver_org_name, transaction.receiver_org_ref) || "Unknown"}
                                 </Link>
                               ) : (
-                                <span className="truncate block">
+                                <span className={`truncate block ${transaction.receiver_org_inferred ? 'text-muted-foreground' : ''}`}>
                                   {getOrgAcronymOrName(transaction.receiver_org_id, transaction.receiver_org_name, transaction.receiver_org_ref) || "Unknown"}
                                 </span>
+                              )}
+                              {transaction.receiver_org_inferred && (
+                                <TooltipProvider>
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <Info className="h-3 w-3 text-muted-foreground flex-shrink-0" />
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                      <p>Inferred from activity data</p>
+                                    </TooltipContent>
+                                  </Tooltip>
+                                </TooltipProvider>
                               )}
                             </div>
                           </div>
@@ -2169,13 +2195,27 @@ export default function TransactionList({
                                       {getOrgId(transaction.provider_org_id, transaction.provider_org_ref) ? (
                                         <Link 
                                           href={`/organizations/${getOrgId(transaction.provider_org_id, transaction.provider_org_ref)}`}
-                                          className="font-medium hover:text-gray-700 transition-colors"
+                                          className={`font-medium hover:text-gray-700 transition-colors ${transaction.provider_org_inferred ? 'text-muted-foreground' : ''}`}
                                           onClick={(e) => e.stopPropagation()}
                                         >
                                           {getOrgFullDisplay(transaction.provider_org_id, transaction.provider_org_name, transaction.provider_org_ref)}
                                         </Link>
                                       ) : (
-                                        <span className="font-medium">{getOrgFullDisplay(transaction.provider_org_id, transaction.provider_org_name, transaction.provider_org_ref)}</span>
+                                        <span className={`font-medium ${transaction.provider_org_inferred ? 'text-muted-foreground' : ''}`}>{getOrgFullDisplay(transaction.provider_org_id, transaction.provider_org_name, transaction.provider_org_ref)}</span>
+                                      )}
+                                      {transaction.provider_org_inferred && (
+                                        <TooltipProvider>
+                                          <Tooltip>
+                                            <TooltipTrigger asChild>
+                                              <Badge variant="outline" className="text-xs text-muted-foreground">
+                                                Inferred
+                                              </Badge>
+                                            </TooltipTrigger>
+                                            <TooltipContent>
+                                              <p>Inferred from activity data</p>
+                                            </TooltipContent>
+                                          </Tooltip>
+                                        </TooltipProvider>
                                       )}
                                       {transaction.provider_org_type && (
                                         <Badge variant="secondary" className="text-xs">
@@ -2210,13 +2250,27 @@ export default function TransactionList({
                                       {getOrgId(transaction.receiver_org_id, transaction.receiver_org_ref) ? (
                                         <Link 
                                           href={`/organizations/${getOrgId(transaction.receiver_org_id, transaction.receiver_org_ref)}`}
-                                          className="font-medium hover:text-gray-700 transition-colors"
+                                          className={`font-medium hover:text-gray-700 transition-colors ${transaction.receiver_org_inferred ? 'text-muted-foreground' : ''}`}
                                           onClick={(e) => e.stopPropagation()}
                                         >
                                           {getOrgFullDisplay(transaction.receiver_org_id, transaction.receiver_org_name, transaction.receiver_org_ref)}
                                         </Link>
                                       ) : (
-                                        <span className="font-medium">{getOrgFullDisplay(transaction.receiver_org_id, transaction.receiver_org_name, transaction.receiver_org_ref)}</span>
+                                        <span className={`font-medium ${transaction.receiver_org_inferred ? 'text-muted-foreground' : ''}`}>{getOrgFullDisplay(transaction.receiver_org_id, transaction.receiver_org_name, transaction.receiver_org_ref)}</span>
+                                      )}
+                                      {transaction.receiver_org_inferred && (
+                                        <TooltipProvider>
+                                          <Tooltip>
+                                            <TooltipTrigger asChild>
+                                              <Badge variant="outline" className="text-xs text-muted-foreground">
+                                                Inferred
+                                              </Badge>
+                                            </TooltipTrigger>
+                                            <TooltipContent>
+                                              <p>Inferred from activity data</p>
+                                            </TooltipContent>
+                                          </Tooltip>
+                                        </TooltipProvider>
                                       )}
                                       {transaction.receiver_org_type && (
                                         <Badge variant="secondary" className="text-xs">

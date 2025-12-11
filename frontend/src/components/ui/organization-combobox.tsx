@@ -200,7 +200,7 @@ export function OrganizationCombobox({
                         {getOrganizationDisplay(selected)}
                       </span>
                       {(selected.iati_org_id || selected.iati_identifier) && (
-                        <span className="text-xs font-mono text-gray-600 bg-gray-100 px-2 py-1 rounded hover:text-gray-600">
+                        <span className="flex-shrink-0 text-xs font-mono text-gray-600 bg-gray-100 px-2 py-1 rounded hover:text-gray-600">
                           {selected.iati_org_id || selected.iati_identifier}
                         </span>
                       )}
@@ -240,17 +240,24 @@ export function OrganizationCombobox({
           })()}
           <div className="flex items-center gap-1 ml-2">
             {value && (
-              <button
-                type="button"
+              <span
+                role="button"
+                tabIndex={0}
                 onClick={(e) => {
                   e.stopPropagation();
                   onValueChange('');
                 }}
-                className="h-4 w-4 rounded-full hover:bg-gray-200 flex items-center justify-center transition-colors"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.stopPropagation();
+                    onValueChange('');
+                  }
+                }}
+                className="h-4 w-4 rounded-full hover:bg-gray-200 flex items-center justify-center transition-colors cursor-pointer"
                 aria-label="Clear selection"
               >
                 <X className="h-3 w-3 text-gray-500" />
-              </button>
+              </span>
             )}
             <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50" />
           </div>
@@ -314,7 +321,7 @@ export function OrganizationCombobox({
                           <div className="flex items-baseline gap-2">
                             <span className="font-normal text-gray-900 text-sm truncate hover:text-gray-900">{org.name}{org.acronym ? ` (${org.acronym})` : ''}</span>
                             {(org.iati_org_id || org.iati_identifier) && (
-                              <span className="text-xs font-mono text-gray-600 bg-gray-100 px-2 py-1 rounded hover:text-gray-600">
+                              <span className="flex-shrink-0 text-xs font-mono text-gray-600 bg-gray-100 px-2 py-1 rounded hover:text-gray-600">
                                 {org.iati_org_id || org.iati_identifier}
                               </span>
                             )}

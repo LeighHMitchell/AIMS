@@ -342,12 +342,28 @@ export async function GET(request: NextRequest) {
       return sortOrder === 'desc' ? -comparison : comparison;
     });
 
+    // Additional client-side filter for organization name (since it's from a joined table)
+    // This ensures organization name search works even though it's not in the database query
+    let filteredPeople = transformedPeople;
+    if (filters.search) {
+      const searchLower = filters.search.toLowerCase();
+      filteredPeople = transformedPeople.filter(person => 
+        // Keep if any field matches (some already matched from DB query, but include org name here)
+        (person.organization_name && person.organization_name.toLowerCase().includes(searchLower)) ||
+        (person.organization_acronym && person.organization_acronym.toLowerCase().includes(searchLower)) ||
+        (person.first_name && person.first_name.toLowerCase().includes(searchLower)) ||
+        (person.last_name && person.last_name.toLowerCase().includes(searchLower)) ||
+        (person.name && person.name.toLowerCase().includes(searchLower)) ||
+        (person.email && person.email.toLowerCase().includes(searchLower))
+      );
+    }
+
     // Apply pagination
-    const total = transformedPeople.length;
-    console.log('[AIMS Rolodex] Total transformed people:', total);
-    console.log('[AIMS Rolodex] First few people:', transformedPeople.slice(0, 3).map(p => ({ name: p.name, source: p.source })));
+    const total = filteredPeople.length;
+    console.log('[AIMS Rolodex] Total filtered people:', total);
+    console.log('[AIMS Rolodex] First few people:', filteredPeople.slice(0, 3).map(p => ({ name: p.name, source: p.source })));
     
-    const paginatedPeople = transformedPeople.slice(offset, offset + (filters.limit || 24));
+    const paginatedPeople = filteredPeople.slice(offset, offset + (filters.limit || 24));
 
     const response = {
       people: paginatedPeople,
@@ -468,6 +484,62 @@ export async function PUT(request: NextRequest) {
     console.error('[AIMS Rolodex] Error updating contact:', error);
     return NextResponse.json(
       { error: 'Failed to update contact' },
+      { status: 500 }
+    );
+  }
+}
+
+export async function DELETE(request: NextRequest) {
+  try {
+    const supabase = getSupabaseAdmin();
+    if (!supabase) {
+      return NextResponse.json(
+        { error: 'Supabase is not configured' },
+        { status: 500 }
+      );
+    }
+
+    const { searchParams } = new URL(request.url);
+    const id = searchParams.get('id');
+    const source = searchParams.get('source');
+
+    if (!id || !source) {
+      return NextResponse.json(
+        { error: 'ID and source are required' },
+        { status: 400 }
+      );
+    }
+
+    console.log('[AIMS Rolodex] Deleting contact:', { id, source });
+
+    // Only allow deletion of activity contacts, not users
+    if (source !== 'activity_contact') {
+      return NextResponse.json(
+        { error: 'Only activity contacts can be deleted from the Rolodex. Users must be managed through the admin panel.' },
+        { status: 403 }
+      );
+    }
+
+    const { error } = await supabase
+      .from('activity_contacts')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      console.error('[AIMS Rolodex] Delete error:', error);
+      return NextResponse.json(
+        { error: error.message },
+        { status: 400 }
+      );
+    }
+
+    console.log('[AIMS Rolodex] Contact deleted successfully:', id);
+    return NextResponse.json({ success: true, message: 'Contact deleted successfully' });
+
+  } catch (error) {
+    console.error('[AIMS Rolodex] Error deleting contact:', error);
+    return NextResponse.json(
+      { error: 'Failed to delete contact' },
       { status: 500 }
     );
   }

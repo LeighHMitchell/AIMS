@@ -102,3 +102,4 @@ COMMENT ON COLUMN duplicate_dismissals.action_taken IS 'Action taken: not_duplic
 -- SELECT * FROM information_schema.tables WHERE table_name IN ('detected_duplicates', 'duplicate_dismissals');
 -- SELECT * FROM information_schema.columns WHERE table_name = 'detected_duplicates';
 -- SELECT * FROM information_schema.columns WHERE table_name = 'duplicate_dismissals';
+

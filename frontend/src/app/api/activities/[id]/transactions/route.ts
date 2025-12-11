@@ -312,6 +312,11 @@ export async function POST(
       receiver_org_activity_id: body.receiver_org_activity_id || null,
       receiver_activity_uuid: body.receiver_activity_uuid || null,
       
+      // Inferred flags - false if user explicitly provided org, true otherwise (system inferred)
+      // When inferred=true, UI displays org name in gray; when false (explicit), displays in black
+      provider_org_inferred: !providerOrgId && !body.provider_org_name,
+      receiver_org_inferred: !receiverOrgId && !body.receiver_org_name,
+      
       // IATI classification fields
       aid_type: body.aid_type || null,
       aid_type_vocabulary: body.aid_type_vocabulary || null,

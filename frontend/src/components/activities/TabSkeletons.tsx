@@ -218,35 +218,125 @@ export function GenericTabSkeleton() {
 export function TransactionsSkeleton() {
   return (
     <div className="space-y-4">
-      {/* Table Skeleton */}
-      <div className="rounded-md border">
-        <div className="p-4 border-b flex justify-between items-center">
-          <Skeleton className="h-6 w-48" />
-          <Skeleton className="h-9 w-32 rounded" />
-        </div>
+      {/* Card wrapper matching actual UI */}
+      <div className="rounded-lg border border-slate-200 bg-white shadow-sm">
+        {/* Table */}
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead>
-              <tr className="border-b">
-                {['Type', 'Date', 'Provider', 'Receiver', 'Amount', 'Currency', 'USD Value', 'Actions'].map((header, i) => (
-                  <th key={i} className="p-4 text-left">
-                    <Skeleton className="h-4 w-20" />
-                  </th>
-                ))}
+            <thead className="bg-muted/50 border-b border-border/70">
+              <tr>
+                {/* Expand */}
+                <th className="py-3 px-2 w-10"></th>
+                {/* Checkbox */}
+                <th className="py-3 px-4 w-10">
+                  <Skeleton className="h-4 w-4 rounded" />
+                </th>
+                {/* Type */}
+                <th className="py-3 px-4">
+                  <Skeleton className="h-4 w-12" />
+                </th>
+                {/* Date */}
+                <th className="py-3 px-4">
+                  <Skeleton className="h-4 w-10" />
+                </th>
+                {/* Provider */}
+                <th className="py-3 px-4">
+                  <Skeleton className="h-4 w-16" />
+                </th>
+                {/* Receiver */}
+                <th className="py-3 px-4">
+                  <Skeleton className="h-4 w-16" />
+                </th>
+                {/* Amount */}
+                <th className="py-3 px-4 text-right">
+                  <Skeleton className="h-4 w-16 ml-auto" />
+                </th>
+                {/* Currency */}
+                <th className="py-3 px-4 text-center">
+                  <Skeleton className="h-4 w-14 mx-auto" />
+                </th>
+                {/* USD Value */}
+                <th className="py-3 px-4 text-right">
+                  <Skeleton className="h-4 w-20 ml-auto" />
+                </th>
+                {/* Actions */}
+                <th className="py-3 px-4 text-right w-20">
+                  <Skeleton className="h-4 w-14 ml-auto" />
+                </th>
               </tr>
             </thead>
             <tbody>
               {[...Array(5)].map((_, i) => (
-                <tr key={i} className="border-b">
-                  {[...Array(8)].map((_, j) => (
-                    <td key={j} className="p-4">
-                      <Skeleton className="h-4 w-full" />
-                    </td>
-                  ))}
+                <tr key={i} className="border-b border-border/50">
+                  {/* Expand button */}
+                  <td className="py-3 px-2">
+                    <Skeleton className="h-4 w-4 rounded" />
+                  </td>
+                  {/* Checkbox */}
+                  <td className="py-3 px-4">
+                    <Skeleton className="h-4 w-4 rounded" />
+                  </td>
+                  {/* Type - badge with icon */}
+                  <td className="py-3 px-4">
+                    <div className="flex items-center gap-2">
+                      <Skeleton className="h-5 w-5 rounded" />
+                      <Skeleton className="h-5 w-24 rounded-full" />
+                    </div>
+                  </td>
+                  {/* Date */}
+                  <td className="py-3 px-4">
+                    <Skeleton className="h-4 w-24" />
+                  </td>
+                  {/* Provider - org with logo */}
+                  <td className="py-3 px-4">
+                    <div className="flex items-center gap-2">
+                      <Skeleton className="h-8 w-8 rounded-full" />
+                      <div className="space-y-1">
+                        <Skeleton className="h-4 w-28" />
+                        <Skeleton className="h-3 w-20" />
+                      </div>
+                    </div>
+                  </td>
+                  {/* Receiver - org with logo */}
+                  <td className="py-3 px-4">
+                    <div className="flex items-center gap-2">
+                      <Skeleton className="h-8 w-8 rounded-full" />
+                      <div className="space-y-1">
+                        <Skeleton className="h-4 w-28" />
+                        <Skeleton className="h-3 w-20" />
+                      </div>
+                    </div>
+                  </td>
+                  {/* Amount */}
+                  <td className="py-3 px-4 text-right">
+                    <Skeleton className="h-4 w-24 ml-auto" />
+                  </td>
+                  {/* Currency */}
+                  <td className="py-3 px-4 text-center">
+                    <Skeleton className="h-6 w-12 rounded-full mx-auto" />
+                  </td>
+                  {/* USD Value */}
+                  <td className="py-3 px-4 text-right">
+                    <Skeleton className="h-4 w-28 ml-auto" />
+                  </td>
+                  {/* Actions */}
+                  <td className="py-3 px-4 text-right">
+                    <Skeleton className="h-8 w-8 rounded ml-auto" />
+                  </td>
                 </tr>
               ))}
             </tbody>
           </table>
+        </div>
+        
+        {/* Pagination */}
+        <div className="flex items-center justify-between px-4 py-3 border-t">
+          <Skeleton className="h-4 w-32" />
+          <div className="flex items-center gap-2">
+            <Skeleton className="h-8 w-8 rounded" />
+            <Skeleton className="h-4 w-16" />
+            <Skeleton className="h-8 w-8 rounded" />
+          </div>
         </div>
       </div>
     </div>
@@ -257,35 +347,109 @@ export function TransactionsSkeleton() {
 export function BudgetsSkeleton() {
   return (
     <div className="space-y-4">
-      {/* Table Skeleton */}
-      <div className="rounded-md border">
-        <div className="p-4 border-b flex justify-between items-center">
-          <Skeleton className="h-6 w-48" />
-          <Skeleton className="h-9 w-40 rounded" />
-        </div>
+      {/* Card wrapper matching actual UI */}
+      <div className="rounded-lg border border-slate-200 bg-white shadow-sm">
+        {/* Table */}
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead>
-              <tr className="border-b">
-                {['Period', 'Type', 'Status', 'Amount', 'Value Date', 'USD Value', 'Actions'].map((header, i) => (
-                  <th key={i} className="p-4 text-left">
-                    <Skeleton className="h-4 w-16" />
-                  </th>
-                ))}
+            <thead className="bg-muted/50 border-b border-border/70">
+              <tr>
+                {/* Expand */}
+                <th className="py-3 px-2 w-12"></th>
+                {/* Checkbox */}
+                <th className="py-3 px-2 w-12 text-center">
+                  <Skeleton className="h-4 w-4 rounded mx-auto" />
+                </th>
+                {/* Period */}
+                <th className="py-3 px-4" style={{ width: '200px' }}>
+                  <Skeleton className="h-4 w-14" />
+                </th>
+                {/* Type */}
+                <th className="py-3 px-4">
+                  <Skeleton className="h-4 w-10" />
+                </th>
+                {/* Status */}
+                <th className="py-3 px-4">
+                  <Skeleton className="h-4 w-12" />
+                </th>
+                {/* Amount */}
+                <th className="py-3 px-4 text-right">
+                  <Skeleton className="h-4 w-16 ml-auto" />
+                </th>
+                {/* Value Date */}
+                <th className="py-3 px-4">
+                  <Skeleton className="h-4 w-20" />
+                </th>
+                {/* USD Value */}
+                <th className="py-3 px-4 text-right">
+                  <Skeleton className="h-4 w-20 ml-auto" />
+                </th>
+                {/* Actions */}
+                <th className="py-3 px-4 text-right w-16"></th>
               </tr>
             </thead>
             <tbody>
               {[...Array(4)].map((_, i) => (
-                <tr key={i} className="border-b">
-                  {[...Array(7)].map((_, j) => (
-                    <td key={j} className="p-4">
-                      <Skeleton className="h-4 w-full" />
-                    </td>
-                  ))}
+                <tr key={i} className="border-b border-border/50">
+                  {/* Expand button */}
+                  <td className="py-3 px-2">
+                    <Skeleton className="h-4 w-4 rounded" />
+                  </td>
+                  {/* Checkbox */}
+                  <td className="py-3 px-2 text-center">
+                    <Skeleton className="h-4 w-4 rounded mx-auto" />
+                  </td>
+                  {/* Period - date range */}
+                  <td className="py-3 px-4">
+                    <div className="space-y-1">
+                      <Skeleton className="h-4 w-36" />
+                      <Skeleton className="h-3 w-16" />
+                    </div>
+                  </td>
+                  {/* Type - badge */}
+                  <td className="py-3 px-4">
+                    <Skeleton className="h-6 w-20 rounded-full" />
+                  </td>
+                  {/* Status - badge */}
+                  <td className="py-3 px-4">
+                    <Skeleton className="h-6 w-20 rounded-full" />
+                  </td>
+                  {/* Amount */}
+                  <td className="py-3 px-4 text-right">
+                    <div className="space-y-1">
+                      <Skeleton className="h-4 w-28 ml-auto" />
+                      <Skeleton className="h-3 w-10 ml-auto" />
+                    </div>
+                  </td>
+                  {/* Value Date */}
+                  <td className="py-3 px-4">
+                    <Skeleton className="h-4 w-24" />
+                  </td>
+                  {/* USD Value */}
+                  <td className="py-3 px-4 text-right">
+                    <div className="space-y-1">
+                      <Skeleton className="h-4 w-28 ml-auto" />
+                      <Skeleton className="h-3 w-20 ml-auto" />
+                    </div>
+                  </td>
+                  {/* Actions */}
+                  <td className="py-3 px-4 text-right">
+                    <Skeleton className="h-8 w-8 rounded ml-auto" />
+                  </td>
                 </tr>
               ))}
             </tbody>
           </table>
+        </div>
+        
+        {/* Pagination */}
+        <div className="flex items-center justify-between px-4 py-3 border-t">
+          <Skeleton className="h-4 w-28" />
+          <div className="flex items-center gap-2">
+            <Skeleton className="h-8 w-8 rounded" />
+            <Skeleton className="h-4 w-16" />
+            <Skeleton className="h-8 w-8 rounded" />
+          </div>
         </div>
       </div>
     </div>
@@ -296,35 +460,119 @@ export function BudgetsSkeleton() {
 export function PlannedDisbursementsSkeleton() {
   return (
     <div className="space-y-4">
-      {/* Table Skeleton */}
-      <div className="rounded-md">
-        <div className="p-4 border-b flex justify-between items-center">
-          <Skeleton className="h-6 w-48" />
-          <Skeleton className="h-9 w-40 rounded" />
-        </div>
+      {/* Card wrapper matching actual UI */}
+      <div className="rounded-lg border border-slate-200 bg-white shadow-sm">
+        {/* Table */}
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead>
-              <tr className="border-b">
-                {['Period', 'Status', 'Provider → Receiver', 'Amount', 'Value Date', 'USD Value', 'Actions'].map((header, i) => (
-                  <th key={i} className="p-4 text-left">
-                    <Skeleton className="h-4 w-20" />
-                  </th>
-                ))}
+            <thead className="bg-muted/50 border-b border-border/70">
+              <tr>
+                {/* Expand */}
+                <th className="py-3 px-2 w-10"></th>
+                {/* Checkbox */}
+                <th className="py-3 px-2 w-12 text-center">
+                  <Skeleton className="h-4 w-4 rounded mx-auto" />
+                </th>
+                {/* Period */}
+                <th className="py-3 px-4">
+                  <Skeleton className="h-4 w-14" />
+                </th>
+                {/* Status */}
+                <th className="py-3 px-4">
+                  <Skeleton className="h-4 w-12" />
+                </th>
+                {/* Provider → Receiver */}
+                <th className="py-3 px-4" style={{ maxWidth: '300px' }}>
+                  <Skeleton className="h-4 w-36" />
+                </th>
+                {/* Amount */}
+                <th className="py-3 px-4 text-right" style={{ width: '160px' }}>
+                  <Skeleton className="h-4 w-16 ml-auto" />
+                </th>
+                {/* Value Date */}
+                <th className="py-3 px-4" style={{ width: '140px' }}>
+                  <Skeleton className="h-4 w-20" />
+                </th>
+                {/* USD Value */}
+                <th className="py-3 px-4 text-right" style={{ width: '150px' }}>
+                  <Skeleton className="h-4 w-20 ml-auto" />
+                </th>
+                {/* Actions */}
+                <th className="py-3 px-4 text-right w-20"></th>
               </tr>
             </thead>
             <tbody>
               {[...Array(4)].map((_, i) => (
-                <tr key={i} className="border-b">
-                  {[...Array(7)].map((_, j) => (
-                    <td key={j} className="p-4">
-                      <Skeleton className="h-4 w-full" />
-                    </td>
-                  ))}
+                <tr key={i} className="border-b border-border/50">
+                  {/* Expand button */}
+                  <td className="py-3 px-2">
+                    <Skeleton className="h-4 w-4 rounded" />
+                  </td>
+                  {/* Checkbox */}
+                  <td className="py-3 px-2 text-center">
+                    <Skeleton className="h-4 w-4 rounded mx-auto" />
+                  </td>
+                  {/* Period - date range */}
+                  <td className="py-3 px-4">
+                    <div className="space-y-1">
+                      <Skeleton className="h-4 w-36" />
+                      <Skeleton className="h-3 w-16" />
+                    </div>
+                  </td>
+                  {/* Status - badge */}
+                  <td className="py-3 px-4">
+                    <Skeleton className="h-6 w-20 rounded-full" />
+                  </td>
+                  {/* Provider → Receiver - org pairs with logos */}
+                  <td className="py-3 px-4">
+                    <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2">
+                        <Skeleton className="h-8 w-8 rounded-full" />
+                        <Skeleton className="h-4 w-20" />
+                      </div>
+                      <Skeleton className="h-4 w-4" /> {/* Arrow */}
+                      <div className="flex items-center gap-2">
+                        <Skeleton className="h-8 w-8 rounded-full" />
+                        <Skeleton className="h-4 w-20" />
+                      </div>
+                    </div>
+                  </td>
+                  {/* Amount */}
+                  <td className="py-3 px-4 text-right">
+                    <div className="space-y-1">
+                      <Skeleton className="h-4 w-28 ml-auto" />
+                      <Skeleton className="h-3 w-10 ml-auto" />
+                    </div>
+                  </td>
+                  {/* Value Date */}
+                  <td className="py-3 px-4">
+                    <Skeleton className="h-4 w-24" />
+                  </td>
+                  {/* USD Value */}
+                  <td className="py-3 px-4 text-right">
+                    <div className="space-y-1">
+                      <Skeleton className="h-4 w-28 ml-auto" />
+                      <Skeleton className="h-3 w-20 ml-auto" />
+                    </div>
+                  </td>
+                  {/* Actions */}
+                  <td className="py-3 px-4 text-right">
+                    <Skeleton className="h-8 w-8 rounded ml-auto" />
+                  </td>
                 </tr>
               ))}
             </tbody>
           </table>
+        </div>
+        
+        {/* Pagination */}
+        <div className="flex items-center justify-between px-4 py-3 border-t">
+          <Skeleton className="h-4 w-36" />
+          <div className="flex items-center gap-2">
+            <Skeleton className="h-8 w-8 rounded" />
+            <Skeleton className="h-4 w-16" />
+            <Skeleton className="h-8 w-8 rounded" />
+          </div>
         </div>
       </div>
     </div>

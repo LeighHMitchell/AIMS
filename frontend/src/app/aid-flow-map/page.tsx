@@ -9,14 +9,14 @@ export default function AidFlowMapPage() {
   return (
     <MainLayout>
       <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Aid Flow Map</h1>
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">Network</h1>
         <p className="text-gray-600">
           Interactive visualization of aid flows between donors and recipients
         </p>
       </div>
       
       <Suspense fallback={<MapSkeleton height="800px" />}>
-        <div className="container mx-auto py-6">
+        <div className="w-full py-4">
           <AidFlowMap height={800} />
         </div>
       </Suspense>
