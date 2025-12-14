@@ -67,6 +67,9 @@ export function buildAidFlowGraphData(
   // Create links map to aggregate flows between organizations
   const linksMap = new Map<string, GraphLink>()
 
+  // Define Unknown node ID for transactions missing provider or receiver
+  const UNKNOWN_NODE_ID = 'unknown-org'
+
   // Filter and process transactions
   const validTransactions = transactions.filter(t => {
     // Must have a value (allow negative values, just check it exists and meets minimum absolute value)
@@ -101,7 +104,7 @@ export function buildAidFlowGraphData(
   validTransactions.forEach(transaction => {
     const value = parseFloat(transaction.value.toString())
     
-    // Get provider info (prefer ID, fallback to name)
+    // Get provider info (prefer ID, fallback to name, then Unknown)
     let providerId = transaction.provider_org_id
     let providerName = transaction.provider_org_name
     let providerOrg = providerId ? orgMap.get(providerId) : null
@@ -116,7 +119,13 @@ export function buildAidFlowGraphData(
       providerId = `name-${providerName}`
     }
     
-    // Get receiver info (prefer ID, fallback to name)
+    // If still no provider, use Unknown
+    if (!providerId && !providerName) {
+      providerId = UNKNOWN_NODE_ID
+      providerName = 'Unknown'
+    }
+    
+    // Get receiver info (prefer ID, fallback to name, then Unknown)
     let receiverId = transaction.receiver_org_id
     let receiverName = transaction.receiver_org_name
     let receiverOrg = receiverId ? orgMap.get(receiverId) : null
@@ -130,20 +139,27 @@ export function buildAidFlowGraphData(
     if (!receiverId && receiverName) {
       receiverId = `name-${receiverName}`
     }
+    
+    // If still no receiver, use Unknown
+    if (!receiverId && !receiverName) {
+      receiverId = UNKNOWN_NODE_ID
+      receiverName = 'Unknown'
+    }
 
     // Use absolute value for node sizing (so negative transactions still contribute)
     const absValue = Math.abs(value)
 
-    // Add provider node
-    if (providerId && (providerOrg || providerName)) {
+    // Add provider node (including Unknown)
+    if (providerId) {
       if (!nodesMap.has(providerId)) {
+        const isUnknown = providerId === UNKNOWN_NODE_ID
         nodesMap.set(providerId, {
           id: providerId,
-          name: providerOrg?.name || providerName || `Org ${providerId}`,
-          type: providerOrg ? mapOrgTypeToNodeType(providerOrg.type) : 'donor',
+          name: isUnknown ? 'Unknown' : (providerOrg?.name || providerName || `Org ${providerId}`),
+          type: isUnknown ? 'implementer' : (providerOrg ? mapOrgTypeToNodeType(providerOrg.type) : 'donor'),
           sector: providerOrg?.sector,
-          logo: providerOrg?.logo || null,
-          acronym: providerOrg?.acronym || null,
+          logo: isUnknown ? null : (providerOrg?.logo || null),
+          acronym: isUnknown ? '?' : (providerOrg?.acronym || null),
           totalIn: 0,
           totalOut: 0
         })
@@ -153,16 +169,17 @@ export function buildAidFlowGraphData(
       node.totalOut = (node.totalOut || 0) + absValue
     }
 
-    // Add receiver node
-    if (receiverId && (receiverOrg || receiverName)) {
+    // Add receiver node (including Unknown)
+    if (receiverId) {
       if (!nodesMap.has(receiverId)) {
+        const isUnknown = receiverId === UNKNOWN_NODE_ID
         nodesMap.set(receiverId, {
           id: receiverId,
-          name: receiverOrg?.name || receiverName || `Org ${receiverId}`,
-          type: receiverOrg ? mapOrgTypeToNodeType(receiverOrg.type) : 'recipient',
+          name: isUnknown ? 'Unknown' : (receiverOrg?.name || receiverName || `Org ${receiverId}`),
+          type: isUnknown ? 'recipient' : (receiverOrg ? mapOrgTypeToNodeType(receiverOrg.type) : 'recipient'),
           sector: receiverOrg?.sector,
-          logo: receiverOrg?.logo || null,
-          acronym: receiverOrg?.acronym || null,
+          logo: isUnknown ? null : (receiverOrg?.logo || null),
+          acronym: isUnknown ? '?' : (receiverOrg?.acronym || null),
           totalIn: 0,
           totalOut: 0
         })
@@ -172,19 +189,15 @@ export function buildAidFlowGraphData(
       node.totalIn = (node.totalIn || 0) + absValue
     }
 
-    // Create link between organizations if both nodes exist in the graph
-    // Important: Only create link if both nodes were actually added to nodesMap
+    // Create link between organizations (including Unknown)
     // Use transaction type in key to create separate links per type
     const txType = transaction.transaction_type || 'unknown'
-    if (providerId && receiverId && providerId !== receiverId && 
-        nodesMap.has(providerId) && nodesMap.has(receiverId)) {
-      // Include transaction type in the key to create separate links per type
+    if (providerId && receiverId && providerId !== receiverId) {
       const linkKey = `${providerId}->${receiverId}:${txType}`
       
       if (linksMap.has(linkKey)) {
         // Aggregate value for existing link (same source, target, AND type)
-        const existingLink = linksMap.get(linkKey)!
-        existingLink.value += absValue
+        linksMap.get(linkKey)!.value += absValue
       } else {
         // Create new link
         linksMap.set(linkKey, {

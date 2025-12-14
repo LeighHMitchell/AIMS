@@ -76,7 +76,7 @@ export async function GET(request: NextRequest) {
     // Get budgets (activity-level, with sector allocation applied later)
     let budgetsQuery = supabase
       .from('activity_budgets')
-      .select('activity_id, value')
+      .select('activity_id, usd_value')
       .in('activity_id', activityIds)
 
     if (year && year !== 'all') {
@@ -180,17 +180,17 @@ export async function GET(request: NextRequest) {
       })
     })
 
-    // Build activity budgets map
+    // Build activity budgets map - use only USD-converted values
     const activityBudgets = new Map<string, number>()
     budgets?.forEach((b: any) => {
-      const value = parseFloat(b.value?.toString() || '0') || 0
+      const value = parseFloat(b.usd_value?.toString() || '0') || 0
       activityBudgets.set(b.activity_id, (activityBudgets.get(b.activity_id) || 0) + value)
     })
 
-    // Build activity planned map
+    // Build activity planned map - use only USD-converted values, no fallback
     const activityPlanned = new Map<string, number>()
     plannedDisbursements?.forEach((pd: any) => {
-      const value = parseFloat(pd.usd_amount?.toString() || pd.amount?.toString() || '0') || 0
+      const value = parseFloat(pd.usd_amount?.toString() || '0') || 0
       activityPlanned.set(pd.activity_id, (activityPlanned.get(pd.activity_id) || 0) + value)
     })
 
@@ -296,9 +296,10 @@ export async function GET(request: NextRequest) {
     }
 
     // Process transactions using transaction_sector_lines for accurate allocation
+    // Use only USD-converted values - no fallback to original currency
     transactions?.forEach((tx: any) => {
       const txSectors = transactionSectors.get(tx.uuid)
-      const txValue = parseFloat(tx.value_usd?.toString() || tx.value?.toString() || '0') || 0
+      const txValue = parseFloat(tx.value_usd?.toString() || '0') || 0
       
       if (txSectors && txSectors.length > 0) {
         // Use transaction-level sector allocation

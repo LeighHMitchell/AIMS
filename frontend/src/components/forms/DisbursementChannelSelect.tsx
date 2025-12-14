@@ -55,7 +55,7 @@ export function DisbursementChannelSelect({
             {value && DISBURSEMENT_CHANNEL_SHORT_LABELS[value as DisbursementChannel]}
           </SelectValue>
         </SelectTrigger>
-        <SelectContent>
+        <SelectContent position="popper" side="top" sideOffset={5}>
           {/* Disbursement channel options */}
           {Object.entries(DISBURSEMENT_CHANNEL_SHORT_LABELS).map(([code, shortLabel]) => {
             const fullLabel = DISBURSEMENT_CHANNEL_LABELS[code as DisbursementChannel];

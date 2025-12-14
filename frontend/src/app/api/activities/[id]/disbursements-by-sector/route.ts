@@ -88,12 +88,12 @@ export async function GET(
       });
     });
 
-    // Process planned disbursements
+    // Process planned disbursements - use only USD-converted values, no fallback
     plannedDisbursements?.forEach(pd => {
       if (!pd.period_start) return;
       
       const year = new Date(pd.period_start).getFullYear();
-      const amount = pd.usd_amount || pd.amount || 0;
+      const amount = parseFloat(pd.usd_amount?.toString() || '0') || 0;
       
       // Allocate to sectors based on activity sector percentages
       activitySectors?.forEach(sector => {
@@ -106,12 +106,12 @@ export async function GET(
       });
     });
 
-    // Process actual disbursements
+    // Process actual disbursements - use only USD-converted values, no fallback
     transactions?.forEach(transaction => {
       if (!transaction.transaction_date) return;
       
       const year = new Date(transaction.transaction_date).getFullYear();
-      const transactionValue = transaction.value_usd || transaction.value || 0;
+      const transactionValue = parseFloat(transaction.value_usd?.toString() || '0') || 0;
       
       // Check if this transaction has sector lines
       const sectorLines = transactionSectorLines.filter(

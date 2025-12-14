@@ -16,9 +16,12 @@ export async function GET(request: NextRequest) {
     const dateFrom = searchParams.get('dateFrom')
     const dateTo = searchParams.get('dateTo')
     const sourceType = searchParams.get('sourceType') || 'transactions' // 'transactions' or 'planned'
-    const transactionType = searchParams.get('transactionType') // '1', '2', '3', '4', etc.
+    const transactionTypesParam = searchParams.get('transactionTypes') // comma-separated: '1,2,3,4'
+    const transactionTypes = transactionTypesParam 
+      ? transactionTypesParam.split(',').filter(Boolean) 
+      : []
 
-    console.log('[Funding Source Breakdown] Request params:', { dateFrom, dateTo, sourceType, transactionType })
+    console.log('[Funding Source Breakdown] Request params:', { dateFrom, dateTo, sourceType, transactionTypes })
 
     if (sourceType === 'planned') {
       // Fetch planned disbursements for all activities
@@ -60,34 +63,13 @@ export async function GET(request: NextRequest) {
       const byReceiver: { [key: string]: number } = {}
       const flowsMap = new Map<string, number>() // Key: "provider|||receiver"
 
-      // Process planned disbursements with conversions
+      // Process planned disbursements - use only USD-converted values, no fallback
       for (const pd of plannedDisbursements || []) {
         const provider = pd.provider_org_name || pd.provider_org_ref || 'Unknown Provider'
         const receiver = pd.receiver_org_name || pd.receiver_org_ref || 'Unknown Receiver'
 
-        // ONLY use USD values
-        let amount = parseFloat(pd.usd_amount) || 0
-        if (!amount && pd.currency === 'USD' && pd.amount) {
-          amount = parseFloat(pd.amount) || 0
-        }
-
-        // Convert to USD if needed (for non-USD amounts without usd_amount)
-        if (!amount && pd.amount && pd.currency && pd.currency !== 'USD') {
-          try {
-            const conversionDate = pd.period_start ? new Date(pd.period_start) : new Date()
-            const result = await fixedCurrencyConverter.convertToUSD(
-              parseFloat(pd.amount),
-              pd.currency,
-              conversionDate
-            )
-            if (result.success && result.usd_amount) {
-              amount = result.usd_amount
-            }
-          } catch (error) {
-            // Skip if conversion fails
-            console.warn('[Funding Source Breakdown] Conversion failed for planned disbursement:', error)
-          }
-        }
+        // Use only stored USD values - no fallback to original currency
+        const amount = parseFloat(pd.usd_amount) || 0
 
         if (amount > 0) {
           byOrg[provider] = (byOrg[provider] || 0) + amount
@@ -139,12 +121,12 @@ export async function GET(request: NextRequest) {
         `)
         .eq('status', 'actual')
 
-      // Filter by transaction type if specified
-      if (transactionType) {
-        transactionsQuery = transactionsQuery.eq('transaction_type', transactionType)
+      // Filter by transaction types if specified
+      if (transactionTypes.length > 0) {
+        transactionsQuery = transactionsQuery.in('transaction_type', transactionTypes)
       } else {
-        // Default to incoming funds, commitments, and disbursements
-        transactionsQuery = transactionsQuery.in('transaction_type', ['1', '2', '3', '11', '12'])
+        // Default to all IATI transaction types
+        transactionsQuery = transactionsQuery.in('transaction_type', ['1', '2', '3', '4', '5', '6', '7', '8', '9', '11', '12', '13'])
       }
 
       // Apply date range filter
@@ -170,40 +152,14 @@ export async function GET(request: NextRequest) {
       const byReceiver: { [key: string]: number } = {}
       const flowsMap = new Map<string, number>() // Key: "provider|||receiver"
 
-      // Process transactions with conversions
+      // Process transactions - use only USD-converted values, no fallback
       for (const t of transactions || []) {
         // Use organization name from join, then denormalized name, then ref, then 'Unknown'
         const provider = t.provider_organization?.name || t.provider_org_name || t.provider_org_ref || 'Unknown Provider'
         const receiver = t.receiver_organization?.name || t.receiver_org_name || t.receiver_org_ref || 'Unknown Receiver'
 
-        // ONLY use USD values
-        let amount = parseFloat(t.value_usd) || 0
-        if (!amount && t.currency === 'USD' && t.value) {
-          amount = parseFloat(t.value) || 0
-        }
-
-        // Convert to USD if needed (for transactions without USD value)
-        if (!amount && t.value && t.currency && t.currency !== 'USD') {
-          try {
-            const valueDate = t.value_date 
-              ? new Date(t.value_date) 
-              : t.transaction_date 
-              ? new Date(t.transaction_date) 
-              : new Date()
-            
-            const result = await fixedCurrencyConverter.convertToUSD(
-              parseFloat(t.value),
-              t.currency,
-              valueDate
-            )
-            if (result.success && result.usd_amount) {
-              amount = result.usd_amount
-            }
-          } catch (error) {
-            // Skip if conversion fails
-            console.warn('[Funding Source Breakdown] Conversion failed for transaction:', error)
-          }
-        }
+        // Use only stored USD values - no fallback to original currency
+        const amount = parseFloat(t.value_usd) || 0
 
         if (amount > 0) {
           byOrg[provider] = (byOrg[provider] || 0) + amount

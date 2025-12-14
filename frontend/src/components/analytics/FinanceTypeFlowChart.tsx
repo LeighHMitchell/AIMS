@@ -28,6 +28,7 @@ import { HelpTextTooltip } from '@/components/ui/help-text-tooltip'
 import { Switch } from '@/components/ui/switch'
 import { Label } from '@/components/ui/label'
 import { splitTransactionAcrossYears } from '@/utils/year-allocation'
+import { FLOW_TYPE_COLORS, TRANSACTION_TYPE_CHART_COLORS, BRAND_COLORS } from '@/components/analytics/sectors/sectorColorMap'
 
 interface FinanceTypeFlowChartProps {
   dateRange?: {
@@ -41,35 +42,12 @@ interface FinanceTypeFlowChartProps {
 type ViewMode = 'bar' | 'line' | 'area' | 'table'
 type TimeMode = 'periodic' | 'cumulative'
 
-// Define base colors for each flow type
-const FLOW_TYPE_BASE_COLORS: { [key: string]: string } = {
-  '10': '#3b82f6', // ODA - Blue
-  '20': '#10b981', // OOF - Green
-  '21': '#8b5cf6', // Non-export credit OOF - Purple
-  '22': '#f59e0b', // Officially supported export credits - Amber
-  '30': '#ec4899', // Private grants - Pink
-  '35': '#06b6d4', // Private market - Cyan
-  '36': '#8b5cf6', // Private Foreign Direct Investment - Purple
-  '37': '#6366f1', // Other private flows - Indigo
-  '40': '#64748b', // Non flow - Slate
-  '50': '#94a3b8'  // Other flows - Gray
-}
+// Use imported brand colors for flow types and transaction types
+// FLOW_TYPE_COLORS and TRANSACTION_TYPE_CHART_COLORS are imported from sectorColorMap
 
-// Define colors for each transaction type
-const TRANSACTION_TYPE_COLORS: { [key: string]: string } = {
-  '1': '#3b82f6',  // Incoming Commitment - Blue
-  '2': '#8b5cf6',  // Outgoing Commitment - Purple
-  '3': '#10b981',  // Disbursement - Green
-  '4': '#f59e0b',  // Expenditure - Amber
-  '5': '#ef4444',  // Interest Repayment - Red
-  '6': '#ec4899',  // Loan Repayment - Pink
-  '7': '#06b6d4',  // Reimbursement - Cyan
-  '8': '#14b8a6',  // Purchase of Equity - Teal
-  '9': '#a855f7',  // Sale of Equity - Purple
-  '11': '#6366f1', // Credit Guarantee - Indigo
-  '12': '#22c55e', // Incoming Funds - Light Green
-  '13': '#f97316'  // Commitment Cancellation - Orange
-}
+// Local aliases for the imported colors (for backwards compatibility in this file)
+const FLOW_TYPE_BASE_COLORS = FLOW_TYPE_COLORS
+const TRANSACTION_TYPE_COLORS_LOCAL = TRANSACTION_TYPE_CHART_COLORS
 
 // Function to blend two colors together
 const blendColors = (color1: string, color2: string, ratio: number = 0.5): string => {
@@ -905,8 +883,8 @@ export function FinanceTypeFlowChart({
                     return selectedTransactionTypes.map((transactionType, txIndex) => {
                       const txTypeName = transactionTypes.find(tt => tt.code === transactionType)?.name || transactionType
                       // Blend flow type and transaction type colors for unique visual distinction
-                      const flowTypeColor = FLOW_TYPE_BASE_COLORS[flowType] || '#94a3b8'
-                      const transactionTypeColor = TRANSACTION_TYPE_COLORS[transactionType] || '#94a3b8'
+                      const flowTypeColor = FLOW_TYPE_BASE_COLORS[flowType] || BRAND_COLORS.paleSlate
+                      const transactionTypeColor = TRANSACTION_TYPE_COLORS_LOCAL[transactionType] || BRAND_COLORS.paleSlate
                       const blendedBaseColor = blendColors(flowTypeColor, transactionTypeColor, 0.65) // 65% flow type, 35% transaction type
 
                       return financeTypesToShow.map((financeType, index) => {
@@ -961,8 +939,8 @@ export function FinanceTypeFlowChart({
                     return selectedTransactionTypes.map((transactionType, txIndex) => {
                       const txTypeName = transactionTypes.find(tt => tt.code === transactionType)?.name || transactionType
                       // Blend flow type and transaction type colors for unique visual distinction
-                      const flowTypeColor = FLOW_TYPE_BASE_COLORS[flowType] || '#94a3b8'
-                      const transactionTypeColor = TRANSACTION_TYPE_COLORS[transactionType] || '#94a3b8'
+                      const flowTypeColor = FLOW_TYPE_BASE_COLORS[flowType] || BRAND_COLORS.paleSlate
+                      const transactionTypeColor = TRANSACTION_TYPE_COLORS_LOCAL[transactionType] || BRAND_COLORS.paleSlate
                       const blendedBaseColor = blendColors(flowTypeColor, transactionTypeColor, 0.65) // 65% flow type, 35% transaction type
 
                       return financeTypesToShow.map((financeType, index) => {
@@ -1008,8 +986,8 @@ export function FinanceTypeFlowChart({
                         : allFinanceTypes
                       
                       return selectedTransactionTypes.map((transactionType) => {
-                        const flowTypeColor = FLOW_TYPE_BASE_COLORS[flowType] || '#94a3b8'
-                        const transactionTypeColor = TRANSACTION_TYPE_COLORS[transactionType] || '#94a3b8'
+                        const flowTypeColor = FLOW_TYPE_BASE_COLORS[flowType] || BRAND_COLORS.paleSlate
+                        const transactionTypeColor = TRANSACTION_TYPE_COLORS_LOCAL[transactionType] || BRAND_COLORS.paleSlate
                         const blendedBaseColor = blendColors(flowTypeColor, transactionTypeColor, 0.65)
                         
                         return financeTypesToShow.map((financeType, index) => {
@@ -1047,8 +1025,8 @@ export function FinanceTypeFlowChart({
 
                     return selectedTransactionTypes.map((transactionType) => {
                       const txTypeName = transactionTypes.find(tt => tt.code === transactionType)?.name || transactionType
-                      const flowTypeColor = FLOW_TYPE_BASE_COLORS[flowType] || '#94a3b8'
-                      const transactionTypeColor = TRANSACTION_TYPE_COLORS[transactionType] || '#94a3b8'
+                      const flowTypeColor = FLOW_TYPE_BASE_COLORS[flowType] || BRAND_COLORS.paleSlate
+                      const transactionTypeColor = TRANSACTION_TYPE_COLORS_LOCAL[transactionType] || BRAND_COLORS.paleSlate
                       const blendedBaseColor = blendColors(flowTypeColor, transactionTypeColor, 0.65)
 
                       return financeTypesToShow.map((financeType, index) => {

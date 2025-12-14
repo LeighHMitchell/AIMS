@@ -19,6 +19,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { SectorMetrics, SectorAnalyticsFilters, SectorSortField, SortDirection } from '@/types/sector-analytics'
 import { BarChart3, Download, AlignLeft, AlignVerticalSpaceAround, Users, FolderKanban, Table as TableIcon, Search, ArrowUpDown, FileImage } from 'lucide-react'
 import { AlertCircle } from 'lucide-react'
+import { CHART_BAR_COLORS } from './sectorColorMap'
 
 interface SectorBarChartProps {
   data: SectorMetrics[]
@@ -251,13 +252,14 @@ export function SectorBarChart({ data, filters }: SectorBarChartProps) {
     return `$${millions.toFixed(2)}m`
   }
 
+  // Use brand color palette for chart bars
   const barColors: Record<string, string> = {
-    budgets: '#f59e0b',      // amber
-    planned: '#3b82f6',      // blue
-    commitments: '#8b5cf6',  // purple
-    actual: '#10b981',       // green
-    projects: '#64748b',     // slate
-    partners: '#ec4899'      // pink
+    budgets: CHART_BAR_COLORS.budgets,        // Cool Steel
+    planned: CHART_BAR_COLORS.planned,        // Blue Slate
+    commitments: CHART_BAR_COLORS.commitments, // Pale Slate
+    actual: CHART_BAR_COLORS.actual,          // Primary Scarlet (highlight)
+    projects: CHART_BAR_COLORS.projects,      // Dark Slate
+    partners: CHART_BAR_COLORS.partners       // Dark Steel
   }
 
   // Handle legend click to toggle series visibility
@@ -836,7 +838,7 @@ export function SectorBarChart({ data, filters }: SectorBarChartProps) {
                         </TableCell>
                         <TableCell className="text-right">
                           <div>
-                            <div className="font-semibold text-green-700">{formatCurrency(item.actualDisbursements)}</div>
+                            <div className="font-semibold" style={{ color: CHART_BAR_COLORS.actual }}>{formatCurrency(item.actualDisbursements)}</div>
                             <div className="text-xs text-slate-500">{item.actualPercentage.toFixed(1)}%</div>
                           </div>
                         </TableCell>
@@ -862,7 +864,7 @@ export function SectorBarChart({ data, filters }: SectorBarChartProps) {
                       <TableCell className="text-right font-bold">
                         {formatCurrency(totals.planned)}
                       </TableCell>
-                      <TableCell className="text-right font-bold text-green-700">
+                      <TableCell className="text-right font-bold" style={{ color: CHART_BAR_COLORS.actual }}>
                         {formatCurrency(totals.actual)}
                       </TableCell>
                       <TableCell className="text-right font-bold">

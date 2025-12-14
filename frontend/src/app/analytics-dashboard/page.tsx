@@ -41,6 +41,7 @@ import { CommitmentsChart } from '@/components/analytics/CommitmentsChart'
 import { AllDonorsHorizontalBarChart } from '@/components/analytics/AllDonorsHorizontalBarChart'
 import { SectorPieChart } from '@/components/analytics/SectorPieChart'
 import { HumanitarianChart } from '@/components/analytics/HumanitarianChart'
+import { HumanitarianShareChart } from '@/components/analytics/HumanitarianShareChart'
 import { AidMap } from '@/components/analytics/AidMap'
 import { AidFlowMap } from '@/components/analytics/AidFlowMap'
 import { SankeyFlow } from '@/components/analytics/SankeyFlow'
@@ -67,6 +68,7 @@ import { Top10DisbursementCommitmentRatioChart } from '@/components/analytics/To
 import { Top10GovernmentValidatedChart } from '@/components/analytics/Top10GovernmentValidatedChart'
 import { Top10SectorFocusedChart } from '@/components/analytics/Top10SectorFocusedChart'
 import { ODAByFlowTypeChart } from '@/components/analytics/ODAByFlowTypeChart'
+import { PolicyMarkersChart } from '@/components/analytics/PolicyMarkersChart'
 
 // Charts from analytics page
 import { BudgetVsSpendingChart } from '@/components/charts/BudgetVsSpendingChart'
@@ -638,18 +640,16 @@ export default function AnalyticsDashboardPage() {
             </Card>
           )}
 
-          <Tabs defaultValue="analytics" className="space-y-6">
-            <TabsList className="grid w-full grid-cols-3 max-w-md">
-              <TabsTrigger value="analytics">Analytics</TabsTrigger>
-              <TabsTrigger value="activities">Activities</TabsTrigger>
-              <TabsTrigger value="transactions">Transactions</TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="analytics">
-              <Tabs defaultValue="main" className="space-y-6">
-                <TabsList className="grid w-full grid-cols-3 max-w-lg">
+          <Tabs defaultValue="main" className="space-y-6">
+                <TabsList className="grid w-full grid-cols-9 max-w-6xl">
                   <TabsTrigger value="main">Main</TabsTrigger>
                   <TabsTrigger value="sectors">Sectors</TabsTrigger>
+                  <TabsTrigger value="humanitarian">Humanitarian</TabsTrigger>
+                  <TabsTrigger value="activity-status">Activity Status</TabsTrigger>
+                  <TabsTrigger value="policy-markers">Policy Markers</TabsTrigger>
+                  <TabsTrigger value="network">Network</TabsTrigger>
+                  <TabsTrigger value="calendar">Calendar</TabsTrigger>
+                  <TabsTrigger value="top10">Top 10</TabsTrigger>
                   <TabsTrigger value="under-development">Under Development</TabsTrigger>
                 </TabsList>
 
@@ -712,6 +712,173 @@ export default function AnalyticsDashboardPage() {
                   </div>
                 </TabsContent>
 
+                <TabsContent value="humanitarian">
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    {/* Share of Humanitarian Aid - Hero Card */}
+                    <HumanitarianShareChart
+                      dateRange={dateRange}
+                      refreshKey={refreshKey}
+                    />
+                    
+                    {/* Time Series Chart */}
+                    <ExpandableCard
+                      className="bg-white border-slate-200"
+                      title="Humanitarian vs Development Aid Over Time"
+                      description="Historical comparison of humanitarian and development aid flows"
+                      exportData={humanitarianData}
+                      hideViewToggle={true}
+                    >
+                      <HumanitarianChart
+                        dateRange={dateRange}
+                        refreshKey={refreshKey}
+                        onDataChange={setHumanitarianData}
+                      />
+                    </ExpandableCard>
+                  </div>
+                </TabsContent>
+
+                <TabsContent value="activity-status">
+                  <div className="space-y-6">
+                    <div>
+                      <h2 className="text-2xl font-bold text-gray-900">Activity Status & Transaction Analysis</h2>
+                      <p className="text-gray-600">
+                        Analyze the distribution of activities by status and transaction types
+                      </p>
+                    </div>
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                      {/* Activity Status Chart */}
+                      <ExpandableCard
+                        className="bg-white border-slate-200"
+                        title={
+                          <div className="flex items-center gap-2">
+                            <CheckCircle2 className="h-5 w-5" />
+                            <span>Activity Status Distribution</span>
+                          </div>
+                        }
+                        description="Analyze the distribution of activities by their status (activity, publication, and submission status)"
+                        exportData={activityStatusData}
+                      >
+                        <ActivityStatusChart
+                          filters={filters}
+                          onDataChange={setActivityStatusData}
+                        />
+                      </ExpandableCard>
+
+                      {/* Transaction Type Chart */}
+                      <ExpandableCard
+                        className="bg-white border-slate-200"
+                        title={
+                          <div className="flex items-center gap-2">
+                            <DollarSign className="h-5 w-5" />
+                            <span>Transaction Type Analysis</span>
+                          </div>
+                        }
+                        description="Compare transaction types by count and total value (Commitments, Disbursements, Expenditures, etc.)"
+                        exportData={transactionTypeData}
+                      >
+                        <TransactionTypeChart
+                          filters={filters}
+                          onDataChange={setTransactionTypeData}
+                        />
+                      </ExpandableCard>
+                    </div>
+                  </div>
+                </TabsContent>
+
+                <TabsContent value="policy-markers">
+                  <div className="space-y-6">
+                    <div>
+                      <h2 className="text-2xl font-bold text-gray-900">Policy Markers</h2>
+                      <p className="text-gray-600">
+                        Analyze activities by policy marker and significance level. Policy markers reflect policy intent, not financial allocation.
+                      </p>
+                    </div>
+                    <PolicyMarkersChart refreshKey={refreshKey} />
+                  </div>
+                </TabsContent>
+
+                <TabsContent value="network">
+                  <div className="space-y-4">
+                    <div>
+                      <h2 className="text-2xl font-bold text-gray-900">Network</h2>
+                      <p className="text-gray-600">
+                        Interactive visualization of aid flows between donors and recipients
+                      </p>
+                    </div>
+                    <div className="w-full">
+                      <AidFlowMap height={500} />
+                    </div>
+                  </div>
+                </TabsContent>
+
+                <TabsContent value="calendar">
+                  <div className="space-y-4">
+                    <div>
+                      <h2 className="text-2xl font-bold text-gray-900">Transaction Calendar</h2>
+                      <p className="text-gray-600">
+                        Daily transaction activity heatmap showing patterns and trends over time
+                      </p>
+                    </div>
+                    <TransactionActivityCalendar
+                      dateRange={dateRange}
+                      refreshKey={refreshKey}
+                    />
+                  </div>
+                </TabsContent>
+
+                <TabsContent value="top10">
+                  <div className="space-y-6">
+                    <div>
+                      <h2 className="text-2xl font-bold text-gray-900">Top 10 Partners</h2>
+                      <p className="text-gray-600">
+                        Rankings of development partners by key performance metrics
+                      </p>
+                    </div>
+                    <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+                      {/* Chart 1: Number of Active Projects */}
+                      <ExpandableCard
+                        className="bg-white border-slate-200"
+                        title="Top 10 Partners by Number of Active Projects"
+                        description="Count of activities where the organisation is listed as a funding or implementing partner"
+                        exportData={top10ActiveProjectsData}
+                      >
+                        <Top10ActiveProjectsChart
+                          refreshKey={refreshKey}
+                          onDataChange={setTop10ActiveProjectsData}
+                        />
+                      </ExpandableCard>
+
+                      {/* Chart 2: Government-Validated Projects */}
+                      <ExpandableCard
+                        className="bg-white border-slate-200"
+                        title="Top 10 Partners by Value of Government-Validated Projects"
+                        description="Highlights alignment and mutual accountability. Shows projects that have been validated by the recipient government."
+                        exportData={top10GovernmentValidatedData}
+                      >
+                        <Top10GovernmentValidatedChart
+                          dateRange={dateRange}
+                          refreshKey={refreshKey}
+                          onDataChange={setTop10GovernmentValidatedData}
+                        />
+                      </ExpandableCard>
+
+                      {/* Chart 3: Total Disbursements (All Sectors) */}
+                      <ExpandableCard
+                        className="bg-white border-slate-200"
+                        title="Top 10 Partners by Total Disbursements (All Sectors)"
+                        description="Top 10 partners across all sectors. Used for sectoral coordination groups or working group dashboards."
+                        exportData={top10SectorFocusedData}
+                      >
+                        <Top10SectorFocusedChart
+                          dateRange={dateRange}
+                          refreshKey={refreshKey}
+                          onDataChange={setTop10SectorFocusedData}
+                        />
+                      </ExpandableCard>
+                    </div>
+                  </div>
+                </TabsContent>
+
                 <TabsContent value="under-development">
                   <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
               {/* Aid by Sector */}
@@ -725,20 +892,6 @@ export default function AnalyticsDashboardPage() {
                   dateRange={dateRange}
                   refreshKey={refreshKey}
                   onDataChange={setSectorPieData}
-                />
-              </ExpandableCard>
-
-              {/* Humanitarian vs Development */}
-              <ExpandableCard
-                className="bg-white border-slate-200"
-                title="Humanitarian vs Development Aid"
-                description="Comparison of aid types over time"
-                exportData={humanitarianData}
-              >
-                <HumanitarianChart
-                  dateRange={dateRange}
-                  refreshKey={refreshKey}
-                  onDataChange={setHumanitarianData}
                 />
               </ExpandableCard>
 
@@ -832,42 +985,6 @@ export default function AnalyticsDashboardPage() {
                 />
               </ExpandableCard>
 
-              {/* Activity Status Chart */}
-              <ExpandableCard
-                className="bg-white border-slate-200"
-                title={
-                  <div className="flex items-center gap-2">
-                    <CheckCircle2 className="h-5 w-5" />
-                    <span>Activity Status Distribution</span>
-                  </div>
-                }
-                description="Analyze the distribution of activities by their status (activity, publication, and submission status)"
-                exportData={activityStatusData}
-              >
-                <ActivityStatusChart
-                  filters={filters}
-                  onDataChange={setActivityStatusData}
-                />
-              </ExpandableCard>
-
-              {/* Transaction Type Chart */}
-              <ExpandableCard
-                className="bg-white border-slate-200"
-                title={
-                  <div className="flex items-center gap-2">
-                    <DollarSign className="h-5 w-5" />
-                    <span>Transaction Type Analysis</span>
-                  </div>
-                }
-                description="Compare transaction types by count and total value (Commitments, Disbursements, Expenditures, etc.)"
-                exportData={transactionTypeData}
-              >
-                <TransactionTypeChart
-                  filters={filters}
-                  onDataChange={setTransactionTypeData}
-                />
-              </ExpandableCard>
-
               {/* Sector Analysis Chart */}
               <ExpandableCard
                 className="bg-white border-slate-200"
@@ -947,12 +1064,6 @@ export default function AnalyticsDashboardPage() {
                 refreshKey={refreshKey}
               />
 
-              {/* Transaction Activity Calendar */}
-              <TransactionActivityCalendar
-                dateRange={dateRange}
-                refreshKey={refreshKey}
-              />
-
               {/* Funding Source Breakdown */}
               <FundingSourceBreakdown
                 dateRange={dateRange}
@@ -971,19 +1082,6 @@ export default function AnalyticsDashboardPage() {
                   dateRange={dateRange}
                   refreshKey={refreshKey}
                   onDataChange={setTop10TotalFinancialData}
-                />
-              </ExpandableCard>
-
-              {/* Chart 2: Number of Active Projects */}
-              <ExpandableCard
-                className="bg-white border-slate-200"
-                title="Top 10 Partners by Number of Active Projects"
-                description="Count of activities where the organisation is listed as a funding or implementing partner"
-                exportData={top10ActiveProjectsData}
-              >
-                <Top10ActiveProjectsChart
-                  refreshKey={refreshKey}
-                  onDataChange={setTop10ActiveProjectsData}
                 />
               </ExpandableCard>
 
@@ -1008,71 +1106,9 @@ export default function AnalyticsDashboardPage() {
                   />
                 </CardContent>
               </Card> */}
-
-              {/* Chart 4: Government-Validated Projects */}
-              <ExpandableCard
-                className="bg-white border-slate-200"
-                title="Top 10 Partners by Value of Government-Validated Projects"
-                description="Highlights alignment and mutual accountability. Shows projects that have been validated by the recipient government."
-                exportData={top10GovernmentValidatedData}
-              >
-                <Top10GovernmentValidatedChart
-                  dateRange={dateRange}
-                  refreshKey={refreshKey}
-                  onDataChange={setTop10GovernmentValidatedData}
-                />
-              </ExpandableCard>
-
-              {/* Chart 5: Sector-Focused Ranking */}
-              <ExpandableCard
-                className="bg-white border-slate-200"
-                title="Top 10 Partners by Total Disbursements (All Sectors)"
-                description="Top 10 partners across all sectors. Used for sectoral coordination groups or working group dashboards."
-                exportData={top10SectorFocusedData}
-              >
-                <Top10SectorFocusedChart
-                  dateRange={dateRange}
-                  refreshKey={refreshKey}
-                  onDataChange={setTop10SectorFocusedData}
-                />
-              </ExpandableCard>
                   </div>
                 </TabsContent>
               </Tabs>
-            </TabsContent>
-
-            <TabsContent value="activities">
-              <Card className="bg-white border-slate-200">
-                <CardHeader>
-                  <CardTitle className="text-lg font-medium text-slate-700">
-                    All Activities
-                  </CardTitle>
-                  <CardDescription>
-                    Complete list of all activities in the system
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-slate-600">Activities list will be displayed here...</p>
-                </CardContent>
-              </Card>
-            </TabsContent>
-
-            <TabsContent value="transactions">
-              <Card className="bg-white border-slate-200">
-                <CardHeader>
-                  <CardTitle className="text-lg font-medium text-slate-700">
-                    All Transactions
-                  </CardTitle>
-                  <CardDescription>
-                    Complete list of all transactions in the system
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-slate-600">Transactions list will be displayed here...</p>
-                </CardContent>
-              </Card>
-            </TabsContent>
-          </Tabs>
         </div>
       </div>
     </MainLayout>

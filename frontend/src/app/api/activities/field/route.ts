@@ -993,6 +993,35 @@ export async function POST(request: Request) {
       }
     }
 
+    // Log date field changes to change_log table for revision history tracking
+    const dateFields = ['plannedStartDate', 'plannedEndDate', 'actualStartDate', 'actualEndDate'];
+    const dateFieldDbMap: Record<string, string> = {
+      'plannedStartDate': 'planned_start_date',
+      'plannedEndDate': 'planned_end_date',
+      'actualStartDate': 'actual_start_date',
+      'actualEndDate': 'actual_end_date'
+    };
+    
+    if (dateFields.includes(body.field) && oldValue !== newValue && body.user?.id) {
+      try {
+        const dbFieldName = dateFieldDbMap[body.field];
+        await getSupabaseAdmin()
+          .from('change_log')
+          .insert({
+            entity_type: 'activity',
+            entity_id: body.activityId,
+            field: dbFieldName,
+            old_value: oldValue || null,
+            new_value: newValue || null,
+            user_id: body.user.id
+          });
+        console.log(`[Field API] Date change logged to change_log: ${dbFieldName} changed from ${oldValue} to ${newValue}`);
+      } catch (changeLogError) {
+        console.error('[Field API] Error logging date change to change_log:', changeLogError);
+        // Don't fail the request if change logging fails
+      }
+    }
+
     // Fetch sectors from activity_sectors table if this was a sectors update
     let sectorsData = updatedActivity.sectors; // Default to existing value
     if (body.field === 'sectors') {

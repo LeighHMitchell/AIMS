@@ -5,6 +5,7 @@ import { ChevronsUpDown, Search, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Popover, PopoverContent, PopoverTrigger } from "./popover";
 import Image from "next/image";
+import { getOrganizationTypeName } from "@/data/iati-organization-types";
 
 export interface Organization {
   id: string;
@@ -14,6 +15,8 @@ export interface Organization {
   logo?: string;
   country?: string;
   organisation_type?: string;
+  Organisation_Type_Code?: string;
+  Organisation_Type_Name?: string;
 }
 
 interface OrganizationSearchableSelectProps {
@@ -95,54 +98,68 @@ export function OrganizationSearchableSelect({
     }
   };
 
-  const renderOrganizationDisplay = (org: Organization, showLogo = true) => (
-    <div className="flex items-center gap-3">
-      {showLogo && org.logo && (
-        <div className="flex-shrink-0">
-          <Image
-            src={org.logo}
-            alt={`${org.name} logo`}
-            width={24}
-            height={24}
-            className="rounded-sm object-contain"
-            onError={(e) => {
-              // Hide image on error
-              (e.target as HTMLImageElement).style.display = 'none';
-            }}
-          />
-        </div>
-      )}
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-1">
-          <span className="font-medium text-foreground truncate">
-            {org.name}
-          </span>
-          {org.acronym && (
-            <span className="font-medium text-foreground">
-              ({org.acronym})
+  const renderOrganizationDisplay = (org: Organization, showLogo = true) => {
+    // Get org type - prefer Organisation_Type_Name, then get from code, then fallback to organisation_type
+    const orgTypeCode = org.Organisation_Type_Code || org.organisation_type;
+    const orgTypeName = org.Organisation_Type_Name || (orgTypeCode ? getOrganizationTypeName(orgTypeCode) : null);
+
+    return (
+      <div className="flex items-center gap-3">
+        {showLogo && org.logo && (
+          <div className="flex-shrink-0">
+            <Image
+              src={org.logo}
+              alt={`${org.name} logo`}
+              width={24}
+              height={24}
+              className="rounded-sm object-contain"
+              onError={(e) => {
+                // Hide image on error
+                (e.target as HTMLImageElement).style.display = 'none';
+              }}
+            />
+          </div>
+        )}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-1">
+            <span className="font-medium text-foreground truncate">
+              {org.name}
             </span>
-          )}
-        </div>
-        {(org.iati_org_id || org.country) && (
-          <div className="flex items-center gap-1 mt-0.5">
-            {org.iati_org_id && (
-              <span className="text-xs text-muted-foreground">
-                {org.iati_org_id}
-              </span>
-            )}
-            {org.iati_org_id && org.country && (
-              <span className="text-xs text-muted-foreground">•</span>
-            )}
-            {org.country && (
-              <span className="text-xs text-muted-foreground">
-                {org.country}
+            {org.acronym && (
+              <span className="font-medium text-foreground">
+                ({org.acronym})
               </span>
             )}
           </div>
-        )}
+          {(org.iati_org_id || orgTypeName || org.country) && (
+            <div className="flex items-center gap-1 mt-0.5 flex-wrap">
+              {org.iati_org_id && (
+                <span className="text-xs font-mono bg-gray-100 text-gray-700 px-1.5 py-0.5 rounded">
+                  {org.iati_org_id}
+                </span>
+              )}
+              {org.iati_org_id && (orgTypeName || org.country) && (
+                <span className="text-xs text-muted-foreground">•</span>
+              )}
+              {orgTypeName && (
+                <span className="text-xs text-muted-foreground">
+                  {orgTypeName}
+                </span>
+              )}
+              {orgTypeName && org.country && (
+                <span className="text-xs text-muted-foreground">•</span>
+              )}
+              {org.country && (
+                <span className="text-xs text-muted-foreground">
+                  {org.country}
+                </span>
+              )}
+            </div>
+          )}
+        </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   return (
     <div className={cn("w-full", className)}>

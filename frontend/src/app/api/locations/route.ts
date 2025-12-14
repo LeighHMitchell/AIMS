@@ -56,20 +56,20 @@ export async function GET(request: NextRequest) {
       console.warn('[All Locations API] Warning: Could not fetch sectors:', sectorsError);
     }
 
-    // Fetch budgets for these activities
+    // Fetch budgets for these activities - use USD-converted values
     const { data: budgets, error: budgetsError } = await supabase
       .from('budgets')
-      .select('activity_id, amount, currency')
+      .select('activity_id, usd_value')
       .in('activity_id', activityIds);
 
     if (budgetsError) {
       console.warn('[All Locations API] Warning: Could not fetch budgets:', budgetsError);
     }
 
-    // Fetch planned disbursements for these activities
+    // Fetch planned disbursements for these activities - use USD-converted values
     const { data: plannedDisbursements, error: pdError } = await supabase
       .from('planned_disbursements')
-      .select('activity_id, amount, currency')
+      .select('activity_id, usd_amount')
       .in('activity_id', activityIds);
 
     if (pdError) {
@@ -98,18 +98,18 @@ export async function GET(request: NextRequest) {
       });
     });
 
-    // Create a map of total budgets by activity ID
+    // Create a map of total budgets by activity ID - use only USD-converted values
     const budgetsMap = new Map<string, number>();
     budgets?.forEach(budget => {
       const current = budgetsMap.get(budget.activity_id) || 0;
-      budgetsMap.set(budget.activity_id, current + (budget.amount || 0));
+      budgetsMap.set(budget.activity_id, current + (parseFloat(budget.usd_value) || 0));
     });
 
-    // Create a map of total planned disbursements by activity ID
+    // Create a map of total planned disbursements by activity ID - use only USD-converted values
     const pdMap = new Map<string, number>();
     plannedDisbursements?.forEach(pd => {
       const current = pdMap.get(pd.activity_id) || 0;
-      pdMap.set(pd.activity_id, current + (pd.amount || 0));
+      pdMap.set(pd.activity_id, current + (parseFloat(pd.usd_amount) || 0));
     });
 
     // Transform the data for the map

@@ -7,6 +7,23 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { AlertCircle, Download, Camera } from 'lucide-react'
 import { toast } from 'sonner'
 import { FundingSourceSankey } from '@/components/activities/FinancialAnalyticsTab'
+import { MultiSelect } from '@/components/ui/multi-select'
+
+// Transaction type options for multi-select (all IATI transaction types)
+const TRANSACTION_TYPE_OPTIONS = [
+  { label: 'Incoming Commitment', value: '1' },
+  { label: 'Outgoing Commitment', value: '2' },
+  { label: 'Disbursement', value: '3' },
+  { label: 'Expenditure', value: '4' },
+  { label: 'Interest Repayment', value: '5' },
+  { label: 'Loan Repayment', value: '6' },
+  { label: 'Reimbursement', value: '7' },
+  { label: 'Purchase of Equity', value: '8' },
+  { label: 'Sale of Equity', value: '9' },
+  { label: 'Credit Guarantee', value: '11' },
+  { label: 'Incoming Funds', value: '12' },
+  { label: 'Commitment Cancellation', value: '13' },
+]
 
 interface AllActivitiesFundingSourceBreakdownProps {
   dateRange?: {
@@ -29,8 +46,14 @@ export function AllActivitiesFundingSourceBreakdown({
   }>({ providers: [], receivers: [], flows: [] })
   
   const [fundingSourceType, setFundingSourceType] = useState<'transactions' | 'planned'>('transactions')
-  const [fundingTransactionType, setFundingTransactionType] = useState<'1' | '2' | '3' | '4'>('1')
+  const [fundingTransactionTypes, setFundingTransactionTypes] = useState<string[]>(['3']) // Default to Disbursement
+  const [stagedTransactionTypes, setStagedTransactionTypes] = useState<string[]>(['3']) // Staged selection for UI
   const [fundingChartType, setFundingChartType] = useState<'chart' | 'table'>('chart')
+
+  // Sync staged state when applied state changes externally
+  useEffect(() => {
+    setStagedTransactionTypes(fundingTransactionTypes)
+  }, [fundingTransactionTypes])
 
   useEffect(() => {
     const fetchData = async () => {
@@ -41,8 +64,8 @@ export function AllActivitiesFundingSourceBreakdown({
         const params = new URLSearchParams()
         params.set('sourceType', fundingSourceType)
         
-        if (fundingSourceType === 'transactions' && fundingTransactionType) {
-          params.set('transactionType', fundingTransactionType)
+        if (fundingSourceType === 'transactions' && fundingTransactionTypes.length > 0) {
+          params.set('transactionTypes', fundingTransactionTypes.join(','))
         }
 
         if (dateRange) {
@@ -78,7 +101,7 @@ export function AllActivitiesFundingSourceBreakdown({
     }
 
     fetchData()
-  }, [dateRange, refreshKey, fundingSourceType, fundingTransactionType])
+  }, [dateRange, refreshKey, fundingSourceType, fundingTransactionTypes])
 
   const formatCurrency = (value: number) => {
     if (value >= 1000000) {
@@ -111,7 +134,9 @@ export function AllActivitiesFundingSourceBreakdown({
     const url = URL.createObjectURL(blob)
     link.setAttribute('href', url)
     const sourceLabel = fundingSourceType === 'planned' ? 'planned_disbursements' : 'transactions'
-    const typeLabel = `type_${fundingTransactionType}`
+    const typeLabel = fundingTransactionTypes.length > 0 
+      ? `types_${fundingTransactionTypes.join('-')}` 
+      : 'all_types'
     link.setAttribute('download', `all_activities_funding_source_${sourceLabel}_${typeLabel}_${new Date().toISOString().split('T')[0]}.csv`)
     link.style.visibility = 'hidden'
     document.body.appendChild(link)
@@ -153,7 +178,9 @@ export function AllActivitiesFundingSourceBreakdown({
             const link = document.createElement('a')
             link.href = url
             const sourceLabel = fundingSourceType === 'planned' ? 'planned_disbursements' : 'transactions'
-            const typeLabel = `type_${fundingTransactionType}`
+            const typeLabel = fundingTransactionTypes.length > 0 
+              ? `types_${fundingTransactionTypes.join('-')}` 
+              : 'all_types'
             link.download = `all_activities_funding_source_${sourceLabel}_${typeLabel}_${new Date().toISOString().split('T')[0]}.jpg`
             link.click()
             URL.revokeObjectURL(url)
@@ -236,45 +263,39 @@ export function AllActivitiesFundingSourceBreakdown({
                 onClick={() => setFundingSourceType('planned')}
                 className="h-8"
               >
-                Planned
+                Planned Disbursements
               </Button>
             </div>
 
             {/* Transaction Type Filter (only show when viewing transactions) */}
             {fundingSourceType === 'transactions' && (
-              <div className="flex gap-1 border rounded-lg p-1 bg-white">
-                <Button
-                  variant={fundingTransactionType === '1' ? 'default' : 'ghost'}
-                  size="sm"
-                  onClick={() => setFundingTransactionType('1')}
-                  className="h-8 text-xs px-2"
-                >
-                  Incoming
-                </Button>
-                <Button
-                  variant={fundingTransactionType === '2' ? 'default' : 'ghost'}
-                  size="sm"
-                  onClick={() => setFundingTransactionType('2')}
-                  className="h-8 text-xs px-2"
-                >
-                  Commitment
-                </Button>
-                <Button
-                  variant={fundingTransactionType === '3' ? 'default' : 'ghost'}
-                  size="sm"
-                  onClick={() => setFundingTransactionType('3')}
-                  className="h-8 text-xs px-2"
-                >
-                  Disbursement
-                </Button>
-                <Button
-                  variant={fundingTransactionType === '4' ? 'default' : 'ghost'}
-                  size="sm"
-                  onClick={() => setFundingTransactionType('4')}
-                  className="h-8 text-xs px-2"
-                >
-                  Expenditure
-                </Button>
+              <div className="w-[240px]">
+                <MultiSelect
+                  options={TRANSACTION_TYPE_OPTIONS}
+                  selected={stagedTransactionTypes}
+                  onChange={setStagedTransactionTypes}
+                  placeholder="Transaction Types..."
+                  selectedLabel="types selected"
+                  onClear={() => {
+                    // Reset both staged and applied state to Disbursement
+                    setStagedTransactionTypes(['3'])
+                    setFundingTransactionTypes(['3'])
+                  }}
+                  onOpenChange={(open) => {
+                    // When dropdown closes, apply the staged selection
+                    if (!open) {
+                      setFundingTransactionTypes(stagedTransactionTypes)
+                    }
+                  }}
+                  renderOption={(option) => (
+                    <span className="flex items-center gap-2">
+                      <code className="px-1.5 py-0.5 rounded bg-slate-100 text-slate-700 font-mono text-xs">
+                        {option.value}
+                      </code>
+                      <span className="text-sm">{option.label}</span>
+                    </span>
+                  )}
+                />
               </div>
             )}
 
@@ -367,7 +388,7 @@ export function AllActivitiesFundingSourceBreakdown({
             <FundingSourceSankey
               data={fundingSourceData}
               fundingSourceType={fundingSourceType}
-              fundingTransactionType={fundingTransactionType}
+              fundingTransactionTypes={fundingTransactionTypes}
             />
           )
         ) : (

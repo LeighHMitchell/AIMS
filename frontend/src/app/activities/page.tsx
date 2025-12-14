@@ -51,7 +51,7 @@ import { HelpTextTooltip } from "@/components/ui/help-text-tooltip";
 import {
   Plus, Download, Edit2, Trash2, AlertCircle, ArrowUp, ArrowDown, ArrowUpDown, ChevronLeft, ChevronRight, Users, Grid3X3, TableIcon, Search, MoreVertical, Edit,
   PencilLine, BookOpenCheck, BookLock, CheckCircle2, AlertTriangle, Circle, Info, ReceiptText, Handshake, Shuffle, Link2,
-  FileCheck, ShieldCheck, Globe, DatabaseZap, RefreshCw, Copy, Check, Blocks, DollarSign, Settings, ExternalLink, FileCode, Columns3, ChevronDown
+  FileCheck, ShieldCheck, Globe, DatabaseZap, RefreshCw, Copy, Check, Blocks, DollarSign, Settings, ExternalLink, FileCode, Columns3, ChevronDown, Heart
 } from "lucide-react";
 import { useUser } from "@/hooks/useUser";
 import { Transaction, TIED_STATUS_LABELS } from "@/types/transaction";
@@ -64,6 +64,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import Link from 'next/link';
 import { IATISyncStatusIndicator, IATISyncStatusBadge } from '@/components/activities/IATISyncStatusIndicator';
 import { CurrencyTooltip, InfoIconTooltip } from '@/components/ui/currency-tooltip';
+import { CodelistTooltip } from '@/components/ui/codelist-tooltip';
 import { Checkbox } from "@/components/ui/checkbox";
 import { BulkActionToolbar } from "@/components/ui/bulk-action-toolbar";
 import { BulkDeleteDialog } from "@/components/dialogs/bulk-delete-dialog";
@@ -435,6 +436,7 @@ type ColumnId =
   | 'defaultFlowType'
   | 'defaultTiedStatus'
   | 'defaultModality'
+  | 'humanitarian'
   // Transaction type totals
   | 'totalIncomingCommitments'
   | 'totalCommitments'
@@ -520,6 +522,7 @@ const COLUMN_CONFIGS: ColumnConfig[] = [
   { id: 'defaultFlowType', label: 'Default Flow Type', group: 'activityDefaults', width: 'min-w-[150px]', defaultVisible: false, align: 'left' },
   { id: 'defaultTiedStatus', label: 'Default Tied Status', group: 'activityDefaults', width: 'min-w-[130px]', defaultVisible: false, align: 'left' },
   { id: 'defaultModality', label: 'Default Modality', group: 'activityDefaults', width: 'min-w-[130px]', defaultVisible: false, align: 'left' },
+  { id: 'humanitarian', label: 'Humanitarian', group: 'activityDefaults', width: 'w-[100px]', defaultVisible: false, align: 'center' },
   
   // Transaction type totals
   { id: 'totalIncomingCommitments', label: 'Incoming Commitments', group: 'transactionTypeTotals', width: 'min-w-[120px]', defaultVisible: false, align: 'right' },
@@ -536,9 +539,9 @@ const COLUMN_CONFIGS: ColumnConfig[] = [
   { id: 'totalCommitmentCancellation', label: 'Commitment Cancellation', group: 'transactionTypeTotals', width: 'min-w-[120px]', defaultVisible: false, align: 'right' },
   
   // Publication status columns
-  { id: 'isPublished', label: 'Published', group: 'publicationStatuses', width: 'w-[100px]', defaultVisible: false, align: 'center' },
-  { id: 'isValidated', label: 'Validated', group: 'publicationStatuses', width: 'w-[100px]', defaultVisible: false, align: 'center' },
-  { id: 'iatiSyncStatus', label: 'IATI Synced', group: 'publicationStatuses', width: 'w-[100px]', defaultVisible: false, align: 'center' },
+  { id: 'isPublished', label: 'Published', group: 'publicationStatuses', width: 'w-[100px]', defaultVisible: false, align: 'left' },
+  { id: 'isValidated', label: 'Validated', group: 'publicationStatuses', width: 'w-[100px]', defaultVisible: false, align: 'left' },
+  { id: 'iatiSyncStatus', label: 'IATI Synced', group: 'publicationStatuses', width: 'min-w-[120px]', defaultVisible: false, align: 'left' },
   
   // Participating organisation columns
   { id: 'fundingOrganisations', label: 'Funding Organisations', group: 'participatingOrgs', width: 'min-w-[180px]', defaultVisible: false, align: 'left' },
@@ -1842,12 +1845,12 @@ function ActivitiesPageContent() {
           value={filterStatus}
           onValueChange={setFilterStatus}
           placeholder="Status"
-          className="w-[120px]"
+          className="w-[140px]"
         />
 
         {/* Validation Filter */}
         <Select value={filterValidation} onValueChange={setFilterValidation}>
-          <SelectTrigger className="w-[115px] h-9">
+          <SelectTrigger className="w-[140px] h-9">
             <SelectValue placeholder="Validation" />
           </SelectTrigger>
           <SelectContent>
@@ -1860,7 +1863,7 @@ function ActivitiesPageContent() {
 
         {/* Reported By Filter */}
         <Select value={filterReportedBy} onValueChange={setFilterReportedBy}>
-          <SelectTrigger className="w-[130px] h-9">
+          <SelectTrigger className="w-[160px] h-9">
             <SelectValue placeholder="Organisation" />
           </SelectTrigger>
           <SelectContent>
@@ -1877,12 +1880,12 @@ function ActivitiesPageContent() {
         <SectorHierarchyFilter
           selected={sectorFilter}
           onChange={setSectorFilter}
-          className="w-[120px]"
+          className="w-[160px]"
         />
 
         {/* Aid Type Filter */}
         <Select value={filterAidType} onValueChange={setFilterAidType}>
-          <SelectTrigger className="w-[115px] h-9">
+          <SelectTrigger className="w-[140px] h-9">
             <SelectValue placeholder="Aid Type" />
           </SelectTrigger>
           <SelectContent>
@@ -1898,7 +1901,7 @@ function ActivitiesPageContent() {
 
         {/* Flow Type Filter */}
         <Select value={filterFlowType} onValueChange={setFilterFlowType}>
-          <SelectTrigger className="w-[115px] h-9">
+          <SelectTrigger className="w-[140px] h-9">
             <SelectValue placeholder="Flow Type" />
           </SelectTrigger>
           <SelectContent>
@@ -2157,6 +2160,11 @@ function ActivitiesPageContent() {
                       Default Modality
                     </th>
                   )}
+                  {visibleColumns.includes('humanitarian') && (
+                    <th className="h-12 px-4 py-3 text-center align-middle text-sm font-medium text-muted-foreground w-[100px]">
+                      Humanitarian
+                    </th>
+                  )}
                   
                   {/* Transaction Type Total Columns */}
                   {visibleColumns.includes('totalIncomingCommitments') && (
@@ -2274,17 +2282,17 @@ function ActivitiesPageContent() {
                   
                   {/* Publication Status Columns */}
                   {visibleColumns.includes('isPublished') && (
-                    <th className="h-12 px-4 py-3 text-center align-middle text-sm font-medium text-muted-foreground w-[100px]">
+                    <th className="h-12 px-4 py-3 text-left align-middle text-sm font-medium text-muted-foreground w-[100px]">
                       Published
                     </th>
                   )}
                   {visibleColumns.includes('isValidated') && (
-                    <th className="h-12 px-4 py-3 text-center align-middle text-sm font-medium text-muted-foreground w-[100px]">
+                    <th className="h-12 px-4 py-3 text-left align-middle text-sm font-medium text-muted-foreground w-[100px]">
                       Validated
                     </th>
                   )}
                   {visibleColumns.includes('iatiSyncStatus') && (
-                    <th className="h-12 px-4 py-3 text-center align-middle text-sm font-medium text-muted-foreground w-[100px]">
+                    <th className="h-12 px-4 py-3 text-left align-middle text-sm font-medium text-muted-foreground min-w-[120px]">
                       IATI Synced
                     </th>
                   )}
@@ -2696,30 +2704,32 @@ function ActivitiesPageContent() {
                       
                       {/* Publication Status cell */}
                       {visibleColumns.includes('publicationStatus') && (
-                      <td className="px-4 py-2 text-sm text-foreground text-center">
-                        <TooltipProvider>
-                          <Tooltip>
-                            <TooltipTrigger>
-                              <DatabaseZap className={`${publicationStatus === 'published' ? 'h-5 w-5' : 'h-4 w-4'} text-gray-500 hover:text-primary cursor-pointer mx-auto`} strokeWidth={publicationStatus === 'published' ? 2.5 : 1} />
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <div className="space-y-2 p-1">
-                                <div className="flex items-center gap-2 text-muted-foreground">
-                                  <FileCheck className="h-4 w-4" />
-                                  <span className="text-sm"><span className="font-semibold">Published:</span> {publicationStatus === 'published' ? 'Yes' : 'No'}</span>
+                      <td className="px-4 py-2 text-sm text-foreground">
+                        <div className="flex items-center justify-center">
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger>
+                                <DatabaseZap className={`${publicationStatus === 'published' ? 'h-5 w-5' : 'h-4 w-4'} text-gray-500 hover:text-primary cursor-pointer`} strokeWidth={publicationStatus === 'published' ? 2.5 : 1} />
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <div className="space-y-2 p-1">
+                                  <div className="flex items-center gap-2 text-muted-foreground">
+                                    <FileCheck className="h-4 w-4" />
+                                    <span className="text-sm"><span className="font-semibold">Published:</span> {publicationStatus === 'published' ? 'Yes' : 'No'}</span>
+                                  </div>
+                                  <div className="flex items-center gap-2 text-muted-foreground">
+                                    <ShieldCheck className="h-4 w-4" />
+                                    <span className="text-sm"><span className="font-semibold">Validation:</span> {submissionStatus === 'validated' ? 'Validated' : submissionStatus === 'rejected' ? 'Rejected' : 'Pending'}</span>
+                                  </div>
+                                  <div className="flex items-center gap-2 text-muted-foreground">
+                                    <Globe className="h-4 w-4" />
+                                    <span className="text-sm"><span className="font-semibold">IATI:</span> {activity.syncStatus === 'live' ? 'Synced' : activity.syncStatus === 'pending' ? 'Pending' : activity.syncStatus === 'error' ? 'Error' : 'Not synced'}</span>
+                                  </div>
                                 </div>
-                                <div className="flex items-center gap-2 text-muted-foreground">
-                                  <ShieldCheck className="h-4 w-4" />
-                                  <span className="text-sm"><span className="font-semibold">Validation:</span> {submissionStatus === 'validated' ? 'Validated' : submissionStatus === 'rejected' ? 'Rejected' : 'Pending'}</span>
-                                </div>
-                                <div className="flex items-center gap-2 text-muted-foreground">
-                                  <Globe className="h-4 w-4" />
-                                  <span className="text-sm"><span className="font-semibold">IATI:</span> {activity.syncStatus === 'live' ? 'Synced' : activity.syncStatus === 'pending' ? 'Pending' : activity.syncStatus === 'error' ? 'Error' : 'Not synced'}</span>
-                                </div>
-                              </div>
-                            </TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        </div>
                       </td>
                       )}
                       
@@ -2898,22 +2908,54 @@ function ActivitiesPageContent() {
                       {/* Optional Activity Default Columns */}
                       {visibleColumns.includes('aidType') && (
                         <td className="px-4 py-2 text-sm text-foreground text-left">
-                          {activity.default_aid_type ? AID_TYPE_LABELS[activity.default_aid_type] || activity.default_aid_type : <span className="text-muted-foreground">—</span>}
+                          {activity.default_aid_type ? (
+                            <CodelistTooltip
+                              type="aid_type"
+                              code={activity.default_aid_type}
+                              displayLabel={AID_TYPE_LABELS[activity.default_aid_type] || activity.default_aid_type}
+                            />
+                          ) : (
+                            <span className="text-muted-foreground">—</span>
+                          )}
                         </td>
                       )}
                       {visibleColumns.includes('defaultFinanceType') && (
                         <td className="px-4 py-2 text-sm text-foreground text-left">
-                          {activity.default_finance_type ? FINANCE_TYPE_LABELS[activity.default_finance_type] || activity.default_finance_type : <span className="text-muted-foreground">—</span>}
+                          {activity.default_finance_type ? (
+                            <CodelistTooltip
+                              type="finance_type"
+                              code={activity.default_finance_type}
+                              displayLabel={FINANCE_TYPE_LABELS[activity.default_finance_type] || activity.default_finance_type}
+                            />
+                          ) : (
+                            <span className="text-muted-foreground">—</span>
+                          )}
                         </td>
                       )}
                       {visibleColumns.includes('defaultFlowType') && (
                         <td className="px-4 py-2 text-sm text-foreground text-left">
-                          {activity.default_flow_type ? FLOW_TYPE_LABELS[activity.default_flow_type] || activity.default_flow_type : <span className="text-muted-foreground">—</span>}
+                          {activity.default_flow_type ? (
+                            <CodelistTooltip
+                              type="flow_type"
+                              code={activity.default_flow_type}
+                              displayLabel={FLOW_TYPE_LABELS[activity.default_flow_type] || activity.default_flow_type}
+                            />
+                          ) : (
+                            <span className="text-muted-foreground">—</span>
+                          )}
                         </td>
                       )}
                       {visibleColumns.includes('defaultTiedStatus') && (
                         <td className="px-4 py-2 text-sm text-foreground text-left">
-                          {activity.default_tied_status ? TIED_STATUS_LABELS[activity.default_tied_status as keyof typeof TIED_STATUS_LABELS] || activity.default_tied_status : <span className="text-muted-foreground">—</span>}
+                          {activity.default_tied_status ? (
+                            <CodelistTooltip
+                              type="tied_status"
+                              code={activity.default_tied_status}
+                              displayLabel={TIED_STATUS_LABELS[activity.default_tied_status as keyof typeof TIED_STATUS_LABELS] || activity.default_tied_status}
+                            />
+                          ) : (
+                            <span className="text-muted-foreground">—</span>
+                          )}
                         </td>
                       )}
                       {visibleColumns.includes('defaultModality') && (
@@ -2921,7 +2963,16 @@ function ActivitiesPageContent() {
                           {activity.default_aid_modality ? MODALITY_LABELS[activity.default_aid_modality] || activity.default_aid_modality : <span className="text-muted-foreground">—</span>}
                         </td>
                       )}
-                      
+                      {visibleColumns.includes('humanitarian') && (
+                        <td className="px-4 py-2 text-sm text-foreground text-center">
+                          {activity.humanitarian ? (
+                            <Heart className="h-4 w-4 text-red-500 fill-red-500 mx-auto" />
+                          ) : (
+                            <span className="text-muted-foreground">—</span>
+                          )}
+                        </td>
+                      )}
+
                       {/* Transaction Type Total Columns */}
                       {visibleColumns.includes('totalIncomingCommitments') && (
                         <td className="px-4 py-2 text-sm text-foreground text-right whitespace-nowrap">
@@ -3038,36 +3089,18 @@ function ActivitiesPageContent() {
                       
                       {/* Publication Status Cells */}
                       {visibleColumns.includes('isPublished') && (
-                        <td className="px-4 py-2 text-sm text-foreground text-center">
-                          {publicationStatus === 'published' ? (
-                            <Badge variant="default" className="bg-green-100 text-green-800 hover:bg-green-100">Yes</Badge>
-                          ) : (
-                            <Badge variant="secondary" className="bg-gray-100 text-gray-600 hover:bg-gray-100">No</Badge>
-                          )}
+                        <td className="px-4 py-2 text-sm text-foreground text-left">
+                          {publicationStatus === 'published' ? 'Yes' : 'No'}
                         </td>
                       )}
                       {visibleColumns.includes('isValidated') && (
-                        <td className="px-4 py-2 text-sm text-foreground text-center">
-                          {submissionStatus === 'validated' ? (
-                            <Badge variant="default" className="bg-green-100 text-green-800 hover:bg-green-100">Yes</Badge>
-                          ) : submissionStatus === 'rejected' ? (
-                            <Badge variant="destructive" className="bg-red-100 text-red-800 hover:bg-red-100">Rejected</Badge>
-                          ) : (
-                            <Badge variant="secondary" className="bg-gray-100 text-gray-600 hover:bg-gray-100">Pending</Badge>
-                          )}
+                        <td className="px-4 py-2 text-sm text-foreground text-left">
+                          {submissionStatus === 'validated' ? 'Yes' : submissionStatus === 'rejected' ? 'Rejected' : 'Pending'}
                         </td>
                       )}
                       {visibleColumns.includes('iatiSyncStatus') && (
-                        <td className="px-4 py-2 text-sm text-foreground text-center">
-                          {activity.syncStatus === 'live' ? (
-                            <Badge variant="default" className="bg-green-100 text-green-800 hover:bg-green-100">Synced</Badge>
-                          ) : activity.syncStatus === 'pending' ? (
-                            <Badge variant="secondary" className="bg-yellow-100 text-yellow-800 hover:bg-yellow-100">Pending</Badge>
-                          ) : activity.syncStatus === 'error' ? (
-                            <Badge variant="destructive" className="bg-red-100 text-red-800 hover:bg-red-100">Error</Badge>
-                          ) : (
-                            <Badge variant="secondary" className="bg-gray-100 text-gray-600 hover:bg-gray-100">Not synced</Badge>
-                          )}
+                        <td className="px-4 py-2 text-sm text-foreground text-left">
+                          {activity.syncStatus === 'live' ? 'Synced' : activity.syncStatus === 'pending' ? 'Pending' : activity.syncStatus === 'error' ? 'Error' : 'Not synced'}
                         </td>
                       )}
                       
@@ -3079,6 +3112,7 @@ function ActivitiesPageContent() {
                             maxDisplay={3}
                             size="sm"
                             label="Funding Organisations"
+                            showAcronym={true}
                           />
                         </td>
                       )}
@@ -3089,6 +3123,7 @@ function ActivitiesPageContent() {
                             maxDisplay={3}
                             size="sm"
                             label="Extending Organisations"
+                            showAcronym={true}
                           />
                         </td>
                       )}
@@ -3099,6 +3134,7 @@ function ActivitiesPageContent() {
                             maxDisplay={3}
                             size="sm"
                             label="Implementing Organisations"
+                            showAcronym={true}
                           />
                         </td>
                       )}
@@ -3109,6 +3145,7 @@ function ActivitiesPageContent() {
                             maxDisplay={3}
                             size="sm"
                             label="Accountable Organisations"
+                            showAcronym={true}
                           />
                         </td>
                       )}

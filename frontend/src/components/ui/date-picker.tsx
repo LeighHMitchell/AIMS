@@ -74,6 +74,9 @@ export function DatePicker({
           mode="single"
           selected={date}
           onSelect={handleSelect}
+          captionLayout="dropdown"
+          startMonth={new Date(1990, 0)}
+          endMonth={new Date(2060, 11)}
           initialFocus
         />
       </PopoverContent>

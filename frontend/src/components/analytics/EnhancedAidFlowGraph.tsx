@@ -3,8 +3,7 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react'
 import * as d3 from 'd3'
 import { Button } from '@/components/ui/button'
-import { Info, Maximize2, Minimize2, Network, X, ArrowRight, Shrink, Expand } from 'lucide-react'
-import { format } from 'date-fns'
+import { Info, Maximize2, Minimize2, X, ArrowRight, Shrink, Expand } from 'lucide-react'
 
 export interface GraphNode {
   id: string
@@ -37,27 +36,6 @@ export interface GraphData {
   links: GraphLink[]
 }
 
-interface Transaction {
-  id: string
-  activityTitle: string
-  activityRef?: string
-  transactionType: string
-  date: string
-  value: number
-  currency: string
-  status: string
-  description?: string
-  isIncoming: boolean
-  partnerOrg: {
-    id?: string
-    name?: string
-    ref?: string
-  }
-  flowType?: string
-  financeType?: string
-  aidType?: string
-}
-
 interface EnhancedAidFlowGraphProps {
   graphData: GraphData
   dateRange?: { from: Date; to: Date }
@@ -86,7 +64,7 @@ const TRANSACTION_TYPE_LABELS: Record<string, string> = {
 export default function EnhancedAidFlowGraph({
   graphData,
   dateRange,
-  height = 600,
+  height = 300,
   onNodeClick,
   searchQuery = ''
 }: EnhancedAidFlowGraphProps) {
@@ -97,13 +75,99 @@ export default function EnhancedAidFlowGraph({
   const [fullscreen, setFullscreen] = useState(false)
   const [selectedNode, setSelectedNode] = useState<GraphNode | null>(null)
   const [selectedNodePosition, setSelectedNodePosition] = useState<{ x: number; y: number } | null>(null)
-  const [hoveredNode, setHoveredNode] = useState<GraphNode | null>(null)
   const [highlightedNodeId, setHighlightedNodeId] = useState<string | null>(null)
-  const [popupOpen, setPopupOpen] = useState(false)
-  const [sidebarTransactions, setSidebarTransactions] = useState<Transaction[]>([])
-  const [loadingTransactions, setLoadingTransactions] = useState(false)
-  const [orgSummary, setOrgSummary] = useState<any>(null)
   const [clusterLevel, setClusterLevel] = useState<'normal' | 'clustered' | 'spread'>('normal')
+  const [nestedPopup, setNestedPopup] = useState<{
+    type: 'partners' | 'transactions' | 'incoming' | 'outgoing'
+    data: any[]
+  } | null>(null)
+
+  // Helper to get connection stats for a node
+  const getNodeConnectionStats = (nodeId: string) => {
+    const incomingLinks = graphData.links.filter(l => {
+      const targetId = typeof l.target === 'object' ? l.target.id : l.target
+      return targetId === nodeId
+    })
+    const outgoingLinks = graphData.links.filter(l => {
+      const sourceId = typeof l.source === 'object' ? l.source.id : l.source
+      return sourceId === nodeId
+    })
+    
+    // Get unique partners with their details
+    const partnersMap = new Map<string, { id: string; name: string; logo?: string | null; type?: string; direction: 'incoming' | 'outgoing' | 'both' }>()
+    
+    incomingLinks.forEach(l => {
+      const sourceId = typeof l.source === 'object' ? l.source.id : l.source
+      const sourceNode = graphData.nodes.find(n => n.id === sourceId)
+      if (sourceNode) {
+        const existing = partnersMap.get(sourceId)
+        partnersMap.set(sourceId, {
+          id: sourceId,
+          name: sourceNode.name,
+          logo: sourceNode.logo,
+          type: sourceNode.type,
+          direction: existing?.direction === 'outgoing' ? 'both' : 'incoming'
+        })
+      }
+    })
+    
+    outgoingLinks.forEach(l => {
+      const targetId = typeof l.target === 'object' ? l.target.id : l.target
+      const targetNode = graphData.nodes.find(n => n.id === targetId)
+      if (targetNode) {
+        const existing = partnersMap.get(targetId)
+        partnersMap.set(targetId, {
+          id: targetId,
+          name: targetNode.name,
+          logo: targetNode.logo,
+          type: targetNode.type,
+          direction: existing?.direction === 'incoming' ? 'both' : 'outgoing'
+        })
+      }
+    })
+    
+    // Get transaction details
+    const incomingTransactions = incomingLinks.map(l => {
+      const sourceId = typeof l.source === 'object' ? l.source.id : l.source
+      const sourceNode = graphData.nodes.find(n => n.id === sourceId)
+      return {
+        partnerId: sourceId,
+        partnerName: sourceNode?.name || 'Unknown',
+        partnerLogo: sourceNode?.logo,
+        value: l.value,
+        type: l.transactionType,
+        typeName: TRANSACTION_TYPE_LABELS[l.transactionType || ''] || 'Unknown',
+        flowType: l.flowType,
+        direction: 'incoming' as const
+      }
+    })
+    
+    const outgoingTransactions = outgoingLinks.map(l => {
+      const targetId = typeof l.target === 'object' ? l.target.id : l.target
+      const targetNode = graphData.nodes.find(n => n.id === targetId)
+      return {
+        partnerId: targetId,
+        partnerName: targetNode?.name || 'Unknown',
+        partnerLogo: targetNode?.logo,
+        value: l.value,
+        type: l.transactionType,
+        typeName: TRANSACTION_TYPE_LABELS[l.transactionType || ''] || 'Unknown',
+        flowType: l.flowType,
+        direction: 'outgoing' as const
+      }
+    })
+    
+    return {
+      incomingCount: incomingLinks.length,
+      outgoingCount: outgoingLinks.length,
+      totalConnections: incomingLinks.length + outgoingLinks.length,
+      partnerCount: partnersMap.size,
+      partners: Array.from(partnersMap.values()),
+      incomingTransactions,
+      outgoingTransactions,
+      allTransactions: [...incomingTransactions, ...outgoingTransactions]
+    }
+  }
 
   // Search functionality
   useEffect(() => {
@@ -123,30 +187,20 @@ export default function EnhancedAidFlowGraph({
 
   // Handle clustering - bring nodes together in the center
   const handleCluster = useCallback(() => {
-    if (!simulationRef.current || !svgRef.current || !containerRef.current) return
+    if (!simulationRef.current || !containerRef.current) return
     
-    const svg = d3.select(svgRef.current)
     const container = containerRef.current
     const width = container.clientWidth
     const actualHeight = fullscreen ? window.innerHeight - 100 : height
     
-    // Update simulation forces to cluster nodes together
+    // Update simulation forces to cluster nodes together (no zoom change)
     simulationRef.current
-      .force('charge', d3.forceManyBody<GraphNode>().strength(-100)) // Less repulsion
-      .force('center', d3.forceCenter(width / 2, actualHeight / 2).strength(0.3)) // Stronger center pull
+      .force('charge', d3.forceManyBody<GraphNode>().strength(-20)) // Much less repulsion
+      .force('center', d3.forceCenter(width / 2, actualHeight / 2).strength(0.8)) // Much stronger center pull
       .alpha(0.8)
       .restart()
     
     setClusterLevel('clustered')
-    
-    // Zoom to fit all nodes in view after a short delay
-    setTimeout(() => {
-      if (zoomRef.current && svgRef.current) {
-        svg.transition()
-          .duration(750)
-          .call(zoomRef.current.transform as any, d3.zoomIdentity.translate(width / 4, actualHeight / 4).scale(0.5))
-      }
-    }, 500)
   }, [fullscreen, height])
   
   // Handle spreading - separate nodes apart
@@ -205,29 +259,6 @@ export default function EnhancedAidFlowGraph({
     }, 500)
   }, [fullscreen, height])
 
-  // Fetch organization transactions
-  const fetchOrgTransactions = async (orgId: string) => {
-    setLoadingTransactions(true)
-    try {
-      const params = new URLSearchParams()
-      if (dateRange) {
-        params.append('start', format(dateRange.from, 'yyyy-MM-dd'))
-        params.append('end', format(dateRange.to, 'yyyy-MM-dd'))
-      }
-      
-      const response = await fetch(`/api/aid-flows/org-transactions/${orgId}?${params.toString()}`)
-      if (response.ok) {
-        const data = await response.json()
-        setSidebarTransactions(data.transactions || [])
-        setOrgSummary(data.summary)
-      }
-    } catch (error) {
-      console.error('Failed to fetch organization transactions:', error)
-    } finally {
-      setLoadingTransactions(false)
-    }
-  }
-
   // D3 Force Graph
   useEffect(() => {
     if (!svgRef.current || !graphData.nodes.length) return
@@ -255,22 +286,23 @@ export default function EnhancedAidFlowGraph({
       return validNodeIds.has(sourceId) && validNodeIds.has(targetId)
     })
 
-    // Transaction type colors - distinct colors for each type
+    // Transaction type colors - based on custom palette
+    // Palette: Primary Scarlet #dc2625, Pale Slate #cfd0d5, Blue Slate #4c5568, Cool Steel #7b95a7, Platinum #f1f4f8
     const transactionTypeColors: Record<string, string> = {
-      '1': '#22c55e',  // Incoming Commitment - Green
-      '2': '#3b82f6',  // Outgoing Commitment - Blue
-      '3': '#8b5cf6',  // Disbursement - Purple
-      '4': '#f59e0b',  // Expenditure - Amber
-      '5': '#ef4444',  // Interest Repayment - Red
-      '6': '#ec4899',  // Loan Repayment - Pink
-      '7': '#14b8a6',  // Reimbursement - Teal
-      '8': '#6366f1',  // Purchase of Equity - Indigo
-      '9': '#84cc16',  // Sale of Equity - Lime
-      '10': '#f97316', // Credit Guarantee - Orange
-      '11': '#06b6d4', // Incoming Funds - Cyan
-      '12': '#a855f7', // Outgoing Pledge - Violet
-      '13': '#10b981', // Incoming Pledge - Emerald
-      'unknown': '#64748b' // Unknown - Slate
+      '1': '#7b95a7',  // Incoming Commitment - Cool Steel
+      '2': '#4c5568',  // Outgoing Commitment - Blue Slate
+      '3': '#dc2625',  // Disbursement - Primary Scarlet
+      '4': '#4c5568',  // Expenditure - Blue Slate
+      '5': '#cfd0d5',  // Interest Repayment - Pale Slate
+      '6': '#cfd0d5',  // Loan Repayment - Pale Slate
+      '7': '#7b95a7',  // Reimbursement - Cool Steel
+      '8': '#4c5568',  // Purchase of Equity - Blue Slate
+      '9': '#7b95a7',  // Sale of Equity - Cool Steel
+      '10': '#cfd0d5', // Credit Guarantee - Pale Slate
+      '11': '#dc2625', // Incoming Funds - Primary Scarlet
+      '12': '#4c5568', // Outgoing Pledge - Blue Slate
+      '13': '#7b95a7', // Incoming Pledge - Cool Steel
+      'unknown': '#cfd0d5' // Unknown - Pale Slate
     }
 
     // Get color for a link based on transaction type
@@ -421,13 +453,14 @@ export default function EnhancedAidFlowGraph({
       )
 
     // Helper function to get node color
+    // Palette: Primary Scarlet #dc2625, Pale Slate #cfd0d5, Blue Slate #4c5568, Cool Steel #7b95a7, Platinum #f1f4f8
     const getNodeColor = (d: GraphNode) => {
-      if (d.id === highlightedNodeId) return '#f97316'
-      if (d.type === 'donor') return '#3b82f6'
-      if (d.type === 'recipient') return '#10b981'
-      if (d.type === 'implementer') return '#f59e0b'
-      if (d.type === 'sector') return '#8b5cf6'
-      return '#64748b'
+      if (d.id === highlightedNodeId) return '#dc2625' // Primary Scarlet for highlighted
+      if (d.type === 'donor') return '#4c5568'        // Blue Slate
+      if (d.type === 'recipient') return '#7b95a7'    // Cool Steel
+      if (d.type === 'implementer') return '#dc2625'  // Primary Scarlet
+      if (d.type === 'sector') return '#cfd0d5'       // Pale Slate
+      return '#4c5568' // Blue Slate default
     }
 
     // Helper function to get initials for nodes without logos
@@ -446,7 +479,7 @@ export default function EnhancedAidFlowGraph({
         (d.totalIn || d.inflow || 0) + (d.totalOut || d.outflow || 0)
       ))
       .attr('fill', d => d.logo ? '#ffffff' : getNodeColor(d))
-      .attr('stroke', d => d.id === highlightedNodeId ? '#ea580c' : (d.logo ? '#e2e8f0' : '#fff'))
+      .attr('stroke', d => d.id === highlightedNodeId ? '#dc2625' : (d.logo ? '#e2e8f0' : '#fff'))
       .attr('stroke-width', d => d.id === highlightedNodeId ? 3 : 2)
       .attr('opacity', d => {
         if (highlightedNodeId && d.id !== highlightedNodeId) {
@@ -498,10 +531,8 @@ export default function EnhancedAidFlowGraph({
       .attr('fill', '#334155')
       .attr('font-weight', d => d.id === highlightedNodeId ? 'bold' : 'normal')
 
-    // Add hover interactions
+    // Add hover interactions (highlight only, no tooltip)
     node.on('mouseenter', function(event, d) {
-      setHoveredNode(d)
-      
       // Highlight connected links
       link.attr('stroke-opacity', l => {
         const sourceId = typeof l.source === 'object' ? l.source.id : l.source
@@ -522,31 +553,28 @@ export default function EnhancedAidFlowGraph({
       })
     })
     .on('mouseleave', function() {
-      setHoveredNode(null)
       link.attr('stroke-opacity', 0.6)
       node.attr('opacity', 1)
     })
     .on('click', function(event, d) {
       event.stopPropagation()
-      // Get position relative to container for the popup
+      // Get position relative to container for the tooltip
       const containerRect = container.getBoundingClientRect()
       const x = event.clientX - containerRect.left
       const y = event.clientY - containerRect.top
       
-      setSelectedNode(d)
-      setSelectedNodePosition({ x, y })
-      setPopupOpen(true)
-      fetchOrgTransactions(d.id)
+      // Toggle tooltip - if clicking same node, close it; otherwise show for new node
+      if (selectedNode?.id === d.id) {
+        setSelectedNode(null)
+        setSelectedNodePosition(null)
+        setNestedPopup(null)
+      } else {
+        setSelectedNode(d)
+        setSelectedNodePosition({ x, y })
+        setNestedPopup(null)
+      }
       if (onNodeClick) onNodeClick(d.id)
     })
-
-    // Add tooltip
-    const tooltip = node.append('title')
-      .text(d => {
-        const inflow = d.totalIn || d.inflow || 0
-        const outflow = d.totalOut || d.outflow || 0
-        return `${d.name}\nInflow: ${formatCurrency(inflow)}\nOutflow: ${formatCurrency(outflow)}`
-      })
 
     // Simulation tick
     simulation.on('tick', () => {
@@ -615,12 +643,22 @@ export default function EnhancedAidFlowGraph({
     }).format(value)
   }
 
+  // Close popup when clicking outside
+  const handleContainerClick = useCallback(() => {
+    if (selectedNode) {
+      setSelectedNode(null)
+      setSelectedNodePosition(null)
+      setNestedPopup(null)
+    }
+  }, [selectedNode])
+
   return (
     <div className="relative">
       <div 
         ref={containerRef}
         className={`relative ${fullscreen ? 'fixed inset-0 z-50 bg-white p-4' : 'w-full'}`}
         style={{ height: fullscreen ? '100vh' : height }}
+        onClick={handleContainerClick}
       >
         {/* Controls */}
         <div className="absolute top-4 right-4 z-10 flex gap-2">
@@ -669,35 +707,8 @@ export default function EnhancedAidFlowGraph({
           </Button>
         </div>
 
-        {/* Legend */}
-        <div className="absolute bottom-4 left-4 z-10 flex gap-2">
-          {/* Organization Types Legend */}
-          <div className="bg-white/90 backdrop-blur p-3 rounded-lg border">
-            <div className="flex items-center gap-2 mb-2">
-              <Network className="h-4 w-4" />
-              <span className="text-sm font-medium">Organization Types</span>
-            </div>
-            <div className="space-y-1">
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full bg-blue-500"></div>
-                <span className="text-xs">Donor</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full bg-green-500"></div>
-                <span className="text-xs">Recipient</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full bg-amber-500"></div>
-                <span className="text-xs">Implementer</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full bg-purple-500"></div>
-                <span className="text-xs">Sector</span>
-              </div>
-            </div>
-          </div>
-          
-          {/* Transaction Types Legend */}
+        {/* Legend - Transaction Types Only */}
+        <div className="absolute bottom-4 left-4 z-10">
           <div className="bg-white/90 backdrop-blur p-3 rounded-lg border">
             <div className="flex items-center gap-2 mb-2">
               <ArrowRight className="h-4 w-4" />
@@ -705,60 +716,303 @@ export default function EnhancedAidFlowGraph({
             </div>
             <div className="grid grid-cols-2 gap-x-3 gap-y-1">
               <div className="flex items-center gap-2">
-                <div className="w-4 h-0.5 bg-green-500"></div>
+                <div className="w-4 h-0.5" style={{ backgroundColor: '#7b95a7' }}></div>
                 <span className="text-xs">Incoming Commit.</span>
               </div>
               <div className="flex items-center gap-2">
-                <div className="w-4 h-0.5 bg-blue-500"></div>
+                <div className="w-4 h-0.5" style={{ backgroundColor: '#4c5568' }}></div>
                 <span className="text-xs">Outgoing Commit.</span>
               </div>
               <div className="flex items-center gap-2">
-                <div className="w-4 h-0.5 bg-purple-500"></div>
+                <div className="w-4 h-0.5" style={{ backgroundColor: '#dc2625' }}></div>
                 <span className="text-xs">Disbursement</span>
               </div>
               <div className="flex items-center gap-2">
-                <div className="w-4 h-0.5 bg-amber-500"></div>
+                <div className="w-4 h-0.5" style={{ backgroundColor: '#4c5568' }}></div>
                 <span className="text-xs">Expenditure</span>
               </div>
               <div className="flex items-center gap-2">
-                <div className="w-4 h-0.5 bg-cyan-500"></div>
+                <div className="w-4 h-0.5" style={{ backgroundColor: '#dc2625' }}></div>
                 <span className="text-xs">Incoming Funds</span>
               </div>
               <div className="flex items-center gap-2">
-                <div className="w-4 h-0.5 bg-slate-500"></div>
+                <div className="w-4 h-0.5" style={{ backgroundColor: '#cfd0d5' }}></div>
                 <span className="text-xs">Other</span>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Tooltip */}
-        {hoveredNode && (
-          <div className="absolute z-20 bg-slate-900 text-white p-3 rounded-lg shadow-lg pointer-events-none"
-            style={{
-              left: '50%',
-              bottom: '80px',
-              transform: 'translateX(-50%)'
-            }}
-          >
-            <div className="font-semibold">{hoveredNode.name}</div>
-            <div className="text-xs text-slate-300 capitalize">{hoveredNode.type || 'organization'}</div>
-            {((hoveredNode.totalIn || hoveredNode.inflow) || (hoveredNode.totalOut || hoveredNode.outflow)) && (
-              <div className="mt-2 space-y-1">
-                {(hoveredNode.totalIn || hoveredNode.inflow) ? (
-                  <div className="text-xs">
-                    Inflow: {formatCurrency(hoveredNode.totalIn || hoveredNode.inflow || 0)}
-                  </div>
+        {/* Tooltip - appears on click */}
+        {selectedNode && selectedNodePosition && (() => {
+          const inflow = selectedNode.totalIn || selectedNode.inflow || 0
+          const outflow = selectedNode.totalOut || selectedNode.outflow || 0
+          const netFlow = inflow - outflow
+          const totalFlow = inflow + outflow
+          const connectionStats = getNodeConnectionStats(selectedNode.id)
+          const nodeTypeColor = selectedNode.type === 'donor' ? '#4c5568' : 
+                               selectedNode.type === 'recipient' ? '#7b95a7' : 
+                               selectedNode.type === 'implementer' ? '#dc2625' : '#cfd0d5'
+          
+          // Determine role based on flow direction
+          const flowRole = inflow > 0 && outflow > 0 ? 'Intermediary' :
+                          inflow > outflow ? 'Net Receiver' : 
+                          outflow > inflow ? 'Net Provider' : 'Organization'
+          
+          return (
+            <div 
+              className="absolute z-20 bg-white text-slate-900 p-4 rounded-xl shadow-xl border border-slate-200 min-w-[280px] max-w-[320px]"
+              style={{
+                left: Math.min(selectedNodePosition.x + 15, (containerRef.current?.clientWidth || 400) - 340),
+                top: selectedNodePosition.y + 15
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Close button */}
+              <button
+                onClick={() => {
+                  setSelectedNode(null)
+                  setSelectedNodePosition(null)
+                  setNestedPopup(null)
+                }}
+                className="absolute top-3 right-3 text-slate-400 hover:text-slate-600 transition-colors"
+              >
+                <X className="h-4 w-4" />
+              </button>
+              
+              {/* Header */}
+              <div className="flex items-start gap-3 pr-6">
+                {selectedNode.logo ? (
+                  <img 
+                    src={selectedNode.logo} 
+                    alt={`${selectedNode.name} logo`}
+                    className="w-10 h-10 rounded-full object-cover flex-shrink-0 border border-slate-200"
+                    onError={(e) => {
+                      // Fallback to initials if image fails to load
+                      const target = e.target as HTMLImageElement
+                      target.style.display = 'none'
+                      target.nextElementSibling?.classList.remove('hidden')
+                    }}
+                  />
                 ) : null}
-                {(hoveredNode.totalOut || hoveredNode.outflow) ? (
-                  <div className="text-xs">
-                    Outflow: {formatCurrency(hoveredNode.totalOut || hoveredNode.outflow || 0)}
+                <div 
+                  className={`w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-bold flex-shrink-0 ${selectedNode.logo ? 'hidden' : ''}`}
+                  style={{ backgroundColor: nodeTypeColor }}
+                >
+                  {selectedNode.acronym?.substring(0, 2) || selectedNode.name.substring(0, 2).toUpperCase()}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="font-semibold text-slate-900 leading-tight">{selectedNode.name}</div>
+                  <div className="flex items-center gap-2 mt-1">
+                    <span 
+                      className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium"
+                      style={{ backgroundColor: `${nodeTypeColor}20`, color: nodeTypeColor }}
+                    >
+                      {selectedNode.type || 'Organization'}
+                    </span>
+                    {flowRole !== 'Organization' && (
+                      <span className="text-xs text-slate-500">{flowRole}</span>
+                    )}
                   </div>
-                ) : null}
+                </div>
               </div>
-            )}
-          </div>
-        )}
+              
+              {/* Financial Summary */}
+              {(inflow > 0 || outflow > 0) && (
+                <div className="mt-4 p-3 bg-slate-50 rounded-lg space-y-2">
+                  <div className="text-xs font-medium text-slate-500 uppercase tracking-wide">Financial Summary</div>
+                  
+                  {inflow > 0 && (
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-slate-600 flex items-center gap-1.5">
+                        <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+                        Inflow
+                      </span>
+                      <span className="font-semibold text-emerald-600">{formatCurrency(inflow)}</span>
+                    </div>
+                  )}
+                  {outflow > 0 && (
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-slate-600 flex items-center gap-1.5">
+                        <span className="w-2 h-2 rounded-full bg-blue-500"></span>
+                        Outflow
+                      </span>
+                      <span className="font-semibold text-blue-600">{formatCurrency(outflow)}</span>
+                    </div>
+                  )}
+                  {inflow > 0 && outflow > 0 && (
+                    <>
+                      <div className="border-t border-slate-200 pt-2 mt-2">
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm font-medium text-slate-700">Net Flow</span>
+                          <span className={`font-bold ${netFlow >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
+                            {netFlow >= 0 ? '+' : ''}{formatCurrency(netFlow)}
+                          </span>
+                        </div>
+                      </div>
+                    </>
+                  )}
+                  {totalFlow > 0 && (
+                    <div className="flex justify-between items-center text-xs text-slate-500 pt-1">
+                      <span>Total Volume</span>
+                      <span>{formatCurrency(totalFlow)}</span>
+                    </div>
+                  )}
+                </div>
+              )}
+              
+              {/* Connection Stats - Clickable */}
+              <div className="mt-3 grid grid-cols-2 gap-3">
+                <button 
+                  className="bg-slate-50 hover:bg-slate-100 rounded-lg p-3 text-center transition-colors cursor-pointer"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    setNestedPopup({ type: 'partners', data: connectionStats.partners })
+                  }}
+                >
+                  <div className="text-2xl font-bold text-slate-900">{connectionStats.partnerCount}</div>
+                  <div className="text-xs text-slate-500">Partners</div>
+                </button>
+                <button 
+                  className="bg-slate-50 hover:bg-slate-100 rounded-lg p-3 text-center transition-colors cursor-pointer"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    setNestedPopup({ type: 'transactions', data: connectionStats.allTransactions })
+                  }}
+                >
+                  <div className="text-2xl font-bold text-slate-900">{connectionStats.totalConnections}</div>
+                  <div className="text-xs text-slate-500">Transactions</div>
+                </button>
+              </div>
+              
+              {/* Flow Direction Breakdown - Clickable */}
+              {(connectionStats.incomingCount > 0 || connectionStats.outgoingCount > 0) && (
+                <div className="mt-3 flex items-center justify-center gap-4 text-xs text-slate-500">
+                  {connectionStats.incomingCount > 0 && (
+                    <button 
+                      className="flex items-center gap-1 hover:text-emerald-600 transition-colors cursor-pointer"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        setNestedPopup({ type: 'incoming', data: connectionStats.incomingTransactions })
+                      }}
+                    >
+                      <span className="text-emerald-500">↓</span> {connectionStats.incomingCount} incoming
+                    </button>
+                  )}
+                  {connectionStats.outgoingCount > 0 && (
+                    <button 
+                      className="flex items-center gap-1 hover:text-blue-600 transition-colors cursor-pointer"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        setNestedPopup({ type: 'outgoing', data: connectionStats.outgoingTransactions })
+                      }}
+                    >
+                      <span className="text-blue-500">↑</span> {connectionStats.outgoingCount} outgoing
+                    </button>
+                  )}
+                </div>
+              )}
+              
+              {/* Nested Popup for Partners/Transactions */}
+              {nestedPopup && (
+                <div className="mt-3 bg-white border border-slate-200 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                  <div className="sticky top-0 bg-white border-b border-slate-200 px-3 py-2 flex items-center justify-between">
+                    <span className="text-sm font-medium text-slate-700 capitalize">
+                      {nestedPopup.type === 'partners' ? 'Partners' : 
+                       nestedPopup.type === 'incoming' ? 'Incoming Transactions' :
+                       nestedPopup.type === 'outgoing' ? 'Outgoing Transactions' : 'All Transactions'}
+                    </span>
+                    <button 
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        setNestedPopup(null)
+                      }}
+                      className="text-slate-400 hover:text-slate-600"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+                  
+                  {nestedPopup.type === 'partners' ? (
+                    <div className="divide-y divide-slate-100">
+                      {nestedPopup.data.map((partner: any, idx: number) => (
+                        <div key={idx} className="px-3 py-2 flex items-center gap-2">
+                          {partner.logo ? (
+                            <img 
+                              src={partner.logo} 
+                              alt={partner.name}
+                              className="w-6 h-6 rounded-full object-cover border border-slate-200"
+                              onError={(e) => {
+                                const target = e.target as HTMLImageElement
+                                target.style.display = 'none'
+                              }}
+                            />
+                          ) : (
+                            <div className="w-6 h-6 rounded-full bg-slate-200 flex items-center justify-center text-xs font-medium text-slate-600">
+                              {partner.name.substring(0, 2).toUpperCase()}
+                            </div>
+                          )}
+                          <div className="flex-1 min-w-0">
+                            <div className="text-sm text-slate-900 truncate">{partner.name}</div>
+                            <div className="text-xs text-slate-500 flex items-center gap-1">
+                              <span className="capitalize">{partner.type || 'Organization'}</span>
+                              <span>•</span>
+                              <span className={partner.direction === 'incoming' ? 'text-emerald-500' : partner.direction === 'outgoing' ? 'text-blue-500' : 'text-purple-500'}>
+                                {partner.direction === 'both' ? '↓↑' : partner.direction === 'incoming' ? '↓' : '↑'}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                      {nestedPopup.data.length === 0 && (
+                        <div className="px-3 py-4 text-center text-sm text-slate-500">No partners</div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="divide-y divide-slate-100">
+                      {nestedPopup.data.map((tx: any, idx: number) => (
+                        <div key={idx} className="px-3 py-2">
+                          <div className="flex items-center gap-2">
+                            {tx.partnerLogo ? (
+                              <img 
+                                src={tx.partnerLogo} 
+                                alt={tx.partnerName}
+                                className="w-6 h-6 rounded-full object-cover border border-slate-200"
+                                onError={(e) => {
+                                  const target = e.target as HTMLImageElement
+                                  target.style.display = 'none'
+                                }}
+                              />
+                            ) : (
+                              <div className="w-6 h-6 rounded-full bg-slate-200 flex items-center justify-center text-xs font-medium text-slate-600">
+                                {tx.partnerName.substring(0, 2).toUpperCase()}
+                              </div>
+                            )}
+                            <div className="flex-1 min-w-0">
+                              <div className="text-sm text-slate-900 truncate">{tx.partnerName}</div>
+                              <div className="text-xs text-slate-500">{tx.typeName}</div>
+                            </div>
+                            <div className="text-right">
+                              <div className={`text-sm font-medium ${tx.direction === 'incoming' ? 'text-emerald-600' : 'text-blue-600'}`}>
+                                {tx.direction === 'incoming' ? '+' : '-'}{formatCurrency(tx.value)}
+                              </div>
+                              <div className="text-xs text-slate-400">
+                                {tx.direction === 'incoming' ? '↓ In' : '↑ Out'}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                      {nestedPopup.data.length === 0 && (
+                        <div className="px-3 py-4 text-center text-sm text-slate-500">No transactions</div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )
+        })()}
 
         {/* SVG Container */}
         <svg ref={svgRef} className="w-full h-full"></svg>
@@ -769,88 +1023,6 @@ export default function EnhancedAidFlowGraph({
           <span>Drag to pan • Pinch to zoom • Click nodes for details</span>
         </div>
       </div>
-
-      {/* Selected Node Popup - appears near clicked node */}
-      {popupOpen && selectedNode && selectedNodePosition && (
-        <div 
-          className="absolute z-20 bg-slate-900 text-white p-4 rounded-lg shadow-xl max-w-sm"
-          style={{
-            left: Math.min(selectedNodePosition.x + 15, (containerRef.current?.clientWidth || 400) - 320),
-            top: selectedNodePosition.y + 15,
-            transform: selectedNodePosition.y > (height - 250) ? 'translateY(-100%)' : undefined
-          }}
-        >
-          {/* Close button */}
-          <button
-            onClick={() => {
-              setPopupOpen(false)
-              setSelectedNode(null)
-              setSelectedNodePosition(null)
-            }}
-            className="absolute top-2 right-2 text-slate-400 hover:text-white transition-colors"
-          >
-            <X className="h-4 w-4" />
-          </button>
-          
-          <div className="font-semibold text-sm pr-6">{selectedNode.name}</div>
-          <div className="text-xs text-slate-300 capitalize mt-1">{selectedNode.type || 'Organization'}</div>
-          
-          {/* Summary Stats */}
-          {orgSummary && (
-            <div className="grid grid-cols-2 gap-2 mt-3">
-              <div className="bg-slate-800 p-2 rounded">
-                <div className="text-xs text-green-400">Total Inflow</div>
-                <div className="font-semibold text-green-300 text-sm">
-                  {formatCurrency(orgSummary.totalInflow)}
-                </div>
-              </div>
-              <div className="bg-slate-800 p-2 rounded">
-                <div className="text-xs text-red-400">Total Outflow</div>
-                <div className="font-semibold text-red-300 text-sm">
-                  {formatCurrency(orgSummary.totalOutflow)}
-                </div>
-              </div>
-              <div className="bg-slate-800 p-2 rounded">
-                <div className="text-xs text-blue-400">Transactions</div>
-                <div className="font-semibold text-blue-300 text-sm">
-                  {orgSummary.transactionCount}
-                </div>
-              </div>
-              <div className="bg-slate-800 p-2 rounded">
-                <div className="text-xs text-purple-400">Partners</div>
-                <div className="font-semibold text-purple-300 text-sm">
-                  {orgSummary.uniquePartners}
-                </div>
-              </div>
-            </div>
-          )}
-          
-          {/* Loading state */}
-          {loadingTransactions && (
-            <div className="flex items-center justify-center py-4 mt-3">
-              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white"></div>
-            </div>
-          )}
-          
-          {/* Flow summary from node data */}
-          {!orgSummary && !loadingTransactions && (
-            <div className="mt-3 pt-3 border-t border-slate-700 space-y-1">
-              {(selectedNode.totalIn || selectedNode.inflow) ? (
-                <div className="flex justify-between text-xs">
-                  <span className="text-green-400">Total Inflow:</span>
-                  <span className="font-medium">{formatCurrency(selectedNode.totalIn || selectedNode.inflow || 0)}</span>
-                </div>
-              ) : null}
-              {(selectedNode.totalOut || selectedNode.outflow) ? (
-                <div className="flex justify-between text-xs">
-                  <span className="text-blue-400">Total Outflow:</span>
-                  <span className="font-medium">{formatCurrency(selectedNode.totalOut || selectedNode.outflow || 0)}</span>
-                </div>
-              ) : null}
-            </div>
-          )}
-        </div>
-      )}
     </div>
   )
 } 

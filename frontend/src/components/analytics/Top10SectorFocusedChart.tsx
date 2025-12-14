@@ -56,16 +56,20 @@ export function Top10SectorFocusedChart({
 
       const response = await fetch(`/api/analytics/top-10/sector-focused?${params}`)
       if (!response.ok) {
+        const errorText = await response.text()
+        console.error('[Top10SectorFocusedChart] API error:', response.status, errorText)
         throw new Error('Failed to fetch data')
       }
 
       const result = await response.json()
+      console.log('[Top10SectorFocusedChart] API response:', result)
 
       const partners = (result.partners || []).map((p: any) => ({
         ...p,
         shortName: p.acronym || p.name.split(' ').slice(0, 2).join(' ')
       }))
 
+      console.log('[Top10SectorFocusedChart] Processed partners:', partners.length)
       setData(partners)
       onDataChange?.(partners)
       setSectorName(result.sectorName || 'All Sectors')

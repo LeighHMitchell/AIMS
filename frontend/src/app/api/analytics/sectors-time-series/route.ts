@@ -265,12 +265,12 @@ export async function GET(request: NextRequest) {
         })
       })
 
-      // Process transactions
+      // Process transactions - use only USD-converted values, no fallback
       transactions?.forEach((tx: any) => {
         if (!tx.transaction_date) return
 
         const year = new Date(tx.transaction_date).getFullYear().toString()
-        const txValue = parseFloat(tx.value_usd?.toString() || tx.value?.toString() || '0') || 0
+        const txValue = parseFloat(tx.value_usd?.toString() || '0') || 0
 
         const txSectors = transactionSectors.get(tx.uuid)
 
@@ -327,12 +327,12 @@ export async function GET(request: NextRequest) {
 
       const { data: plannedDisbursements } = await plannedQuery
 
-      // Process planned disbursements using activity-level sectors
+      // Process planned disbursements using activity-level sectors - use only USD values, no fallback
       plannedDisbursements?.forEach((pd: any) => {
         if (!pd.period_start) return
 
         const year = new Date(pd.period_start).getFullYear().toString()
-        const value = parseFloat(pd.usd_amount?.toString() || pd.amount?.toString() || '0') || 0
+        const value = parseFloat(pd.usd_amount?.toString() || '0') || 0
 
         const actSectors = activitySectorsMap.get(pd.activity_id) || []
         if (actSectors.length > 0) {

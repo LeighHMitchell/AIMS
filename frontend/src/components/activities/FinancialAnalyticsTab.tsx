@@ -240,13 +240,15 @@ interface FundingSourceSankeyProps {
     flows: { provider: string; receiver: string; value: number }[]
   }
   fundingSourceType: 'transactions' | 'planned'
-  fundingTransactionType: string
+  fundingTransactionType?: string // Single type (backward compat)
+  fundingTransactionTypes?: string[] // Multiple types (new)
 }
 
 export const FundingSourceSankey: React.FC<FundingSourceSankeyProps> = ({
   data,
   fundingSourceType,
-  fundingTransactionType
+  fundingTransactionType,
+  fundingTransactionTypes
 }) => {
   const svgRef = useRef<SVGSVGElement>(null)
 
@@ -378,7 +380,8 @@ export const FundingSourceSankey: React.FC<FundingSourceSankeyProps> = ({
     }
 
     const nodes: SankeyNode[] = []
-    const COLORS = ['#3b82f6', '#8b5cf6', '#ec4899', '#f59e0b', '#10b981', '#6366f1', '#14b8a6', '#f97316', '#84cc16', '#06b6d4']
+    // Custom color palette: Primary Scarlet, Pale Slate, Blue Slate, Cool Steel, Platinum
+    const COLORS = ['#dc2625', '#cfd0d5', '#4c5568', '#7b95a7', '#f1f4f8']
 
     // Add provider nodes (left side)
     let providerY = 0

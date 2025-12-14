@@ -1212,6 +1212,8 @@ export async function GET(
       autoSyncFields: activity.auto_sync_fields || [],
       // Include general_info data
       general_info: activity.general_info || {},
+      // Include custom dates (for "Add another Activity Date" feature)
+      customDates: activity.custom_dates || [],
       // Include related data
       sectors: sectors?.map((sector: any) => ({
         id: sector.id,

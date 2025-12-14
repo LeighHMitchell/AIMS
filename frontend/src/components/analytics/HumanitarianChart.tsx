@@ -4,6 +4,8 @@ import React, { useState, useEffect } from 'react'
 import {
   AreaChart,
   Area,
+  BarChart,
+  Bar,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -15,7 +17,8 @@ import { format, startOfMonth, endOfMonth, eachMonthOfInterval, getYear, getQuar
 import { supabase } from '@/lib/supabase'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Calendar, DollarSign, CalendarDays } from 'lucide-react'
+import { Calendar, DollarSign, CalendarDays, BarChart3, LineChart, Table } from 'lucide-react'
+import { Button } from '@/components/ui/button'
 
 interface HumanitarianChartProps {
   dateRange: {
@@ -34,11 +37,13 @@ interface ChartData {
 }
 
 type GroupByMode = 'calendar' | 'fiscal' | 'quarter'
+type ViewMode = 'area' | 'bar' | 'table'
 
 export function HumanitarianChart({ dateRange, refreshKey, onDataChange }: HumanitarianChartProps) {
   const [data, setData] = useState<ChartData[]>([])
   const [loading, setLoading] = useState(true)
   const [groupBy, setGroupBy] = useState<GroupByMode>('calendar')
+  const [viewMode, setViewMode] = useState<ViewMode>('area')
 
   useEffect(() => {
     fetchData()
@@ -67,10 +72,10 @@ export function HumanitarianChart({ dateRange, refreshKey, onDataChange }: Human
     try {
       setLoading(true)
       
-      // Query transactions directly
+      // Query transactions directly - use value_usd for USD-converted amounts
       const { data: transactions, error: queryError } = await supabase
         .from('transactions')
-        .select('value, transaction_date, is_humanitarian, transaction_type, status')
+        .select('value, value_usd, currency, transaction_date, is_humanitarian, transaction_type, status')
         .in('transaction_type', ['2', '3', '4']) // Include Commitments, Disbursements, and Expenditures
         .eq('status', 'actual')
         .gte('transaction_date', dateRange.from.toISOString())
@@ -100,8 +105,12 @@ export function HumanitarianChart({ dateRange, refreshKey, onDataChange }: Human
       }
 
       transactions?.forEach((t: any) => {
-        const value = parseFloat(t.value) || 0
-        if (isNaN(value)) return
+        // Use value_usd if available, otherwise fall back to value (assuming USD if no conversion)
+        let value = parseFloat(t.value_usd) || 0
+        if (!value && t.currency === 'USD' && t.value) {
+          value = parseFloat(t.value) || 0
+        }
+        if (isNaN(value) || value === 0) return
         
         const date = new Date(t.transaction_date)
         const period = periodFn(date)
@@ -182,10 +191,29 @@ export function HumanitarianChart({ dateRange, refreshKey, onDataChange }: Human
         style: 'currency',
         currency: 'USD',
         notation: 'compact',
-        maximumFractionDigits: 1
+        maximumFractionDigits: 0
       }).format(safeValue)
     } catch (error) {
       console.error('[HumanitarianChart] Error formatting currency:', error, value)
+      return '$0'
+    }
+  }
+
+  const formatCurrencyFull = (value: number): string => {
+    try {
+      if (value === null || value === undefined || isNaN(value) || !isFinite(value)) {
+        return '$0'
+      }
+      // Format in billions or millions
+      if (value >= 1_000_000_000) {
+        return `$${Math.round(value / 1_000_000_000)} bn`
+      } else if (value >= 1_000_000) {
+        return `$${Math.round(value / 1_000_000)} M`
+      } else if (value >= 1_000) {
+        return `$${Math.round(value / 1_000)} K`
+      }
+      return `$${Math.round(value)}`
+    } catch (error) {
       return '$0'
     }
   }
@@ -204,8 +232,8 @@ export function HumanitarianChart({ dateRange, refreshKey, onDataChange }: Human
   if (!data || data.length === 0) {
     return (
       <div className="space-y-4">
-        {/* Aggregation Mode Selector */}
-        <div className="flex items-center justify-between">
+        {/* Controls Row */}
+        <div className="flex items-center justify-between flex-wrap gap-3">
           <Select value={groupBy} onValueChange={(value) => setGroupBy(value as GroupByMode)}>
             <SelectTrigger className="w-48 h-9 bg-white border-slate-200">
               <SelectValue />
@@ -232,11 +260,41 @@ export function HumanitarianChart({ dateRange, refreshKey, onDataChange }: Human
             </SelectContent>
           </Select>
           
-          {groupBy === 'fiscal' && (
-            <div className="text-xs text-slate-500">
-              Financial Year: July–June
+          <div className="flex items-center gap-3">
+            {groupBy === 'fiscal' && (
+              <div className="text-xs text-slate-500">
+                Financial Year: July–June
+              </div>
+            )}
+            
+            {/* View Mode Toggle */}
+            <div className="flex items-center gap-1 bg-slate-100 rounded-lg p-1">
+              <Button
+                variant={viewMode === 'area' ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => setViewMode('area')}
+                className="h-8 px-3"
+              >
+                <LineChart className="h-4 w-4" />
+              </Button>
+              <Button
+                variant={viewMode === 'bar' ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => setViewMode('bar')}
+                className="h-8 px-3"
+              >
+                <BarChart3 className="h-4 w-4" />
+              </Button>
+              <Button
+                variant={viewMode === 'table' ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => setViewMode('table')}
+                className="h-8 px-3"
+              >
+                <Table className="h-4 w-4" />
+              </Button>
             </div>
-          )}
+          </div>
         </div>
         
         {/* Empty State */}
@@ -250,10 +308,164 @@ export function HumanitarianChart({ dateRange, refreshKey, onDataChange }: Human
     )
   }
 
+  const renderAreaChart = () => (
+    <ResponsiveContainer width="100%" height={300}>
+      <AreaChart 
+        data={data}
+        margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+      >
+        <CartesianGrid 
+          strokeDasharray="3 3" 
+          stroke="#e2e8f0" 
+          vertical={false}
+        />
+        <XAxis 
+          dataKey="period" 
+          tick={{ fill: '#64748b', fontSize: 12 }}
+          axisLine={{ stroke: '#94a3b8' }}
+        />
+        <YAxis 
+          tickFormatter={formatCurrency}
+          tick={{ fill: '#64748b', fontSize: 12 }}
+          axisLine={{ stroke: '#94a3b8' }}
+          allowDecimals={false}
+        />
+        <Tooltip 
+          formatter={(value: number) => formatCurrency(value)}
+          contentStyle={{
+            backgroundColor: '#1e293b',
+            border: 'none',
+            borderRadius: '8px',
+            color: '#fff'
+          }}
+          labelStyle={{ color: '#94a3b8' }}
+        />
+        <Legend 
+          wrapperStyle={{
+            paddingTop: '20px',
+            color: '#64748b'
+          }}
+          iconType="rect"
+        />
+        <Area 
+          type="monotone" 
+          dataKey="development" 
+          stackId="1"
+          stroke="#1E4D6B"
+          fill="#1E4D6B"
+          name="Development"
+        />
+        <Area 
+          type="monotone" 
+          dataKey="humanitarian" 
+          stackId="1"
+          stroke="#DC2626"
+          fill="#DC2626"
+          name="Humanitarian"
+        />
+      </AreaChart>
+    </ResponsiveContainer>
+  )
+
+  const renderBarChart = () => (
+    <ResponsiveContainer width="100%" height={300}>
+      <BarChart 
+        data={data}
+        margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+      >
+        <CartesianGrid 
+          strokeDasharray="3 3" 
+          stroke="#e2e8f0" 
+          vertical={false}
+        />
+        <XAxis 
+          dataKey="period" 
+          tick={{ fill: '#64748b', fontSize: 12 }}
+          axisLine={{ stroke: '#94a3b8' }}
+        />
+        <YAxis 
+          tickFormatter={formatCurrency}
+          tick={{ fill: '#64748b', fontSize: 12 }}
+          axisLine={{ stroke: '#94a3b8' }}
+          allowDecimals={false}
+        />
+        <Tooltip 
+          formatter={(value: number) => formatCurrency(value)}
+          contentStyle={{
+            backgroundColor: '#1e293b',
+            border: 'none',
+            borderRadius: '8px',
+            color: '#fff'
+          }}
+          labelStyle={{ color: '#94a3b8' }}
+        />
+        <Legend 
+          wrapperStyle={{
+            paddingTop: '20px',
+            color: '#64748b'
+          }}
+          iconType="rect"
+        />
+        <Bar 
+          dataKey="development" 
+          stackId="1"
+          fill="#1E4D6B"
+          name="Development"
+        />
+        <Bar 
+          dataKey="humanitarian" 
+          stackId="1"
+          fill="#DC2626"
+          name="Humanitarian"
+        />
+      </BarChart>
+    </ResponsiveContainer>
+  )
+
+  const renderTable = () => (
+    <div className="overflow-x-auto">
+      <table className="w-full text-sm">
+        <thead>
+          <tr className="border-b border-slate-200">
+            <th className="text-left py-3 px-4 font-semibold text-slate-700">Period</th>
+            <th className="text-right py-3 px-4 font-semibold text-slate-700">Development</th>
+            <th className="text-right py-3 px-4 font-semibold text-red-700">Humanitarian</th>
+            <th className="text-right py-3 px-4 font-semibold text-slate-700">Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          {data.map((row, idx) => (
+            <tr key={idx} className="border-b border-slate-100 hover:bg-slate-50">
+              <td className="py-3 px-4 text-slate-800">{row.period}</td>
+              <td className="text-right py-3 px-4 text-slate-600">{formatCurrencyFull(row.development)}</td>
+              <td className="text-right py-3 px-4 text-red-600">{formatCurrencyFull(row.humanitarian)}</td>
+              <td className="text-right py-3 px-4 text-slate-800 font-medium">{formatCurrencyFull(row.development + row.humanitarian)}</td>
+            </tr>
+          ))}
+        </tbody>
+        <tfoot>
+          <tr className="bg-slate-50">
+            <td className="py-3 px-4 font-semibold text-slate-800">Total</td>
+            <td className="text-right py-3 px-4 font-semibold text-slate-800">
+              {formatCurrencyFull(data.reduce((sum, row) => sum + row.development, 0))}
+            </td>
+            <td className="text-right py-3 px-4 font-semibold text-red-700">
+              {formatCurrencyFull(data.reduce((sum, row) => sum + row.humanitarian, 0))}
+            </td>
+            <td className="text-right py-3 px-4 font-semibold text-slate-800">
+              {formatCurrencyFull(data.reduce((sum, row) => sum + row.development + row.humanitarian, 0))}
+            </td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+  )
+
   return (
     <div className="space-y-4">
-      {/* Aggregation Mode Selector */}
-      <div className="flex items-center justify-between">
+      {/* Controls Row */}
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        {/* Aggregation Mode Selector */}
         <Select value={groupBy} onValueChange={(value) => setGroupBy(value as GroupByMode)}>
           <SelectTrigger className="w-48 h-9 bg-white border-slate-200">
             <SelectValue />
@@ -279,70 +491,48 @@ export function HumanitarianChart({ dateRange, refreshKey, onDataChange }: Human
             </SelectItem>
           </SelectContent>
         </Select>
-        
-        {groupBy === 'fiscal' && (
-          <div className="text-xs text-slate-500">
-            Financial Year: July–June
+
+        <div className="flex items-center gap-3">
+          {groupBy === 'fiscal' && (
+            <div className="text-xs text-slate-500">
+              Financial Year: July–June
+            </div>
+          )}
+          
+          {/* View Mode Toggle */}
+          <div className="flex items-center gap-1 bg-slate-100 rounded-lg p-1">
+            <Button
+              variant={viewMode === 'area' ? 'default' : 'ghost'}
+              size="sm"
+              onClick={() => setViewMode('area')}
+              className="h-8 px-3"
+            >
+              <LineChart className="h-4 w-4" />
+            </Button>
+            <Button
+              variant={viewMode === 'bar' ? 'default' : 'ghost'}
+              size="sm"
+              onClick={() => setViewMode('bar')}
+              className="h-8 px-3"
+            >
+              <BarChart3 className="h-4 w-4" />
+            </Button>
+            <Button
+              variant={viewMode === 'table' ? 'default' : 'ghost'}
+              size="sm"
+              onClick={() => setViewMode('table')}
+              className="h-8 px-3"
+            >
+              <Table className="h-4 w-4" />
+            </Button>
           </div>
-        )}
+        </div>
       </div>
 
-      {/* Chart */}
-      <ResponsiveContainer width="100%" height={300}>
-        <AreaChart 
-          data={data}
-          margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
-        >
-          <CartesianGrid 
-            strokeDasharray="3 3" 
-            stroke="#e2e8f0" 
-            vertical={false}
-          />
-          <XAxis 
-            dataKey="period" 
-            tick={{ fill: '#64748b', fontSize: 12 }}
-            axisLine={{ stroke: '#94a3b8' }}
-          />
-          <YAxis 
-            tickFormatter={formatCurrency}
-            tick={{ fill: '#64748b', fontSize: 12 }}
-            axisLine={{ stroke: '#94a3b8' }}
-          />
-          <Tooltip 
-            formatter={(value: number) => formatCurrency(value)}
-            contentStyle={{
-              backgroundColor: '#1e293b',
-              border: 'none',
-              borderRadius: '8px',
-              color: '#fff'
-            }}
-            labelStyle={{ color: '#94a3b8' }}
-          />
-          <Legend 
-            wrapperStyle={{
-              paddingTop: '20px',
-              color: '#64748b'
-            }}
-            iconType="rect"
-          />
-          <Area 
-            type="monotone" 
-            dataKey="development" 
-            stackId="1"
-            stroke="#cbd5e1"
-            fill="#e2e8f0"
-            name="Development"
-          />
-          <Area 
-            type="monotone" 
-            dataKey="humanitarian" 
-            stackId="1"
-            stroke="#94a3b8"
-            fill="#cbd5e1"
-            name="Humanitarian"
-          />
-        </AreaChart>
-      </ResponsiveContainer>
+      {/* Chart/Table */}
+      {viewMode === 'area' && renderAreaChart()}
+      {viewMode === 'bar' && renderBarChart()}
+      {viewMode === 'table' && renderTable()}
     </div>
   )
 } 

@@ -68,16 +68,20 @@ export function Top10GovernmentValidatedChart({
 
       const response = await fetch(`/api/analytics/top-10/government-validated?${params}`)
       if (!response.ok) {
+        const errorText = await response.text()
+        console.error('[Top10GovernmentValidatedChart] API error:', response.status, errorText)
         throw new Error('Failed to fetch data')
       }
 
       const result = await response.json()
+      console.log('[Top10GovernmentValidatedChart] API response:', result)
       
       const partners = (result.partners || []).map((p: any) => ({
         ...p,
         shortName: p.acronym || p.name.split(' ').slice(0, 2).join(' ')
       }))
 
+      console.log('[Top10GovernmentValidatedChart] Processed partners:', partners.length)
       setData(partners)
       onDataChange?.(partners)
     } catch (error) {

@@ -4,7 +4,8 @@ import React, { useMemo, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Cell, PieChart, Pie } from 'recharts';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer, Cell, PieChart, Pie } from 'recharts';
 import { ArrowUpDown, ArrowUp, ArrowDown, Leaf, Wind, Waves, TreePine, MountainSnow, Sparkles, Shield, Handshake, Baby, AlertCircle, Heart, Droplets, Wrench } from 'lucide-react';
 
 interface PolicyMarkerDetails {
@@ -34,11 +35,128 @@ interface PolicyMarkersAnalyticsTabProps {
 const getSignificanceLabel = (significance: number): string => {
   switch (significance) {
     case 0: return "Not Targeted";
-    case 1: return "Significant";
-    case 2: return "Principal";
-    case 3: return "Principal (Enhanced)";
+    case 1: return "Significant Objective";
+    case 2: return "Principal Objective";
+    case 3: return "Principal Objective (Enhanced)";
     case 4: return "Primary Objective";
     default: return "Unknown";
+  }
+};
+
+// Helper function to get significance explanation tooltip text
+const getSignificanceExplanation = (iatiCode: string | undefined, markerName: string | undefined, significance: number): string => {
+  // Normalize marker name for matching (case-insensitive)
+  const normalizedName = (markerName || '').toLowerCase();
+  
+  // Determine marker type - check both IATI code and name
+  const isNutrition = iatiCode === '12' || normalizedName.includes('nutrition');
+  const isEnvironment = iatiCode === '2' || (normalizedName.includes('environment') && !normalizedName.includes('climate'));
+  const isClimateMitigation = iatiCode === '6' || normalizedName.includes('climate mitigation') || normalizedName.includes('mitigation');
+  const isClimateAdaptation = iatiCode === '7' || normalizedName.includes('climate adaptation') || (normalizedName.includes('adaptation') && normalizedName.includes('climate'));
+  const isBiodiversity = iatiCode === '5' || normalizedName.includes('biodiversity');
+  const isDesertification = iatiCode === '8' || normalizedName.includes('desertification');
+  const isDisability = iatiCode === '11' || normalizedName.includes('disability');
+  const isDisasterRiskReduction = iatiCode === '10' || normalizedName.includes('disaster') || normalizedName.includes('sendai');
+  const isPeaceSecurity = iatiCode === '3' || normalizedName.includes('peace') || normalizedName.includes('conflict') || normalizedName.includes('security');
+  const isGender = iatiCode === '1' || normalizedName.includes('gender') || normalizedName.includes('women');
+
+  // Get explanation based on marker type and significance
+  if (isNutrition) {
+    switch (significance) {
+      case 0: return "The activity does not deliberately aim to improve nutrition outcomes. Any effects on nutrition are unintended or secondary.";
+      case 1: return "Improving nutrition is an explicit objective, but not the principal purpose of the activity. The activity includes nutrition-specific or nutrition-sensitive components alongside other objectives.";
+      case 2: return "Improving nutrition outcomes is the main purpose of the activity. The activity is fundamentally designed to prevent or address malnutrition in all its forms.";
+      default: return "";
+    }
+  }
+
+  if (isEnvironment) {
+    switch (significance) {
+      case 0: return "The activity does not deliberately aim to protect or improve the environment. Environmental considerations are not a stated objective.";
+      case 1: return "Environmental protection is an explicit objective, but not the main purpose of the activity. The activity includes measures to mitigate environmental harm or promote sustainability.";
+      case 2: return "Environmental protection or improvement is the primary purpose of the activity. The activity is designed specifically to achieve environmental outcomes.";
+      default: return "";
+    }
+  }
+
+  if (isClimateMitigation) {
+    switch (significance) {
+      case 0: return "The activity does not deliberately aim to reduce or limit greenhouse gas emissions. Any mitigation effects are incidental.";
+      case 1: return "Climate change mitigation is an explicit objective, but not the primary purpose of the activity. The activity includes components that contribute to emissions reduction alongside other goals.";
+      case 2: return "Reducing or limiting greenhouse gas emissions is the main purpose of the activity. The activity is specifically designed as a climate mitigation intervention.";
+      default: return "";
+    }
+  }
+
+  if (isClimateAdaptation) {
+    switch (significance) {
+      case 0: return "The activity does not deliberately aim to reduce vulnerability to climate change. Any resilience benefits are incidental.";
+      case 1: return "Climate change adaptation is an explicit objective, but not the principal purpose. The activity includes measures to enhance resilience to climate impacts alongside other objectives.";
+      case 2: return "Reducing vulnerability to climate change is the main purpose of the activity. The activity is specifically designed to address climate risks and impacts.";
+      default: return "";
+    }
+  }
+
+  if (isBiodiversity) {
+    switch (significance) {
+      case 0: return "The activity does not deliberately aim to conserve or sustainably use biodiversity. Any biodiversity effects are incidental.";
+      case 1: return "Biodiversity conservation is an explicit objective, but not the primary purpose. The activity includes biodiversity-related measures alongside other objectives.";
+      case 2: return "Conserving or sustainably using biodiversity is the main purpose of the activity. The activity is fundamentally designed to deliver biodiversity outcomes.";
+      default: return "";
+    }
+  }
+
+  if (isDesertification) {
+    switch (significance) {
+      case 0: return "The activity does not deliberately aim to combat desertification or land degradation. Any related impacts are incidental.";
+      case 1: return "Combating desertification or land degradation is an explicit objective, but not the main purpose. The activity includes relevant measures alongside other development objectives.";
+      case 2: return "Combating desertification or land degradation is the main purpose of the activity. The activity is specifically designed to address these challenges.";
+      default: return "";
+    }
+  }
+
+  if (isDisability) {
+    switch (significance) {
+      case 0: return "The activity does not deliberately aim to promote the inclusion or rights of persons with disabilities. Disability inclusion is not an explicit objective.";
+      case 1: return "Disability inclusion is an explicit and deliberate objective, but not the primary purpose. The activity includes targeted measures to reduce barriers for persons with disabilities.";
+      case 2: return "Promoting the inclusion and rights of persons with disabilities is the main purpose of the activity. The activity is designed primarily to address disability-related exclusion.";
+      default: return "";
+    }
+  }
+
+  if (isDisasterRiskReduction) {
+    switch (significance) {
+      case 0: return "The activity does not deliberately aim to reduce disaster risk or vulnerability. Any disaster-related effects are incidental.";
+      case 1: return "Disaster risk reduction is an explicit objective, but not the primary purpose. The activity includes measures to prevent, reduce, or manage disaster risks alongside other goals.";
+      case 2: return "Reducing disaster risk and vulnerability is the main purpose of the activity. The activity is designed specifically to deliver disaster risk reduction outcomes.";
+      default: return "";
+    }
+  }
+
+  if (isPeaceSecurity) {
+    switch (significance) {
+      case 0: return "The activity does not deliberately aim to promote peace, prevent conflict, or improve security. Any effects in this area are incidental.";
+      case 1: return "Peace, conflict prevention, or security is an explicit objective, but not the main purpose. The activity includes components that address conflict drivers or support stability.";
+      case 2: return "Promoting peace, preventing conflict, or improving security is the main purpose of the activity. The activity is specifically designed to address conflict or insecurity.";
+      default: return "";
+    }
+  }
+
+  if (isGender) {
+    switch (significance) {
+      case 0: return "The activity does not deliberately aim to advance gender equality or women's empowerment. Gender equality is neither an explicit objective nor reflected in the design or results framework.";
+      case 1: return "Gender equality is an explicit and deliberate objective, but not the principal reason for the activity. The activity includes specific actions to reduce gender inequalities alongside other primary objectives.";
+      case 2: return "Advancing gender equality and women's empowerment is the main purpose of the activity. The activity is designed primarily to address gender-based inequalities and would not exist without this objective.";
+      default: return "";
+    }
+  }
+
+  // Default explanations for other markers
+  switch (significance) {
+    case 0: return "The activity does not deliberately aim to address this policy marker. Any related effects are incidental.";
+    case 1: return "This policy marker is an explicit objective, but not the principal purpose of the activity. The activity includes relevant components alongside other objectives.";
+    case 2: return "This policy marker is the main purpose of the activity. The activity is fundamentally designed to deliver outcomes in this area.";
+    default: return "";
   }
 };
 
@@ -257,9 +375,24 @@ export function PolicyMarkersAnalyticsTab({ policyMarkers, activityTitle }: Poli
                         </Badge>
                       </TableCell>
                       <TableCell>
-                        <Badge className={getSignificanceColor(marker.significance)}>
-                          {getSignificanceLabel(marker.significance)}
-                        </Badge>
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <span className="cursor-help text-slate-900">
+                                {getSignificanceLabel(marker.significance)}
+                              </span>
+                            </TooltipTrigger>
+                            <TooltipContent className="max-w-md">
+                              <p className="text-sm">
+                                {getSignificanceExplanation(
+                                  marker.policy_marker_details?.iati_code,
+                                  marker.policy_marker_details?.name,
+                                  marker.significance
+                                )}
+                              </p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
                       </TableCell>
                       <TableCell className="max-w-md">
                         <p className="text-sm text-slate-600 line-clamp-2">

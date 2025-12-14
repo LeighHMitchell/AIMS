@@ -43,7 +43,7 @@ export async function GET(request: Request) {
     console.log('[AllDonors API] Fetching budgets...')
     const { data: budgets, error: budgetsError } = await supabase
       .from('activity_budgets')
-      .select('activity_id, value, period_start, period_end')
+      .select('activity_id, usd_value, period_start, period_end')
       .gte('period_start', dateFrom)
       .lte('period_end', dateTo)
 
@@ -66,7 +66,7 @@ export async function GET(request: Request) {
       // Map activity ID to reporting org
       const activityToReportingOrg = new Map(activities?.map((a: any) => [a.id, a.reporting_org_id]) || [])
 
-      // Aggregate budgets by reporting org
+      // Aggregate budgets by reporting org - use only USD-converted values
       budgets.forEach((budget: any) => {
         const reportingOrgId = activityToReportingOrg.get(budget.activity_id)
         if (!reportingOrgId) return
@@ -74,7 +74,7 @@ export async function GET(request: Request) {
         const orgInfo = orgMap.get(reportingOrgId)
         if (!orgInfo) return
 
-        const budgetValue = parseFloat(budget.value) || 0
+        const budgetValue = parseFloat(budget.usd_value) || 0
         if (isNaN(budgetValue)) return
 
         if (!donorData.has(reportingOrgId)) {
@@ -100,7 +100,7 @@ export async function GET(request: Request) {
     console.log('[AllDonors API] Fetching planned disbursements...')
     const { data: plannedDisbursements, error: pdError } = await supabase
       .from('planned_disbursements')
-      .select('provider_org_id, amount, currency, period_start, period_end')
+      .select('provider_org_id, usd_amount, period_start, period_end')
       .gte('period_start', dateFrom)
       .lte('period_end', dateTo)
       .not('provider_org_id', 'is', null)
@@ -109,12 +109,10 @@ export async function GET(request: Request) {
       console.error('[AllDonors API] Error fetching planned disbursements:', pdError)
     }
 
-    // Aggregate planned disbursements by provider org
-    // Note: For now we're treating all amounts as USD.
-    // TODO: Add currency conversion if needed
+    // Aggregate planned disbursements by provider org - use only USD-converted values
     plannedDisbursements?.forEach((pd: any) => {
       const providerOrgId = pd.provider_org_id
-      const pdValue = parseFloat(pd.amount) || 0
+      const pdValue = parseFloat(pd.usd_amount) || 0
       if (isNaN(pdValue)) return
 
       const orgInfo = orgMap.get(providerOrgId)
@@ -169,17 +167,14 @@ export async function GET(request: Request) {
     }
 
     // Aggregate disbursements by provider org (or reporting org as fallback)
-    // Use value_usd if available, otherwise fall back to value (treating as USD)
+    // Use only USD-converted values - no fallback to original currency
     transactions?.forEach((tx: any) => {
       // Use provider_org_id if available, otherwise fall back to activity's reporting_org
       const providerOrgId = tx.provider_org_id || activityToReportingOrgForTx.get(tx.activity_id)
       if (!providerOrgId) return
       
-      // Try value_usd first, then fall back to value
-      let txValue = parseFloat(tx.value_usd) || 0
-      if (!txValue && tx.value) {
-        txValue = parseFloat(tx.value) || 0
-      }
+      // Use only USD value - no fallback
+      const txValue = parseFloat(tx.value_usd) || 0
       if (isNaN(txValue) || txValue === 0) return
 
       const orgInfo = orgMap.get(providerOrgId)

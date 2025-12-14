@@ -95,7 +95,8 @@ export async function GET(request: NextRequest) {
       }
 
       const periodData = dataMap.get(periodKey)!;
-      periodData.budget += budget.value || 0;
+      // Use only USD-converted value - no fallback to original currency
+      periodData.budget += parseFloat(budget.usd_value?.toString() || '0') || 0;
     });
 
     // Process activities and their transactions

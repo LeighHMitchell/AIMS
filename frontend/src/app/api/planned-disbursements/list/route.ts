@@ -84,7 +84,7 @@ export async function GET(request: NextRequest) {
       allOrgIds.size > 0
         ? supabase
             .from('organizations')
-            .select('id, name, acronym')
+            .select('id, name, acronym, logo')
             .in('id', Array.from(allOrgIds))
         : Promise.resolve({ data: null, error: null })
     ]);
@@ -129,8 +129,10 @@ export async function GET(request: NextRequest) {
         receiver_activity: disbursement?.receiver_activity_uuid ? activitiesMap[disbursement.receiver_activity_uuid] || null : null,
         provider_org_acronym: providerOrg?.acronym || disbursement.provider_org_acronym || null,
         provider_org_name: providerOrg?.name || disbursement.provider_org_name || null,
+        provider_org_logo: providerOrg?.logo || null,
         receiver_org_acronym: receiverOrg?.acronym || disbursement.receiver_org_acronym || null,
         receiver_org_name: receiverOrg?.name || disbursement.receiver_org_name || null,
+        receiver_org_logo: receiverOrg?.logo || null,
       };
     });
 

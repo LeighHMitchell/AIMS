@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
+import { DatePicker } from '@/components/ui/date-picker';
 import { EnhancedActivityComments } from './EnhancedActivityComments';
 import { useUser } from '@/hooks/useUser';
 import { toast } from 'sonner';
@@ -854,14 +855,14 @@ export default function EnhancedActivityEditor({ activityId, initialData = {} }:
                   <FieldWrapper section="dates" field="planned_start" label="Planned Start Date">
                     <div className="space-y-3">
                       <div className="space-y-1">
-                        <Input
-                          type="date"
+                        <DatePicker
                           value={formData.planned_start_date || ''}
-                          onChange={(e) => {
-                            handleFieldChange('planned_start_date', e.target.value);
-                            handleFieldBlur('planned_start_date', e.target.value);
+                          onChange={(value) => {
+                            handleFieldChange('planned_start_date', value);
+                            handleFieldBlur('planned_start_date', value);
                           }}
                           disabled={saving.planned_start_date}
+                          placeholder="Select planned start date"
                         />
                         <SaveIndicator fieldName="planned_start_date" />
                       </div>
@@ -888,14 +889,14 @@ export default function EnhancedActivityEditor({ activityId, initialData = {} }:
                   <FieldWrapper section="dates" field="planned_end" label="Planned End Date">
                     <div className="space-y-3">
                       <div className="space-y-1">
-                        <Input
-                          type="date"
+                        <DatePicker
                           value={formData.planned_end_date || ''}
-                          onChange={(e) => {
-                            handleFieldChange('planned_end_date', e.target.value);
-                            handleFieldBlur('planned_end_date', e.target.value);
+                          onChange={(value) => {
+                            handleFieldChange('planned_end_date', value);
+                            handleFieldBlur('planned_end_date', value);
                           }}
                           disabled={saving.planned_end_date}
+                          placeholder="Select planned end date"
                         />
                         <SaveIndicator fieldName="planned_end_date" />
                       </div>
@@ -922,14 +923,14 @@ export default function EnhancedActivityEditor({ activityId, initialData = {} }:
                   <FieldWrapper section="dates" field="actual_start" label="Actual Start Date">
                     <div className="space-y-3">
                       <div className="space-y-1">
-                        <Input
-                          type="date"
+                        <DatePicker
                           value={formData.actual_start_date || ''}
-                          onChange={(e) => {
-                            handleFieldChange('actual_start_date', e.target.value);
-                            handleFieldBlur('actual_start_date', e.target.value);
+                          onChange={(value) => {
+                            handleFieldChange('actual_start_date', value);
+                            handleFieldBlur('actual_start_date', value);
                           }}
                           disabled={saving.actual_start_date}
+                          placeholder="Select actual start date"
                         />
                         <SaveIndicator fieldName="actual_start_date" />
                       </div>
@@ -956,14 +957,14 @@ export default function EnhancedActivityEditor({ activityId, initialData = {} }:
                   <FieldWrapper section="dates" field="actual_end" label="Actual End Date">
                     <div className="space-y-3">
                       <div className="space-y-1">
-                        <Input
-                          type="date"
+                        <DatePicker
                           value={formData.actual_end_date || ''}
-                          onChange={(e) => {
-                            handleFieldChange('actual_end_date', e.target.value);
-                            handleFieldBlur('actual_end_date', e.target.value);
+                          onChange={(value) => {
+                            handleFieldChange('actual_end_date', value);
+                            handleFieldBlur('actual_end_date', value);
                           }}
                           disabled={saving.actual_end_date}
+                          placeholder="Select actual end date"
                         />
                         <SaveIndicator fieldName="actual_end_date" />
                       </div>
@@ -1279,14 +1280,14 @@ export default function EnhancedActivityEditor({ activityId, initialData = {} }:
                   {/* Activity Effective Date */}
                   <FieldWrapper section="administration" field="effective_date" label="Activity Effective Date">
                     <div className="space-y-1">
-                      <Input
-                        type="date"
+                      <DatePicker
                         value={formData.effective_date || ''}
-                        onChange={(e) => {
-                          handleFieldChange('effective_date', e.target.value);
-                          handleFieldBlur('effective_date', e.target.value);
+                        onChange={(value) => {
+                          handleFieldChange('effective_date', value);
+                          handleFieldBlur('effective_date', value);
                         }}
                         disabled={saving.effective_date}
+                        placeholder="Select effective date"
                       />
                       <SaveIndicator fieldName="effective_date" />
                     </div>

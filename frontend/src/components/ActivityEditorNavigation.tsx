@@ -4,7 +4,6 @@ import React from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { cn } from "@/lib/utils"
 import { Lock } from "lucide-react"
-import { TabCompletionIndicator } from "@/utils/tab-completion-indicator"
 import { StableTabCompletionIndicator } from "@/utils/stable-tab-completion"
 import {
   Tooltip,
@@ -194,20 +193,16 @@ export default function ActivityEditorNavigation({
                           <span>{section.label}</span>
                         </div>
                         <div className="flex items-center gap-2">
-                          {(section.id === 'contributors' || section.id === 'organisations' || section.id === 'contacts' || section.id === 'finances' || section.id === 'capital-spend' || section.id === 'country-budget' || section.id === 'humanitarian') ? (
-                            <StableTabCompletionIndicator 
-                              tabId={section.id}
-                              currentStatus={tabCompletionStatus[section.id] ? {
-                                isComplete: isComplete,
-                                isInProgress: isInProgress,
-                                completedFields: [],
-                                missingFields: []
-                              } : null}
-                              isLoading={isInProgress}
-                            />
-                          ) : (
-                            <TabCompletionIndicator isComplete={isComplete} isInProgress={isInProgress} />
-                          )}
+                          <StableTabCompletionIndicator 
+                            tabId={section.id}
+                            currentStatus={tabCompletionStatus[section.id] ? {
+                              isComplete: isComplete,
+                              isInProgress: isInProgress,
+                              completedFields: [],
+                              missingFields: []
+                            } : null}
+                            isLoading={isInProgress}
+                          />
                         </div>
                       </div>
                     </button>

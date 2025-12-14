@@ -73,7 +73,8 @@ export const TransactionTypeChart: React.FC<TransactionTypeChartProps> = ({
     }
   };
 
-  const COLORS = ['#3B82F6', '#64748b', '#475569', '#EF4444', '#8B5CF6', '#EC4899', '#14B8A6', '#F97316'];
+  // Custom color palette: Primary Scarlet, Blue Slate, Cool Steel, Pale Slate, Platinum
+  const COLORS = ['#dc2625', '#4c5568', '#7b95a7', '#cfd0d5', '#f1f4f8'];
 
   const formatValue = (value: number) => {
     if (metric === 'value') {
@@ -93,13 +94,31 @@ export const TransactionTypeChart: React.FC<TransactionTypeChartProps> = ({
     if (active && payload && payload.length) {
       const data = payload[0].payload;
       return (
-        <div className="bg-white p-4 border border-gray-200 rounded-lg shadow-lg">
-          <p className="font-semibold text-gray-900 mb-2">{data.typeName}</p>
-          <p className="text-xs text-gray-600 mb-2">Code: {data.transactionType}</p>
-          <p className="text-sm text-blue-600">Count: {data.count}</p>
-          <p className="text-sm text-green-600">Total Value: {currency} {data.totalValue.toLocaleString()}</p>
-          <p className="text-sm text-purple-600">Average: {currency} {data.averageValue.toLocaleString()}</p>
-          <p className="text-sm text-orange-600">Percentage: {data.percentage.toFixed(1)}%</p>
+        <div className="bg-white p-3 border border-[#cfd0d5] rounded-lg shadow-lg min-w-[220px]">
+          <div className="mb-2 pb-2 border-b border-[#f1f4f8]">
+            <span className="font-semibold text-[#4c5568]">{data.typeName}</span>
+            <span className="ml-2 px-1.5 py-0.5 bg-[#f1f4f8] text-[#7b95a7] text-xs font-mono rounded">{data.transactionType}</span>
+          </div>
+          <table className="w-full text-sm">
+            <tbody>
+              <tr className="border-b border-[#f1f4f8]">
+                <td className="py-1.5 text-[#7b95a7] font-medium">Count</td>
+                <td className="py-1.5 text-[#dc2625] font-semibold text-right">{data.count.toLocaleString()}</td>
+              </tr>
+              <tr className="border-b border-[#f1f4f8]">
+                <td className="py-1.5 text-[#7b95a7] font-medium">Total Value</td>
+                <td className="py-1.5 text-[#4c5568] font-semibold text-right">{currency} {data.totalValue.toLocaleString()}</td>
+              </tr>
+              <tr className="border-b border-[#f1f4f8]">
+                <td className="py-1.5 text-[#7b95a7] font-medium">Average</td>
+                <td className="py-1.5 text-[#4c5568] font-semibold text-right">{currency} {data.averageValue.toLocaleString()}</td>
+              </tr>
+              <tr>
+                <td className="py-1.5 text-[#7b95a7] font-medium">Percentage</td>
+                <td className="py-1.5 text-[#4c5568] font-semibold text-right">{data.percentage.toFixed(1)}%</td>
+              </tr>
+            </tbody>
+          </table>
         </div>
       );
     }
@@ -147,9 +166,8 @@ export const TransactionTypeChart: React.FC<TransactionTypeChartProps> = ({
   return (
     <div className="w-full">
       {/* Controls */}
-      <div className="flex flex-wrap items-center justify-between gap-4 mb-6 p-4 bg-gray-50 rounded-lg">
+      <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
         <div className="flex items-center gap-2">
-          <span className="text-sm font-medium">Metric:</span>
           <div className="flex gap-1">
             <Button
               variant={metric === 'count' ? "default" : "outline"}
@@ -169,23 +187,24 @@ export const TransactionTypeChart: React.FC<TransactionTypeChartProps> = ({
         </div>
         
         <div className="flex items-center gap-2">
-          <span className="text-sm font-medium">Chart Type:</span>
           <div className="flex gap-1">
             <Button
               variant={chartType === 'pie' ? "default" : "outline"}
-              size="sm"
+              size="icon"
+              className="h-8 w-8"
               onClick={() => setChartType('pie')}
+              title="Donut Chart"
             >
-              <PieChartIcon className="h-4 w-4 mr-1" />
-              Pie
+              <PieChartIcon className="h-4 w-4" />
             </Button>
             <Button
               variant={chartType === 'bar' ? "default" : "outline"}
-              size="sm"
+              size="icon"
+              className="h-8 w-8"
               onClick={() => setChartType('bar')}
+              title="Bar Chart"
             >
-              <BarChart3 className="h-4 w-4 mr-1" />
-              Bar
+              <BarChart3 className="h-4 w-4" />
             </Button>
           </div>
         </div>
@@ -200,46 +219,40 @@ export const TransactionTypeChart: React.FC<TransactionTypeChartProps> = ({
               cx="50%"
               cy="50%"
               labelLine={false}
-              label={({ transactionType, percentage }) => `${transactionType}: ${percentage.toFixed(1)}%`}
-              outerRadius={120}
+              label={({ typeName, percentage }) => `${typeName}: ${percentage.toFixed(1)}%`}
+              outerRadius={140}
+              innerRadius={70}
               fill="#8884d8"
               dataKey="displayValue"
+              paddingAngle={2}
             >
               {chartData.map((entry, index) => (
                 <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
               ))}
             </Pie>
             <Tooltip content={<CustomTooltip />} />
-            <Legend />
+            <Legend formatter={(value, entry: any) => entry.payload.typeName} />
           </PieChart>
         ) : (
           <BarChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
-            <XAxis dataKey="transactionType" stroke="#6B7280" fontSize={12} />
+            <CartesianGrid strokeDasharray="3 3" stroke="#cfd0d5" />
+            <XAxis dataKey="typeName" stroke="#4c5568" fontSize={12} />
             <YAxis 
-              stroke="#6B7280" 
+              stroke="#4c5568" 
               fontSize={12}
               tickFormatter={formatValue}
               label={{ 
                 value: metric === 'count' ? 'Count' : `Value (${currency})`, 
                 angle: -90, 
-                position: 'insideLeft' 
+                position: 'insideLeft',
+                fill: '#4c5568'
               }}
             />
             <Tooltip content={<CustomTooltip />} />
-            <Bar dataKey="displayValue" fill="#3B82F6" radius={[4, 4, 0, 0]} />
+            <Bar dataKey="displayValue" fill="#dc2625" radius={[4, 4, 0, 0]} />
           </BarChart>
         )}
       </ResponsiveContainer>
-
-      {/* Summary */}
-      <div className="mt-4 text-sm text-muted-foreground">
-        <p>
-          <strong>Total Transactions:</strong> {data.reduce((sum, item) => sum + item.count, 0)} | 
-          <strong> Total Value:</strong> {currency} {data.reduce((sum, item) => sum + item.totalValue, 0).toLocaleString()} | 
-          <strong> Transaction Types:</strong> {data.length}
-        </p>
-      </div>
     </div>
   );
 };

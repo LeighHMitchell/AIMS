@@ -1,11 +1,11 @@
 "use client"
 
-import React, { useState, useEffect, useMemo } from 'react'
+import React, { useState, useEffect } from 'react'
 import { TransactionCalendarHeatmap } from '@/components/activities/TransactionCalendarHeatmap'
 import { supabase } from '@/lib/supabase'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
-import { AlertCircle } from 'lucide-react'
+import { AlertCircle, Calendar } from 'lucide-react'
 
 interface TransactionActivityCalendarProps {
   dateRange?: {
@@ -34,6 +34,12 @@ export function TransactionActivityCalendar({
   const [transactions, setTransactions] = useState<Transaction[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [stats, setStats] = useState<{
+    totalTransactions: number
+    totalValue: number
+    activeDays: number
+    avgPerDay: number
+  }>({ totalTransactions: 0, totalValue: 0, activeDays: 0, avgPerDay: 0 })
 
   useEffect(() => {
     const fetchTransactions = async () => {
@@ -75,6 +81,17 @@ export function TransactionActivityCalendar({
           value: parseFloat(String(t.value || 0)),
         }))
 
+        // Calculate stats
+        const uniqueDays = new Set(allTransactions.map(t => t.transaction_date?.split('T')[0])).size
+        const totalValue = allTransactions.reduce((sum, t) => sum + Math.abs(t.value), 0)
+        
+        setStats({
+          totalTransactions: allTransactions.length,
+          totalValue,
+          activeDays: uniqueDays,
+          avgPerDay: uniqueDays > 0 ? allTransactions.length / uniqueDays : 0
+        })
+
         setTransactions(allTransactions)
       } catch (err) {
         console.error('[TransactionActivityCalendar] Unexpected error:', err)
@@ -91,11 +108,12 @@ export function TransactionActivityCalendar({
     return (
       <Card className="bg-white border-slate-200">
         <CardHeader>
-          <CardTitle className="text-lg font-semibold text-slate-900">
+          <CardTitle className="text-lg font-semibold text-slate-900 flex items-center gap-2">
+            <Calendar className="h-5 w-5" />
             Transaction Activity Calendar
           </CardTitle>
           <CardDescription>
-            Daily transaction activity colored by transaction type. Gradient colors indicate mixed transaction types on the same day.
+            Daily transaction activity colored by transaction type
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -109,11 +127,12 @@ export function TransactionActivityCalendar({
     return (
       <Card className="bg-white border-slate-200">
         <CardHeader>
-          <CardTitle className="text-lg font-semibold text-slate-900">
+          <CardTitle className="text-lg font-semibold text-slate-900 flex items-center gap-2">
+            <Calendar className="h-5 w-5" />
             Transaction Activity Calendar
           </CardTitle>
           <CardDescription>
-            Daily transaction activity colored by transaction type. Gradient colors indicate mixed transaction types on the same day.
+            Daily transaction activity colored by transaction type
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -131,26 +150,17 @@ export function TransactionActivityCalendar({
   return (
     <Card className="bg-white border-slate-200">
       <CardHeader>
-        <CardTitle className="text-lg font-semibold text-slate-900">
+        <CardTitle className="text-lg font-semibold text-slate-900 flex items-center gap-2">
+          <Calendar className="h-5 w-5" />
           Transaction Activity Calendar
         </CardTitle>
         <CardDescription>
-          Daily transaction activity colored by transaction type. Gradient colors indicate mixed transaction types on the same day.
+          Daily transaction activity colored by transaction type. Hover over days for details.
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <TransactionCalendarHeatmap transactions={transactions} />
+        <TransactionCalendarHeatmap transactions={transactions} stats={stats} />
       </CardContent>
     </Card>
   )
 }
-
-
-
-
-
-
-
-
-
-

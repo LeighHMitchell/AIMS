@@ -60,16 +60,20 @@ export function Top10ActiveProjectsChart({
 
       const response = await fetch(`/api/analytics/top-10/active-projects?${params}`)
       if (!response.ok) {
+        const errorText = await response.text()
+        console.error('[Top10ActiveProjectsChart] API error:', response.status, errorText)
         throw new Error('Failed to fetch data')
       }
 
       const result = await response.json()
+      console.log('[Top10ActiveProjectsChart] API response:', result)
       
       const partners = (result.partners || []).map((p: any) => ({
         ...p,
         shortName: p.acronym || p.name.split(' ').slice(0, 2).join(' ')
       }))
 
+      console.log('[Top10ActiveProjectsChart] Processed partners:', partners.length)
       setData(partners)
       onDataChange?.(partners)
     } catch (error) {

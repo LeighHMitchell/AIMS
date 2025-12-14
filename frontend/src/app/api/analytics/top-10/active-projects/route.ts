@@ -12,6 +12,8 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '10');
 
     // Build query for activities with participating organizations
+    // Using !inner ensures we only get activities with participating orgs
+    // Include all role codes - any organization participating counts
     let activitiesQuery = supabase
       .from('activities')
       .select(`
@@ -25,8 +27,7 @@ export async function GET(request: NextRequest) {
         )
       `)
       .eq('publication_status', 'published')
-      .in('activity_status', ['2', '1']) // Implementation (2) or Pipeline/Identification (1)
-      .in('activity_participating_organizations.iati_role_code', [1, 4]); // Funding (1) or Implementing (4)
+      .in('activity_status', ['2', '1']); // Implementation (2) or Pipeline/Identification (1)
 
     if (country && country !== 'all') {
       activitiesQuery = activitiesQuery.contains('locations', [{ country_code: country }]);
@@ -41,6 +42,8 @@ export async function GET(request: NextRequest) {
       console.error('[Top10ActiveProjects] Error:', error);
       return NextResponse.json({ error: 'Failed to fetch data' }, { status: 500 });
     }
+
+    console.log('[Top10ActiveProjects] Found activities:', activities?.length || 0);
 
     // Count projects per organization
     const orgProjectCounts = new Map<string, Set<string>>(); // orgId -> Set of activity IDs
@@ -59,6 +62,8 @@ export async function GET(request: NextRequest) {
 
     // Get organization names
     const orgIds = Array.from(orgProjectCounts.keys());
+    console.log('[Top10ActiveProjects] Organizations found:', orgIds.length);
+    
     const { data: orgs } = await supabase
       .from('organizations')
       .select('id, name, acronym')

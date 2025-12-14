@@ -16,9 +16,6 @@ import { supabase } from '@/lib/supabase'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Calendar, DollarSign, CalendarDays } from 'lucide-react'
-import { Switch } from '@/components/ui/switch'
-import { Label } from '@/components/ui/label'
-import { HelpTextTooltip } from '@/components/ui/help-text-tooltip'
 import { 
   splitBudgetAcrossYears, 
   splitTransactionAcrossYears 
@@ -52,7 +49,7 @@ export function BudgetVsActualChart({ dateRange, filters, refreshKey, onDataChan
   const [data, setData] = useState<ChartData[]>([])
   const [loading, setLoading] = useState(true)
   const [groupBy, setGroupBy] = useState<GroupByMode>('calendar')
-  const [allocationMethod, setAllocationMethod] = useState<'proportional' | 'period-start'>('proportional')
+  const allocationMethod: 'proportional' | 'period-start' = 'proportional' // Always use proportional
 
   useEffect(() => {
     fetchData()
@@ -284,28 +281,6 @@ export function BudgetVsActualChart({ dateRange, filters, refreshKey, onDataChan
             </SelectContent>
           </Select>
 
-          {/* Allocation Method Toggle - Only show for Calendar Year mode */}
-          {groupBy === 'calendar' && (
-            <div className="flex items-center gap-2">
-              <div className="flex items-center gap-2 border rounded-lg px-3 py-1.5 bg-white border-slate-200 h-9">
-                <Label htmlFor="allocation-toggle-budget-vs-actual" className="text-sm text-slate-700 cursor-pointer whitespace-nowrap">
-                  {allocationMethod === 'proportional' ? 'Proportional' : 'Period Start'}
-                </Label>
-                <Switch
-                  id="allocation-toggle-budget-vs-actual"
-                  checked={allocationMethod === 'proportional'}
-                  onCheckedChange={(checked) => setAllocationMethod(checked ? 'proportional' : 'period-start')}
-                />
-              </div>
-              <HelpTextTooltip 
-                content={
-                  allocationMethod === 'proportional'
-                    ? "Allocates budget amounts proportionally across calendar years based on the number of days. For example, a budget spanning July 2024 to June 2025 will be split between 2024 and 2025."
-                    : "Allocates the full budget amount to the year of the start date."
-                }
-              />
-            </div>
-          )}
         </div>
         
         {groupBy === 'fiscal' && (

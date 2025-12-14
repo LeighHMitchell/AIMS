@@ -25,6 +25,7 @@ interface ExpandableCardProps {
   exportData?: any[]
   exportFilename?: string
   onExport?: () => void
+  hideViewToggle?: boolean
 }
 
 export function ExpandableCard({
@@ -35,7 +36,8 @@ export function ExpandableCard({
   headerClassName = "",
   exportData,
   exportFilename,
-  onExport
+  onExport,
+  hideViewToggle = false
 }: ExpandableCardProps) {
   const [isExpanded, setIsExpanded] = useState(false)
   const [viewMode, setViewMode] = useState<'chart' | 'table'>('chart')
@@ -120,7 +122,7 @@ export function ExpandableCard({
               )}
             </div>
             <div className="flex items-center gap-1">
-              {exportData && exportData.length > 0 && (
+              {!hideViewToggle && exportData && exportData.length > 0 && (
                 <Button
                   variant="ghost"
                   size="sm"
@@ -186,7 +188,7 @@ export function ExpandableCard({
                 )}
               </div>
               <div className="flex items-center gap-2">
-                {exportData && exportData.length > 0 && (
+                {!hideViewToggle && exportData && exportData.length > 0 && (
                   <Button
                     variant="outline"
                     size="sm"

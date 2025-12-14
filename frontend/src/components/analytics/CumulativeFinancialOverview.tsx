@@ -32,6 +32,7 @@ import {
   splitPlannedDisbursementAcrossYears, 
   splitTransactionAcrossYears 
 } from '@/utils/year-allocation'
+import { FINANCIAL_OVERVIEW_COLORS, BRAND_COLORS } from '@/components/analytics/sectors/sectorColorMap'
 
 type DataMode = 'cumulative' | 'periodic'
 type ChartType = 'line' | 'bar' | 'area' | 'table' | 'total'
@@ -1120,14 +1121,7 @@ export function CumulativeFinancialOverview({
                     .map(([key, value]) => ({
                       name: key,
                       value,
-                      fill: key === 'Incoming Commitment' ? '#3b82f6' :
-                            key === 'Incoming Funds' ? '#3b82f6' :
-                            key === 'Outgoing Commitment' ? '#8b5cf6' :
-                            key === 'Credit Guarantee' ? '#10b981' :
-                            key === 'Disbursements' ? '#10b981' :
-                            key === 'Expenditures' ? '#f59e0b' :
-                            key === 'Planned Disbursements' ? '#06b6d4' :
-                            key === 'Budgets' ? '#6366f1' : '#3b82f6'
+                      fill: FINANCIAL_OVERVIEW_COLORS[key as keyof typeof FINANCIAL_OVERVIEW_COLORS] || BRAND_COLORS.coolSteel
                     }))
                     .sort((a, b) => b.value - a.value)
                   }
@@ -1161,16 +1155,7 @@ export function CumulativeFinancialOverview({
                     {Object.entries(totals).map(([key, value], index) => (
                       <Cell
                         key={`cell-${index}`}
-                        fill={
-                          key === 'Incoming Commitment' ? '#3b82f6' :
-                          key === 'Incoming Funds' ? '#3b82f6' :
-                          key === 'Outgoing Commitment' ? '#8b5cf6' :
-                          key === 'Credit Guarantee' ? '#10b981' :
-                          key === 'Disbursements' ? '#10b981' :
-                          key === 'Expenditures' ? '#f59e0b' :
-                          key === 'Planned Disbursements' ? '#06b6d4' :
-                          key === 'Budgets' ? '#6366f1' : '#3b82f6'
-                        }
+                        fill={FINANCIAL_OVERVIEW_COLORS[key as keyof typeof FINANCIAL_OVERVIEW_COLORS] || BRAND_COLORS.coolSteel}
                       />
                     ))}
                   </Bar>
@@ -1202,7 +1187,7 @@ export function CumulativeFinancialOverview({
                   {activeSeries.has('Incoming Commitment') && (
                     <Bar
                       dataKey="Incoming Commitment"
-                      fill={hiddenSeries.has('Incoming Commitment') ? '#cbd5e1' : '#3b82f6'}
+                      fill={hiddenSeries.has('Incoming Commitment') ? '#cbd5e1' : FINANCIAL_OVERVIEW_COLORS['Incoming Commitment']}
                       opacity={hiddenSeries.has('Incoming Commitment') ? 0.3 : 1}
                       isAnimationActive={true}
                       animationDuration={600}
@@ -1212,7 +1197,7 @@ export function CumulativeFinancialOverview({
                   {activeSeries.has('Incoming Funds') && (
                     <Bar
                       dataKey="Incoming Funds"
-                      fill={hiddenSeries.has('Incoming Funds') ? '#cbd5e1' : '#3b82f6'}
+                      fill={hiddenSeries.has('Incoming Funds') ? '#cbd5e1' : FINANCIAL_OVERVIEW_COLORS['Incoming Funds']}
                       opacity={hiddenSeries.has('Incoming Funds') ? 0.3 : 1}
                       isAnimationActive={true}
                       animationDuration={600}
@@ -1222,7 +1207,7 @@ export function CumulativeFinancialOverview({
                   {activeSeries.has('Outgoing Commitment') && (
                     <Bar
                       dataKey="Outgoing Commitment"
-                      fill={hiddenSeries.has('Outgoing Commitment') ? '#cbd5e1' : '#8b5cf6'}
+                      fill={hiddenSeries.has('Outgoing Commitment') ? '#cbd5e1' : FINANCIAL_OVERVIEW_COLORS['Outgoing Commitment']}
                       opacity={hiddenSeries.has('Outgoing Commitment') ? 0.3 : 1}
                       isAnimationActive={true}
                       animationDuration={600}
@@ -1232,7 +1217,7 @@ export function CumulativeFinancialOverview({
                   {activeSeries.has('Credit Guarantee') && (
                     <Bar
                       dataKey="Credit Guarantee"
-                      fill={hiddenSeries.has('Credit Guarantee') ? '#cbd5e1' : '#10b981'}
+                      fill={hiddenSeries.has('Credit Guarantee') ? '#cbd5e1' : FINANCIAL_OVERVIEW_COLORS['Credit Guarantee']}
                       opacity={hiddenSeries.has('Credit Guarantee') ? 0.3 : 1}
                       isAnimationActive={true}
                       animationDuration={600}
@@ -1242,7 +1227,7 @@ export function CumulativeFinancialOverview({
                   {activeSeries.has('Disbursements') && (
                     <Bar
                       dataKey="Disbursements"
-                      fill={hiddenSeries.has('Disbursements') ? '#cbd5e1' : '#10b981'}
+                      fill={hiddenSeries.has('Disbursements') ? '#cbd5e1' : FINANCIAL_OVERVIEW_COLORS['Disbursements']}
                       opacity={hiddenSeries.has('Disbursements') ? 0.3 : 1}
                       isAnimationActive={true}
                       animationDuration={600}
@@ -1252,7 +1237,7 @@ export function CumulativeFinancialOverview({
                   {activeSeries.has('Expenditures') && (
                     <Bar
                       dataKey="Expenditures"
-                      fill={hiddenSeries.has('Expenditures') ? '#cbd5e1' : '#f59e0b'}
+                      fill={hiddenSeries.has('Expenditures') ? '#cbd5e1' : FINANCIAL_OVERVIEW_COLORS['Expenditures']}
                       opacity={hiddenSeries.has('Expenditures') ? 0.3 : 1}
                       isAnimationActive={true}
                       animationDuration={600}
@@ -1262,7 +1247,7 @@ export function CumulativeFinancialOverview({
                   {activeSeries.has('Planned Disbursements') && (
                     <Bar
                       dataKey="Planned Disbursements"
-                      fill={hiddenSeries.has('Planned Disbursements') ? '#cbd5e1' : '#06b6d4'}
+                      fill={hiddenSeries.has('Planned Disbursements') ? '#cbd5e1' : FINANCIAL_OVERVIEW_COLORS['Planned Disbursements']}
                       opacity={hiddenSeries.has('Planned Disbursements') ? 0.3 : 1}
                       isAnimationActive={true}
                       animationDuration={600}
@@ -1272,7 +1257,7 @@ export function CumulativeFinancialOverview({
                   {activeSeries.has('Budgets') && (
                     <Bar
                       dataKey="Budgets"
-                      fill={hiddenSeries.has('Budgets') ? '#cbd5e1' : '#6366f1'}
+                      fill={hiddenSeries.has('Budgets') ? '#cbd5e1' : FINANCIAL_OVERVIEW_COLORS['Budgets']}
                       opacity={hiddenSeries.has('Budgets') ? 0.3 : 1}
                       isAnimationActive={true}
                       animationDuration={600}
@@ -1308,9 +1293,9 @@ export function CumulativeFinancialOverview({
                     <Line
                       type="monotone"
                       dataKey="Incoming Commitment"
-                      stroke={hiddenSeries.has('Incoming Commitment') ? '#cbd5e1' : '#3b82f6'}
+                      stroke={hiddenSeries.has('Incoming Commitment') ? '#cbd5e1' : FINANCIAL_OVERVIEW_COLORS['Incoming Commitment']}
                       strokeWidth={hiddenSeries.has('Incoming Commitment') ? 1 : 2.5}
-                      dot={{ fill: hiddenSeries.has('Incoming Commitment') ? '#cbd5e1' : '#3b82f6', r: 3 }}
+                      dot={{ fill: hiddenSeries.has('Incoming Commitment') ? '#cbd5e1' : FINANCIAL_OVERVIEW_COLORS['Incoming Commitment'], r: 3 }}
                       isAnimationActive={true}
                       animationDuration={600}
                       animationEasing="ease-in-out"
@@ -1321,9 +1306,9 @@ export function CumulativeFinancialOverview({
                     <Line
                       type="monotone"
                       dataKey="Incoming Funds"
-                      stroke={hiddenSeries.has('Incoming Funds') ? '#cbd5e1' : '#3b82f6'}
+                      stroke={hiddenSeries.has('Incoming Funds') ? '#cbd5e1' : FINANCIAL_OVERVIEW_COLORS['Incoming Funds']}
                       strokeWidth={hiddenSeries.has('Incoming Funds') ? 1 : 2.5}
-                      dot={{ fill: hiddenSeries.has('Incoming Funds') ? '#cbd5e1' : '#3b82f6', r: 3 }}
+                      dot={{ fill: hiddenSeries.has('Incoming Funds') ? '#cbd5e1' : FINANCIAL_OVERVIEW_COLORS['Incoming Funds'], r: 3 }}
                       isAnimationActive={true}
                       animationDuration={600}
                       animationEasing="ease-in-out"
@@ -1334,9 +1319,9 @@ export function CumulativeFinancialOverview({
                     <Line
                       type="monotone"
                       dataKey="Outgoing Commitment"
-                      stroke={hiddenSeries.has('Outgoing Commitment') ? '#cbd5e1' : '#8b5cf6'}
+                      stroke={hiddenSeries.has('Outgoing Commitment') ? '#cbd5e1' : FINANCIAL_OVERVIEW_COLORS['Outgoing Commitment']}
                       strokeWidth={hiddenSeries.has('Outgoing Commitment') ? 1 : 2.5}
-                      dot={{ fill: hiddenSeries.has('Outgoing Commitment') ? '#cbd5e1' : '#8b5cf6', r: 3 }}
+                      dot={{ fill: hiddenSeries.has('Outgoing Commitment') ? '#cbd5e1' : FINANCIAL_OVERVIEW_COLORS['Outgoing Commitment'], r: 3 }}
                       isAnimationActive={true}
                       animationDuration={600}
                       animationEasing="ease-in-out"
@@ -1347,9 +1332,9 @@ export function CumulativeFinancialOverview({
                     <Line
                       type="monotone"
                       dataKey="Credit Guarantee"
-                      stroke={hiddenSeries.has('Credit Guarantee') ? '#cbd5e1' : '#10b981'}
+                      stroke={hiddenSeries.has('Credit Guarantee') ? '#cbd5e1' : FINANCIAL_OVERVIEW_COLORS['Credit Guarantee']}
                       strokeWidth={hiddenSeries.has('Credit Guarantee') ? 1 : 2.5}
-                      dot={{ fill: hiddenSeries.has('Credit Guarantee') ? '#cbd5e1' : '#10b981', r: 3 }}
+                      dot={{ fill: hiddenSeries.has('Credit Guarantee') ? '#cbd5e1' : FINANCIAL_OVERVIEW_COLORS['Credit Guarantee'], r: 3 }}
                       isAnimationActive={true}
                       animationDuration={600}
                       animationEasing="ease-in-out"
@@ -1360,9 +1345,9 @@ export function CumulativeFinancialOverview({
                     <Line
                       type="monotone"
                       dataKey="Disbursements"
-                      stroke={hiddenSeries.has('Disbursements') ? '#cbd5e1' : '#10b981'}
+                      stroke={hiddenSeries.has('Disbursements') ? '#cbd5e1' : FINANCIAL_OVERVIEW_COLORS['Disbursements']}
                       strokeWidth={hiddenSeries.has('Disbursements') ? 1 : 2.5}
-                      dot={{ fill: hiddenSeries.has('Disbursements') ? '#cbd5e1' : '#10b981', r: 3 }}
+                      dot={{ fill: hiddenSeries.has('Disbursements') ? '#cbd5e1' : FINANCIAL_OVERVIEW_COLORS['Disbursements'], r: 3 }}
                       isAnimationActive={true}
                       animationDuration={600}
                       animationEasing="ease-in-out"
@@ -1373,9 +1358,9 @@ export function CumulativeFinancialOverview({
                     <Line
                       type="monotone"
                       dataKey="Expenditures"
-                      stroke={hiddenSeries.has('Expenditures') ? '#cbd5e1' : '#f59e0b'}
+                      stroke={hiddenSeries.has('Expenditures') ? '#cbd5e1' : FINANCIAL_OVERVIEW_COLORS['Expenditures']}
                       strokeWidth={hiddenSeries.has('Expenditures') ? 1 : 2.5}
-                      dot={{ fill: hiddenSeries.has('Expenditures') ? '#cbd5e1' : '#f59e0b', r: 3 }}
+                      dot={{ fill: hiddenSeries.has('Expenditures') ? '#cbd5e1' : FINANCIAL_OVERVIEW_COLORS['Expenditures'], r: 3 }}
                       isAnimationActive={true}
                       animationDuration={600}
                       animationEasing="ease-in-out"
@@ -1386,10 +1371,10 @@ export function CumulativeFinancialOverview({
                     <Line
                       type="monotone"
                       dataKey="Planned Disbursements"
-                      stroke={hiddenSeries.has('Planned Disbursements') ? '#cbd5e1' : '#06b6d4'}
+                      stroke={hiddenSeries.has('Planned Disbursements') ? '#cbd5e1' : FINANCIAL_OVERVIEW_COLORS['Planned Disbursements']}
                       strokeWidth={hiddenSeries.has('Planned Disbursements') ? 1 : 2}
                       strokeDasharray="5 5"
-                      dot={{ fill: hiddenSeries.has('Planned Disbursements') ? '#cbd5e1' : '#06b6d4', r: 3 }}
+                      dot={{ fill: hiddenSeries.has('Planned Disbursements') ? '#cbd5e1' : FINANCIAL_OVERVIEW_COLORS['Planned Disbursements'], r: 3 }}
                       isAnimationActive={true}
                       animationDuration={600}
                       animationEasing="ease-in-out"
@@ -1400,10 +1385,10 @@ export function CumulativeFinancialOverview({
                     <Line
                       type="linear"
                       dataKey="Budgets"
-                      stroke={hiddenSeries.has('Budgets') ? '#cbd5e1' : '#6366f1'}
+                      stroke={hiddenSeries.has('Budgets') ? '#cbd5e1' : FINANCIAL_OVERVIEW_COLORS['Budgets']}
                       strokeWidth={hiddenSeries.has('Budgets') ? 1 : 2}
                       strokeDasharray="5 5"
-                      dot={{ fill: hiddenSeries.has('Budgets') ? '#cbd5e1' : '#6366f1', r: 3 }}
+                      dot={{ fill: hiddenSeries.has('Budgets') ? '#cbd5e1' : FINANCIAL_OVERVIEW_COLORS['Budgets'], r: 3 }}
                       connectNulls={true}
                       isAnimationActive={true}
                       animationDuration={600}
@@ -1426,50 +1411,50 @@ export function CumulativeFinancialOverview({
                   <defs>
                     {activeSeries.has('Incoming Commitment') && (
                       <linearGradient id="colorIncomingCommitment" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.8}/>
-                        <stop offset="95%" stopColor="#3b82f6" stopOpacity={0.1}/>
+                        <stop offset="5%" stopColor={FINANCIAL_OVERVIEW_COLORS['Incoming Commitment']} stopOpacity={0.8}/>
+                        <stop offset="95%" stopColor={FINANCIAL_OVERVIEW_COLORS['Incoming Commitment']} stopOpacity={0.1}/>
                       </linearGradient>
                     )}
                     {activeSeries.has('Incoming Funds') && (
                       <linearGradient id="colorIncomingFunds" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.8}/>
-                        <stop offset="95%" stopColor="#3b82f6" stopOpacity={0.1}/>
+                        <stop offset="5%" stopColor={FINANCIAL_OVERVIEW_COLORS['Incoming Funds']} stopOpacity={0.8}/>
+                        <stop offset="95%" stopColor={FINANCIAL_OVERVIEW_COLORS['Incoming Funds']} stopOpacity={0.1}/>
                       </linearGradient>
                     )}
                     {activeSeries.has('Outgoing Commitment') && (
                       <linearGradient id="colorOutgoingCommitment" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.8}/>
-                        <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0.1}/>
+                        <stop offset="5%" stopColor={FINANCIAL_OVERVIEW_COLORS['Outgoing Commitment']} stopOpacity={0.8}/>
+                        <stop offset="95%" stopColor={FINANCIAL_OVERVIEW_COLORS['Outgoing Commitment']} stopOpacity={0.1}/>
                       </linearGradient>
                     )}
                     {activeSeries.has('Credit Guarantee') && (
                       <linearGradient id="colorCreditGuarantee" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#10b981" stopOpacity={0.8}/>
-                        <stop offset="95%" stopColor="#10b981" stopOpacity={0.1}/>
+                        <stop offset="5%" stopColor={FINANCIAL_OVERVIEW_COLORS['Credit Guarantee']} stopOpacity={0.8}/>
+                        <stop offset="95%" stopColor={FINANCIAL_OVERVIEW_COLORS['Credit Guarantee']} stopOpacity={0.1}/>
                       </linearGradient>
                     )}
                     {activeSeries.has('Disbursements') && (
                       <linearGradient id="colorDisbursements" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#10b981" stopOpacity={0.8}/>
-                        <stop offset="95%" stopColor="#10b981" stopOpacity={0.1}/>
+                        <stop offset="5%" stopColor={FINANCIAL_OVERVIEW_COLORS['Disbursements']} stopOpacity={0.8}/>
+                        <stop offset="95%" stopColor={FINANCIAL_OVERVIEW_COLORS['Disbursements']} stopOpacity={0.1}/>
                       </linearGradient>
                     )}
                     {activeSeries.has('Expenditures') && (
                       <linearGradient id="colorExpenditures" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.8}/>
-                        <stop offset="95%" stopColor="#f59e0b" stopOpacity={0.1}/>
+                        <stop offset="5%" stopColor={FINANCIAL_OVERVIEW_COLORS['Expenditures']} stopOpacity={0.8}/>
+                        <stop offset="95%" stopColor={FINANCIAL_OVERVIEW_COLORS['Expenditures']} stopOpacity={0.1}/>
                       </linearGradient>
                     )}
                     {activeSeries.has('Planned Disbursements') && (
                       <linearGradient id="colorPlannedDisbursements" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#06b6d4" stopOpacity={0.8}/>
-                        <stop offset="95%" stopColor="#06b6d4" stopOpacity={0.1}/>
+                        <stop offset="5%" stopColor={FINANCIAL_OVERVIEW_COLORS['Planned Disbursements']} stopOpacity={0.8}/>
+                        <stop offset="95%" stopColor={FINANCIAL_OVERVIEW_COLORS['Planned Disbursements']} stopOpacity={0.1}/>
                       </linearGradient>
                     )}
                     {activeSeries.has('Budgets') && (
                       <linearGradient id="colorBudgets" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#6366f1" stopOpacity={0.8}/>
-                        <stop offset="95%" stopColor="#6366f1" stopOpacity={0.1}/>
+                        <stop offset="5%" stopColor={FINANCIAL_OVERVIEW_COLORS['Budgets']} stopOpacity={0.8}/>
+                        <stop offset="95%" stopColor={FINANCIAL_OVERVIEW_COLORS['Budgets']} stopOpacity={0.1}/>
                       </linearGradient>
                     )}
                   </defs>
@@ -1490,7 +1475,7 @@ export function CumulativeFinancialOverview({
                     <Area
                       type="monotone"
                       dataKey="Incoming Commitment"
-                      stroke={hiddenSeries.has('Incoming Commitment') ? '#cbd5e1' : '#3b82f6'}
+                      stroke={hiddenSeries.has('Incoming Commitment') ? '#cbd5e1' : FINANCIAL_OVERVIEW_COLORS['Incoming Commitment']}
                       strokeWidth={hiddenSeries.has('Incoming Commitment') ? 1 : 2.5}
                       fill={hiddenSeries.has('Incoming Commitment') ? 'url(#colorIncomingCommitment)' : 'url(#colorIncomingCommitment)'}
                       fillOpacity={hiddenSeries.has('Incoming Commitment') ? 0.1 : 0.6}
@@ -1503,7 +1488,7 @@ export function CumulativeFinancialOverview({
                     <Area
                       type="monotone"
                       dataKey="Incoming Funds"
-                      stroke={hiddenSeries.has('Incoming Funds') ? '#cbd5e1' : '#3b82f6'}
+                      stroke={hiddenSeries.has('Incoming Funds') ? '#cbd5e1' : FINANCIAL_OVERVIEW_COLORS['Incoming Funds']}
                       strokeWidth={hiddenSeries.has('Incoming Funds') ? 1 : 2.5}
                       fill={hiddenSeries.has('Incoming Funds') ? 'url(#colorIncomingFunds)' : 'url(#colorIncomingFunds)'}
                       fillOpacity={hiddenSeries.has('Incoming Funds') ? 0.1 : 0.6}
@@ -1516,7 +1501,7 @@ export function CumulativeFinancialOverview({
                     <Area
                       type="monotone"
                       dataKey="Outgoing Commitment"
-                      stroke={hiddenSeries.has('Outgoing Commitment') ? '#cbd5e1' : '#8b5cf6'}
+                      stroke={hiddenSeries.has('Outgoing Commitment') ? '#cbd5e1' : FINANCIAL_OVERVIEW_COLORS['Outgoing Commitment']}
                       strokeWidth={hiddenSeries.has('Outgoing Commitment') ? 1 : 2.5}
                       fill={hiddenSeries.has('Outgoing Commitment') ? 'url(#colorOutgoingCommitment)' : 'url(#colorOutgoingCommitment)'}
                       fillOpacity={hiddenSeries.has('Outgoing Commitment') ? 0.1 : 0.6}
@@ -1529,7 +1514,7 @@ export function CumulativeFinancialOverview({
                     <Area
                       type="monotone"
                       dataKey="Credit Guarantee"
-                      stroke={hiddenSeries.has('Credit Guarantee') ? '#cbd5e1' : '#10b981'}
+                      stroke={hiddenSeries.has('Credit Guarantee') ? '#cbd5e1' : FINANCIAL_OVERVIEW_COLORS['Credit Guarantee']}
                       strokeWidth={hiddenSeries.has('Credit Guarantee') ? 1 : 2.5}
                       fill={hiddenSeries.has('Credit Guarantee') ? 'url(#colorCreditGuarantee)' : 'url(#colorCreditGuarantee)'}
                       fillOpacity={hiddenSeries.has('Credit Guarantee') ? 0.1 : 0.6}
@@ -1542,7 +1527,7 @@ export function CumulativeFinancialOverview({
                     <Area
                       type="monotone"
                       dataKey="Disbursements"
-                      stroke={hiddenSeries.has('Disbursements') ? '#cbd5e1' : '#10b981'}
+                      stroke={hiddenSeries.has('Disbursements') ? '#cbd5e1' : FINANCIAL_OVERVIEW_COLORS['Disbursements']}
                       strokeWidth={hiddenSeries.has('Disbursements') ? 1 : 2.5}
                       fill={hiddenSeries.has('Disbursements') ? 'url(#colorDisbursements)' : 'url(#colorDisbursements)'}
                       fillOpacity={hiddenSeries.has('Disbursements') ? 0.1 : 0.6}
@@ -1555,7 +1540,7 @@ export function CumulativeFinancialOverview({
                     <Area
                       type="monotone"
                       dataKey="Expenditures"
-                      stroke={hiddenSeries.has('Expenditures') ? '#cbd5e1' : '#f59e0b'}
+                      stroke={hiddenSeries.has('Expenditures') ? '#cbd5e1' : FINANCIAL_OVERVIEW_COLORS['Expenditures']}
                       strokeWidth={hiddenSeries.has('Expenditures') ? 1 : 2.5}
                       fill={hiddenSeries.has('Expenditures') ? 'url(#colorExpenditures)' : 'url(#colorExpenditures)'}
                       fillOpacity={hiddenSeries.has('Expenditures') ? 0.1 : 0.6}
@@ -1568,7 +1553,7 @@ export function CumulativeFinancialOverview({
                     <Area
                       type="monotone"
                       dataKey="Planned Disbursements"
-                      stroke={hiddenSeries.has('Planned Disbursements') ? '#cbd5e1' : '#06b6d4'}
+                      stroke={hiddenSeries.has('Planned Disbursements') ? '#cbd5e1' : FINANCIAL_OVERVIEW_COLORS['Planned Disbursements']}
                       strokeWidth={hiddenSeries.has('Planned Disbursements') ? 1 : 2}
                       strokeDasharray="5 5"
                       fill={hiddenSeries.has('Planned Disbursements') ? 'url(#colorPlannedDisbursements)' : 'url(#colorPlannedDisbursements)'}
@@ -1582,7 +1567,7 @@ export function CumulativeFinancialOverview({
                     <Area
                       type="linear"
                       dataKey="Budgets"
-                      stroke={hiddenSeries.has('Budgets') ? '#cbd5e1' : '#6366f1'}
+                      stroke={hiddenSeries.has('Budgets') ? '#cbd5e1' : FINANCIAL_OVERVIEW_COLORS['Budgets']}
                       strokeWidth={hiddenSeries.has('Budgets') ? 1 : 2}
                       strokeDasharray="5 5"
                       fill={hiddenSeries.has('Budgets') ? 'url(#colorBudgets)' : 'url(#colorBudgets)'}

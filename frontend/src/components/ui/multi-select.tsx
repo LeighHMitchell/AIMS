@@ -35,6 +35,7 @@ interface MultiSelectProps {
   showSelectAll?: boolean
   onClear?: () => void
   selectedLabel?: string
+  onOpenChange?: (open: boolean) => void
 }
 
 export function MultiSelect({
@@ -48,25 +49,40 @@ export function MultiSelect({
   showSelectAll = false,
   onClear,
   selectedLabel,
+  onOpenChange,
 }: MultiSelectProps) {
   const [open, setOpen] = React.useState(false)
+  const isSelectingRef = React.useRef(false)
 
   const handleUnselect = (item: string) => {
     onChange(selected.filter((i) => i !== item))
   }
 
   const handleSelect = (item: string) => {
+    isSelectingRef.current = true
+    
     if (item === "SELECT_ALL") {
       // Select all options
       onChange(options.map(opt => opt.value))
-      return
-    }
-
-    if (selected.includes(item)) {
+    } else if (selected.includes(item)) {
       handleUnselect(item)
     } else {
       onChange([...selected, item])
     }
+    
+    // Keep popover open after selection
+    setTimeout(() => {
+      isSelectingRef.current = false
+    }, 0)
+  }
+  
+  const handleOpenChange = (newOpen: boolean) => {
+    // Don't close if we're in the middle of selecting
+    if (!newOpen && isSelectingRef.current) {
+      return
+    }
+    setOpen(newOpen)
+    onOpenChange?.(newOpen)
   }
 
   const handleClear = (e: React.MouseEvent) => {
@@ -94,7 +110,7 @@ export function MultiSelect({
   }, [options])
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
+    <Popover open={open} onOpenChange={handleOpenChange} modal={false}>
       <PopoverTrigger asChild>
         <Button
           variant="outline"

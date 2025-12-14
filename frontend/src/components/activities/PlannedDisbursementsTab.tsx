@@ -71,6 +71,7 @@ import {
 import { toast } from 'sonner';
 import { OrganizationCombobox } from '@/components/ui/organization-combobox';
 import { ActivityCombobox } from '@/components/ui/activity-combobox';
+import { OrgTypeMappingModal, useOrgTypeMappingModal } from '@/components/organizations/OrgTypeMappingModal';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { ChevronsUpDown } from 'lucide-react';
 import { exportToCSV } from '@/lib/csv-export';
@@ -214,6 +215,25 @@ export default function PlannedDisbursementsTab({
 
   // Filter state
   const [statusFilter, setStatusFilter] = useState<string>('all');
+
+  // Org type mapping modal for handling legacy organization type codes
+  const orgTypeMappingModal = useOrgTypeMappingModal();
+
+  // Handler to update organization type via API
+  const handleOrgTypeUpdate = async (orgId: string, newTypeCode: string) => {
+    const response = await fetch(`/api/organizations/${orgId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ Organisation_Type_Code: newTypeCode })
+    });
+    
+    if (!response.ok) {
+      throw new Error('Failed to update organization type');
+    }
+    
+    // Refresh organizations list
+    fetchOrganizations();
+  };
 
   // Reset to page 1 when filter changes
   useEffect(() => {
@@ -1769,7 +1789,7 @@ export default function PlannedDisbursementsTab({
                           className="flex items-center gap-1 cursor-pointer hover:bg-muted/30 transition-colors"
                           onClick={() => handleSort('status')}
                         >
-                          Status
+                          Type
                           {sortColumn === 'status' ? (
                             sortDirection === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
                           ) : (
@@ -2634,6 +2654,7 @@ export default function PlannedDisbursementsTab({
                 }}
                 placeholder="Search for provider organisation..."
                 organizations={organizations}
+                onLegacyTypeDetected={orgTypeMappingModal.openModal}
               />
             </div>
 
@@ -2691,6 +2712,7 @@ export default function PlannedDisbursementsTab({
                 }}
                 placeholder="Search for receiver organisation..."
                 organizations={organizations}
+                onLegacyTypeDetected={orgTypeMappingModal.openModal}
               />
             </div>
 
@@ -2790,6 +2812,14 @@ export default function PlannedDisbursementsTab({
         onDelete={confirmBulkDelete}
         onCancel={() => setSelectedDisbursementIds(new Set())}
         isDeleting={isBulkDeleting}
+      />
+
+      {/* Organization Type Mapping Modal for legacy type codes */}
+      <OrgTypeMappingModal
+        isOpen={orgTypeMappingModal.isOpen}
+        onClose={orgTypeMappingModal.closeModal}
+        organization={orgTypeMappingModal.targetOrg}
+        onSave={handleOrgTypeUpdate}
       />
 
     </div>

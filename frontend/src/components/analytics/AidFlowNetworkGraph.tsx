@@ -104,6 +104,8 @@ export default function AidFlowNetworkGraph({
     // Create arrow markers for directed edges
     const defs = svg.append('defs')
     
+    // Arrow markers using custom palette
+    // Palette: Primary Scarlet #dc2625, Pale Slate #cfd0d5, Blue Slate #4c5568, Cool Steel #7b95a7, Platinum #f1f4f8
     defs.append('marker')
       .attr('id', 'arrow-commitment')
       .attr('viewBox', '0 -5 10 10')
@@ -114,7 +116,7 @@ export default function AidFlowNetworkGraph({
       .attr('orient', 'auto')
       .append('path')
       .attr('d', 'M0,-5L10,0L0,5')
-      .attr('fill', '#94a3b8')
+      .attr('fill', '#7b95a7') // Cool Steel
 
     defs.append('marker')
       .attr('id', 'arrow-disbursement')
@@ -126,7 +128,7 @@ export default function AidFlowNetworkGraph({
       .attr('orient', 'auto')
       .append('path')
       .attr('d', 'M0,-5L10,0L0,5')
-      .attr('fill', '#10b981')
+      .attr('fill', '#dc2625') // Primary Scarlet
 
     defs.append('marker')
       .attr('id', 'arrow-expenditure')
@@ -138,7 +140,7 @@ export default function AidFlowNetworkGraph({
       .attr('orient', 'auto')
       .append('path')
       .attr('d', 'M0,-5L10,0L0,5')
-      .attr('fill', '#f59e0b')
+      .attr('fill', '#4c5568') // Blue Slate
 
     // Create force simulation
     const simulation = d3.forceSimulation<GraphNode>(graphData.nodes)
@@ -151,16 +153,17 @@ export default function AidFlowNetworkGraph({
       .force('collision', d3.forceCollide().radius(30))
 
     // Create links
+    // Palette: Primary Scarlet #dc2625, Pale Slate #cfd0d5, Blue Slate #4c5568, Cool Steel #7b95a7, Platinum #f1f4f8
     const link = g.append('g')
       .attr('class', 'links')
       .selectAll('line')
       .data(graphData.links)
       .enter().append('line')
       .attr('stroke', d => {
-        if (d.flowType === 'commitment') return '#94a3b8'
-        if (d.flowType === 'disbursement') return '#10b981'
-        if (d.flowType === 'expenditure') return '#f59e0b'
-        return '#e2e8f0'
+        if (d.flowType === 'commitment') return '#7b95a7'    // Cool Steel
+        if (d.flowType === 'disbursement') return '#dc2625'  // Primary Scarlet
+        if (d.flowType === 'expenditure') return '#4c5568'   // Blue Slate
+        return '#cfd0d5' // Pale Slate
       })
       .attr('stroke-width', d => Math.max(2, Math.sqrt(d.value / 5000000)))
       .attr('stroke-opacity', 0.6)
@@ -216,17 +219,18 @@ export default function AidFlowNetworkGraph({
       )
 
     // Add circles for nodes
+    // Palette: Primary Scarlet #dc2625, Pale Slate #cfd0d5, Blue Slate #4c5568, Cool Steel #7b95a7, Platinum #f1f4f8
     node.append('circle')
       .attr('r', d => {
         const totalFlow = (d.totalIn || 0) + (d.totalOut || 0)
         return Math.max(10, Math.min(40, Math.sqrt(totalFlow / 1000000)))
       })
       .attr('fill', d => {
-        if (d.type === 'donor') return '#3b82f6'
-        if (d.type === 'recipient') return '#10b981'
-        if (d.type === 'implementer') return '#f59e0b'
-        if (d.type === 'sector') return '#8b5cf6'
-        return '#64748b'
+        if (d.type === 'donor') return '#4c5568'        // Blue Slate
+        if (d.type === 'recipient') return '#7b95a7'    // Cool Steel
+        if (d.type === 'implementer') return '#dc2625'  // Primary Scarlet
+        if (d.type === 'sector') return '#cfd0d5'       // Pale Slate
+        return '#4c5568' // Blue Slate default
       })
       .attr('stroke', '#fff')
       .attr('stroke-width', 2)
@@ -410,19 +414,19 @@ export default function AidFlowNetworkGraph({
         </div>
         <div className="space-y-1">
           <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded-full bg-blue-500"></div>
+            <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#4c5568' }}></div>
             <span className="text-xs">Donor</span>
           </div>
           <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded-full bg-green-500"></div>
+            <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#7b95a7' }}></div>
             <span className="text-xs">Recipient</span>
           </div>
           <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded-full bg-amber-500"></div>
+            <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#dc2625' }}></div>
             <span className="text-xs">Implementer</span>
           </div>
           <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded-full bg-purple-500"></div>
+            <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#cfd0d5' }}></div>
             <span className="text-xs">Sector</span>
           </div>
         </div>
@@ -431,15 +435,15 @@ export default function AidFlowNetworkGraph({
           <span className="text-sm font-medium">Flow Types</span>
           <div className="space-y-1 mt-2">
             <div className="flex items-center gap-2">
-              <div className="w-4 h-0.5 bg-slate-400"></div>
+              <div className="w-4 h-0.5" style={{ backgroundColor: '#7b95a7' }}></div>
               <span className="text-xs">Commitment</span>
             </div>
             <div className="flex items-center gap-2">
-              <div className="w-4 h-0.5 bg-green-500"></div>
+              <div className="w-4 h-0.5" style={{ backgroundColor: '#dc2625' }}></div>
               <span className="text-xs">Disbursement</span>
             </div>
             <div className="flex items-center gap-2">
-              <div className="w-4 h-0.5 bg-amber-500"></div>
+              <div className="w-4 h-0.5" style={{ backgroundColor: '#4c5568' }}></div>
               <span className="text-xs">Expenditure</span>
             </div>
           </div>
@@ -463,9 +467,9 @@ export default function AidFlowNetworkGraph({
                 <span 
                   className="w-2 h-2 rounded-full" 
                   style={{ 
-                    backgroundColor: tooltip.node.type === 'donor' ? '#3b82f6' : 
-                                    tooltip.node.type === 'recipient' ? '#10b981' : 
-                                    tooltip.node.type === 'implementer' ? '#f59e0b' : '#8b5cf6' 
+                    backgroundColor: tooltip.node.type === 'donor' ? '#4c5568' : 
+                                    tooltip.node.type === 'recipient' ? '#7b95a7' : 
+                                    tooltip.node.type === 'implementer' ? '#dc2625' : '#cfd0d5' 
                   }}
                 />
                 <span className="text-xs text-slate-300 capitalize">{tooltip.node.type}</span>
@@ -520,8 +524,8 @@ export default function AidFlowNetworkGraph({
                     <span 
                       className="capitalize font-medium"
                       style={{
-                        color: tooltip.link.flowType === 'commitment' ? '#94a3b8' :
-                               tooltip.link.flowType === 'disbursement' ? '#10b981' : '#f59e0b'
+                        color: tooltip.link.flowType === 'commitment' ? '#7b95a7' :
+                               tooltip.link.flowType === 'disbursement' ? '#dc2625' : '#4c5568'
                       }}
                     >
                       {tooltip.link.flowType}
@@ -572,9 +576,9 @@ export default function AidFlowNetworkGraph({
             <span 
               className="w-2 h-2 rounded-full" 
               style={{ 
-                backgroundColor: selectedNode.type === 'donor' ? '#3b82f6' : 
-                                selectedNode.type === 'recipient' ? '#10b981' : 
-                                selectedNode.type === 'implementer' ? '#f59e0b' : '#8b5cf6' 
+                backgroundColor: selectedNode.type === 'donor' ? '#4c5568' : 
+                                selectedNode.type === 'recipient' ? '#7b95a7' : 
+                                selectedNode.type === 'implementer' ? '#dc2625' : '#cfd0d5' 
               }}
             />
             <span className="text-xs text-slate-300 capitalize">{selectedNode.type}</span>

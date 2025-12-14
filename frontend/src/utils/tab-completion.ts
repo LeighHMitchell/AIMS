@@ -637,6 +637,89 @@ export function checkGovernmentInputsTabCompletion(governmentInputs: any): TabCo
   }
 }
 /**
+ * Check if the Metadata tab is complete based on any metadata field having data
+ */
+export function checkMetadataTabCompletion(metadata: any): TabCompletionStatus {
+  const completedFields: string[] = []
+  const missingFields: string[] = []
+  
+  // Complete if at least one metadata field has data
+  const hasData = 
+    metadata?.publication_status ||
+    metadata?.submission_status ||
+    metadata?.language ||
+    metadata?.reporting_org_id ||
+    metadata?.created_by_org_name;
+  
+  if (hasData) {
+    completedFields.push('metadata')
+  } else {
+    missingFields.push('metadata')
+  }
+  
+  return {
+    isComplete: !!hasData,
+    isInProgress: false,
+    completedFields,
+    missingFields
+  }
+}
+
+/**
+ * Check if the XML Import tab is complete based on import status
+ */
+export function checkXmlImportTabCompletion(importStatus: { stage?: string }): TabCompletionStatus {
+  const completedFields: string[] = []
+  const missingFields: string[] = []
+  
+  // Complete if import has been successfully completed
+  const isComplete = importStatus?.stage === 'complete'
+  const isInProgress = importStatus?.stage === 'importing' || importStatus?.stage === 'parsing'
+  
+  if (isComplete) {
+    completedFields.push('xml_import')
+  } else {
+    missingFields.push('xml_import')
+  }
+  
+  return {
+    isComplete,
+    isInProgress,
+    completedFields,
+    missingFields
+  }
+}
+
+/**
+ * Check if the Government Endorsement tab is complete based on any endorsement field having data
+ */
+export function checkGovernmentEndorsementTabCompletion(endorsement: any): TabCompletionStatus {
+  const completedFields: string[] = []
+  const missingFields: string[] = []
+  
+  // Complete if at least one endorsement field has data
+  const hasData = 
+    endorsement?.effective_date ||
+    endorsement?.validation_status ||
+    endorsement?.validating_authority ||
+    endorsement?.document_title ||
+    endorsement?.document_url;
+  
+  if (hasData) {
+    completedFields.push('endorsement')
+  } else {
+    missingFields.push('endorsement')
+  }
+  
+  return {
+    isComplete: !!hasData,
+    isInProgress: false,
+    completedFields,
+    missingFields
+  }
+}
+
+/**
  * Check if the Aid Effectiveness tab is complete based on required fields
  */
 export function checkAidEffectivenessTabCompletion(data: any): TabCompletionStatus {
@@ -804,6 +887,12 @@ export function getTabCompletionStatus(
       return checkGovernmentInputsTabCompletion(data);
     case 'aid_effectiveness':
       return checkAidEffectivenessTabCompletion(data);
+    case 'metadata':
+      return checkMetadataTabCompletion(data);
+    case 'xml-import':
+      return checkXmlImportTabCompletion(data);
+    case 'government_endorsement':
+      return checkGovernmentEndorsementTabCompletion(data);
     // Add other tabs here as needed
     default:
       return null;

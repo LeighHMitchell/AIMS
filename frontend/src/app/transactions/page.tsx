@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { MainLayout } from "@/components/layout/main-layout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,7 +9,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { useRouter } from "next/navigation";
 import { format } from "date-fns";
 import { toast } from "sonner";
-import { Download, ChevronUp, ChevronDown, ChevronsUpDown, Frown, ChevronLeft, ChevronRight, Columns3 } from "lucide-react";
+import { Download, ChevronUp, ChevronDown, ChevronsUpDown, Frown, ChevronLeft, ChevronRight, Columns3, Search } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
@@ -134,6 +134,7 @@ interface TransactionColumnSelectorProps {
 
 function TransactionColumnSelector({ visibleColumns, onColumnsChange }: TransactionColumnSelectorProps) {
   const [open, setOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
   const toggleColumn = (columnId: TransactionColumnId) => {
     const config = TRANSACTION_COLUMN_CONFIGS.find(c => c.id === columnId);
@@ -181,8 +182,20 @@ function TransactionColumnSelector({ visibleColumns, onColumnsChange }: Transact
 
   const totalToggleable = TRANSACTION_COLUMN_CONFIGS.filter(c => !c.alwaysVisible).length;
 
+  // Filter columns based on search query
+  const filteredColumns = useMemo(() => {
+    if (!searchQuery.trim()) return null; // null means show grouped view
+    const query = searchQuery.toLowerCase();
+    return TRANSACTION_COLUMN_CONFIGS.filter(c => 
+      !c.alwaysVisible && c.label.toLowerCase().includes(query)
+    );
+  }, [searchQuery]);
+
   return (
-    <Popover open={open} onOpenChange={setOpen}>
+    <Popover open={open} onOpenChange={(isOpen) => {
+      setOpen(isOpen);
+      if (!isOpen) setSearchQuery(''); // Clear search when closing
+    }}>
       <PopoverTrigger asChild>
         <Button variant="outline" size="sm" className="gap-2">
           <Columns3 className="h-4 w-4" />
@@ -219,47 +232,85 @@ function TransactionColumnSelector({ visibleColumns, onColumnsChange }: Transact
           <p className="text-xs text-muted-foreground mt-1">
             {visibleCount} of {totalToggleable} columns visible
           </p>
+          <div className="relative mt-2">
+            <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search columns..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-8 h-8 text-sm"
+            />
+          </div>
         </div>
         <div className="max-h-[400px] overflow-y-auto">
-          {(Object.keys(TRANSACTION_COLUMN_GROUPS) as Array<keyof typeof TRANSACTION_COLUMN_GROUPS>).map(groupKey => {
-            const groupColumns = TRANSACTION_COLUMN_CONFIGS.filter(c => c.group === groupKey && !c.alwaysVisible);
-            if (groupColumns.length === 0) return null;
-            
-            const allVisible = groupColumns.every(c => visibleColumns.includes(c.id));
-            const someVisible = groupColumns.some(c => visibleColumns.includes(c.id));
-            
-            return (
-              <div key={groupKey} className="border-b last:border-b-0">
-                <div 
-                  className="flex items-center gap-2 px-3 py-2 bg-muted/50 cursor-pointer hover:bg-muted/80"
-                  onClick={() => toggleGroup(groupKey)}
-                >
-                  <Checkbox 
-                    checked={allVisible}
-                    // @ts-ignore - indeterminate is valid but not in types
-                    indeterminate={someVisible && !allVisible}
-                    onCheckedChange={() => toggleGroup(groupKey)}
-                  />
-                  <span className="text-sm font-medium">{TRANSACTION_COLUMN_GROUPS[groupKey]}</span>
-                </div>
-                <div className="py-1">
-                  {groupColumns.map(column => (
-                    <div
-                      key={column.id}
-                      className="flex items-center gap-2 px-3 py-1.5 hover:bg-muted/50 cursor-pointer"
-                      onClick={() => toggleColumn(column.id)}
-                    >
-                      <Checkbox 
-                        checked={visibleColumns.includes(column.id)}
-                        onCheckedChange={() => toggleColumn(column.id)}
-                      />
-                      <span className="text-sm">{column.label}</span>
-                    </div>
-                  ))}
-                </div>
+          {filteredColumns ? (
+            // Show flat filtered list when searching
+            filteredColumns.length === 0 ? (
+              <div className="p-3 text-sm text-muted-foreground text-center">
+                No columns match "{searchQuery}"
               </div>
-            );
-          })}
+            ) : (
+              <div className="py-1">
+                {filteredColumns.map(column => (
+                  <div
+                    key={column.id}
+                    className="flex items-center gap-2 px-3 py-1.5 hover:bg-muted/50 cursor-pointer"
+                    onClick={() => toggleColumn(column.id)}
+                  >
+                    <Checkbox 
+                      checked={visibleColumns.includes(column.id)}
+                      onCheckedChange={() => toggleColumn(column.id)}
+                    />
+                    <span className="text-sm">{column.label}</span>
+                    <span className="text-xs text-muted-foreground ml-auto">
+                      {TRANSACTION_COLUMN_GROUPS[column.group as keyof typeof TRANSACTION_COLUMN_GROUPS]}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )
+          ) : (
+            // Show grouped view when not searching
+            (Object.keys(TRANSACTION_COLUMN_GROUPS) as Array<keyof typeof TRANSACTION_COLUMN_GROUPS>).map(groupKey => {
+              const groupColumns = TRANSACTION_COLUMN_CONFIGS.filter(c => c.group === groupKey && !c.alwaysVisible);
+              if (groupColumns.length === 0) return null;
+              
+              const allVisible = groupColumns.every(c => visibleColumns.includes(c.id));
+              const someVisible = groupColumns.some(c => visibleColumns.includes(c.id));
+              
+              return (
+                <div key={groupKey} className="border-b last:border-b-0">
+                  <div 
+                    className="flex items-center gap-2 px-3 py-2 bg-muted/50 cursor-pointer hover:bg-muted/80"
+                    onClick={() => toggleGroup(groupKey)}
+                  >
+                    <Checkbox 
+                      checked={allVisible}
+                      // @ts-ignore - indeterminate is valid but not in types
+                      indeterminate={someVisible && !allVisible}
+                      onCheckedChange={() => toggleGroup(groupKey)}
+                    />
+                    <span className="text-sm font-medium">{TRANSACTION_COLUMN_GROUPS[groupKey]}</span>
+                  </div>
+                  <div className="py-1">
+                    {groupColumns.map(column => (
+                      <div
+                        key={column.id}
+                        className="flex items-center gap-2 px-3 py-1.5 hover:bg-muted/50 cursor-pointer"
+                        onClick={() => toggleColumn(column.id)}
+                      >
+                        <Checkbox 
+                          checked={visibleColumns.includes(column.id)}
+                          onCheckedChange={() => toggleColumn(column.id)}
+                        />
+                        <span className="text-sm">{column.label}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })
+          )}
         </div>
       </PopoverContent>
     </Popover>

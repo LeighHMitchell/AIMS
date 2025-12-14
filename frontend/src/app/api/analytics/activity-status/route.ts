@@ -9,6 +9,15 @@ interface StatusData {
   percentage: number;
 }
 
+interface ActivityDetail {
+  id: string;
+  title: string;
+  iati_identifier: string | null;
+  activity_status: string;
+  publication_status: string;
+  submission_status: string;
+}
+
 export async function GET() {
   try {
     const supabaseAdmin = getSupabaseAdmin();
@@ -20,10 +29,10 @@ export async function GET() {
       );
     }
 
-    // Get all activities with their status fields
+    // Get all activities with their status fields and details for table view
     const { data: activities, error } = await supabaseAdmin
       .from('activities')
-      .select('activity_status, publication_status, submission_status');
+      .select('id, title_narrative, iati_identifier, activity_status, publication_status, submission_status');
 
     if (error) {
       console.error('Error fetching activities:', error);
@@ -49,8 +58,8 @@ export async function GET() {
     const submissionStatusCounts = new Map<string, number>();
 
     activities.forEach((activity: any) => {
-      // Activity Status
-      const activityStatus = activity.activity_status || 'Unknown';
+      // Activity Status - default to '1' (Pipeline) for consistency with IATI standard
+      const activityStatus = activity.activity_status || '1';
       activityStatusCounts.set(activityStatus, (activityStatusCounts.get(activityStatus) || 0) + 1);
 
       // Publication Status
@@ -79,12 +88,23 @@ export async function GET() {
     const publicationStatus = createStatusArray(publicationStatusCounts);
     const submissionStatus = createStatusArray(submissionStatusCounts);
 
+    // Create activity details list for table view
+    const activityDetails: ActivityDetail[] = activities.map((activity: any) => ({
+      id: activity.id,
+      title: activity.title_narrative || 'Untitled Activity',
+      iati_identifier: activity.iati_identifier,
+      activity_status: activity.activity_status || '1', // Default to Pipeline for consistency
+      publication_status: activity.publication_status || 'Unknown',
+      submission_status: activity.submission_status || 'Unknown'
+    }));
+
     return NextResponse.json({
       data: {
         activityStatus,
         publicationStatus,
         submissionStatus
       },
+      activityDetails,
       summary: {
         totalActivities,
         activityStatusTypes: activityStatus.length,

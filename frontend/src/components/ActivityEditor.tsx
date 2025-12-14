@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import toast from 'react-hot-toast';
 import { CommentsDrawer } from './activities/CommentsDrawer';
+import { DateRevisionHistory } from './activities/DateRevisionHistory';
+import { DatePicker } from '@/components/ui/date-picker';
 
 // Initialize Supabase client
 const supabase = createClient(
@@ -261,17 +263,24 @@ export default function ActivityEditor({ activityId, initialData = {} }: Activit
               <label htmlFor="planned_start_date" className="block text-sm font-medium text-gray-700">
                 Planned Start Date
               </label>
-              <input
-                type="date"
-                id="planned_start_date"
-                value={formData.planned_start_date || ''}
-                onChange={(e) => {
-                  handleFieldChange('planned_start_date', e.target.value);
-                  handleFieldBlur('planned_start_date', e.target.value);
-                }}
-                disabled={saving.planned_start_date}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
-              />
+              <div className="flex items-center gap-2">
+                <DatePicker
+                  id="planned_start_date"
+                  value={formData.planned_start_date || ''}
+                  onChange={(value) => {
+                    handleFieldChange('planned_start_date', value);
+                    handleFieldBlur('planned_start_date', value);
+                  }}
+                  disabled={saving.planned_start_date}
+                  placeholder="Select planned start date"
+                  className="flex-1"
+                />
+                <DateRevisionHistory
+                  activityId={activityId}
+                  dateField="planned_start_date"
+                  currentValue={formData.planned_start_date}
+                />
+              </div>
               {saving.planned_start_date && (
                 <p className="text-xs text-blue-600">Saving...</p>
               )}
@@ -282,17 +291,24 @@ export default function ActivityEditor({ activityId, initialData = {} }: Activit
               <label htmlFor="planned_end_date" className="block text-sm font-medium text-gray-700">
                 Planned End Date
               </label>
-              <input
-                type="date"
-                id="planned_end_date"
-                value={formData.planned_end_date || ''}
-                onChange={(e) => {
-                  handleFieldChange('planned_end_date', e.target.value);
-                  handleFieldBlur('planned_end_date', e.target.value);
-                }}
-                disabled={saving.planned_end_date}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
-              />
+              <div className="flex items-center gap-2">
+                <DatePicker
+                  id="planned_end_date"
+                  value={formData.planned_end_date || ''}
+                  onChange={(value) => {
+                    handleFieldChange('planned_end_date', value);
+                    handleFieldBlur('planned_end_date', value);
+                  }}
+                  disabled={saving.planned_end_date}
+                  placeholder="Select planned end date"
+                  className="flex-1"
+                />
+                <DateRevisionHistory
+                  activityId={activityId}
+                  dateField="planned_end_date"
+                  currentValue={formData.planned_end_date}
+                />
+              </div>
               {saving.planned_end_date && (
                 <p className="text-xs text-blue-600">Saving...</p>
               )}
@@ -303,17 +319,24 @@ export default function ActivityEditor({ activityId, initialData = {} }: Activit
               <label htmlFor="actual_start_date" className="block text-sm font-medium text-gray-700">
                 Actual Start Date
               </label>
-              <input
-                type="date"
-                id="actual_start_date"
-                value={formData.actual_start_date || ''}
-                onChange={(e) => {
-                  handleFieldChange('actual_start_date', e.target.value);
-                  handleFieldBlur('actual_start_date', e.target.value);
-                }}
-                disabled={saving.actual_start_date}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
-              />
+              <div className="flex items-center gap-2">
+                <DatePicker
+                  id="actual_start_date"
+                  value={formData.actual_start_date || ''}
+                  onChange={(value) => {
+                    handleFieldChange('actual_start_date', value);
+                    handleFieldBlur('actual_start_date', value);
+                  }}
+                  disabled={saving.actual_start_date}
+                  placeholder="Select actual start date"
+                  className="flex-1"
+                />
+                <DateRevisionHistory
+                  activityId={activityId}
+                  dateField="actual_start_date"
+                  currentValue={formData.actual_start_date}
+                />
+              </div>
               {saving.actual_start_date && (
                 <p className="text-xs text-blue-600">Saving...</p>
               )}
@@ -324,17 +347,24 @@ export default function ActivityEditor({ activityId, initialData = {} }: Activit
               <label htmlFor="actual_end_date" className="block text-sm font-medium text-gray-700">
                 Actual End Date
               </label>
-              <input
-                type="date"
-                id="actual_end_date"
-                value={formData.actual_end_date || ''}
-                onChange={(e) => {
-                  handleFieldChange('actual_end_date', e.target.value);
-                  handleFieldBlur('actual_end_date', e.target.value);
-                }}
-                disabled={saving.actual_end_date}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
-              />
+              <div className="flex items-center gap-2">
+                <DatePicker
+                  id="actual_end_date"
+                  value={formData.actual_end_date || ''}
+                  onChange={(value) => {
+                    handleFieldChange('actual_end_date', value);
+                    handleFieldBlur('actual_end_date', value);
+                  }}
+                  disabled={saving.actual_end_date}
+                  placeholder="Select actual end date"
+                  className="flex-1"
+                />
+                <DateRevisionHistory
+                  activityId={activityId}
+                  dateField="actual_end_date"
+                  currentValue={formData.actual_end_date}
+                />
+              </div>
               {saving.actual_end_date && (
                 <p className="text-xs text-blue-600">Saving...</p>
               )}

@@ -227,6 +227,31 @@ export default function PolicyMarkersSectionIATIWithCustom({ activityId, policyM
     setHasUnsavedChanges?.(true);
   };
 
+  // Update marker rationale
+  const updateMarkerRationale = (markerUuid: string, rationale: string) => {
+    const newSelectedMarkers = new Map(selectedMarkers);
+    const existingMarker = newSelectedMarkers.get(markerUuid);
+    
+    if (existingMarker) {
+      newSelectedMarkers.set(markerUuid, {
+        ...existingMarker,
+        rationale
+      });
+      
+      setSelectedMarkers(newSelectedMarkers);
+      
+      const markersArray = Array.from(newSelectedMarkers.values());
+      onChange(markersArray);
+      
+      if (policyMarkersAutosave) {
+        const validMarkers = markersArray.filter(m => m.significance && m.significance > 0);
+        policyMarkersAutosave.triggerFieldSave(validMarkers);
+      }
+      
+      setHasUnsavedChanges?.(true);
+    }
+  };
+
   // Add custom policy marker
   const addCustomMarker = async () => {
     if (!customMarkerForm.name.trim()) {
@@ -533,10 +558,26 @@ export default function PolicyMarkersSectionIATIWithCustom({ activityId, policyM
           )}
           
           {/* Rationale */}
-          {isSelected && rationale && (
+          {isSelected && (
             <div>
-              <Label className="text-xs font-medium mb-1 block text-slate-700">Rationale</Label>
-              <p className="text-xs text-slate-600 line-clamp-2">{rationale}</p>
+              <Label className="text-xs font-medium mb-1 block text-slate-700">
+                Rationale {readOnly ? '' : '(Optional)'}
+              </Label>
+              {readOnly ? (
+                rationale ? (
+                  <p className="text-xs text-slate-600 line-clamp-2">{rationale}</p>
+                ) : (
+                  <p className="text-xs text-slate-400 italic">No rationale provided</p>
+                )
+              ) : (
+                <Textarea
+                  value={rationale}
+                  onChange={(e) => updateMarkerRationale(markerUuid, e.target.value)}
+                  placeholder="Provide a short description or rationale for the selected degree of significance..."
+                  className="text-xs min-h-[60px]"
+                  rows={2}
+                />
+              )}
             </div>
           )}
           

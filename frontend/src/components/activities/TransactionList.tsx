@@ -48,6 +48,7 @@ import {
   ChevronLeft,
   ChevronRight,
   FileText,
+  Info,
   ExternalLink,
   Link as LinkIcon,
   Columns3,
@@ -464,7 +465,7 @@ export default function TransactionList({
   const [financeTypeFilter, setFinanceTypeFilter] = useState<string>('all');
   
   // Grouped view state
-  const [groupedView, setGroupedView] = useState(false);
+  const [groupedView, setGroupedView] = useState(true);
   
   // Track if component is mounted for portal rendering
   const [isMounted, setIsMounted] = useState(false);
@@ -1919,7 +1920,7 @@ export default function TransactionList({
                       {/* Humanitarian (optional) */}
                       {isColumnVisible('humanitarian') && (
                         <TableCell className="py-3 px-4 text-center whitespace-nowrap">
-                          {transaction.humanitarian ? (
+                          {transaction.is_humanitarian ? (
                             <Heart className="h-4 w-4 text-red-500 mx-auto" />
                           ) : (
                             <span className="text-gray-400">—</span>

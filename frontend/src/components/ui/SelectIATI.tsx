@@ -34,6 +34,7 @@ interface SelectIATIProps {
   helperText?: string;
   copyValue?: string; // Optional value to copy to clipboard
   onCopySuccess?: () => void;
+  hideGroupLabels?: boolean; // Hide group category labels
 }
 
 export function SelectIATI({
@@ -52,6 +53,7 @@ export function SelectIATI({
   helperText,
   copyValue,
   onCopySuccess,
+  hideGroupLabels = false,
 }: SelectIATIProps) {
   // Use shared dropdown state if dropdownId is provided
   const { isOpen, setOpen } = useDropdownState(dropdownId);
@@ -186,7 +188,7 @@ export function SelectIATI({
                     setSearchQuery('');
                   }
                 }}
-                className="flex h-9 w-full rounded-md bg-transparent py-2 px-3 text-sm outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50 border-none focus:ring-0 focus:border-none"
+                className="flex h-9 w-full rounded-md bg-transparent py-2 text-sm outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50 border-none focus:ring-0 focus:border-none"
                 autoFocus
               />
               {searchQuery && (
@@ -204,9 +206,11 @@ export function SelectIATI({
             <CommandList className="max-h-[200px]">
               {Object.entries(groupedOptions).map(([groupName, options]) => (
                 <CommandGroup key={groupName}>
-                  <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground bg-muted/50">
-                    {groupName}
-                  </div>
+                  {!hideGroupLabels && (
+                    <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground bg-muted/50">
+                      {groupName}
+                    </div>
+                  )}
                   {options.map((option) => (
                     <CommandItem
                       key={option.code}
@@ -215,7 +219,7 @@ export function SelectIATI({
                         setOpen(false);
                         setSearchQuery('');
                       }}
-                      className="pl-6 cursor-pointer py-3 hover:bg-accent/50 focus:bg-accent data-[selected]:bg-accent transition-colors"
+                      className="px-3 cursor-pointer py-3 hover:bg-accent/50 focus:bg-accent data-[selected]:bg-accent transition-colors"
                     >
                       <Check
                         className={cn(

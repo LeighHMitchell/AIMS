@@ -1403,6 +1403,8 @@ function OrganizationsPageContent() {
         org.name.toLowerCase().includes(searchLower) ||
         org.acronym?.toLowerCase().includes(searchLower) ||
         org.description?.toLowerCase().includes(searchLower) ||
+        // Search by IATI Organisation ID (e.g., GB-GOV-1)
+        org.iati_org_id?.toLowerCase().includes(searchLower) ||
         // Search in alias_refs (Legacy/Internal Codes)
         org.alias_refs?.some(alias => alias?.toLowerCase().includes(searchLower)) ||
         // Search in name_aliases (Alternate Names)

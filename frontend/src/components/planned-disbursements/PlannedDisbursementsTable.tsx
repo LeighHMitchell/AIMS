@@ -713,7 +713,7 @@ export function PlannedDisbursementsTable({
                                 {/* Provider */}
                                 <div className="flex items-start gap-1 flex-1 min-w-0">
                                   <OrganizationLogo
-                                    logo={null}
+                                    logo={disbursement.provider_org_logo}
                                     name={providerDisplay}
                                     size="sm"
                                     className="flex-shrink-0 mt-0.5"
@@ -744,7 +744,7 @@ export function PlannedDisbursementsTable({
                                 {/* Receiver */}
                                 <div className="flex items-start gap-1 flex-1 min-w-0">
                                   <OrganizationLogo
-                                    logo={null}
+                                    logo={disbursement.receiver_org_logo}
                                     name={receiverDisplay}
                                     size="sm"
                                     className="flex-shrink-0 mt-0.5"

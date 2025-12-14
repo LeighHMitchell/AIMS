@@ -87,6 +87,10 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to fetch data' }, { status: 500 });
     }
 
+    console.log('[Top10SectorFocused] Activity IDs:', activityIds.length);
+    console.log('[Top10SectorFocused] Transactions found:', transactions?.length || 0);
+    console.log('[Top10SectorFocused] Date range:', { dateFrom, dateTo });
+
     // Get sector name
     let sectorName = 'All Sectors';
     if (sector && sector !== 'all') {
@@ -102,14 +106,21 @@ export async function GET(request: NextRequest) {
 
     // Aggregate by donor organization
     const donorTotals = new Map<string, number>();
+    let transactionsWithoutProvider = 0;
 
     transactions?.forEach((t: any) => {
-      if (!t.provider_org_id) return;
+      if (!t.provider_org_id) {
+        transactionsWithoutProvider++;
+        return;
+      }
       
       const value = parseFloat(t.value_usd?.toString() || '0') || 0;
       const current = donorTotals.get(t.provider_org_id) || 0;
       donorTotals.set(t.provider_org_id, current + value);
     });
+
+    console.log('[Top10SectorFocused] Transactions without provider_org_id:', transactionsWithoutProvider);
+    console.log('[Top10SectorFocused] Unique organizations:', donorTotals.size);
 
     // Get organization names
     const orgIds = Array.from(donorTotals.keys());

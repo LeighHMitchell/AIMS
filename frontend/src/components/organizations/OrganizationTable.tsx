@@ -119,19 +119,34 @@ const getOrganizationTypeLabel = (
   return type?.label || typeCode;
 };
 
-// Get type badge variant
-const getTypeBadgeVariant = (typeCode: string | undefined): "default" | "secondary" | "outline" => {
-  if (!typeCode) return 'outline';
+// Get type badge variant - category-specific colors
+const getTypeBadgeVariant = (typeCode: string | undefined): string => {
+  if (!typeCode) return 'gray';
   const code = parseInt(typeCode);
   
-  // Government types
-  if (code === 10 || code === 11 || code === 15) return 'default';
-  // Multilateral
-  if (code === 40) return 'secondary';
-  // NGOs
-  if (code >= 21 && code <= 23) return 'outline';
+  // Government (10, 11, 15) - Blue
+  if (code === 10 || code === 11 || code === 15) return 'blue';
   
-  return 'outline';
+  // NGO (21, 22, 23, 24) - Green
+  if (code >= 21 && code <= 24) return 'green';
+  
+  // Partnership (30) - Purple
+  if (code === 30) return 'purple';
+  
+  // Multilateral (40) - Indigo
+  if (code === 40) return 'indigo';
+  
+  // Foundation (60) - Pink
+  if (code === 60) return 'pink';
+  
+  // Private Sector (70, 71, 72, 73) - Orange
+  if (code >= 70 && code <= 73) return 'orange';
+  
+  // Academic (80) - Cyan
+  if (code === 80) return 'cyan';
+  
+  // Other (90) and unknown - Gray
+  return 'gray';
 };
 
 export const OrganizationTable: React.FC<OrganizationTableProps> = ({

@@ -26,7 +26,7 @@ import { CreateActivityModal } from "@/components/modals/CreateActivityModal";
 
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { EnhancedDatePicker } from "@/components/ui/enhanced-date-picker";
+import { DatePicker } from "@/components/ui/date-picker";
 import { format } from "date-fns";
 import { useUser } from "@/hooks/useUser";
 import { Button } from "@/components/ui/button";
@@ -82,6 +82,7 @@ import { saveGeneralTab } from '@/lib/general-tab-service';
 import { LabelSaveIndicator, SaveIndicator } from '@/components/ui/save-indicator';
 import { getTabCompletionStatus } from "@/utils/tab-completion";
 import { useLoadingBar } from "@/hooks/useLoadingBar";
+import { useGovernmentEndorsement } from "@/hooks/use-government-endorsement";
 
 // Remove test utilities import that's causing module not found error
 // if (process.env.NODE_ENV === 'development') {
@@ -146,6 +147,18 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
   const [showCustomDateDescriptions, setShowCustomDateDescriptions] = useState<Record<number, boolean>>({});
   const [savedCustomDates, setSavedCustomDates] = useState<Record<number, boolean>>({});
   const customDatesInitializedRef = useRef(false);
+
+  // Focus state tracking for save indicators
+  const [isTitleFocused, setIsTitleFocused] = useState(false);
+  const [isObjectivesFocused, setIsObjectivesFocused] = useState(false);
+  const [isTargetGroupsFocused, setIsTargetGroupsFocused] = useState(false);
+  const [isOtherFocused, setIsOtherFocused] = useState(false);
+  const [isPlannedStartDescriptionFocused, setIsPlannedStartDescriptionFocused] = useState(false);
+  const [isPlannedEndDescriptionFocused, setIsPlannedEndDescriptionFocused] = useState(false);
+  const [isActualStartDescriptionFocused, setIsActualStartDescriptionFocused] = useState(false);
+  const [isActualEndDescriptionFocused, setIsActualEndDescriptionFocused] = useState(false);
+  const [otherIdentifiersFocusStates, setOtherIdentifiersFocusStates] = useState<Record<string, boolean>>({});
+  const [customDateFocusStates, setCustomDateFocusStates] = useState<Record<string, boolean>>({});
 
   // Initialize savedCustomDates ONLY when activity is first loaded from database
   // This runs when the activity ID changes (new activity loaded)
@@ -811,6 +824,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
             isSaving={false}
             isSaved={!!general.id && !!general.title?.trim()}
             hasValue={!!general.title?.trim()}
+            isFocused={isTitleFocused}
             className="text-gray-700"
           >
             <div className="flex items-center gap-2">
@@ -828,7 +842,9 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
                 setGeneral((g: any) => ({ ...g, title: e.target.value }));
                 setHasUnsavedChanges(true);
               }}
+              onFocus={() => setIsTitleFocused(true)}
               onBlur={() => {
+                setIsTitleFocused(false);
                 // Trigger activity creation when user enters title and navigates away
                 if (general.title?.trim() && !general.id) {
                   saveActivity({});
@@ -1171,43 +1187,48 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
       <div className="space-y-4">
         {/* Objectives Description - Always shown, collapsible */}
         <div>
-          <button
-            type="button"
-            onClick={() => setVisibleDescriptionFields(prev => ({ ...prev, objectives: !prev.objectives }))}
-            className={`w-full flex items-center gap-2 text-left hover:text-gray-900 focus:outline-none text-sm font-medium ${fieldLockStatus.isLocked ? 'text-gray-400' : 'text-gray-700'}`}
-          >
-            <svg
-              className={`w-4 h-4 text-gray-400 transition-transform ${visibleDescriptionFields.objectives ? 'rotate-90' : ''}`}
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setVisibleDescriptionFields(prev => ({ ...prev, objectives: !prev.objectives }))}
+              className={`flex items-center gap-2 text-left hover:text-gray-900 focus:outline-none ${fieldLockStatus.isLocked ? 'text-gray-400' : 'text-gray-700'}`}
             >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-            </svg>
-            Activity Description - Objectives
-            <HelpTextTooltip>
-              Describe the specific objectives that this activity aims to achieve. This should outline what the activity intends to accomplish and the changes it seeks to bring about.
-            </HelpTextTooltip>
-            {/* Save indicator right after help icon */}
-            {descriptionObjectivesAutosave.state.isSaving && (
-              <CircleDashed className="w-4 h-4 text-orange-600 animate-spin" />
-            )}
-            {!descriptionObjectivesAutosave.state.isSaving && descriptionObjectivesAutosave.state.isPersistentlySaved && !!general.descriptionObjectives?.trim() && (
-              <CheckCircle className="w-4 h-4 text-green-600" />
-            )}
-            {fieldLockStatus.isLocked && (
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Lock className="h-3 w-3 ml-2 text-gray-400" />
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>{fieldLockStatus.tooltipMessage}</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            )}
-          </button>
+              <svg
+                className={`w-4 h-4 text-gray-400 transition-transform ${visibleDescriptionFields.objectives ? 'rotate-90' : ''}`}
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </button>
+            <LabelSaveIndicator
+              isSaving={descriptionObjectivesAutosave.state.isSaving}
+              isSaved={descriptionObjectivesAutosave.state.isPersistentlySaved}
+              hasValue={!!general.descriptionObjectives?.trim()}
+              isFocused={isObjectivesFocused}
+              className={`text-sm font-medium ${fieldLockStatus.isLocked ? 'text-gray-400' : 'text-gray-700'}`}
+            >
+              <div className="flex items-center gap-2">
+                Activity Description - Objectives
+                <HelpTextTooltip>
+                  Describe the specific objectives that this activity aims to achieve. This should outline what the activity intends to accomplish and the changes it seeks to bring about.
+                </HelpTextTooltip>
+                {fieldLockStatus.isLocked && (
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Lock className="h-3 w-3 ml-2 text-gray-400" />
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>{fieldLockStatus.tooltipMessage}</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                )}
+              </div>
+            </LabelSaveIndicator>
+          </div>
           {visibleDescriptionFields.objectives && (
             <div className="mt-2">
               <div className={fieldLockStatus.isLocked ? 'opacity-50' : ''}>
@@ -1219,7 +1240,9 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
                       setHasUnsavedChanges(true);
                     }
                   }}
+                  onFocus={() => setIsObjectivesFocused(true)}
                   onBlur={(e) => {
+                    setIsObjectivesFocused(false);
                     if (!fieldLockStatus.isLocked && e.target.value.trim()) {
                       descriptionObjectivesAutosave.triggerFieldSave(e.target.value);
                     }
@@ -1237,43 +1260,48 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
 
         {/* Target Groups Description - Always shown, collapsible */}
         <div>
-          <button
-            type="button"
-            onClick={() => setVisibleDescriptionFields(prev => ({ ...prev, targetGroups: !prev.targetGroups }))}
-            className={`w-full flex items-center gap-2 text-left hover:text-gray-900 focus:outline-none text-sm font-medium ${fieldLockStatus.isLocked ? 'text-gray-400' : 'text-gray-700'}`}
-          >
-            <svg
-              className={`w-4 h-4 text-gray-400 transition-transform ${visibleDescriptionFields.targetGroups ? 'rotate-90' : ''}`}
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setVisibleDescriptionFields(prev => ({ ...prev, targetGroups: !prev.targetGroups }))}
+              className={`flex items-center gap-2 text-left hover:text-gray-900 focus:outline-none ${fieldLockStatus.isLocked ? 'text-gray-400' : 'text-gray-700'}`}
             >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-            </svg>
-            Activity Description - Target Groups
-            <HelpTextTooltip>
-              Identify and describe the target groups that will benefit from this activity. Include information about demographics, locations, and any specific characteristics of the intended beneficiaries.
-            </HelpTextTooltip>
-            {/* Save indicator right after help icon */}
-            {descriptionTargetGroupsAutosave.state.isSaving && (
-              <CircleDashed className="w-4 h-4 text-orange-600 animate-spin" />
-            )}
-            {!descriptionTargetGroupsAutosave.state.isSaving && descriptionTargetGroupsAutosave.state.isPersistentlySaved && !!general.descriptionTargetGroups?.trim() && (
-              <CheckCircle className="w-4 h-4 text-green-600" />
-            )}
-            {fieldLockStatus.isLocked && (
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Lock className="h-3 w-3 ml-2 text-gray-400" />
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>{fieldLockStatus.tooltipMessage}</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            )}
-          </button>
+              <svg
+                className={`w-4 h-4 text-gray-400 transition-transform ${visibleDescriptionFields.targetGroups ? 'rotate-90' : ''}`}
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </button>
+            <LabelSaveIndicator
+              isSaving={descriptionTargetGroupsAutosave.state.isSaving}
+              isSaved={descriptionTargetGroupsAutosave.state.isPersistentlySaved}
+              hasValue={!!general.descriptionTargetGroups?.trim()}
+              isFocused={isTargetGroupsFocused}
+              className={`text-sm font-medium ${fieldLockStatus.isLocked ? 'text-gray-400' : 'text-gray-700'}`}
+            >
+              <div className="flex items-center gap-2">
+                Activity Description - Target Groups
+                <HelpTextTooltip>
+                  Identify and describe the target groups that will benefit from this activity. Include information about demographics, locations, and any specific characteristics of the intended beneficiaries.
+                </HelpTextTooltip>
+                {fieldLockStatus.isLocked && (
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Lock className="h-3 w-3 ml-2 text-gray-400" />
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>{fieldLockStatus.tooltipMessage}</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                )}
+              </div>
+            </LabelSaveIndicator>
+          </div>
           {visibleDescriptionFields.targetGroups && (
             <div className="mt-2">
               <div className={fieldLockStatus.isLocked ? 'opacity-50' : ''}>
@@ -1285,7 +1313,9 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
                       setHasUnsavedChanges(true);
                     }
                   }}
+                  onFocus={() => setIsTargetGroupsFocused(true)}
                   onBlur={(e) => {
+                    setIsTargetGroupsFocused(false);
                     if (!fieldLockStatus.isLocked && e.target.value.trim()) {
                       descriptionTargetGroupsAutosave.triggerFieldSave(e.target.value);
                     }
@@ -1303,43 +1333,48 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
 
         {/* Other Description - Always shown, collapsible */}
         <div>
-          <button
-            type="button"
-            onClick={() => setVisibleDescriptionFields(prev => ({ ...prev, other: !prev.other }))}
-            className={`w-full flex items-center gap-2 text-left hover:text-gray-900 focus:outline-none text-sm font-medium ${fieldLockStatus.isLocked ? 'text-gray-400' : 'text-gray-700'}`}
-          >
-            <svg
-              className={`w-4 h-4 text-gray-400 transition-transform ${visibleDescriptionFields.other ? 'rotate-90' : ''}`}
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setVisibleDescriptionFields(prev => ({ ...prev, other: !prev.other }))}
+              className={`flex items-center gap-2 text-left hover:text-gray-900 focus:outline-none ${fieldLockStatus.isLocked ? 'text-gray-400' : 'text-gray-700'}`}
             >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-            </svg>
-            Activity Description - Other
-            <HelpTextTooltip>
-              Any additional information about the activity that doesn't fit into the general description or other categories. This could include context, background information, or other relevant details.
-            </HelpTextTooltip>
-            {/* Save indicator right after help icon */}
-            {descriptionOtherAutosave.state.isSaving && (
-              <CircleDashed className="w-4 h-4 text-orange-600 animate-spin" />
-            )}
-            {!descriptionOtherAutosave.state.isSaving && descriptionOtherAutosave.state.isPersistentlySaved && !!general.descriptionOther?.trim() && (
-              <CheckCircle className="w-4 h-4 text-green-600" />
-            )}
-            {fieldLockStatus.isLocked && (
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Lock className="h-3 w-3 ml-2 text-gray-400" />
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>{fieldLockStatus.tooltipMessage}</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            )}
-          </button>
+              <svg
+                className={`w-4 h-4 text-gray-400 transition-transform ${visibleDescriptionFields.other ? 'rotate-90' : ''}`}
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </button>
+            <LabelSaveIndicator
+              isSaving={descriptionOtherAutosave.state.isSaving}
+              isSaved={descriptionOtherAutosave.state.isPersistentlySaved}
+              hasValue={!!general.descriptionOther?.trim()}
+              isFocused={isOtherFocused}
+              className={`text-sm font-medium ${fieldLockStatus.isLocked ? 'text-gray-400' : 'text-gray-700'}`}
+            >
+              <div className="flex items-center gap-2">
+                Activity Description - Other
+                <HelpTextTooltip>
+                  Any additional information about the activity that doesn't fit into the general description or other categories. This could include context, background information, or other relevant details.
+                </HelpTextTooltip>
+                {fieldLockStatus.isLocked && (
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Lock className="h-3 w-3 ml-2 text-gray-400" />
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>{fieldLockStatus.tooltipMessage}</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                )}
+              </div>
+            </LabelSaveIndicator>
+          </div>
           {visibleDescriptionFields.other && (
             <div className="mt-2">
               <div className={fieldLockStatus.isLocked ? 'opacity-50' : ''}>
@@ -1351,7 +1386,9 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
                       setHasUnsavedChanges(true);
                     }
                   }}
+                  onFocus={() => setIsOtherFocused(true)}
                   onBlur={(e) => {
+                    setIsOtherFocused(false);
                     if (!fieldLockStatus.isLocked && e.target.value.trim()) {
                       descriptionOtherAutosave.triggerFieldSave(e.target.value);
                     }
@@ -1584,31 +1621,46 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
                 )}
               </div>
             </LabelSaveIndicator>
-            <EnhancedDatePicker
-              value={general.plannedStartDate ? new Date(general.plannedStartDate + 'T00:00:00') : undefined}
-              onChange={(date) => {
+            <DatePicker
+              value={general.plannedStartDate || ''}
+              onChange={(value) => {
                 if (!fieldLockStatus.isLocked) {
-                  const dateString = formatDateToString(date);
-                  setGeneral((g: any) => ({ ...g, plannedStartDate: dateString }));
-                  plannedStartDateAutosave.triggerFieldSave(dateString);
+                  setGeneral((g: any) => ({ ...g, plannedStartDate: value }));
+                  plannedStartDateAutosave.triggerFieldSave(value);
                 }
               }}
-              placeholder="dd/mm/yyyy"
-              format="dd/mm/yyyy"
+              placeholder="Select planned start date"
               disabled={fieldLockStatus.isLocked}
               className={fieldLockStatus.isLocked ? "opacity-50" : ""}
             />
             {plannedStartDateAutosave.state.error && <p className="text-xs text-red-600">Failed to save: {plannedStartDateAutosave.state.error.message}</p>}
             <div className="mt-2">
-              <button
-                type="button"
-                onClick={() => setShowPlannedStartDescription(!showPlannedStartDescription)}
-                className="flex items-center gap-2 text-xs text-gray-600 hover:text-gray-800 transition-colors"
-                disabled={fieldLockStatus.isLocked}
-              >
-                <ChevronDown className={`h-3 w-3 transition-transform ${showPlannedStartDescription ? 'rotate-180' : ''}`} />
-                <span>{general.plannedStartDescription ? 'Edit context' : 'Add context'}</span>
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setShowPlannedStartDescription(!showPlannedStartDescription)}
+                  className="flex items-center gap-2 text-xs text-gray-600 hover:text-gray-800 transition-colors"
+                  disabled={fieldLockStatus.isLocked}
+                >
+                  <ChevronDown className={`h-3 w-3 transition-transform ${showPlannedStartDescription ? 'rotate-180' : ''}`} />
+                </button>
+                <LabelSaveIndicator
+                  isSaving={plannedStartDescriptionAutosave.state.isSaving}
+                  isSaved={plannedStartDescriptionAutosave.state.isPersistentlySaved}
+                  hasValue={!!general.plannedStartDescription?.trim()}
+                  isFocused={isPlannedStartDescriptionFocused}
+                  className="text-xs text-gray-600"
+                >
+                  <button
+                    type="button"
+                    onClick={() => setShowPlannedStartDescription(!showPlannedStartDescription)}
+                    className="hover:text-gray-800 transition-colors"
+                    disabled={fieldLockStatus.isLocked}
+                  >
+                    {general.plannedStartDescription ? 'Edit context' : 'Add context'}
+                  </button>
+                </LabelSaveIndicator>
+              </div>
               {showPlannedStartDescription && (
                 <div className="mt-2 space-y-1">
                   <label className="text-xs text-gray-600">Description/Context (optional)</label>
@@ -1620,12 +1672,12 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
                         plannedStartDescriptionAutosave.triggerFieldSave(e.target.value);
                       }
                     }}
+                    onFocus={() => setIsPlannedStartDescriptionFocused(true)}
+                    onBlur={() => setIsPlannedStartDescriptionFocused(false)}
                     placeholder="Add context about this date (e.g., 'Government approval received on this date')"
                     disabled={fieldLockStatus.isLocked}
                     className={`min-h-[60px] text-sm ${fieldLockStatus.isLocked ? "opacity-50" : ""}`}
                   />
-                  {plannedStartDescriptionAutosave.state.isSaving && <p className="text-xs text-gray-500 mt-1">Saving...</p>}
-                  {plannedStartDescriptionAutosave.state.isPersistentlySaved && <p className="text-xs text-green-600 mt-1">✓ Saved</p>}
                 </div>
               )}
             </div>
@@ -1656,31 +1708,46 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
                 )}
               </div>
             </LabelSaveIndicator>
-            <EnhancedDatePicker
-              value={general.plannedEndDate ? new Date(general.plannedEndDate + 'T00:00:00') : undefined}
-              onChange={(date) => {
+            <DatePicker
+              value={general.plannedEndDate || ''}
+              onChange={(value) => {
                 if (!fieldLockStatus.isLocked) {
-                  const dateString = formatDateToString(date);
-                  setGeneral((g: any) => ({ ...g, plannedEndDate: dateString }));
-                  plannedEndDateAutosave.triggerFieldSave(dateString);
+                  setGeneral((g: any) => ({ ...g, plannedEndDate: value }));
+                  plannedEndDateAutosave.triggerFieldSave(value);
                 }
               }}
-              placeholder="dd/mm/yyyy"
-              format="dd/mm/yyyy"
+              placeholder="Select planned end date"
               disabled={fieldLockStatus.isLocked}
               className={fieldLockStatus.isLocked ? "opacity-50" : ""}
             />
             {plannedEndDateAutosave.state.error && <p className="text-xs text-red-600">Failed to save: {plannedEndDateAutosave.state.error.message}</p>}
             <div className="mt-2">
-              <button
-                type="button"
-                onClick={() => setShowPlannedEndDescription(!showPlannedEndDescription)}
-                className="flex items-center gap-2 text-xs text-gray-600 hover:text-gray-800 transition-colors"
-                disabled={fieldLockStatus.isLocked}
-              >
-                <ChevronDown className={`h-3 w-3 transition-transform ${showPlannedEndDescription ? 'rotate-180' : ''}`} />
-                <span>{general.plannedEndDescription ? 'Edit context' : 'Add context'}</span>
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setShowPlannedEndDescription(!showPlannedEndDescription)}
+                  className="flex items-center gap-2 text-xs text-gray-600 hover:text-gray-800 transition-colors"
+                  disabled={fieldLockStatus.isLocked}
+                >
+                  <ChevronDown className={`h-3 w-3 transition-transform ${showPlannedEndDescription ? 'rotate-180' : ''}`} />
+                </button>
+                <LabelSaveIndicator
+                  isSaving={plannedEndDescriptionAutosave.state.isSaving}
+                  isSaved={plannedEndDescriptionAutosave.state.isPersistentlySaved}
+                  hasValue={!!general.plannedEndDescription?.trim()}
+                  isFocused={isPlannedEndDescriptionFocused}
+                  className="text-xs text-gray-600"
+                >
+                  <button
+                    type="button"
+                    onClick={() => setShowPlannedEndDescription(!showPlannedEndDescription)}
+                    className="hover:text-gray-800 transition-colors"
+                    disabled={fieldLockStatus.isLocked}
+                  >
+                    {general.plannedEndDescription ? 'Edit context' : 'Add context'}
+                  </button>
+                </LabelSaveIndicator>
+              </div>
               {showPlannedEndDescription && (
                 <div className="mt-2 space-y-1">
                   <label className="text-xs text-gray-600">Description/Context (optional)</label>
@@ -1692,12 +1759,12 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
                         plannedEndDescriptionAutosave.triggerFieldSave(e.target.value);
                       }
                     }}
+                    onFocus={() => setIsPlannedEndDescriptionFocused(true)}
+                    onBlur={() => setIsPlannedEndDescriptionFocused(false)}
                     placeholder="Add context about this date"
                     disabled={fieldLockStatus.isLocked}
                     className={`min-h-[60px] text-sm ${fieldLockStatus.isLocked ? "opacity-50" : ""}`}
                   />
-                  {plannedEndDescriptionAutosave.state.isSaving && <p className="text-xs text-gray-500 mt-1">Saving...</p>}
-                  {plannedEndDescriptionAutosave.state.isPersistentlySaved && <p className="text-xs text-green-600 mt-1">✓ Saved</p>}
                 </div>
               )}
             </div>
@@ -1728,17 +1795,15 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
                 )}
               </div>
             </LabelSaveIndicator>
-            <EnhancedDatePicker
-              value={general.actualStartDate ? new Date(general.actualStartDate + 'T00:00:00') : undefined}
-              onChange={(date) => {
+            <DatePicker
+              value={general.actualStartDate || ''}
+              onChange={(value) => {
                 if (!fieldLockStatus.isLocked && getDateFieldStatus().actualStartDate) {
-                  const dateString = formatDateToString(date);
-                  setGeneral((g: any) => ({ ...g, actualStartDate: dateString }));
-                  actualStartDateAutosave.triggerFieldSave(dateString);
+                  setGeneral((g: any) => ({ ...g, actualStartDate: value }));
+                  actualStartDateAutosave.triggerFieldSave(value);
                 }
               }}
-              placeholder="dd/mm/yyyy"
-              format="dd/mm/yyyy"
+              placeholder="Select actual start date"
               disabled={fieldLockStatus.isLocked || !getDateFieldStatus().actualStartDate}
               className={(fieldLockStatus.isLocked || !getDateFieldStatus().actualStartDate) ? "opacity-50" : ""}
             />
@@ -1800,31 +1865,46 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
                 )}
               </div>
             </LabelSaveIndicator>
-            <EnhancedDatePicker
-              value={general.actualEndDate ? new Date(general.actualEndDate + 'T00:00:00') : undefined}
-              onChange={(date) => {
+            <DatePicker
+              value={general.actualEndDate || ''}
+              onChange={(value) => {
                 if (!fieldLockStatus.isLocked && getDateFieldStatus().actualEndDate) {
-                  const dateString = formatDateToString(date);
-                  setGeneral((g: any) => ({ ...g, actualEndDate: dateString }));
-                  actualEndDateAutosave.triggerFieldSave(dateString);
+                  setGeneral((g: any) => ({ ...g, actualEndDate: value }));
+                  actualEndDateAutosave.triggerFieldSave(value);
                 }
               }}
-              placeholder="dd/mm/yyyy"
-              format="dd/mm/yyyy"
+              placeholder="Select actual end date"
               disabled={fieldLockStatus.isLocked || !getDateFieldStatus().actualEndDate}
               className={(fieldLockStatus.isLocked || !getDateFieldStatus().actualEndDate) ? "opacity-50" : ""}
             />
             {actualEndDateAutosave.state.error && <p className="text-xs text-red-600">Failed to save: {actualEndDateAutosave.state.error.message}</p>}
             <div className="mt-2">
-              <button
-                type="button"
-                onClick={() => setShowActualEndDescription(!showActualEndDescription)}
-                className="flex items-center gap-2 text-xs text-gray-600 hover:text-gray-800 transition-colors"
-                disabled={fieldLockStatus.isLocked || !getDateFieldStatus().actualEndDate}
-              >
-                <ChevronDown className={`h-3 w-3 transition-transform ${showActualEndDescription ? 'rotate-180' : ''}`} />
-                <span>{general.actualEndDescription ? 'Edit context' : 'Add context'}</span>
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setShowActualEndDescription(!showActualEndDescription)}
+                  className="flex items-center gap-2 text-xs text-gray-600 hover:text-gray-800 transition-colors"
+                  disabled={fieldLockStatus.isLocked || !getDateFieldStatus().actualEndDate}
+                >
+                  <ChevronDown className={`h-3 w-3 transition-transform ${showActualEndDescription ? 'rotate-180' : ''}`} />
+                </button>
+                <LabelSaveIndicator
+                  isSaving={actualEndDescriptionAutosave.state.isSaving}
+                  isSaved={actualEndDescriptionAutosave.state.isPersistentlySaved}
+                  hasValue={!!general.actualEndDescription?.trim()}
+                  isFocused={isActualEndDescriptionFocused}
+                  className="text-xs text-gray-600"
+                >
+                  <button
+                    type="button"
+                    onClick={() => setShowActualEndDescription(!showActualEndDescription)}
+                    className="hover:text-gray-800 transition-colors"
+                    disabled={fieldLockStatus.isLocked || !getDateFieldStatus().actualEndDate}
+                  >
+                    {general.actualEndDescription ? 'Edit context' : 'Add context'}
+                  </button>
+                </LabelSaveIndicator>
+              </div>
               {showActualEndDescription && (
                 <div className="mt-2 space-y-1">
                   <label className="text-xs text-gray-600">Description/Context (optional)</label>
@@ -1836,20 +1916,29 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
                         actualEndDescriptionAutosave.triggerFieldSave(e.target.value);
                       }
                     }}
+                    onFocus={() => setIsActualEndDescriptionFocused(true)}
+                    onBlur={() => setIsActualEndDescriptionFocused(false)}
                     placeholder="Add context about this date"
                     disabled={fieldLockStatus.isLocked || !getDateFieldStatus().actualEndDate}
                     className={`min-h-[60px] text-sm ${(fieldLockStatus.isLocked || !getDateFieldStatus().actualEndDate) ? "opacity-50" : ""}`}
                   />
-                  {actualEndDescriptionAutosave.state.isSaving && <p className="text-xs text-gray-500 mt-1">Saving...</p>}
-                  {actualEndDescriptionAutosave.state.isPersistentlySaved && <p className="text-xs text-green-600 mt-1">✓ Saved</p>}
                 </div>
               )}
             </div>
           </div>
         </div>
 
-        {/* Custom Activity Dates */}
-        {(general.customDates || []).map((customDate: any, index: number) => {
+        {/* Other Activity Dates Section */}
+        <div className="space-y-4 mt-6">
+          <div className="flex items-center gap-2">
+            <h3 className="text-sm font-semibold text-gray-900">Other Activity Dates</h3>
+            <HelpTextTooltip>
+              Additional custom dates for this activity, such as government approval dates or milestone dates.
+            </HelpTextTooltip>
+          </div>
+
+          {/* Custom Activity Dates */}
+          {(general.customDates || []).map((customDate: any, index: number) => {
           // Check if user has clicked "Save Date Type" button (or loaded from database with label)
           const isSaved = savedCustomDates[index] === true;
 
@@ -1859,9 +1948,15 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
-                      <label className="text-sm font-medium text-gray-700">
+                      <LabelSaveIndicator
+                        isSaving={customDatesAutosave.state.isSaving}
+                        isSaved={false}
+                        hasValue={!!customDate.label?.trim()}
+                        isFocused={customDateFocusStates[`${index}-label`] || false}
+                        className="text-sm font-medium text-gray-700"
+                      >
                         Date Type/Label
-                      </label>
+                      </LabelSaveIndicator>
                       <button
                         type="button"
                         onClick={() => {
@@ -1892,7 +1987,9 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
                           setGeneral((g: any) => ({ ...g, customDates: updatedDates }));
                         }
                       }}
+                      onFocus={() => setCustomDateFocusStates(prev => ({ ...prev, [`${index}-label`]: true }))}
                       onBlur={() => {
+                        setCustomDateFocusStates(prev => ({ ...prev, [`${index}-label`]: false }));
                         if (!fieldLockStatus.isLocked && customDate.label?.trim()) {
                           setSavedCustomDates(prev => ({ ...prev, [index]: true }));
                           customDatesAutosave.triggerFieldSave(general.customDates);
@@ -1914,6 +2011,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
                         isSaving={customDatesAutosave.state.isSaving}
                         isSaved={customDatesAutosave.state.isPersistentlySaved}
                         hasValue={!!customDate.label?.trim()}
+                        isFocused={customDateFocusStates[`${index}-label`] || false}
                         className="text-gray-700"
                       >
                         {customDate.label}
@@ -1940,52 +2038,74 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
                     </div>
 
                     {/* Date Input */}
-                    <Input
-                      type="date"
-                      value={customDate.date || ''}
-                      onChange={(e) => {
-                        if (!fieldLockStatus.isLocked) {
-                          const updatedDates = [...(general.customDates || [])];
-                          updatedDates[index] = { ...updatedDates[index], date: e.target.value };
-                          setGeneral((g: any) => ({ ...g, customDates: updatedDates }));
-                        }
-                      }}
-                      onBlur={() => {
-                        if (!fieldLockStatus.isLocked) {
-                          customDatesAutosave.triggerFieldSave(general.customDates);
-                        }
-                      }}
-                      disabled={fieldLockStatus.isLocked}
-                      className={fieldLockStatus.isLocked ? "opacity-50" : ""}
-                    />
+                    <div className="space-y-2">
+                      <LabelSaveIndicator
+                        isSaving={customDatesAutosave.state.isSaving}
+                        isSaved={customDatesAutosave.state.isPersistentlySaved}
+                        hasValue={!!customDate.date}
+                        isFocused={customDateFocusStates[`${index}-date`] || false}
+                        className="text-xs text-gray-600"
+                      >
+                        Date
+                      </LabelSaveIndicator>
+                      <DatePicker
+                        value={customDate.date || ''}
+                        onChange={(value) => {
+                          if (!fieldLockStatus.isLocked) {
+                            const updatedDates = [...(general.customDates || [])];
+                            updatedDates[index] = { ...updatedDates[index], date: value };
+                            setGeneral((g: any) => ({ ...g, customDates: updatedDates }));
+                            customDatesAutosave.triggerFieldSave(updatedDates);
+                          }
+                        }}
+                        onBlur={() => setCustomDateFocusStates(prev => ({ ...prev, [`${index}-date`]: false }))}
+                        placeholder="Select date"
+                        disabled={fieldLockStatus.isLocked}
+                        className={fieldLockStatus.isLocked ? "opacity-50" : ""}
+                      />
+                    </div>
 
                     {/* Collapsible Add Context Button */}
                     <div>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setShowCustomDateDescriptions(prev => ({
-                            ...prev,
-                            [index]: !prev[index]
-                          }));
-                        }}
-                        className="flex items-center gap-2 text-xs text-gray-600 hover:text-gray-800 transition-colors"
-                        disabled={fieldLockStatus.isLocked}
-                      >
-                        <ChevronDown className={`h-3 w-3 transition-transform ${showCustomDateDescriptions[index] ? 'rotate-180' : ''}`} />
-                        <span>{customDate.description ? 'Edit context' : 'Add context'}</span>
-                      </button>
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setShowCustomDateDescriptions(prev => ({
+                              ...prev,
+                              [index]: !prev[index]
+                            }));
+                          }}
+                          className="flex items-center gap-2 text-xs text-gray-600 hover:text-gray-800 transition-colors"
+                          disabled={fieldLockStatus.isLocked}
+                        >
+                          <ChevronDown className={`h-3 w-3 transition-transform ${showCustomDateDescriptions[index] ? 'rotate-180' : ''}`} />
+                        </button>
+                        <LabelSaveIndicator
+                          isSaving={customDatesAutosave.state.isSaving}
+                          isSaved={customDatesAutosave.state.isPersistentlySaved}
+                          hasValue={!!customDate.description?.trim()}
+                          isFocused={customDateFocusStates[`${index}-description`] || false}
+                          className="text-xs text-gray-600"
+                        >
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setShowCustomDateDescriptions(prev => ({
+                                ...prev,
+                                [index]: !prev[index]
+                              }));
+                            }}
+                            className="hover:text-gray-800 transition-colors"
+                            disabled={fieldLockStatus.isLocked}
+                          >
+                            {customDate.description ? 'Edit context' : 'Add context'}
+                          </button>
+                        </LabelSaveIndicator>
+                      </div>
                       {showCustomDateDescriptions[index] && (
                         <div className="mt-2 space-y-1">
-                          <div className="flex items-center gap-2">
-                            <label className="text-xs text-gray-600">Description/Context</label>
-                            <SaveIndicator 
-                              isSaving={customDatesAutosave.state.isSaving}
-                              isSaved={customDatesAutosave.state.isPersistentlySaved}
-                              size="sm"
-                              className=""
-                            />
-                          </div>
+                          <label className="text-xs text-gray-600">Description/Context</label>
                           <Textarea
                             value={customDate.description || ''}
                             onChange={(e) => {
@@ -1996,6 +2116,8 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
                                 customDatesAutosave.triggerFieldSave(updatedDates);
                               }
                             }}
+                            onFocus={() => setCustomDateFocusStates(prev => ({ ...prev, [`${index}-description`]: true }))}
+                            onBlur={() => setCustomDateFocusStates(prev => ({ ...prev, [`${index}-description`]: false }))}
                             placeholder="Add context about this date"
                             disabled={fieldLockStatus.isLocked}
                             className={`min-h-[60px] text-sm ${fieldLockStatus.isLocked ? "opacity-50" : ""}`}
@@ -2010,27 +2132,28 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
           );
         })}
 
-        {/* Add Another Activity Date Button */}
-        <div className="mt-4">
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={() => {
-              const newDates = [...(general.customDates || []), {
-                label: '',
-                date: '',
-                description: ''
-              }];
-              setGeneral((g: any) => ({ ...g, customDates: newDates }));
-              customDatesAutosave.triggerFieldSave(newDates);
-            }}
-            className="gap-2"
-            disabled={fieldLockStatus.isLocked}
-          >
-            <Plus className="w-4 h-4" />
-            Add another Activity Date
-          </Button>
+          {/* Add Another Activity Date Button */}
+          <div className="mt-4">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                const newDates = [...(general.customDates || []), {
+                  label: '',
+                  date: '',
+                  description: ''
+                }];
+                setGeneral((g: any) => ({ ...g, customDates: newDates }));
+                customDatesAutosave.triggerFieldSave(newDates);
+              }}
+              className="gap-2"
+              disabled={fieldLockStatus.isLocked}
+            >
+              <Plus className="w-4 h-4" />
+              Add another Activity Date
+            </Button>
+          </div>
         </div>
       </div>
 
@@ -2069,6 +2192,8 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
                 <LabelSaveIndicator
                   isSaving={otherIdentifiersAutosave.state.isSaving}
                   isSaved={otherIdentifiersAutosave.state.isPersistentlySaved}
+                  hasValue={!!identifier.code?.trim()}
+                  isFocused={otherIdentifiersFocusStates[`${index}-code`] || false}
                   className="text-gray-700"
                 >
                   Identifier Code
@@ -2082,6 +2207,8 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
                     setGeneral((g: any) => ({ ...g, otherIdentifiers: updatedIdentifiers }));
                     otherIdentifiersAutosave.triggerFieldSave(updatedIdentifiers);
                   }}
+                  onFocus={() => setOtherIdentifiersFocusStates(prev => ({ ...prev, [`${index}-code`]: true }))}
+                  onBlur={() => setOtherIdentifiersFocusStates(prev => ({ ...prev, [`${index}-code`]: false }))}
                   placeholder="e.g., 2023000168"
                 />
               </div>
@@ -2091,6 +2218,8 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
                 <LabelSaveIndicator
                   isSaving={otherIdentifiersAutosave.state.isSaving}
                   isSaved={otherIdentifiersAutosave.state.isPersistentlySaved}
+                  hasValue={!!identifier.type?.trim()}
+                  isFocused={otherIdentifiersFocusStates[`${index}-type`] || false}
                   className="text-gray-700"
                 >
                   Identifier Type
@@ -2112,6 +2241,8 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
                 <LabelSaveIndicator
                   isSaving={otherIdentifiersAutosave.state.isSaving}
                   isSaved={otherIdentifiersAutosave.state.isPersistentlySaved}
+                  hasValue={!!identifier.ownerOrg?.narrative?.trim()}
+                  isFocused={otherIdentifiersFocusStates[`${index}-ownerOrg-narrative`] || false}
                   className="text-gray-700"
                 >
                   Owner Organisation Name
@@ -2128,6 +2259,8 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
                     setGeneral((g: any) => ({ ...g, otherIdentifiers: updatedIdentifiers }));
                     otherIdentifiersAutosave.triggerFieldSave(updatedIdentifiers);
                   }}
+                  onFocus={() => setOtherIdentifiersFocusStates(prev => ({ ...prev, [`${index}-ownerOrg-narrative`]: true }))}
+                  onBlur={() => setOtherIdentifiersFocusStates(prev => ({ ...prev, [`${index}-ownerOrg-narrative`]: false }))}
                   placeholder="e.g., OECD/DAC"
                 />
               </div>
@@ -2137,6 +2270,8 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
                 <LabelSaveIndicator
                   isSaving={otherIdentifiersAutosave.state.isSaving}
                   isSaved={otherIdentifiersAutosave.state.isPersistentlySaved}
+                  hasValue={!!identifier.ownerOrg?.ref?.trim()}
+                  isFocused={otherIdentifiersFocusStates[`${index}-ownerOrg-ref`] || false}
                   className="text-gray-700"
                 >
                   Owner Organisation Ref{' '}<span className="text-gray-400">(Optional)</span>
@@ -2156,6 +2291,8 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
                     setGeneral((g: any) => ({ ...g, otherIdentifiers: updatedIdentifiers }));
                     otherIdentifiersAutosave.triggerFieldSave(updatedIdentifiers);
                   }}
+                  onFocus={() => setOtherIdentifiersFocusStates(prev => ({ ...prev, [`${index}-ownerOrg-ref`]: true }))}
+                  onBlur={() => setOtherIdentifiersFocusStates(prev => ({ ...prev, [`${index}-ownerOrg-ref`]: false }))}
                   placeholder="e.g., XM-DAC-5-1"
                 />
               </div>
@@ -2685,6 +2822,10 @@ function NewActivityPageContent() {
   
   const [subnationalBreakdowns, setSubnationalBreakdowns] = useState<Record<string, number>>({});
 
+  // State for metadata, XML import, and government endorsement tabs
+  const [metadataData, setMetadataData] = useState<any>(null);
+  const [xmlImportStatus, setXmlImportStatus] = useState<{ stage?: string }>({ stage: 'idle' });
+
   // Add missing state variables
   const [transactionsLoaded, setTransactionsLoaded] = useState(false);
   const [comments, setComments] = useState<any[]>([]);
@@ -2814,6 +2955,68 @@ function NewActivityPageContent() {
     };
 
     fetchCountryBudgetItemsCount();
+  }, [general.id]);
+
+  // Fetch metadata on page load for tab completion
+  React.useEffect(() => {
+    const fetchMetadata = async () => {
+      if (!general.id || general.id === 'new') return;
+      try {
+        const response = await fetch(`/api/activities/${general.id}/metadata`);
+        if (response.ok) {
+          const data = await response.json();
+          setMetadataData(data.metadata || null);
+        } else {
+          setMetadataData(null);
+        }
+      } catch (error) {
+        console.error('Error fetching metadata:', error);
+        setMetadataData(null);
+      }
+    };
+
+    fetchMetadata();
+  }, [general.id]);
+
+  // Use government endorsement hook for tab completion
+  const { endorsement: governmentEndorsementData } = useGovernmentEndorsement(general.id || 'new');
+
+  // Track XML import status from localStorage (IatiImportTab stores it there)
+  React.useEffect(() => {
+    if (!general.id || general.id === 'new') return;
+    
+    const checkXmlImportStatus = () => {
+      try {
+        const cachedData = localStorage.getItem(`iati_import_${general.id}`);
+        if (cachedData) {
+          const parsed = JSON.parse(cachedData);
+          if (parsed.importStatus) {
+            setXmlImportStatus(parsed.importStatus);
+          }
+        }
+      } catch (error) {
+        // Ignore errors
+      }
+    };
+
+    checkXmlImportStatus();
+    
+    // Listen for storage changes (when import completes)
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === `iati_import_${general.id}` && e.newValue) {
+        try {
+          const parsed = JSON.parse(e.newValue);
+          if (parsed.importStatus) {
+            setXmlImportStatus(parsed.importStatus);
+          }
+        } catch (error) {
+          // Ignore errors
+        }
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
   }, [general.id]);
 
   // Sync sidebar collapse state with localStorage
@@ -3952,6 +4155,15 @@ function NewActivityPageContent() {
     const iatiSyncComplete = iatiSyncState.isEnabled && iatiSyncState.syncStatus === 'live';
     const iatiSyncInProgress = iatiSyncState.isEnabled && (iatiSyncState.syncStatus === 'pending' || iatiSyncState.syncStatus === 'outdated');
 
+    // Metadata tab: check if any metadata fields exist
+    const metadataCompletion = getTabCompletionStatus('metadata', metadataData);
+
+    // XML Import tab: check if import was completed
+    const xmlImportCompletion = getTabCompletionStatus('xml-import', xmlImportStatus);
+
+    // Government Endorsement tab: check if endorsement exists
+    const governmentEndorsementCompletion = getTabCompletionStatus('government_endorsement', governmentEndorsementData);
+
     return {
       general: generalCompletion ? { 
         isComplete: generalCompletion.isComplete,
@@ -4037,9 +4249,21 @@ function NewActivityPageContent() {
       aid_effectiveness: aidEffectivenessCompletion ? {
         isComplete: aidEffectivenessCompletion.isComplete,
         isInProgress: aidEffectivenessCompletion.isInProgress
+      } : { isComplete: false, isInProgress: false },
+      metadata: metadataCompletion ? {
+        isComplete: metadataCompletion.isComplete,
+        isInProgress: metadataCompletion.isInProgress
+      } : { isComplete: false, isInProgress: false },
+      "xml-import": xmlImportCompletion ? {
+        isComplete: xmlImportCompletion.isComplete,
+        isInProgress: xmlImportCompletion.isInProgress
+      } : { isComplete: false, isInProgress: false },
+      government_endorsement: governmentEndorsementCompletion ? {
+        isComplete: governmentEndorsementCompletion.isComplete,
+        isInProgress: governmentEndorsementCompletion.isInProgress
       } : { isComplete: false, isInProgress: false }
     }
-  }, [general, sectors, getDateFieldStatus, sectorValidation, specificLocations, countries, regions, tags, workingGroups, policyMarkers, hasUnsavedChanges, transactions, budgets, budgetNotProvided, plannedDisbursements, forwardSpendCount, humanitarian, humanitarianScopes, sdgMappings, iatiSyncState, subnationalBreakdowns, extendingPartners, implementingPartners, governmentPartners, participatingOrgsCount, linkedActivitiesCount, resultsCount, capitalSpendPercentage, conditionsCount, financingTermsCount, documents, contacts, countryBudgetItemsCount]);
+  }, [general, sectors, getDateFieldStatus, sectorValidation, specificLocations, countries, regions, tags, workingGroups, policyMarkers, hasUnsavedChanges, transactions, budgets, budgetNotProvided, plannedDisbursements, forwardSpendCount, humanitarian, humanitarianScopes, sdgMappings, iatiSyncState, subnationalBreakdowns, extendingPartners, implementingPartners, governmentPartners, participatingOrgsCount, linkedActivitiesCount, resultsCount, capitalSpendPercentage, conditionsCount, financingTermsCount, documents, contacts, countryBudgetItemsCount, metadataData, xmlImportStatus, governmentEndorsementData]);
 
   // Helper to get next section id - moved here to avoid temporal dead zone
   const getNextSection = useCallback((currentId: string) => {

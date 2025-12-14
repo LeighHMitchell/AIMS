@@ -70,6 +70,8 @@ export async function GET(request: NextRequest) {
         default_finance_type,
         default_tied_status,
         default_currency,
+        default_modality,
+        default_modality_override,
         created_by,
         ${includeImages ? 'banner, icon,' : ''}
         activity_sdg_mappings (
@@ -232,8 +234,11 @@ export async function GET(request: NextRequest) {
       default_aid_type: activity.default_aid_type,
       default_flow_type: activity.default_flow_type,
       tied_status: activity.default_tied_status,
+      default_tied_status: activity.default_tied_status,
       default_finance_type: activity.default_finance_type,
       default_currency: activity.default_currency,
+      default_aid_modality: activity.default_modality, // Map from correct DB column
+      default_aid_modality_override: activity.default_modality_override, // Map from correct DB column
       // Add IATI sync fields (set to defaults)
       autoSync: false,
       lastSyncTime: null,

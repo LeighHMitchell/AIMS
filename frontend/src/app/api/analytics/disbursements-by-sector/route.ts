@@ -140,12 +140,12 @@ export async function GET(request: NextRequest) {
       }
     });
 
-    // Process planned disbursements
+    // Process planned disbursements - use only USD-converted values, no fallback
     plannedDisbursements?.forEach(pd => {
       if (!pd.period_start) return;
       
       const year = new Date(pd.period_start).getFullYear();
-      const amount = pd.usd_amount || pd.amount || 0;
+      const amount = parseFloat(pd.usd_amount?.toString() || '0') || 0;
       const activitySectors = activitySectorsMap.get(pd.activity_id) || [];
       
       // Allocate to sectors based on activity sector percentages

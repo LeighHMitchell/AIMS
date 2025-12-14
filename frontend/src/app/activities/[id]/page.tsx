@@ -119,6 +119,7 @@ import FinanceTypeDonut from '@/components/charts/FinanceTypeDonut'
 import PolicyMarkersSectionIATIWithCustom from '@/components/PolicyMarkersSectionIATIWithCustom'
 import { PolicyMarkersAnalyticsTab } from '@/components/activities/PolicyMarkersAnalyticsTab'
 import { DocumentsAndImagesTabV2 } from '@/components/activities/DocumentsAndImagesTabV2'
+import { AllDatesHistory } from '@/components/activities/AllDatesHistory'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -147,6 +148,7 @@ import { VALIDATION_STATUS_OPTIONS } from "@/types/government-endorsement"
 import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
 import { HelpTextTooltip } from "@/components/ui/help-text-tooltip"
+import { CodelistTooltip } from "@/components/ui/codelist-tooltip"
 import { splitBudgetAcrossYears, splitPlannedDisbursementAcrossYears } from "@/utils/year-allocation"
 import { getTransactionUSDValue, normalizeTransactionType } from "@/lib/transaction-usd-helper"
 
@@ -297,6 +299,8 @@ interface Activity {
   autoSyncFields?: string[]
   // Humanitarian field
   humanitarian?: boolean
+  // Custom dates (e.g., Contract Signing Date, Revised Start Date)
+  customDates?: Array<{ label: string; date: string; description: string }>
 }
 
 // Format large numbers into compact form: 500000000 -> 500m, 200000 -> 200k
@@ -1336,10 +1340,10 @@ export default function ActivityDetailPage() {
   const getDisplayDates = (activity: Activity) => {
     if (!activity) return null;
     
-    const activityStatus = activity.activityStatus?.toLowerCase() || 'planning';
-    const isPipeline = activityStatus === 'planning' || activityStatus === 'pipeline';
-    const isActive = activityStatus === 'implementation' || activityStatus === 'active';
-    const isClosed = ['completed', 'cancelled', 'suspended'].includes(activityStatus);
+    const activityStatus = activity.activityStatus?.toLowerCase() || '1'; // Default to Pipeline code
+    const isPipeline = activityStatus === 'planning' || activityStatus === 'pipeline' || activityStatus === '1';
+    const isActive = activityStatus === 'implementation' || activityStatus === 'active' || activityStatus === '2';
+    const isClosed = ['completed', 'cancelled', 'suspended', '4', '5', '6'].includes(activityStatus);
 
     return (
       <div className="space-y-2 text-sm">
@@ -1371,6 +1375,17 @@ export default function ActivityDetailPage() {
             <span className="text-slate-700">{formatDate(activity.actualEndDate)}</span>
           </div>
         )}
+        {/* Unified Date History Button */}
+        <AllDatesHistory 
+          activityId={activity.id} 
+          dates={{
+            plannedStartDate: activity.plannedStartDate,
+            plannedEndDate: activity.plannedEndDate,
+            actualStartDate: activity.actualStartDate,
+            actualEndDate: activity.actualEndDate
+          }}
+          customDates={activity.customDates}
+        />
       </div>
     );
   }
@@ -1616,7 +1631,11 @@ export default function ActivityDetailPage() {
                                     {activity.defaultFlowType === '0' || activity.defaultFlowType === 0 ? (
                                       <span className="text-slate-400 italic text-sm font-normal">Blank</span>
                                     ) : (
-                                      FLOW_TYPE_LABELS[activity.defaultFlowType] || activity.defaultFlowType
+                                      <CodelistTooltip
+                                        type="flow_type"
+                                        code={activity.defaultFlowType}
+                                        displayLabel={FLOW_TYPE_LABELS[activity.defaultFlowType] || activity.defaultFlowType}
+                                      />
                                     )}
                                   </div>
                                 </div>
@@ -1628,7 +1647,11 @@ export default function ActivityDetailPage() {
                                     {activity.defaultFinanceType === '0' || activity.defaultFinanceType === 0 ? (
                                       <span className="text-slate-400 italic text-sm font-normal">Blank</span>
                                     ) : (
-                                      FINANCE_TYPE_LABELS[activity.defaultFinanceType] || activity.defaultFinanceType
+                                      <CodelistTooltip
+                                        type="finance_type"
+                                        code={activity.defaultFinanceType}
+                                        displayLabel={FINANCE_TYPE_LABELS[activity.defaultFinanceType] || activity.defaultFinanceType}
+                                      />
                                     )}
                                   </div>
                                 </div>
@@ -1640,7 +1663,11 @@ export default function ActivityDetailPage() {
                                     {activity.defaultAidType === '0' || activity.defaultAidType === 0 ? (
                                       <span className="text-slate-400 italic text-sm font-normal">Blank</span>
                                     ) : (
-                                      AID_TYPE_LABELS[activity.defaultAidType] || activity.defaultAidType
+                                      <CodelistTooltip
+                                        type="aid_type"
+                                        code={activity.defaultAidType}
+                                        displayLabel={AID_TYPE_LABELS[activity.defaultAidType] || activity.defaultAidType}
+                                      />
                                     )}
                                   </div>
                                 </div>
@@ -1652,7 +1679,11 @@ export default function ActivityDetailPage() {
                                     {activity.defaultTiedStatus === '0' || activity.defaultTiedStatus === 0 ? (
                                       <span className="text-slate-400 italic text-sm font-normal">Blank</span>
                                     ) : (
-                                      TIED_STATUS_LABELS[activity.defaultTiedStatus as keyof typeof TIED_STATUS_LABELS] || activity.defaultTiedStatus
+                                      <CodelistTooltip
+                                        type="tied_status"
+                                        code={activity.defaultTiedStatus}
+                                        displayLabel={TIED_STATUS_LABELS[activity.defaultTiedStatus as keyof typeof TIED_STATUS_LABELS] || activity.defaultTiedStatus}
+                                      />
                                     )}
                                   </div>
                                 </div>
@@ -1755,9 +1786,22 @@ export default function ActivityDetailPage() {
                              activity.activityStatus === "4" ? "Post-Completion" :
                              activity.activityStatus === "5" ? "Cancelled" :
                              activity.activityStatus === "6" ? "Suspended" :
-                             (activity.activityStatus || "Planning").charAt(0).toUpperCase() + 
-                             (activity.activityStatus || "Planning").slice(1).toLowerCase()}
+                             "Pipeline/Identification"}
                           </Badge>
+                          
+                          {/* Publication Status Badge */}
+                          {activity.publicationStatus && (
+                            <Badge 
+                              variant={activity.publicationStatus === 'published' ? 'default' : 'secondary'}
+                              className={
+                                activity.publicationStatus === 'published' 
+                                  ? 'bg-green-100 text-green-800 hover:bg-green-200' 
+                                  : 'bg-slate-100 text-slate-800 hover:bg-slate-200'
+                              }
+                            >
+                              {activity.publicationStatus === 'published' ? 'Published' : 'Unpublished'}
+                            </Badge>
+                          )}
                           
                           {/* IATI Sync Status */}
                           {activity.iatiIdentifier && (
@@ -1815,39 +1859,86 @@ export default function ActivityDetailPage() {
                         {/* Third Row: Timeline Dates */}
                         <div className="flex flex-wrap items-center gap-3 pb-3 border-b border-slate-200">
                           {activity.plannedStartDate && (
-                            <div className="flex items-center gap-1.5 text-xs text-slate-600">
-                              <Calendar className="h-3 w-3 text-slate-400" />
+                            <div className="flex items-center gap-1.5 text-xs text-slate-600 whitespace-nowrap">
+                              <Calendar className="h-3 w-3 text-slate-400 flex-shrink-0" />
                               <span className="text-slate-500">Planned Start:</span>
                               <span className="font-medium text-slate-900">{formatDate(activity.plannedStartDate)}</span>
                             </div>
                           )}
                           {activity.actualStartDate && (
-                            <div className="flex items-center gap-1.5 text-xs text-slate-600">
-                              <Calendar className="h-3 w-3 text-slate-400" />
+                            <div className="flex items-center gap-1.5 text-xs text-slate-600 whitespace-nowrap">
+                              <Calendar className="h-3 w-3 text-slate-400 flex-shrink-0" />
                               <span className="text-slate-500">Actual Start:</span>
                               <span className="font-medium text-slate-900">{formatDate(activity.actualStartDate)}</span>
                             </div>
                           )}
                           {(activity.plannedEndDate || activity.actualEndDate) && (
-                            <div className="flex items-center gap-1.5 text-xs text-slate-600">
-                              <Calendar className="h-3 w-3 text-slate-400" />
+                            <div className="flex items-center gap-1.5 text-xs text-slate-600 whitespace-nowrap">
+                              <Calendar className="h-3 w-3 text-slate-400 flex-shrink-0" />
                               <span className="text-slate-500">
                                 {activity.actualEndDate ? 'Actual End:' : 'Planned End:'}
                               </span>
                               <span className="font-medium text-slate-900">
                                 {formatDate(activity.actualEndDate || activity.plannedEndDate || '')}
                               </span>
+                              {/* Date History Button - inline with last date */}
+                              <AllDatesHistory 
+                                activityId={activity.id} 
+                                dates={{
+                                  plannedStartDate: activity.plannedStartDate,
+                                  plannedEndDate: activity.plannedEndDate,
+                                  actualStartDate: activity.actualStartDate,
+                                  actualEndDate: activity.actualEndDate
+                                }}
+                                customDates={activity.customDates}
+                              />
                             </div>
                           )}
-                          <div className="flex items-center gap-1 text-xs text-slate-500">
+                          {/* Fallback: Show history button even if no end dates */}
+                          {!(activity.plannedEndDate || activity.actualEndDate) && (
+                            <AllDatesHistory 
+                              activityId={activity.id} 
+                              dates={{
+                                plannedStartDate: activity.plannedStartDate,
+                                plannedEndDate: activity.plannedEndDate,
+                                actualStartDate: activity.actualStartDate,
+                                actualEndDate: activity.actualEndDate
+                              }}
+                              customDates={activity.customDates}
+                            />
+                          )}
+                          <div className="flex items-center gap-1 text-xs text-slate-500 whitespace-nowrap">
                             <span>Created:</span>
                             <span className="text-slate-900">{formatDate(activity.createdAt)}</span>
                           </div>
-                          <div className="flex items-center gap-1 text-xs text-slate-500">
+                          <div className="flex items-center gap-1 text-xs text-slate-500 whitespace-nowrap">
                             <span>Updated:</span>
                             <span className="text-slate-900">{formatDate(activity.updatedAt)}</span>
                           </div>
                         </div>
+                        
+                        {/* Custom/Additional Dates */}
+                        {activity.customDates && activity.customDates.length > 0 && (
+                          <div className="flex flex-wrap items-center gap-3 pt-2">
+                            {activity.customDates.map((customDate, index) => (
+                              <div key={index} className="flex items-center gap-1.5 text-xs text-slate-600">
+                                <Calendar className="h-3 w-3 text-slate-400" />
+                                <span className="text-slate-500">{customDate.label}:</span>
+                                <span className="font-medium text-slate-900">{formatDate(customDate.date)}</span>
+                                {customDate.description && (
+                                  <TooltipProvider>
+                                    <Tooltip>
+                                      <TooltipTrigger>
+                                        <HelpCircle className="h-3 w-3 text-slate-400" />
+                                      </TooltipTrigger>
+                                      <TooltipContent>{customDate.description}</TooltipContent>
+                                    </Tooltip>
+                                  </TooltipProvider>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        )}
                       </div>
                     
                     {/* Combined Description Sections with 1000 character limit */}
@@ -2073,6 +2164,7 @@ export default function ActivityDetailPage() {
                       {/* All Participating Organizations */}
                       {participatingOrgs.length > 0 && (
                         <>
+                          <div className="text-slate-500 mb-2 text-xs font-medium">Participating Organisations</div>
                           <div className="space-y-3">
                             {(showAllSidebarPartners ? participatingOrgs : participatingOrgs.slice(0, 4)).map((org, idx) => (
                               <div key={idx} className="pb-3 last:pb-0">
@@ -2115,13 +2207,13 @@ export default function ActivityDetailPage() {
                                           {org.organization.iati_org_id}
                                         </span>
                                       )}
-                                      {/* Role Badge with colors from Activity Editor */}
+                                      {/* Role Badge with colors from new palette */}
                                       <Badge 
                                         className={`text-xs px-2 py-0.5 rounded ${
-                                          org.role_type === 'extending' ? 'bg-blue-100 text-blue-800' :
-                                          org.role_type === 'implementing' ? 'bg-green-100 text-green-800' :
-                                          org.role_type === 'government' ? 'bg-purple-100 text-purple-800' :
-                                          org.role_type === 'funding' ? 'bg-yellow-100 text-yellow-800' :
+                                          org.role_type === 'funding' ? 'bg-[#dc2625]/10 text-[#dc2625]' :
+                                          org.role_type === 'extending' ? 'bg-[#7b95a7]/10 text-[#7b95a7]' :
+                                          org.role_type === 'government' ? 'bg-[#4c5568]/10 text-[#4c5568]' :
+                                          org.role_type === 'implementing' ? 'bg-[#7b95a7]/10 text-[#7b95a7]' :
                                           'bg-slate-100 text-slate-700'
                                         }`}
                                       >
@@ -2337,8 +2429,8 @@ export default function ActivityDetailPage() {
                     <div className="w-full">
                       <div className="w-full bg-slate-200 rounded-full h-2">
                         <div
-                          className="bg-blue-600 h-2 rounded-full transition-all duration-300"
-                          style={{ width: `${Math.min(financialDeliveryPercent, 100)}%` }}
+                          className="h-2 rounded-full transition-all duration-300"
+                          style={{ width: `${Math.min(financialDeliveryPercent, 100)}%`, backgroundColor: '#4c5568' }}
                         />
                       </div>
                     </div>
@@ -2357,8 +2449,8 @@ export default function ActivityDetailPage() {
                     <div className="w-full">
                       <div className="w-full bg-slate-200 rounded-full h-2">
                         <div 
-                          className="bg-green-600 h-2 rounded-full transition-all duration-300" 
-                          style={{ width: `${Math.min(implementationVsPlanPercent, 100)}%` }}
+                          className="h-2 rounded-full transition-all duration-300" 
+                          style={{ width: `${Math.min(implementationVsPlanPercent, 100)}%`, backgroundColor: '#4c5568' }}
                         />
                       </div>
                     </div>
@@ -2371,7 +2463,12 @@ export default function ActivityDetailPage() {
             {/* Budget by Year Chart */}
             <Card className="border-slate-200 bg-white">
               <CardHeader className="pb-2 pt-3 px-3 flex flex-row items-center justify-between">
-                <CardTitle className="text-xs font-semibold text-slate-900">Budget by Year</CardTitle>
+                <div className="flex items-center gap-1.5">
+                  <CardTitle className="text-xs font-semibold text-slate-900">Budget by Year</CardTitle>
+                  <HelpTextTooltip 
+                    content="Allocates budget amounts proportionally across calendar years based on the number of days. For example, a budget spanning July 2024 to June 2025 will be split between 2024 and 2025."
+                  />
+                </div>
                 <div className="flex items-center gap-2">
                   <div className="flex gap-1">
                   <Button
@@ -2423,14 +2520,14 @@ export default function ActivityDetailPage() {
                   // Calculate budgets by year
                   const budgetsByYear = new Map<number, number>()
                   ;(budgets || []).forEach(budget => {
-                    if (budgetAllocationMethod === 'proportional' && budget.period_start && budget.period_end) {
-                      // Use proportional allocation
+                    if (budget.period_start && budget.period_end) {
+                      // Always use proportional allocation
                       const allocations = splitBudgetAcrossYears(budget)
                       allocations.forEach(({ year, amount }) => {
                         budgetsByYear.set(year, (budgetsByYear.get(year) || 0) + amount)
                       })
                     } else if (budget.period_start) {
-                      // Use period-start allocation (default behavior)
+                      // Fallback to period-start allocation if no end date
                       const year = new Date(budget.period_start).getFullYear()
                       const usdValue = budget.usd_value || (budget.currency === 'USD' ? budget.value : 0)
                       budgetsByYear.set(year, (budgetsByYear.get(year) || 0) + (usdValue || 0))
@@ -2503,13 +2600,18 @@ export default function ActivityDetailPage() {
                             content={({ active, payload }) => {
                               if (active && payload && payload.length) {
                                 return (
-                                  <div className="bg-white p-2 border border-gray-200 rounded shadow-lg">
-                                    <p className="text-xs font-semibold mb-2 text-slate-900">{payload[0].payload.year}</p>
-                                    <table className="text-xs">
+                                  <div className="bg-white border border-gray-200 rounded shadow-lg overflow-hidden">
+                                    <table className="text-xs w-full border-collapse">
+                                      <thead>
+                                        <tr className="bg-slate-50 border-b border-slate-200">
+                                          <th className="text-left px-3 py-2 text-slate-600 font-semibold">{payload[0].payload.year}</th>
+                                          <th className="text-right px-3 py-2 text-slate-600 font-semibold">Budget</th>
+                                        </tr>
+                                      </thead>
                                       <tbody>
-                                        <tr>
-                                          <td className="pr-3 py-0.5 text-slate-600">Budget:</td>
-                                          <td className="text-right py-0.5 font-medium text-slate-900">{formatCurrencyShort(payload[0].value as number)}</td>
+                                        <tr className="border-b border-slate-100">
+                                          <td className="px-3 py-2 text-slate-600">Budget</td>
+                                          <td className="text-right px-3 py-2 font-medium text-slate-900">{formatCurrencyShort(payload[0].value as number)}</td>
                                         </tr>
                                       </tbody>
                                     </table>
@@ -2525,10 +2627,10 @@ export default function ActivityDetailPage() {
                             isAnimationActive={true}
                             animationDuration={600}
                             animationEasing="ease-in-out"
-                            key={`budget-bar-${budgetAllocationMethod}`}
+                            key="budget-bar-proportional"
                           >
                             {budgetData.map((entry, index) => (
-                              <Cell key={`cell-${index}`} fill="#475569" />
+                              <Cell key={`cell-${index}`} fill="#4c5568" />
                             ))}
                           </Bar>
                         </RechartsBarChart>
@@ -2536,34 +2638,18 @@ export default function ActivityDetailPage() {
                     </div>
                   )
                 })()}
-                {/* Allocation Method Toggle - Bottom */}
-                <div className="flex items-center gap-1.5 mt-2 pt-2 border-t border-slate-100">
-                  <div className="flex items-center gap-1.5 border rounded-lg px-1.5 py-0.5 bg-white">
-                    <Label htmlFor="budget-allocation-toggle" className="text-[10px] text-slate-700 cursor-pointer whitespace-nowrap">
-                      {budgetAllocationMethod === 'proportional' ? 'Proportional' : 'Period Start'}
-                    </Label>
-                    <Switch
-                      id="budget-allocation-toggle"
-                      checked={budgetAllocationMethod === 'proportional'}
-                      onCheckedChange={(checked) => setBudgetAllocationMethod(checked ? 'proportional' : 'period-start')}
-                      className="scale-75"
-                    />
-                  </div>
-                  <HelpTextTooltip 
-                    content={
-                      budgetAllocationMethod === 'proportional'
-                        ? "Allocates budget amounts proportionally across calendar years based on the number of days. For example, a budget spanning July 2024 to June 2025 will be split between 2024 and 2025."
-                        : "Allocates the full budget amount to the year of the start date."
-                    }
-                  />
-                </div>
               </CardContent>
             </Card>
 
             {/* Planned vs Actual */}
             <Card className="border-slate-200 bg-white">
               <CardHeader className="pb-2 pt-3 px-3 flex flex-row items-center justify-between">
-                <CardTitle className="text-xs font-semibold text-slate-900">Planned vs Actual</CardTitle>
+                <div className="flex items-center gap-1.5">
+                  <CardTitle className="text-xs font-semibold text-slate-900">Planned vs Actual</CardTitle>
+                  <HelpTextTooltip 
+                    content="Allocates budget and planned disbursement amounts proportionally across calendar years based on the number of days. For example, a budget spanning July 2024 to June 2025 will be split between 2024 and 2025."
+                  />
+                </div>
                 <div className="flex items-center gap-2">
                   <div className="flex gap-1">
                   <Button
@@ -2646,14 +2732,14 @@ export default function ActivityDetailPage() {
 
                   // Process planned disbursements
                   ;(plannedDisbursements || []).forEach((pd: any) => {
-                    if (budgetVsSpendAllocationMethod === 'proportional' && pd.period_start && pd.period_end) {
-                      // Use proportional allocation
+                    if (pd.period_start && pd.period_end) {
+                      // Always use proportional allocation
                       const allocations = splitPlannedDisbursementAcrossYears(pd)
                       allocations.forEach(({ year, amount }) => {
                         plannedDisbursementsByYearMap.set(year, (plannedDisbursementsByYearMap.get(year) || 0) + amount)
                       })
                     } else if (pd.period_start) {
-                      // Use period-start allocation (default behavior)
+                      // Fallback to period-start allocation if no end date
                       const year = new Date(pd.period_start).getFullYear()
                       const usdValue = pd.usd_amount || (pd.currency === 'USD' ? pd.value : 0)
                       plannedDisbursementsByYearMap.set(year, (plannedDisbursementsByYearMap.get(year) || 0) + (usdValue || 0))
@@ -2713,20 +2799,20 @@ export default function ActivityDetailPage() {
                             {chartData.map((item) => (
                               <tr key={item.year} className="border-b border-slate-100">
                                 <td className="py-1 text-slate-900">{item.year}</td>
-                                <td className="text-right py-1 font-medium" style={{ color: '#64748b' }}>{formatCurrencyShort(item.plannedDisbursements)}</td>
-                                <td className="text-right py-1 font-medium" style={{ color: '#1e40af' }}>{formatCurrencyShort(item.disbursements)}</td>
-                                <td className="text-right py-1 font-medium" style={{ color: '#0f172a' }}>{formatCurrencyShort(item.expenditures)}</td>
+                                <td className="text-right py-1 font-medium" style={{ color: '#cfd0d5' }}>{formatCurrencyShort(item.plannedDisbursements)}</td>
+                                <td className="text-right py-1 font-medium" style={{ color: '#7b95a7' }}>{formatCurrencyShort(item.disbursements)}</td>
+                                <td className="text-right py-1 font-medium" style={{ color: '#dc2625' }}>{formatCurrencyShort(item.expenditures)}</td>
                               </tr>
                             ))}
                             <tr className="border-t-2 border-slate-300 bg-slate-50">
                               <td className="py-1 text-slate-900 font-semibold">Total</td>
-                              <td className="text-right py-1 font-semibold" style={{ color: '#64748b' }}>
+                              <td className="text-right py-1 font-semibold" style={{ color: '#cfd0d5' }}>
                                 {formatCurrencyShort(chartData.reduce((sum, item) => sum + item.plannedDisbursements, 0))}
                               </td>
-                              <td className="text-right py-1 font-semibold" style={{ color: '#1e40af' }}>
+                              <td className="text-right py-1 font-semibold" style={{ color: '#7b95a7' }}>
                                 {formatCurrencyShort(chartData.reduce((sum, item) => sum + item.disbursements, 0))}
                               </td>
-                              <td className="text-right py-1 font-semibold" style={{ color: '#0f172a' }}>
+                              <td className="text-right py-1 font-semibold" style={{ color: '#dc2625' }}>
                                 {formatCurrencyShort(chartData.reduce((sum, item) => sum + item.expenditures, 0))}
                               </td>
                             </tr>
@@ -2744,7 +2830,7 @@ export default function ActivityDetailPage() {
                           margin={{ top: 0, right: 5, left: 0, bottom: 5 }} 
                           barCategoryGap="5%" 
                           barGap={0}
-                          key={`budget-vs-spend-${budgetVsSpendAllocationMethod}`}
+                          key="budget-vs-spend-proportional"
                         >
                           <XAxis 
                             dataKey="year" 
@@ -2768,21 +2854,26 @@ export default function ActivityDetailPage() {
                             content={({ active, payload }) => {
                               if (active && payload && payload.length) {
                                 return (
-                                  <div className="bg-white p-2 border border-gray-200 rounded shadow-lg">
-                                    <p className="text-xs font-semibold mb-2 text-slate-900">{payload[0].payload.year}</p>
-                                    <table className="text-xs">
+                                  <div className="bg-white border border-gray-200 rounded shadow-lg overflow-hidden">
+                                    <table className="text-xs w-full border-collapse">
+                                      <thead>
+                                        <tr className="bg-slate-50 border-b border-slate-200">
+                                          <th className="text-left px-3 py-2 text-slate-600 font-semibold">{payload[0].payload.year}</th>
+                                          <th className="text-right px-3 py-2 text-slate-600 font-semibold">Amount</th>
+                                        </tr>
+                                      </thead>
                                       <tbody>
-                                        <tr>
-                                          <td className="pr-3 py-0.5 text-slate-600">Planned Disbursements:</td>
-                                          <td className="text-right py-0.5 font-medium text-slate-900">{formatCurrencyShort(payload[0].payload.plannedDisbursements)}</td>
+                                        <tr className="border-b border-slate-100">
+                                          <td className="px-3 py-2 text-slate-600">Planned Disbursements</td>
+                                          <td className="text-right px-3 py-2 font-medium text-slate-900">{formatCurrencyShort(payload[0].payload.plannedDisbursements)}</td>
+                                        </tr>
+                                        <tr className="border-b border-slate-100">
+                                          <td className="px-3 py-2 text-slate-600">Disbursements</td>
+                                          <td className="text-right px-3 py-2 font-medium text-slate-900">{formatCurrencyShort(payload[0].payload.disbursements)}</td>
                                         </tr>
                                         <tr>
-                                          <td className="pr-3 py-0.5 text-slate-600">Disbursements:</td>
-                                          <td className="text-right py-0.5 font-medium text-slate-900">{formatCurrencyShort(payload[0].payload.disbursements)}</td>
-                                        </tr>
-                                        <tr>
-                                          <td className="pr-3 py-0.5 text-slate-600">Expenditures:</td>
-                                          <td className="text-right py-0.5 font-medium text-slate-900">{formatCurrencyShort(payload[0].payload.expenditures)}</td>
+                                          <td className="px-3 py-2 text-slate-600">Expenditures</td>
+                                          <td className="text-right px-3 py-2 font-medium text-slate-900">{formatCurrencyShort(payload[0].payload.expenditures)}</td>
                                         </tr>
                                       </tbody>
                                     </table>
@@ -2794,17 +2885,17 @@ export default function ActivityDetailPage() {
                           />
                           <Bar 
                             dataKey="plannedDisbursements" 
-                            fill="#94a3b8" 
+                            fill="#cfd0d5" 
                             name="Planned" 
                             radius={[4, 4, 4, 4]}
                             isAnimationActive={true}
                             animationDuration={600}
                             animationEasing="ease-in-out"
-                            key={`planned-${budgetVsSpendAllocationMethod}`}
+                            key="planned-proportional"
                           />
                           <Bar 
                             dataKey="disbursements" 
-                            fill="#1e40af" 
+                            fill="#7b95a7" 
                             name="Disbursements" 
                             radius={[4, 4, 4, 4]}
                             isAnimationActive={true}
@@ -2813,7 +2904,7 @@ export default function ActivityDetailPage() {
                           />
                           <Bar 
                             dataKey="expenditures" 
-                            fill="#0f172a" 
+                            fill="#dc2625" 
                             name="Expenditures" 
                             radius={[4, 4, 4, 4]}
                             isAnimationActive={true}
@@ -2825,27 +2916,6 @@ export default function ActivityDetailPage() {
                     </div>
                   )
                 })()}
-                {/* Allocation Method Toggle - Bottom */}
-                <div className="flex items-center gap-1.5 mt-2 pt-2 border-t border-slate-100">
-                  <div className="flex items-center gap-1.5 border rounded-lg px-1.5 py-0.5 bg-white">
-                    <Label htmlFor="budget-vs-spend-allocation-toggle" className="text-[10px] text-slate-700 cursor-pointer whitespace-nowrap">
-                      {budgetVsSpendAllocationMethod === 'proportional' ? 'Proportional' : 'Period Start'}
-                    </Label>
-                    <Switch
-                      id="budget-vs-spend-allocation-toggle"
-                      checked={budgetVsSpendAllocationMethod === 'proportional'}
-                      onCheckedChange={(checked) => setBudgetVsSpendAllocationMethod(checked ? 'proportional' : 'period-start')}
-                      className="scale-75"
-                    />
-                  </div>
-                  <HelpTextTooltip 
-                    content={
-                      budgetVsSpendAllocationMethod === 'proportional'
-                        ? "Allocates budget and planned disbursement amounts proportionally across calendar years based on the number of days. For example, a budget spanning July 2024 to June 2025 will be split between 2024 and 2025."
-                        : "Allocates the full budget or planned disbursement amount to the year of the start date."
-                    }
-                  />
-                </div>
               </CardContent>
             </Card>
 
@@ -4190,16 +4260,13 @@ export default function ActivityDetailPage() {
                   <>
                 {/* Country/Region Allocation Chart - Hero Card */}
                 {(countryAllocations.length > 0 || regionAllocations.length > 0) && (() => {
-                  // Dark blue/slate color palette
+                  // New color palette
                   const colorPalette = [
-                    { bg: 'bg-slate-800', hex: '#1e293b' },
-                    { bg: 'bg-slate-700', hex: '#334155' },
-                    { bg: 'bg-slate-600', hex: '#475569' },
-                    { bg: 'bg-blue-900', hex: '#1e3a5f' },
-                    { bg: 'bg-blue-800', hex: '#1e40af' },
-                    { bg: 'bg-blue-700', hex: '#1d4ed8' },
-                    { bg: 'bg-slate-500', hex: '#64748b' },
-                    { bg: 'bg-blue-600', hex: '#2563eb' },
+                    { bg: 'bg-[#dc2625]', hex: '#dc2625' },
+                    { bg: 'bg-[#cfd0d5]', hex: '#cfd0d5' },
+                    { bg: 'bg-[#4c5568]', hex: '#4c5568' },
+                    { bg: 'bg-[#7b95a7]', hex: '#7b95a7' },
+                    { bg: 'bg-[#f1f4f8]', hex: '#f1f4f8' },
                   ];
 
                   // Combine countries and regions into a single list with colors

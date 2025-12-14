@@ -1599,6 +1599,7 @@ const autoPopulateIatiFields = useCallback((params: {
                           }}
                           placeholder="Select country"
                           dropdownId="country-select"
+                          hideGroupLabels={true}
                         />
                       )}
                     />

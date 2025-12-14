@@ -338,9 +338,10 @@ export function HeroCard<T = any>({
                       }}
                     />
                     <Bar dataKey="amount" radius={[4, 4, 0, 0]}>
-                      {budgetsByYear.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill="#475569" />
-                      ))}
+                      {budgetsByYear.map((entry, index) => {
+                        const colorPalette = ['#dc2625', '#cfd0d5', '#4c5568', '#7b95a7', '#f1f4f8'];
+                        return <Cell key={`cell-${index}`} fill={colorPalette[index % colorPalette.length]} />;
+                      })}
                     </Bar>
                   </BarChart>
                 </ResponsiveContainer>

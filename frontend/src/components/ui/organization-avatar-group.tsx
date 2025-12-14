@@ -21,6 +21,7 @@ interface OrganizationAvatarGroupProps {
   size?: 'sm' | 'md' | 'lg';
   showNameForSingle?: boolean;
   label?: string; // Label for the tooltip header (e.g., "Funding Organisations")
+  showAcronym?: boolean; // If true, show acronym instead of full name
 }
 
 const sizeClasses = {
@@ -73,6 +74,7 @@ export function OrganizationAvatarGroup({
   size = 'sm',
   showNameForSingle = true,
   label,
+  showAcronym = false,
 }: OrganizationAvatarGroupProps) {
   if (!organizations || organizations.length === 0) {
     return <span className="text-muted-foreground">—</span>;
@@ -85,6 +87,7 @@ export function OrganizationAvatarGroup({
   // Single organization - show avatar with name
   if (organizations.length === 1 && showNameForSingle) {
     const org = organizations[0];
+    const displayText = showAcronym && org.acronym ? org.acronym : org.name;
     return (
       <TooltipProvider>
         <Tooltip>
@@ -98,7 +101,7 @@ export function OrganizationAvatarGroup({
                   {getInitials(org)}
                 </AvatarFallback>
               </Avatar>
-              <span className="truncate max-w-[150px]">{org.name}</span>
+              <span className="truncate max-w-[150px]">{displayText}</span>
             </div>
           </TooltipTrigger>
           <TooltipContent className="max-w-sm bg-white border shadow-lg p-3">
@@ -111,11 +114,16 @@ export function OrganizationAvatarGroup({
   }
 
   // Multiple organizations - show stacked avatars with tooltip
+  // When showAcronym is true, also show acronym text labels
+  const getDisplayText = (org: OrganizationInfo) => {
+    return showAcronym && org.acronym ? org.acronym : org.name;
+  };
+  
   return (
     <TooltipProvider>
       <Tooltip>
         <TooltipTrigger asChild>
-          <div className="flex items-center cursor-pointer">
+          <div className="flex items-center gap-2 cursor-pointer">
             <div className="flex -space-x-2">
               {displayOrgs.map((org, index) => (
                 <Avatar
@@ -142,6 +150,15 @@ export function OrganizationAvatarGroup({
                 </Avatar>
               )}
             </div>
+            {showAcronym && (
+              <span className="text-sm truncate max-w-[200px]">
+                {organizations
+                  .map(org => org.acronym || org.name)
+                  .slice(0, maxDisplay)
+                  .join(', ')}
+                {remainingCount > 0 && ` +${remainingCount}`}
+              </span>
+            )}
           </div>
         </TooltipTrigger>
         <TooltipContent className="max-w-sm bg-white border shadow-lg p-3">
@@ -151,19 +168,27 @@ export function OrganizationAvatarGroup({
                 {label} ({organizations.length})
               </p>
             )}
-            {organizations.map((org, index) => (
-              <div key={index} className="flex items-center gap-2">
-                <Avatar className="h-5 w-5 text-[9px] ring-1 ring-gray-200">
-                  {org.logo ? (
-                    <AvatarImage src={org.logo} alt={org.name} className="object-cover" />
-                  ) : null}
-                  <AvatarFallback className={`${getColorFromName(org.name)} font-medium`}>
-                    {getInitials(org)}
-                  </AvatarFallback>
-                </Avatar>
-                <span className="text-sm">{org.name}</span>
-              </div>
-            ))}
+            {organizations.map((org, index) => {
+              const displayText = showAcronym && org.acronym ? org.acronym : org.name;
+              return (
+                <div key={index} className="flex items-center gap-2">
+                  <Avatar className="h-5 w-5 text-[9px] ring-1 ring-gray-200">
+                    {org.logo ? (
+                      <AvatarImage src={org.logo} alt={org.name} className="object-cover" />
+                    ) : null}
+                    <AvatarFallback className={`${getColorFromName(org.name)} font-medium`}>
+                      {getInitials(org)}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex flex-col">
+                    <span className="text-sm font-medium">{org.name}</span>
+                    {showAcronym && org.acronym && (
+                      <span className="text-xs text-muted-foreground">{org.acronym}</span>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </TooltipContent>
       </Tooltip>

@@ -74,7 +74,8 @@ export async function GET() {
     });
 
     const totalTransactions = transactions.length;
-    const totalValue = transactions.reduce((sum: number, t: any) => sum + (t.value || 0), 0);
+    // Use only USD-converted value - no fallback to original currency
+    const totalValue = transactions.reduce((sum: number, t: any) => sum + (parseFloat(t.value_usd?.toString() || '0') || 0), 0);
 
     // Convert to result format
     const result: TransactionTypeData[] = Array.from(typeMap.entries())

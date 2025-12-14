@@ -1,20 +1,18 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { DefaultFieldsSection } from '@/components/forms/DefaultFieldsSection';
 import { SupabaseSelect, withSupabaseIntegration } from '@/components/forms/SupabaseSelect';
-import LinkedTransactionsEditorTab from '@/components/activities/LinkedTransactionsEditorTab';
 import TransactionsManager from '@/components/TransactionsManager';
 import { AidTypeSelect } from '@/components/forms/AidTypeSelect';
 import { DefaultFinanceTypeSelect } from '@/components/forms/DefaultFinanceTypeSelect';
 import { FlowTypeSelect } from '@/components/forms/FlowTypeSelect';
 import { CurrencySelector } from '@/components/forms/CurrencySelector';
 import { TiedStatusSelect } from '@/components/forms/TiedStatusSelect';
+import { DisbursementChannelSelect } from '@/components/forms/DisbursementChannelSelect';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Badge } from '@/components/ui/badge';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
-import { CheckCircle, BarChart3, CreditCard, Link, Settings } from 'lucide-react';
+import { CheckCircle, CreditCard, Settings } from 'lucide-react';
 import { HelpTextTooltip } from '@/components/ui/help-text-tooltip';
 import { ModalitySearchableSelect } from '@/components/forms/ModalitySearchableSelect';
 import { FinanceTypeSearchableSelect } from '@/components/forms/FinanceTypeSearchableSelect';
@@ -29,6 +27,7 @@ const SupabaseFinanceTypeSelect = withSupabaseIntegration(DefaultFinanceTypeSele
 const SupabaseFlowTypeSelect = withSupabaseIntegration(FlowTypeSelect);
 const SupabaseCurrencySelector = withSupabaseIntegration(CurrencySelector);
 const SupabaseTiedStatusSelect = withSupabaseIntegration(TiedStatusSelect);
+const SupabaseDisbursementChannelSelect = withSupabaseIntegration(DisbursementChannelSelect);
 const SupabaseFinanceTypeSearchableSelect = withSupabaseIntegration(FinanceTypeSearchableSelect);
 const SupabaseModalitySearchableSelect = withSupabaseIntegration(ModalitySearchableSelect);
 
@@ -40,6 +39,7 @@ interface EnhancedFinancesSectionProps {
     defaultFlowType?: string | null;
     defaultCurrency?: string | null;
     defaultTiedStatus?: string | null;
+    defaultDisbursementChannel?: string | null;
     defaultModality?: string | null; // Changed to camelCase
     defaultModalityOverride?: boolean; // Changed to camelCase
     otherIdentifier?: string | null;
@@ -96,6 +96,7 @@ export function EnhancedFinancesSection({
     flowType: Boolean(general.defaultFlowType),
     currency: Boolean(general.defaultCurrency),
     tiedStatus: Boolean(general.defaultTiedStatus),
+    disbursementChannel: Boolean(general.defaultDisbursementChannel),
     modality: Boolean(general.defaultModality), // Updated to camelCase
   };
 
@@ -223,14 +224,6 @@ export function EnhancedFinancesSection({
             <CreditCard className="h-4 w-4" />
             Transactions
           </TabsTrigger>
-          <TabsTrigger value="linked-transactions" className="flex items-center gap-2">
-            <Link className="h-4 w-4" />
-            Linked Transactions
-          </TabsTrigger>
-          <TabsTrigger value="analytics" className="flex items-center gap-2">
-            <BarChart3 className="h-4 w-4" />
-            Analytics
-          </TabsTrigger>
           <TabsTrigger value="defaults" className="flex items-center gap-2">
             <Settings className="h-4 w-4" />
             Defaults
@@ -357,9 +350,24 @@ export function EnhancedFinancesSection({
                       />
                     </div>
 
-                    {/* Placeholder for future field */}
+                    {/* Default Disbursement Channel */}
                     <div className="space-y-2">
-                      {/* Future field can be added here */}
+                      <label className="text-sm font-medium flex items-center gap-2">
+                        Default Disbursement Channel
+                        {fieldCompletion.disbursementChannel && (
+                          <CheckCircle className="h-4 w-4 text-green-500" />
+                        )}
+                        <HelpTextTooltip content="Specifies the channel through which funds are delivered, such as government ministries, non-governmental organisations, or multilateral agencies." />
+                      </label>
+                      <SupabaseDisbursementChannelSelect
+                        activityId={activityId}
+                        fieldName="defaultDisbursementChannel"
+                        value={general.defaultDisbursementChannel}
+                        onUpdateSuccess={handleFieldUpdate}
+                        onUpdateError={handleFieldError}
+                        placeholder="Select Disbursement Channel"
+                        disabled={disabled}
+                      />
                     </div>
                   </div>
                 </CardContent>
@@ -427,26 +435,9 @@ export function EnhancedFinancesSection({
             defaultCurrency={general.defaultCurrency || undefined}
             defaultTiedStatus={general.defaultTiedStatus || undefined}
             defaultFlowType={general.defaultFlowType || undefined}
+            defaultDisbursementChannel={general.defaultDisbursementChannel || undefined}
             initialTransactionId={initialTransactionId}
           />
-        </TabsContent>
-
-        {/* Linked Transactions Tab */}
-        <TabsContent value="linked-transactions">
-          <LinkedTransactionsEditorTab 
-            activityId={activityId || "new"}
-          />
-        </TabsContent>
-
-        {/* Analytics Tab */}
-        <TabsContent value="analytics">
-          <Card>
-            <CardContent className="py-8">
-              <div className="text-center text-muted-foreground">
-                <p>Analytics coming soon</p>
-              </div>
-            </CardContent>
-          </Card>
         </TabsContent>
       </Tabs>
     </div>

@@ -79,6 +79,7 @@ import { LabelSaveIndicator } from '@/components/ui/save-indicator';
 import { useTransactionFieldAutosave } from '@/hooks/use-transaction-field-autosave';
 import { IATI_FIELD_HELP } from '@/components/ActivityFieldHelpers';
 import { InfoTooltipWithSaveIndicator, LabelWithInfoAndSave } from '@/components/ui/info-tooltip-with-save-indicator';
+import { OrgTypeMappingModal, useOrgTypeMappingModal } from '@/components/organizations/OrgTypeMappingModal';
 // Remove lodash import (not used)
 // import { uniqBy } from 'lodash';
 
@@ -282,6 +283,7 @@ interface TransactionModalProps {
   defaultCurrency?: string; // From activity settings
   defaultTiedStatus?: string; // From activity settings
   defaultFlowType?: string; // From activity settings
+  defaultDisbursementChannel?: string; // From activity settings
   defaultModality?: string;
   defaultModalityOverride?: boolean;
   isSubmitting?: boolean;
@@ -299,6 +301,7 @@ export default function TransactionModal({
   defaultCurrency,
   defaultTiedStatus,
   defaultFlowType,
+  defaultDisbursementChannel,
   defaultModality = '',
   defaultModalityOverride = false,
   isSubmitting
@@ -431,13 +434,35 @@ export default function TransactionModal({
       name: partner.fullName || partner.name || '',
       acronym: partner.acronym,
       iati_org_id: partner.iatiOrgId,
+      iati_identifier: partner.iatiOrgId,
       type: partner.type,
+      Organisation_Type_Code: partner.type,
+      Organisation_Type_Name: partner.typeName,
       country: partner.countryRepresented,
       logo: partner.logo // Include logo field for displaying organization logos
     }));
     
     return orgs;
   }, [partners]);
+
+  // Org type mapping modal for handling legacy organization type codes
+  const orgTypeMappingModal = useOrgTypeMappingModal();
+
+  // Handler to update organization type via API
+  const handleOrgTypeUpdate = async (orgId: string, newTypeCode: string) => {
+    const response = await fetch(`/api/organizations/${orgId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ Organisation_Type_Code: newTypeCode })
+    });
+    
+    if (!response.ok) {
+      throw new Error('Failed to update organization type');
+    }
+    
+    // Refresh partners to get updated organization data
+    // Note: usePartners hook should handle refetching
+  };
 
   // Form state with all IATI fields - using lazy initializer with safe defaults
   const [formData, setFormData] = useState<Partial<Transaction>>(() => {
@@ -460,16 +485,20 @@ export default function TransactionModal({
       value_date: transaction?.value_date || '',
       description: transaction?.description || '',
       
-      // Provider organization
-      provider_org_id: transaction?.provider_org_id || undefined,
+      // Provider organization - fallback to resolving by IATI ref if UUID is missing
+      provider_org_id: transaction?.provider_org_id 
+        || organizations.find(o => o.iati_org_id === transaction?.provider_org_ref)?.id 
+        || undefined,
       provider_org_type: transaction?.provider_org_type || undefined,
       provider_org_ref: transaction?.provider_org_ref || '',
       provider_org_name: transaction?.provider_org_name || '',
       provider_org_activity_id: transaction?.provider_org_activity_id || '',
       provider_activity_uuid: transaction?.provider_activity_uuid || undefined,
       
-      // Receiver organization
-      receiver_org_id: transaction?.receiver_org_id || undefined,
+      // Receiver organization - fallback to resolving by IATI ref if UUID is missing
+      receiver_org_id: transaction?.receiver_org_id 
+        || organizations.find(o => o.iati_org_id === transaction?.receiver_org_ref)?.id 
+        || undefined,
       receiver_org_type: transaction?.receiver_org_type || undefined,
       receiver_org_ref: transaction?.receiver_org_ref || '',
       receiver_org_name: transaction?.receiver_org_name || '',
@@ -477,7 +506,7 @@ export default function TransactionModal({
       receiver_activity_uuid: transaction?.receiver_activity_uuid || undefined,
       
       // Classifications - Use effective values (which include inherited) for display, fall back to activity defaults
-      disbursement_channel: transaction?.disbursement_channel || undefined,
+      disbursement_channel: transaction?.disbursement_channel || (defaultDisbursementChannel as DisbursementChannel) || undefined,
       flow_type: transaction?.effective_flow_type || transaction?.flow_type || (safeDefaultFlowType as FlowType) || undefined,
       finance_type: transaction?.effective_finance_type || transaction?.finance_type || (safeDefaultFinanceType as FinanceType) || undefined,
       aid_type: transaction?.effective_aid_type || transaction?.aid_type || safeDefaultAidType || undefined,
@@ -675,16 +704,20 @@ export default function TransactionModal({
         value_date: transaction.value_date || '',
         description: transaction.description || '',
         
-        // Provider organization
-        provider_org_id: transaction.provider_org_id || undefined,
+        // Provider organization - fallback to resolving by IATI ref if UUID is missing
+        provider_org_id: transaction.provider_org_id 
+          || organizations.find(o => o.iati_org_id === transaction.provider_org_ref)?.id 
+          || undefined,
         provider_org_type: transaction.provider_org_type || undefined,
         provider_org_ref: transaction.provider_org_ref || '',
         provider_org_name: transaction.provider_org_name || '',
         provider_org_activity_id: transaction.provider_org_activity_id || '',
         provider_activity_uuid: transaction.provider_activity_uuid || undefined,
         
-        // Receiver organization
-        receiver_org_id: transaction.receiver_org_id || undefined,
+        // Receiver organization - fallback to resolving by IATI ref if UUID is missing
+        receiver_org_id: transaction.receiver_org_id 
+          || organizations.find(o => o.iati_org_id === transaction.receiver_org_ref)?.id 
+          || undefined,
         receiver_org_type: transaction.receiver_org_type || undefined,
         receiver_org_ref: transaction.receiver_org_ref || '',
         receiver_org_name: transaction.receiver_org_name || '',
@@ -726,7 +759,8 @@ export default function TransactionModal({
         defaultAidType,
         defaultCurrency,
         defaultTiedStatus,
-        defaultFlowType
+        defaultFlowType,
+        defaultDisbursementChannel
       });
       
       setFormData({
@@ -750,7 +784,7 @@ export default function TransactionModal({
         receiver_org_name: '',
         receiver_org_activity_id: '',
         receiver_activity_uuid: undefined,
-        disbursement_channel: undefined,
+        disbursement_channel: (defaultDisbursementChannel as DisbursementChannel) || undefined,
         flow_type: (defaultFlowType as FlowType) || undefined,
         finance_type: (defaultFinanceType as FinanceType) || undefined,
         aid_type: defaultAidType || undefined,
@@ -1651,6 +1685,7 @@ export default function TransactionModal({
                   placeholder="Search for provider organization..."
                   organizations={organizations}
                   fallbackRef={formData.provider_org_ref}
+                  onLegacyTypeDetected={orgTypeMappingModal.openModal}
                 />
               </div>
 
@@ -1853,6 +1888,7 @@ export default function TransactionModal({
                   placeholder="Search for receiver organization..."
                   organizations={organizations}
                   fallbackRef={formData.receiver_org_ref}
+                  onLegacyTypeDetected={orgTypeMappingModal.openModal}
                 />
               </div>
 
@@ -2142,7 +2178,7 @@ export default function TransactionModal({
               {/* Disbursement Channel */}
               <div className="space-y-2">
                 <LabelWithInfoAndSave 
-                  helpText="How funds are disbursed"
+                  helpText="Specifies the channel through which funds are delivered, such as government ministries, non-governmental organisations, or multilateral agencies."
                   isSaving={disbursementChannelAutosave.isSaving}
                   isSaved={disbursementChannelAutosave.isSaved}
                   hasValue={!!formData.disbursement_channel}
@@ -2669,6 +2705,14 @@ export default function TransactionModal({
           </Button>
         </DialogFooter>
       </DialogContent>
+
+      {/* Organization Type Mapping Modal for legacy type codes */}
+      <OrgTypeMappingModal
+        isOpen={orgTypeMappingModal.isOpen}
+        onClose={orgTypeMappingModal.closeModal}
+        organization={orgTypeMappingModal.targetOrg}
+        onSave={handleOrgTypeUpdate}
+      />
     </Dialog>
   );
 } 

@@ -21,6 +21,7 @@ import {
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { isLegacyOrgType } from "@/lib/org-type-mappings";
 
 export interface Organization {
   id: string
@@ -44,6 +45,8 @@ interface OrganizationComboboxProps {
   allowManualEntry?: boolean
   className?: string
   fallbackRef?: string
+  /** Callback when an organization with a legacy type code is selected */
+  onLegacyTypeDetected?: (org: Organization) => void
 }
 
 export function OrganizationCombobox({
@@ -52,7 +55,8 @@ export function OrganizationCombobox({
   onValueChange,
   placeholder = "Select organization...",
   className,
-  fallbackRef
+  fallbackRef,
+  onLegacyTypeDetected
 }: OrganizationComboboxProps) {
   const [open, setOpen] = React.useState(false)
   const [search, setSearch] = React.useState("")
@@ -152,6 +156,15 @@ export function OrganizationCombobox({
   const handleSelect = (orgId: string) => {
     onValueChange(orgId)
     setOpen(false)
+    
+    // Check if the selected organization has a legacy type code
+    const selectedOrg = organizations.find(o => o.id === orgId)
+    if (selectedOrg && onLegacyTypeDetected) {
+      const orgTypeCode = selectedOrg.Organisation_Type_Code || selectedOrg.type
+      if (isLegacyOrgType(orgTypeCode)) {
+        onLegacyTypeDetected(selectedOrg)
+      }
+    }
   }
 
   return (
@@ -289,10 +302,7 @@ export function OrganizationCombobox({
                   {filteredOrgs.map(org => (
                     <CommandItem
                       key={org.id}
-                      onSelect={() => {
-                        onValueChange(org.id);
-                        setOpen(false);
-                      }}
+                      onSelect={() => handleSelect(org.id)}
                       className="py-3"
                     >
                       <div className="flex items-center gap-3 w-full">

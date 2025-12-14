@@ -3,6 +3,7 @@
 import React from 'react'
 import { Card, CardContent } from '@/components/ui/card'
 import { DollarSign, TrendingUp, Activity, Users, Target, Wallet } from 'lucide-react'
+import { BRAND_COLORS, CHART_BAR_COLORS } from './sectorColorMap'
 
 interface SectorMetricsCardsProps {
   totalPlanned: number
@@ -35,48 +36,49 @@ export function SectorMetricsCards({
     }).format(value)
   }
 
+  // Using brand colors for consistency with charts
   const metrics = [
     {
       title: 'Total Budgets',
       value: formatCurrency(totalBudgets),
       icon: Target,
-      color: 'text-blue-600',
-      bgColor: 'bg-blue-50'
+      iconColor: CHART_BAR_COLORS.budgets,
+      bgColor: `${CHART_BAR_COLORS.budgets}15` // 15% opacity
     },
     {
       title: 'Planned Disbursements',
       value: formatCurrency(totalPlanned),
       icon: Wallet,
-      color: 'text-green-600',
-      bgColor: 'bg-green-50'
+      iconColor: CHART_BAR_COLORS.planned,
+      bgColor: `${CHART_BAR_COLORS.planned}15`
     },
     {
       title: 'Actual Disbursements',
       value: formatCurrency(totalActual),
       icon: DollarSign,
-      color: 'text-emerald-600',
-      bgColor: 'bg-emerald-50'
+      iconColor: CHART_BAR_COLORS.actual,
+      bgColor: `${CHART_BAR_COLORS.actual}15`
     },
     {
       title: 'Commitments',
       value: formatCurrency(totalCommitments),
       icon: TrendingUp,
-      color: 'text-purple-600',
-      bgColor: 'bg-purple-50'
+      iconColor: CHART_BAR_COLORS.commitments,
+      bgColor: `${CHART_BAR_COLORS.commitments}30` // Slightly more visible for light color
     },
     {
       title: 'Total Projects',
       value: totalProjects.toLocaleString(),
       icon: Activity,
-      color: 'text-orange-600',
-      bgColor: 'bg-orange-50'
+      iconColor: CHART_BAR_COLORS.projects,
+      bgColor: `${CHART_BAR_COLORS.projects}15`
     },
     {
       title: 'Total Partners',
       value: totalPartners.toLocaleString(),
       icon: Users,
-      color: 'text-pink-600',
-      bgColor: 'bg-pink-50'
+      iconColor: CHART_BAR_COLORS.partners,
+      bgColor: `${CHART_BAR_COLORS.partners}15`
     }
   ]
 
@@ -92,8 +94,11 @@ export function SectorMetricsCards({
                   <p className="text-sm font-medium text-slate-600">{metric.title}</p>
                   <p className="text-2xl font-bold text-slate-900 mt-2">{metric.value}</p>
                 </div>
-                <div className={`p-3 rounded-lg ${metric.bgColor}`}>
-                  <Icon className={`h-6 w-6 ${metric.color}`} />
+                <div 
+                  className="p-3 rounded-lg"
+                  style={{ backgroundColor: metric.bgColor }}
+                >
+                  <Icon className="h-6 w-6" style={{ color: metric.iconColor }} />
                 </div>
               </div>
             </CardContent>

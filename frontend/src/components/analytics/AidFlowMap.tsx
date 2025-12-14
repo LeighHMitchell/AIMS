@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { MultiSelect } from '@/components/ui/multi-select'
 import { Loader2, RefreshCw, Download, Network, ArrowLeftRight, Activity, Search } from 'lucide-react'
 import { format, subMonths, startOfYear, endOfYear } from 'date-fns'
 import { cn } from '@/lib/utils'
@@ -18,22 +19,21 @@ interface DateRange {
 
 type ViewMode = 'transaction' | 'activity'
 
-// Transaction type labels for the filter
+// Transaction type options for multi-select (all IATI transaction types)
 const TRANSACTION_TYPE_OPTIONS = [
-  { value: 'all', label: 'All Transactions' },
-  { value: '1', label: 'Incoming Commitment' },
-  { value: '2', label: 'Outgoing Commitment' },
-  { value: '3', label: 'Disbursement' },
-  { value: '4', label: 'Expenditure' },
-  { value: '5', label: 'Interest Repayment' },
-  { value: '6', label: 'Loan Repayment' },
-  { value: '7', label: 'Reimbursement' },
-  { value: '8', label: 'Purchase of Equity' },
-  { value: '9', label: 'Sale of Equity' },
-  { value: '10', label: 'Credit Guarantee' },
-  { value: '11', label: 'Incoming Funds' },
-  { value: '12', label: 'Outgoing Pledge' },
-  { value: '13', label: 'Incoming Pledge' }
+  { label: 'Incoming Commitment', value: '1' },
+  { label: 'Outgoing Commitment', value: '2' },
+  { label: 'Disbursement', value: '3' },
+  { label: 'Expenditure', value: '4' },
+  { label: 'Interest Repayment', value: '5' },
+  { label: 'Loan Repayment', value: '6' },
+  { label: 'Reimbursement', value: '7' },
+  { label: 'Purchase of Equity', value: '8' },
+  { label: 'Sale of Equity', value: '9' },
+  { label: 'Credit Guarantee', value: '10' },
+  { label: 'Incoming Funds', value: '11' },
+  { label: 'Outgoing Pledge', value: '12' },
+  { label: 'Incoming Pledge', value: '13' },
 ]
 
 interface AidFlowMapProps {
@@ -42,7 +42,7 @@ interface AidFlowMapProps {
   initialDateRange?: DateRange
 }
 
-export function AidFlowMap({ className, height = 600, initialDateRange }: AidFlowMapProps) {
+export function AidFlowMap({ className, height = 300, initialDateRange }: AidFlowMapProps) {
   // Initialize with All Time as default
   const defaultDateRange = {
     from: initialDateRange?.from || new Date(2000, 0, 1),
@@ -55,7 +55,8 @@ export function AidFlowMap({ className, height = 600, initialDateRange }: AidFlo
   const [graphData, setGraphData] = useState<GraphData | null>(null)
   const [metadata, setMetadata] = useState<any>(null)
   const [statusFilter, setStatusFilter] = useState<'actual' | 'draft' | 'both'>('both')
-  const [transactionTypeFilter, setTransactionTypeFilter] = useState<string>('all')
+  const [transactionTypeFilter, setTransactionTypeFilter] = useState<string[]>(['3']) // Default to Disbursement
+  const [stagedTransactionTypes, setStagedTransactionTypes] = useState<string[]>(['3']) // Staged selection for UI
   const [viewMode, setViewMode] = useState<ViewMode>('transaction')
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedTimePeriod, setSelectedTimePeriod] = useState<string>('all')
@@ -85,7 +86,9 @@ export function AidFlowMap({ className, height = 600, initialDateRange }: AidFlo
       
       if (viewMode === 'transaction') {
         params.append('status', statusFilter)
-        params.append('transactionType', transactionTypeFilter)
+        if (transactionTypeFilter.length > 0) {
+          params.append('transactionTypes', transactionTypeFilter.join(','))
+        }
         endpoint = `/api/aid-flows/graph?${params.toString()}`
       } else {
         endpoint = `/api/aid-flows/activity-graph?${params.toString()}`
@@ -249,7 +252,6 @@ export function AidFlowMap({ className, height = 600, initialDateRange }: AidFlo
         
         {/* View Mode Toggle */}
         <div className="flex items-center gap-2 mt-4">
-          <span className="text-sm font-medium text-slate-600">View by:</span>
           <div className="inline-flex rounded-lg border border-slate-200 p-1 bg-slate-50">
             <button
               onClick={() => setViewMode('transaction')}
@@ -316,18 +318,32 @@ export function AidFlowMap({ className, height = 600, initialDateRange }: AidFlo
           {viewMode === 'transaction' ? (
             <div className="space-y-1.5">
               <label className="text-sm font-medium text-slate-700">Transaction Type</label>
-              <Select value={transactionTypeFilter} onValueChange={setTransactionTypeFilter}>
-                <SelectTrigger className="w-full h-10 bg-white">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {TRANSACTION_TYPE_OPTIONS.map(option => (
-                    <SelectItem key={option.value} value={option.value}>
-                      {option.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <MultiSelect
+                options={TRANSACTION_TYPE_OPTIONS}
+                selected={stagedTransactionTypes}
+                onChange={setStagedTransactionTypes}
+                placeholder="Transaction Types..."
+                selectedLabel="types selected"
+                onClear={() => {
+                  // Reset both staged and applied state to Disbursement
+                  setStagedTransactionTypes(['3'])
+                  setTransactionTypeFilter(['3'])
+                }}
+                onOpenChange={(open) => {
+                  // When dropdown closes, apply the staged selection
+                  if (!open) {
+                    setTransactionTypeFilter(stagedTransactionTypes)
+                  }
+                }}
+                renderOption={(option) => (
+                  <span className="flex items-center gap-2">
+                    <code className="px-1.5 py-0.5 rounded bg-slate-100 text-slate-700 font-mono text-xs">
+                      {option.value}
+                    </code>
+                    <span className="text-sm">{option.label}</span>
+                  </span>
+                )}
+              />
             </div>
           ) : (
             <div className="space-y-1.5">
@@ -363,53 +379,6 @@ export function AidFlowMap({ className, height = 600, initialDateRange }: AidFlo
           )}
         </div>
         
-        {/* Metadata display */}
-        {metadata && !loading && (
-          <div className="flex flex-wrap items-center gap-3 mt-4">
-            {viewMode === 'transaction' ? (
-              <>
-                <div className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 text-blue-700 rounded-full text-sm font-medium">
-                  <span>{metadata.transactionCount || 0}</span>
-                  <span className="text-blue-500">transactions</span>
-                </div>
-                <div className="flex items-center gap-2 px-3 py-1.5 bg-emerald-50 text-emerald-700 rounded-full text-sm font-medium">
-                  <span>{metadata.organizationCount || 0}</span>
-                  <span className="text-emerald-500">organizations</span>
-                </div>
-                <div className="flex items-center gap-2 px-3 py-1.5 bg-purple-50 text-purple-700 rounded-full text-sm font-medium">
-                  <span>{metadata.flowCount || 0}</span>
-                  <span className="text-purple-500">flows</span>
-                </div>
-                <div className="flex items-center gap-2 px-3 py-1.5 bg-amber-50 text-amber-700 rounded-full text-sm font-medium">
-                  <span>Total:</span>
-                  <span>{formatCurrency(metadata.totalValue || 0)}</span>
-                </div>
-                {statusFilter !== 'both' && (
-                  <div className="px-3 py-1.5 bg-slate-100 text-slate-700 rounded-full text-sm font-medium">
-                    Showing {statusFilter} transactions only
-                  </div>
-                )}
-              </>
-            ) : (
-              <>
-                <div className="flex items-center gap-2 px-3 py-1.5 bg-indigo-50 text-indigo-700 rounded-full text-sm font-medium">
-                  <span>{metadata.activityCount || 0}</span>
-                  <span className="text-indigo-500">activities</span>
-                </div>
-                <div className="flex items-center gap-2 px-3 py-1.5 bg-rose-50 text-rose-700 rounded-full text-sm font-medium">
-                  <span>{metadata.relationshipCount || 0}</span>
-                  <span className="text-rose-500">relationships</span>
-                </div>
-                {metadata.totalValue > 0 && (
-                  <div className="flex items-center gap-2 px-3 py-1.5 bg-amber-50 text-amber-700 rounded-full text-sm font-medium">
-                    <span>Combined Value:</span>
-                    <span>{formatCurrency(metadata.totalValue)}</span>
-                  </div>
-                )}
-              </>
-            )}
-          </div>
-        )}
       </CardHeader>
       
       <CardContent>
@@ -431,12 +400,14 @@ export function AidFlowMap({ className, height = 600, initialDateRange }: AidFlo
         )}
         
         {!loading && !error && graphData && (
-          <EnhancedAidFlowGraph
-            graphData={graphData}
-            dateRange={dateRange}
-            height={height}
-            searchQuery={searchQuery}
-          />
+          <>
+            <EnhancedAidFlowGraph
+              graphData={graphData}
+              dateRange={dateRange}
+              height={height}
+              searchQuery={searchQuery}
+            />
+          </>
         )}
         
         {!loading && !error && !graphData && (

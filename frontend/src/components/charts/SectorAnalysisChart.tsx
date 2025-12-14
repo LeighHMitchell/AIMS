@@ -189,7 +189,6 @@ export const SectorAnalysisChart: React.FC<SectorAnalysisChartProps> = ({
         </div>
 
         <div className="flex items-center gap-2">
-          <span className="text-sm font-medium">Metric:</span>
           <div className="flex gap-1">
             <Button
               variant={metric === 'budget' ? "default" : "outline"}
@@ -216,23 +215,24 @@ export const SectorAnalysisChart: React.FC<SectorAnalysisChartProps> = ({
         </div>
         
         <div className="flex items-center gap-2">
-          <span className="text-sm font-medium">Chart Type:</span>
           <div className="flex gap-1">
             <Button
               variant={chartType === 'pie' ? "default" : "outline"}
-              size="sm"
+              size="icon"
+              className="h-8 w-8"
               onClick={() => setChartType('pie')}
+              title="Pie Chart"
             >
-              <PieChartIcon className="h-4 w-4 mr-1" />
-              Pie
+              <PieChartIcon className="h-4 w-4" />
             </Button>
             <Button
               variant={chartType === 'bar' ? "default" : "outline"}
-              size="sm"
+              size="icon"
+              className="h-8 w-8"
               onClick={() => setChartType('bar')}
+              title="Bar Chart"
             >
-              <BarChart3 className="h-4 w-4 mr-1" />
-              Bar
+              <BarChart3 className="h-4 w-4" />
             </Button>
           </div>
         </div>
