@@ -7,10 +7,12 @@ import { MainLayout } from "@/components/layout/main-layout"
 import { AdminUserTable } from "@/components/AdminUserTable"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Shield, Users, FileText, AlertCircle, Settings, MessageSquare } from "lucide-react"
+import { Shield, Users, FileText, AlertCircle, Settings, MessageSquare, Landmark, DollarSign } from "lucide-react"
 import { USER_ROLES } from "@/types/user"
 import { SystemsSettings } from "@/components/admin/SystemsSettings"
 import { FeedbackManagement } from "@/components/admin/FeedbackManagement"
+import { BudgetClassificationsManagement } from "@/components/admin/BudgetClassificationsManagement"
+import { DomesticBudgetManagement } from "@/components/admin/DomesticBudgetManagement"
 
 function AdminPageContent() {
   const { user, isLoading } = useUser()
@@ -19,7 +21,7 @@ function AdminPageContent() {
   const [activeTab, setActiveTab] = useState("users")
 
   // Valid tab values
-  const validTabs = ["users", "import-logs", "validations", "feedback", "systems"]
+  const validTabs = ["users", "import-logs", "validations", "feedback", "systems", "chart-of-accounts", "domestic-budget"]
 
   useEffect(() => {
     // Redirect if user is not super_user
@@ -115,6 +117,14 @@ function AdminPageContent() {
               <Settings className="h-4 w-4" />
               Systems Settings
             </TabsTrigger>
+            <TabsTrigger value="chart-of-accounts" className="flex items-center gap-2">
+              <Landmark className="h-4 w-4" />
+              Chart of Accounts
+            </TabsTrigger>
+            <TabsTrigger value="domestic-budget" className="flex items-center gap-2">
+              <DollarSign className="h-4 w-4" />
+              Domestic Budget
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="users" className="space-y-6">
@@ -167,6 +177,14 @@ function AdminPageContent() {
 
           <TabsContent value="systems" className="space-y-6">
             <SystemsSettings />
+          </TabsContent>
+
+          <TabsContent value="chart-of-accounts" className="space-y-6">
+            <BudgetClassificationsManagement />
+          </TabsContent>
+
+          <TabsContent value="domestic-budget" className="space-y-6">
+            <DomesticBudgetManagement />
           </TabsContent>
         </Tabs>
       </div>

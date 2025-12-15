@@ -72,6 +72,7 @@ import dynamic from 'next/dynamic';
 import { SectorFilterSelection, matchesSectorFilter } from "@/components/maps/SectorHierarchyFilter";
 import { SafeHtml } from '@/components/ui/safe-html';
 import { OrganizationAvatarGroup } from '@/components/ui/organization-avatar-group';
+import { SDGAvatarGroup } from '@/components/ui/sdg-avatar-group';
 import { Progress } from "@/components/ui/progress";
 import { 
   calculateDurationDetailed,
@@ -264,6 +265,15 @@ type Activity = {
   description_objectives?: string;
   description_target_groups?: string;
   description_other?: string;
+  
+  // SDG mappings
+  sdgMappings?: Array<{
+    id?: string;
+    sdgGoal: number | string;
+    sdgTarget?: string;
+    contributionPercent?: number;
+    notes?: string;
+  }>;
 };
 
 type SortField = 'title' | 'partnerId' | 'createdBy' | 'commitments' | 'disbursements' | 'plannedDisbursements' | 'createdAt' | 'updatedAt' | 'activityStatus' | 'actualLength' | 'totalExpectedLength' | 'implementationToDate' | 'remainingDuration' | 'durationBand' | 'plannedStartDate' | 'plannedEndDate' | 'actualStartDate' | 'actualEndDate';
@@ -487,12 +497,14 @@ type ColumnId =
   // Sector allocation columns
   | 'sectorCategories'
   | 'sectors'
-  | 'subSectors';
+  | 'subSectors'
+  // SDG column
+  | 'sdgs';
 
 interface ColumnConfig {
   id: ColumnId;
   label: string;
-  group: 'default' | 'activityDefaults' | 'transactionTypeTotals' | 'publicationStatuses' | 'participatingOrgs' | 'descriptions' | 'progressMetrics' | 'portfolioShares' | 'durations' | 'dates' | 'sectors';
+  group: 'default' | 'activityDefaults' | 'transactionTypeTotals' | 'publicationStatuses' | 'participatingOrgs' | 'descriptions' | 'progressMetrics' | 'portfolioShares' | 'durations' | 'dates' | 'sectors' | 'sdgs';
   width?: string;
   alwaysVisible?: boolean; // For columns that can't be hidden (checkbox, actions)
   defaultVisible?: boolean;
@@ -549,6 +561,9 @@ const COLUMN_CONFIGS: ColumnConfig[] = [
   { id: 'implementingOrganisations', label: 'Implementing Organisations', group: 'participatingOrgs', width: 'min-w-[180px]', defaultVisible: false, align: 'left' },
   { id: 'accountableOrganisations', label: 'Accountable Organisations', group: 'participatingOrgs', width: 'min-w-[180px]', defaultVisible: false, align: 'left' },
   
+  // SDG column
+  { id: 'sdgs', label: 'SDGs', group: 'sdgs', width: 'min-w-[120px]', defaultVisible: false, align: 'left' },
+  
   // Description columns
   { id: 'descriptionGeneral', label: 'Activity Description – General', group: 'descriptions', width: 'min-w-[200px]', defaultVisible: false, align: 'left' },
   { id: 'descriptionObjectives', label: 'Activity Description – Objectives', group: 'descriptions', width: 'min-w-[200px]', defaultVisible: false, align: 'left' },
@@ -593,6 +608,7 @@ const COLUMN_GROUPS = {
   portfolioShares: 'Portfolio Shares',
   durations: 'Activity Durations',
   dates: 'Activity Dates',
+  sdgs: 'SDGs',
 };
 
 const DEFAULT_VISIBLE_COLUMNS: ColumnId[] = COLUMN_CONFIGS
@@ -2319,6 +2335,13 @@ function ActivitiesPageContent() {
                     </th>
                   )}
                   
+                  {/* SDG Column */}
+                  {visibleColumns.includes('sdgs') && (
+                    <th className="h-12 px-4 py-3 text-left align-middle text-sm font-medium text-muted-foreground min-w-[120px]">
+                      SDGs
+                    </th>
+                  )}
+                  
                   {/* Description Columns */}
                   {visibleColumns.includes('descriptionGeneral') && (
                     <th className="h-12 px-4 py-3 text-left align-middle text-sm font-medium text-muted-foreground min-w-[200px]">
@@ -3146,6 +3169,17 @@ function ActivitiesPageContent() {
                             size="sm"
                             label="Accountable Organisations"
                             showAcronym={true}
+                          />
+                        </td>
+                      )}
+                      
+                      {/* SDG Column */}
+                      {visibleColumns.includes('sdgs') && (
+                        <td className="px-4 py-2 text-sm text-foreground text-left">
+                          <SDGAvatarGroup
+                            sdgMappings={activity.sdgMappings || []}
+                            maxDisplay={3}
+                            size="sm"
                           />
                         </td>
                       )}

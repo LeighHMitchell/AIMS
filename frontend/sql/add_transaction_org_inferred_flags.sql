@@ -22,3 +22,6 @@ UPDATE transactions
 SET receiver_org_inferred = FALSE 
 WHERE receiver_org_id IS NOT NULL 
   AND receiver_org_inferred IS NULL;
+
+
+

@@ -60,6 +60,8 @@ import { ProjectTimeline } from '@/components/organizations/ProjectTimeline'
 import { ActivityPortfolioTimeline } from '@/components/organizations/ActivityPortfolioTimeline'
 import { GeographicFootprint } from '@/components/organizations/GeographicFootprint'
 import { PartnershipNetwork } from '@/components/organizations/PartnershipNetwork'
+import { OrganisationHealthCard } from '@/components/organizations/OrganisationHealthCard'
+import { CopyableIdentifier } from '@/components/organizations/CopyableIdentifier'
 import { SectorAllocationChart } from '@/components/organizations/SectorAllocationChart'
 import { EditOrganizationModal } from '@/components/organizations/EditOrganizationModal'
 import { OrganizationAnalytics } from '@/components/organizations/analytics/OrganizationAnalytics'
@@ -91,6 +93,7 @@ import {
 } from "@/components/ui/dialog"
 import { getCountryCode } from '@/lib/country-utils'
 import { toast } from 'sonner'
+import { format } from 'date-fns'
 
 interface Organization {
   id: string
@@ -189,7 +192,7 @@ export default function OrganizationProfilePage() {
   const [error, setError] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState('activities')
   const [activitiesView, setActivitiesView] = useState<'card' | 'table'>('card')
-  const [hoveredPoint, setHoveredPoint] = useState<{year: number, count: number, x: number, y: number} | null>(null)
+  const [hoveredPoint, setHoveredPoint] = useState<{year: number, count: number, totalValue: number, x: number, y: number} | null>(null)
   const [editModalOpen, setEditModalOpen] = useState(false)
   const [deleteActivityId, setDeleteActivityId] = useState<string | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
@@ -200,14 +203,71 @@ export default function OrganizationProfilePage() {
   const [sectorVisualizationTab, setSectorVisualizationTab] = useState<'sankey' | 'sunburst'>('sankey')
   const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false)
   const [modalityComposition, setModalityComposition] = useState<Array<{ name: string; value: number; color: string }>>([])
+  const [modalityCompositionByCount, setModalityCompositionByCount] = useState<Array<{ name: string; value: number; color: string }>>([])
+  const [modalityCompositionByValue, setModalityCompositionByValue] = useState<Array<{ name: string; value: number; color: string }>>([])
   const [timelineView, setTimelineView] = useState<'chart' | 'table'>('chart')
   const [budgetView, setBudgetView] = useState<'chart' | 'table'>('chart')
   const [budgetVsActualsView, setBudgetVsActualsView] = useState<'chart' | 'table'>('chart')
+  const [budgetVsActualsMetric, setBudgetVsActualsMetric] = useState<'commitments' | 'disbursements' | 'expenditure'>('commitments')
+  const [budgetVsActualsGrouping, setBudgetVsActualsGrouping] = useState<'year' | 'activity'>('year')
   const [modalityView, setModalityView] = useState<'chart' | 'table'>('chart')
+  const [modalityViewMode, setModalityViewMode] = useState<'value' | 'count'>('value')
+  const [temporalMetadata, setTemporalMetadata] = useState<{
+    firstActivityDate: string | null
+    mostRecentTransaction: string | null
+    lastDataUpdate: string | null
+    defaultCurrency: string
+  } | null>(null)
+  const [showContactInfo, setShowContactInfo] = useState(false)
+  const [roleDistribution, setRoleDistribution] = useState<{
+    funding: number
+    implementing: number
+    extending: number
+    government: number
+  } | null>(null)
+  const [roleMetrics, setRoleMetrics] = useState<{
+    isFundingOrg: boolean
+    totalOutboundFunding?: number
+    uniqueImplementingPartners?: number
+    disbursementVsCommitmentRate?: number
+    totalInboundFunding?: number
+    uniqueDonors?: number
+    averageActivitySize?: number
+  } | null>(null)
+  const [healthMetrics, setHealthMetrics] = useState<{
+    missingBudgetsPercent: number
+    missingPlannedDisbursementsPercent: number
+    outdatedDataPercent: number
+  } | null>(null)
+  const [partnerOrganizations, setPartnerOrganizations] = useState<any[]>([])
+  const [activitiesWithPartnerData, setActivitiesWithPartnerData] = useState<any[]>([])
+  const [organizationDocuments, setOrganizationDocuments] = useState<any[]>([])
+  const [activityDocuments, setActivityDocuments] = useState<Array<{activityId: string, activityTitle: string, documents: any[]}>>([])
 
   
   // AbortController ref for race condition prevention
   const abortControllerRef = useRef<AbortController | null>(null)
+
+  // Format date helper function
+  const formatDate = (dateString: string | null) => {
+    if (!dateString) return 'Not set'
+    try {
+      const date = new Date(dateString)
+      if (isNaN(date.getTime())) return 'Not set'
+      return format(date, 'dd MMM yyyy')
+    } catch {
+      return 'Not set'
+    }
+  }
+
+  // Update modality composition when view mode changes
+  useEffect(() => {
+    if (modalityViewMode === 'value' && modalityCompositionByValue.length > 0) {
+      setModalityComposition(modalityCompositionByValue)
+    } else if (modalityViewMode === 'count' && modalityCompositionByCount.length > 0) {
+      setModalityComposition(modalityCompositionByCount)
+    }
+  }, [modalityViewMode, modalityCompositionByValue, modalityCompositionByCount])
 
   useEffect(() => {
     const fetchOrganizationData = async () => {
@@ -242,6 +302,61 @@ export default function OrganizationProfilePage() {
         const orgData = await orgResponse.json()
         setOrganization(orgData)
 
+        // Fetch temporal metadata
+        try {
+          const temporalResponse = await fetch(`/api/organizations/${params.id}/temporal-metadata`, {
+            signal: abortControllerRef.current.signal
+          })
+          if (temporalResponse.ok) {
+            const temporalData = await temporalResponse.json()
+            setTemporalMetadata(temporalData)
+          }
+        } catch (temporalErr) {
+          console.warn('Failed to fetch temporal metadata:', temporalErr)
+        }
+
+        // Fetch role distribution
+        try {
+          const roleResponse = await fetch(`/api/organizations/${params.id}/role-distribution`, {
+            signal: abortControllerRef.current.signal
+          })
+          if (roleResponse.ok) {
+            const roleData = await roleResponse.json()
+            setRoleDistribution(roleData)
+            
+            // Fetch role metrics after role distribution is loaded
+            try {
+              const roleMetricsResponse = await fetch(`/api/organizations/${params.id}/role-metrics`, {
+                signal: abortControllerRef.current.signal
+              })
+              if (roleMetricsResponse.ok) {
+                const roleMetricsData = await roleMetricsResponse.json()
+                setRoleMetrics(roleMetricsData)
+              }
+            } catch (roleMetricsErr) {
+              console.warn('Failed to fetch role metrics:', roleMetricsErr)
+            }
+          }
+        } catch (roleErr) {
+          console.warn('Failed to fetch role distribution:', roleErr)
+        }
+
+        // Fetch health metrics
+        try {
+          const healthResponse = await fetch(`/api/organizations/${params.id}/health-metrics`, {
+            signal: abortControllerRef.current.signal
+          })
+          if (healthResponse.ok) {
+            const healthData = await healthResponse.json()
+            setHealthMetrics(healthData)
+          }
+        } catch (healthErr) {
+          console.warn('Failed to fetch health metrics:', healthErr)
+        }
+
+        // Fetch organization documents (if any)
+        // Note: Organizations may not have a documents field, so we'll check for it
+        
         // Fetch activities with budget data
         try {
           const activitiesResponse = await fetch(`/api/activities?organization_id=${params.id}`, {
@@ -282,27 +397,32 @@ export default function OrganizationProfilePage() {
             
             setActivities(activitiesWithBudgets)
             
-            // Calculate finance type composition from all activities
-            const financeTypeMap = new Map<string, number>()
-            
+            // Calculate finance type composition from all activities (by count)
+            const financeTypeMapByCount = new Map<string, number>()
+            // Calculate finance type composition by value
+            const financeTypeMapByValue = new Map<string, number>()
+
             console.log('[OrgProfile] Processing activities for finance types:', activitiesWithBudgets.length)
-            console.log('[OrgProfile] Sample activity:', activitiesWithBudgets[0])
-            
+
             for (const activity of activitiesWithBudgets) {
               const financeType = activity.defaultFinanceType
-              console.log('[OrgProfile] Activity finance type:', { id: activity.id, financeType })
-              
               if (financeType) {
                 const label = financeTypeLabels[financeType] || `Type ${financeType}`
-                const currentCount = financeTypeMap.get(label) || 0
-                financeTypeMap.set(label, currentCount + 1)
+                
+                // Count by number of activities
+                const currentCount = financeTypeMapByCount.get(label) || 0
+                financeTypeMapByCount.set(label, currentCount + 1)
+                
+                // Sum by value (use totalPlannedBudgetUSD or commitments)
+                const activityValue = activity.totalPlannedBudgetUSD || activity.total_budget || 0
+                const currentValue = financeTypeMapByValue.get(label) || 0
+                financeTypeMapByValue.set(label, currentValue + activityValue)
               }
             }
-            
-            console.log('[OrgProfile] Finance type composition:', Array.from(financeTypeMap.entries()))
-            
-            // Define colors for different finance types (dark blues/slates palette)
+
+            // Define colors for different finance types (matching Activity Profile)
             const colors = [
+              '#4c5568', // slate-600 (primary)
               '#1e40af', // blue-800
               '#3b82f6', // blue-500
               '#0f172a', // slate-900
@@ -314,17 +434,143 @@ export default function OrganizationProfilePage() {
               '#1e3a8a', // blue-900
               '#6366f1'  // indigo-500
             ]
-            
-            // Convert to array format for pie chart
-            const modalityData = Array.from(financeTypeMap.entries())
+
+            // Convert to array format for pie chart - by count
+            const modalityDataByCount = Array.from(financeTypeMapByCount.entries())
               .map(([name, count], index) => ({
                 name,
                 value: count,
                 color: colors[index % colors.length]
               }))
               .sort((a, b) => b.value - a.value)
-            
-            setModalityComposition(modalityData)
+
+            // Convert to array format for pie chart - by value
+            const modalityDataByValue = Array.from(financeTypeMapByValue.entries())
+              .map(([name, value], index) => ({
+                name,
+                value: value,
+                color: colors[index % colors.length]
+              }))
+              .sort((a, b) => b.value - a.value)
+
+            setModalityCompositionByCount(modalityDataByCount)
+            setModalityCompositionByValue(modalityDataByValue)
+            // Default to count view
+            setModalityComposition(modalityDataByCount)
+
+            // Fetch documents from activities
+            try {
+              const activityDocsPromises = activitiesWithBudgets.map(async (activity) => {
+                try {
+                  const docsResponse = await fetch(`/api/activities/${activity.id}/documents`, {
+                    signal: abortControllerRef.current?.signal
+                  })
+                  if (docsResponse.ok) {
+                    const docs = await docsResponse.json()
+                    return {
+                      activityId: activity.id,
+                      activityTitle: activity.title || activity.title_narrative || 'Untitled',
+                      documents: Array.isArray(docs) ? docs : (docs.documents || [])
+                    }
+                  }
+                } catch (err) {
+                  console.warn(`Failed to fetch documents for activity ${activity.id}:`, err)
+                }
+                return null
+              })
+              
+              const activityDocsResults = await Promise.all(activityDocsPromises)
+              setActivityDocuments(activityDocsResults.filter(result => result !== null && result.documents.length > 0))
+            } catch (docsErr) {
+              console.warn('Failed to fetch activity documents:', docsErr)
+            }
+
+            // Fetch and transform partner data for PartnershipNetwork
+            try {
+              const partnerOrgIds = new Set<string>()
+              const activitiesTransformed = await Promise.all(
+                activitiesWithBudgets.map(async (activity) => {
+                  try {
+                    const participatingOrgsResponse = await fetch(
+                      `/api/activities/${activity.id}/participating-organizations`,
+                      { signal: abortControllerRef.current?.signal }
+                    )
+                    if (participatingOrgsResponse.ok) {
+                      const participatingOrgs = await participatingOrgsResponse.json()
+                      
+                      // Group by role type
+                      const extendingPartners: Array<{ orgId: string; name: string }> = []
+                      const implementingPartners: Array<{ orgId: string; name: string }> = []
+                      const governmentPartners: Array<{ orgId: string; name: string }> = []
+                      const fundingPartners: Array<{ orgId: string; name: string }> = []
+                      
+                      participatingOrgs.forEach((po: any) => {
+                        if (po.organization_id && po.organization_id !== params.id) {
+                          partnerOrgIds.add(po.organization_id)
+                          const partnerData = {
+                            orgId: po.organization_id,
+                            name: po.organization?.name || po.narrative || 'Unknown'
+                          }
+                          
+                          if (po.role_type === 'extending') extendingPartners.push(partnerData)
+                          else if (po.role_type === 'implementing') implementingPartners.push(partnerData)
+                          else if (po.role_type === 'government') governmentPartners.push(partnerData)
+                          else if (po.role_type === 'funding') fundingPartners.push(partnerData)
+                        }
+                      })
+                      
+                      return {
+                        id: activity.id,
+                        title: activity.title || activity.title_narrative || 'Untitled',
+                        activity_status: activity.activity_status || '1',
+                        extendingPartners,
+                        implementingPartners,
+                        governmentPartners,
+                        fundingPartners
+                      }
+                    }
+                  } catch (err) {
+                    console.warn(`Failed to fetch participating orgs for activity ${activity.id}:`, err)
+                  }
+                  
+                  // Fallback if fetch fails
+                  return {
+                    id: activity.id,
+                    title: activity.title || activity.title_narrative || 'Untitled',
+                    activity_status: activity.activity_status || '1',
+                    extendingPartners: [],
+                    implementingPartners: [],
+                    governmentPartners: [],
+                    fundingPartners: []
+                  }
+                })
+              )
+
+              setActivitiesWithPartnerData(activitiesTransformed.filter(a => a !== null))
+
+              // Fetch organization details for all partner IDs
+              if (partnerOrgIds.size > 0) {
+                const partnerOrgIdsArray = Array.from(partnerOrgIds)
+                const partnerOrgDetails = await Promise.all(
+                  partnerOrgIdsArray.map(async (orgId) => {
+                    try {
+                      const orgResponse = await fetch(`/api/organizations/${orgId}`, {
+                        signal: abortControllerRef.current?.signal
+                      })
+                      if (orgResponse.ok) {
+                        return await orgResponse.json()
+                      }
+                    } catch (err) {
+                      console.warn(`Failed to fetch org ${orgId}:`, err)
+                    }
+                    return null
+                  })
+                )
+                setPartnerOrganizations(partnerOrgDetails.filter(org => org !== null))
+              }
+            } catch (partnerErr) {
+              console.warn('Failed to fetch partner organizations:', partnerErr)
+            }
             
             // Calculate budgets by year from published activities
             const budgetsByYearMap = new Map<number, number>()
@@ -629,18 +875,18 @@ export default function OrganizationProfilePage() {
     const safeTransactions = transactions || [];
     const safeActivities = activities || [];
     
-    // Calculate budget from commitment transactions (types '1' = Incoming Commitment, '2' = Outgoing Commitment)
-    const budgetFromTransactions = safeTransactions
+    // Calculate total portfolio value (commitments) - transaction types '1' and '2'
+    const totalPortfolioValue = safeTransactions
       .filter(txn => ['1', '2'].includes(txn.transaction_type))
-      .reduce((sum, txn) => sum + txn.value, 0)
+      .reduce((sum, txn) => sum + (txn.value || 0), 0)
     
     // Calculate budget from activity budgets (activity_budgets table) - only for published activities
     const budgetFromActivities = safeActivities
       .filter(activity => activity.publication_status === 'published')
       .reduce((sum, activity) => sum + (activity.totalPlannedBudgetUSD || 0), 0)
     
-    // Use activity budgets if available, otherwise fall back to transaction-based budgets
-    const totalBudget = budgetFromActivities > 0 ? budgetFromActivities : budgetFromTransactions
+    // Use portfolio value (commitments) as primary, fall back to activity budgets if no commitments
+    const totalBudget = totalPortfolioValue > 0 ? totalPortfolioValue : budgetFromActivities
     
     // Calculate total planned disbursements from plannedDisbursementsByYear
     const totalPlannedDisbursements = plannedDisbursementsByYear.reduce((sum, item) => sum + item.amount, 0)
@@ -659,6 +905,7 @@ export default function OrganizationProfilePage() {
     
     return {
       totalBudget,
+      totalPortfolioValue,
       totalPlannedDisbursements,
       totalDisbursements,
       totalExpenditures,
@@ -670,19 +917,37 @@ export default function OrganizationProfilePage() {
 
   const calculateActiveProjectsByYear = () => {
     const years = [2020, 2021, 2022, 2023, 2024, 2025]
-    const projectsByYear: Record<number, number> = {}
+    const projectsByYear: Record<number, { count: number; totalValue: number }> = {}
     
-    // Get current active projects count to distribute across years
-    const activeCount = activities.filter(a => ['2', '3'].includes(a.activity_status)).length
-    
+    // Initialize years
     years.forEach(year => {
-      // For now, distribute active projects evenly across recent years
-      // This is a simplified approach until we have proper date data
-      if (year >= 2022 && year <= 2024) {
-        projectsByYear[year] = Math.floor(activeCount / 3) + (year === 2023 ? activeCount % 3 : 0)
-      } else {
-        projectsByYear[year] = 0
-      }
+      projectsByYear[year] = { count: 0, totalValue: 0 }
+    })
+    
+    // Process each activity
+    activities.forEach(activity => {
+      // Get activity dates (use actual if available, otherwise planned)
+      const startDate = activity.actual_start_date || activity.planned_start_date
+      const endDate = activity.actual_end_date || activity.planned_end_date
+      
+      if (!startDate) return
+      
+      const startYear = new Date(startDate).getFullYear()
+      const endYear = endDate ? new Date(endDate).getFullYear() : new Date().getFullYear()
+      
+      // Get activity value (use totalPlannedBudgetUSD or total_budget or 0)
+      const activityValue = activity.totalPlannedBudgetUSD || activity.total_budget || 0
+      
+      // Determine which years this activity was active
+      years.forEach(year => {
+        if (year >= startYear && year <= endYear) {
+          // Activity was active in this year
+          projectsByYear[year].count++
+          // Distribute value evenly across years activity was active
+          const yearsActive = endYear - startYear + 1
+          projectsByYear[year].totalValue += activityValue / yearsActive
+        }
+      })
     })
     
     return projectsByYear
@@ -887,21 +1152,36 @@ export default function OrganizationProfilePage() {
 
                 {/* Organization Info */}
                 <div className="flex-1">
-                      <h1 className="text-3xl font-bold text-slate-900 mb-3">
+                      <h1 className="text-3xl font-bold text-slate-900 mb-2">
                         {organization.name}
                         {organization.acronym && <span className="text-3xl font-bold text-slate-900"> ({organization.acronym})</span>}
                       </h1>
                       
+                      {/* Aggregation Helper Text */}
+                      {activities.length > 0 && (
+                        <p className="text-sm text-slate-500 mb-3">
+                          This page aggregates data across {activities.length} activities where this organisation participates
+                        </p>
+                      )}
+                      
                       <div className="flex flex-col gap-2 mb-3">
-                        <div className="flex items-center gap-2">
+                        <div className="flex flex-wrap items-center gap-2">
                           {organization.iati_org_id && (
-                            <code className="text-xs px-2 py-1 bg-slate-100 text-slate-700 rounded font-mono">
-                              {organization.iati_org_id}
-                            </code>
+                            <CopyableIdentifier value={organization.iati_org_id} />
                           )}
                           <Badge className={getTypeColor(organization.organisation_type)}>
                             {organization.organisation_type}
                           </Badge>
+                          {organization.iati_org_id && (
+                            <Badge variant="outline" className="border-green-300 bg-green-50 text-green-700">
+                              Reporting to IATI
+                            </Badge>
+                          )}
+                          {organization.secondary_reporter !== undefined && (
+                            <Badge variant="outline" className="border-blue-300 bg-blue-50 text-blue-700">
+                              {organization.secondary_reporter ? 'Secondary reporter' : 'Primary publisher'}
+                            </Badge>
+                          )}
                           {organization.default_currency && (
                             <Badge variant="outline" className="border-blue-300 bg-blue-50 text-blue-700">
                               {organization.default_currency}
@@ -991,109 +1271,159 @@ export default function OrganizationProfilePage() {
                     </div>
                   </div>
 
-                {/* Contact Information Sub-Card - Column 4 */}
+                {/* Temporal Metadata Sub-Card - Column 4 */}
                 <div className="lg:col-span-1">
-                  <div className="bg-white p-4">
+                  <div className="bg-white">
                     <div className="space-y-3">
-                    {organization.website && (
-                      <a 
-                        href={organization.website} 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                          className="flex items-center gap-2 text-slate-600 hover:text-slate-900 transition-colors"
-                        >
-                          <Globe className="h-4 w-4 flex-shrink-0" />
-                          <span className="text-sm truncate">Website</span>
-                          <ExternalLink className="h-3 w-3 flex-shrink-0" />
-                      </a>
-                    )}
-                    {organization.email && (
-                      <a 
-                        href={`mailto:${organization.email}`}
-                          className="flex items-start gap-2 text-slate-600 hover:text-slate-900 transition-colors"
-                      >
-                          <Mail className="h-4 w-4 flex-shrink-0 mt-0.5" />
-                          <span className="text-sm break-all">{organization.email}</span>
-                      </a>
-                    )}
-                    {organization.phone && (
-                      <a 
-                        href={`tel:${organization.phone}`}
-                          className="flex items-center gap-2 text-slate-600 hover:text-slate-900 transition-colors"
-                      >
-                          <Phone className="h-4 w-4 flex-shrink-0" />
-                        <span className="text-sm">{organization.phone}</span>
-                      </a>
-                    )}
-                      {organization.address && (
-                        <div className="flex items-start gap-2 text-slate-600">
-                          <MapPin className="h-4 w-4 flex-shrink-0 mt-0.5" />
-                          <span className="text-sm">{organization.address}</span>
-                      </div>
-                    )}
-                    
-                    {/* Social Media Links */}
-                    {(organization.twitter || organization.facebook || organization.linkedin || organization.instagram || organization.youtube) && (
-                      <div className="pt-3 border-t border-slate-200">
-                        <div className="flex flex-wrap gap-2">
-                          {organization.twitter && (
-                            <a
-                              href={organization.twitter.startsWith('http') ? organization.twitter : `https://twitter.com/${organization.twitter}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="flex items-center justify-center w-8 h-8 rounded-full bg-slate-100 text-slate-600 hover:bg-slate-900 hover:text-white transition-colors"
-                              title="Twitter/X"
-                            >
-                              <Twitter className="h-4 w-4" />
-                            </a>
-                          )}
-                          {organization.facebook && (
-                            <a
-                              href={organization.facebook.startsWith('http') ? organization.facebook : `https://facebook.com/${organization.facebook}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="flex items-center justify-center w-8 h-8 rounded-full bg-slate-100 text-slate-600 hover:bg-blue-600 hover:text-white transition-colors"
-                              title="Facebook"
-                            >
-                              <Facebook className="h-4 w-4" />
-                            </a>
-                          )}
-                          {organization.linkedin && (
-                            <a
-                              href={organization.linkedin.startsWith('http') ? organization.linkedin : `https://linkedin.com/company/${organization.linkedin}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="flex items-center justify-center w-8 h-8 rounded-full bg-slate-100 text-slate-600 hover:bg-blue-700 hover:text-white transition-colors"
-                              title="LinkedIn"
-                            >
-                              <Linkedin className="h-4 w-4" />
-                            </a>
-                          )}
-                          {organization.instagram && (
-                            <a
-                              href={organization.instagram.startsWith('http') ? organization.instagram : `https://instagram.com/${organization.instagram}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="flex items-center justify-center w-8 h-8 rounded-full bg-slate-100 text-slate-600 hover:bg-gradient-to-br hover:from-purple-600 hover:to-pink-600 hover:text-white transition-colors"
-                              title="Instagram"
-                            >
-                              <Instagram className="h-4 w-4" />
-                            </a>
-                          )}
-                          {organization.youtube && (
-                            <a
-                              href={organization.youtube.startsWith('http') ? organization.youtube : `https://youtube.com/${organization.youtube}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="flex items-center justify-center w-8 h-8 rounded-full bg-slate-100 text-slate-600 hover:bg-red-600 hover:text-white transition-colors"
-                              title="YouTube"
-                            >
-                              <Youtube className="h-4 w-4" />
-                            </a>
+                      {temporalMetadata?.firstActivityDate && (
+                        <div className="flex items-center gap-2 text-xs text-slate-600 whitespace-nowrap">
+                          <Calendar className="h-3 w-3 text-slate-400 flex-shrink-0" />
+                          <span className="text-slate-500">First activity:</span>
+                          <span className="font-medium text-slate-900">{formatDate(temporalMetadata.firstActivityDate)}</span>
+                        </div>
+                      )}
+                      {temporalMetadata?.mostRecentTransaction && (
+                        <div className="flex items-center gap-2 text-xs text-slate-600 whitespace-nowrap">
+                          <Calendar className="h-3 w-3 text-slate-400 flex-shrink-0" />
+                          <span className="text-slate-500">Most recent transaction:</span>
+                          <span className="font-medium text-slate-900">{formatDate(temporalMetadata.mostRecentTransaction)}</span>
+                        </div>
+                      )}
+                      {temporalMetadata?.lastDataUpdate && (
+                        <div className="flex items-center gap-2 text-xs text-slate-600 whitespace-nowrap">
+                          <Calendar className="h-3 w-3 text-slate-400 flex-shrink-0" />
+                          <span className="text-slate-500">Last data update:</span>
+                          <span className="font-medium text-slate-900">{formatDate(temporalMetadata.lastDataUpdate)}</span>
+                        </div>
+                      )}
+                      {temporalMetadata?.defaultCurrency && (
+                        <div className="flex items-center gap-2 text-xs text-slate-600 whitespace-nowrap">
+                          <DollarSign className="h-3 w-3 text-slate-400 flex-shrink-0" />
+                          <span className="text-slate-500">Default currency:</span>
+                          <span className="font-medium text-slate-900">{temporalMetadata.defaultCurrency}</span>
+                        </div>
+                      )}
+                      
+                      {/* Collapsible Contact Information */}
+                      {(organization.website || organization.email || organization.phone || organization.address || 
+                        organization.twitter || organization.facebook || organization.linkedin || organization.instagram || organization.youtube) && (
+                        <div className="pt-3 border-t border-slate-200">
+                          <button
+                            onClick={() => setShowContactInfo(!showContactInfo)}
+                            className="flex items-center justify-between w-full text-xs font-medium text-slate-600 hover:text-slate-900 transition-colors mb-2"
+                          >
+                            <span>Contact Information</span>
+                            {showContactInfo ? (
+                              <ChevronUp className="h-3 w-3" />
+                            ) : (
+                              <ChevronDown className="h-3 w-3" />
+                            )}
+                          </button>
+                          {showContactInfo && (
+                            <div className="space-y-2">
+                              {organization.website && (
+                                <a 
+                                  href={organization.website} 
+                                  target="_blank" 
+                                  rel="noopener noreferrer"
+                                  className="flex items-center gap-2 text-xs text-slate-600 hover:text-slate-900 transition-colors"
+                                >
+                                  <Globe className="h-3 w-3 flex-shrink-0" />
+                                  <span className="truncate">Website</span>
+                                  <ExternalLink className="h-3 w-3 flex-shrink-0" />
+                                </a>
+                              )}
+                              {organization.email && (
+                                <a 
+                                  href={`mailto:${organization.email}`}
+                                  className="flex items-start gap-2 text-xs text-slate-600 hover:text-slate-900 transition-colors"
+                                >
+                                  <Mail className="h-3 w-3 flex-shrink-0 mt-0.5" />
+                                  <span className="break-all">{organization.email}</span>
+                                </a>
+                              )}
+                              {organization.phone && (
+                                <a 
+                                  href={`tel:${organization.phone}`}
+                                  className="flex items-center gap-2 text-xs text-slate-600 hover:text-slate-900 transition-colors"
+                                >
+                                  <Phone className="h-3 w-3 flex-shrink-0" />
+                                  <span>{organization.phone}</span>
+                                </a>
+                              )}
+                              {organization.address && (
+                                <div className="flex items-start gap-2 text-xs text-slate-600">
+                                  <MapPin className="h-3 w-3 flex-shrink-0 mt-0.5" />
+                                  <span>{organization.address}</span>
+                                </div>
+                              )}
+                              
+                              {/* Social Media Links */}
+                              {(organization.twitter || organization.facebook || organization.linkedin || organization.instagram || organization.youtube) && (
+                                <div className="pt-2 border-t border-slate-100">
+                                  <div className="flex flex-wrap gap-2">
+                                    {organization.twitter && (
+                                      <a
+                                        href={organization.twitter.startsWith('http') ? organization.twitter : `https://twitter.com/${organization.twitter}`}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="flex items-center justify-center w-6 h-6 rounded-full bg-slate-100 text-slate-600 hover:bg-slate-900 hover:text-white transition-colors"
+                                        title="Twitter/X"
+                                      >
+                                        <Twitter className="h-3 w-3" />
+                                      </a>
+                                    )}
+                                    {organization.facebook && (
+                                      <a
+                                        href={organization.facebook.startsWith('http') ? organization.facebook : `https://facebook.com/${organization.facebook}`}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="flex items-center justify-center w-6 h-6 rounded-full bg-slate-100 text-slate-600 hover:bg-blue-600 hover:text-white transition-colors"
+                                        title="Facebook"
+                                      >
+                                        <Facebook className="h-3 w-3" />
+                                      </a>
+                                    )}
+                                    {organization.linkedin && (
+                                      <a
+                                        href={organization.linkedin.startsWith('http') ? organization.linkedin : `https://linkedin.com/company/${organization.linkedin}`}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="flex items-center justify-center w-6 h-6 rounded-full bg-slate-100 text-slate-600 hover:bg-blue-700 hover:text-white transition-colors"
+                                        title="LinkedIn"
+                                      >
+                                        <Linkedin className="h-3 w-3" />
+                                      </a>
+                                    )}
+                                    {organization.instagram && (
+                                      <a
+                                        href={organization.instagram.startsWith('http') ? organization.instagram : `https://instagram.com/${organization.instagram}`}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="flex items-center justify-center w-6 h-6 rounded-full bg-slate-100 text-slate-600 hover:bg-gradient-to-br hover:from-purple-600 hover:to-pink-600 hover:text-white transition-colors"
+                                        title="Instagram"
+                                      >
+                                        <Instagram className="h-3 w-3" />
+                                      </a>
+                                    )}
+                                    {organization.youtube && (
+                                      <a
+                                        href={organization.youtube.startsWith('http') ? organization.youtube : `https://youtube.com/${organization.youtube}`}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="flex items-center justify-center w-6 h-6 rounded-full bg-slate-100 text-slate-600 hover:bg-red-600 hover:text-white transition-colors"
+                                        title="YouTube"
+                                      >
+                                        <Youtube className="h-3 w-3" />
+                                      </a>
+                                    )}
+                                  </div>
+                                </div>
+                              )}
+                            </div>
                           )}
                         </div>
-                      </div>
-                    )}
+                      )}
                     </div>
                   </div>
                 </div>
@@ -1102,110 +1432,198 @@ export default function OrganizationProfilePage() {
           </Card>
 
           {/* Financial Summary Cards - Row 1 */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-            {/* Total Active Projects Card */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            {/* Total Active Activities Card */}
             <Card className="border-slate-200 bg-white">
-              <CardContent className="p-6">
+              <CardContent className="p-3">
                 <div className="flex items-start justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-slate-600">Total Active Projects</p>
-                    <p className="text-2xl font-bold text-slate-900">{totals.activeActivities}</p>
-                    <p className="text-xs text-slate-500">of {totals.totalActivities} total</p>
+                  <div className="space-y-2 w-full">
+                    <div>
+                      <p className="text-xs font-medium text-slate-600">Total Active Activities</p>
+                      <p className="text-lg font-bold text-slate-900">{totals.activeActivities}</p>
+                    </div>
+                    <div className="border-t border-slate-200 pt-2">
+                      <p className="text-xs text-slate-500">of {totals.totalActivities} total</p>
+                    </div>
                   </div>
-                  <Activity className="h-8 w-8 text-slate-400" />
+                  <Activity className="h-6 w-6 text-slate-400 flex-shrink-0" />
                 </div>
               </CardContent>
             </Card>
 
-            {/* Total Budget Card */}
+            {/* Total Portfolio Value Card */}
             <Card className="border-slate-200 bg-white">
-              <CardContent className="p-6">
+              <CardContent className="p-3">
                 <div className="flex items-start justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-slate-600">Total Budget</p>
-                    <p className="text-2xl font-bold text-slate-900">
-                      {formatCurrency(totals.totalBudget, organization.default_currency)}
-                    </p>
-                    <p className="text-xs text-slate-500">across all activities</p>
+                  <div className="space-y-2 w-full">
+                    <div>
+                      <p className="text-xs font-medium text-slate-600">Total Portfolio Value</p>
+                      <p className="text-lg font-bold text-slate-900">
+                        {formatCurrency(totals.totalPortfolioValue || totals.totalBudget, organization.default_currency)}
+                      </p>
+                    </div>
+                    <div className="border-t border-slate-200 pt-2">
+                      <p className="text-xs text-slate-500">(commitments)</p>
+                    </div>
                   </div>
-                  <DollarSign className="h-8 w-8 text-slate-400" />
+                  <DollarSign className="h-6 w-6 text-slate-400 flex-shrink-0" />
                 </div>
               </CardContent>
             </Card>
 
-            {/* Financial Actuals Card */}
+            {/* Total Disbursed Card */}
             <Card className="border-slate-200 bg-white">
-              <CardContent className="p-6">
-                <div className="space-y-2">
-                  <div>
-                    <p className="text-xs font-medium text-slate-600">Planned Disbursements</p>
-                    <p className="text-sm font-bold text-slate-900">
-                      {formatCurrency(totals.totalPlannedDisbursements, organization.default_currency)}
-                    </p>
+              <CardContent className="p-3">
+                <div className="flex items-start justify-between">
+                  <div className="space-y-2 w-full">
+                    <div>
+                      <p className="text-xs font-medium text-slate-600">Total Disbursed</p>
+                      <p className="text-lg font-bold text-slate-900">
+                        {formatCurrency(totals.totalDisbursements, organization.default_currency)}
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-xs font-medium text-slate-600">Disbursements</p>
-                    <p className="text-sm font-bold text-slate-900">
-                      {formatCurrency(totals.totalDisbursements, organization.default_currency)}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-xs font-medium text-slate-600">Expenditures</p>
-                    <p className="text-sm font-bold text-slate-900">
-                      {formatCurrency(totals.totalExpenditures, organization.default_currency)}
-                    </p>
-                  </div>
+                  <DollarSign className="h-6 w-6 text-slate-400 flex-shrink-0" />
                 </div>
               </CardContent>
             </Card>
 
-            {/* Finance Type Summary Card */}
+            {/* Total Expended Card */}
             <Card className="border-slate-200 bg-white">
-              <CardContent className="p-6">
-                <div className="space-y-2">
-                  {(() => {
-                    // Calculate totals for Grants, Loans, and Other
-                    const grantCodes = ['110', '111', '210', '211', '212', '422'] // Grant-related codes
-                    const loanCodes = ['310', '311', '320', '410', '411', '421'] // Loan-related codes
-                    
-                    const totalGrants = modalityComposition
-                      .filter(item => grantCodes.some(code => item.name.includes(financeTypeLabels[code as keyof typeof financeTypeLabels] || '')))
-                      .reduce((sum, item) => sum + item.value, 0)
-                    
-                    const totalLoans = modalityComposition
-                      .filter(item => loanCodes.some(code => item.name.includes(financeTypeLabels[code as keyof typeof financeTypeLabels] || '')))
-                      .reduce((sum, item) => sum + item.value, 0)
-                    
-                    const totalOther = modalityComposition.reduce((sum, item) => sum + item.value, 0) - totalGrants - totalLoans
-                    
-                    return (
-                      <>
-                        <div>
-                          <p className="text-xs font-medium text-slate-600">Total Grants</p>
-                          <p className="text-sm font-bold text-slate-900">{totalGrants}</p>
-                        </div>
-                        <div>
-                          <p className="text-xs font-medium text-slate-600">Total Loans</p>
-                          <p className="text-sm font-bold text-slate-900">{totalLoans}</p>
-                        </div>
-                        <div>
-                          <p className="text-xs font-medium text-slate-600">Other</p>
-                          <p className="text-sm font-bold text-slate-900">{totalOther}</p>
-                        </div>
-                      </>
-                    )
-                  })()}
+              <CardContent className="p-3">
+                <div className="flex items-start justify-between">
+                  <div className="space-y-2 w-full">
+                    <div>
+                      <p className="text-xs font-medium text-slate-600">Total Expended</p>
+                      <p className="text-lg font-bold text-slate-900">
+                        {formatCurrency(totals.totalExpenditures, organization.default_currency)}
+                      </p>
+                    </div>
+                  </div>
+                  <DollarSign className="h-6 w-6 text-slate-400 flex-shrink-0" />
                 </div>
               </CardContent>
             </Card>
           </div>
 
+          {/* Role-Aware KPI Cards - Row 2 */}
+          {roleMetrics && roleDistribution && (
+            roleMetrics.isFundingOrg ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                <Card className="border-slate-200 bg-white">
+                  <CardContent className="p-3">
+                    <div className="flex items-start justify-between">
+                      <div className="space-y-2 w-full">
+                        <div>
+                          <p className="text-xs font-medium text-slate-600">Total Outbound Funding</p>
+                          <p className="text-lg font-bold text-slate-900">
+                            {formatCurrency(roleMetrics.totalOutboundFunding || 0, organization.default_currency)}
+                          </p>
+                        </div>
+                      </div>
+                      <DollarSign className="h-6 w-6 text-slate-400 flex-shrink-0" />
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card className="border-slate-200 bg-white">
+                  <CardContent className="p-3">
+                    <div className="flex items-start justify-between">
+                      <div className="space-y-2 w-full">
+                        <div>
+                          <p className="text-xs font-medium text-slate-600">Implementing Partners</p>
+                          <p className="text-lg font-bold text-slate-900">
+                            {roleMetrics.uniqueImplementingPartners || 0}
+                          </p>
+                        </div>
+                      </div>
+                      <Users className="h-6 w-6 text-slate-400 flex-shrink-0" />
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card className="border-slate-200 bg-white">
+                  <CardContent className="p-3">
+                    <div className="flex items-start justify-between">
+                      <div className="space-y-2 w-full">
+                        <div>
+                          <p className="text-xs font-medium text-slate-600">% Funds Disbursed</p>
+                          <p className="text-lg font-bold text-slate-900">
+                            {roleMetrics.disbursementVsCommitmentRate?.toFixed(1) || '0.0'}%
+                          </p>
+                        </div>
+                      </div>
+                      <TrendingUp className="h-6 w-6 text-slate-400 flex-shrink-0" />
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                <Card className="border-slate-200 bg-white">
+                  <CardContent className="p-3">
+                    <div className="flex items-start justify-between">
+                      <div className="space-y-2 w-full">
+                        <div>
+                          <p className="text-xs font-medium text-slate-600">Total Inbound Funding</p>
+                          <p className="text-lg font-bold text-slate-900">
+                            {formatCurrency(roleMetrics.totalInboundFunding || 0, organization.default_currency)}
+                          </p>
+                        </div>
+                      </div>
+                      <DollarSign className="h-6 w-6 text-slate-400 flex-shrink-0" />
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card className="border-slate-200 bg-white">
+                  <CardContent className="p-3">
+                    <div className="flex items-start justify-between">
+                      <div className="space-y-2 w-full">
+                        <div>
+                          <p className="text-xs font-medium text-slate-600">Number of Donors</p>
+                          <p className="text-lg font-bold text-slate-900">
+                            {roleMetrics.uniqueDonors || 0}
+                          </p>
+                        </div>
+                      </div>
+                      <Users className="h-6 w-6 text-slate-400 flex-shrink-0" />
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card className="border-slate-200 bg-white">
+                  <CardContent className="p-3">
+                    <div className="flex items-start justify-between">
+                      <div className="space-y-2 w-full">
+                        <div>
+                          <p className="text-xs font-medium text-slate-600">Average Activity Size</p>
+                          <p className="text-lg font-bold text-slate-900">
+                            {formatCurrency(roleMetrics.averageActivitySize || 0, organization.default_currency)}
+                          </p>
+                        </div>
+                      </div>
+                      <TrendingUp className="h-6 w-6 text-slate-400 flex-shrink-0" />
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            )
+          )}
+
+          {/* Organisation Health Card */}
+          {healthMetrics && (
+            <div className="mb-6">
+              <OrganisationHealthCard healthMetrics={healthMetrics} />
+            </div>
+          )}
+
           {/* Charts Section - Row 2: Chart Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
             {/* Active Projects Timeline Chart */}
             <Card className="border-slate-200 bg-white">
-              <CardHeader className="pb-3 flex flex-row items-center justify-between">
-                <CardTitle className="text-sm font-semibold text-slate-900">Projects Timeline</CardTitle>
+              <CardHeader className="pb-2 pt-3 px-3 flex flex-row items-center justify-between">
+                <CardTitle className="text-xs font-semibold text-slate-900">Projects Timeline</CardTitle>
                 <div className="flex gap-1">
                   <Button
                     variant="ghost"
@@ -1220,11 +1638,12 @@ export default function OrganizationProfilePage() {
                     size="sm"
                     onClick={() => {
                       const projectsByYear = calculateActiveProjectsByYear()
-                      const data = Object.entries(projectsByYear).map(([year, projects]) => ({
+                      const data = Object.entries(projectsByYear).map(([year, data]) => ({
                         year: parseInt(year),
-                        projects
+                        count: data.count,
+                        totalValue: data.totalValue
                       }))
-                      exportToCSV(data, 'projects-timeline.csv', ['Year', 'Projects'])
+                      exportToCSV(data, 'projects-timeline.csv', ['Year', 'Count', 'Total Value'])
                     }}
                     className="h-6 w-6 p-0"
                   >
@@ -1232,27 +1651,29 @@ export default function OrganizationProfilePage() {
                   </Button>
                 </div>
               </CardHeader>
-              <CardContent>
+              <CardContent className="p-3 pt-0">
                   {(() => {
                     const projectsByYear = calculateActiveProjectsByYear()
                     const years = Object.keys(projectsByYear).map(Number).sort()
-                    const maxProjects = Math.max(...Object.values(projectsByYear), 1)
+                    const maxCount = Math.max(...Object.values(projectsByYear).map(v => v.count), 1)
                     
                   if (timelineView === 'table') {
                     return (
-                      <div className="h-40 overflow-auto">
+                      <div className="h-24 overflow-auto">
                         <table className="w-full text-xs">
                           <thead>
                             <tr className="border-b border-slate-200">
                               <th className="text-left py-1 text-slate-600 font-medium">Year</th>
-                              <th className="text-right py-1 text-slate-600 font-medium">Projects</th>
+                              <th className="text-right py-1 text-slate-600 font-medium">Count</th>
+                              <th className="text-right py-1 text-slate-600 font-medium">Value</th>
                             </tr>
                           </thead>
                           <tbody>
                             {years.map((year) => (
                               <tr key={year} className="border-b border-slate-100">
                                 <td className="py-1 text-slate-900">{year}</td>
-                                <td className="text-right py-1 text-slate-900 font-medium">{projectsByYear[year]}</td>
+                                <td className="text-right py-1 text-slate-900 font-medium">{projectsByYear[year].count}</td>
+                                <td className="text-right py-1 text-slate-900 font-medium">{formatCurrencyShort(projectsByYear[year].totalValue)}</td>
                               </tr>
                             ))}
                           </tbody>
@@ -1262,7 +1683,7 @@ export default function OrganizationProfilePage() {
                   }
                   
                   return (
-                    <div className="h-40 relative group">
+                    <div className="h-24 relative group">
                         <svg className="w-full h-full" viewBox="0 0 300 100">
                           {/* Grid lines */}
                           {[0, 1, 2, 3, 4].map(i => (
@@ -1286,7 +1707,7 @@ export default function OrganizationProfilePage() {
                             strokeLinejoin="round"
                             points={years.map((year, index) => {
                               const x = (index / (years.length - 1)) * 280 + 10
-                              const y = 90 - (projectsByYear[year] / maxProjects) * 70
+                              const y = 90 - (projectsByYear[year].count / maxCount) * 70
                               return `${x},${y}`
                             }).join(' ')}
                           />
@@ -1294,7 +1715,7 @@ export default function OrganizationProfilePage() {
                           {/* Data points with hover areas */}
                           {years.map((year, index) => {
                             const x = (index / (years.length - 1)) * 280 + 10
-                            const y = 90 - (projectsByYear[year] / maxProjects) * 70
+                            const y = 90 - (projectsByYear[year].count / maxCount) * 70
                             return (
                               <g key={year}>
                                 <circle
@@ -1303,7 +1724,13 @@ export default function OrganizationProfilePage() {
                                   r="8"
                                   fill="transparent"
                                   className="cursor-pointer"
-                                  onMouseEnter={() => setHoveredPoint({year, count: projectsByYear[year], x, y})}
+                                  onMouseEnter={() => setHoveredPoint({
+                                    year, 
+                                    count: projectsByYear[year].count, 
+                                    totalValue: projectsByYear[year].totalValue,
+                                    x, 
+                                    y
+                                  })}
                                   onMouseLeave={() => setHoveredPoint(null)}
                                 />
                                 <circle
@@ -1334,17 +1761,19 @@ export default function OrganizationProfilePage() {
                             )
                           })}
                         </svg>
-                        
+
                         {hoveredPoint && (
                           <div
-                            className="absolute bg-slate-900 text-white text-xs px-2 py-1 rounded pointer-events-none"
+                            className="absolute bg-white border border-gray-200 rounded shadow-lg px-3 py-2 pointer-events-none z-10"
                             style={{
                               left: `${(hoveredPoint.x / 300) * 100}%`,
                               top: `${(hoveredPoint.y / 100) * 100 - 30}%`,
                               transform: 'translateX(-50%)'
                             }}
                           >
-                            {hoveredPoint.year}: {hoveredPoint.count} projects
+                            <div className="text-xs font-semibold text-slate-900 mb-1">{hoveredPoint.year}</div>
+                            <div className="text-xs text-slate-600">Active activities: {hoveredPoint.count}</div>
+                            <div className="text-xs text-slate-600">Total value: {formatCurrencyShort(hoveredPoint.totalValue)}</div>
                           </div>
                         )}
                     </div>
@@ -1355,8 +1784,8 @@ export default function OrganizationProfilePage() {
 
             {/* Budget by Year Chart */}
             <Card className="border-slate-200 bg-white">
-              <CardHeader className="pb-3 flex flex-row items-center justify-between">
-                <CardTitle className="text-sm font-semibold text-slate-900">Budget by Year</CardTitle>
+              <CardHeader className="pb-2 pt-3 px-3 flex flex-row items-center justify-between">
+                <CardTitle className="text-xs font-semibold text-slate-900">Budget by Year</CardTitle>
                 <div className="flex gap-1">
                   <Button
                     variant="ghost"
@@ -1382,10 +1811,10 @@ export default function OrganizationProfilePage() {
                   </Button>
                 </div>
               </CardHeader>
-              <CardContent>
+              <CardContent className="p-3 pt-0">
                 {budgetsByYear.length > 0 ? (
-                  budgetView === 'table' ? (
-                    <div className="h-40 overflow-auto">
+                    budgetView === 'table' ? (
+                    <div className="h-24 overflow-auto">
                       <table className="w-full text-xs">
                         <thead>
                           <tr className="border-b border-slate-200">
@@ -1410,7 +1839,7 @@ export default function OrganizationProfilePage() {
                       </table>
                     </div>
                   ) : (
-                  <div className="h-40 -mx-2">
+                  <div className="h-24 -mx-2">
                     <ResponsiveContainer width="100%" height="100%">
                       <BarChart data={budgetsByYear} margin={{ top: 0, right: 5, left: 0, bottom: 5 }}>
                         <XAxis 
@@ -1448,7 +1877,7 @@ export default function OrganizationProfilePage() {
                   </div>
                   )
                 ) : (
-                  <div className="h-40 flex items-center justify-center text-slate-400 text-xs">
+                  <div className="h-24 flex items-center justify-center text-slate-400 text-xs">
                     <p>No data</p>
                   </div>
                 )}
@@ -1457,9 +1886,10 @@ export default function OrganizationProfilePage() {
 
             {/* Expenditure Trend */}
             <Card className="border-slate-200 bg-white">
-              <CardHeader className="pb-3 flex flex-row items-center justify-between">
-                <CardTitle className="text-sm font-semibold text-slate-900">Budget vs Actuals</CardTitle>
-                <div className="flex gap-1">
+              <CardHeader className="pb-2 pt-3 px-3">
+                <div className="flex items-center justify-between mb-2">
+                  <CardTitle className="text-xs font-semibold text-slate-900">Budget vs Actuals</CardTitle>
+                  <div className="flex gap-1">
                   <Button
                     variant="ghost"
                     size="sm"
@@ -1488,9 +1918,37 @@ export default function OrganizationProfilePage() {
                   >
                     <Download className="h-3 w-3" />
                   </Button>
+                  </div>
+                </div>
+                {/* Metric Toggle Buttons */}
+                <div className="flex gap-1 mt-2">
+                  <Button
+                    variant={budgetVsActualsMetric === 'commitments' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setBudgetVsActualsMetric('commitments')}
+                    className={`h-6 text-xs ${budgetVsActualsMetric === 'commitments' ? 'bg-slate-900 text-white' : ''}`}
+                  >
+                    Commitments
+                  </Button>
+                  <Button
+                    variant={budgetVsActualsMetric === 'disbursements' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setBudgetVsActualsMetric('disbursements')}
+                    className={`h-6 text-xs ${budgetVsActualsMetric === 'disbursements' ? 'bg-slate-900 text-white' : ''}`}
+                  >
+                    Disbursements
+                  </Button>
+                  <Button
+                    variant={budgetVsActualsMetric === 'expenditure' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setBudgetVsActualsMetric('expenditure')}
+                    className={`h-6 text-xs ${budgetVsActualsMetric === 'expenditure' ? 'bg-slate-900 text-white' : ''}`}
+                  >
+                    Expenditure
+                  </Button>
                 </div>
               </CardHeader>
-              <CardContent>
+              <CardContent className="p-3 pt-0">
                 {(() => {
                   // Combine planned disbursements and actual disbursement data
                   const allYears = new Set([
@@ -1518,7 +1976,7 @@ export default function OrganizationProfilePage() {
                   
                   return chartData.length > 0 ? (
                     budgetVsActualsView === 'table' ? (
-                      <div className="h-40 overflow-auto">
+                      <div className="h-24 overflow-auto">
                         <table className="w-full text-xs">
                           <thead>
                             <tr className="border-b border-slate-200">
@@ -1553,7 +2011,7 @@ export default function OrganizationProfilePage() {
                         </table>
                       </div>
                     ) :
-                    <div className="h-40 -mx-2">
+                    <div className="h-24 -mx-2">
                       <ResponsiveContainer width="100%" height="100%">
                         <BarChart data={chartData} margin={{ top: 0, right: 5, left: 0, bottom: 5 }} barCategoryGap="5%" barGap={0}>
                           <XAxis 
@@ -1602,9 +2060,10 @@ export default function OrganizationProfilePage() {
 
             {/* Aid Modality Composition */}
             <Card className="border-slate-200 bg-white">
-              <CardHeader className="pb-3 flex flex-row items-center justify-between">
-                <CardTitle className="text-sm font-semibold text-slate-900">Aid Modality Composition</CardTitle>
-                <div className="flex gap-1">
+              <CardHeader className="pb-2 pt-3 px-3">
+                <div className="flex items-center justify-between mb-2">
+                  <CardTitle className="text-xs font-semibold text-slate-900">Aid Modality Composition</CardTitle>
+                  <div className="flex gap-1">
                   <Button
                     variant="ghost"
                     size="sm"
@@ -1620,26 +2079,52 @@ export default function OrganizationProfilePage() {
                       const total = modalityComposition.reduce((sum, item) => sum + item.value, 0)
                       const data = modalityComposition.map(item => ({
                         finance_type: item.name,
-                        activities: item.value,
+                        [modalityViewMode === 'value' ? 'value' : 'activities']: item.value,
                         percentage: ((item.value / total) * 100).toFixed(1)
                       }))
-                      exportToCSV(data, 'aid-modality-composition.csv', ['Finance_Type', 'Activities', 'Percentage'])
+                      exportToCSV(data, 'aid-modality-composition.csv', [
+                        'Finance_Type', 
+                        modalityViewMode === 'value' ? 'Value' : 'Activities', 
+                        'Percentage'
+                      ])
                     }}
                     className="h-6 w-6 p-0"
                   >
                     <Download className="h-3 w-3" />
                   </Button>
+                  </div>
+                </div>
+                {/* View Mode Toggle */}
+                <div className="flex gap-1 mt-2">
+                  <Button
+                    variant={modalityViewMode === 'value' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setModalityViewMode('value')}
+                    className={`h-6 text-xs ${modalityViewMode === 'value' ? 'bg-slate-900 text-white' : ''}`}
+                  >
+                    By Value
+                  </Button>
+                  <Button
+                    variant={modalityViewMode === 'count' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setModalityViewMode('count')}
+                    className={`h-6 text-xs ${modalityViewMode === 'count' ? 'bg-slate-900 text-white' : ''}`}
+                  >
+                    By Number of Activities
+                  </Button>
                 </div>
               </CardHeader>
-              <CardContent>
+              <CardContent className="p-3 pt-0">
                 {modalityComposition.length > 0 ? (
                   modalityView === 'table' ? (
-                    <div className="h-40 overflow-auto">
+                    <div className="h-24 overflow-auto">
                       <table className="w-full text-xs">
                         <thead>
                           <tr className="border-b border-slate-200">
                             <th className="text-left py-1 text-slate-600 font-medium">Finance Type</th>
-                            <th className="text-right py-1 text-slate-600 font-medium">Activities</th>
+                            <th className="text-right py-1 text-slate-600 font-medium">
+                              {modalityViewMode === 'value' ? 'Value' : 'Activities'}
+                            </th>
                             <th className="text-right py-1 text-slate-600 font-medium">%</th>
                           </tr>
                         </thead>
@@ -1653,7 +2138,9 @@ export default function OrganizationProfilePage() {
                                   <div className="w-2 h-2 rounded-full" style={{ backgroundColor: item.color }} />
                                   <span>{item.name}</span>
                                 </td>
-                                <td className="text-right py-1 text-slate-900 font-medium">{item.value}</td>
+                                <td className="text-right py-1 text-slate-900 font-medium">
+                                  {modalityViewMode === 'value' ? formatCurrencyShort(item.value) : item.value}
+                                </td>
                                 <td className="text-right py-1 text-slate-700">{percentage}%</td>
                               </tr>
                             )
@@ -1662,7 +2149,7 @@ export default function OrganizationProfilePage() {
                       </table>
                 </div>
                   ) : (
-                  <div className="h-40 flex items-center justify-center">
+                  <div className="h-24 flex items-center justify-center">
                     <ResponsiveContainer width="100%" height="100%">
                       <RechartsPieChart>
                         <Pie
@@ -1687,7 +2174,11 @@ export default function OrganizationProfilePage() {
                               return (
                                 <div className="bg-white p-2 border border-gray-200 rounded shadow-lg">
                                   <p className="text-sm font-semibold">{data.name}</p>
-                                  <p className="text-xs text-slate-600">{data.value} activities ({percentage}%)</p>
+                                  <p className="text-xs text-slate-600">
+                                    {modalityViewMode === 'value' 
+                                      ? `${formatCurrencyShort(data.value)} (${percentage}%)`
+                                      : `${data.value} activities (${percentage}%)`}
+                                  </p>
                                 </div>
                               )
                             }
@@ -1699,7 +2190,7 @@ export default function OrganizationProfilePage() {
                   </div>
                   )
                 ) : (
-                  <div className="h-40 flex items-center justify-center text-slate-400 text-xs">
+                  <div className="h-24 flex items-center justify-center text-slate-400 text-xs">
                     <p>No finance type data</p>
                   </div>
                 )}
@@ -1710,18 +2201,15 @@ export default function OrganizationProfilePage() {
           {/* Main Content Tabs */}
           <Card className="border-slate-200">
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <TabsList className="grid w-full grid-cols-8 lg:grid-cols-8 bg-slate-50 border-b border-slate-200">
+              <TabsList className="grid w-full grid-cols-7 lg:grid-cols-7 bg-slate-50 border-b border-slate-200">
                 <TabsTrigger value="activities" className="data-[state=active]:bg-white data-[state=active]:text-slate-900">
                   Activities
                 </TabsTrigger>
-                <TabsTrigger value="analytics" className="data-[state=active]:bg-white data-[state=active]:text-slate-900">
-                  Analytics
+                <TabsTrigger value="financial-analytics" className="data-[state=active]:bg-white data-[state=active]:text-slate-900">
+                  Financial Analytics
                 </TabsTrigger>
                 <TabsTrigger value="sectors" className="data-[state=active]:bg-white data-[state=active]:text-slate-900">
                   Sectors
-                </TabsTrigger>
-                <TabsTrigger value="finances" className="data-[state=active]:bg-white data-[state=active]:text-slate-900">
-                  Finances
                 </TabsTrigger>
                 <TabsTrigger value="partnerships" className="data-[state=active]:bg-white data-[state=active]:text-slate-900">
                   Partnerships
@@ -1769,7 +2257,15 @@ export default function OrganizationProfilePage() {
                     {activities.length > 0 ? (
                       activitiesView === 'card' ? (
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                          {activities.filter(activity => activity.title && activity.title.trim() !== '').map((activity) => (
+                          {activities
+                            .filter(activity => activity.title && activity.title.trim() !== '')
+                            .sort((a, b) => {
+                              // Sort by updated_at descending (most recent first)
+                              const aDate = a.updated_at ? new Date(a.updated_at).getTime() : 0
+                              const bDate = b.updated_at ? new Date(b.updated_at).getTime() : 0
+                              return bDate - aDate
+                            })
+                            .map((activity) => (
                             <Card key={activity.id} className="border-slate-200 hover:shadow-md transition-shadow">
                               <CardContent className="p-4">
                                 <div className="space-y-3">
@@ -2075,59 +2571,17 @@ export default function OrganizationProfilePage() {
                   </Card>
               </TabsContent>
 
-              <TabsContent value="analytics" className="p-0">
-                {params?.id && (
-                  <OrganizationAnalytics
-                    organizationId={params.id as string}
-                    currency={organization.default_currency || 'USD'}
-                  />
-                )}
-              </TabsContent>
-
-              <TabsContent value="sectors" className="p-6">
-                <Card className="border-slate-200">
-                  <CardHeader>
-                    <CardTitle className="text-slate-900">Sector Distribution</CardTitle>
-                    <p className="text-sm text-slate-600 mt-2">
-                      Aggregated sector allocations across all activities ({sectorAllocations.length} unique sectors)
-                    </p>
-                  </CardHeader>
-                  <CardContent>
-                    {sectorAllocations.length > 0 ? (
-                      <Tabs value={sectorVisualizationTab} onValueChange={(value) => setSectorVisualizationTab(value as 'sankey' | 'sunburst')}>
-                        {/* Tab headers removed per design; selection is controlled externally */}
-                        
-                        <TabsContent value="sankey" className="mt-4">
-                          <div className="relative overflow-hidden h-[600px]">
-                            <SectorSankeyVisualization 
-                              allocations={sectorAllocations}
-                              className="w-full h-full"
-                            />
-                          </div>
-                        </TabsContent>
-                        
-                        <TabsContent value="sunburst" className="mt-4">
-                          <div className="relative overflow-hidden h-[600px]">
-                            <SectorSunburstVisualization 
-                              allocations={sectorAllocations}
-                              className="w-full h-full"
-                            />
-                          </div>
-                        </TabsContent>
-                      </Tabs>
-                    ) : (
-                      <div className="text-center py-12">
-                        <PieChart className="h-12 w-12 text-slate-300 mx-auto mb-4" />
-                        <p className="text-slate-500">No sector data available</p>
-                        <p className="text-xs text-slate-400 mt-2">Activities need sector allocations to display visualization</p>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              </TabsContent>
-
-              <TabsContent value="finances" className="p-6">
-                <div className="grid grid-cols-1 gap-6">
+              <TabsContent value="financial-analytics" className="p-6">
+                <div className="space-y-6">
+                  {/* Organization Analytics Component */}
+                  {params?.id && (
+                    <OrganizationAnalytics
+                      organizationId={params.id as string}
+                      currency={organization.default_currency || 'USD'}
+                    />
+                  )}
+                  
+                  {/* Financial Transactions */}
                   <Card className="border-slate-200">
                     <CardHeader>
                       <CardTitle className="text-slate-900">Financial Transactions</CardTitle>
@@ -2173,6 +2627,41 @@ export default function OrganizationProfilePage() {
                               </p>
                             </div>
                           </div>
+                          
+                          {/* Transaction Table */}
+                          <div className="overflow-x-auto">
+                            <Table>
+                              <TableHeader>
+                                <TableRow>
+                                  <TableHead>Date</TableHead>
+                                  <TableHead>Type</TableHead>
+                                  <TableHead>Description</TableHead>
+                                  <TableHead className="text-right">Amount</TableHead>
+                                  <TableHead>Currency</TableHead>
+                                </TableRow>
+                              </TableHeader>
+                              <TableBody>
+                                {transactions.slice(0, 50).map((transaction) => (
+                                  <TableRow key={transaction.id}>
+                                    <TableCell>{transaction.transaction_date ? formatDate(transaction.transaction_date) : '-'}</TableCell>
+                                    <TableCell>
+                                      {transaction.transaction_type === '1' ? 'Incoming Commitment' :
+                                       transaction.transaction_type === '2' ? 'Outgoing Commitment' :
+                                       transaction.transaction_type === '3' ? 'Disbursement' :
+                                       transaction.transaction_type === '4' ? 'Expenditure' :
+                                       transaction.transaction_type}
+                                    </TableCell>
+                                    <TableCell className="max-w-md truncate">{transaction.description || '-'}</TableCell>
+                                    <TableCell className="text-right">{formatCurrency(transaction.value || 0, transaction.currency || 'USD')}</TableCell>
+                                    <TableCell>{transaction.currency || '-'}</TableCell>
+                                  </TableRow>
+                                ))}
+                              </TableBody>
+                            </Table>
+                          </div>
+                          {transactions.length > 50 && (
+                            <p className="text-sm text-slate-500 text-center">Showing first 50 transactions</p>
+                          )}
                           <div className="text-center py-4">
                             <Button 
                               variant="outline" 
@@ -2183,25 +2672,78 @@ export default function OrganizationProfilePage() {
                           </div>
                         </div>
                       ) : (
-                        <p className="text-slate-500 text-center py-4">No transaction data available</p>
+                        <div className="text-center py-12">
+                          <CreditCard className="h-12 w-12 text-slate-300 mx-auto mb-4" />
+                          <p className="text-slate-500">No transactions found</p>
+                        </div>
                       )}
                     </CardContent>
                   </Card>
                 </div>
               </TabsContent>
 
-              <TabsContent value="partnerships" className="p-6">
+              <TabsContent value="sectors" className="p-6">
                 <Card className="border-slate-200">
                   <CardHeader>
-                    <CardTitle className="text-slate-900">Partnership Network</CardTitle>
+                    <CardTitle className="text-slate-900">Sector Distribution</CardTitle>
+                    <p className="text-sm text-slate-600 mt-2">
+                      Aggregated sector allocations across all activities ({sectorAllocations.length} unique sectors)
+                    </p>
                   </CardHeader>
                   <CardContent>
-                    <div className="text-center py-12">
-                      <Users className="h-12 w-12 text-slate-300 mx-auto mb-4" />
-                      <p className="text-slate-500">Partnership network feature coming soon</p>
-                    </div>
+                    {sectorAllocations.length > 0 ? (
+                      <Tabs value={sectorVisualizationTab} onValueChange={(value) => setSectorVisualizationTab(value as 'sankey' | 'sunburst')}>
+                        {/* Tab headers removed per design; selection is controlled externally */}
+                        
+                        <TabsContent value="sankey" className="mt-4">
+                          <div className="relative overflow-hidden h-[600px]">
+                            <SectorSankeyVisualization 
+                              allocations={sectorAllocations}
+                              className="w-full h-full"
+                            />
+                          </div>
+                        </TabsContent>
+                        
+                        <TabsContent value="sunburst" className="mt-4">
+                          <div className="relative overflow-hidden h-[600px]">
+                            <SectorSunburstVisualization 
+                              allocations={sectorAllocations}
+                              className="w-full h-full"
+                            />
+                          </div>
+                        </TabsContent>
+                      </Tabs>
+                    ) : (
+                      <div className="text-center py-12">
+                        <PieChart className="h-12 w-12 text-slate-300 mx-auto mb-4" />
+                        <p className="text-slate-500">No sector data available</p>
+                        <p className="text-xs text-slate-400 mt-2">Activities need sector allocations to display visualization</p>
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
+              </TabsContent>
+
+              <TabsContent value="partnerships" className="p-6">
+                {params?.id && activitiesWithPartnerData.length > 0 ? (
+                  <PartnershipNetwork
+                    organizationId={params.id as string}
+                    activities={activitiesWithPartnerData}
+                    allOrganizations={partnerOrganizations}
+                  />
+                ) : (
+                  <Card className="border-slate-200">
+                    <CardHeader>
+                      <CardTitle className="text-slate-900">Partnership Network</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-center py-12">
+                        <Users className="h-12 w-12 text-slate-300 mx-auto mb-4" />
+                        <p className="text-slate-500">No partnership data available</p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
               </TabsContent>
 
               <TabsContent value="geography" className="p-6">
@@ -2238,10 +2780,85 @@ export default function OrganizationProfilePage() {
                     <CardTitle className="text-slate-900">Documents</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="text-center py-12">
-                      <FileText className="h-12 w-12 text-slate-300 mx-auto mb-4" />
-                      <p className="text-slate-500">No documents available</p>
-                    </div>
+                    {(organizationDocuments.length > 0 || activityDocuments.length > 0) ? (
+                      <div className="space-y-6">
+                        {/* Organization Documents */}
+                        {organizationDocuments.length > 0 && (
+                          <div>
+                            <h3 className="text-sm font-semibold text-slate-900 mb-3">Organisation Documents</h3>
+                            <div className="space-y-2">
+                              {organizationDocuments.map((doc, index) => (
+                                <div key={index} className="p-3 border border-slate-200 rounded-lg">
+                                  <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-2">
+                                      <FileText className="h-4 w-4 text-slate-600" />
+                                      <span className="text-sm font-medium text-slate-900">
+                                        {doc.title || doc.filename || 'Untitled Document'}
+                                      </span>
+                                      <Badge variant="outline" className="text-xs">Organisation Document</Badge>
+                                    </div>
+                                    {doc.url && (
+                                      <a 
+                                        href={doc.url} 
+                                        target="_blank" 
+                                        rel="noopener noreferrer"
+                                        className="text-sm text-blue-600 hover:text-blue-800"
+                                      >
+                                        <ExternalLink className="h-4 w-4" />
+                                      </a>
+                                    )}
+                                  </div>
+                                  {doc.description && (
+                                    <p className="text-xs text-slate-600 mt-1">{doc.description}</p>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Activity Documents */}
+                        {activityDocuments.map((activityDoc) => (
+                          <div key={activityDoc.activityId}>
+                            <h3 className="text-sm font-semibold text-slate-900 mb-3">
+                              From Activity: {activityDoc.activityTitle}
+                            </h3>
+                            <div className="space-y-2">
+                              {activityDoc.documents.map((doc: any, index: number) => (
+                                <div key={index} className="p-3 border border-slate-200 rounded-lg">
+                                  <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-2">
+                                      <FileText className="h-4 w-4 text-slate-600" />
+                                      <span className="text-sm font-medium text-slate-900">
+                                        {doc.title || doc.filename || 'Untitled Document'}
+                                      </span>
+                                    </div>
+                                    {doc.url && (
+                                      <a 
+                                        href={doc.url} 
+                                        target="_blank" 
+                                        rel="noopener noreferrer"
+                                        className="text-sm text-blue-600 hover:text-blue-800"
+                                      >
+                                        <ExternalLink className="h-4 w-4" />
+                                      </a>
+                                    )}
+                                  </div>
+                                  {doc.description && (
+                                    <p className="text-xs text-slate-600 mt-1">{doc.description}</p>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-center py-12">
+                        <FileText className="h-12 w-12 text-slate-300 mx-auto mb-4" />
+                        <p className="text-slate-500">No documents available</p>
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               </TabsContent>

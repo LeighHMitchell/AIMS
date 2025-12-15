@@ -897,7 +897,66 @@ export async function POST(request: Request) {
         newValue = body.value;
         updateData.banner = body.value;
         break;
-        
+
+      case 'budgetStatus':
+        oldValue = existingActivity.budget_status;
+        newValue = body.value;
+        // Validate budget status value
+        const validBudgetStatuses = ['on_budget', 'off_budget', 'partial', 'unknown'];
+        if (body.value && !validBudgetStatuses.includes(body.value)) {
+          clearTimeout(timeoutId);
+          return NextResponse.json(
+            { error: `Invalid budget status. Must be one of: ${validBudgetStatuses.join(', ')}` },
+            { status: 400 }
+          );
+        }
+        updateData.budget_status = body.value || 'unknown';
+        // Clear on_budget_percentage if not partial
+        if (body.value !== 'partial') {
+          updateData.on_budget_percentage = null;
+        }
+        // Update timestamp
+        updateData.budget_status_updated_at = new Date().toISOString();
+        if (body.user?.id) {
+          updateData.budget_status_updated_by = body.user.id;
+        }
+        break;
+
+      case 'onBudgetPercentage':
+        oldValue = existingActivity.on_budget_percentage;
+        newValue = body.value;
+        // Validate percentage value
+        if (body.value !== null && body.value !== undefined) {
+          const percentage = parseFloat(body.value);
+          if (isNaN(percentage) || percentage < 0 || percentage > 100) {
+            clearTimeout(timeoutId);
+            return NextResponse.json(
+              { error: 'On-budget percentage must be between 0 and 100' },
+              { status: 400 }
+            );
+          }
+          updateData.on_budget_percentage = percentage;
+        } else {
+          updateData.on_budget_percentage = null;
+        }
+        // Update timestamp
+        updateData.budget_status_updated_at = new Date().toISOString();
+        if (body.user?.id) {
+          updateData.budget_status_updated_by = body.user.id;
+        }
+        break;
+
+      case 'budgetStatusNotes':
+        oldValue = existingActivity.budget_status_notes;
+        newValue = body.value;
+        updateData.budget_status_notes = body.value || null;
+        // Update timestamp
+        updateData.budget_status_updated_at = new Date().toISOString();
+        if (body.user?.id) {
+          updateData.budget_status_updated_by = body.user.id;
+        }
+        break;
+
       default:
         clearTimeout(timeoutId);
         return NextResponse.json(
@@ -1258,7 +1317,13 @@ export async function POST(request: Request) {
       otherIdentifiers: updatedActivity.other_identifiers,
       iatiIdentifier: updatedActivity.iati_identifier,
       customDates: updatedActivity.custom_dates,
-      updatedAt: updatedActivity.updated_at
+      updatedAt: updatedActivity.updated_at,
+      // Budget status fields
+      budgetStatus: updatedActivity.budget_status,
+      onBudgetPercentage: updatedActivity.on_budget_percentage,
+      budgetStatusNotes: updatedActivity.budget_status_notes,
+      budgetStatusUpdatedAt: updatedActivity.budget_status_updated_at,
+      budgetStatusUpdatedBy: updatedActivity.budget_status_updated_by
     };
 
     console.log('[Field API] Field update successful');

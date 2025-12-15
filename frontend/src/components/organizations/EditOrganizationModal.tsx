@@ -753,8 +753,8 @@ export function EditOrganizationModal({
   return (
     <>
     <Dialog open={modalOpen} onOpenChange={handleOpenChange}>
-      <DialogContent className="max-w-4xl h-[85vh] overflow-hidden flex flex-col">
-        <DialogHeader className="flex-shrink-0">
+      <DialogContent className="max-w-4xl h-[85vh] overflow-hidden flex flex-col p-0">
+        <DialogHeader className="flex-shrink-0 p-6 pb-4 rounded-t-lg" style={{ backgroundColor: '#F0EEE9' }}>
           <div className="flex items-center justify-between">
             <div>
               <DialogTitle className="text-xl font-semibold">
@@ -780,7 +780,7 @@ export function EditOrganizationModal({
         
         {/* Validation Error Banner */}
         {validationErrors.length > 0 && (
-          <div className="bg-red-50 border border-red-200 rounded-md p-3 flex items-start gap-3">
+          <div className="bg-red-50 border border-red-200 rounded-md p-3 flex items-start gap-3 mx-6">
             <AlertTriangle className="h-5 w-5 text-red-500 flex-shrink-0 mt-0.5" />
             <div className="flex-1">
               <p className="text-sm font-medium text-red-800 mb-1">Please fix the validation errors</p>
@@ -794,7 +794,7 @@ export function EditOrganizationModal({
         )}
         
         {/* Tabbed Content */}
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col overflow-hidden">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col overflow-hidden px-6">
           <TabsList className="grid w-full grid-cols-7 flex-shrink-0">
             <TabsTrigger value="basic">General</TabsTrigger>
             <TabsTrigger value="branding">Branding</TabsTrigger>
@@ -1623,7 +1623,7 @@ export function EditOrganizationModal({
         </Tabs>
 
         {/* Dialog Footer */}
-        <DialogFooter className="flex-shrink-0 border-t pt-4">
+        <DialogFooter className="flex-shrink-0 border-t pt-4 px-6 pb-6">
           <Button
             variant="outline"
             onClick={() => handleOpenChange(false)}

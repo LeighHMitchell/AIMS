@@ -2,7 +2,7 @@
 
 import React from "react";
 import { Plus, Edit2, Trash2, AlertCircle, ChevronDown, ChevronRight } from "lucide-react";
-import { Card, CardHeader, CardContent } from "@/components/ui/card";
+import { Card, CardHeader, CardContent, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { CountryBudgetItems, Narrative } from "@/types/country-budget-items";
 import { BUDGET_IDENTIFIER_VOCABULARIES } from "@/data/budget-identifier-vocabulary";
@@ -16,13 +16,28 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
+import { BudgetStatusField } from "@/components/activities/BudgetStatusField";
+import { BudgetStatusType } from "@/types/activity-budget-status";
 
 interface BudgetMappingTabProps {
   activityId: string;
+  userId?: string;
+  budgetStatus?: BudgetStatusType;
+  onBudgetPercentage?: number | null;
+  budgetStatusNotes?: string | null;
+  onActivityChange?: (field: string, value: any) => void;
   onDataChange?: (count: number) => void;
 }
 
-export default function BudgetMappingTab({ activityId, onDataChange }: BudgetMappingTabProps) {
+export default function BudgetMappingTab({
+  activityId,
+  userId,
+  budgetStatus = "unknown",
+  onBudgetPercentage,
+  budgetStatusNotes,
+  onActivityChange,
+  onDataChange,
+}: BudgetMappingTabProps) {
   const [countryBudgetItems, setCountryBudgetItems] = React.useState<CountryBudgetItems[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [saving, setSaving] = React.useState(false);
@@ -251,9 +266,38 @@ export default function BudgetMappingTab({ activityId, onDataChange }: BudgetMap
 
   return (
     <>
+      {/* Budget Status Section */}
+      {userId && onActivityChange && (
+        <Card className="bg-white mb-6">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-lg">Government Budget Status</CardTitle>
+            <CardDescription>
+              Set whether this activity is reflected in the government budget
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <BudgetStatusField
+              activityId={activityId}
+              userId={userId}
+              budgetStatus={budgetStatus}
+              onBudgetPercentage={onBudgetPercentage}
+              budgetStatusNotes={budgetStatusNotes}
+              onActivityChange={onActivityChange}
+            />
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Country Budget Items Section */}
       <Card className="bg-white">
         <CardHeader>
-          <div className="flex items-center justify-end">
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="text-lg">Country Budget Item Mappings</CardTitle>
+              <CardDescription>
+                Map this activity to budget classification codes
+              </CardDescription>
+            </div>
             {availableVocabularies.length > 0 && (
               <Button onClick={handleAddNew} disabled={saving}>
                 <Plus className="h-4 w-4 mr-2" />

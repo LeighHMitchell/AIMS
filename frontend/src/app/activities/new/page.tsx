@@ -2568,8 +2568,15 @@ function SectionContent({ section, general, setGeneral, sectors, setSectors, tra
     case "policy_markers":
       return <PolicyMarkersSectionIATIWithCustom activityId={general.id} policyMarkers={policyMarkers} onChange={setPolicyMarkers} setHasUnsavedChanges={setHasUnsavedChanges} />;
     case "country-budget":
-      return <BudgetMappingTab 
-        activityId={general.id} 
+      return <BudgetMappingTab
+        activityId={general.id}
+        userId={user?.id}
+        budgetStatus={general.budgetStatus}
+        onBudgetPercentage={general.onBudgetPercentage}
+        budgetStatusNotes={general.budgetStatusNotes}
+        onActivityChange={(field, value) => {
+          setGeneral((g: any) => ({ ...g, [field]: value }));
+        }}
         onDataChange={setCountryBudgetItemsCount}
       />;
     case "linked_activities":
@@ -2749,7 +2756,11 @@ function NewActivityPageContent() {
       autoSync: false,
       lastSyncTime: "",
       syncStatus: "not_synced" as "live" | "pending" | "outdated" | "not_synced",
-      autoSyncFields: [] as string[]
+      autoSyncFields: [] as string[],
+      // Budget status fields
+      budgetStatus: "unknown" as "on_budget" | "off_budget" | "partial" | "unknown",
+      onBudgetPercentage: null as number | null,
+      budgetStatusNotes: null as string | null
     };
   });
 
@@ -3627,7 +3638,11 @@ function NewActivityPageContent() {
             autoSyncFields: data.autoSyncFields || [],
             activityScope: data.activityScope || "4",
             language: data.language || "en",
-            hierarchy: data.hierarchy || "1"
+            hierarchy: data.hierarchy || "1",
+            // Budget status fields
+            budgetStatus: data.budgetStatus || data.budget_status || "unknown",
+            onBudgetPercentage: data.onBudgetPercentage ?? data.on_budget_percentage ?? null,
+            budgetStatusNotes: data.budgetStatusNotes ?? data.budget_status_notes ?? null
           });
 
           // Set capital spend percentage for tab completion

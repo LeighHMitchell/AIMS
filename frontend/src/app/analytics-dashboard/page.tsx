@@ -70,6 +70,12 @@ import { Top10SectorFocusedChart } from '@/components/analytics/Top10SectorFocus
 import { ODAByFlowTypeChart } from '@/components/analytics/ODAByFlowTypeChart'
 import { PolicyMarkersChart } from '@/components/analytics/PolicyMarkersChart'
 
+// SDGs Analytics
+import { SDGAnalytics } from '@/components/analytics/sdgs/SDGAnalytics'
+
+// Aid on Budget Chart
+import { AidOnBudgetChart } from '@/components/analytics/AidOnBudgetChart'
+
 // Charts from analytics page
 import { BudgetVsSpendingChart } from '@/components/charts/BudgetVsSpendingChart'
 import { ReportingOrgChart } from '@/components/charts/ReportingOrgChart'
@@ -641,15 +647,17 @@ export default function AnalyticsDashboardPage() {
           )}
 
           <Tabs defaultValue="main" className="space-y-6">
-                <TabsList className="grid w-full grid-cols-9 max-w-6xl">
+                <TabsList className="grid w-full grid-cols-11 max-w-6xl">
                   <TabsTrigger value="main">Main</TabsTrigger>
                   <TabsTrigger value="sectors">Sectors</TabsTrigger>
                   <TabsTrigger value="humanitarian">Humanitarian</TabsTrigger>
                   <TabsTrigger value="activity-status">Activity Status</TabsTrigger>
                   <TabsTrigger value="policy-markers">Policy Markers</TabsTrigger>
+                  <TabsTrigger value="sdgs">SDGs</TabsTrigger>
                   <TabsTrigger value="network">Network</TabsTrigger>
                   <TabsTrigger value="calendar">Calendar</TabsTrigger>
                   <TabsTrigger value="top10">Top 10</TabsTrigger>
+                  <TabsTrigger value="aid-on-budget">Aid on Budget</TabsTrigger>
                   <TabsTrigger value="under-development">Under Development</TabsTrigger>
                 </TabsList>
 
@@ -797,6 +805,14 @@ export default function AnalyticsDashboardPage() {
                   </div>
                 </TabsContent>
 
+                <TabsContent value="sdgs">
+                  <SDGAnalytics 
+                    dateRange={dateRange} 
+                    onDateRangeChange={setDateRange}
+                    refreshKey={refreshKey} 
+                  />
+                </TabsContent>
+
                 <TabsContent value="network">
                   <div className="space-y-4">
                     <div>
@@ -876,6 +892,21 @@ export default function AnalyticsDashboardPage() {
                         />
                       </ExpandableCard>
                     </div>
+                  </div>
+                </TabsContent>
+
+                <TabsContent value="aid-on-budget">
+                  <div className="space-y-6">
+                    <div>
+                      <h2 className="text-2xl font-bold text-gray-900">Aid on Budget</h2>
+                      <p className="text-gray-600">
+                        Visualization of aid and domestic spending by sector, showing the breakdown of funding sources across different sectors
+                      </p>
+                    </div>
+                    <AidOnBudgetChart
+                      dateRange={dateRange}
+                      refreshKey={refreshKey}
+                    />
                   </div>
                 </TabsContent>
 

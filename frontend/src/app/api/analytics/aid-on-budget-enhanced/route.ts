@@ -1,0 +1,288 @@
+import { NextRequest, NextResponse } from "next/server";
+import { getSupabaseAdmin } from "@/lib/supabase";
+import {
+  EnhancedAidOnBudgetSummary,
+  EnhancedChartDataPoint,
+  EnhancedAidOnBudgetChartData,
+  ENHANCED_CHART_COLORS,
+} from "@/types/aid-on-budget";
+import { BudgetStatusType } from "@/types/activity-budget-status";
+
+interface ActivityWithBudgetStatus {
+  id: string;
+  budget_status: BudgetStatusType;
+  on_budget_percentage: number | null;
+  total_disbursements: number;
+  total_commitments: number;
+  budget_classification_ids: string[];
+}
+
+/**
+ * GET /api/analytics/aid-on-budget-enhanced
+ * Get enhanced Aid on Budget analytics including domestic budget data
+ */
+export async function GET(request: NextRequest) {
+  try {
+    const supabase = getSupabaseAdmin();
+
+    if (!supabase) {
+      return NextResponse.json(
+        { error: "Database connection not available" },
+        { status: 500 }
+      );
+    }
+
+    const searchParams = request.nextUrl.searchParams;
+    const fiscalYear = searchParams.get("fiscalYear")
+      ? parseInt(searchParams.get("fiscalYear")!)
+      : new Date().getFullYear();
+    const classificationType = searchParams.get("classificationType") || "all";
+
+    // 1. Fetch domestic budget data for the fiscal year
+    let domesticQuery = supabase
+      .from("domestic_budget_data")
+      .select(`
+        budget_classification_id,
+        budget_amount,
+        expenditure_amount,
+        currency,
+        budget_classifications (
+          id,
+          code,
+          name,
+          classification_type,
+          level
+        )
+      `)
+      .eq("fiscal_year", fiscalYear);
+
+    const { data: domesticData, error: domesticError } = await domesticQuery;
+
+    if (domesticError) {
+      console.error("[Aid on Budget Enhanced] Error fetching domestic data:", domesticError);
+    }
+
+    // 2. Fetch activities with budget status and their disbursements
+    // Get activities with their budget status
+    const { data: activities, error: activitiesError } = await supabase
+      .from("activities")
+      .select(`
+        id,
+        budget_status,
+        on_budget_percentage
+      `);
+
+    if (activitiesError) {
+      console.error("[Aid on Budget Enhanced] Error fetching activities:", activitiesError);
+    }
+
+    // 3. Fetch transactions (disbursements) for calculating aid amounts
+    // Group by activity to get total disbursements
+    const { data: transactions, error: transactionsError } = await supabase
+      .from("transactions")
+      .select(`
+        activity_id,
+        transaction_type,
+        value,
+        transaction_date
+      `)
+      .in("transaction_type", ["3", "4"]); // Disbursement and Expenditure
+
+    if (transactionsError) {
+      console.error("[Aid on Budget Enhanced] Error fetching transactions:", transactionsError);
+    }
+
+    // 4. Fetch country budget items to map activities to classifications
+    const { data: countryBudgetItems, error: cbiError } = await supabase
+      .from("country_budget_items")
+      .select(`
+        activity_id,
+        budget_items (
+          code,
+          percentage
+        )
+      `);
+
+    if (cbiError) {
+      console.error("[Aid on Budget Enhanced] Error fetching country budget items:", cbiError);
+    }
+
+    // 5. Fetch all budget classifications for aggregation
+    let classQuery = supabase
+      .from("budget_classifications")
+      .select("*")
+      .eq("is_active", true)
+      .order("sort_order");
+
+    if (classificationType !== "all") {
+      classQuery = classQuery.eq("classification_type", classificationType);
+    }
+
+    const { data: classifications, error: classError } = await classQuery;
+
+    if (classError) {
+      console.error("[Aid on Budget Enhanced] Error fetching classifications:", classError);
+    }
+
+    // Process and aggregate data
+    const activityDisbursements = new Map<string, number>();
+    (transactions || []).forEach((tx) => {
+      const current = activityDisbursements.get(tx.activity_id) || 0;
+      activityDisbursements.set(tx.activity_id, current + (Number(tx.value) || 0));
+    });
+
+    // Calculate aid totals by budget status
+    let totalOnBudgetAid = 0;
+    let totalOffBudgetAid = 0;
+    let totalPartialAid = 0;
+    let totalUnknownAid = 0;
+    let onBudgetCount = 0;
+    let offBudgetCount = 0;
+    let partialCount = 0;
+    let unknownCount = 0;
+
+    (activities || []).forEach((activity) => {
+      const disbursements = activityDisbursements.get(activity.id) || 0;
+      const status = activity.budget_status || "unknown";
+      const percentage = activity.on_budget_percentage || 0;
+
+      switch (status) {
+        case "on_budget":
+          totalOnBudgetAid += disbursements;
+          onBudgetCount++;
+          break;
+        case "off_budget":
+          totalOffBudgetAid += disbursements;
+          offBudgetCount++;
+          break;
+        case "partial":
+          totalPartialAid += (disbursements * percentage) / 100;
+          totalOffBudgetAid += (disbursements * (100 - percentage)) / 100;
+          partialCount++;
+          break;
+        case "unknown":
+        default:
+          totalUnknownAid += disbursements;
+          unknownCount++;
+          break;
+      }
+    });
+
+    // Calculate domestic totals
+    let totalDomesticBudget = 0;
+    let totalDomesticExpenditure = 0;
+
+    (domesticData || []).forEach((d) => {
+      totalDomesticBudget += Number(d.budget_amount) || 0;
+      totalDomesticExpenditure += Number(d.expenditure_amount) || 0;
+    });
+
+    // Build classification-level data
+    const classificationData: EnhancedChartDataPoint[] = (classifications || []).map((c) => {
+      // Find domestic data for this classification
+      const domestic = (domesticData || []).find(
+        (d) => d.budget_classification_id === c.id
+      );
+
+      // For now, we'll track aid by budget status at aggregate level
+      // In a full implementation, you'd map activities to classifications via country_budget_items
+
+      return {
+        name: c.name,
+        code: c.code,
+        classificationType: c.classification_type,
+        level: c.level,
+        domesticBudget: Number(domestic?.budget_amount) || 0,
+        domesticExpenditure: Number(domestic?.expenditure_amount) || 0,
+        onBudgetAid: 0, // Would need activity->classification mapping
+        offBudgetAid: 0,
+        partialAid: 0,
+        unknownAid: 0,
+        totalAid: 0,
+        totalSpending: Number(domestic?.expenditure_amount) || 0,
+        aidShare: 0,
+      };
+    });
+
+    // Calculate summary
+    const totalAid = totalOnBudgetAid + totalOffBudgetAid + totalPartialAid + totalUnknownAid;
+    const effectiveOnBudget = totalOnBudgetAid + totalPartialAid;
+
+    const summary: EnhancedAidOnBudgetSummary = {
+      totalAid,
+      totalOnBudgetAid,
+      totalOffBudgetAid,
+      totalPartialAid,
+      totalUnknownAid,
+      totalDomesticBudget,
+      totalDomesticExpenditure,
+      domesticExecutionRate:
+        totalDomesticBudget > 0
+          ? Math.round((totalDomesticExpenditure / totalDomesticBudget) * 10000) / 100
+          : 0,
+      totalSpending: totalDomesticExpenditure + effectiveOnBudget,
+      aidShareOfBudget:
+        totalDomesticExpenditure + effectiveOnBudget > 0
+          ? Math.round(
+              (effectiveOnBudget / (totalDomesticExpenditure + effectiveOnBudget)) * 10000
+            ) / 100
+          : 0,
+      onBudgetPercentage: totalAid > 0 ? Math.round((effectiveOnBudget / totalAid) * 10000) / 100 : 0,
+      activityCount: activities?.length || 0,
+      mappedActivityCount: countryBudgetItems?.length || 0,
+      onBudgetActivityCount: onBudgetCount,
+      offBudgetActivityCount: offBudgetCount,
+      partialActivityCount: partialCount,
+      unknownActivityCount: unknownCount,
+    };
+
+    // Build chart data
+    const chartData: EnhancedAidOnBudgetChartData = {
+      centerData: {
+        total: totalDomesticExpenditure + totalAid,
+        breakdown: [
+          {
+            type: "Domestic",
+            value: totalDomesticExpenditure,
+            color: ENHANCED_CHART_COLORS.domestic,
+          },
+          {
+            type: "On-Budget Aid",
+            value: effectiveOnBudget,
+            color: ENHANCED_CHART_COLORS.onBudgetAid,
+          },
+          {
+            type: "Off-Budget Aid",
+            value: totalOffBudgetAid,
+            color: ENHANCED_CHART_COLORS.offBudgetAid,
+          },
+          {
+            type: "Unknown Aid",
+            value: totalUnknownAid,
+            color: ENHANCED_CHART_COLORS.unknownAid,
+          },
+        ],
+      },
+      sectorData: classificationData,
+      fiscalYear,
+      currency: "USD",
+    };
+
+    return NextResponse.json({
+      success: true,
+      data: classificationData,
+      summary,
+      chartData,
+      filters: {
+        fiscalYear,
+        classificationType,
+      },
+    });
+  } catch (error) {
+    console.error("[Aid on Budget Enhanced] Unexpected error:", error);
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 }
+    );
+  }
+}

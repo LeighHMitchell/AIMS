@@ -569,3 +569,6 @@ export function getCodelistDefinition(
 export function hasCodelistDefinition(type: CodelistType, code: string | undefined | null): boolean {
   return getCodelistDefinition(type, code) !== null;
 }
+
+
+

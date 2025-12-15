@@ -164,12 +164,27 @@ export async function POST(
 
     // Insert budget items
     // Note: description is stored as JSONB with multi-language support
+    // Database constraint rejects empty objects, so we must convert {} to null
     const budgetItemsToInsert = body.budget_items.map(item => {
       let description = null;
       if (item.description) {
-        // If already an object (e.g. {"en": "text"}), use as-is
         if (typeof item.description === 'object') {
-          description = item.description;
+          // Check if the object is empty - convert to null if so
+          const keys = Object.keys(item.description);
+          if (keys.length > 0) {
+            // Filter out empty string values
+            const filteredDescription: Record<string, string> = {};
+            for (const key of keys) {
+              const value = (item.description as Record<string, string>)[key];
+              if (value && value.trim()) {
+                filteredDescription[key] = value;
+              }
+            }
+            // Only use if there's at least one non-empty value
+            if (Object.keys(filteredDescription).length > 0) {
+              description = filteredDescription;
+            }
+          }
         } else if (typeof item.description === 'string' && item.description.trim()) {
           // Convert plain string to JSONB format with "en" as default language
           description = { en: item.description };

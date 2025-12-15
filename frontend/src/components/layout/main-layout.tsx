@@ -35,11 +35,11 @@ export function MainLayout({ children, requireAuth = true }: MainLayoutProps) {
       <aside
         className={`${sidebarWidth} flex-shrink-0 border-r h-full fixed z-40 flex flex-col`}
         style={{
-          backgroundColor: '#F6F5F4'
+          backgroundColor: '#F0EEE9'
         }}
       >
         {/* Logo Section */}
-        <div className="h-16 flex items-center px-4 flex-shrink-0" style={{ backgroundColor: '#F6F5F4' }}>
+        <div className="h-16 flex items-center px-4 flex-shrink-0" style={{ backgroundColor: '#F0EEE9' }}>
           <Link href="/" className="flex items-center hover:opacity-80 transition-opacity duration-200">
             <img
               src="/images/Logo - No Text 2.jpeg"

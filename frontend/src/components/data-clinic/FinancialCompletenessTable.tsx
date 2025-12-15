@@ -313,3 +313,6 @@ export function FinancialCompletenessTable({ data, onRowClick }: FinancialComple
   );
 }
 
+
+
+

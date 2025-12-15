@@ -1,6 +1,7 @@
 import React from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import Flag from "react-world-flags";
 import {
   ArrowUp,
   ArrowDown,
@@ -13,6 +14,7 @@ import {
   DollarSign,
   Copy,
 } from "lucide-react";
+import { getCountryCode } from "@/lib/country-utils";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -341,7 +343,15 @@ export const OrganizationTable: React.FC<OrganizationTableProps> = ({
                   </TableCell>
                   <TableCell className="px-4 py-3 text-sm text-foreground">
                     {org.country_represented ? (
-                      <span className="line-clamp-1">{org.country_represented}</span>
+                      <div className="flex items-start gap-2">
+                        {getCountryCode(org.country_represented) && (
+                          <Flag
+                            code={getCountryCode(org.country_represented)!}
+                            className="h-4 w-5 flex-shrink-0 rounded-sm object-cover mt-0.5"
+                          />
+                        )}
+                        <span>{org.country_represented}</span>
+                      </div>
                     ) : (
                       '-'
                     )}
