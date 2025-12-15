@@ -74,7 +74,7 @@ import { PolicyMarkersChart } from '@/components/analytics/PolicyMarkersChart'
 import { SDGAnalytics } from '@/components/analytics/sdgs/SDGAnalytics'
 
 // Aid on Budget Chart
-import { AidOnBudgetChart } from '@/components/analytics/AidOnBudgetChart'
+import { EnhancedAidOnBudgetChart } from '@/components/analytics/EnhancedAidOnBudgetChart'
 
 // Charts from analytics page
 import { BudgetVsSpendingChart } from '@/components/charts/BudgetVsSpendingChart'
@@ -900,11 +900,10 @@ export default function AnalyticsDashboardPage() {
                     <div>
                       <h2 className="text-2xl font-bold text-gray-900">Aid on Budget</h2>
                       <p className="text-gray-600">
-                        Visualization of aid and domestic spending by sector, showing the breakdown of funding sources across different sectors
+                        Compare domestic government spending with on-budget and off-budget aid by fiscal year
                       </p>
                     </div>
-                    <AidOnBudgetChart
-                      dateRange={dateRange}
+                    <EnhancedAidOnBudgetChart
                       refreshKey={refreshKey}
                     />
                   </div>
