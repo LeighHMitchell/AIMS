@@ -20,8 +20,9 @@ import {
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { AlertCircle, RefreshCw, TrendingUp, Wallet, PiggyBank, CircleDollarSign, HandCoins } from "lucide-react";
+import { AlertCircle, RefreshCw, TrendingUp, Wallet, PiggyBank, CircleDollarSign, HandCoins, HelpCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { HelpTextTooltip } from "@/components/ui/help-text-tooltip";
 import {
   EnhancedAidOnBudgetSummary,
   EnhancedChartDataPoint,
@@ -60,6 +61,7 @@ interface ApiResponse {
 
 export function EnhancedAidOnBudgetChart({ refreshKey }: EnhancedAidOnBudgetChartProps) {
   const svgRef = useRef<SVGSVGElement>(null);
+  const mainGroupRef = useRef<d3.Selection<SVGGElement, unknown, null, undefined> | null>(null);
   const [tooltip, setTooltip] = useState<TooltipState>({
     show: false,
     x: 0,
@@ -70,9 +72,19 @@ export function EnhancedAidOnBudgetChart({ refreshKey }: EnhancedAidOnBudgetChar
   const [error, setError] = useState<string | null>(null);
   const [data, setData] = useState<ApiResponse | null>(null);
 
-  // Filters
-  const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
-  const [classificationType, setClassificationType] = useState<ClassificationType | "all">("all");
+  // Filters - "all" means all years combined
+  const [selectedYear, setSelectedYear] = useState<number | "all">("all");
+  const [classificationType, setClassificationType] = useState<ClassificationType>("functional");
+
+  // Zoom state - null means no zoom, otherwise contains the target info
+  const [zoomTarget, setZoomTarget] = useState<{ type: 'center' | 'satellite'; index?: number; x?: number; y?: number } | null>(null);
+
+  // Pan state - tracks manual panning offset (using ref for smooth updates without re-renders)
+  const panOffsetRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
+
+  // Chart dimensions (constants for zoom calculations)
+  const chartWidth = 1200;
+  const chartHeight = 700;
 
   const fiscalYearOptions = getFiscalYearOptions();
 
@@ -84,7 +96,7 @@ export function EnhancedAidOnBudgetChart({ refreshKey }: EnhancedAidOnBudgetChar
     return `$${value.toFixed(0)}`;
   };
 
-  // Format currency
+  // Format currency - always in USD (transactions are converted using value_usd)
   const formatCurrency = (value: number): string => {
     return new Intl.NumberFormat("en-US", {
       style: "currency",
@@ -101,10 +113,11 @@ export function EnhancedAidOnBudgetChart({ refreshKey }: EnhancedAidOnBudgetChar
       setError(null);
 
       const params = new URLSearchParams();
-      params.set("fiscalYear", selectedYear.toString());
-      if (classificationType !== "all") {
-        params.set("classificationType", classificationType);
+      if (selectedYear !== "all") {
+        params.set("fiscalYear", selectedYear.toString());
       }
+      // If selectedYear is "all", don't send fiscalYear param - API will aggregate all years
+      params.set("classificationType", classificationType);
 
       const response = await fetch(
         `/api/analytics/aid-on-budget-enhanced?${params.toString()}`
@@ -128,12 +141,13 @@ export function EnhancedAidOnBudgetChart({ refreshKey }: EnhancedAidOnBudgetChar
     fetchData();
   }, [fetchData, refreshKey]);
 
-  // Render D3 chart when data changes
+  // Render D3 chart when data changes (NOT when zoom changes)
   useEffect(() => {
     if (!svgRef.current || !data) return;
 
     // Clear any existing content
     d3.select(svgRef.current).selectAll("*").remove();
+    mainGroupRef.current = null;
 
     const { summary, chartData } = data;
 
@@ -172,11 +186,69 @@ export function EnhancedAidOnBudgetChart({ refreshKey }: EnhancedAidOnBudgetChar
     }
 
     // SETUP - larger canvas for orbital layout
-    const width = 900;
-    const height = 700;
+    const width = chartWidth;
+    const height = chartHeight;
     const svg = d3.select(svgRef.current).attr("viewBox", `0 0 ${width} ${height}`);
 
-    const g = svg.append("g").attr("transform", `translate(${width / 2}, ${height / 2})`);
+    // Add invisible background rect for click-outside-to-reset-zoom and panning
+    const backgroundRect = svg.append("rect")
+      .attr("width", width)
+      .attr("height", height)
+      .attr("fill", "transparent")
+      .style("cursor", "grab")
+      .on("click", function(event: MouseEvent) {
+        // Only reset zoom if this was a click, not end of a drag
+        const target = event.target as Element;
+        if (!target.classList.contains('dragging')) {
+          setZoomTarget(null);
+          panOffsetRef.current = { x: 0, y: 0 }; // Also reset pan
+        }
+      });
+
+    // Start at center, no zoom
+    const initialTransform = `translate(${width / 2}, ${height / 2})`;
+
+    const g = svg.append("g")
+      .attr("class", "main-group")
+      .attr("transform", initialTransform);
+
+    // Store reference for zoom animations
+    mainGroupRef.current = g;
+
+    // Set up D3 zoom behavior for panning and pinch-to-zoom
+    let isDragging = false;
+    const zoom = d3.zoom<SVGSVGElement, unknown>()
+      .scaleExtent([0.5, 4]) // Allow zoom from 0.5x to 4x
+      .on("start", function(event) {
+        if (event.sourceEvent?.type === "mousedown" || event.sourceEvent?.type === "touchstart") {
+          isDragging = true;
+          d3.select(this).style("cursor", "grabbing");
+          backgroundRect.classed("dragging", true);
+        }
+      })
+      .on("zoom", function(event) {
+        if (mainGroupRef.current) {
+          // Get the full transform from the zoom event (includes scale for pinch-to-zoom)
+          const { x, y, k } = event.transform;
+          // Apply pan offset relative to center
+          const newPanX = x - width / 2;
+          const newPanY = y - height / 2;
+          panOffsetRef.current = { x: newPanX, y: newPanY };
+
+          // Directly update transform for smooth panning and zooming (no React re-render)
+          mainGroupRef.current.attr("transform", `translate(${x}, ${y}) scale(${k})`);
+        }
+      })
+      .on("end", function() {
+        isDragging = false;
+        d3.select(this).style("cursor", "grab");
+        // Delay removing dragging class to prevent click from firing
+        setTimeout(() => backgroundRect.classed("dragging", false), 100);
+      });
+
+    // Apply zoom behavior to svg
+    svg.call(zoom)
+      .call(zoom.transform, d3.zoomIdentity.translate(width / 2 + panOffsetRef.current.x, height / 2 + panOffsetRef.current.y));
 
     // Prepare center donut data with 4 categories
     const centerData = chartData.centerData.breakdown.filter((d) => d.value > 0);
@@ -202,16 +274,17 @@ export function EnhancedAidOnBudgetChart({ refreshKey }: EnhancedAidOnBudgetChar
     const sectorData = chartData.sectorData.filter(s =>
       s.domesticBudget > 0 || s.domesticExpenditure > 0 || s.onBudgetAid > 0 || s.offBudgetAid > 0
     );
-    const orbitRadius = sectorData.length > 1 ? 260 : 0;
+    // Always show orbit if there's at least one sector with data - larger radius to fit bigger satellites
+    const orbitRadius = sectorData.length >= 1 ? 380 : 0;
 
-    if (sectorData.length > 1) {
+    if (sectorData.length >= 1) {
       g.append("circle")
         .attr("r", orbitRadius)
         .attr("fill", "none")
         .attr("stroke", palette.paleSlate)
-        .attr("stroke-width", 1)
-        .attr("stroke-dasharray", "4 4")
-        .attr("opacity", 0.5);
+        .attr("stroke-width", 3)
+        .attr("stroke-dasharray", "8 6")
+        .attr("opacity", 0.6);
     }
 
     // CENTER DONUT - shows the 4 categories
@@ -267,13 +340,31 @@ export function EnhancedAidOnBudgetChart({ refreshKey }: EnhancedAidOnBudgetChar
             .duration(150)
             .attr("transform", "scale(1)");
           hideTooltip();
+        })
+        .on("click", function(event: MouseEvent) {
+          event.stopPropagation(); // Prevent background click
+          // Toggle zoom on center
+          if (zoomTarget?.type === 'center') {
+            setZoomTarget(null);
+          } else {
+            setZoomTarget({ type: 'center' });
+          }
         });
     }
 
-    // Center circle with white background
+    // Center circle with white background - also clickable
     g.append("circle")
       .attr("r", centerRadius)
-      .attr("fill", "#ffffff");
+      .attr("fill", "#ffffff")
+      .style("cursor", "pointer")
+      .on("click", function(event: MouseEvent) {
+        event.stopPropagation(); // Prevent background click
+        if (zoomTarget?.type === 'center') {
+          setZoomTarget(null);
+        } else {
+          setZoomTarget({ type: 'center' });
+        }
+      });
 
     // Center text
     g.append("text")
@@ -289,7 +380,7 @@ export function EnhancedAidOnBudgetChart({ refreshKey }: EnhancedAidOnBudgetChar
       .attr("dy", "0.8em")
       .attr("font-size", "11px")
       .attr("fill", palette.blueSlate)
-      .text("Total Spending");
+      .text("Total Spending (USD)");
 
     // Show on-budget percentage
     const onBudgetTotal = summary.totalOnBudgetAid + summary.totalPartialAid + summary.totalBudgetSupport;
@@ -304,20 +395,12 @@ export function EnhancedAidOnBudgetChart({ refreshKey }: EnhancedAidOnBudgetChar
     // SATELLITES (Budget Classifications) - only if there are classifications with data
     if (sectorData.length > 0) {
       const maxValue = d3.max(sectorData, d => d.domesticExpenditure + d.onBudgetAid + d.offBudgetAid) || 1;
+      // Larger satellites to show full names without clipping
       const rScale = d3.scaleSqrt()
         .domain([0, maxValue])
-        .range([22, 55]);
+        .range([40, 75]);
 
       const angleStep = (2 * Math.PI) / sectorData.length;
-
-      // Color scale for sectors - using brand palette
-      const sectorColors = [
-        palette.blueSlate,
-        palette.coolSteel,
-        palette.primaryScarlet,
-        palette.paleSlate
-      ];
-      const sectorColorScale = d3.scaleOrdinal(sectorColors);
 
       sectorData.forEach((sector, i) => {
         const angle = (i * angleStep) - (Math.PI / 2);
@@ -330,19 +413,66 @@ export function EnhancedAidOnBudgetChart({ refreshKey }: EnhancedAidOnBudgetChar
           .attr("transform", `translate(${x}, ${y})`)
           .style("cursor", "pointer");
 
-        // Filled circle for the satellite
+        // Build pie data for this satellite - same categories as center donut
+        const satellitePieData = [
+          { type: "Domestic", value: sector.domesticExpenditure, color: palette.blueSlate },
+          { type: "On-Budget Aid", value: sector.onBudgetAid, color: palette.coolSteel },
+          { type: "Off-Budget Aid", value: sector.offBudgetAid, color: palette.primaryScarlet },
+        ].filter(d => d.value > 0);
+
+        // If no data, show a gray circle
+        if (satellitePieData.length === 0) {
+          planetGroup.append("circle")
+            .attr("r", r)
+            .attr("fill", palette.paleSlate)
+            .attr("opacity", 0.5);
+        } else {
+          // Create mini donut for the satellite
+          const satellitePie = d3.pie<{ type: string; value: number; color: string }>()
+            .value(d => d.value)
+            .sort(null);
+
+          const satelliteArc = d3.arc<d3.PieArcDatum<{ type: string; value: number; color: string }>>()
+            .innerRadius(r * 0.65)
+            .outerRadius(r);
+
+          // Add white background circle
+          planetGroup.append("circle")
+            .attr("r", r)
+            .attr("fill", "#ffffff")
+            .attr("stroke", palette.paleSlate)
+            .attr("stroke-width", 1);
+
+          // Add pie slices
+          planetGroup.selectAll(".satellite-slice")
+            .data(satellitePie(satellitePieData))
+            .enter()
+            .append("path")
+            .attr("d", satelliteArc)
+            .attr("fill", d => d.data.color)
+            .attr("stroke", "white")
+            .attr("stroke-width", 1);
+
+          // Add inner white circle
+          planetGroup.append("circle")
+            .attr("r", r * 0.65)
+            .attr("fill", "#ffffff");
+        }
+
+        // Invisible overlay circle for hover events
         planetGroup.append("circle")
           .attr("r", r)
-          .attr("fill", sectorColorScale(i.toString()) as string)
-          .attr("opacity", 0.8)
-          .attr("stroke", sectorColorScale(i.toString()) as string)
-          .attr("stroke-width", 2)
+          .attr("fill", "transparent")
+          .attr("stroke", "transparent")
           .on("mouseover", function(event: MouseEvent) {
-            d3.select(this)
+            planetGroup.select("circle:first-of-type")
               .transition()
               .duration(150)
-              .attr("opacity", 1)
               .attr("r", r * 1.1);
+            planetGroup.selectAll("path")
+              .transition()
+              .duration(150)
+              .attr("transform", "scale(1.1)");
 
             const pct = totalValue > 0 ? ((sectorTotal / totalValue) * 100).toFixed(1) : '0.0';
             showTooltip(event, {
@@ -370,83 +500,68 @@ export function EnhancedAidOnBudgetChart({ refreshKey }: EnhancedAidOnBudgetChar
             });
           })
           .on("mouseout", function() {
-            d3.select(this)
+            planetGroup.select("circle:first-of-type")
               .transition()
               .duration(150)
-              .attr("opacity", 0.8)
               .attr("r", r);
+            planetGroup.selectAll("path")
+              .transition()
+              .duration(150)
+              .attr("transform", "scale(1)");
             hideTooltip();
+          })
+          .on("click", function(event: MouseEvent) {
+            event.stopPropagation(); // Prevent background click
+            // Toggle zoom on this satellite
+            if (zoomTarget?.type === 'satellite' && zoomTarget.index === i) {
+              setZoomTarget(null);
+            } else {
+              setZoomTarget({ type: 'satellite', index: i, x, y });
+            }
           });
 
-        // Inner circle for text background
-        planetGroup.append("circle")
-          .attr("r", r * 0.75)
-          .attr("fill", "#ffffff");
-
-        // Value text
+        // Value text (inside the donut hole) - larger for bigger satellites
         planetGroup.append("text")
           .attr("text-anchor", "middle")
-          .attr("dy", "-0.2em")
-          .attr("font-size", r > 35 ? "12px" : "10px")
+          .attr("dy", "-0.1em")
+          .attr("font-size", r > 60 ? "16px" : r > 45 ? "14px" : "12px")
           .attr("font-weight", "bold")
           .attr("fill", palette.blueSlate)
           .text(formatAbbreviated(sectorTotal));
 
-        // Name text (wrapped if needed)
+        // Name text (wrapped if needed) - improved for larger satellites
         const words = sector.name.split(" ");
-        if (words.length > 1 && sector.name.length > 8 && r > 35) {
-          planetGroup.append("text")
-            .attr("text-anchor", "middle")
-            .attr("dy", "1em")
-            .attr("font-size", "8px")
-            .attr("fill", palette.blueSlate)
-            .text(words.slice(0, Math.ceil(words.length / 2)).join(" "));
+        const maxCharsPerLine = Math.floor(r / 4); // More chars allowed in larger circles
+
+        if (words.length > 1 && sector.name.length > maxCharsPerLine) {
+          // Split into multiple lines for long names
+          const midpoint = Math.ceil(words.length / 2);
+          const line1 = words.slice(0, midpoint).join(" ");
+          const line2 = words.slice(midpoint).join(" ");
 
           planetGroup.append("text")
             .attr("text-anchor", "middle")
-            .attr("dy", "2.1em")
-            .attr("font-size", "8px")
+            .attr("dy", "1.0em")
+            .attr("font-size", r > 50 ? "12px" : "11px")
             .attr("fill", palette.blueSlate)
-            .text(words.slice(Math.ceil(words.length / 2)).join(" "));
+            .text(line1.length > maxCharsPerLine ? line1.slice(0, maxCharsPerLine) + "..." : line1);
+
+          planetGroup.append("text")
+            .attr("text-anchor", "middle")
+            .attr("dy", "2.2em")
+            .attr("font-size", r > 50 ? "12px" : "11px")
+            .attr("fill", palette.blueSlate)
+            .text(line2.length > maxCharsPerLine ? line2.slice(0, maxCharsPerLine) + "..." : line2);
         } else {
           planetGroup.append("text")
             .attr("text-anchor", "middle")
-            .attr("dy", "1em")
-            .attr("font-size", r > 35 ? "9px" : "7px")
+            .attr("dy", "1.1em")
+            .attr("font-size", r > 50 ? "12px" : "11px")
             .attr("fill", palette.blueSlate)
-            .text(sector.name.length > 12 ? sector.name.slice(0, 12) + "..." : sector.name);
+            .text(sector.name.length > maxCharsPerLine ? sector.name.slice(0, maxCharsPerLine) + "..." : sector.name);
         }
       });
     }
-
-    // LEGEND - 4 categories using brand palette
-    const legendData = [
-      { label: "Domestic Spending", color: palette.blueSlate },
-      { label: "Aid on Budget", color: palette.coolSteel },
-      { label: "Aid off Budget", color: palette.primaryScarlet },
-      { label: "Budget Support", color: palette.paleSlate }
-    ];
-
-    const legend = svg.append("g")
-      .attr("transform", `translate(${width - 170}, 25)`);
-
-    legendData.forEach((d, i) => {
-      const row = legend.append("g")
-        .attr("transform", `translate(0, ${i * 28})`);
-
-      row.append("rect")
-        .attr("width", 18)
-        .attr("height", 18)
-        .attr("rx", 3)
-        .attr("fill", d.color);
-
-      row.append("text")
-        .attr("x", 26)
-        .attr("y", 13)
-        .attr("font-size", "12px")
-        .attr("fill", palette.blueSlate)
-        .text(d.label);
-    });
 
     // Stats in bottom left
     const stats = svg.append("g")
@@ -463,7 +578,48 @@ export function EnhancedAidOnBudgetChart({ refreshKey }: EnhancedAidOnBudgetChar
       .attr("fill", palette.blueSlate)
       .text(`On Budget: ${summary.onBudgetActivityCount} | Off Budget: ${summary.offBudgetActivityCount} | Budget Support: ${summary.budgetSupportActivityCount}`);
 
-  }, [data]);
+  }, [data]); // Only re-render when data changes, NOT when zoom changes
+
+  // Separate useEffect for animated zoom transitions
+  useEffect(() => {
+    if (!mainGroupRef.current) return;
+
+    const width = chartWidth;
+    const height = chartHeight;
+
+    // When zooming, reset pan offset and animate to target
+    // Calculate target transform based on zoomTarget
+    let targetTransform: string;
+    if (zoomTarget) {
+      // Reset pan when zooming to a target
+      panOffsetRef.current = { x: 0, y: 0 };
+
+      const zoomScale = 2.5;
+      if (zoomTarget.type === 'center') {
+        // Zoom to center - scale up from center
+        targetTransform = `translate(${width / 2}, ${height / 2}) scale(${zoomScale})`;
+      } else if (zoomTarget.type === 'satellite' && zoomTarget.x !== undefined && zoomTarget.y !== undefined) {
+        // Zoom to satellite - translate so satellite is centered, then scale
+        const offsetX = -zoomTarget.x * zoomScale;
+        const offsetY = -zoomTarget.y * zoomScale;
+        targetTransform = `translate(${width / 2 + offsetX}, ${height / 2 + offsetY}) scale(${zoomScale})`;
+      } else {
+        targetTransform = `translate(${width / 2}, ${height / 2})`;
+      }
+    } else {
+      // No zoom - return to default view (also reset pan)
+      panOffsetRef.current = { x: 0, y: 0 };
+      targetTransform = `translate(${width / 2}, ${height / 2})`;
+    }
+
+    // Animate the transform change using D3 transition
+    mainGroupRef.current
+      .transition()
+      .duration(750)
+      .ease(d3.easeCubicInOut)
+      .attr("transform", targetTransform);
+
+  }, [zoomTarget, chartWidth, chartHeight]);
 
   if (loading) {
     return (
@@ -520,7 +676,7 @@ export function EnhancedAidOnBudgetChart({ refreshKey }: EnhancedAidOnBudgetChar
               Aid on Budget Analysis
             </CardTitle>
             <CardDescription>
-              Comparing domestic spending with donor aid for fiscal year {selectedYear}
+              Comparing domestic spending with donor aid {selectedYear === "all" ? "across all years" : `for fiscal year ${selectedYear}`}
             </CardDescription>
           </div>
           <div className="flex items-center gap-4">
@@ -530,17 +686,37 @@ export function EnhancedAidOnBudgetChart({ refreshKey }: EnhancedAidOnBudgetChar
               </Label>
               <Select
                 value={selectedYear.toString()}
-                onValueChange={(v) => setSelectedYear(parseInt(v))}
+                onValueChange={(v) => setSelectedYear(v === "all" ? "all" : parseInt(v))}
               >
-                <SelectTrigger id="year-select" className="w-[100px]">
+                <SelectTrigger id="year-select" className="w-[120px]">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="all">All Years</SelectItem>
                   {fiscalYearOptions.map((year) => (
                     <SelectItem key={year} value={year.toString()}>
                       {year}
                     </SelectItem>
                   ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex items-center gap-2">
+              <Label htmlFor="type-select" className="text-sm">
+                Type:
+              </Label>
+              <Select
+                value={classificationType}
+                onValueChange={(v) => setClassificationType(v as ClassificationType)}
+              >
+                <SelectTrigger id="type-select" className="w-[150px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="functional">Functional</SelectItem>
+                  <SelectItem value="administrative">Administrative</SelectItem>
+                  <SelectItem value="economic">Economic</SelectItem>
+                  <SelectItem value="programme">Programme</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -556,8 +732,13 @@ export function EnhancedAidOnBudgetChart({ refreshKey }: EnhancedAidOnBudgetChar
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
             <div className="bg-white rounded-lg p-4 border border-slate-200">
               <div className="flex items-center gap-2 text-sm mb-1" style={{ color: '#4c5568' }}>
-                <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: '#4c5568' }} />
+                <div className="w-5 h-5 rounded" style={{ backgroundColor: '#4c5568' }} />
                 Domestic Spending
+                <HelpTextTooltip>
+                  <p className="font-semibold mb-1">Domestic Spending</p>
+                  <p className="text-xs">Total government expenditure from domestic budget data entered in the system.</p>
+                  <p className="text-xs mt-1"><strong>Calculation:</strong> Sum of all expenditure amounts from the Domestic Budget Data table for the selected fiscal year(s).</p>
+                </HelpTextTooltip>
               </div>
               <div className="text-xl font-bold" style={{ color: '#4c5568' }}>
                 {formatCurrency(summary.totalDomesticExpenditure)}
@@ -569,8 +750,13 @@ export function EnhancedAidOnBudgetChart({ refreshKey }: EnhancedAidOnBudgetChar
 
             <div className="bg-white rounded-lg p-4 border border-slate-200">
               <div className="flex items-center gap-2 text-sm mb-1" style={{ color: '#4c5568' }}>
-                <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: '#7b95a7' }} />
+                <div className="w-5 h-5 rounded" style={{ backgroundColor: '#7b95a7' }} />
                 Aid on Budget
+                <HelpTextTooltip>
+                  <p className="font-semibold mb-1">Aid on Budget</p>
+                  <p className="text-xs">Foreign aid that is recorded in the government&apos;s budget system.</p>
+                  <p className="text-xs mt-1"><strong>Calculation:</strong> Sum of disbursements from activities with Budget Status set to &quot;On Budget&quot;, plus the on-budget portion of activities marked as &quot;Partial&quot;.</p>
+                </HelpTextTooltip>
               </div>
               <div className="text-xl font-bold" style={{ color: '#4c5568' }}>
                 {formatCurrency(summary.totalOnBudgetAid + summary.totalPartialAid)}
@@ -582,8 +768,13 @@ export function EnhancedAidOnBudgetChart({ refreshKey }: EnhancedAidOnBudgetChar
 
             <div className="bg-white rounded-lg p-4 border border-slate-200">
               <div className="flex items-center gap-2 text-sm mb-1" style={{ color: '#4c5568' }}>
-                <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: '#dc2625' }} />
+                <div className="w-5 h-5 rounded" style={{ backgroundColor: '#dc2625' }} />
                 Aid off Budget
+                <HelpTextTooltip>
+                  <p className="font-semibold mb-1">Aid off Budget</p>
+                  <p className="text-xs">Foreign aid that is NOT recorded in the government&apos;s budget system.</p>
+                  <p className="text-xs mt-1"><strong>Calculation:</strong> Sum of disbursements from activities with Budget Status set to &quot;Off Budget&quot; or &quot;Unknown&quot;, plus the off-budget portion of activities marked as &quot;Partial&quot;.</p>
+                </HelpTextTooltip>
               </div>
               <div className="text-xl font-bold" style={{ color: '#4c5568' }}>
                 {formatCurrency(summary.totalOffBudgetAid + summary.totalUnknownAid)}
@@ -595,8 +786,13 @@ export function EnhancedAidOnBudgetChart({ refreshKey }: EnhancedAidOnBudgetChar
 
             <div className="bg-white rounded-lg p-4 border border-slate-200">
               <div className="flex items-center gap-2 text-sm mb-1" style={{ color: '#4c5568' }}>
-                <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: '#cfd0d5' }} />
+                <div className="w-5 h-5 rounded" style={{ backgroundColor: '#cfd0d5' }} />
                 Budget Support
+                <HelpTextTooltip>
+                  <p className="font-semibold mb-1">Budget Support</p>
+                  <p className="text-xs">Direct financial contributions to the government&apos;s general or sector budgets.</p>
+                  <p className="text-xs mt-1"><strong>Calculation:</strong> Sum of disbursements from activities with Aid Type code A01 (General Budget Support) or A02 (Sector Budget Support). These are counted separately from regular on/off budget aid.</p>
+                </HelpTextTooltip>
               </div>
               <div className="text-xl font-bold" style={{ color: '#4c5568' }}>
                 {formatCurrency(summary.totalBudgetSupport)}
@@ -610,34 +806,55 @@ export function EnhancedAidOnBudgetChart({ refreshKey }: EnhancedAidOnBudgetChar
 
         {/* Orbital Chart */}
         <div className="relative w-full flex items-center justify-center bg-white" style={{ minHeight: '700px' }}>
-          <svg ref={svgRef} className="w-full h-full max-w-4xl max-h-[700px]" />
+          {/* Reset Zoom Button */}
+          {zoomTarget && (
+            <Button
+              onClick={() => setZoomTarget(null)}
+              variant="outline"
+              size="sm"
+              className="absolute top-4 left-4 z-10 bg-white"
+            >
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Reset Zoom
+            </Button>
+          )}
+          <svg ref={svgRef} className="w-full h-auto" style={{ maxHeight: '700px' }} />
 
           {/* Tooltip */}
           {tooltip.show && tooltip.content && (
             <div
-              className="absolute pointer-events-none z-50 rounded-lg shadow-lg px-3 py-2"
+              className="absolute pointer-events-none z-50 rounded-lg shadow-lg"
               style={{
                 left: tooltip.x,
                 top: tooltip.y,
                 transform: 'translate(0, -100%)',
-                backgroundColor: '#f1f4f8',
+                backgroundColor: '#ffffff',
                 border: '1px solid #cfd0d5'
               }}
             >
-              <div className="font-semibold text-sm" style={{ color: '#4c5568' }}>
+              <div
+                className="font-semibold text-sm px-3 py-2 border-b"
+                style={{ color: '#4c5568', backgroundColor: '#f1f4f8' }}
+              >
                 {tooltip.content.title}
               </div>
-              {tooltip.content.values.map((item, i) => (
-                <div key={i} className="flex items-center justify-between gap-4 text-sm">
-                  <span style={{ color: '#4c5568' }}>{item.label}:</span>
-                  <span
-                    className="font-medium"
-                    style={{ color: item.color || '#4c5568' }}
-                  >
-                    {item.value}
-                  </span>
-                </div>
-              ))}
+              <table className="text-sm">
+                <tbody>
+                  {tooltip.content.values.map((item, i) => (
+                    <tr key={i} className="border-b last:border-b-0" style={{ borderColor: '#e5e7eb' }}>
+                      <td className="px-3 py-1.5 text-left" style={{ color: '#6b7280' }}>
+                        {item.label}
+                      </td>
+                      <td
+                        className="px-3 py-1.5 text-right font-medium"
+                        style={{ color: item.color || '#4c5568' }}
+                      >
+                        {item.value}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           )}
         </div>
