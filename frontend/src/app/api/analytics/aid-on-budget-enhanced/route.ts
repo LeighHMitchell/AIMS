@@ -8,10 +8,14 @@ import {
 } from "@/types/aid-on-budget";
 import { BudgetStatusType } from "@/types/activity-budget-status";
 
+// Budget Support aid type codes (IATI)
+const BUDGET_SUPPORT_AID_TYPES = ["A01", "A02"]; // A01: General budget support, A02: Sector budget support
+
 interface ActivityWithBudgetStatus {
   id: string;
   budget_status: BudgetStatusType;
   on_budget_percentage: number | null;
+  default_aid_type: string | null;
   total_disbursements: number;
   total_commitments: number;
   budget_classification_ids: string[];
@@ -62,14 +66,14 @@ export async function GET(request: NextRequest) {
       console.error("[Aid on Budget Enhanced] Error fetching domestic data:", domesticError);
     }
 
-    // 2. Fetch activities with budget status and their disbursements
-    // Get activities with their budget status
+    // 2. Fetch activities with budget status and aid type
     const { data: activities, error: activitiesError } = await supabase
       .from("activities")
       .select(`
         id,
         budget_status,
-        on_budget_percentage
+        on_budget_percentage,
+        default_aid_type
       `);
 
     if (activitiesError) {
@@ -131,13 +135,15 @@ export async function GET(request: NextRequest) {
       activityDisbursements.set(tx.activity_id, current + (Number(tx.value) || 0));
     });
 
-    // Calculate aid totals by budget status
+    // Calculate aid totals by budget status and identify budget support
     let totalOnBudgetAid = 0;
     let totalOffBudgetAid = 0;
+    let totalBudgetSupport = 0;
     let totalPartialAid = 0;
     let totalUnknownAid = 0;
     let onBudgetCount = 0;
     let offBudgetCount = 0;
+    let budgetSupportCount = 0;
     let partialCount = 0;
     let unknownCount = 0;
 
@@ -145,26 +151,37 @@ export async function GET(request: NextRequest) {
       const disbursements = activityDisbursements.get(activity.id) || 0;
       const status = activity.budget_status || "unknown";
       const percentage = activity.on_budget_percentage || 0;
+      const aidType = activity.default_aid_type || "";
 
-      switch (status) {
-        case "on_budget":
-          totalOnBudgetAid += disbursements;
-          onBudgetCount++;
-          break;
-        case "off_budget":
-          totalOffBudgetAid += disbursements;
-          offBudgetCount++;
-          break;
-        case "partial":
-          totalPartialAid += (disbursements * percentage) / 100;
-          totalOffBudgetAid += (disbursements * (100 - percentage)) / 100;
-          partialCount++;
-          break;
-        case "unknown":
-        default:
-          totalUnknownAid += disbursements;
-          unknownCount++;
-          break;
+      // Check if this is budget support (A01 or A02)
+      const isBudgetSupport = BUDGET_SUPPORT_AID_TYPES.includes(aidType);
+
+      if (isBudgetSupport) {
+        // Budget support is counted separately
+        totalBudgetSupport += disbursements;
+        budgetSupportCount++;
+      } else {
+        // Non-budget support aid is categorized by budget status
+        switch (status) {
+          case "on_budget":
+            totalOnBudgetAid += disbursements;
+            onBudgetCount++;
+            break;
+          case "off_budget":
+            totalOffBudgetAid += disbursements;
+            offBudgetCount++;
+            break;
+          case "partial":
+            totalPartialAid += (disbursements * percentage) / 100;
+            totalOffBudgetAid += (disbursements * (100 - percentage)) / 100;
+            partialCount++;
+            break;
+          case "unknown":
+          default:
+            totalUnknownAid += disbursements;
+            unknownCount++;
+            break;
+        }
       }
     });
 
@@ -205,6 +222,7 @@ export async function GET(request: NextRequest) {
     });
 
     // Calculate summary
+    // Note: Budget Support is counted separately and NOT included in totalAid
     const totalAid = totalOnBudgetAid + totalOffBudgetAid + totalPartialAid + totalUnknownAid;
     const effectiveOnBudget = totalOnBudgetAid + totalPartialAid;
 
@@ -214,17 +232,18 @@ export async function GET(request: NextRequest) {
       totalOffBudgetAid,
       totalPartialAid,
       totalUnknownAid,
+      totalBudgetSupport,
       totalDomesticBudget,
       totalDomesticExpenditure,
       domesticExecutionRate:
         totalDomesticBudget > 0
           ? Math.round((totalDomesticExpenditure / totalDomesticBudget) * 10000) / 100
           : 0,
-      totalSpending: totalDomesticExpenditure + effectiveOnBudget,
+      totalSpending: totalDomesticExpenditure + effectiveOnBudget + totalBudgetSupport,
       aidShareOfBudget:
-        totalDomesticExpenditure + effectiveOnBudget > 0
+        totalDomesticExpenditure + effectiveOnBudget + totalBudgetSupport > 0
           ? Math.round(
-              (effectiveOnBudget / (totalDomesticExpenditure + effectiveOnBudget)) * 10000
+              ((effectiveOnBudget + totalBudgetSupport) / (totalDomesticExpenditure + effectiveOnBudget + totalBudgetSupport)) * 10000
             ) / 100
           : 0,
       onBudgetPercentage: totalAid > 0 ? Math.round((effectiveOnBudget / totalAid) * 10000) / 100 : 0,
@@ -234,32 +253,37 @@ export async function GET(request: NextRequest) {
       offBudgetActivityCount: offBudgetCount,
       partialActivityCount: partialCount,
       unknownActivityCount: unknownCount,
+      budgetSupportActivityCount: budgetSupportCount,
     };
 
-    // Build chart data
+    // Build chart data with 4 categories:
+    // 1. Domestic Spending - government expenditure
+    // 2. Aid on Budget - on-budget + partial aid (non-budget-support)
+    // 3. Aid off Budget - off-budget + unknown aid (non-budget-support)
+    // 4. Budget Support - A01 (General) and A02 (Sector) budget support
     const chartData: EnhancedAidOnBudgetChartData = {
       centerData: {
-        total: totalDomesticExpenditure + totalAid,
+        total: totalDomesticExpenditure + totalAid + totalBudgetSupport,
         breakdown: [
           {
-            type: "Domestic",
+            type: "Domestic Spending",
             value: totalDomesticExpenditure,
             color: ENHANCED_CHART_COLORS.domestic,
           },
           {
-            type: "On-Budget Aid",
+            type: "Aid on Budget",
             value: effectiveOnBudget,
             color: ENHANCED_CHART_COLORS.onBudgetAid,
           },
           {
-            type: "Off-Budget Aid",
-            value: totalOffBudgetAid,
+            type: "Aid off Budget",
+            value: totalOffBudgetAid + totalUnknownAid,
             color: ENHANCED_CHART_COLORS.offBudgetAid,
           },
           {
-            type: "Unknown Aid",
-            value: totalUnknownAid,
-            color: ENHANCED_CHART_COLORS.unknownAid,
+            type: "Budget Support",
+            value: totalBudgetSupport,
+            color: ENHANCED_CHART_COLORS.budgetSupport,
           },
         ],
       },

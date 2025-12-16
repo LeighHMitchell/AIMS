@@ -402,6 +402,7 @@ export interface EnhancedAidOnBudgetSummary {
   totalOffBudgetAid: number;
   totalPartialAid: number;
   totalUnknownAid: number;
+  totalBudgetSupport: number; // A01 and A02 aid types
 
   // Domestic totals
   totalDomesticBudget: number;
@@ -420,6 +421,7 @@ export interface EnhancedAidOnBudgetSummary {
   offBudgetActivityCount: number;
   partialActivityCount: number;
   unknownActivityCount: number;
+  budgetSupportActivityCount: number;
 }
 
 /**
@@ -452,7 +454,7 @@ export interface EnhancedAidOnBudgetChartData {
   centerData: {
     total: number;
     breakdown: {
-      type: 'Domestic' | 'On-Budget Aid' | 'Off-Budget Aid' | 'Unknown Aid';
+      type: 'Domestic Spending' | 'Aid on Budget' | 'Aid off Budget' | 'Budget Support';
       value: number;
       color: string;
     }[];
@@ -535,4 +537,6 @@ export const ENHANCED_CHART_COLORS = {
   offBudgetAidLight: '#fca5a5', // red-300
   partialAid: '#eab308', // yellow-500
   unknownAid: '#9ca3af', // gray-400
+  budgetSupport: '#8b5cf6', // violet-500
+  budgetSupportLight: '#c4b5fd', // violet-300
 };

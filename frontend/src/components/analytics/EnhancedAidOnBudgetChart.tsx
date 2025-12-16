@@ -20,7 +20,7 @@ import {
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { AlertCircle, RefreshCw, TrendingUp, Wallet, PiggyBank } from "lucide-react";
+import { AlertCircle, RefreshCw, TrendingUp, Wallet, PiggyBank, CircleDollarSign, HandCoins } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   EnhancedAidOnBudgetSummary,
@@ -137,71 +137,53 @@ export function EnhancedAidOnBudgetChart({ refreshKey }: EnhancedAidOnBudgetChar
 
     const { summary, chartData } = data;
 
+    // Color palette - matching the original orbital chart
+    const palette = {
+      domestic: '#3b82f6',      // blue-500 for domestic
+      onBudget: '#22c55e',      // green-500 for on-budget aid
+      offBudget: '#ef4444',     // red-500 for off-budget aid
+      budgetSupport: '#8b5cf6', // violet-500 for budget support
+      paleSlate: '#cfd0d5',
+      blueSlate: '#4c5568',
+      coolSteel: '#7b95a7',
+      platinum: '#f1f4f8'
+    };
+
     // Check if there's any data to show
-    if (summary.totalAid === 0 && summary.totalDomesticExpenditure === 0) {
-      const svg = d3.select(svgRef.current).attr("viewBox", `0 0 600 400`);
+    if (summary.totalAid === 0 && summary.totalDomesticExpenditure === 0 && summary.totalBudgetSupport === 0) {
+      const svg = d3.select(svgRef.current).attr("viewBox", `0 0 900 700`);
 
       svg
         .append("text")
-        .attr("x", 300)
-        .attr("y", 180)
+        .attr("x", 450)
+        .attr("y", 320)
         .attr("text-anchor", "middle")
         .attr("font-size", "16px")
-        .attr("fill", "#64748b")
+        .attr("fill", palette.blueSlate)
         .text("No budget data available for this period.");
 
       svg
         .append("text")
-        .attr("x", 300)
-        .attr("y", 210)
+        .attr("x", 450)
+        .attr("y", 350)
         .attr("text-anchor", "middle")
         .attr("font-size", "14px")
-        .attr("fill", "#94a3b8")
+        .attr("fill", palette.coolSteel)
         .text("Add domestic budget data and activity budget status to see analytics.");
 
       return;
     }
 
-    // Setup
-    const width = 600;
-    const height = 400;
+    // SETUP - larger canvas for orbital layout
+    const width = 900;
+    const height = 700;
     const svg = d3.select(svgRef.current).attr("viewBox", `0 0 ${width} ${height}`);
 
-    const centerX = width / 2;
-    const centerY = height / 2;
+    const g = svg.append("g").attr("transform", `translate(${width / 2}, ${height / 2})`);
 
-    // Donut chart dimensions
-    const outerRadius = 140;
-    const innerRadius = 80;
-
-    const g = svg.append("g").attr("transform", `translate(${centerX}, ${centerY})`);
-
-    // Prepare data for donut chart
-    const pieData = chartData.centerData.breakdown.filter((d) => d.value > 0);
-
-    if (pieData.length === 0) {
-      // No data to show in pie
-      g.append("text")
-        .attr("text-anchor", "middle")
-        .attr("font-size", "14px")
-        .attr("fill", "#64748b")
-        .text("No spending data");
-      return;
-    }
-
-    // Create pie generator
-    const pie = d3
-      .pie<{ type: string; value: number; color: string }>()
-      .value((d) => d.value)
-      .sort(null);
-
-    // Create arc generator
-    const arc = d3
-      .arc<d3.PieArcDatum<{ type: string; value: number; color: string }>>()
-      .innerRadius(innerRadius)
-      .outerRadius(outerRadius)
-      .padAngle(0.02)
-      .cornerRadius(4);
+    // Prepare center donut data with 4 categories
+    const centerData = chartData.centerData.breakdown.filter((d) => d.value > 0);
+    const totalValue = chartData.centerData.total;
 
     // Tooltip handlers
     const showTooltip = (event: MouseEvent, content: TooltipContent) => {
@@ -219,97 +201,276 @@ export function EnhancedAidOnBudgetChart({ refreshKey }: EnhancedAidOnBudgetChar
       setTooltip({ show: false, x: 0, y: 0, content: null });
     };
 
-    // Draw arcs
-    const arcs = g
-      .selectAll(".arc")
-      .data(pie(pieData))
-      .enter()
-      .append("g")
-      .attr("class", "arc");
+    // ORBIT - for sector satellites
+    const sectorData = chartData.sectorData.filter(s =>
+      s.domesticBudget > 0 || s.domesticExpenditure > 0 || s.onBudgetAid > 0 || s.offBudgetAid > 0
+    );
+    const orbitRadius = sectorData.length > 1 ? 260 : 0;
 
-    arcs
-      .append("path")
-      .attr("d", arc)
-      .attr("fill", (d) => d.data.color)
-      .attr("stroke", "white")
-      .attr("stroke-width", 2)
-      .style("cursor", "pointer")
-      .on("mouseover", function (event, d) {
-        d3.select(this).attr("opacity", 0.8);
-        const total = chartData.centerData.total;
-        const percentage = total > 0 ? ((d.data.value / total) * 100).toFixed(1) : "0";
-        showTooltip(event, {
-          title: d.data.type,
-          values: [
-            { label: "Amount", value: formatCurrency(d.data.value), color: d.data.color },
-            { label: "Share", value: `${percentage}%` },
-          ],
+    if (sectorData.length > 1) {
+      g.append("circle")
+        .attr("r", orbitRadius)
+        .attr("fill", "none")
+        .attr("stroke", palette.paleSlate)
+        .attr("stroke-width", 1)
+        .attr("stroke-dasharray", "4 4")
+        .attr("opacity", 0.5);
+    }
+
+    // CENTER DONUT - shows the 4 categories
+    const centerRadius = 110;
+    const centerThickness = 22;
+
+    if (centerData.length > 0) {
+      const pieGenerator = d3.pie<{ type: string; value: number; color: string }>()
+        .value(d => d.value)
+        .sort(null);
+
+      const centerArc = d3.arc<d3.PieArcDatum<{ type: string; value: number; color: string }>>()
+        .innerRadius(centerRadius)
+        .outerRadius(centerRadius + centerThickness);
+
+      g.selectAll(".center-slice")
+        .data(pieGenerator(centerData))
+        .enter()
+        .append("path")
+        .attr("d", centerArc)
+        .attr("fill", d => d.data.color)
+        .attr("stroke", "white")
+        .attr("stroke-width", 2)
+        .style("cursor", "pointer")
+        .on("mouseover", function(event: MouseEvent, d) {
+          d3.select(this)
+            .transition()
+            .duration(150)
+            .attr("transform", "scale(1.05)");
+
+          const percentage = totalValue > 0 ? ((d.data.value / totalValue) * 100).toFixed(1) : "0";
+          showTooltip(event, {
+            title: d.data.type,
+            values: [
+              { label: "Amount", value: formatCurrency(d.data.value), color: d.data.color },
+              { label: "Share", value: `${percentage}%` },
+            ],
+          });
+        })
+        .on("mousemove", function(event: MouseEvent, d) {
+          const percentage = totalValue > 0 ? ((d.data.value / totalValue) * 100).toFixed(1) : "0";
+          showTooltip(event, {
+            title: d.data.type,
+            values: [
+              { label: "Amount", value: formatCurrency(d.data.value), color: d.data.color },
+              { label: "Share", value: `${percentage}%` },
+            ],
+          });
+        })
+        .on("mouseout", function() {
+          d3.select(this)
+            .transition()
+            .duration(150)
+            .attr("transform", "scale(1)");
+          hideTooltip();
         });
-      })
-      .on("mousemove", function (event, d) {
-        const total = chartData.centerData.total;
-        const percentage = total > 0 ? ((d.data.value / total) * 100).toFixed(1) : "0";
-        showTooltip(event, {
-          title: d.data.type,
-          values: [
-            { label: "Amount", value: formatCurrency(d.data.value), color: d.data.color },
-            { label: "Share", value: `${percentage}%` },
-          ],
-        });
-      })
-      .on("mouseout", function () {
-        d3.select(this).attr("opacity", 1);
-        hideTooltip();
-      });
+    }
+
+    // Center circle with platinum background
+    g.append("circle")
+      .attr("r", centerRadius)
+      .attr("fill", palette.platinum);
 
     // Center text
     g.append("text")
       .attr("text-anchor", "middle")
-      .attr("dy", "-0.5em")
-      .attr("font-size", "12px")
-      .attr("fill", "#64748b")
-      .text("Total Spending");
+      .attr("dy", "-0.8em")
+      .attr("font-size", "22px")
+      .attr("font-weight", "bold")
+      .attr("fill", palette.blueSlate)
+      .text(formatAbbreviated(totalValue));
 
     g.append("text")
       .attr("text-anchor", "middle")
-      .attr("dy", "1em")
-      .attr("font-size", "20px")
-      .attr("font-weight", "bold")
-      .attr("fill", "#1e293b")
-      .text(formatAbbreviated(chartData.centerData.total));
+      .attr("dy", "0.8em")
+      .attr("font-size", "11px")
+      .attr("fill", palette.blueSlate)
+      .text("Total Spending");
 
-    // Legend
-    const legend = svg
-      .append("g")
-      .attr("transform", `translate(${width - 180}, 30)`);
+    // Show on-budget percentage
+    const onBudgetTotal = summary.totalOnBudgetAid + summary.totalPartialAid + summary.totalBudgetSupport;
+    const onBudgetPct = totalValue > 0 ? ((onBudgetTotal / totalValue) * 100).toFixed(0) : "0";
+    g.append("text")
+      .attr("text-anchor", "middle")
+      .attr("dy", "2.2em")
+      .attr("font-size", "11px")
+      .attr("fill", palette.blueSlate)
+      .text(`${onBudgetPct}% Aid On Budget`);
 
-    const legendItems = legend
-      .selectAll(".legend-item")
-      .data(pieData)
-      .enter()
-      .append("g")
-      .attr("class", "legend-item")
-      .attr("transform", (d, i) => `translate(0, ${i * 25})`);
+    // SATELLITES (Budget Classifications) - only if there are classifications with data
+    if (sectorData.length > 0) {
+      const maxValue = d3.max(sectorData, d => d.domesticExpenditure + d.onBudgetAid + d.offBudgetAid) || 1;
+      const rScale = d3.scaleSqrt()
+        .domain([0, maxValue])
+        .range([22, 55]);
 
-    legendItems
-      .append("rect")
-      .attr("width", 16)
-      .attr("height", 16)
-      .attr("rx", 3)
-      .attr("fill", (d) => d.color);
+      const angleStep = (2 * Math.PI) / sectorData.length;
 
-    legendItems
-      .append("text")
-      .attr("x", 24)
-      .attr("y", 12)
+      // Color scale for sectors
+      const sectorColors = [
+        palette.blueSlate,
+        palette.coolSteel,
+        palette.domestic,
+        palette.onBudget
+      ];
+      const sectorColorScale = d3.scaleOrdinal(sectorColors);
+
+      sectorData.forEach((sector, i) => {
+        const angle = (i * angleStep) - (Math.PI / 2);
+        const x = Math.cos(angle) * orbitRadius;
+        const y = Math.sin(angle) * orbitRadius;
+        const sectorTotal = sector.domesticExpenditure + sector.onBudgetAid + sector.offBudgetAid;
+        const r = rScale(sectorTotal);
+
+        const planetGroup = g.append("g")
+          .attr("transform", `translate(${x}, ${y})`)
+          .style("cursor", "pointer");
+
+        // Filled circle for the satellite
+        planetGroup.append("circle")
+          .attr("r", r)
+          .attr("fill", sectorColorScale(i.toString()) as string)
+          .attr("opacity", 0.8)
+          .attr("stroke", sectorColorScale(i.toString()) as string)
+          .attr("stroke-width", 2)
+          .on("mouseover", function(event: MouseEvent) {
+            d3.select(this)
+              .transition()
+              .duration(150)
+              .attr("opacity", 1)
+              .attr("r", r * 1.1);
+
+            const pct = totalValue > 0 ? ((sectorTotal / totalValue) * 100).toFixed(1) : '0.0';
+            showTooltip(event, {
+              title: `${sector.code} - ${sector.name}`,
+              values: [
+                { label: "Total", value: formatCurrency(sectorTotal) },
+                { label: "Domestic", value: formatCurrency(sector.domesticExpenditure), color: palette.domestic },
+                { label: "On-Budget Aid", value: formatCurrency(sector.onBudgetAid), color: palette.onBudget },
+                { label: "Off-Budget Aid", value: formatCurrency(sector.offBudgetAid), color: palette.offBudget },
+                { label: "Share", value: `${pct}%` },
+              ],
+            });
+          })
+          .on("mousemove", function(event: MouseEvent) {
+            const pct = totalValue > 0 ? ((sectorTotal / totalValue) * 100).toFixed(1) : '0.0';
+            showTooltip(event, {
+              title: `${sector.code} - ${sector.name}`,
+              values: [
+                { label: "Total", value: formatCurrency(sectorTotal) },
+                { label: "Domestic", value: formatCurrency(sector.domesticExpenditure), color: palette.domestic },
+                { label: "On-Budget Aid", value: formatCurrency(sector.onBudgetAid), color: palette.onBudget },
+                { label: "Off-Budget Aid", value: formatCurrency(sector.offBudgetAid), color: palette.offBudget },
+                { label: "Share", value: `${pct}%` },
+              ],
+            });
+          })
+          .on("mouseout", function() {
+            d3.select(this)
+              .transition()
+              .duration(150)
+              .attr("opacity", 0.8)
+              .attr("r", r);
+            hideTooltip();
+          });
+
+        // Inner circle for text background
+        planetGroup.append("circle")
+          .attr("r", r * 0.75)
+          .attr("fill", palette.platinum);
+
+        // Value text
+        planetGroup.append("text")
+          .attr("text-anchor", "middle")
+          .attr("dy", "-0.2em")
+          .attr("font-size", r > 35 ? "12px" : "10px")
+          .attr("font-weight", "bold")
+          .attr("fill", palette.blueSlate)
+          .text(formatAbbreviated(sectorTotal));
+
+        // Name text (wrapped if needed)
+        const words = sector.name.split(" ");
+        if (words.length > 1 && sector.name.length > 8 && r > 35) {
+          planetGroup.append("text")
+            .attr("text-anchor", "middle")
+            .attr("dy", "1em")
+            .attr("font-size", "8px")
+            .attr("fill", palette.blueSlate)
+            .text(words.slice(0, Math.ceil(words.length / 2)).join(" "));
+
+          planetGroup.append("text")
+            .attr("text-anchor", "middle")
+            .attr("dy", "2.1em")
+            .attr("font-size", "8px")
+            .attr("fill", palette.blueSlate)
+            .text(words.slice(Math.ceil(words.length / 2)).join(" "));
+        } else {
+          planetGroup.append("text")
+            .attr("text-anchor", "middle")
+            .attr("dy", "1em")
+            .attr("font-size", r > 35 ? "9px" : "7px")
+            .attr("fill", palette.blueSlate)
+            .text(sector.name.length > 12 ? sector.name.slice(0, 12) + "..." : sector.name);
+        }
+      });
+    }
+
+    // LEGEND - 4 categories
+    const legendData = [
+      { label: "Domestic Spending", color: palette.domestic },
+      { label: "Aid on Budget", color: palette.onBudget },
+      { label: "Aid off Budget", color: palette.offBudget },
+      { label: "Budget Support", color: palette.budgetSupport }
+    ];
+
+    const legend = svg.append("g")
+      .attr("transform", `translate(${width - 170}, 25)`);
+
+    legendData.forEach((d, i) => {
+      const row = legend.append("g")
+        .attr("transform", `translate(0, ${i * 28})`);
+
+      row.append("rect")
+        .attr("width", 18)
+        .attr("height", 18)
+        .attr("rx", 3)
+        .attr("fill", d.color);
+
+      row.append("text")
+        .attr("x", 26)
+        .attr("y", 13)
+        .attr("font-size", "12px")
+        .attr("fill", palette.blueSlate)
+        .text(d.label);
+    });
+
+    // Stats in bottom left
+    const stats = svg.append("g")
+      .attr("transform", `translate(20, ${height - 80})`);
+
+    stats.append("text")
       .attr("font-size", "12px")
-      .attr("fill", "#475569")
-      .text((d) => `${d.type}: ${formatAbbreviated(d.value)}`);
+      .attr("fill", palette.blueSlate)
+      .text(`Activities: ${summary.activityCount} total`);
+
+    stats.append("text")
+      .attr("y", 20)
+      .attr("font-size", "12px")
+      .attr("fill", palette.blueSlate)
+      .text(`On Budget: ${summary.onBudgetActivityCount} | Off Budget: ${summary.offBudgetActivityCount} | Budget Support: ${summary.budgetSupportActivityCount}`);
+
   }, [data]);
 
   if (loading) {
     return (
-      <Card>
+      <Card className="bg-white border-slate-200">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <TrendingUp className="h-5 w-5" />
@@ -320,7 +481,7 @@ export function EnhancedAidOnBudgetChart({ refreshKey }: EnhancedAidOnBudgetChar
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Skeleton className="h-[400px] w-full" />
+          <Skeleton className="h-[700px] w-full" />
         </CardContent>
       </Card>
     );
@@ -328,7 +489,7 @@ export function EnhancedAidOnBudgetChart({ refreshKey }: EnhancedAidOnBudgetChar
 
   if (error) {
     return (
-      <Card>
+      <Card className="bg-white border-slate-200">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <TrendingUp className="h-5 w-5" />
@@ -336,10 +497,11 @@ export function EnhancedAidOnBudgetChart({ refreshKey }: EnhancedAidOnBudgetChar
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex flex-col items-center justify-center py-12 text-red-600">
-            <AlertCircle className="h-8 w-8 mb-2" />
-            <p>Error: {error}</p>
-            <Button onClick={fetchData} variant="outline" className="mt-4">
+          <div className="flex flex-col items-center justify-center h-[700px] text-center">
+            <AlertCircle className="h-12 w-12 text-red-500 mb-4" />
+            <p className="text-lg font-medium text-gray-900 mb-2">Error loading data</p>
+            <p className="text-sm text-gray-500 mb-4">{error}</p>
+            <Button onClick={fetchData} variant="outline">
               <RefreshCw className="h-4 w-4 mr-2" />
               Retry
             </Button>
@@ -352,7 +514,7 @@ export function EnhancedAidOnBudgetChart({ refreshKey }: EnhancedAidOnBudgetChar
   const summary = data?.summary;
 
   return (
-    <Card>
+    <Card className="bg-white border-slate-200">
       <CardHeader>
         <div className="flex items-center justify-between">
           <div>
@@ -411,7 +573,7 @@ export function EnhancedAidOnBudgetChart({ refreshKey }: EnhancedAidOnBudgetChar
             <div className="bg-green-50 rounded-lg p-4">
               <div className="flex items-center gap-2 text-sm text-green-600 mb-1">
                 <PiggyBank className="h-4 w-4" />
-                On-Budget Aid
+                Aid on Budget
               </div>
               <div className="text-xl font-bold text-green-900">
                 {formatCurrency(summary.totalOnBudgetAid + summary.totalPartialAid)}
@@ -423,49 +585,57 @@ export function EnhancedAidOnBudgetChart({ refreshKey }: EnhancedAidOnBudgetChar
 
             <div className="bg-red-50 rounded-lg p-4">
               <div className="flex items-center gap-2 text-sm text-red-600 mb-1">
-                <AlertCircle className="h-4 w-4" />
-                Off-Budget Aid
+                <CircleDollarSign className="h-4 w-4" />
+                Aid off Budget
               </div>
               <div className="text-xl font-bold text-red-900">
-                {formatCurrency(summary.totalOffBudgetAid)}
+                {formatCurrency(summary.totalOffBudgetAid + summary.totalUnknownAid)}
               </div>
               <div className="text-xs text-red-600 mt-1">
-                {summary.offBudgetActivityCount} activities
+                {summary.offBudgetActivityCount + summary.unknownActivityCount} activities
               </div>
             </div>
 
-            <div className="bg-gray-50 rounded-lg p-4">
-              <div className="flex items-center gap-2 text-sm text-gray-600 mb-1">
-                <TrendingUp className="h-4 w-4" />
-                Aid Share of Budget
+            <div className="bg-violet-50 rounded-lg p-4">
+              <div className="flex items-center gap-2 text-sm text-violet-600 mb-1">
+                <HandCoins className="h-4 w-4" />
+                Budget Support
               </div>
-              <div className="text-xl font-bold text-gray-900">
-                {summary.aidShareOfBudget.toFixed(1)}%
+              <div className="text-xl font-bold text-violet-900">
+                {formatCurrency(summary.totalBudgetSupport)}
               </div>
-              <Progress value={summary.aidShareOfBudget} className="mt-2 h-2" />
+              <div className="text-xs text-violet-600 mt-1">
+                {summary.budgetSupportActivityCount} activities (A01/A02)
+              </div>
             </div>
           </div>
         )}
 
-        {/* Chart */}
-        <div className="relative">
-          <svg ref={svgRef} className="w-full h-auto" />
+        {/* Orbital Chart */}
+        <div className="relative w-full flex items-center justify-center" style={{ backgroundColor: '#f1f4f8', minHeight: '700px' }}>
+          <svg ref={svgRef} className="w-full h-full max-w-4xl max-h-[700px]" />
 
           {/* Tooltip */}
           {tooltip.show && tooltip.content && (
             <div
-              className="absolute bg-white border border-gray-200 rounded-lg shadow-lg p-3 pointer-events-none z-50"
-              style={{ left: tooltip.x, top: tooltip.y }}
+              className="absolute pointer-events-none z-50 rounded-lg shadow-lg px-3 py-2"
+              style={{
+                left: tooltip.x,
+                top: tooltip.y,
+                transform: 'translate(0, -100%)',
+                backgroundColor: '#f1f4f8',
+                border: '1px solid #cfd0d5'
+              }}
             >
-              <div className="font-semibold text-gray-900 mb-2">
+              <div className="font-semibold text-sm" style={{ color: '#4c5568' }}>
                 {tooltip.content.title}
               </div>
               {tooltip.content.values.map((item, i) => (
                 <div key={i} className="flex items-center justify-between gap-4 text-sm">
-                  <span className="text-gray-600">{item.label}:</span>
+                  <span style={{ color: '#4c5568' }}>{item.label}:</span>
                   <span
                     className="font-medium"
-                    style={{ color: item.color || "#1e293b" }}
+                    style={{ color: item.color || '#4c5568' }}
                   >
                     {item.value}
                   </span>
@@ -494,10 +664,14 @@ export function EnhancedAidOnBudgetChart({ refreshKey }: EnhancedAidOnBudgetChar
               <Badge variant="outline" className="bg-gray-50 text-gray-600 border-gray-200">
                 Unknown: {summary.unknownActivityCount}
               </Badge>
+              <Badge variant="outline" className="bg-violet-50 text-violet-700 border-violet-200">
+                Budget Support: {summary.budgetSupportActivityCount}
+              </Badge>
             </div>
             <p className="text-xs text-muted-foreground mt-2">
               Total: {summary.activityCount} activities |{" "}
-              {summary.onBudgetPercentage.toFixed(1)}% of aid is on budget
+              {summary.onBudgetPercentage.toFixed(1)}% of project aid is on budget |{" "}
+              {summary.aidShareOfBudget.toFixed(1)}% aid share of total spending
             </p>
           </div>
         )}
