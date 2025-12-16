@@ -270,10 +270,10 @@ export function EnhancedAidOnBudgetChart({ refreshKey }: EnhancedAidOnBudgetChar
         });
     }
 
-    // Center circle with platinum background
+    // Center circle with white background
     g.append("circle")
       .attr("r", centerRadius)
-      .attr("fill", palette.platinum);
+      .attr("fill", "#ffffff");
 
     // Center text
     g.append("text")
@@ -381,7 +381,7 @@ export function EnhancedAidOnBudgetChart({ refreshKey }: EnhancedAidOnBudgetChar
         // Inner circle for text background
         planetGroup.append("circle")
           .attr("r", r * 0.75)
-          .attr("fill", palette.platinum);
+          .attr("fill", "#ffffff");
 
         // Value text
         planetGroup.append("text")
@@ -609,7 +609,7 @@ export function EnhancedAidOnBudgetChart({ refreshKey }: EnhancedAidOnBudgetChar
         )}
 
         {/* Orbital Chart */}
-        <div className="relative w-full flex items-center justify-center" style={{ backgroundColor: '#f1f4f8', minHeight: '700px' }}>
+        <div className="relative w-full flex items-center justify-center bg-white" style={{ minHeight: '700px' }}>
           <svg ref={svgRef} className="w-full h-full max-w-4xl max-h-[700px]" />
 
           {/* Tooltip */}
