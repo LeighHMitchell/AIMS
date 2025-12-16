@@ -526,17 +526,20 @@ export interface DomesticAidComparisonRow {
 }
 
 /**
- * Chart color scheme for enhanced visualization
+ * Chart color scheme for enhanced visualization - Brand palette
  */
 export const ENHANCED_CHART_COLORS = {
-  domestic: '#3b82f6', // blue-500
-  domesticLight: '#93c5fd', // blue-300
-  onBudgetAid: '#22c55e', // green-500
-  onBudgetAidLight: '#86efac', // green-300
-  offBudgetAid: '#ef4444', // red-500
-  offBudgetAidLight: '#fca5a5', // red-300
-  partialAid: '#eab308', // yellow-500
-  unknownAid: '#9ca3af', // gray-400
-  budgetSupport: '#8b5cf6', // violet-500
-  budgetSupportLight: '#c4b5fd', // violet-300
+  // Brand palette
+  primaryScarlet: '#dc2625', // Primary Scarlet - off-budget/alerts
+  paleSlate: '#cfd0d5',      // Pale Slate - budget support/borders
+  blueSlate: '#4c5568',      // Blue Slate - domestic spending/text
+  coolSteel: '#7b95a7',      // Cool Steel - on-budget aid
+  platinum: '#f1f4f8',       // Platinum - backgrounds
+
+  // Semantic mappings
+  domestic: '#4c5568',       // Blue Slate for domestic spending
+  onBudgetAid: '#7b95a7',    // Cool Steel for on-budget aid
+  offBudgetAid: '#dc2625',   // Primary Scarlet for off-budget aid
+  budgetSupport: '#cfd0d5',  // Pale Slate for budget support
+  unknownAid: '#cfd0d5',     // Pale Slate for unknown
 };

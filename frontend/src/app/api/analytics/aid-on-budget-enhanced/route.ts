@@ -256,11 +256,11 @@ export async function GET(request: NextRequest) {
       budgetSupportActivityCount: budgetSupportCount,
     };
 
-    // Build chart data with 4 categories:
-    // 1. Domestic Spending - government expenditure
-    // 2. Aid on Budget - on-budget + partial aid (non-budget-support)
-    // 3. Aid off Budget - off-budget + unknown aid (non-budget-support)
-    // 4. Budget Support - A01 (General) and A02 (Sector) budget support
+    // Build chart data with 4 categories using brand palette:
+    // 1. Domestic Spending - Blue Slate (#4c5568)
+    // 2. Aid on Budget - Cool Steel (#7b95a7)
+    // 3. Aid off Budget - Primary Scarlet (#dc2625)
+    // 4. Budget Support - Pale Slate (#cfd0d5)
     const chartData: EnhancedAidOnBudgetChartData = {
       centerData: {
         total: totalDomesticExpenditure + totalAid + totalBudgetSupport,
@@ -268,22 +268,22 @@ export async function GET(request: NextRequest) {
           {
             type: "Domestic Spending",
             value: totalDomesticExpenditure,
-            color: ENHANCED_CHART_COLORS.domestic,
+            color: ENHANCED_CHART_COLORS.blueSlate,
           },
           {
             type: "Aid on Budget",
             value: effectiveOnBudget,
-            color: ENHANCED_CHART_COLORS.onBudgetAid,
+            color: ENHANCED_CHART_COLORS.coolSteel,
           },
           {
             type: "Aid off Budget",
             value: totalOffBudgetAid + totalUnknownAid,
-            color: ENHANCED_CHART_COLORS.offBudgetAid,
+            color: ENHANCED_CHART_COLORS.primaryScarlet,
           },
           {
             type: "Budget Support",
             value: totalBudgetSupport,
-            color: ENHANCED_CHART_COLORS.budgetSupport,
+            color: ENHANCED_CHART_COLORS.paleSlate,
           },
         ],
       },

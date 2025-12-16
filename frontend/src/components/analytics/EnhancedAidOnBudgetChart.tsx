@@ -137,16 +137,13 @@ export function EnhancedAidOnBudgetChart({ refreshKey }: EnhancedAidOnBudgetChar
 
     const { summary, chartData } = data;
 
-    // Color palette - matching the original orbital chart
+    // Color palette - brand colors
     const palette = {
-      domestic: '#3b82f6',      // blue-500 for domestic
-      onBudget: '#22c55e',      // green-500 for on-budget aid
-      offBudget: '#ef4444',     // red-500 for off-budget aid
-      budgetSupport: '#8b5cf6', // violet-500 for budget support
-      paleSlate: '#cfd0d5',
-      blueSlate: '#4c5568',
-      coolSteel: '#7b95a7',
-      platinum: '#f1f4f8'
+      primaryScarlet: '#dc2625',  // Primary Scarlet - for off-budget/alerts
+      paleSlate: '#cfd0d5',       // Pale Slate - for borders/subtle elements
+      blueSlate: '#4c5568',       // Blue Slate - for text/domestic spending
+      coolSteel: '#7b95a7',       // Cool Steel - for on-budget aid
+      platinum: '#f1f4f8'         // Platinum - for backgrounds
     };
 
     // Check if there's any data to show
@@ -313,12 +310,12 @@ export function EnhancedAidOnBudgetChart({ refreshKey }: EnhancedAidOnBudgetChar
 
       const angleStep = (2 * Math.PI) / sectorData.length;
 
-      // Color scale for sectors
+      // Color scale for sectors - using brand palette
       const sectorColors = [
         palette.blueSlate,
         palette.coolSteel,
-        palette.domestic,
-        palette.onBudget
+        palette.primaryScarlet,
+        palette.paleSlate
       ];
       const sectorColorScale = d3.scaleOrdinal(sectorColors);
 
@@ -352,9 +349,9 @@ export function EnhancedAidOnBudgetChart({ refreshKey }: EnhancedAidOnBudgetChar
               title: `${sector.code} - ${sector.name}`,
               values: [
                 { label: "Total", value: formatCurrency(sectorTotal) },
-                { label: "Domestic", value: formatCurrency(sector.domesticExpenditure), color: palette.domestic },
-                { label: "On-Budget Aid", value: formatCurrency(sector.onBudgetAid), color: palette.onBudget },
-                { label: "Off-Budget Aid", value: formatCurrency(sector.offBudgetAid), color: palette.offBudget },
+                { label: "Domestic", value: formatCurrency(sector.domesticExpenditure), color: palette.blueSlate },
+                { label: "On-Budget Aid", value: formatCurrency(sector.onBudgetAid), color: palette.coolSteel },
+                { label: "Off-Budget Aid", value: formatCurrency(sector.offBudgetAid), color: palette.primaryScarlet },
                 { label: "Share", value: `${pct}%` },
               ],
             });
@@ -365,9 +362,9 @@ export function EnhancedAidOnBudgetChart({ refreshKey }: EnhancedAidOnBudgetChar
               title: `${sector.code} - ${sector.name}`,
               values: [
                 { label: "Total", value: formatCurrency(sectorTotal) },
-                { label: "Domestic", value: formatCurrency(sector.domesticExpenditure), color: palette.domestic },
-                { label: "On-Budget Aid", value: formatCurrency(sector.onBudgetAid), color: palette.onBudget },
-                { label: "Off-Budget Aid", value: formatCurrency(sector.offBudgetAid), color: palette.offBudget },
+                { label: "Domestic", value: formatCurrency(sector.domesticExpenditure), color: palette.blueSlate },
+                { label: "On-Budget Aid", value: formatCurrency(sector.onBudgetAid), color: palette.coolSteel },
+                { label: "Off-Budget Aid", value: formatCurrency(sector.offBudgetAid), color: palette.primaryScarlet },
                 { label: "Share", value: `${pct}%` },
               ],
             });
@@ -422,12 +419,12 @@ export function EnhancedAidOnBudgetChart({ refreshKey }: EnhancedAidOnBudgetChar
       });
     }
 
-    // LEGEND - 4 categories
+    // LEGEND - 4 categories using brand palette
     const legendData = [
-      { label: "Domestic Spending", color: palette.domestic },
-      { label: "Aid on Budget", color: palette.onBudget },
-      { label: "Aid off Budget", color: palette.offBudget },
-      { label: "Budget Support", color: palette.budgetSupport }
+      { label: "Domestic Spending", color: palette.blueSlate },
+      { label: "Aid on Budget", color: palette.coolSteel },
+      { label: "Aid off Budget", color: palette.primaryScarlet },
+      { label: "Budget Support", color: palette.paleSlate }
     ];
 
     const legend = svg.append("g")
@@ -554,57 +551,57 @@ export function EnhancedAidOnBudgetChart({ refreshKey }: EnhancedAidOnBudgetChar
         </div>
       </CardHeader>
       <CardContent>
-        {/* Summary Cards */}
+        {/* Summary Cards - Monochrome with white background */}
         {summary && (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-            <div className="bg-blue-50 rounded-lg p-4">
-              <div className="flex items-center gap-2 text-sm text-blue-600 mb-1">
-                <Wallet className="h-4 w-4" />
+            <div className="bg-white rounded-lg p-4 border border-slate-200">
+              <div className="flex items-center gap-2 text-sm mb-1" style={{ color: '#4c5568' }}>
+                <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: '#4c5568' }} />
                 Domestic Spending
               </div>
-              <div className="text-xl font-bold text-blue-900">
+              <div className="text-xl font-bold" style={{ color: '#4c5568' }}>
                 {formatCurrency(summary.totalDomesticExpenditure)}
               </div>
-              <div className="text-xs text-blue-600 mt-1">
+              <div className="text-xs mt-1" style={{ color: '#7b95a7' }}>
                 {summary.domesticExecutionRate.toFixed(1)}% execution rate
               </div>
             </div>
 
-            <div className="bg-green-50 rounded-lg p-4">
-              <div className="flex items-center gap-2 text-sm text-green-600 mb-1">
-                <PiggyBank className="h-4 w-4" />
+            <div className="bg-white rounded-lg p-4 border border-slate-200">
+              <div className="flex items-center gap-2 text-sm mb-1" style={{ color: '#4c5568' }}>
+                <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: '#7b95a7' }} />
                 Aid on Budget
               </div>
-              <div className="text-xl font-bold text-green-900">
+              <div className="text-xl font-bold" style={{ color: '#4c5568' }}>
                 {formatCurrency(summary.totalOnBudgetAid + summary.totalPartialAid)}
               </div>
-              <div className="text-xs text-green-600 mt-1">
+              <div className="text-xs mt-1" style={{ color: '#7b95a7' }}>
                 {summary.onBudgetActivityCount + summary.partialActivityCount} activities
               </div>
             </div>
 
-            <div className="bg-red-50 rounded-lg p-4">
-              <div className="flex items-center gap-2 text-sm text-red-600 mb-1">
-                <CircleDollarSign className="h-4 w-4" />
+            <div className="bg-white rounded-lg p-4 border border-slate-200">
+              <div className="flex items-center gap-2 text-sm mb-1" style={{ color: '#4c5568' }}>
+                <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: '#dc2625' }} />
                 Aid off Budget
               </div>
-              <div className="text-xl font-bold text-red-900">
+              <div className="text-xl font-bold" style={{ color: '#4c5568' }}>
                 {formatCurrency(summary.totalOffBudgetAid + summary.totalUnknownAid)}
               </div>
-              <div className="text-xs text-red-600 mt-1">
+              <div className="text-xs mt-1" style={{ color: '#7b95a7' }}>
                 {summary.offBudgetActivityCount + summary.unknownActivityCount} activities
               </div>
             </div>
 
-            <div className="bg-violet-50 rounded-lg p-4">
-              <div className="flex items-center gap-2 text-sm text-violet-600 mb-1">
-                <HandCoins className="h-4 w-4" />
+            <div className="bg-white rounded-lg p-4 border border-slate-200">
+              <div className="flex items-center gap-2 text-sm mb-1" style={{ color: '#4c5568' }}>
+                <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: '#cfd0d5' }} />
                 Budget Support
               </div>
-              <div className="text-xl font-bold text-violet-900">
+              <div className="text-xl font-bold" style={{ color: '#4c5568' }}>
                 {formatCurrency(summary.totalBudgetSupport)}
               </div>
-              <div className="text-xs text-violet-600 mt-1">
+              <div className="text-xs mt-1" style={{ color: '#7b95a7' }}>
                 {summary.budgetSupportActivityCount} activities (A01/A02)
               </div>
             </div>
@@ -648,27 +645,27 @@ export function EnhancedAidOnBudgetChart({ refreshKey }: EnhancedAidOnBudgetChar
         {/* Activity Status Breakdown */}
         {summary && (
           <div className="mt-6 pt-4 border-t">
-            <h4 className="text-sm font-semibold text-gray-700 mb-3">
+            <h4 className="text-sm font-semibold mb-3" style={{ color: '#4c5568' }}>
               Activity Budget Status Distribution
             </h4>
             <div className="flex flex-wrap gap-2">
-              <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+              <Badge variant="outline" className="bg-white border-slate-300" style={{ color: '#4c5568' }}>
                 On Budget: {summary.onBudgetActivityCount}
               </Badge>
-              <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200">
+              <Badge variant="outline" className="bg-white border-slate-300" style={{ color: '#4c5568' }}>
                 Partial: {summary.partialActivityCount}
               </Badge>
-              <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">
+              <Badge variant="outline" className="bg-white border-slate-300" style={{ color: '#4c5568' }}>
                 Off Budget: {summary.offBudgetActivityCount}
               </Badge>
-              <Badge variant="outline" className="bg-gray-50 text-gray-600 border-gray-200">
+              <Badge variant="outline" className="bg-white border-slate-300" style={{ color: '#4c5568' }}>
                 Unknown: {summary.unknownActivityCount}
               </Badge>
-              <Badge variant="outline" className="bg-violet-50 text-violet-700 border-violet-200">
+              <Badge variant="outline" className="bg-white border-slate-300" style={{ color: '#4c5568' }}>
                 Budget Support: {summary.budgetSupportActivityCount}
               </Badge>
             </div>
-            <p className="text-xs text-muted-foreground mt-2">
+            <p className="text-xs mt-2" style={{ color: '#7b95a7' }}>
               Total: {summary.activityCount} activities |{" "}
               {summary.onBudgetPercentage.toFixed(1)}% of project aid is on budget |{" "}
               {summary.aidShareOfBudget.toFixed(1)}% aid share of total spending
