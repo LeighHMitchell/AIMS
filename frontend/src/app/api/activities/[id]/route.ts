@@ -1214,6 +1214,15 @@ export async function GET(
       general_info: activity.general_info || {},
       // Include custom dates (for "Add another Activity Date" feature)
       customDates: activity.custom_dates || [],
+      // Budget status fields
+      budgetStatus: activity.budget_status || 'unknown',
+      budget_status: activity.budget_status || 'unknown',
+      onBudgetPercentage: activity.on_budget_percentage,
+      on_budget_percentage: activity.on_budget_percentage,
+      budgetStatusNotes: activity.budget_status_notes,
+      budget_status_notes: activity.budget_status_notes,
+      budgetStatusUpdatedAt: activity.budget_status_updated_at,
+      budgetStatusUpdatedBy: activity.budget_status_updated_by,
       // Include related data
       sectors: sectors?.map((sector: any) => ({
         id: sector.id,

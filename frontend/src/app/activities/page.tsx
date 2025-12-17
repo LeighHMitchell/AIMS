@@ -85,6 +85,11 @@ import {
   DurationResult,
   DurationBand
 } from '@/lib/date-utils';
+import {
+  BudgetStatusType,
+  getBudgetStatusLabel,
+  BUDGET_STATUS_COLORS
+} from '@/types/activity-budget-status';
 
 // Dynamically import SectorHierarchyFilter to avoid hydration issues
 const SectorHierarchyFilter = dynamic(
@@ -274,6 +279,10 @@ type Activity = {
     contributionPercent?: number;
     notes?: string;
   }>;
+
+  // Budget status
+  budgetStatus?: BudgetStatusType;
+  onBudgetPercentage?: number;
 };
 
 type SortField = 'title' | 'partnerId' | 'createdBy' | 'commitments' | 'disbursements' | 'plannedDisbursements' | 'createdAt' | 'updatedAt' | 'activityStatus' | 'actualLength' | 'totalExpectedLength' | 'implementationToDate' | 'remainingDuration' | 'durationBand' | 'plannedStartDate' | 'plannedEndDate' | 'actualStartDate' | 'actualEndDate';
@@ -499,7 +508,9 @@ type ColumnId =
   | 'sectors'
   | 'subSectors'
   // SDG column
-  | 'sdgs';
+  | 'sdgs'
+  // Budget status column
+  | 'budgetStatus';
 
 interface ColumnConfig {
   id: ColumnId;
@@ -563,7 +574,10 @@ const COLUMN_CONFIGS: ColumnConfig[] = [
   
   // SDG column
   { id: 'sdgs', label: 'SDGs', group: 'sdgs', width: 'min-w-[120px]', defaultVisible: false, align: 'left' },
-  
+
+  // Budget status column
+  { id: 'budgetStatus', label: 'Budget Status', group: 'default', width: 'min-w-[130px]', defaultVisible: true, align: 'center' },
+
   // Description columns
   { id: 'descriptionGeneral', label: 'Activity Description – General', group: 'descriptions', width: 'min-w-[200px]', defaultVisible: false, align: 'left' },
   { id: 'descriptionObjectives', label: 'Activity Description – Objectives', group: 'descriptions', width: 'min-w-[200px]', defaultVisible: false, align: 'left' },
@@ -2341,7 +2355,14 @@ function ActivitiesPageContent() {
                       SDGs
                     </th>
                   )}
-                  
+
+                  {/* Budget Status Column */}
+                  {visibleColumns.includes('budgetStatus') && (
+                    <th className="h-12 px-4 py-3 text-center align-middle text-sm font-medium text-muted-foreground min-w-[130px]">
+                      Budget Status
+                    </th>
+                  )}
+
                   {/* Description Columns */}
                   {visibleColumns.includes('descriptionGeneral') && (
                     <th className="h-12 px-4 py-3 text-left align-middle text-sm font-medium text-muted-foreground min-w-[200px]">
@@ -3183,7 +3204,40 @@ function ActivitiesPageContent() {
                           />
                         </td>
                       )}
-                      
+
+                      {/* Budget Status Cell */}
+                      {visibleColumns.includes('budgetStatus') && (
+                        <td className="px-4 py-2 text-sm text-foreground text-center">
+                          {(() => {
+                            const status = activity.budgetStatus || 'unknown';
+                            const statusLabel = getBudgetStatusLabel(status);
+                            const colorClass = BUDGET_STATUS_COLORS[status] || BUDGET_STATUS_COLORS.unknown;
+                            return (
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Badge variant="outline" className={`${colorClass} cursor-pointer`}>
+                                      {statusLabel}
+                                      {status === 'partial' && activity.onBudgetPercentage && (
+                                        <span className="ml-1">({activity.onBudgetPercentage}%)</span>
+                                      )}
+                                    </Badge>
+                                  </TooltipTrigger>
+                                  <TooltipContent className="max-w-xs bg-white border shadow-lg p-2">
+                                    <p className="text-sm">
+                                      {status === 'on_budget' && 'This activity is fully reflected in the government budget.'}
+                                      {status === 'off_budget' && 'This activity is not included in the government budget.'}
+                                      {status === 'partial' && `${activity.onBudgetPercentage || 0}% of this activity is reflected in the government budget.`}
+                                      {status === 'unknown' && 'Budget status has not been determined for this activity.'}
+                                    </p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                            );
+                          })()}
+                        </td>
+                      )}
+
                       {/* Description Cells */}
                       {visibleColumns.includes('descriptionGeneral') && (
                         <td className="px-4 py-2 text-sm text-foreground text-left">

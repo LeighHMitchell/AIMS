@@ -899,6 +899,10 @@ export async function POST(request: Request) {
         break;
 
       case 'budgetStatus':
+        console.log('[Field API] === BUDGET STATUS UPDATE ===');
+        console.log('[Field API] Existing budget_status:', existingActivity.budget_status);
+        console.log('[Field API] New value from body:', body.value);
+        console.log('[Field API] Activity ID:', body.activityId);
         oldValue = existingActivity.budget_status;
         newValue = body.value;
         // Validate budget status value
@@ -911,15 +915,18 @@ export async function POST(request: Request) {
           );
         }
         updateData.budget_status = body.value || 'unknown';
+        console.log('[Field API] Setting budget_status to:', updateData.budget_status);
         // Clear on_budget_percentage if not partial
         if (body.value !== 'partial') {
           updateData.on_budget_percentage = null;
         }
         // Update timestamp
         updateData.budget_status_updated_at = new Date().toISOString();
-        if (body.user?.id) {
-          updateData.budget_status_updated_by = body.user.id;
+        // Support both body.user?.id and body.userId
+        if (body.user?.id || body.userId) {
+          updateData.budget_status_updated_by = body.user?.id || body.userId;
         }
+        console.log('[Field API] Final updateData for budgetStatus:', JSON.stringify(updateData, null, 2));
         break;
 
       case 'onBudgetPercentage':
@@ -994,20 +1001,28 @@ export async function POST(request: Request) {
       // CRITICAL: Ensure the update is fully committed before proceeding
       if (!updateError && updatedActivity) {
         console.log('[Field API] Update successful, verifying data consistency...');
+        console.log('[Field API] Updated activity data:', JSON.stringify(updatedActivity, null, 2));
         // Add a small delay to ensure database consistency
         await new Promise(resolve => setTimeout(resolve, 100));
-        
+
         // Verify the update was actually committed by re-reading the record
+        // Include budget_status fields for verification
         const { data: verifyData, error: verifyError } = await getSupabaseAdmin()
           .from('activities')
-          .select('id, acronym, title_narrative')
+          .select('id, acronym, title_narrative, budget_status, on_budget_percentage, budget_status_notes')
           .eq('id', body.activityId)
           .single();
-          
+
         if (verifyError) {
           console.error('[Field API] Verification failed:', verifyError);
+          console.error('[Field API] Verification error details:', JSON.stringify(verifyError, null, 2));
         } else {
-          console.log('[Field API] Verification successful - acronym:', verifyData?.acronym, 'title:', verifyData?.title_narrative);
+          console.log('[Field API] Verification successful:');
+          console.log('[Field API]   - acronym:', verifyData?.acronym);
+          console.log('[Field API]   - title:', verifyData?.title_narrative);
+          console.log('[Field API]   - budget_status:', verifyData?.budget_status);
+          console.log('[Field API]   - on_budget_percentage:', verifyData?.on_budget_percentage);
+          console.log('[Field API]   - budget_status_notes:', verifyData?.budget_status_notes);
         }
       }
 

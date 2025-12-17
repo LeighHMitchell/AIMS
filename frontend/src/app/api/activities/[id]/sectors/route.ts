@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase';
+import { applyAutoMapping } from '@/lib/sector-budget-mapping-service';
 
 export async function GET(
   request: NextRequest,
@@ -86,10 +87,36 @@ export async function PUT(
       console.error('Error updating activity timestamp:', updateError);
     }
 
-    return NextResponse.json({ 
-      success: true, 
+    // Trigger auto-mapping from sectors to budget classifications
+    // This runs async and doesn't block the response
+    let autoMappingResult = null;
+    try {
+      // Get user ID from auth header if available, otherwise use a system user ID
+      const supabase = getSupabaseAdmin();
+      const userId = 'system'; // Auto-mapping triggered by sector change
+
+      autoMappingResult = await applyAutoMapping(activityId, userId, {
+        overwriteExisting: true, // When sectors change, update auto-mapped items
+      });
+
+      console.log('[Sectors API] Auto-mapping result:', {
+        created: autoMappingResult.created,
+        suggestions: autoMappingResult.suggestions.length,
+        coverage: autoMappingResult.coveragePercent,
+      });
+    } catch (autoMapError) {
+      // Log but don't fail - auto-mapping is a nice-to-have
+      console.error('[Sectors API] Auto-mapping failed (non-blocking):', autoMapError);
+    }
+
+    return NextResponse.json({
+      success: true,
       sectors: insertedSectors,
-      message: 'Sectors saved successfully' 
+      message: 'Sectors saved successfully',
+      autoMapping: autoMappingResult ? {
+        created: autoMappingResult.created,
+        coveragePercent: autoMappingResult.coveragePercent,
+      } : null,
     });
   } catch (error) {
     console.error('Unexpected error:', error);
@@ -174,10 +201,33 @@ export async function POST(
 
     console.log('[Sectors API] Successfully inserted sectors:', insertedSectors);
 
-    return NextResponse.json({ 
-      success: true, 
+    // Trigger auto-mapping from sectors to budget classifications
+    let autoMappingResult = null;
+    try {
+      const userId = 'system'; // Auto-mapping triggered by sector import
+
+      autoMappingResult = await applyAutoMapping(activityId, userId, {
+        overwriteExisting: replace, // Only overwrite if replacing sectors
+      });
+
+      console.log('[Sectors API] Auto-mapping result:', {
+        created: autoMappingResult.created,
+        suggestions: autoMappingResult.suggestions.length,
+        coverage: autoMappingResult.coveragePercent,
+      });
+    } catch (autoMapError) {
+      // Log but don't fail - auto-mapping is a nice-to-have
+      console.error('[Sectors API] Auto-mapping failed (non-blocking):', autoMapError);
+    }
+
+    return NextResponse.json({
+      success: true,
       sectors: insertedSectors,
-      message: `Successfully imported ${insertedSectors.length} sectors` 
+      message: `Successfully imported ${insertedSectors.length} sectors`,
+      autoMapping: autoMappingResult ? {
+        created: autoMappingResult.created,
+        coveragePercent: autoMappingResult.coveragePercent,
+      } : null,
     });
   } catch (error) {
     console.error('[Sectors API] Unexpected error:', error);

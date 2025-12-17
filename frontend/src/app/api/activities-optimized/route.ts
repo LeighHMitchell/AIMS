@@ -86,6 +86,8 @@ export async function GET(request: NextRequest) {
         default_tied_status,
         default_modality,
         default_modality_override,
+        budget_status,
+        on_budget_percentage,
         banner,
         icon,
         activity_sdg_mappings (
@@ -593,6 +595,8 @@ export async function GET(request: NextRequest) {
         tied_status: activity.default_tied_status, // Legacy compatibility
         default_aid_modality: activity.default_modality, // Map from correct DB column
         default_aid_modality_override: activity.default_modality_override, // Map from correct DB column
+        budgetStatus: activity.budget_status || 'unknown',
+        onBudgetPercentage: activity.on_budget_percentage,
         banner: activity.banner, // Include banner for card view
         icon: activity.icon, // Include icon for card view
         createdAt: activity.created_at,

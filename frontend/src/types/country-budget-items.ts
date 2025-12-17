@@ -19,6 +19,8 @@ export interface BudgetItem {
   code: string;
   percentage: number;
   description?: Narrative; // Multi-language support
+  source_sector_code?: string; // DAC sector code that suggested this mapping
+  source_sector_name?: string; // Readable sector name for display
   created_at?: string;
   updated_at?: string;
 }

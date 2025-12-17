@@ -6,7 +6,7 @@
 /**
  * Classification type categories
  */
-export type ClassificationType = 'administrative' | 'functional' | 'economic' | 'programme';
+export type ClassificationType = 'administrative' | 'functional' | 'functional_cofog' | 'economic' | 'programme';
 
 /**
  * Budget Classification (Chart of Accounts entry)
@@ -63,6 +63,7 @@ export interface SectorBudgetMapping {
   budgetClassification?: BudgetClassification;
   percentage: number;
   isDefault: boolean;
+  isCategoryLevel: boolean;  // true for 3-digit category mappings, false for 5-digit specific
   notes?: string;
   createdAt?: string;
   updatedAt?: string;
@@ -79,10 +80,13 @@ export interface SectorBudgetMappingRow {
   budget_classification_id: string;
   percentage: number;
   is_default: boolean;
+  is_category_level: boolean;
   notes?: string;
   created_at?: string;
   updated_at?: string;
   created_by?: string;
+  // Joined data
+  budget_classifications?: BudgetClassificationRow;
 }
 
 /**
@@ -233,7 +237,39 @@ export interface SectorBudgetMappingFormData {
   budgetClassificationId: string;
   percentage: number;
   isDefault: boolean;
+  isCategoryLevel: boolean;
   notes?: string;
+}
+
+/**
+ * Grouped sector mapping - groups all 4 classification types for a sector
+ */
+export interface GroupedSectorMapping {
+  sectorCode: string;
+  sectorName: string;
+  isCategoryLevel: boolean;
+  hasOverride?: boolean;  // True if this is a specific sector that overrides a category default
+  mappings: {
+    functional?: SectorBudgetMapping;
+    functional_cofog?: SectorBudgetMapping;
+    administrative?: SectorBudgetMapping;
+    economic?: SectorBudgetMapping;
+    programme?: SectorBudgetMapping;
+  };
+}
+
+/**
+ * Sector with mapping status for admin display
+ */
+export interface SectorMappingStatus {
+  sectorCode: string;
+  sectorName: string;
+  categoryCode: string;  // 3-digit category
+  categoryName: string;
+  isMapped: boolean;
+  hasCategoryMapping: boolean;
+  hasSpecificMapping: boolean;
+  mappingCount: number;  // Number of classification types mapped
 }
 
 /**
@@ -317,8 +353,12 @@ export function toSectorBudgetMapping(row: SectorBudgetMappingRow): SectorBudget
     sectorCode: row.sector_code,
     sectorName: row.sector_name,
     budgetClassificationId: row.budget_classification_id,
+    budgetClassification: row.budget_classifications
+      ? toBudgetClassification(row.budget_classifications)
+      : undefined,
     percentage: row.percentage,
     isDefault: row.is_default,
+    isCategoryLevel: row.is_category_level ?? false,
     notes: row.notes,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
@@ -371,7 +411,8 @@ export function buildClassificationTree(
  */
 export const CLASSIFICATION_TYPE_LABELS: Record<ClassificationType, string> = {
   administrative: 'Administrative',
-  functional: 'Functional',
+  functional: 'Functional - National',
+  functional_cofog: 'Functional - COFOG',
   economic: 'Economic',
   programme: 'Programme',
 };
@@ -381,7 +422,8 @@ export const CLASSIFICATION_TYPE_LABELS: Record<ClassificationType, string> = {
  */
 export const CLASSIFICATION_TYPE_DESCRIPTIONS: Record<ClassificationType, string> = {
   administrative: 'By ministry, department, or agency responsible',
-  functional: 'By purpose or function (COFOG-based)',
+  functional: 'By purpose or function (national classification)',
+  functional_cofog: 'By purpose or function (COFOG international standard)',
   economic: 'By type of expenditure (salaries, goods, grants)',
   programme: 'By government programme or project',
 };

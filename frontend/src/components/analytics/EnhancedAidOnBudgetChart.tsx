@@ -20,9 +20,19 @@ import {
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { AlertCircle, RefreshCw, TrendingUp, Wallet, PiggyBank, CircleDollarSign, HandCoins, HelpCircle } from "lucide-react";
+import { AlertCircle, RefreshCw, TrendingUp, Wallet, PiggyBank, CircleDollarSign, HandCoins, HelpCircle, BarChart3, Table2, ChevronDown, ChevronRight, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { HelpTextTooltip } from "@/components/ui/help-text-tooltip";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { BudgetStatusType, getBudgetStatusLabel } from "@/types/activity-budget-status";
+import Link from "next/link";
 import {
   EnhancedAidOnBudgetSummary,
   EnhancedChartDataPoint,
@@ -59,6 +69,44 @@ interface ApiResponse {
   };
 }
 
+interface ActivityDetail {
+  id: string;
+  title: string;
+  iatiIdentifier: string;
+  partnerName: string;
+  budgetStatus: BudgetStatusType;
+  onBudgetPercentage: number | null;
+  defaultAidType: string | null;
+  isBudgetSupport: boolean;
+  totalDisbursements: number;
+  onBudgetAmount: number;
+  offBudgetAmount: number;
+  budgetClassifications: Array<{
+    code: string;
+    name: string;
+    percentage: number;
+  }>;
+}
+
+interface ActivitiesApiResponse {
+  success: boolean;
+  activities: ActivityDetail[];
+  totals: {
+    activities: number;
+    totalDisbursements: number;
+    onBudgetTotal: number;
+    offBudgetTotal: number;
+    onBudgetCount: number;
+    offBudgetCount: number;
+    partialCount: number;
+    unknownCount: number;
+    budgetSupportCount: number;
+  };
+}
+
+type ViewMode = "chart" | "table";
+type TableMode = "aggregate" | "activities";
+
 export function EnhancedAidOnBudgetChart({ refreshKey }: EnhancedAidOnBudgetChartProps) {
   const svgRef = useRef<SVGSVGElement>(null);
   const mainGroupRef = useRef<d3.Selection<SVGGElement, unknown, null, undefined> | null>(null);
@@ -81,6 +129,14 @@ export function EnhancedAidOnBudgetChart({ refreshKey }: EnhancedAidOnBudgetChar
 
   // Pan state - tracks manual panning offset (using ref for smooth updates without re-renders)
   const panOffsetRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
+
+  // View mode state
+  const [viewMode, setViewMode] = useState<ViewMode>("chart");
+  const [tableMode, setTableMode] = useState<TableMode>("aggregate");
+  const [activitiesData, setActivitiesData] = useState<ActivitiesApiResponse | null>(null);
+  const [activitiesLoading, setActivitiesLoading] = useState(false);
+  const [budgetStatusFilter, setBudgetStatusFilter] = useState<string>("all");
+  const [expandedActivities, setExpandedActivities] = useState<Set<string>>(new Set());
 
   // Chart dimensions (constants for zoom calculations)
   const chartWidth = 1200;
@@ -140,6 +196,73 @@ export function EnhancedAidOnBudgetChart({ refreshKey }: EnhancedAidOnBudgetChar
   useEffect(() => {
     fetchData();
   }, [fetchData, refreshKey]);
+
+  // Fetch activities data for table view
+  const fetchActivitiesData = useCallback(async () => {
+    try {
+      setActivitiesLoading(true);
+
+      const params = new URLSearchParams();
+      if (selectedYear !== "all") {
+        params.set("fiscalYear", selectedYear.toString());
+      }
+      if (budgetStatusFilter !== "all") {
+        params.set("budgetStatus", budgetStatusFilter);
+      }
+
+      const response = await fetch(
+        `/api/analytics/aid-on-budget-activities?${params.toString()}`
+      );
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || "Failed to fetch activities");
+      }
+
+      setActivitiesData(result);
+    } catch (err: any) {
+      console.error("[EnhancedAidOnBudgetChart] Error fetching activities:", err);
+    } finally {
+      setActivitiesLoading(false);
+    }
+  }, [selectedYear, budgetStatusFilter]);
+
+  // Fetch activities when switching to table view with activities mode
+  useEffect(() => {
+    if (viewMode === "table" && tableMode === "activities") {
+      fetchActivitiesData();
+    }
+  }, [viewMode, tableMode, fetchActivitiesData]);
+
+  // Toggle activity expansion
+  const toggleActivityExpansion = (activityId: string) => {
+    setExpandedActivities(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(activityId)) {
+        newSet.delete(activityId);
+      } else {
+        newSet.add(activityId);
+      }
+      return newSet;
+    });
+  };
+
+  // Get badge variant for budget status
+  const getBudgetStatusBadge = (status: BudgetStatusType, isBudgetSupport: boolean) => {
+    if (isBudgetSupport) {
+      return <Badge variant="outline" className="bg-gray-100 text-gray-700 border-gray-300">Budget Support</Badge>;
+    }
+    switch (status) {
+      case "on_budget":
+        return <Badge variant="outline" className="bg-green-50 text-green-700 border-green-300">On Budget</Badge>;
+      case "off_budget":
+        return <Badge variant="outline" className="bg-red-50 text-red-700 border-red-300">Off Budget</Badge>;
+      case "partial":
+        return <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-300">Partial</Badge>;
+      default:
+        return <Badge variant="outline" className="bg-gray-50 text-gray-700 border-gray-300">Unknown</Badge>;
+    }
+  };
 
   // Render D3 chart when data changes (NOT when zoom changes)
   useEffect(() => {
@@ -720,9 +843,30 @@ export function EnhancedAidOnBudgetChart({ refreshKey }: EnhancedAidOnBudgetChar
                 </SelectContent>
               </Select>
             </div>
-            <Button onClick={fetchData} variant="outline" size="sm">
+            <Button onClick={fetchData} variant="outline" size="sm" title="Refresh data">
               <RefreshCw className="h-4 w-4" />
             </Button>
+            {/* View Toggle */}
+            <div className="flex items-center border rounded-md">
+              <Button
+                variant={viewMode === "chart" ? "default" : "ghost"}
+                size="sm"
+                onClick={() => setViewMode("chart")}
+                className="rounded-r-none"
+                title="Chart View"
+              >
+                <BarChart3 className="h-4 w-4" />
+              </Button>
+              <Button
+                variant={viewMode === "table" ? "default" : "ghost"}
+                size="sm"
+                onClick={() => setViewMode("table")}
+                className="rounded-l-none"
+                title="Table View"
+              >
+                <Table2 className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
         </div>
       </CardHeader>
@@ -804,89 +948,341 @@ export function EnhancedAidOnBudgetChart({ refreshKey }: EnhancedAidOnBudgetChar
           </div>
         )}
 
-        {/* Orbital Chart */}
-        <div className="relative w-full flex items-center justify-center bg-white" style={{ minHeight: '700px' }}>
-          {/* Reset Zoom Button */}
-          {zoomTarget && (
-            <Button
-              onClick={() => setZoomTarget(null)}
-              variant="outline"
-              size="sm"
-              className="absolute top-4 left-4 z-10 bg-white"
-            >
-              <RefreshCw className="h-4 w-4 mr-2" />
-              Reset Zoom
-            </Button>
-          )}
-          <svg ref={svgRef} className="w-full h-auto" style={{ maxHeight: '700px' }} />
+        {/* Chart View */}
+        {viewMode === "chart" && (
+          <>
+            {/* Orbital Chart */}
+            <div className="relative w-full flex items-center justify-center bg-white" style={{ minHeight: '700px' }}>
+              {/* Reset Zoom Button */}
+              {zoomTarget && (
+                <Button
+                  onClick={() => setZoomTarget(null)}
+                  variant="outline"
+                  size="sm"
+                  className="absolute top-4 left-4 z-10 bg-white"
+                >
+                  <RefreshCw className="h-4 w-4 mr-2" />
+                  Reset Zoom
+                </Button>
+              )}
+              <svg ref={svgRef} className="w-full h-auto" style={{ maxHeight: '700px' }} />
 
-          {/* Tooltip */}
-          {tooltip.show && tooltip.content && (
-            <div
-              className="absolute pointer-events-none z-50 rounded-lg shadow-lg"
-              style={{
-                left: tooltip.x,
-                top: tooltip.y,
-                transform: 'translate(0, -100%)',
-                backgroundColor: '#ffffff',
-                border: '1px solid #cfd0d5'
-              }}
-            >
-              <div
-                className="font-semibold text-sm px-3 py-2 border-b"
-                style={{ color: '#4c5568', backgroundColor: '#f1f4f8' }}
-              >
-                {tooltip.content.title}
+              {/* Tooltip */}
+              {tooltip.show && tooltip.content && (
+                <div
+                  className="absolute pointer-events-none z-50 rounded-lg shadow-lg"
+                  style={{
+                    left: tooltip.x,
+                    top: tooltip.y,
+                    transform: 'translate(0, -100%)',
+                    backgroundColor: '#ffffff',
+                    border: '1px solid #cfd0d5'
+                  }}
+                >
+                  <div
+                    className="font-semibold text-sm px-3 py-2 border-b"
+                    style={{ color: '#4c5568', backgroundColor: '#f1f4f8' }}
+                  >
+                    {tooltip.content.title}
+                  </div>
+                  <table className="text-sm">
+                    <tbody>
+                      {tooltip.content.values.map((item, i) => (
+                        <tr key={i} className="border-b last:border-b-0" style={{ borderColor: '#e5e7eb' }}>
+                          <td className="px-3 py-1.5 text-left" style={{ color: '#6b7280' }}>
+                            {item.label}
+                          </td>
+                          <td
+                            className="px-3 py-1.5 text-right font-medium"
+                            style={{ color: item.color || '#4c5568' }}
+                          >
+                            {item.value}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+
+            {/* Activity Status Breakdown */}
+            {summary && (
+              <div className="mt-6 pt-4 border-t">
+                <h4 className="text-sm font-semibold mb-3" style={{ color: '#4c5568' }}>
+                  Activity Budget Status Distribution
+                </h4>
+                <div className="flex flex-wrap gap-2">
+                  <Badge variant="outline" className="bg-white border-slate-300" style={{ color: '#4c5568' }}>
+                    On Budget: {summary.onBudgetActivityCount}
+                  </Badge>
+                  <Badge variant="outline" className="bg-white border-slate-300" style={{ color: '#4c5568' }}>
+                    Partial: {summary.partialActivityCount}
+                  </Badge>
+                  <Badge variant="outline" className="bg-white border-slate-300" style={{ color: '#4c5568' }}>
+                    Off Budget: {summary.offBudgetActivityCount}
+                  </Badge>
+                  <Badge variant="outline" className="bg-white border-slate-300" style={{ color: '#4c5568' }}>
+                    Unknown: {summary.unknownActivityCount}
+                  </Badge>
+                  <Badge variant="outline" className="bg-white border-slate-300" style={{ color: '#4c5568' }}>
+                    Budget Support: {summary.budgetSupportActivityCount}
+                  </Badge>
+                </div>
+                <p className="text-xs mt-2" style={{ color: '#7b95a7' }}>
+                  Total: {summary.activityCount} activities |{" "}
+                  {summary.onBudgetPercentage.toFixed(1)}% of project aid is on budget |{" "}
+                  {summary.aidShareOfBudget.toFixed(1)}% aid share of total spending
+                </p>
               </div>
-              <table className="text-sm">
-                <tbody>
-                  {tooltip.content.values.map((item, i) => (
-                    <tr key={i} className="border-b last:border-b-0" style={{ borderColor: '#e5e7eb' }}>
-                      <td className="px-3 py-1.5 text-left" style={{ color: '#6b7280' }}>
-                        {item.label}
-                      </td>
-                      <td
-                        className="px-3 py-1.5 text-right font-medium"
-                        style={{ color: item.color || '#4c5568' }}
-                      >
-                        {item.value}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
+            )}
+          </>
+        )}
 
-        {/* Activity Status Breakdown */}
-        {summary && (
-          <div className="mt-6 pt-4 border-t">
-            <h4 className="text-sm font-semibold mb-3" style={{ color: '#4c5568' }}>
-              Activity Budget Status Distribution
-            </h4>
-            <div className="flex flex-wrap gap-2">
-              <Badge variant="outline" className="bg-white border-slate-300" style={{ color: '#4c5568' }}>
-                On Budget: {summary.onBudgetActivityCount}
-              </Badge>
-              <Badge variant="outline" className="bg-white border-slate-300" style={{ color: '#4c5568' }}>
-                Partial: {summary.partialActivityCount}
-              </Badge>
-              <Badge variant="outline" className="bg-white border-slate-300" style={{ color: '#4c5568' }}>
-                Off Budget: {summary.offBudgetActivityCount}
-              </Badge>
-              <Badge variant="outline" className="bg-white border-slate-300" style={{ color: '#4c5568' }}>
-                Unknown: {summary.unknownActivityCount}
-              </Badge>
-              <Badge variant="outline" className="bg-white border-slate-300" style={{ color: '#4c5568' }}>
-                Budget Support: {summary.budgetSupportActivityCount}
-              </Badge>
+        {/* Table View */}
+        {viewMode === "table" && (
+          <div className="space-y-4">
+            {/* Table Mode Toggle */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Label className="text-sm">Show:</Label>
+                <div className="flex items-center border rounded-md">
+                  <Button
+                    variant={tableMode === "aggregate" ? "default" : "ghost"}
+                    size="sm"
+                    onClick={() => setTableMode("aggregate")}
+                    className="rounded-r-none text-xs"
+                  >
+                    Aggregate
+                  </Button>
+                  <Button
+                    variant={tableMode === "activities" ? "default" : "ghost"}
+                    size="sm"
+                    onClick={() => setTableMode("activities")}
+                    className="rounded-l-none text-xs"
+                  >
+                    Activities
+                  </Button>
+                </div>
+              </div>
+              {tableMode === "activities" && (
+                <div className="flex items-center gap-2">
+                  <Label className="text-sm">Filter:</Label>
+                  <Select
+                    value={budgetStatusFilter}
+                    onValueChange={setBudgetStatusFilter}
+                  >
+                    <SelectTrigger className="w-[150px]">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Statuses</SelectItem>
+                      <SelectItem value="on_budget">On Budget</SelectItem>
+                      <SelectItem value="off_budget">Off Budget</SelectItem>
+                      <SelectItem value="partial">Partial</SelectItem>
+                      <SelectItem value="unknown">Unknown</SelectItem>
+                      <SelectItem value="budget_support">Budget Support</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
             </div>
-            <p className="text-xs mt-2" style={{ color: '#7b95a7' }}>
-              Total: {summary.activityCount} activities |{" "}
-              {summary.onBudgetPercentage.toFixed(1)}% of project aid is on budget |{" "}
-              {summary.aidShareOfBudget.toFixed(1)}% aid share of total spending
-            </p>
+
+            {/* Aggregate Table */}
+            {tableMode === "aggregate" && data?.chartData?.sectorData && (
+              <div className="border rounded-lg overflow-hidden">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="bg-slate-50">
+                      <TableHead className="font-semibold">Classification</TableHead>
+                      <TableHead className="font-semibold text-right">Domestic Spending</TableHead>
+                      <TableHead className="font-semibold text-right">Aid on Budget</TableHead>
+                      <TableHead className="font-semibold text-right">Aid off Budget</TableHead>
+                      <TableHead className="font-semibold text-right">Total</TableHead>
+                      <TableHead className="font-semibold text-right">Aid Share</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {data.chartData.sectorData
+                      .filter(s => s.domesticExpenditure > 0 || s.onBudgetAid > 0 || s.offBudgetAid > 0)
+                      .map((sector) => {
+                        const total = sector.domesticExpenditure + sector.onBudgetAid + sector.offBudgetAid;
+                        return (
+                          <TableRow key={sector.code}>
+                            <TableCell className="font-medium">
+                              <span className="text-sm text-gray-500 mr-2">{sector.code}</span>
+                              {sector.name}
+                            </TableCell>
+                            <TableCell className="text-right" style={{ color: '#4c5568' }}>
+                              {formatCurrency(sector.domesticExpenditure)}
+                            </TableCell>
+                            <TableCell className="text-right" style={{ color: '#7b95a7' }}>
+                              {formatCurrency(sector.onBudgetAid)}
+                            </TableCell>
+                            <TableCell className="text-right" style={{ color: '#dc2625' }}>
+                              {formatCurrency(sector.offBudgetAid)}
+                            </TableCell>
+                            <TableCell className="text-right font-semibold">
+                              {formatCurrency(total)}
+                            </TableCell>
+                            <TableCell className="text-right">
+                              {total > 0 ? ((sector.onBudgetAid / total) * 100).toFixed(1) : 0}%
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    {/* Totals Row */}
+                    {summary && (
+                      <TableRow className="bg-slate-50 font-semibold">
+                        <TableCell>Total</TableCell>
+                        <TableCell className="text-right" style={{ color: '#4c5568' }}>
+                          {formatCurrency(summary.totalDomesticExpenditure)}
+                        </TableCell>
+                        <TableCell className="text-right" style={{ color: '#7b95a7' }}>
+                          {formatCurrency(summary.totalOnBudgetAid + summary.totalPartialAid)}
+                        </TableCell>
+                        <TableCell className="text-right" style={{ color: '#dc2625' }}>
+                          {formatCurrency(summary.totalOffBudgetAid + summary.totalUnknownAid)}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          {formatCurrency(summary.totalSpending)}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          {summary.aidShareOfBudget.toFixed(1)}%
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
+
+            {/* Activities Table */}
+            {tableMode === "activities" && (
+              <div className="border rounded-lg overflow-hidden">
+                {activitiesLoading ? (
+                  <div className="p-8 text-center">
+                    <RefreshCw className="h-6 w-6 animate-spin mx-auto mb-2 text-gray-400" />
+                    <p className="text-sm text-gray-500">Loading activities...</p>
+                  </div>
+                ) : activitiesData?.activities && activitiesData.activities.length > 0 ? (
+                  <>
+                    <Table>
+                      <TableHeader>
+                        <TableRow className="bg-slate-50">
+                          <TableHead className="w-8"></TableHead>
+                          <TableHead className="font-semibold">Activity</TableHead>
+                          <TableHead className="font-semibold">Partner</TableHead>
+                          <TableHead className="font-semibold">Status</TableHead>
+                          <TableHead className="font-semibold text-right">Total Disbursements</TableHead>
+                          <TableHead className="font-semibold text-right">On Budget</TableHead>
+                          <TableHead className="font-semibold text-right">Off Budget</TableHead>
+                          <TableHead className="w-10"></TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {activitiesData.activities.map((activity) => (
+                          <React.Fragment key={activity.id}>
+                            <TableRow
+                              className="cursor-pointer hover:bg-slate-50"
+                              onClick={() => toggleActivityExpansion(activity.id)}
+                            >
+                              <TableCell className="w-8">
+                                {activity.budgetClassifications.length > 0 && (
+                                  expandedActivities.has(activity.id)
+                                    ? <ChevronDown className="h-4 w-4 text-gray-400" />
+                                    : <ChevronRight className="h-4 w-4 text-gray-400" />
+                                )}
+                              </TableCell>
+                              <TableCell>
+                                <div className="font-medium truncate max-w-[300px]" title={activity.title}>
+                                  {activity.title}
+                                </div>
+                                {activity.iatiIdentifier && (
+                                  <div className="text-xs text-gray-500">{activity.iatiIdentifier}</div>
+                                )}
+                              </TableCell>
+                              <TableCell className="text-sm">{activity.partnerName}</TableCell>
+                              <TableCell>
+                                {getBudgetStatusBadge(activity.budgetStatus, activity.isBudgetSupport)}
+                                {activity.budgetStatus === "partial" && activity.onBudgetPercentage && (
+                                  <span className="ml-1 text-xs text-gray-500">
+                                    ({activity.onBudgetPercentage}%)
+                                  </span>
+                                )}
+                              </TableCell>
+                              <TableCell className="text-right font-medium">
+                                {formatCurrency(activity.totalDisbursements)}
+                              </TableCell>
+                              <TableCell className="text-right" style={{ color: '#7b95a7' }}>
+                                {formatCurrency(activity.onBudgetAmount)}
+                              </TableCell>
+                              <TableCell className="text-right" style={{ color: '#dc2625' }}>
+                                {formatCurrency(activity.offBudgetAmount)}
+                              </TableCell>
+                              <TableCell className="w-10">
+                                <Link href={`/activities/${activity.id}`} onClick={(e) => e.stopPropagation()}>
+                                  <Button variant="ghost" size="sm" title="View Activity">
+                                    <ExternalLink className="h-4 w-4" />
+                                  </Button>
+                                </Link>
+                              </TableCell>
+                            </TableRow>
+                            {/* Expanded Row - Budget Classifications */}
+                            {expandedActivities.has(activity.id) && activity.budgetClassifications.length > 0 && (
+                              <TableRow className="bg-slate-50/50">
+                                <TableCell colSpan={8} className="py-2 px-8">
+                                  <div className="text-xs text-gray-600 mb-1 font-medium">Budget Classifications:</div>
+                                  <div className="flex flex-wrap gap-2">
+                                    {activity.budgetClassifications.map((bc, idx) => (
+                                      <Badge key={idx} variant="outline" className="text-xs">
+                                        {bc.code} - {bc.name} ({bc.percentage}%)
+                                      </Badge>
+                                    ))}
+                                  </div>
+                                </TableCell>
+                              </TableRow>
+                            )}
+                          </React.Fragment>
+                        ))}
+                        {/* Totals Row */}
+                        {activitiesData.totals && (
+                          <TableRow className="bg-slate-100 font-semibold">
+                            <TableCell></TableCell>
+                            <TableCell>Total ({activitiesData.totals.activities} activities)</TableCell>
+                            <TableCell></TableCell>
+                            <TableCell></TableCell>
+                            <TableCell className="text-right">
+                              {formatCurrency(activitiesData.totals.totalDisbursements)}
+                            </TableCell>
+                            <TableCell className="text-right" style={{ color: '#7b95a7' }}>
+                              {formatCurrency(activitiesData.totals.onBudgetTotal)}
+                            </TableCell>
+                            <TableCell className="text-right" style={{ color: '#dc2625' }}>
+                              {formatCurrency(activitiesData.totals.offBudgetTotal)}
+                            </TableCell>
+                            <TableCell></TableCell>
+                          </TableRow>
+                        )}
+                      </TableBody>
+                    </Table>
+                    {/* Status Summary */}
+                    <div className="p-3 bg-slate-50 border-t text-xs text-gray-600">
+                      <span className="font-medium">Status breakdown: </span>
+                      On Budget: {activitiesData.totals.onBudgetCount} |
+                      Off Budget: {activitiesData.totals.offBudgetCount} |
+                      Partial: {activitiesData.totals.partialCount} |
+                      Unknown: {activitiesData.totals.unknownCount} |
+                      Budget Support: {activitiesData.totals.budgetSupportCount}
+                    </div>
+                  </>
+                ) : (
+                  <div className="p-8 text-center text-gray-500">
+                    <p>No activities with disbursements found for the selected filters.</p>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         )}
       </CardContent>

@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import html2canvas from 'html2canvas'
 import { toast } from "sonner"
 import type { LocationSchema } from '@/lib/schemas/location'
+import { getCountryCoordinates, DEFAULT_MAP_CENTER, DEFAULT_MAP_ZOOM } from '@/data/country-coordinates'
 
 // Dynamically import the Leaflet map component (client-side only)
 const ActivityLocationsMapView = dynamic(() => import('./ActivityLocationsMapView'), {
@@ -87,10 +88,8 @@ const MAP_LAYERS: Record<MapLayerKey, MapLayerConfig> = {
 }
 
 const LAYER_PREFERENCE_KEY = 'aims-activity-map-layer-preference'
-const DEFAULT_CENTER: [number, number] = [21.9162, 95.9560] // Myanmar center
-const DEFAULT_ZOOM = 6
 
-export default function ActivityLocationsHeatmap({ 
+export default function ActivityLocationsHeatmap({
   locations = [],
   title = "Activity Locations Map",
   activityTitle
@@ -101,7 +100,32 @@ export default function ActivityLocationsHeatmap({
   const [viewMode, setViewMode] = useState<ViewMode>('markers')
   const mapContainerRef = useRef<HTMLDivElement>(null)
 
-  // Reset map to Myanmar view
+  // Home country coordinates from system settings
+  const [homeCountryCenter, setHomeCountryCenter] = useState<[number, number]>(DEFAULT_MAP_CENTER)
+  const [homeCountryZoom, setHomeCountryZoom] = useState<number>(DEFAULT_MAP_ZOOM)
+
+  // Fetch home country from system settings
+  useEffect(() => {
+    const fetchHomeCountry = async () => {
+      try {
+        const response = await fetch('/api/admin/system-settings')
+        if (response.ok) {
+          const data = await response.json()
+          if (data.homeCountry) {
+            const countryCoords = getCountryCoordinates(data.homeCountry)
+            setHomeCountryCenter(countryCoords.center)
+            setHomeCountryZoom(countryCoords.zoom)
+          }
+        }
+      } catch (error) {
+        console.error('Failed to fetch home country setting:', error)
+        // Keep defaults on error
+      }
+    }
+    fetchHomeCountry()
+  }, [])
+
+  // Reset map to home country view
   const handleResetView = () => {
     setMapKey(prev => prev + 1)
   }
@@ -137,9 +161,9 @@ export default function ActivityLocationsHeatmap({
     )
   }, [locations])
 
-  // Always use Myanmar as default view
-  const mapCenter = DEFAULT_CENTER
-  const mapZoom = DEFAULT_ZOOM
+  // Always use home country as default view
+  const mapCenter = homeCountryCenter
+  const mapZoom = homeCountryZoom
 
   // Export map to JPEG
   const exportToJPEG = async () => {
@@ -213,7 +237,7 @@ export default function ActivityLocationsHeatmap({
               onClick={handleResetView}
               variant="outline"
               size="sm"
-              title="Reset to Myanmar view"
+              title="Reset to home country view"
               className="bg-white shadow-md border-gray-300"
             >
               <RotateCcw className="h-4 w-4" />

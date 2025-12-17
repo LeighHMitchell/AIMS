@@ -208,15 +208,10 @@ export function BudgetStatusField({
           <SelectContent>
             {BUDGET_STATUS_OPTIONS.map((option) => (
               <SelectItem key={option.value} value={option.value}>
-                <div className="flex items-center gap-2">
+                <span className="inline-flex items-center gap-2">
                   <StatusIcon status={option.value} />
-                  <div>
-                    <div className="font-medium">{option.label}</div>
-                    <div className="text-xs text-muted-foreground">
-                      {option.description}
-                    </div>
-                  </div>
-                </div>
+                  <span>{option.label}</span>
+                </span>
               </SelectItem>
             ))}
           </SelectContent>

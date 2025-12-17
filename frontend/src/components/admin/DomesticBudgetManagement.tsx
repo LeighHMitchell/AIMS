@@ -35,7 +35,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
@@ -47,9 +46,19 @@ import {
   AlertCircle,
   TrendingUp,
   Wallet,
-  PiggyBank,
+  Receipt,
   Calculator,
+  ChevronsUpDown,
+  Check,
+  Search,
+  Calendar,
+  ArrowUpDown,
+  ArrowUp,
+  ArrowDown,
 } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Command, CommandGroup, CommandItem, CommandList } from "@/components/ui/command";
+import { cn } from "@/lib/utils";
 import {
   DomesticBudgetData,
   DomesticBudgetFormData,
@@ -91,14 +100,23 @@ export function DomesticBudgetManagement() {
   const [editingItem, setEditingItem] = useState<DomesticBudgetData | null>(null);
   const [saving, setSaving] = useState(false);
 
+  // Classification combobox state
+  const [classificationOpen, setClassificationOpen] = useState(false);
+  const [classificationSearch, setClassificationSearch] = useState("");
+
+  // Sorting state
+  const [sortColumn, setSortColumn] = useState<string | null>(null);
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
+
   // Form state
-  const [formData, setFormData] = useState<DomesticBudgetFormData>({
+  const [formData, setFormData] = useState<DomesticBudgetFormData & { valueDate?: string }>({
     budgetClassificationId: "",
     fiscalYear: new Date().getFullYear(),
     budgetAmount: 0,
     expenditureAmount: 0,
     currency: "USD",
     notes: "",
+    valueDate: new Date().toISOString().split('T')[0],
   });
 
   const fiscalYearOptions = getFiscalYearOptions();
@@ -170,6 +188,98 @@ export function DomesticBudgetManagement() {
     }).format(amount);
   };
 
+  // Filter classifications for searchable combobox
+  const filteredClassifications = React.useMemo(() => {
+    if (!classificationSearch) return classifications;
+    const query = classificationSearch.toLowerCase();
+    return classifications.filter(c =>
+      c.code?.toLowerCase().includes(query) ||
+      c.name.toLowerCase().includes(query) ||
+      (c.classificationType && CLASSIFICATION_TYPE_LABELS[c.classificationType]?.toLowerCase().includes(query))
+    );
+  }, [classifications, classificationSearch]);
+
+  // Group filtered classifications by type
+  const groupedClassifications = React.useMemo(() => {
+    const groups: Record<string, BudgetClassification[]> = {};
+    filteredClassifications.forEach(c => {
+      const type = c.classificationType || 'other';
+      if (!groups[type]) groups[type] = [];
+      groups[type].push(c);
+    });
+    return groups;
+  }, [filteredClassifications]);
+
+  // Sort budget data
+  const sortedBudgetData = React.useMemo(() => {
+    if (!sortColumn) return budgetData;
+
+    return [...budgetData].sort((a, b) => {
+      let aVal: string | number = 0;
+      let bVal: string | number = 0;
+
+      switch (sortColumn) {
+        case "code":
+          aVal = a.budgetClassification?.code || "";
+          bVal = b.budgetClassification?.code || "";
+          break;
+        case "classification":
+          aVal = a.budgetClassification?.name || "";
+          bVal = b.budgetClassification?.name || "";
+          break;
+        case "type":
+          aVal = a.budgetClassification?.classificationType || "";
+          bVal = b.budgetClassification?.classificationType || "";
+          break;
+        case "budget":
+          aVal = a.budgetAmount;
+          bVal = b.budgetAmount;
+          break;
+        case "expenditure":
+          aVal = a.expenditureAmount;
+          bVal = b.expenditureAmount;
+          break;
+        case "execution":
+          aVal = calculateExecutionRate(a.budgetAmount, a.expenditureAmount);
+          bVal = calculateExecutionRate(b.budgetAmount, b.expenditureAmount);
+          break;
+      }
+
+      if (typeof aVal === "string" && typeof bVal === "string") {
+        return sortDirection === "asc"
+          ? aVal.localeCompare(bVal)
+          : bVal.localeCompare(aVal);
+      }
+
+      return sortDirection === "asc"
+        ? (aVal as number) - (bVal as number)
+        : (bVal as number) - (aVal as number);
+    });
+  }, [budgetData, sortColumn, sortDirection]);
+
+  // Handle column sort
+  const handleSort = (column: string) => {
+    if (sortColumn === column) {
+      setSortDirection(sortDirection === "asc" ? "desc" : "asc");
+    } else {
+      setSortColumn(column);
+      setSortDirection("asc");
+    }
+  };
+
+  // Get sort icon for column
+  const getSortIcon = (column: string) => {
+    if (sortColumn !== column) {
+      return <ArrowUpDown className="h-4 w-4 ml-1 opacity-50" />;
+    }
+    return sortDirection === "asc"
+      ? <ArrowUp className="h-4 w-4 ml-1" />
+      : <ArrowDown className="h-4 w-4 ml-1" />;
+  };
+
+  // Get selected classification
+  const selectedClassification = classifications.find(c => c.id === formData.budgetClassificationId);
+
   // Open modal for creating
   const handleAdd = () => {
     setEditingItem(null);
@@ -180,7 +290,9 @@ export function DomesticBudgetManagement() {
       expenditureAmount: 0,
       currency: "USD",
       notes: "",
+      valueDate: new Date().toISOString().split('T')[0],
     });
+    setClassificationSearch("");
     setIsModalOpen(true);
   };
 
@@ -194,7 +306,9 @@ export function DomesticBudgetManagement() {
       expenditureAmount: item.expenditureAmount,
       currency: item.currency,
       notes: item.notes || "",
+      valueDate: (item as any).valueDate || new Date().toISOString().split('T')[0],
     });
+    setClassificationSearch("");
     setIsModalOpen(true);
   };
 
@@ -298,21 +412,6 @@ export function DomesticBudgetManagement() {
     }
   };
 
-  // Get classification type badge color
-  const getTypeBadgeClass = (type: ClassificationType) => {
-    switch (type) {
-      case "functional":
-        return "border-blue-300 text-blue-700";
-      case "administrative":
-        return "border-green-300 text-green-700";
-      case "economic":
-        return "border-orange-300 text-orange-700";
-      case "programme":
-        return "border-purple-300 text-purple-700";
-      default:
-        return "";
-    }
-  };
 
   if (loading && budgetData.length === 0) {
     return (
@@ -399,7 +498,7 @@ export function DomesticBudgetManagement() {
             <Card>
               <CardContent className="p-4">
                 <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
-                  <PiggyBank className="h-4 w-4" />
+                  <Receipt className="h-4 w-4" />
                   Total Expenditure
                 </div>
                 <div className="text-2xl font-bold">
@@ -491,25 +590,84 @@ export function DomesticBudgetManagement() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="w-[100px]">Code</TableHead>
-                    <TableHead>Classification</TableHead>
-                    <TableHead>Type</TableHead>
-                    <TableHead className="text-right">Budget</TableHead>
-                    <TableHead className="text-right">Expenditure</TableHead>
-                    <TableHead className="text-right">Execution %</TableHead>
+                    <TableHead
+                      className="w-[100px] cursor-pointer hover:bg-muted/50 select-none"
+                      onClick={() => handleSort("code")}
+                    >
+                      <div className="flex items-center">
+                        Code
+                        {getSortIcon("code")}
+                      </div>
+                    </TableHead>
+                    <TableHead
+                      className="cursor-pointer hover:bg-muted/50 select-none"
+                      onClick={() => handleSort("classification")}
+                    >
+                      <div className="flex items-center">
+                        Classification
+                        {getSortIcon("classification")}
+                      </div>
+                    </TableHead>
+                    <TableHead
+                      className="cursor-pointer hover:bg-muted/50 select-none"
+                      onClick={() => handleSort("type")}
+                    >
+                      <div className="flex items-center">
+                        Type
+                        {getSortIcon("type")}
+                      </div>
+                    </TableHead>
+                    <TableHead
+                      className="text-right cursor-pointer hover:bg-muted/50 select-none"
+                      onClick={() => handleSort("budget")}
+                    >
+                      <div className="flex items-center justify-end">
+                        Budget
+                        {getSortIcon("budget")}
+                      </div>
+                    </TableHead>
+                    <TableHead
+                      className="text-right cursor-pointer hover:bg-muted/50 select-none"
+                      onClick={() => handleSort("expenditure")}
+                    >
+                      <div className="flex items-center justify-end">
+                        Expenditure
+                        {getSortIcon("expenditure")}
+                      </div>
+                    </TableHead>
+                    <TableHead
+                      className="w-[120px] cursor-pointer hover:bg-muted/50 select-none"
+                      onClick={() => handleSort("execution")}
+                    >
+                      <div className="flex items-center justify-center">
+                        Progress
+                        {getSortIcon("execution")}
+                      </div>
+                    </TableHead>
+                    <TableHead
+                      className="text-right cursor-pointer hover:bg-muted/50 select-none"
+                      onClick={() => handleSort("execution")}
+                    >
+                      <div className="flex items-center justify-end">
+                        Execution %
+                        {getSortIcon("execution")}
+                      </div>
+                    </TableHead>
                     <TableHead className="w-[80px]">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {budgetData.map((item) => {
+                  {sortedBudgetData.map((item) => {
                     const executionRate = calculateExecutionRate(
                       item.budgetAmount,
                       item.expenditureAmount
                     );
                     return (
                       <TableRow key={item.id}>
-                        <TableCell className="font-mono text-xs">
-                          {item.budgetClassification?.code || "-"}
+                        <TableCell>
+                          <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded">
+                            {item.budgetClassification?.code || "-"}
+                          </span>
                         </TableCell>
                         <TableCell>
                           <div>
@@ -523,19 +681,12 @@ export function DomesticBudgetManagement() {
                             )}
                           </div>
                         </TableCell>
-                        <TableCell>
-                          {item.budgetClassification?.classificationType && (
-                            <Badge
-                              variant="outline"
-                              className={`text-xs ${getTypeBadgeClass(
+                        <TableCell className="text-sm text-muted-foreground">
+                          {item.budgetClassification?.classificationType
+                            ? CLASSIFICATION_TYPE_LABELS[
                                 item.budgetClassification.classificationType
-                              )}`}
-                            >
-                              {CLASSIFICATION_TYPE_LABELS[
-                                item.budgetClassification.classificationType
-                              ]}
-                            </Badge>
-                          )}
+                              ]
+                            : "-"}
                         </TableCell>
                         <TableCell className="text-right font-mono">
                           {formatCurrency(item.budgetAmount, item.currency)}
@@ -543,16 +694,27 @@ export function DomesticBudgetManagement() {
                         <TableCell className="text-right font-mono">
                           {formatCurrency(item.expenditureAmount, item.currency)}
                         </TableCell>
+                        <TableCell>
+                          <div
+                            className="w-full rounded-full h-2.5 overflow-hidden"
+                            style={{ backgroundColor: '#f1f4f8' }}
+                          >
+                            <div
+                              className="h-full rounded-full transition-all"
+                              style={{
+                                width: `${Math.min(executionRate, 100)}%`,
+                                backgroundColor: executionRate > 100 ? '#dc2625' : '#7b95a7'
+                              }}
+                            />
+                          </div>
+                        </TableCell>
                         <TableCell className="text-right">
                           <div className="flex items-center justify-end gap-2">
                             <span
-                              className={`font-medium ${
-                                executionRate > 100
-                                  ? "text-red-600"
-                                  : executionRate > 90
-                                  ? "text-yellow-600"
-                                  : "text-green-600"
-                              }`}
+                              className="font-medium"
+                              style={{
+                                color: executionRate > 100 ? '#dc2625' : '#4c5568'
+                              }}
                             >
                               {executionRate.toFixed(1)}%
                             </span>
@@ -590,7 +752,7 @@ export function DomesticBudgetManagement() {
 
       {/* Add/Edit Modal */}
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-        <DialogContent className="sm:max-w-[500px]">
+        <DialogContent className="sm:max-w-[700px]">
           <DialogHeader>
             <DialogTitle>
               {editingItem ? "Edit Budget Entry" : "Add Budget Entry"}
@@ -603,30 +765,197 @@ export function DomesticBudgetManagement() {
           </DialogHeader>
 
           <div className="space-y-4 py-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="classification">Classification *</Label>
-                <Select
-                  value={formData.budgetClassificationId}
-                  onValueChange={(value) =>
-                    setFormData({ ...formData, budgetClassificationId: value })
-                  }
+            {/* Classification - Searchable Combobox */}
+            <div className="space-y-2">
+              <Label htmlFor="classification">Classification *</Label>
+              <Popover open={classificationOpen} onOpenChange={setClassificationOpen}>
+                <PopoverTrigger
+                  className={cn(
+                    "flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 hover:bg-accent/50 transition-colors",
+                    !selectedClassification && "text-muted-foreground",
+                    !!editingItem && "cursor-not-allowed opacity-50"
+                  )}
                   disabled={!!editingItem}
                 >
+                  <span className="truncate">
+                    {selectedClassification ? (
+                      <span className="flex items-center gap-2">
+                        <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
+                          {selectedClassification.code}
+                        </span>
+                        <span className="font-medium">{selectedClassification.name}</span>
+                      </span>
+                    ) : (
+                      "Select classification..."
+                    )}
+                  </span>
+                  <div className="flex items-center gap-2">
+                    {selectedClassification && !editingItem && (
+                      <div
+                        role="button"
+                        tabIndex={0}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setFormData({ ...formData, budgetClassificationId: "" });
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            setFormData({ ...formData, budgetClassificationId: "" });
+                          }
+                        }}
+                        className="h-4 w-4 rounded-full hover:bg-muted-foreground/20 flex items-center justify-center transition-colors cursor-pointer"
+                        aria-label="Clear selection"
+                      >
+                        <span className="text-xs">×</span>
+                      </div>
+                    )}
+                    <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50" />
+                  </div>
+                </PopoverTrigger>
+                <PopoverContent
+                  className="w-[var(--radix-popover-trigger-width)] min-w-[400px] p-0 shadow-lg border"
+                  align="start"
+                  sideOffset={4}
+                >
+                  <Command>
+                    <div className="flex items-center border-b px-3 py-2">
+                      <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
+                      <input
+                        placeholder="Search classifications..."
+                        value={classificationSearch}
+                        onChange={(e) => setClassificationSearch(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Escape') {
+                            setClassificationOpen(false);
+                            setClassificationSearch("");
+                          }
+                        }}
+                        className="flex h-9 w-full rounded-md bg-transparent py-2 px-3 text-sm outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50 border-none focus:ring-0 focus:border-none"
+                        autoFocus
+                      />
+                      {classificationSearch && (
+                        <button
+                          type="button"
+                          onClick={() => setClassificationSearch("")}
+                          className="ml-2 h-4 w-4 rounded-full hover:bg-muted-foreground/20 flex items-center justify-center transition-colors"
+                          aria-label="Clear search"
+                        >
+                          <span className="text-xs">×</span>
+                        </button>
+                      )}
+                    </div>
+                    <CommandList className="max-h-[300px] overflow-y-auto">
+                      {Object.entries(groupedClassifications).map(([type, items]) => (
+                        <CommandGroup key={type}>
+                          <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground bg-muted/50">
+                            {CLASSIFICATION_TYPE_LABELS[type as ClassificationType] || type}
+                          </div>
+                          {items.map((classification) => (
+                            <CommandItem
+                              key={classification.id}
+                              onSelect={() => {
+                                setFormData({ ...formData, budgetClassificationId: classification.id });
+                                setClassificationOpen(false);
+                                setClassificationSearch("");
+                              }}
+                              className="pl-6 cursor-pointer py-3 hover:bg-accent/50 focus:bg-accent data-[selected]:bg-accent transition-colors"
+                            >
+                              <Check
+                                className={cn(
+                                  "mr-2 h-4 w-4",
+                                  formData.budgetClassificationId === classification.id ? "opacity-100" : "opacity-0"
+                                )}
+                              />
+                              <div className="flex-1">
+                                <div className="flex items-center gap-2">
+                                  <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
+                                    {classification.code}
+                                  </span>
+                                  <span className="font-medium text-foreground">{classification.name}</span>
+                                </div>
+                              </div>
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      ))}
+                      {Object.keys(groupedClassifications).length === 0 && (
+                        <div className="py-8 text-center">
+                          <div className="text-sm text-muted-foreground">
+                            No classifications found.
+                          </div>
+                          <div className="text-xs text-muted-foreground mt-1">
+                            Try adjusting your search terms
+                          </div>
+                        </div>
+                      )}
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
+            </div>
+
+            {/* Budget Amount, Currency, and Value Date in a row */}
+            <div className="grid grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="budgetAmount">Budget Amount *</Label>
+                <Input
+                  id="budgetAmount"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={formData.budgetAmount || ""}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      budgetAmount: parseFloat(e.target.value) || 0,
+                    })
+                  }
+                  placeholder="0.00"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="currency">Currency *</Label>
+                <Select
+                  value={formData.currency}
+                  onValueChange={(value) =>
+                    setFormData({ ...formData, currency: value })
+                  }
+                >
                   <SelectTrigger>
-                    <SelectValue placeholder="Select classification" />
+                    <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {classifications.map((c) => (
-                      <SelectItem key={c.id} value={c.id}>
-                        <span className="font-mono text-xs mr-2">{c.code}</span>
-                        {c.name}
+                    {CURRENCY_OPTIONS.map((opt) => (
+                      <SelectItem key={opt.value} value={opt.value}>
+                        {opt.label}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
 
+              <div className="space-y-2">
+                <Label htmlFor="valueDate">Value Date *</Label>
+                <div className="relative">
+                  <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+                  <Input
+                    id="valueDate"
+                    type="date"
+                    value={formData.valueDate || ""}
+                    onChange={(e) =>
+                      setFormData({ ...formData, valueDate: e.target.value })
+                    }
+                    className="pl-10"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Fiscal Year and Expenditure Amount */}
+            <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="fiscalYear">Fiscal Year *</Label>
                 <Select
@@ -648,26 +977,6 @@ export function DomesticBudgetManagement() {
                   </SelectContent>
                 </Select>
               </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="budgetAmount">Budget Amount *</Label>
-                <Input
-                  id="budgetAmount"
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  value={formData.budgetAmount}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      budgetAmount: parseFloat(e.target.value) || 0,
-                    })
-                  }
-                  placeholder="0.00"
-                />
-              </div>
 
               <div className="space-y-2">
                 <Label htmlFor="expenditureAmount">Expenditure Amount</Label>
@@ -676,7 +985,7 @@ export function DomesticBudgetManagement() {
                   type="number"
                   min="0"
                   step="0.01"
-                  value={formData.expenditureAmount}
+                  value={formData.expenditureAmount || ""}
                   onChange={(e) =>
                     setFormData({
                       ...formData,
@@ -689,27 +998,6 @@ export function DomesticBudgetManagement() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="currency">Currency</Label>
-              <Select
-                value={formData.currency}
-                onValueChange={(value) =>
-                  setFormData({ ...formData, currency: value })
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {CURRENCY_OPTIONS.map((opt) => (
-                    <SelectItem key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
               <Label htmlFor="notes">Notes (Optional)</Label>
               <Textarea
                 id="notes"
@@ -718,7 +1006,7 @@ export function DomesticBudgetManagement() {
                   setFormData({ ...formData, notes: e.target.value })
                 }
                 placeholder="Any notes about this budget entry"
-                rows={3}
+                rows={2}
               />
             </div>
 

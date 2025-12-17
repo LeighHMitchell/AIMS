@@ -10,16 +10,19 @@ import { Textarea } from '@/components/ui/textarea'
 import { Badge } from '@/components/ui/badge'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { Label } from '@/components/ui/label'
-import { 
-  Plus, 
-  Search, 
-  Edit, 
-  Trash2, 
-  ChevronDown, 
+import {
+  Plus,
+  Search,
+  Edit,
+  Trash2,
+  ChevronDown,
   ChevronUp,
   HelpCircle,
   Clock,
-  ChevronsUpDown
+  ChevronsUpDown,
+  MessageCircle,
+  Send,
+  Loader2
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useUser } from '@/hooks/useUser'
@@ -37,6 +40,19 @@ interface FAQItem {
   updated_at: string
   created_by?: string
   updated_by?: string
+  followUps?: FollowUpQuestion[]
+}
+
+interface FollowUpQuestion {
+  id: string
+  question: string
+  status: string
+  created_at: string
+  user?: {
+    first_name?: string
+    last_name?: string
+    email?: string
+  }
 }
 
 export default function FAQPage() {
@@ -51,6 +67,11 @@ export default function FAQPage() {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
   const [editingFAQ, setEditingFAQ] = useState<FAQItem | null>(null)
   const [submitting, setSubmitting] = useState(false)
+
+  // Follow-up question state
+  const [followUpFAQ, setFollowUpFAQ] = useState<FAQItem | null>(null)
+  const [followUpQuestion, setFollowUpQuestion] = useState('')
+  const [submittingFollowUp, setSubmittingFollowUp] = useState(false)
 
   // Form state for create/edit
   const [formData, setFormData] = useState({
@@ -70,7 +91,7 @@ export default function FAQPage() {
     try {
       setLoading(true)
       setError(null)
-      const response = await fetch('/api/faq')
+      const response = await fetch('/api/faq?includeFollowUps=true')
       if (!response.ok) {
         throw new Error('Failed to fetch FAQs')
       }
@@ -189,6 +210,50 @@ export default function FAQPage() {
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Failed to delete FAQ')
     }
+  }
+
+  // Handle follow-up question submission
+  const handleFollowUpSubmit = async () => {
+    if (!followUpQuestion.trim() || !followUpFAQ || !user?.id) {
+      toast.error('Please enter your follow-up question')
+      return
+    }
+
+    setSubmittingFollowUp(true)
+    try {
+      const response = await fetch('/api/faq/questions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: user.id,
+          question: followUpQuestion.trim(),
+          context: `Follow-up to FAQ: "${followUpFAQ.question}"`,
+          tags: ['follow-up', ...followUpFAQ.tags],
+          relatedFaqId: followUpFAQ.id,
+        }),
+      })
+
+      if (response.ok) {
+        toast.success('Your follow-up question has been submitted! A manager will review it.')
+        setFollowUpQuestion('')
+        setFollowUpFAQ(null)
+        // Refresh FAQs to show the new follow-up
+        fetchFAQs()
+      } else {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Failed to submit question')
+      }
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to submit follow-up')
+    } finally {
+      setSubmittingFollowUp(false)
+    }
+  }
+
+  // Truncate text helper
+  const truncateText = (text: string, maxLength: number) => {
+    if (text.length <= maxLength) return text
+    return text.substring(0, maxLength).trim() + '...'
   }
 
   return (
@@ -358,65 +423,83 @@ export default function FAQPage() {
                 </CardContent>
               </Card>
             ) : (
-              filteredFAQs.map((faq) => (
-                <Card key={faq.id} className="overflow-hidden">
-                  <CardHeader className="pb-3">
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <button
-                          onClick={() => toggleExpanded(faq.id)}
-                          className="text-left w-full group"
-                        >
-                          <CardTitle className="text-lg font-semibold text-gray-900 group-hover:text-gray-700 transition-colors flex items-center justify-between">
+              filteredFAQs.map((faq) => {
+                const isExpanded = expandedItems.has(faq.id)
+                const isLongAnswer = faq.answer.length > 300
+                const displayAnswer = isExpanded || !isLongAnswer
+                  ? faq.answer
+                  : truncateText(faq.answer, 300)
+
+                return (
+                  <Card key={faq.id} className="overflow-hidden">
+                    <CardHeader className="pb-3">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <CardTitle className="text-lg font-semibold text-gray-900">
                             {faq.question}
-                            {expandedItems.has(faq.id) ? (
-                              <ChevronUp className="h-5 w-5 text-muted-foreground" />
-                            ) : (
-                              <ChevronDown className="h-5 w-5 text-muted-foreground" />
-                            )}
                           </CardTitle>
-                        </button>
-                        
-                        <div className="flex items-center space-x-2 mt-2">
-                          <Badge variant="secondary">{faq.category}</Badge>
-                          <div className="flex items-center text-xs text-gray-500">
-                            <Clock className="h-3 w-3 mr-1" />
-                            Updated {isClient ? new Date(faq.updated_at).toLocaleDateString() : ''}
+
+                          <div className="flex items-center space-x-2 mt-2">
+                            <Badge variant="secondary">{faq.category}</Badge>
+                            <div className="flex items-center text-xs text-gray-500">
+                              <Clock className="h-3 w-3 mr-1" />
+                              Updated {isClient ? new Date(faq.updated_at).toLocaleDateString() : ''}
+                            </div>
                           </div>
                         </div>
+
+                        {isSuperUser && (
+                          <div className="flex items-center space-x-2 ml-4">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleEdit(faq)}
+                              className="h-8 w-8 p-0"
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleDelete(faq.id)}
+                              className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        )}
                       </div>
-                      
-                      {isSuperUser && (
-                        <div className="flex items-center space-x-2 ml-4">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleEdit(faq)}
-                            className="h-8 w-8 p-0"
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleDelete(faq.id)}
-                            className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      )}
-                    </div>
-                  </CardHeader>
-                  
-                  {expandedItems.has(faq.id) && (
+                    </CardHeader>
+
                     <CardContent className="pt-0">
+                      {/* Answer - always visible */}
                       <div className="prose prose-sm max-w-none">
                         <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">
-                          {faq.answer}
+                          {displayAnswer}
                         </p>
                       </div>
-                      
+
+                      {/* Show more/less button for long answers */}
+                      {isLongAnswer && (
+                        <button
+                          onClick={() => toggleExpanded(faq.id)}
+                          className="mt-2 text-sm text-blue-600 hover:text-blue-800 flex items-center gap-1"
+                        >
+                          {isExpanded ? (
+                            <>
+                              <ChevronUp className="h-4 w-4" />
+                              Show less
+                            </>
+                          ) : (
+                            <>
+                              <ChevronDown className="h-4 w-4" />
+                              Read more
+                            </>
+                          )}
+                        </button>
+                      )}
+
+                      {/* Tags */}
                       {faq.tags.length > 0 && (
                         <div className="mt-4 pt-4 border-t">
                           <div className="flex flex-wrap gap-2">
@@ -428,10 +511,74 @@ export default function FAQPage() {
                           </div>
                         </div>
                       )}
+
+                      {/* Follow-up questions thread */}
+                      {faq.followUps && faq.followUps.length > 0 && (
+                        <div className="mt-4 pt-4 border-t">
+                          <p className="text-xs font-medium text-gray-500 uppercase mb-3">
+                            Follow-up Questions ({faq.followUps.length})
+                          </p>
+                          <div className="space-y-0">
+                            {faq.followUps.map((followUp, index) => {
+                              const userName = followUp.user
+                                ? `${followUp.user.first_name || ''} ${followUp.user.last_name || ''}`.trim() || followUp.user.email
+                                : 'Anonymous'
+                              const isLast = index === faq.followUps!.length - 1
+
+                              return (
+                                <div key={followUp.id} className="relative">
+                                  {/* Connecting line */}
+                                  <div className="absolute left-3 top-0 bottom-0 w-0.5 bg-gray-200"
+                                       style={{ height: isLast ? '24px' : '100%' }} />
+
+                                  {/* Branch connector */}
+                                  <div className="absolute left-3 top-6 w-4 h-0.5 bg-gray-200" />
+
+                                  {/* Follow-up content */}
+                                  <div className="pl-9 pb-4">
+                                    <div className="bg-blue-50 border border-blue-100 rounded-lg p-3">
+                                      <div className="flex items-start justify-between gap-2">
+                                        <p className="text-sm text-gray-800">{followUp.question}</p>
+                                        <Badge
+                                          variant={followUp.status === 'published' ? 'default' : 'secondary'}
+                                          className="text-xs flex-shrink-0"
+                                        >
+                                          {followUp.status === 'pending' ? 'Awaiting answer' :
+                                           followUp.status === 'published' ? 'Answered' : followUp.status}
+                                        </Badge>
+                                      </div>
+                                      <p className="text-xs text-gray-500 mt-2">
+                                        Asked by {userName} • {isClient ? new Date(followUp.created_at).toLocaleDateString() : ''}
+                                      </p>
+                                    </div>
+                                  </div>
+                                </div>
+                              )
+                            })}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Follow-up question button */}
+                      <div className="mt-4 pt-4 border-t flex items-center justify-between">
+                        <p className="text-sm text-gray-500">
+                          Need more information?
+                        </p>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setFollowUpFAQ(faq)}
+                          disabled={!user}
+                          className="flex items-center gap-2"
+                        >
+                          <MessageCircle className="h-4 w-4" />
+                          Ask follow-up
+                        </Button>
+                      </div>
                     </CardContent>
-                  )}
-                </Card>
-              ))
+                  </Card>
+                )
+              })
             )}
           </div>
 
@@ -451,6 +598,79 @@ export default function FAQPage() {
           </Card>
         </div>
       </div>
+
+      {/* Follow-up Question Modal */}
+      <Dialog open={!!followUpFAQ} onOpenChange={(open) => !open && setFollowUpFAQ(null)}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <MessageCircle className="h-5 w-5" />
+              Ask a Follow-up Question
+            </DialogTitle>
+            <DialogDescription>
+              Need more details about this answer? Submit a follow-up question and our team will respond.
+            </DialogDescription>
+          </DialogHeader>
+
+          {followUpFAQ && (
+            <div className="space-y-4">
+              {/* Original FAQ context */}
+              <div className="bg-gray-50 rounded-lg p-3 border">
+                <p className="text-xs text-gray-500 uppercase font-medium mb-1">Related to:</p>
+                <p className="text-sm font-medium text-gray-900">{followUpFAQ.question}</p>
+              </div>
+
+              {/* Follow-up question input */}
+              <div className="space-y-2">
+                <Label htmlFor="followup">Your follow-up question</Label>
+                <Textarea
+                  id="followup"
+                  value={followUpQuestion}
+                  onChange={(e) => setFollowUpQuestion(e.target.value)}
+                  placeholder="What additional information would you like to know?"
+                  rows={4}
+                />
+              </div>
+
+              {/* Submit buttons */}
+              <div className="flex justify-end gap-2 pt-2">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setFollowUpFAQ(null)
+                    setFollowUpQuestion('')
+                  }}
+                  disabled={submittingFollowUp}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handleFollowUpSubmit}
+                  disabled={!followUpQuestion.trim() || submittingFollowUp}
+                >
+                  {submittingFollowUp ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Submitting...
+                    </>
+                  ) : (
+                    <>
+                      <Send className="h-4 w-4 mr-2" />
+                      Submit Question
+                    </>
+                  )}
+                </Button>
+              </div>
+
+              {!user && (
+                <p className="text-sm text-amber-600 text-center">
+                  Please log in to submit a follow-up question.
+                </p>
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </MainLayout>
   )
 }

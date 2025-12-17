@@ -17,13 +17,15 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { FolderPlus, User, LogOut, Briefcase, Settings, Shield, MessageSquare, ChevronDown, Zap, Eye, Upload } from "lucide-react"
+import { FolderPlus, User, LogOut, Briefcase, Settings, Shield, MessageSquare, ChevronDown, Zap, Eye, Upload, HelpCircle } from "lucide-react"
 import { USER_ROLES, ROLE_LABELS } from "@/types/user"
 import { getRoleBadgeVariant, getRoleDisplayLabel } from "@/lib/role-badge-utils"
 import { GlobalSearchBar } from "@/components/search/GlobalSearchBar"
 import { FeedbackModal } from "@/components/ui/feedback-modal"
+import { AskQuestionModal } from "@/components/faq/AskQuestionModal"
 import { QuickAddActivityModal } from "@/components/modals/QuickAddActivityModal"
 import { ImportActivityModal } from "@/components/modals/ImportActivityModal"
+import { NotificationBell } from "@/components/notifications/NotificationBell"
 
 interface TopNavProps {
   user?: {
@@ -52,6 +54,7 @@ interface TopNavProps {
 export function TopNav({ user, canCreateActivities, isInActivityEditor = false, onLogout }: TopNavProps) {
   const router = useRouter();
   const [isFeedbackModalOpen, setIsFeedbackModalOpen] = useState(false);
+  const [isAskQuestionModalOpen, setIsAskQuestionModalOpen] = useState(false);
   const [showQuickAddModal, setShowQuickAddModal] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
 
@@ -147,7 +150,12 @@ export function TopNav({ user, canCreateActivities, isInActivityEditor = false, 
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
-          
+
+          {/* Notification Bell */}
+          {user && (
+            <NotificationBell userId={user.id} />
+          )}
+
           {/* User Menu - always rendered if user exists */}
           {user && (
             <DropdownMenu>
@@ -212,6 +220,10 @@ export function TopNav({ user, canCreateActivities, isInActivityEditor = false, 
                   <Briefcase className="mr-2 h-4 w-4" />
                   <span>My Portfolio</span>
                 </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setIsAskQuestionModalOpen(true)}>
+                  <HelpCircle className="mr-2 h-4 w-4" />
+                  <span>Ask a Question</span>
+                </DropdownMenuItem>
                 <DropdownMenuSub>
                   <DropdownMenuSubTrigger>
                     <MessageSquare className="mr-2 h-4 w-4" />
@@ -250,9 +262,15 @@ export function TopNav({ user, canCreateActivities, isInActivityEditor = false, 
       </div>
       
       {/* Feedback Modal */}
-      <FeedbackModal 
-        isOpen={isFeedbackModalOpen} 
-        onClose={() => setIsFeedbackModalOpen(false)} 
+      <FeedbackModal
+        isOpen={isFeedbackModalOpen}
+        onClose={() => setIsFeedbackModalOpen(false)}
+      />
+
+      {/* Ask Question Modal */}
+      <AskQuestionModal
+        isOpen={isAskQuestionModalOpen}
+        onClose={() => setIsAskQuestionModalOpen(false)}
       />
       
       {/* Quick Add Activity Modal */}

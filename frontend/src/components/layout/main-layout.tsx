@@ -9,6 +9,7 @@ import { ErrorBoundary } from "@/components/ErrorBoundary"
 import { SidebarNav } from "@/components/navigation/SidebarNav"
 import { TopNav } from "@/components/navigation/TopNav"
 import { useSmartPreCache } from "@/hooks/use-pre-cached-data"
+import { useRoutePrefetch } from "@/hooks/useRoutePrefetch"
 
 interface MainLayoutProps {
   children: React.ReactNode
@@ -19,8 +20,11 @@ export function MainLayout({ children, requireAuth = true }: MainLayoutProps) {
   const { user, permissions, logout, isLoading } = useUser();
   const pathname = usePathname();
 
-  // Initialize smart pre-caching based on current path
+  // Initialize smart pre-caching based on current path (data caching)
   useSmartPreCache(pathname || '');
+
+  // Initialize route prefetching (page bundle caching)
+  useRoutePrefetch({ enabled: true, prefetchUserOrg: true });
 
   // Check if user is currently in the activity editor
   const isInActivityEditor = pathname?.includes('/activities/new') ||

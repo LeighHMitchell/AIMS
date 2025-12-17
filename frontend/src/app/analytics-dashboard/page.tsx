@@ -76,6 +76,9 @@ import { SDGAnalytics } from '@/components/analytics/sdgs/SDGAnalytics'
 // Aid on Budget Chart
 import { EnhancedAidOnBudgetChart } from '@/components/analytics/EnhancedAidOnBudgetChart'
 
+// Participating Orgs Sankey
+import { ParticipatingOrgsSankey } from '@/components/analytics/ParticipatingOrgsSankey'
+
 // Charts from analytics page
 import { BudgetVsSpendingChart } from '@/components/charts/BudgetVsSpendingChart'
 import { ReportingOrgChart } from '@/components/charts/ReportingOrgChart'
@@ -647,13 +650,14 @@ export default function AnalyticsDashboardPage() {
           )}
 
           <Tabs defaultValue="main" className="space-y-6">
-                <TabsList className="grid w-full grid-cols-11 max-w-6xl">
+                <TabsList className="grid w-full grid-cols-12">
                   <TabsTrigger value="main">Main</TabsTrigger>
                   <TabsTrigger value="sectors">Sectors</TabsTrigger>
                   <TabsTrigger value="humanitarian">Humanitarian</TabsTrigger>
                   <TabsTrigger value="activity-status">Activity Status</TabsTrigger>
                   <TabsTrigger value="policy-markers">Policy Markers</TabsTrigger>
                   <TabsTrigger value="sdgs">SDGs</TabsTrigger>
+                  <TabsTrigger value="participating-orgs">Participating Orgs</TabsTrigger>
                   <TabsTrigger value="network">Network</TabsTrigger>
                   <TabsTrigger value="calendar">Calendar</TabsTrigger>
                   <TabsTrigger value="top10">Top 10</TabsTrigger>
@@ -811,6 +815,19 @@ export default function AnalyticsDashboardPage() {
                     onDateRangeChange={setDateRange}
                     refreshKey={refreshKey} 
                   />
+                </TabsContent>
+
+                <TabsContent value="participating-orgs">
+                  <div className="space-y-6">
+                    <div>
+                      <h2 className="text-2xl font-bold text-gray-900">Participating Organizations Flow</h2>
+                      <p className="text-gray-600">
+                        4-tier Sankey visualization showing the flow of organizations across IATI participating-org roles:
+                        Funding (1) → Extending (3) → Accountable (2) → Implementing (4)
+                      </p>
+                    </div>
+                    <ParticipatingOrgsSankey refreshKey={refreshKey} />
+                  </div>
                 </TabsContent>
 
                 <TabsContent value="network">

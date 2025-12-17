@@ -7,12 +7,14 @@ import { MainLayout } from "@/components/layout/main-layout"
 import { AdminUserTable } from "@/components/AdminUserTable"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Shield, Users, FileText, AlertCircle, Settings, MessageSquare, Landmark, DollarSign } from "lucide-react"
+import { Shield, Users, FileText, AlertCircle, Settings, MessageSquare, Landmark, DollarSign, Map, HelpCircle } from "lucide-react"
 import { USER_ROLES } from "@/types/user"
 import { SystemsSettings } from "@/components/admin/SystemsSettings"
 import { FeedbackManagement } from "@/components/admin/FeedbackManagement"
 import { BudgetClassificationsManagement } from "@/components/admin/BudgetClassificationsManagement"
 import { DomesticBudgetManagement } from "@/components/admin/DomesticBudgetManagement"
+import { SectorMappingsManagement } from "@/components/admin/SectorMappingsManagement"
+import { FAQManagement } from "@/components/admin/FAQManagement"
 
 function AdminPageContent() {
   const { user, isLoading } = useUser()
@@ -21,7 +23,7 @@ function AdminPageContent() {
   const [activeTab, setActiveTab] = useState("users")
 
   // Valid tab values
-  const validTabs = ["users", "import-logs", "validations", "feedback", "systems", "chart-of-accounts", "domestic-budget"]
+  const validTabs = ["users", "import-logs", "validations", "feedback", "faq", "systems", "chart-of-accounts", "domestic-budget", "sector-mappings"]
 
   useEffect(() => {
     // Redirect if user is not super_user
@@ -113,6 +115,10 @@ function AdminPageContent() {
               <MessageSquare className="h-4 w-4" />
               Feedback
             </TabsTrigger>
+            <TabsTrigger value="faq" className="flex items-center gap-2">
+              <HelpCircle className="h-4 w-4" />
+              FAQ
+            </TabsTrigger>
             <TabsTrigger value="systems" className="flex items-center gap-2">
               <Settings className="h-4 w-4" />
               Systems Settings
@@ -124,6 +130,10 @@ function AdminPageContent() {
             <TabsTrigger value="domestic-budget" className="flex items-center gap-2">
               <DollarSign className="h-4 w-4" />
               Domestic Budget
+            </TabsTrigger>
+            <TabsTrigger value="sector-mappings" className="flex items-center gap-2">
+              <Map className="h-4 w-4" />
+              Sector Mappings
             </TabsTrigger>
           </TabsList>
 
@@ -175,6 +185,10 @@ function AdminPageContent() {
             <FeedbackManagement />
           </TabsContent>
 
+          <TabsContent value="faq" className="space-y-6">
+            <FAQManagement />
+          </TabsContent>
+
           <TabsContent value="systems" className="space-y-6">
             <SystemsSettings />
           </TabsContent>
@@ -185,6 +199,10 @@ function AdminPageContent() {
 
           <TabsContent value="domestic-budget" className="space-y-6">
             <DomesticBudgetManagement />
+          </TabsContent>
+
+          <TabsContent value="sector-mappings" className="space-y-6">
+            <SectorMappingsManagement />
           </TabsContent>
         </Tabs>
       </div>

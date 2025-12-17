@@ -34,7 +34,7 @@ export async function GET(
       (countryBudgetItems || []).map(async (cbi) => {
         const { data: budgetItems, error: biError } = await supabase
           .from('budget_items')
-          .select('*')
+          .select('id, country_budget_items_id, code, percentage, description, source_sector_code, source_sector_name, created_at, updated_at')
           .eq('country_budget_items_id', cbi.id)
           .order('created_at', { ascending: true });
 

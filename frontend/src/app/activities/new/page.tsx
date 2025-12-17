@@ -2328,7 +2328,18 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
 }
 
 function SectionContent({ section, general, setGeneral, sectors, setSectors, transactions, setTransactions, refreshTransactions, transactionId, extendingPartners, setExtendingPartners, implementingPartners, setImplementingPartners, governmentPartners, setGovernmentPartners, fundingPartners, setFundingPartners, contacts, setContacts, updateContacts, governmentInputs, setGovernmentInputs, sdgMappings, setSdgMappings, tags, setTags, workingGroups, setWorkingGroups, policyMarkers, setPolicyMarkers, specificLocations, setSpecificLocations, coverageAreas, setCoverageAreas, countries, setCountries, regions, setRegions, advancedLocations, setAdvancedLocations, permissions, setSectorValidation, setSectorsCompletionStatusWithLogging, activityScope, setActivityScope, user, getDateFieldStatus, setHasUnsavedChanges, updateActivityNestedField, setShowActivityCreatedAlert, onTitleAutosaveState, tabCompletionStatus, budgets, setBudgets, budgetNotProvided, setBudgetNotProvided, plannedDisbursements, setPlannedDisbursements, handlePlannedDisbursementsChange, handleResultsChange, documents, setDocuments, documentsAutosave, setIatiSyncState, subnationalBreakdowns, setSubnationalBreakdowns, onSectionChange, getNextSection, getPreviousSection, setParticipatingOrgsCount, setLinkedActivitiesCount, setResultsCount, setCapitalSpendPercentage, setConditionsCount, setFinancingTermsCount, setCountryBudgetItemsCount, setForwardSpendCount, clearSavedFormData, loadedTabs, setHumanitarian, setHumanitarianScopes }: any) {
-  
+
+  // Calculate total budget in USD for country budget mappings
+  const totalBudgetUSD = useMemo(() => {
+    if (!budgets || budgets.length === 0) return 0;
+    return budgets.reduce((sum: number, b: any) => {
+      if (b.usd_value != null && b.usd_value > 0) {
+        return sum + parseFloat(b.usd_value);
+      }
+      return sum;
+    }, 0);
+  }, [budgets]);
+
   // OPTIMIZATION: Lazy loading - only render heavy components after tab has been visited
   // Removed the duplicate skeleton rendering logic here since the parent component
   // already shows skeleton when tabLoading is true. This was causing the finances tab
@@ -2578,6 +2589,7 @@ function SectionContent({ section, general, setGeneral, sectors, setSectors, tra
           setGeneral((g: any) => ({ ...g, [field]: value }));
         }}
         onDataChange={setCountryBudgetItemsCount}
+        totalBudgetUSD={totalBudgetUSD}
       />;
     case "linked_activities":
       return <LinkedActivitiesEditorTab 
@@ -2822,7 +2834,7 @@ function NewActivityPageContent() {
   const [activityScope, setActivityScope] = useState<any>({});
   
   const [budgets, setBudgets] = useState<any[]>([]);
-  
+
   const [plannedDisbursements, setPlannedDisbursements] = useState<any[]>([]);
   const [forwardSpendCount, setForwardSpendCount] = useState(0);
   

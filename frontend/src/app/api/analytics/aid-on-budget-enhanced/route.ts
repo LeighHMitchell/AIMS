@@ -37,12 +37,11 @@ export async function GET(request: NextRequest) {
     }
 
     const searchParams = request.nextUrl.searchParams;
-    const fiscalYear = searchParams.get("fiscalYear")
-      ? parseInt(searchParams.get("fiscalYear")!)
-      : new Date().getFullYear();
+    const fiscalYearParam = searchParams.get("fiscalYear");
+    const fiscalYear = fiscalYearParam ? parseInt(fiscalYearParam) : null; // null means "all years"
     const classificationType = searchParams.get("classificationType") || "all";
 
-    // 1. Fetch domestic budget data for the fiscal year
+    // 1. Fetch domestic budget data - filter by fiscal year if specified, otherwise get all
     let domesticQuery = supabase
       .from("domestic_budget_data")
       .select(`
@@ -50,6 +49,7 @@ export async function GET(request: NextRequest) {
         budget_amount,
         expenditure_amount,
         currency,
+        fiscal_year,
         budget_classifications (
           id,
           code,
@@ -57,8 +57,11 @@ export async function GET(request: NextRequest) {
           classification_type,
           level
         )
-      `)
-      .eq("fiscal_year", fiscalYear);
+      `);
+
+    if (fiscalYear) {
+      domesticQuery = domesticQuery.eq("fiscal_year", fiscalYear);
+    }
 
     const { data: domesticData, error: domesticError } = await domesticQuery;
 
@@ -81,13 +84,14 @@ export async function GET(request: NextRequest) {
     }
 
     // 3. Fetch transactions (disbursements) for calculating aid amounts
-    // Group by activity to get total disbursements
+    // Group by activity to get total disbursements - use value_usd for converted USD amounts
     const { data: transactions, error: transactionsError } = await supabase
       .from("transactions")
       .select(`
         activity_id,
         transaction_type,
         value,
+        value_usd,
         transaction_date
       `)
       .in("transaction_type", ["3", "4"]); // Disbursement and Expenditure
@@ -97,19 +101,45 @@ export async function GET(request: NextRequest) {
     }
 
     // 4. Fetch country budget items to map activities to classifications
-    const { data: countryBudgetItems, error: cbiError } = await supabase
+    // First fetch country_budget_items
+    const { data: countryBudgetItemsRaw, error: cbiError } = await supabase
       .from("country_budget_items")
-      .select(`
-        activity_id,
-        budget_items (
-          code,
-          percentage
-        )
-      `);
+      .select("id, activity_id, vocabulary");
 
     if (cbiError) {
       console.error("[Aid on Budget Enhanced] Error fetching country budget items:", cbiError);
     }
+
+    // Then fetch budget_items for all country_budget_items
+    const cbiIds = (countryBudgetItemsRaw || []).map(cbi => cbi.id);
+    let budgetItemsRaw: any[] = [];
+
+    if (cbiIds.length > 0) {
+      const { data: biData, error: biError } = await supabase
+        .from("budget_items")
+        .select("id, country_budget_items_id, code, percentage")
+        .in("country_budget_items_id", cbiIds);
+
+      if (biError) {
+        console.error("[Aid on Budget Enhanced] Error fetching budget items:", biError);
+      } else {
+        budgetItemsRaw = biData || [];
+      }
+    }
+
+    // Build a map of country_budget_items_id -> budget_items
+    const budgetItemsByCbiId = new Map<string, any[]>();
+    budgetItemsRaw.forEach(bi => {
+      const existing = budgetItemsByCbiId.get(bi.country_budget_items_id) || [];
+      existing.push(bi);
+      budgetItemsByCbiId.set(bi.country_budget_items_id, existing);
+    });
+
+    // Combine into the expected format
+    const countryBudgetItems = (countryBudgetItemsRaw || []).map(cbi => ({
+      activity_id: cbi.activity_id,
+      budget_items: budgetItemsByCbiId.get(cbi.id) || []
+    }));
 
     // 5. Fetch all budget classifications for aggregation
     let classQuery = supabase
@@ -128,11 +158,13 @@ export async function GET(request: NextRequest) {
       console.error("[Aid on Budget Enhanced] Error fetching classifications:", classError);
     }
 
-    // Process and aggregate data
+    // Process and aggregate data - use value_usd for USD-converted amounts, fallback to value if not available
     const activityDisbursements = new Map<string, number>();
     (transactions || []).forEach((tx) => {
       const current = activityDisbursements.get(tx.activity_id) || 0;
-      activityDisbursements.set(tx.activity_id, current + (Number(tx.value) || 0));
+      // Prefer value_usd (converted to USD) over original value
+      const txValue = Number(tx.value_usd) || Number(tx.value) || 0;
+      activityDisbursements.set(tx.activity_id, current + txValue);
     });
 
     // Calculate aid totals by budget status and identify budget support
@@ -194,6 +226,100 @@ export async function GET(request: NextRequest) {
       totalDomesticExpenditure += Number(d.expenditure_amount) || 0;
     });
 
+    // Build a map of activity -> budget classification codes with percentages
+    const activityClassificationMap = new Map<string, Array<{ code: string; percentage: number }>>();
+    (countryBudgetItems || []).forEach((cbi: any) => {
+      if (cbi.activity_id && cbi.budget_items) {
+        const items = Array.isArray(cbi.budget_items) ? cbi.budget_items : [cbi.budget_items];
+        const mappings = items
+          .filter((item: any) => item && item.code)
+          .map((item: any) => ({
+            code: item.code,
+            percentage: Number(item.percentage) || 0
+          }));
+        if (mappings.length > 0) {
+          activityClassificationMap.set(cbi.activity_id, mappings);
+        }
+      }
+    });
+
+    console.log('[Aid on Budget Enhanced] Activity classification mappings:', activityClassificationMap.size);
+    console.log('[Aid on Budget Enhanced] Budget items found:', budgetItemsRaw.length);
+    console.log('[Aid on Budget Enhanced] Classifications available:', (classifications || []).map(c => c.code).join(', '));
+
+    // Log the first few mappings for debugging
+    let debugCount = 0;
+    activityClassificationMap.forEach((mappings, activityId) => {
+      if (debugCount < 5) {
+        console.log(`[Aid on Budget Enhanced] Activity ${activityId} mapped to:`, mappings);
+        debugCount++;
+      }
+    });
+
+    // Calculate aid amounts per classification code
+    const classificationAidTotals = new Map<string, {
+      onBudgetAid: number;
+      offBudgetAid: number;
+      partialAid: number;
+      unknownAid: number;
+    }>();
+
+    // Initialize totals for all classification codes
+    (classifications || []).forEach((c) => {
+      classificationAidTotals.set(c.code, {
+        onBudgetAid: 0,
+        offBudgetAid: 0,
+        partialAid: 0,
+        unknownAid: 0
+      });
+    });
+
+    // Map activity disbursements to classifications based on budget_status and country_budget_items
+    (activities || []).forEach((activity) => {
+      const disbursements = activityDisbursements.get(activity.id) || 0;
+      if (disbursements === 0) return;
+
+      const status = activity.budget_status || "unknown";
+      const onBudgetPct = activity.on_budget_percentage || 0;
+      const aidType = activity.default_aid_type || "";
+      const isBudgetSupport = BUDGET_SUPPORT_AID_TYPES.includes(aidType);
+
+      // Skip budget support activities - they're tracked separately
+      if (isBudgetSupport) return;
+
+      // Get the classification mappings for this activity
+      const mappings = activityClassificationMap.get(activity.id);
+      if (!mappings || mappings.length === 0) return;
+
+      // Distribute the activity's disbursements to each mapped classification
+      mappings.forEach(({ code, percentage }) => {
+        const totals = classificationAidTotals.get(code);
+        if (!totals) return;
+
+        // Calculate the aid amount for this classification
+        const aidForClassification = (disbursements * percentage) / 100;
+
+        // Categorize by budget status
+        switch (status) {
+          case "on_budget":
+            totals.onBudgetAid += aidForClassification;
+            break;
+          case "off_budget":
+            totals.offBudgetAid += aidForClassification;
+            break;
+          case "partial":
+            // Partial: split by on_budget_percentage
+            totals.onBudgetAid += (aidForClassification * onBudgetPct) / 100;
+            totals.offBudgetAid += (aidForClassification * (100 - onBudgetPct)) / 100;
+            break;
+          case "unknown":
+          default:
+            totals.unknownAid += aidForClassification;
+            break;
+        }
+      });
+    });
+
     // Build classification-level data
     const classificationData: EnhancedChartDataPoint[] = (classifications || []).map((c) => {
       // Find domestic data for this classification
@@ -201,8 +327,17 @@ export async function GET(request: NextRequest) {
         (d) => d.budget_classification_id === c.id
       );
 
-      // For now, we'll track aid by budget status at aggregate level
-      // In a full implementation, you'd map activities to classifications via country_budget_items
+      // Get the calculated aid totals for this classification
+      const aidTotals = classificationAidTotals.get(c.code) || {
+        onBudgetAid: 0,
+        offBudgetAid: 0,
+        partialAid: 0,
+        unknownAid: 0
+      };
+
+      const totalClassificationAid = aidTotals.onBudgetAid + aidTotals.offBudgetAid + aidTotals.partialAid + aidTotals.unknownAid;
+      const domesticExp = Number(domestic?.expenditure_amount) || 0;
+      const totalSpending = domesticExp + aidTotals.onBudgetAid; // Only on-budget aid contributes to "total spending"
 
       return {
         name: c.name,
@@ -210,14 +345,14 @@ export async function GET(request: NextRequest) {
         classificationType: c.classification_type,
         level: c.level,
         domesticBudget: Number(domestic?.budget_amount) || 0,
-        domesticExpenditure: Number(domestic?.expenditure_amount) || 0,
-        onBudgetAid: 0, // Would need activity->classification mapping
-        offBudgetAid: 0,
-        partialAid: 0,
-        unknownAid: 0,
-        totalAid: 0,
-        totalSpending: Number(domestic?.expenditure_amount) || 0,
-        aidShare: 0,
+        domesticExpenditure: domesticExp,
+        onBudgetAid: aidTotals.onBudgetAid,
+        offBudgetAid: aidTotals.offBudgetAid,
+        partialAid: aidTotals.partialAid,
+        unknownAid: aidTotals.unknownAid,
+        totalAid: totalClassificationAid,
+        totalSpending: totalSpending,
+        aidShare: totalSpending > 0 ? Math.round((aidTotals.onBudgetAid / totalSpending) * 10000) / 100 : 0,
       };
     });
 

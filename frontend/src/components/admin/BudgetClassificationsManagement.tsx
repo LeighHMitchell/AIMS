@@ -49,6 +49,11 @@ import {
   AlertCircle,
   Search,
   Filter,
+  ArrowUpDown,
+  ArrowUp,
+  ArrowDown,
+  Lock,
+  Unlock,
 } from "lucide-react";
 import {
   BudgetClassification,
@@ -58,6 +63,9 @@ import {
   BudgetClassificationFormData,
 } from "@/types/aid-on-budget";
 
+type SortColumn = "code" | "name" | "nameLocal" | "status";
+type SortDirection = "asc" | "desc";
+
 interface TreeNodeProps {
   node: BudgetClassification & { children?: BudgetClassification[] };
   level: number;
@@ -66,6 +74,7 @@ interface TreeNodeProps {
   onAddChild: (parent: BudgetClassification) => void;
   expandedIds: Set<string>;
   toggleExpanded: (id: string) => void;
+  isLocked: boolean;
 }
 
 function TreeNode({
@@ -76,21 +85,23 @@ function TreeNode({
   onAddChild,
   expandedIds,
   toggleExpanded,
+  isLocked,
 }: TreeNodeProps) {
   const hasChildren = node.children && node.children.length > 0;
   const isExpanded = expandedIds.has(node.id);
 
   return (
-    <div>
+    <div className="border-b last:border-b-0">
       <div
-        className={`flex items-center gap-2 py-2 px-3 hover:bg-muted/50 rounded-md group ${
-          !node.isActive ? "opacity-50" : ""
+        className={`flex items-center gap-2 py-2 px-3 hover:bg-muted/50 group ${
+          !node.isActive ? "opacity-60" : ""
         }`}
-        style={{ paddingLeft: `${level * 24 + 12}px` }}
+        style={{ paddingLeft: `${level * 20 + 12}px` }}
       >
+        {/* Expand/Collapse button */}
         <button
           onClick={() => hasChildren && toggleExpanded(node.id)}
-          className={`w-5 h-5 flex items-center justify-center ${
+          className={`w-5 h-5 flex items-center justify-center flex-shrink-0 ${
             hasChildren ? "cursor-pointer" : "cursor-default"
           }`}
         >
@@ -105,71 +116,92 @@ function TreeNode({
           )}
         </button>
 
+        {/* Code */}
         <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded">
           {node.code}
         </span>
 
-        <span className="flex-1 text-sm">{node.name}</span>
+        {/* Name */}
+        <span className="flex-1 text-sm truncate">{node.name}</span>
 
-        {node.nameLocal && (
-          <span className="text-xs text-muted-foreground italic hidden md:inline">
-            {node.nameLocal}
-          </span>
-        )}
+        {/* Local Name */}
+        <span className="hidden md:block text-xs text-muted-foreground italic w-[180px] truncate text-right">
+          {node.nameLocal || "—"}
+        </span>
 
-        {!node.isActive && (
-          <Badge variant="secondary" className="text-xs">
-            Inactive
+        {/* Description */}
+        <span className="hidden lg:block text-xs text-muted-foreground w-[200px] truncate">
+          {node.description || "—"}
+        </span>
+
+        {/* Status */}
+        <span className="w-[100px] flex justify-center">
+          {!node.isActive ? (
+            <Badge variant="secondary" className="text-xs">
+              Inactive
+            </Badge>
+          ) : (
+            <Badge variant="outline" className="text-xs border-green-300 text-green-700">
+              Active
+            </Badge>
+          )}
+        </span>
+
+        {/* Type Badge */}
+        <span className="w-[160px] flex">
+          <Badge
+            variant="outline"
+            className={`text-xs ${
+              node.classificationType === "functional"
+                ? "border-blue-300 text-blue-700"
+                : node.classificationType === "functional_cofog"
+                ? "border-cyan-300 text-cyan-700"
+                : node.classificationType === "administrative"
+                ? "border-green-300 text-green-700"
+                : node.classificationType === "economic"
+                ? "border-orange-300 text-orange-700"
+                : "border-purple-300 text-purple-700"
+            }`}
+          >
+            {CLASSIFICATION_TYPE_LABELS[node.classificationType]}
           </Badge>
+        </span>
+
+        {/* Actions - only show when unlocked */}
+        {!isLocked && (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 flex-shrink-0"
+              >
+                <MoreHorizontal className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => onEdit(node)}>
+                <Pencil className="h-4 w-4 mr-2" />
+                Edit
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => onAddChild(node)}>
+                <Plus className="h-4 w-4 mr-2" />
+                Add Child
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => onDelete(node)}
+                className="text-red-600"
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                Delete
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         )}
-
-        <Badge
-          variant="outline"
-          className={`text-xs ${
-            node.classificationType === "functional"
-              ? "border-blue-300 text-blue-700"
-              : node.classificationType === "administrative"
-              ? "border-green-300 text-green-700"
-              : node.classificationType === "economic"
-              ? "border-orange-300 text-orange-700"
-              : "border-purple-300 text-purple-700"
-          }`}
-        >
-          {CLASSIFICATION_TYPE_LABELS[node.classificationType]}
-        </Badge>
-
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100"
-            >
-              <MoreHorizontal className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={() => onEdit(node)}>
-              <Pencil className="h-4 w-4 mr-2" />
-              Edit
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => onAddChild(node)}>
-              <Plus className="h-4 w-4 mr-2" />
-              Add Child
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              onClick={() => onDelete(node)}
-              className="text-red-600"
-            >
-              <Trash2 className="h-4 w-4 mr-2" />
-              Delete
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
       </div>
 
       {hasChildren && isExpanded && (
-        <div>
+        <div className="border-t border-dashed">
           {node.children!.map((child) => (
             <TreeNode
               key={child.id}
@@ -180,6 +212,7 @@ function TreeNode({
               onAddChild={onAddChild}
               expandedIds={expandedIds}
               toggleExpanded={toggleExpanded}
+              isLocked={isLocked}
             />
           ))}
         </div>
@@ -196,8 +229,11 @@ export function BudgetClassificationsManagement() {
   const [error, setError] = useState<string | null>(null);
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
   const [searchQuery, setSearchQuery] = useState("");
-  const [filterType, setFilterType] = useState<ClassificationType | "all">("all");
+  const [filterType, setFilterType] = useState<ClassificationType>("functional");
   const [showInactive, setShowInactive] = useState(false);
+  const [sortColumn, setSortColumn] = useState<SortColumn>("code");
+  const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
+  const [isLocked, setIsLocked] = useState(true);
 
   // Modal state
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -222,7 +258,7 @@ export function BudgetClassificationsManagement() {
     try {
       setLoading(true);
       const params = new URLSearchParams();
-      if (filterType !== "all") params.set("type", filterType);
+      params.set("type", filterType);
       if (!showInactive) params.set("activeOnly", "true");
 
       const response = await fetch(
@@ -279,6 +315,16 @@ export function BudgetClassificationsManagement() {
   // Collapse all
   const collapseAll = () => {
     setExpandedIds(new Set());
+  };
+
+  // Toggle sort
+  const toggleSort = (column: SortColumn) => {
+    if (sortColumn === column) {
+      setSortDirection(sortDirection === "asc" ? "desc" : "asc");
+    } else {
+      setSortColumn(column);
+      setSortDirection("asc");
+    }
   };
 
   // Open modal for creating
@@ -383,38 +429,90 @@ export function BudgetClassificationsManagement() {
     }
   };
 
-  // Filter classifications by search
+  // Sort function for classifications
+  const sortNodes = (
+    nodes: (BudgetClassification & { children?: BudgetClassification[] })[]
+  ): (BudgetClassification & { children?: BudgetClassification[] })[] => {
+    const sorted = [...nodes].sort((a, b) => {
+      // Handle status sorting separately (boolean values)
+      if (sortColumn === "status") {
+        const aActive = a.isActive;
+        const bActive = b.isActive;
+        // Active comes before inactive in asc
+        const comparison = aActive === bActive ? 0 : aActive ? -1 : 1;
+        return sortDirection === "asc" ? comparison : -comparison;
+      }
+
+      // Handle string sorting
+      let aVal: string;
+      let bVal: string;
+
+      switch (sortColumn) {
+        case "code":
+          aVal = a.code;
+          bVal = b.code;
+          break;
+        case "name":
+          aVal = a.name;
+          bVal = b.name;
+          break;
+        case "nameLocal":
+          aVal = a.nameLocal || "";
+          bVal = b.nameLocal || "";
+          break;
+        default:
+          aVal = a.code;
+          bVal = b.code;
+      }
+
+      const comparison = aVal.localeCompare(bVal);
+      return sortDirection === "asc" ? comparison : -comparison;
+    });
+
+    // Recursively sort children
+    return sorted.map((node) => ({
+      ...node,
+      children: node.children ? sortNodes(node.children as any) : undefined,
+    }));
+  };
+
+  // Filter and sort classifications
   const filteredClassifications = React.useMemo(() => {
-    if (!searchQuery) return classifications;
+    let result = classifications;
 
-    const query = searchQuery.toLowerCase();
-    const filterNodes = (
-      nodes: (BudgetClassification & { children?: BudgetClassification[] })[]
-    ): (BudgetClassification & { children?: BudgetClassification[] })[] => {
-      return nodes
-        .map((node) => {
-          const matchesSelf =
-            node.code.toLowerCase().includes(query) ||
-            node.name.toLowerCase().includes(query) ||
-            (node.nameLocal?.toLowerCase().includes(query) ?? false);
+    // Apply search filter
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      const filterNodes = (
+        nodes: (BudgetClassification & { children?: BudgetClassification[] })[]
+      ): (BudgetClassification & { children?: BudgetClassification[] })[] => {
+        return nodes
+          .map((node) => {
+            const matchesSelf =
+              node.code.toLowerCase().includes(query) ||
+              node.name.toLowerCase().includes(query) ||
+              (node.nameLocal?.toLowerCase().includes(query) ?? false);
 
-          const filteredChildren = node.children
-            ? filterNodes(node.children as any)
-            : [];
+            const filteredChildren = node.children
+              ? filterNodes(node.children as any)
+              : [];
 
-          if (matchesSelf || filteredChildren.length > 0) {
-            return {
-              ...node,
-              children: filteredChildren.length > 0 ? filteredChildren : node.children,
-            };
-          }
-          return null;
-        })
-        .filter(Boolean) as (BudgetClassification & { children?: BudgetClassification[] })[];
-    };
+            if (matchesSelf || filteredChildren.length > 0) {
+              return {
+                ...node,
+                children: filteredChildren.length > 0 ? filteredChildren : node.children,
+              };
+            }
+            return null;
+          })
+          .filter(Boolean) as (BudgetClassification & { children?: BudgetClassification[] })[];
+      };
+      result = filterNodes(result);
+    }
 
-    return filterNodes(classifications);
-  }, [classifications, searchQuery]);
+    // Apply sorting
+    return sortNodes(result);
+  }, [classifications, searchQuery, sortColumn, sortDirection]);
 
   if (loading) {
     return (
@@ -478,7 +576,7 @@ export function BudgetClassificationsManagement() {
                 Manage budget classifications for aid-on-budget reporting
               </CardDescription>
             </div>
-            <Button onClick={() => handleAdd()}>
+            <Button onClick={() => handleAdd()} disabled={isLocked}>
               <Plus className="h-4 w-4 mr-2" />
               Add Classification
             </Button>
@@ -501,16 +599,16 @@ export function BudgetClassificationsManagement() {
               <Select
                 value={filterType}
                 onValueChange={(value) =>
-                  setFilterType(value as ClassificationType | "all")
+                  setFilterType(value as ClassificationType)
                 }
               >
-                <SelectTrigger className="w-[180px]">
+                <SelectTrigger className="w-[220px]">
                   <Filter className="h-4 w-4 mr-2" />
                   <SelectValue placeholder="Filter by type" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Types</SelectItem>
-                  <SelectItem value="functional">Functional</SelectItem>
+                  <SelectItem value="functional">Functional - National</SelectItem>
+                  <SelectItem value="functional_cofog">Functional - COFOG</SelectItem>
                   <SelectItem value="administrative">Administrative</SelectItem>
                   <SelectItem value="economic">Economic</SelectItem>
                   <SelectItem value="programme">Programme</SelectItem>
@@ -534,6 +632,25 @@ export function BudgetClassificationsManagement() {
               <Button variant="outline" size="sm" onClick={collapseAll}>
                 Collapse All
               </Button>
+              <Button
+                variant={isLocked ? "outline" : "default"}
+                size="sm"
+                onClick={() => setIsLocked(!isLocked)}
+                className={isLocked ? "" : "bg-amber-500 hover:bg-amber-600 text-white"}
+                title={isLocked ? "Click to unlock editing" : "Click to lock editing"}
+              >
+                {isLocked ? (
+                  <>
+                    <Lock className="h-4 w-4 mr-1" />
+                    Locked
+                  </>
+                ) : (
+                  <>
+                    <Unlock className="h-4 w-4 mr-1" />
+                    Unlocked
+                  </>
+                )}
+              </Button>
             </div>
           </div>
 
@@ -548,26 +665,99 @@ export function BudgetClassificationsManagement() {
                   : "Add your first budget classification to get started"}
               </p>
               {!searchQuery && (
-                <Button onClick={() => handleAdd()}>
+                <Button onClick={() => handleAdd()} disabled={isLocked}>
                   <Plus className="h-4 w-4 mr-2" />
                   Add Classification
                 </Button>
               )}
             </div>
           ) : (
-            <div className="border rounded-lg divide-y">
-              {filteredClassifications.map((node) => (
-                <TreeNode
-                  key={node.id}
-                  node={node}
-                  level={0}
-                  onEdit={handleEdit}
-                  onDelete={handleDelete}
-                  onAddChild={handleAdd}
-                  expandedIds={expandedIds}
-                  toggleExpanded={toggleExpanded}
-                />
-              ))}
+            <div className="border rounded-lg">
+              {/* Sticky Header */}
+              <div className="sticky top-0 z-10 bg-muted/80 backdrop-blur-sm border-b">
+                <div className="flex items-center gap-2 py-3 px-3 text-sm font-medium text-muted-foreground">
+                  <div className="w-5 flex-shrink-0" /> {/* Spacer for expand icon */}
+                  <button
+                    className="flex items-center gap-1 hover:text-foreground transition-colors"
+                    onClick={() => toggleSort("code")}
+                  >
+                    Code
+                    {sortColumn === "code" ? (
+                      sortDirection === "asc" ? (
+                        <ArrowUp className="h-3 w-3" />
+                      ) : (
+                        <ArrowDown className="h-3 w-3" />
+                      )
+                    ) : (
+                      <ArrowUpDown className="h-3 w-3 opacity-50" />
+                    )}
+                  </button>
+                  <button
+                    className="flex-1 flex items-center gap-1 hover:text-foreground transition-colors"
+                    onClick={() => toggleSort("name")}
+                  >
+                    Name
+                    {sortColumn === "name" ? (
+                      sortDirection === "asc" ? (
+                        <ArrowUp className="h-3 w-3" />
+                      ) : (
+                        <ArrowDown className="h-3 w-3" />
+                      )
+                    ) : (
+                      <ArrowUpDown className="h-3 w-3 opacity-50" />
+                    )}
+                  </button>
+                  <button
+                    className="hidden md:flex items-center gap-1 justify-end hover:text-foreground transition-colors w-[180px]"
+                    onClick={() => toggleSort("nameLocal")}
+                  >
+                    Local Name
+                    {sortColumn === "nameLocal" ? (
+                      sortDirection === "asc" ? (
+                        <ArrowUp className="h-3 w-3" />
+                      ) : (
+                        <ArrowDown className="h-3 w-3" />
+                      )
+                    ) : (
+                      <ArrowUpDown className="h-3 w-3 opacity-50" />
+                    )}
+                  </button>
+                  <div className="hidden lg:block w-[200px]">Description</div>
+                  <button
+                    className="flex items-center justify-center gap-1 hover:text-foreground transition-colors w-[100px]"
+                    onClick={() => toggleSort("status")}
+                  >
+                    Status
+                    {sortColumn === "status" ? (
+                      sortDirection === "asc" ? (
+                        <ArrowUp className="h-3 w-3" />
+                      ) : (
+                        <ArrowDown className="h-3 w-3" />
+                      )
+                    ) : (
+                      <ArrowUpDown className="h-3 w-3 opacity-50" />
+                    )}
+                  </button>
+                  <div className="w-[160px]">Type</div>
+                  <div className="w-8 flex-shrink-0" /> {/* Spacer for actions */}
+                </div>
+              </div>
+              {/* Scrollable Content */}
+              <div className="max-h-[500px] overflow-y-auto">
+                {filteredClassifications.map((node) => (
+                  <TreeNode
+                    key={node.id}
+                    node={node}
+                    level={0}
+                    onEdit={handleEdit}
+                    onDelete={handleDelete}
+                    onAddChild={handleAdd}
+                    expandedIds={expandedIds}
+                    toggleExpanded={toggleExpanded}
+                    isLocked={isLocked}
+                  />
+                ))}
+              </div>
             </div>
           )}
 
@@ -575,7 +765,7 @@ export function BudgetClassificationsManagement() {
           <div className="mt-4 text-sm text-muted-foreground">
             Showing {filteredClassifications.length} classification
             {filteredClassifications.length !== 1 ? "s" : ""}
-            {filterType !== "all" && ` (${CLASSIFICATION_TYPE_LABELS[filterType]})`}
+            {` (${CLASSIFICATION_TYPE_LABELS[filterType]})`}
           </div>
         </CardContent>
       </Card>

@@ -68,6 +68,7 @@ import { SelectIATI, type SelectIATIGroup } from '@/components/ui/SelectIATI';
 import { HelpTextTooltip } from '@/components/ui/help-text-tooltip';
 import { IATI_LOCATION_TYPE_GROUPS } from '@/data/iati-location-types';
 import { countries } from '@/data/countries';
+import { getCountryCoordinates, DEFAULT_MAP_CENTER, DEFAULT_MAP_ZOOM } from '@/data/country-coordinates';
 
 const LocationMap = dynamic(() => import('./LocationMap'), {
   ssr: false,
@@ -520,9 +521,8 @@ const COUNTRY_GROUPS: SelectIATIGroup[] = [
 ];
 
 
-// Default center (Myanmar)
-const DEFAULT_CENTER: [number, number] = [21.9162, 96.0785];
-const DEFAULT_ZOOM = 6;
+// Note: DEFAULT_MAP_CENTER and DEFAULT_MAP_ZOOM are imported from country-coordinates
+// They will be overridden by the home country from system settings
 
 // Map layer configuration
 type MapLayerKey = 'osm_standard' | 'osm_humanitarian' | 'cyclosm' | 'opentopo' | 'satellite_esri';
@@ -607,8 +607,8 @@ export default function LocationModal({
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<LocationSearchResult[]>([]);
   const [isSearching, setIsSearching] = useState(false);
-  const [mapCenter, setMapCenter] = useState<[number, number]>(DEFAULT_CENTER);
-  const [mapZoom, setMapZoom] = useState(DEFAULT_ZOOM);
+  const [mapCenter, setMapCenter] = useState<[number, number]>(DEFAULT_MAP_CENTER);
+  const [mapZoom, setMapZoom] = useState(DEFAULT_MAP_ZOOM);
   const [markerPosition, setMarkerPosition] = useState<[number, number] | null>(null);
   const [selectedLocation, setSelectedLocation] = useState<Partial<LocationFormSchema>>({});
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
@@ -617,7 +617,37 @@ export default function LocationModal({
   const [isRetrying, setIsRetrying] = useState(false);
   const [satelliteFallbackIndex, setSatelliteFallbackIndex] = useState(0);
 
+  // Home country coordinates from system settings
+  const [homeCountryCenter, setHomeCountryCenter] = useState<[number, number]>(DEFAULT_MAP_CENTER);
+  const [homeCountryZoom, setHomeCountryZoom] = useState<number>(DEFAULT_MAP_ZOOM);
+
   const mapRef = useRef<any>(null);
+
+  // Fetch home country from system settings
+  useEffect(() => {
+    const fetchHomeCountry = async () => {
+      try {
+        const response = await fetch('/api/admin/system-settings')
+        if (response.ok) {
+          const data = await response.json()
+          if (data.homeCountry) {
+            const countryCoords = getCountryCoordinates(data.homeCountry)
+            setHomeCountryCenter(countryCoords.center)
+            setHomeCountryZoom(countryCoords.zoom)
+            // Also update map center if no location is being edited
+            if (!location) {
+              setMapCenter(countryCoords.center)
+              setMapZoom(countryCoords.zoom)
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Failed to fetch home country setting:', error)
+        // Keep defaults on error
+      }
+    }
+    fetchHomeCountry()
+  }, [location]);
 
   // Load saved layer preference
   useEffect(() => {
@@ -797,10 +827,10 @@ export default function LocationModal({
       } as LocationFormSchema);
       setSelectedLocation({});
       setMarkerPosition(null);
-      setMapCenter(DEFAULT_CENTER);
-      setMapZoom(DEFAULT_ZOOM);
+      setMapCenter(homeCountryCenter);
+      setMapZoom(homeCountryZoom);
     }
-  }, [location, reset]);
+  }, [location, reset, homeCountryCenter, homeCountryZoom]);
 
   // Reset form when modal opens for new location
   useEffect(() => {
@@ -812,13 +842,13 @@ export default function LocationModal({
       } as LocationFormSchema);
       setSelectedLocation({});
       setMarkerPosition(null);
-      setMapCenter(DEFAULT_CENTER);
-      setMapZoom(DEFAULT_ZOOM);
+      setMapCenter(homeCountryCenter);
+      setMapZoom(homeCountryZoom);
       setValidationErrors({});
       setSearchQuery('');
       setSearchResults([]);
     }
-  }, [isOpen, location, reset]);
+  }, [isOpen, location, reset, homeCountryCenter, homeCountryZoom]);
 
   // Search functionality with cascading approach: Myanmar → Regional → Global
   useEffect(() => {
@@ -1215,12 +1245,12 @@ const autoPopulateIatiFields = useCallback((params: {
                       variant="outline"
                       size="sm"
                       onClick={() => {
-                        setMapCenter(DEFAULT_CENTER);
-                        setMapZoom(DEFAULT_ZOOM);
+                        setMapCenter(homeCountryCenter);
+                        setMapZoom(homeCountryZoom);
                         setMarkerPosition(null);
                         // Actually move the map to the new center
                         if (mapRef.current) {
-                          mapRef.current.setView(DEFAULT_CENTER, DEFAULT_ZOOM);
+                          mapRef.current.setView(homeCountryCenter, homeCountryZoom);
                         }
                       }}
                       className="flex items-center gap-2"

@@ -23,6 +23,7 @@ import { EnhancedSubnationalBreakdown } from '@/components/activities/EnhancedSu
 import { SectorHierarchyFilter, SectorFilterSelection, matchesSectorFilter } from '@/components/maps/SectorHierarchyFilter';
 import { MapSearch } from '@/components/maps/MapSearch';
 import { ACTIVITY_STATUS_GROUPS } from '@/data/activity-status-types';
+import { getCountryCoordinates, DEFAULT_MAP_CENTER, DEFAULT_MAP_ZOOM } from '@/data/country-coordinates';
 
 // Dynamic import for MyanmarRegionsMap to avoid SSR issues
 const MyanmarRegionsMap = dynamic(() => import('@/components/MyanmarRegionsMap'), { ssr: false });
@@ -199,64 +200,25 @@ function MapInitializer() {
   return null;
 }
 
-// Map bounds component to fit all locations
-function MapBounds({ locations }: { locations: LocationData[] }) {
+// Map reset component to handle reset functionality - always resets to home country
+function MapReset({ shouldReset, homeCountryCenter, homeCountryZoom }: {
+  shouldReset: boolean;
+  homeCountryCenter: [number, number];
+  homeCountryZoom: number;
+}) {
   if (!useMapEventsHook || typeof window === 'undefined') {
     return null;
   }
-  
-  const map = useMapEventsHook({});
 
-  useEffect(() => {
-    if (!map || !locations.length) return;
-    
-    const validLocations = locations.filter(loc => 
-      loc.latitude && loc.longitude && 
-      !isNaN(loc.latitude) && !isNaN(loc.longitude)
-    );
-    
-    if (validLocations.length === 0) return;
-    
-    if (validLocations.length === 1) {
-      const loc = validLocations[0];
-      map.setView([loc.latitude, loc.longitude], 12);
-    } else {
-      const bounds = validLocations.map(loc => [loc.latitude, loc.longitude] as [number, number]);
-      map.fitBounds(bounds, { padding: [20, 20] });
-    }
-  }, [map, locations]);
-  
-  return null;
-}
-
-// Map reset component to handle reset functionality
-function MapReset({ shouldReset, locations }: { shouldReset: boolean; locations: LocationData[] }) {
-  if (!useMapEventsHook || typeof window === 'undefined') {
-    return null;
-  }
-  
   const map = useMapEventsHook({});
 
   useEffect(() => {
     if (!map || !shouldReset) return;
-    
-    const validLocations = locations.filter(loc => 
-      loc.latitude && loc.longitude && 
-      !isNaN(loc.latitude) && !isNaN(loc.longitude)
-    );
-    
-    if (validLocations.length === 0) {
-      // Reset to Myanmar center view if no locations
-      map.setView([19.5, 96.0], 6);
-    } else if (validLocations.length === 1) {
-      const loc = validLocations[0];
-      map.setView([loc.latitude, loc.longitude], 12);
-    } else {
-      const bounds = validLocations.map(loc => [loc.latitude, loc.longitude] as [number, number]);
-      map.fitBounds(bounds, { padding: [20, 20] });
-    }
-  }, [map, shouldReset, locations]);
-  
+
+    // Always reset to home country view
+    map.setView(homeCountryCenter, homeCountryZoom);
+  }, [map, shouldReset, homeCountryCenter, homeCountryZoom]);
+
   return null;
 }
 
@@ -293,9 +255,34 @@ export default function AidMap() {
     subSectors: [],
   });
   const mapRef = useRef<any>(null);
-  
+
+  // Home country coordinates from system settings
+  const [homeCountryCenter, setHomeCountryCenter] = useState<[number, number]>(DEFAULT_MAP_CENTER);
+  const [homeCountryZoom, setHomeCountryZoom] = useState<number>(DEFAULT_MAP_ZOOM);
+
   // State for fly-to target (used by MapFlyTo component inside MapContainer)
   const [flyToTarget, setFlyToTarget] = useState<{ lat: number; lng: number; zoom: number } | null>(null);
+
+  // Fetch home country from system settings
+  useEffect(() => {
+    const fetchHomeCountry = async () => {
+      try {
+        const response = await fetch('/api/admin/system-settings')
+        if (response.ok) {
+          const data = await response.json()
+          if (data.homeCountry) {
+            const countryCoords = getCountryCoordinates(data.homeCountry)
+            setHomeCountryCenter(countryCoords.center)
+            setHomeCountryZoom(countryCoords.zoom)
+          }
+        }
+      } catch (error) {
+        console.error('Failed to fetch home country setting:', error)
+        // Keep defaults on error
+      }
+    }
+    fetchHomeCountry()
+  }, []);
 
   // Handler for location search
   const handleLocationSearch = useCallback((lat: number, lng: number, name: string, type: string) => {
@@ -628,7 +615,7 @@ export default function AidMap() {
                   }}
                   variant="outline"
                   size="sm"
-                  title="Reset to Myanmar view"
+                  title="Reset to home country view"
                   className="bg-white shadow-md border-gray-300 h-9 w-9 p-0"
                 >
                   <RotateCcw className="h-4 w-4" />
@@ -660,10 +647,10 @@ export default function AidMap() {
             
             {isMapLoaded && L && useMapEventsHook ? (
               <MapContainer
-                key={mapLayer}
+                key={`${mapLayer}-${homeCountryCenter[0]}-${homeCountryCenter[1]}`}
                 ref={mapRef}
-                center={[19.5, 96.0]}
-                zoom={6}
+                center={homeCountryCenter}
+                zoom={homeCountryZoom}
                 minZoom={2}
                 maxBounds={[[-90, -180], [90, 180]]}
                 maxBoundsViscosity={1.0}
@@ -718,8 +705,11 @@ export default function AidMap() {
                   />
                 )}
                 
-                <MapBounds locations={filteredLocations} />
-                <MapReset shouldReset={shouldResetMap} locations={filteredLocations} />
+                <MapReset
+                  shouldReset={shouldResetMap}
+                  homeCountryCenter={homeCountryCenter}
+                  homeCountryZoom={homeCountryZoom}
+                />
                 <MapInitializer />
                 <MapFlyTo 
                   target={flyToTarget} 
