@@ -79,6 +79,10 @@ import { EnhancedAidOnBudgetChart } from '@/components/analytics/EnhancedAidOnBu
 // Participating Orgs Sankey
 import { ParticipatingOrgsSankey } from '@/components/analytics/ParticipatingOrgsSankey'
 
+// Coordination Circle Pack
+import { CoordinationCirclePack } from '@/components/analytics/CoordinationCirclePack'
+import type { CoordinationView, CoordinationResponse } from '@/types/coordination'
+
 // Charts from analytics page
 import { BudgetVsSpendingChart } from '@/components/charts/BudgetVsSpendingChart'
 import { ReportingOrgChart } from '@/components/charts/ReportingOrgChart'
@@ -94,6 +98,9 @@ import { SectorFilters } from '@/components/analytics/sectors/SectorFilters'
 import { SectorBarChart } from '@/components/analytics/sectors/SectorBarChart'
 import { SectorTimeSeriesPanel } from '@/components/analytics/sectors/SectorTimeSeriesPanel'
 import { SectorAnalyticsFilters, SectorMetrics, SectorAnalyticsResponse } from '@/types/sector-analytics'
+
+// Funding Over Time Analytics
+import { FundingOverTimeAnalytics } from '@/components/analytics/FundingOverTimeAnalytics'
 
 interface KPIData {
   totalDisbursed: number
@@ -186,6 +193,11 @@ export default function AnalyticsDashboardPage() {
     groupByLevel: '5',
     publicationStatus: 'all'
   })
+
+  // Coordination state
+  const [coordinationView, setCoordinationView] = useState<CoordinationView>('sectors')
+  const [coordinationData, setCoordinationData] = useState<CoordinationResponse | null>(null)
+  const [coordinationLoading, setCoordinationLoading] = useState(false)
 
   // Dropdown options for Comprehensive tab
   const [aidTypes, setAidTypes] = useState<Array<{code: string, name: string}>>([])
@@ -464,6 +476,30 @@ export default function AnalyticsDashboardPage() {
     fetchSectorAnalyticsData()
   }, [sectorAnalyticsFilters, refreshKey])
 
+  // Fetch Coordination data
+  const fetchCoordinationData = async () => {
+    try {
+      setCoordinationLoading(true)
+      const response = await fetch(`/api/analytics/coordination?view=${coordinationView}`)
+      const result = await response.json()
+
+      if (result.success) {
+        setCoordinationData(result)
+      } else {
+        console.error('[Coordination] Error:', result.error)
+      }
+    } catch (error) {
+      console.error('[Coordination] Error:', error)
+    } finally {
+      setCoordinationLoading(false)
+    }
+  }
+
+  // Fetch Coordination data when view changes
+  useEffect(() => {
+    fetchCoordinationData()
+  }, [coordinationView, refreshKey])
+
   const formatCurrency = (value: number) => {
     try {
       if (value === null || value === undefined || isNaN(value) || !isFinite(value)) {
@@ -650,7 +686,7 @@ export default function AnalyticsDashboardPage() {
           )}
 
           <Tabs defaultValue="main" className="space-y-6">
-                <TabsList className="grid w-full grid-cols-12">
+                <TabsList className="flex flex-wrap w-full gap-1">
                   <TabsTrigger value="main">Main</TabsTrigger>
                   <TabsTrigger value="sectors">Sectors</TabsTrigger>
                   <TabsTrigger value="humanitarian">Humanitarian</TabsTrigger>
@@ -662,6 +698,7 @@ export default function AnalyticsDashboardPage() {
                   <TabsTrigger value="calendar">Calendar</TabsTrigger>
                   <TabsTrigger value="top10">Top 10</TabsTrigger>
                   <TabsTrigger value="aid-on-budget">Aid on Budget</TabsTrigger>
+                  <TabsTrigger value="funding-over-time">Funding Over Time</TabsTrigger>
                   <TabsTrigger value="under-development">Under Development</TabsTrigger>
                 </TabsList>
 
@@ -713,14 +750,72 @@ export default function AnalyticsDashboardPage() {
                     {sectorAnalyticsLoading ? (
                       <Skeleton className="h-[500px] w-full" />
                     ) : (
-                      <SectorBarChart 
-                        data={sectorAnalyticsData} 
-                        filters={sectorAnalyticsFilters} 
+                      <SectorBarChart
+                        data={sectorAnalyticsData}
+                        filters={sectorAnalyticsFilters}
                       />
                     )}
 
                     {/* Sector Time Series Panel */}
                     <SectorTimeSeriesPanel />
+
+                    {/* Coordination Circle Pack */}
+                    <Card>
+                      <CardHeader>
+                        <div className="flex flex-wrap items-center justify-between gap-4">
+                          <div className="flex items-center gap-3">
+                            <Network className="h-5 w-5 text-slate-700" />
+                            <div>
+                              <CardTitle>Coordination</CardTitle>
+                              <CardDescription>
+                                {coordinationView === 'sectors'
+                                  ? "Who's working in each sector?"
+                                  : "What is each partner working on?"}
+                              </CardDescription>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-medium text-slate-700">View:</span>
+                            <div className="flex gap-1">
+                              <Button
+                                variant={coordinationView === 'sectors' ? 'default' : 'outline'}
+                                size="sm"
+                                onClick={() => setCoordinationView('sectors')}
+                              >
+                                By Sector
+                              </Button>
+                              <Button
+                                variant={coordinationView === 'organizations' ? 'default' : 'outline'}
+                                size="sm"
+                                onClick={() => setCoordinationView('organizations')}
+                              >
+                                By Partner
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+                      </CardHeader>
+                      <CardContent>
+                        {coordinationLoading ? (
+                          <div className="flex items-center justify-center h-[500px]">
+                            <div className="text-center">
+                              <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-slate-900 mx-auto mb-3" />
+                              <p className="text-slate-600 text-sm">Loading coordination data...</p>
+                            </div>
+                          </div>
+                        ) : (
+                          <CoordinationCirclePack
+                            view={coordinationView}
+                            data={coordinationData?.data || null}
+                          />
+                        )}
+                        <p className="text-sm text-slate-500 text-center mt-4">
+                          {coordinationView === 'sectors'
+                            ? 'Each large circle represents a sector. Smaller circles show development partners working in that sector, sized by budget.'
+                            : 'Each large circle represents a partner. Smaller circles show sectors they work in, sized by budget.'}
+                        </p>
+                      </CardContent>
+                    </Card>
                   </div>
                 </TabsContent>
 
@@ -923,6 +1018,12 @@ export default function AnalyticsDashboardPage() {
                     <EnhancedAidOnBudgetChart
                       refreshKey={refreshKey}
                     />
+                  </div>
+                </TabsContent>
+
+                <TabsContent value="funding-over-time">
+                  <div className="space-y-6">
+                    <FundingOverTimeAnalytics />
                   </div>
                 </TabsContent>
 

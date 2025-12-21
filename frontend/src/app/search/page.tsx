@@ -295,7 +295,7 @@ function SearchPageContent() {
 
   return (
     <MainLayout>
-      <div className="max-w-6xl mx-auto">
+      <div>
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-4">Search Results</h1>

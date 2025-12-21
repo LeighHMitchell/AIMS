@@ -6,7 +6,7 @@
 /**
  * Classification type categories
  */
-export type ClassificationType = 'administrative' | 'functional' | 'functional_cofog' | 'economic' | 'programme';
+export type ClassificationType = 'administrative' | 'functional' | 'functional_cofog' | 'economic' | 'programme' | 'revenue' | 'liabilities' | 'funding_sources' | 'country_sector';
 
 /**
  * Budget Classification (Chart of Accounts entry)
@@ -255,6 +255,10 @@ export interface GroupedSectorMapping {
     administrative?: SectorBudgetMapping;
     economic?: SectorBudgetMapping;
     programme?: SectorBudgetMapping;
+    revenue?: SectorBudgetMapping;
+    liabilities?: SectorBudgetMapping;
+    funding_sources?: SectorBudgetMapping;
+    country_sector?: SectorBudgetMapping;
   };
 }
 
@@ -415,6 +419,10 @@ export const CLASSIFICATION_TYPE_LABELS: Record<ClassificationType, string> = {
   functional_cofog: 'Functional - COFOG',
   economic: 'Economic',
   programme: 'Programme',
+  revenue: 'Revenue',
+  liabilities: 'Liabilities',
+  funding_sources: 'Funding Sources',
+  country_sector: 'Country Sectors',
 };
 
 /**
@@ -426,6 +434,10 @@ export const CLASSIFICATION_TYPE_DESCRIPTIONS: Record<ClassificationType, string
   functional_cofog: 'By purpose or function (COFOG international standard)',
   economic: 'By type of expenditure (salaries, goods, grants)',
   programme: 'By government programme or project',
+  revenue: 'By source of revenue (grants, loans, taxes)',
+  liabilities: 'By type of liability (loans, debt obligations)',
+  funding_sources: 'By development partner (multilateral and bilateral)',
+  country_sector: 'Country-specific sector classification mapped from DAC sectors',
 };
 
 // ============================================================================

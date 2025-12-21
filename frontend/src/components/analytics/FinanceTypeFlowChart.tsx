@@ -143,14 +143,25 @@ export function FinanceTypeFlowChart({
         const financeTypesResponse = await fetch('/api/analytics/finance-types')
         const financeTypesData = await financeTypesResponse.json()
 
-        // Fetch all transactions with finance_type and flow_type
-        // Don't filter by transaction type here - fetch all and filter client-side
+        // Fetch all transactions with their activity defaults for finance_type and flow_type
+        // Join with activities to get default values when transaction values are null
         let query = supabase
           .from('transactions')
-          .select('transaction_date, finance_type, flow_type, value, value_usd, currency, transaction_type')
+          .select(`
+            transaction_date,
+            finance_type,
+            flow_type,
+            value,
+            value_usd,
+            currency,
+            transaction_type,
+            activity_id,
+            activities!transactions_activity_id_fkey1 (
+              default_finance_type,
+              default_flow_type
+            )
+          `)
           .eq('status', 'actual')
-          .not('finance_type', 'is', null)
-          .not('flow_type', 'is', null)
           .order('transaction_date', { ascending: true })
 
         // Apply date range filter if provided
@@ -176,9 +187,9 @@ export function FinanceTypeFlowChart({
           return
         }
 
-        // Process data - keep actual finance type codes, transaction types, and use USD values
+        // Process data - use inferred values (transaction-level or activity defaults)
         const processedData: any[] = []
-        
+
         transactions.forEach((t: any) => {
           // Try value_usd first, then fall back to raw value
           let value = parseFloat(String(t.value_usd)) || 0
@@ -193,17 +204,29 @@ export function FinanceTypeFlowChart({
             return
           }
 
+          // Get activity defaults
+          const activityDefaults = t.activities || {}
+
+          // Use transaction value if set, otherwise fall back to activity default
+          const effectiveFinanceType = t.finance_type || activityDefaults.default_finance_type
+          const effectiveFlowType = t.flow_type || activityDefaults.default_flow_type
+
+          // Skip if we don't have both finance_type and flow_type (even after fallback)
+          if (!effectiveFinanceType || !effectiveFlowType) {
+            return
+          }
+
           // Apply proportional allocation if enabled
-          const txToProcess = allocationMethod === 'proportional' 
-            ? t 
+          const txToProcess = allocationMethod === 'proportional'
+            ? t
             : { ...t, period_start: null, period_end: null }
-            
+
           const yearAllocations = splitTransactionAcrossYears(txToProcess)
-          
+
           yearAllocations.forEach(({ year, amount }) => {
-            // Use actual finance_type code from database
-            const financeType = String(t.finance_type || 'Unknown')
-            const flowType = String(t.flow_type || 'Unknown')
+            // Use effective (inferred) finance_type and flow_type
+            const financeType = String(effectiveFinanceType)
+            const flowType = String(effectiveFlowType)
             // Convert to string to match selectedTransactionTypes format
             const transactionType = String(t.transaction_type || 'Unknown')
 

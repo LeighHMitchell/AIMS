@@ -33,7 +33,10 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { SearchableSelect, SearchableSelectOption } from "@/components/ui/searchable-select";
+import { MultiSelectFilter } from "@/components/ui/multi-select-filter";
 import { ActivityStatusFilterSelect } from "@/components/forms/ActivityStatusFilterSelect";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription as DialogDesc, DialogFooter } from "@/components/ui/dialog";
@@ -51,7 +54,8 @@ import { HelpTextTooltip } from "@/components/ui/help-text-tooltip";
 import {
   Plus, Download, Edit2, Trash2, AlertCircle, ArrowUp, ArrowDown, ArrowUpDown, ChevronLeft, ChevronRight, Users, Grid3X3, TableIcon, Search, MoreVertical, Edit,
   PencilLine, BookOpenCheck, BookLock, CheckCircle2, AlertTriangle, Circle, Info, ReceiptText, Handshake, Shuffle, Link2,
-  FileCheck, ShieldCheck, Globe, DatabaseZap, RefreshCw, Copy, Check, Blocks, DollarSign, Settings, ExternalLink, FileCode, Columns3, ChevronDown, Heart
+  FileCheck, ShieldCheck, Globe, DatabaseZap, RefreshCw, Copy, Check, Blocks, DollarSign, Settings, ExternalLink, FileCode, Columns3, ChevronDown, Heart,
+  Building2, ArrowRightLeft, X
 } from "lucide-react";
 import { useUser } from "@/hooks/useUser";
 import { Transaction, TIED_STATUS_LABELS } from "@/types/transaction";
@@ -167,6 +171,8 @@ type Organization = {
   logo?: string;
   type?: string;
   country?: string;
+  iati_org_id?: string;
+  reporting_org_ref?: string;
 };
 
 type Activity = {
@@ -737,14 +743,20 @@ function ColumnSelector({ visibleColumns, onColumnsChange }: ColumnSelectorProps
           <p className="text-xs text-muted-foreground mt-1">
             {visibleCount} of {totalToggleable} columns visible
           </p>
-          <div className="relative mt-2">
-            <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <div className="flex items-center border rounded-md px-3 py-1 mt-2">
+            <Search className="h-4 w-4 text-muted-foreground mr-2 shrink-0" />
             <Input
               placeholder="Search columns..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-8 h-8 text-sm"
+              className="border-0 h-8 focus-visible:ring-0 focus-visible:ring-offset-0 px-0 text-sm"
             />
+            {searchQuery && (
+              <X
+                className="h-4 w-4 text-muted-foreground cursor-pointer hover:text-foreground shrink-0"
+                onClick={() => setSearchQuery('')}
+              />
+            )}
           </div>
         </div>
         <div className="max-h-[400px] overflow-y-auto">
@@ -971,14 +983,26 @@ function ActivitiesPageContent() {
   const totalActivitiesCount = usingOptimization ? safeOptimizedData.totalCount : legacyActivities.length;
   const setCurrentPage = usingOptimization ? safeOptimizedData.setPage : setLegacyCurrentPage;
   
-  // Filter states - use safe optimized filters
+  // Filter states - use safe optimized filters (multi-select arrays)
+  const filterStatuses = usingOptimization ? safeOptimizedData.filters.activityStatuses : [];
+  const setFilterStatuses = usingOptimization ? safeOptimizedData.filters.setActivityStatuses : () => {};
+
+  const filterValidations = usingOptimization ? safeOptimizedData.filters.submissionStatuses : [];
+  const setFilterValidations = usingOptimization ? safeOptimizedData.filters.setSubmissionStatuses : () => {};
+
+  // Additional filters (multi-select arrays)
+  const filterReportedByOrgs = usingOptimization ? safeOptimizedData.filters.reportedByOrgs : [];
+  const setFilterReportedByOrgs = usingOptimization ? safeOptimizedData.filters.setReportedByOrgs : () => {};
+  const filterAidTypes = usingOptimization ? safeOptimizedData.filters.aidTypes : [];
+  const setFilterAidTypes = usingOptimization ? safeOptimizedData.filters.setAidTypes : () => {};
+  const filterFlowTypes = usingOptimization ? safeOptimizedData.filters.flowTypes : [];
+  const setFilterFlowTypes = usingOptimization ? safeOptimizedData.filters.setFlowTypes : () => {};
+
+  // Legacy single-value getters for backward compatibility
   const filterStatus = usingOptimization ? safeOptimizedData.filters.activityStatus : 'all';
   const setFilterStatus = usingOptimization ? safeOptimizedData.filters.setActivityStatus : () => {};
-
   const filterValidation = usingOptimization ? safeOptimizedData.filters.submissionStatus : 'all';
   const setFilterValidation = usingOptimization ? safeOptimizedData.filters.setSubmissionStatus : () => {};
-  
-  // Additional filters
   const filterReportedBy = usingOptimization ? safeOptimizedData.filters.reportedBy : 'all';
   const setFilterReportedBy = usingOptimization ? safeOptimizedData.filters.setReportedBy : () => {};
   const filterAidType = usingOptimization ? safeOptimizedData.filters.aidType : 'all';
@@ -1869,88 +1893,129 @@ function ActivitiesPageContent() {
       </div>
 
       {/* Filters and View Controls - All in One Row */}
-      <div className="flex items-center gap-1.5 py-2 bg-slate-50 rounded-lg px-2 border border-gray-200">
+      <div className="flex items-end gap-3 py-2 bg-slate-50 rounded-lg px-3 border border-gray-200">
         {/* Status Filter */}
-        <ActivityStatusFilterSelect
-          value={filterStatus}
-          onValueChange={setFilterStatus}
-          placeholder="Status"
-          className="w-[140px]"
-        />
+        <div className="flex flex-col gap-1">
+          <Label className="text-xs text-muted-foreground">Status</Label>
+          <MultiSelectFilter
+            options={[
+              { value: "1", label: "Pipeline/identification", code: "1" },
+              { value: "2", label: "Implementation", code: "2" },
+              { value: "3", label: "Completion", code: "3" },
+              { value: "4", label: "Post-completion", code: "4" },
+              { value: "5", label: "Cancelled", code: "5" },
+              { value: "6", label: "Suspended", code: "6" },
+            ]}
+            value={filterStatuses}
+            onChange={setFilterStatuses}
+            placeholder="All"
+            searchPlaceholder="Search statuses..."
+            emptyText="No statuses found."
+            icon={<Circle className="h-4 w-4 text-muted-foreground shrink-0" />}
+            className="w-[180px] h-9"
+            dropdownClassName="w-[280px]"
+          />
+        </div>
 
         {/* Validation Filter */}
-        <Select value={filterValidation} onValueChange={setFilterValidation}>
-          <SelectTrigger className="w-[140px] h-9">
-            <SelectValue placeholder="Validation" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Validation</SelectItem>
-            <SelectItem value="validated">Validated</SelectItem>
-            <SelectItem value="rejected">Rejected</SelectItem>
-            <SelectItem value="pending">Not Validated</SelectItem>
-          </SelectContent>
-        </Select>
+        <div className="flex flex-col gap-1">
+          <Label className="text-xs text-muted-foreground">Validation</Label>
+          <MultiSelectFilter
+            options={[
+              { value: "validated", label: "Validated" },
+              { value: "rejected", label: "Rejected" },
+              { value: "pending", label: "Not Validated" },
+            ]}
+            value={filterValidations}
+            onChange={setFilterValidations}
+            placeholder="All"
+            searchPlaceholder="Search validations..."
+            emptyText="No validations found."
+            icon={<ShieldCheck className="h-4 w-4 text-muted-foreground shrink-0" />}
+            className="w-[160px] h-9"
+            dropdownClassName="w-[240px]"
+          />
+        </div>
 
         {/* Reported By Filter */}
-        <Select value={filterReportedBy} onValueChange={setFilterReportedBy}>
-          <SelectTrigger className="w-[160px] h-9">
-            <SelectValue placeholder="Organisation" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Organisations</SelectItem>
-            {organizations.map((org) => (
-              <SelectItem key={org.id} value={org.id}>
-                {org.acronym || org.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <div className="flex flex-col gap-1">
+          <Label className="text-xs text-muted-foreground">Reported by</Label>
+          <MultiSelectFilter
+            options={organizations.map((org) => ({
+              value: org.id,
+              label: org.name,
+              code: org.acronym || undefined,
+            }))}
+            value={filterReportedByOrgs}
+            onChange={setFilterReportedByOrgs}
+            placeholder="All"
+            searchPlaceholder="Search organisations..."
+            emptyText="No organisations found."
+            icon={<Building2 className="h-4 w-4 text-muted-foreground shrink-0" />}
+            className="w-[200px] h-9"
+            dropdownClassName="w-[400px]"
+          />
+        </div>
 
         {/* Sector Filter */}
-        <SectorHierarchyFilter
-          selected={sectorFilter}
-          onChange={setSectorFilter}
-          className="w-[160px]"
-        />
+        <div className="flex flex-col gap-1">
+          <Label className="text-xs text-muted-foreground">Sector</Label>
+          <SectorHierarchyFilter
+            selected={sectorFilter}
+            onChange={setSectorFilter}
+            className="w-[180px]"
+          />
+        </div>
 
         {/* Aid Type Filter */}
-        <Select value={filterAidType} onValueChange={setFilterAidType}>
-          <SelectTrigger className="w-[140px] h-9">
-            <SelectValue placeholder="Aid Type" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Aid Types</SelectItem>
-            {Object.entries(AID_TYPE_LABELS).map(([code, label]) => (
-              <SelectItem key={code} value={code}>
-                <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded mr-2">{code}</span>
-                {label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <div className="flex flex-col gap-1">
+          <Label className="text-xs text-muted-foreground">Aid Type</Label>
+          <MultiSelectFilter
+            options={Object.entries(AID_TYPE_LABELS).map(([code, label]) => ({
+              value: code,
+              label: label,
+              code: code,
+            }))}
+            value={filterAidTypes}
+            onChange={setFilterAidTypes}
+            placeholder="All"
+            searchPlaceholder="Search aid types..."
+            emptyText="No aid types found."
+            icon={<Handshake className="h-4 w-4 text-muted-foreground shrink-0" />}
+            className="w-[180px] h-9"
+            dropdownClassName="w-[360px]"
+          />
+        </div>
 
         {/* Flow Type Filter */}
-        <Select value={filterFlowType} onValueChange={setFilterFlowType}>
-          <SelectTrigger className="w-[140px] h-9">
-            <SelectValue placeholder="Flow Type" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Flow Types</SelectItem>
-            {Object.entries(FLOW_TYPE_LABELS).map(([code, label]) => (
-              <SelectItem key={code} value={code}>
-                <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded mr-2">{code}</span>
-                {label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <div className="flex flex-col gap-1">
+          <Label className="text-xs text-muted-foreground">Flow Type</Label>
+          <MultiSelectFilter
+            options={Object.entries(FLOW_TYPE_LABELS).map(([code, label]) => ({
+              value: code,
+              label: label,
+              code: code,
+            }))}
+            value={filterFlowTypes}
+            onChange={setFilterFlowTypes}
+            placeholder="All"
+            searchPlaceholder="Search flow types..."
+            emptyText="No flow types found."
+            icon={<ArrowRightLeft className="h-4 w-4 text-muted-foreground shrink-0" />}
+            className="w-[180px] h-9"
+            dropdownClassName="w-[340px]"
+          />
+        </div>
 
         {/* Column Selector - Only visible in table view */}
         {viewMode === 'table' && (
-          <ColumnSelector 
-            visibleColumns={visibleColumns} 
-            onColumnsChange={handleColumnsChange} 
-          />
+          <div className="flex flex-col gap-1">
+            <Label className="text-xs text-muted-foreground">Columns</Label>
+            <ColumnSelector
+              visibleColumns={visibleColumns}
+              onColumnsChange={handleColumnsChange}
+            />
+          </div>
         )}
 
         {/* Spacer to push view toggle to the right */}

@@ -9,7 +9,10 @@ import { Card, CardContent } from "@/components/ui/card";
 import { useRouter } from "next/navigation";
 import { format } from "date-fns";
 import { toast } from "sonner";
-import { Download, ChevronUp, ChevronDown, ChevronsUpDown, Frown, ChevronLeft, ChevronRight, Columns3, Search } from "lucide-react";
+import { Download, ChevronUp, ChevronDown, ChevronsUpDown, Frown, ChevronLeft, ChevronRight, Columns3, Search, Receipt, ShieldCheck, Building2, Banknote } from "lucide-react";
+import { Label } from "@/components/ui/label";
+import { SearchableSelect } from "@/components/ui/searchable-select";
+import { MultiSelectFilter } from "@/components/ui/multi-select-filter";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
@@ -25,14 +28,14 @@ import { YearlyTotalsBarChart, MultiSeriesDataPoint } from "@/components/charts/
 import { useLoadingBar } from "@/hooks/useLoadingBar";
 
 type FilterState = {
-  transactionType: string;
+  transactionTypes: string[];
   aidType: string;
   flowType: string;
-  financeType: string;
-  organization: string;
+  financeTypes: string[];
+  organizations: string[];
   dateFrom: string;
   dateTo: string;
-  status: string;
+  statuses: string[];
   transactionSource: string;
 };
 
@@ -341,14 +344,14 @@ export default function TransactionsPage() {
   const [visibleColumns, setVisibleColumns] = useState<TransactionColumnId[]>(DEFAULT_VISIBLE_TRANSACTION_COLUMNS);
   
   const [filters, setFilters] = useState<FilterState>({
-    transactionType: "all",
+    transactionTypes: [],
     aidType: "all",
     flowType: "all",
-    financeType: "all",
-    organization: "all",
+    financeTypes: [],
+    organizations: [],
     dateFrom: "",
     dateTo: "",
-    status: "all",
+    statuses: [],
     transactionSource: "all",
   });
 
@@ -456,10 +459,10 @@ export default function TransactionsPage() {
       setYearlySummaryLoading(true);
       try {
         const params = new URLSearchParams();
-        if (filters.transactionType !== 'all') params.append('transactionType', filters.transactionType);
-        if (filters.status !== 'all') params.append('status', filters.status);
-        if (filters.organization !== 'all') params.append('organization', filters.organization);
-        if (filters.financeType !== 'all') params.append('financeType', filters.financeType);
+        if (filters.transactionTypes.length > 0) params.append('transactionTypes', filters.transactionTypes.join(','));
+        if (filters.statuses.length > 0) params.append('statuses', filters.statuses.join(','));
+        if (filters.organizations.length > 0) params.append('organizations', filters.organizations.join(','));
+        if (filters.financeTypes.length > 0) params.append('financeTypes', filters.financeTypes.join(','));
         if (filters.flowType !== 'all') params.append('flowType', filters.flowType);
         if (filters.dateFrom) params.append('dateFrom', filters.dateFrom);
         if (filters.dateTo) params.append('dateTo', filters.dateTo);
@@ -948,124 +951,116 @@ export default function TransactionsPage() {
         </div>
 
         {/* Search, Filters, and View Controls - All in One Row */}
-        <div className="flex items-center justify-between gap-4 py-4 bg-slate-50 rounded-lg px-4 overflow-visible relative z-[50]">
-          {/* Left Side: Search */}
-          <div className="flex-shrink-0">
-            <Input
-              placeholder="Search transactions..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-[200px]"
-            />
-          </div>
-          
-          {/* Center: Filters */}
-          <div className="flex items-center gap-2 flex-shrink-0">
-            <Select value={filters.transactionType} onValueChange={(value) => setFilters({...filters, transactionType: value})}>
-              <SelectTrigger className="w-[120px]">
-                <SelectValue placeholder="Type" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Types</SelectItem>
-                <SelectItem value="1">Incoming Commitment</SelectItem>
-                <SelectItem value="2">Outgoing Commitment</SelectItem>
-                <SelectItem value="3">Disbursement</SelectItem>
-                <SelectItem value="4">Expenditure</SelectItem>
-                <SelectItem value="5">Interest Repayment</SelectItem>
-                <SelectItem value="6">Loan Repayment</SelectItem>
-                <SelectItem value="7">Reimbursement</SelectItem>
-                <SelectItem value="8">Purchase of Equity</SelectItem>
-                <SelectItem value="9">Sale of Equity</SelectItem>
-                <SelectItem value="11">Credit Guarantee</SelectItem>
-                <SelectItem value="12">Incoming Funds</SelectItem>
-                <SelectItem value="13">Commitment Cancellation</SelectItem>
-              </SelectContent>
-            </Select>
-            <Select value={filters.status} onValueChange={(value) => setFilters({...filters, status: value})}>
-              <SelectTrigger className="w-[110px]">
-                <SelectValue placeholder="Status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Status</SelectItem>
-                <SelectItem value="draft">Draft</SelectItem>
-                <SelectItem value="submitted">Submitted</SelectItem>
-                <SelectItem value="validated">Validated</SelectItem>
-                <SelectItem value="rejected">Rejected</SelectItem>
-                <SelectItem value="actual">Actual</SelectItem>
-              </SelectContent>
-            </Select>
-            <Select value={filters.organization} onValueChange={(value) => setFilters({...filters, organization: value})}>
-              <SelectTrigger className="w-[120px]">
-                <SelectValue placeholder="Organization" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Orgs</SelectItem>
-                {organizations.map((org) => (
-                  <SelectItem key={org.id} value={org.id}>
-                    {org.name && org.acronym && org.name !== org.acronym
-                      ? `${org.name} (${org.acronym})`
-                      : org.name || org.acronym}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Select value={filters.financeType} onValueChange={(value) => setFilters({...filters, financeType: value})}>
-              <SelectTrigger className="w-[160px]">
-                <SelectValue placeholder="Finance Type">
-                  {filters.financeType === "all" ? "All Finance Types" :
-                   financeTypes.find(ft => ft.code === filters.financeType) ? (
-                     <span className="flex items-center gap-1">
-                       <code className="px-1 py-0.5 rounded bg-slate-100 text-slate-700 font-mono text-xs">
-                         {filters.financeType}
-                       </code>
-                       <span className="text-sm truncate">
-                         {financeTypes.find(ft => ft.code === filters.financeType)?.name}
-                       </span>
-                     </span>
-                   ) : "Finance Type"
-                  }
-                </SelectValue>
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Finance Types</SelectItem>
-                {financeTypes.map((ft) => (
-                  <SelectItem key={ft.code} value={ft.code}>
-                    <span className="flex items-center gap-2">
-                      <code className="px-1.5 py-0.5 rounded bg-slate-100 text-slate-700 font-mono text-xs">
-                        {ft.code}
-                      </code>
-                      <span className="text-sm">{ft.name}</span>
-                    </span>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Select value={filters.transactionSource} onValueChange={(value) => setFilters({...filters, transactionSource: value})}>
-              <SelectTrigger className="w-[120px]">
-                <SelectValue placeholder="Source" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Sources</SelectItem>
-                <SelectItem value="own">My Transactions</SelectItem>
-                <SelectItem value="linked">Linked</SelectItem>
-                <SelectItem value="pending_acceptance">Pending</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Right Side: Column Selector + Results Count */}
-          <div className="flex items-center gap-3 flex-shrink-0">
-            <div className="relative z-[200]">
-              <TransactionColumnSelector 
-                visibleColumns={visibleColumns} 
-                onColumnsChange={handleColumnsChange} 
+        <div className="flex items-end gap-3 py-3 bg-slate-50 rounded-lg px-3 border border-gray-200 overflow-visible relative z-[50]">
+          {/* Search */}
+          <div className="flex flex-col gap-1">
+            <Label className="text-xs text-muted-foreground">Search</Label>
+            <div className="relative">
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search transactions..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-[240px] h-9 pl-8"
               />
             </div>
-            <p className="text-sm text-slate-600 whitespace-nowrap">
-              {(transactions?.total || 0) === 0
-                ? "No transactions"
-                : `Showing ${(currentPage - 1) * pageLimit + 1}–${Math.min(currentPage * pageLimit, transactions?.total || 0)} of ${transactions?.total || 0} transactions`}
-            </p>
+          </div>
+
+          {/* Filters */}
+            <div className="flex flex-col gap-1">
+              <Label className="text-xs text-muted-foreground">Type</Label>
+              <MultiSelectFilter
+                options={[
+                  { value: "1", label: "Incoming Commitment", code: "1" },
+                  { value: "2", label: "Outgoing Commitment", code: "2" },
+                  { value: "3", label: "Disbursement", code: "3" },
+                  { value: "4", label: "Expenditure", code: "4" },
+                  { value: "5", label: "Interest Repayment", code: "5" },
+                  { value: "6", label: "Loan Repayment", code: "6" },
+                  { value: "7", label: "Reimbursement", code: "7" },
+                  { value: "8", label: "Purchase of Equity", code: "8" },
+                  { value: "9", label: "Sale of Equity", code: "9" },
+                  { value: "11", label: "Credit Guarantee", code: "11" },
+                  { value: "12", label: "Incoming Funds", code: "12" },
+                  { value: "13", label: "Commitment Cancellation", code: "13" },
+                ]}
+                value={filters.transactionTypes}
+                onChange={(value) => setFilters({...filters, transactionTypes: value})}
+                placeholder="All"
+                searchPlaceholder="Search types..."
+                emptyText="No types found."
+                icon={<Receipt className="h-4 w-4 text-muted-foreground shrink-0" />}
+                className="w-[200px] h-9"
+                dropdownClassName="w-[320px]"
+              />
+            </div>
+            <div className="flex flex-col gap-1">
+              <Label className="text-xs text-muted-foreground">Status</Label>
+              <MultiSelectFilter
+                options={[
+                  { value: "draft", label: "Draft" },
+                  { value: "submitted", label: "Submitted" },
+                  { value: "validated", label: "Validated" },
+                  { value: "rejected", label: "Rejected" },
+                  { value: "actual", label: "Actual" },
+                ]}
+                value={filters.statuses}
+                onChange={(value) => setFilters({...filters, statuses: value})}
+                placeholder="All"
+                searchPlaceholder="Search statuses..."
+                emptyText="No statuses found."
+                icon={<ShieldCheck className="h-4 w-4 text-muted-foreground shrink-0" />}
+                className="w-[160px] h-9"
+                dropdownClassName="w-[240px]"
+              />
+            </div>
+            <div className="flex flex-col gap-1">
+              <Label className="text-xs text-muted-foreground">Organisation</Label>
+              <MultiSelectFilter
+                options={organizations.map((org) => ({
+                  value: org.id,
+                  label: org.name || org.acronym || '',
+                  code: org.acronym || undefined,
+                }))}
+                value={filters.organizations}
+                onChange={(value) => setFilters({...filters, organizations: value})}
+                placeholder="All"
+                searchPlaceholder="Search organisations..."
+                emptyText="No organisations found."
+                icon={<Building2 className="h-4 w-4 text-muted-foreground shrink-0" />}
+                className="w-[220px] h-9"
+                dropdownClassName="w-[400px]"
+              />
+            </div>
+            <div className="flex flex-col gap-1">
+              <Label className="text-xs text-muted-foreground">Finance Type</Label>
+              <MultiSelectFilter
+                options={financeTypes.map((ft) => ({
+                  value: ft.code,
+                  label: ft.name,
+                  code: ft.code,
+                }))}
+                value={filters.financeTypes}
+                onChange={(value) => setFilters({...filters, financeTypes: value})}
+                placeholder="All"
+                searchPlaceholder="Search finance types..."
+                emptyText="No finance types found."
+                icon={<Banknote className="h-4 w-4 text-muted-foreground shrink-0" />}
+                className="w-[200px] h-9"
+                dropdownClassName="w-[320px]"
+              />
+            </div>
+
+          {/* Spacer */}
+          <div className="flex-1" />
+
+          {/* Column Selector */}
+          <div className="flex flex-col gap-1">
+            <Label className="text-xs text-muted-foreground">Columns</Label>
+            <TransactionColumnSelector
+              visibleColumns={visibleColumns}
+              onColumnsChange={handleColumnsChange}
+            />
           </div>
         </div>
         
@@ -1100,7 +1095,7 @@ export default function TransactionsPage() {
               </div>
             </div>
           </div>
-        ) : sortedTransactions.length === 0 && (searchQuery || filters.transactionType !== "all" || filters.status !== "all" || filters.organization !== "all" || filters.financeType !== "all") ? (
+        ) : sortedTransactions.length === 0 && (searchQuery || filters.transactionTypes.length > 0 || filters.statuses.length > 0 || filters.organizations.length > 0 || filters.financeTypes.length > 0) ? (
           <div className="bg-white rounded-md shadow-sm border border-gray-200 p-8 text-center">
             <div className="text-slate-500">No matching transactions found</div>
           </div>

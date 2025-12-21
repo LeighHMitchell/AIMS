@@ -1,7 +1,8 @@
 "use client"
 
 import * as React from "react"
-import { Check, ChevronsUpDown, Search } from "lucide-react"
+import { Check, ChevronsUpDown, Search, X } from "lucide-react"
+import { Input } from "@/components/ui/input"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import {
@@ -22,7 +23,9 @@ export interface SearchableSelectOption {
   value: string
   label: string
   description?: string
+  code?: string  // Optional code to display as a badge before the label
   category?: string
+  icon?: React.ReactNode
 }
 
 interface SearchableSelectProps {
@@ -34,6 +37,9 @@ interface SearchableSelectProps {
   emptyText?: string
   className?: string
   disabled?: boolean
+  showValueCode?: boolean
+  dropdownClassName?: string
+  triggerIcon?: React.ReactNode
 }
 
 export function SearchableSelect({
@@ -45,6 +51,9 @@ export function SearchableSelect({
   emptyText = "No results found.",
   className,
   disabled = false,
+  showValueCode = true,
+  dropdownClassName,
+  triggerIcon,
 }: SearchableSelectProps) {
   const [open, setOpen] = React.useState(false)
   const [search, setSearch] = React.useState("")
@@ -78,7 +87,8 @@ export function SearchableSelect({
         return (
           item.value.toLowerCase().includes(searchLower) ||
           item.label.toLowerCase().includes(searchLower) ||
-          (item.description && item.description.toLowerCase().includes(searchLower))
+          (item.description && item.description.toLowerCase().includes(searchLower)) ||
+          (item.code && item.code.toLowerCase().includes(searchLower))
         )
       })
       
@@ -140,21 +150,22 @@ export function SearchableSelect({
           )}
           disabled={disabled}
         >
-          <span className="truncate">
+          <span className="truncate flex items-center gap-2">
+            {triggerIcon}
+            {selectedOption?.icon}
             {selectedOption ? selectedOption.label : placeholder}
           </span>
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </PopoverTrigger>
-        <PopoverContent 
+        <PopoverContent
           ref={contentRef}
-          className="w-[var(--radix-popover-trigger-width)] p-0 z-[9999]" 
+          className={cn("w-[var(--radix-popover-trigger-width)] p-0 z-[9999]", dropdownClassName)}
           align="start"
         >
           <Command>
-            <div className="flex items-center border-b px-3">
-              <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
-              <input
-                className="flex h-11 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50"
+            <div className="flex items-center border-b px-3 py-2">
+              <Search className="h-4 w-4 text-muted-foreground mr-2 shrink-0" />
+              <Input
                 placeholder={searchPlaceholder}
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
@@ -162,8 +173,15 @@ export function SearchableSelect({
                   // Prevent command from intercepting keyboard navigation
                   e.stopPropagation()
                 }}
+                className="border-0 h-8 focus-visible:ring-0 focus-visible:ring-offset-0 px-0"
                 autoFocus
               />
+              {search && (
+                <X
+                  className="h-4 w-4 text-muted-foreground cursor-pointer hover:text-foreground shrink-0"
+                  onClick={() => setSearch('')}
+                />
+              )}
             </div>
             <CommandList>
               {Object.keys(filteredGroups).length === 0 ? (
@@ -196,10 +214,18 @@ export function SearchableSelect({
                         />
                         <div className="flex flex-col gap-0.5 flex-1">
                           <div className="flex items-center gap-2">
-                            <span className="font-mono text-xs text-muted-foreground">
-                              {option.value}
-                            </span>
-                            <span>{option.label}</span>
+                            {option.icon}
+                            {showValueCode && (
+                              <span className="font-mono text-xs text-muted-foreground">
+                                {option.value}
+                              </span>
+                            )}
+                            {option.code && (
+                              <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded shrink-0">
+                                {option.code}
+                              </span>
+                            )}
+                            <span className="truncate">{option.label}</span>
                           </div>
                           {option.description && (
                             <span className="text-xs text-muted-foreground pl-7">

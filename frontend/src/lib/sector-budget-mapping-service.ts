@@ -316,17 +316,15 @@ export async function applyAutoMapping(
 
       countryBudgetItemsId = existingCbi.id;
     } else {
-      // Check which classification types already have manual mappings
+      // Check which classification codes already have mappings
       const { data: existingItems } = await supabase
         .from('budget_items')
         .select('code, source_sector_code')
         .eq('country_budget_items_id', existingCbi.id);
 
-      // Filter out suggestions that would duplicate existing manual items
+      // Filter out suggestions that would duplicate existing items (both manual and auto-mapped)
       const existingCodes = new Set(
-        (existingItems || [])
-          .filter(item => !item.source_sector_code) // Manual items don't have source_sector_code
-          .map(item => item.code)
+        (existingItems || []).map(item => item.code)
       );
 
       suggestionsToApply = suggestionsToApply.filter(

@@ -8,16 +8,45 @@ export async function PATCH(
   try {
     const { id } = params
     const body = await request.json()
-    const { status } = body
+    const { 
+      status, 
+      title, 
+      description, 
+      start, 
+      end, 
+      location, 
+      type,
+      meetingLink,
+      notificationMinutes,
+      recordingEnabled,
+      aiNotetaking,
+      integrations
+    } = body
 
-    if (!status || !['pending', 'approved', 'rejected'].includes(status)) {
+    // If only status is being updated, validate it
+    if (status && !['pending', 'approved', 'rejected'].includes(status)) {
       return NextResponse.json({ error: 'Invalid status' }, { status: 400 })
     }
 
-    // Update event status in Supabase
+    // Build update object
+    const updateData: any = {}
+    if (status !== undefined) updateData.status = status
+    if (title !== undefined) updateData.title = title
+    if (description !== undefined) updateData.description = description
+    if (start !== undefined) updateData.start = new Date(start).toISOString()
+    if (end !== undefined) updateData.end = end ? new Date(end).toISOString() : null
+    if (location !== undefined) updateData.location = location
+    if (type !== undefined) updateData.type = type
+    if (meetingLink !== undefined) updateData.meeting_link = meetingLink
+    if (notificationMinutes !== undefined) updateData.notification_minutes = notificationMinutes
+    if (recordingEnabled !== undefined) updateData.recording_enabled = recordingEnabled
+    if (aiNotetaking !== undefined) updateData.ai_notetaking = aiNotetaking
+    if (integrations !== undefined) updateData.integrations = integrations
+
+    // Update event in Supabase
     const { data: event, error } = await supabase
       .from('calendar_events')
-      .update({ status })
+      .update(updateData)
       .eq('id', id)
       .select()
       .single()
@@ -43,12 +72,17 @@ export async function PATCH(
       organizerId: event.organizer_id,
       organizerName: event.organizer_name,
       attendees: event.attendees,
+      meetingLink: event.meeting_link,
+      notificationMinutes: event.notification_minutes,
+      recordingEnabled: event.recording_enabled,
+      aiNotetaking: event.ai_notetaking,
+      integrations: event.integrations,
       createdAt: event.created_at,
       updatedAt: event.updated_at
     }
 
     return NextResponse.json({ 
-      message: `Event ${status} successfully`,
+      message: status ? `Event ${status} successfully` : 'Event updated successfully',
       event: transformedEvent
     })
   } catch (error) {

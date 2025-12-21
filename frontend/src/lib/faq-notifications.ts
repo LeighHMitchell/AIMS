@@ -129,7 +129,7 @@ export async function notifyUserOfAnswer(
 
 /**
  * Get managers for notifications
- * Returns user IDs of all users with super_user, manager, or global_admin role
+ * Returns user IDs of all users with super_user, manager, global_admin, or admin role
  */
 export async function getManagerUserIds(): Promise<string[]> {
   const supabase = getSupabaseAdmin();
@@ -140,15 +140,18 @@ export async function getManagerUserIds(): Promise<string[]> {
 
   const { data, error } = await supabase
     .from('users')
-    .select('id')
-    .in('role', ['super_user', 'manager', 'global_admin']);
+    .select('id, role')
+    .in('role', ['super_user', 'manager', 'global_admin', 'admin']);
 
   if (error) {
     console.error('[FAQ Notifications] Error fetching managers:', error);
     return [];
   }
 
-  return (data || []).map((u) => u.id);
+  const managerIds = (data || []).map((u) => u.id);
+  console.log(`[FAQ Notifications] Found ${managerIds.length} managers/admins:`, data?.map(u => ({ id: u.id, role: u.role })));
+  
+  return managerIds;
 }
 
 /**

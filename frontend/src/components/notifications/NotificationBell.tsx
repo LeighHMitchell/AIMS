@@ -10,7 +10,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Bell, Check, HelpCircle, MessageSquare, ExternalLink } from 'lucide-react';
+import { Bell, Check, HelpCircle, MessageSquare, ExternalLink, Calendar } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
 import { formatDistanceToNow } from 'date-fns';
@@ -44,8 +44,16 @@ export function NotificationBell({ userId }: NotificationBellProps) {
       const response = await fetch(`/api/notifications/user?userId=${userId}&limit=10`);
       if (response.ok) {
         const data = await response.json();
+        console.log('[NotificationBell] Fetched notifications:', { 
+          count: data.data?.length || 0, 
+          unreadCount: data.unreadCount || 0,
+          userId 
+        });
         setNotifications(data.data || []);
         setUnreadCount(data.unreadCount || 0);
+      } else {
+        const errorData = await response.json().catch(() => ({}));
+        console.error('[NotificationBell] Error response:', response.status, errorData);
       }
     } catch (error) {
       console.error('[NotificationBell] Error fetching:', error);
@@ -103,6 +111,8 @@ export function NotificationBell({ userId }: NotificationBellProps) {
         return <HelpCircle className="h-4 w-4 text-green-500" />;
       case 'faq_new_question':
         return <MessageSquare className="h-4 w-4 text-blue-500" />;
+      case 'calendar_event_pending':
+        return <Calendar className="h-4 w-4 text-orange-500" />;
       default:
         return <Bell className="h-4 w-4 text-gray-500" />;
     }
@@ -185,20 +195,16 @@ export function NotificationBell({ userId }: NotificationBellProps) {
           </div>
         )}
 
-        {notifications.length > 0 && (
-          <>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem
-              className="text-center text-sm text-blue-600 cursor-pointer justify-center"
-              onClick={() => {
-                router.push('/notifications');
-                setOpen(false);
-              }}
-            >
-              View all notifications
-            </DropdownMenuItem>
-          </>
-        )}
+        <DropdownMenuSeparator />
+        <DropdownMenuItem
+          className="text-center text-sm text-blue-600 cursor-pointer justify-center"
+          onClick={() => {
+            router.push('/notifications');
+            setOpen(false);
+          }}
+        >
+          View all notifications
+        </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   );

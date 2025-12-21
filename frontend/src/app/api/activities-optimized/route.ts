@@ -40,9 +40,17 @@ export async function GET(request: NextRequest) {
     const page = parseInt(searchParams.get('page') || '1', 10);
     const limit = Math.min(parseInt(searchParams.get('limit') || '20', 10), 100); // Cap at 100
     const search = searchParams.get('search') || '';
-    const activityStatus = searchParams.get('activityStatus');
+
+    // Support both single values and comma-separated arrays for backward compatibility
+    const activityStatus = searchParams.get('activityStatus'); // Legacy single value
+    const activityStatuses = searchParams.get('activityStatuses')?.split(',').filter(Boolean) || [];
     const publicationStatus = searchParams.get('publicationStatus');
-    const submissionStatus = searchParams.get('submissionStatus');
+    const submissionStatus = searchParams.get('submissionStatus'); // Legacy single value
+    const submissionStatuses = searchParams.get('submissionStatuses')?.split(',').filter(Boolean) || [];
+    const reportedByOrgs = searchParams.get('reportedByOrgs')?.split(',').filter(Boolean) || [];
+    const aidTypes = searchParams.get('aidTypes')?.split(',').filter(Boolean) || [];
+    const flowTypes = searchParams.get('flowTypes')?.split(',').filter(Boolean) || [];
+    const tiedStatuses = searchParams.get('tiedStatuses')?.split(',').filter(Boolean) || [];
     const sortField = searchParams.get('sortField') || 'updated_at';
     const sortOrder = searchParams.get('sortOrder') || 'desc';
 
@@ -126,7 +134,11 @@ export async function GET(request: NextRequest) {
       dataQuery = dataQuery.or(orCondition);
     }
 
-    if (activityStatus && activityStatus !== 'all') {
+    // Activity status - support both array and single value
+    if (activityStatuses.length > 0) {
+      countQuery = countQuery.in('activity_status', activityStatuses);
+      dataQuery = dataQuery.in('activity_status', activityStatuses);
+    } else if (activityStatus && activityStatus !== 'all') {
       countQuery = countQuery.eq('activity_status', activityStatus);
       dataQuery = dataQuery.eq('activity_status', activityStatus);
     }
@@ -136,9 +148,37 @@ export async function GET(request: NextRequest) {
       dataQuery = dataQuery.eq('publication_status', publicationStatus);
     }
 
-    if (submissionStatus && submissionStatus !== 'all') {
+    // Submission status - support both array and single value
+    if (submissionStatuses.length > 0) {
+      countQuery = countQuery.in('submission_status', submissionStatuses);
+      dataQuery = dataQuery.in('submission_status', submissionStatuses);
+    } else if (submissionStatus && submissionStatus !== 'all') {
       countQuery = countQuery.eq('submission_status', submissionStatus);
       dataQuery = dataQuery.eq('submission_status', submissionStatus);
+    }
+
+    // Reported by organization filter
+    if (reportedByOrgs.length > 0) {
+      countQuery = countQuery.in('reporting_org_id', reportedByOrgs);
+      dataQuery = dataQuery.in('reporting_org_id', reportedByOrgs);
+    }
+
+    // Aid type filter
+    if (aidTypes.length > 0) {
+      countQuery = countQuery.in('default_aid_type', aidTypes);
+      dataQuery = dataQuery.in('default_aid_type', aidTypes);
+    }
+
+    // Flow type filter
+    if (flowTypes.length > 0) {
+      countQuery = countQuery.in('default_flow_type', flowTypes);
+      dataQuery = dataQuery.in('default_flow_type', flowTypes);
+    }
+
+    // Tied status filter
+    if (tiedStatuses.length > 0) {
+      countQuery = countQuery.in('default_tied_status', tiedStatuses);
+      dataQuery = dataQuery.in('default_tied_status', tiedStatuses);
     }
 
     // Apply sorting with field mapping

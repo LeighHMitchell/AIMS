@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react'
 
 interface SystemSettings {
   homeCountry: string
+  defaultLanguage: string
+  defaultCurrency: string
 }
 
 interface UseSystemSettingsReturn {
@@ -21,12 +23,12 @@ export function useSystemSettings(): UseSystemSettingsReturn {
     try {
       setLoading(true)
       setError(null)
-      
+
       const response = await fetch('/api/admin/system-settings')
       if (!response.ok) {
         throw new Error('Failed to fetch system settings')
       }
-      
+
       const data = await response.json()
       setSettings(data)
     } catch (err) {
@@ -41,7 +43,7 @@ export function useSystemSettings(): UseSystemSettingsReturn {
   const updateSettings = async (newSettings: SystemSettings): Promise<boolean> => {
     try {
       setError(null)
-      
+
       const response = await fetch('/api/admin/system-settings', {
         method: 'POST',
         headers: {
@@ -59,10 +61,14 @@ export function useSystemSettings(): UseSystemSettingsReturn {
 
       // Only update settings if we get success
       if (data.success) {
-        setSettings({ homeCountry: data.homeCountry })
+        setSettings({
+          homeCountry: data.homeCountry,
+          defaultLanguage: data.defaultLanguage,
+          defaultCurrency: data.defaultCurrency
+        })
         return true
       }
-      
+
       throw new Error('Update failed without error message')
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Unknown error'

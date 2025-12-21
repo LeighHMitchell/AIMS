@@ -1,12 +1,11 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { NotificationItem } from "@/components/NotificationItem"
 import { AtSign, Bell, AlertCircle, Loader2, RefreshCw } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { supabase } from "@/lib/supabase"
 import { toast } from "sonner"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 
@@ -19,53 +18,33 @@ export interface Notification {
   isRead: boolean
   activityId?: string
   activityTitle?: string
-  userId?: string
-  userName?: string
+  link?: string
 }
 
 interface NotificationTabsProps {
   userId: string
 }
 
-// Convert database notification to component notification
-const mapDbNotification = (dbNotif: any): Notification => ({
-  id: dbNotif.id,
-  type: dbNotif.type,
-  title: dbNotif.title,
-  description: dbNotif.description,
-  timestamp: dbNotif.created_at,
-  isRead: dbNotif.is_read,
-  activityId: dbNotif.activity_id,
-  activityTitle: dbNotif.activity_title,
-  userId: dbNotif.related_user_id,
-  userName: dbNotif.related_user_name,
-})
+// Convert API notification to component notification
+const mapApiNotification = (apiNotif: any): Notification => {
+  // Map notification types - faq_question_answered and faq_new_question are system type
+  let type: "mention" | "system" = "system"
+  if (apiNotif.type === "mention") {
+    type = "mention"
+  }
 
-// Mock notifications for when Supabase is not available
-const getMockNotifications = (userId: string): Notification[] => [
-  {
-    id: "1",
-    type: "mention",
-    title: "John Doe mentioned you",
-    description: "You were mentioned in a comment on 'Water Supply Project Phase 2'",
-    timestamp: new Date(Date.now() - 1000 * 60 * 30).toISOString(),
-    isRead: false,
-    activityId: "activity-123",
-    activityTitle: "Water Supply Project Phase 2",
-    userId: "user-1",
-    userName: "John Doe"
-  },
-  {
-    id: "2",
-    type: "system",
-    title: "Activity Validated",
-    description: "Your activity 'Rural Education Initiative' has been validated by the government partner",
-    timestamp: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString(),
-    isRead: false,
-    activityId: "activity-456",
-    activityTitle: "Rural Education Initiative"
-  },
-]
+  return {
+    id: apiNotif.id,
+    type,
+    title: apiNotif.title,
+    description: apiNotif.message,
+    timestamp: apiNotif.created_at,
+    isRead: apiNotif.is_read,
+    activityId: apiNotif.metadata?.activity_id,
+    activityTitle: apiNotif.metadata?.activity_title,
+    link: apiNotif.link,
+  }
+}
 
 export function NotificationTabs({ userId }: NotificationTabsProps) {
   const [notifications, setNotifications] = useState<Notification[]>([])
@@ -73,90 +52,35 @@ export function NotificationTabs({ userId }: NotificationTabsProps) {
   const [isRefreshing, setIsRefreshing] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const fetchNotifications = async (showLoadingIndicator = true) => {
+  const fetchNotifications = useCallback(async (showLoadingIndicator = true) => {
     if (showLoadingIndicator) {
       setIsLoading(true)
     }
     setError(null)
 
     try {
-      if (!supabase) {
-        // Use mock data if Supabase is not configured
-        setNotifications(getMockNotifications(userId))
-        return
+      const response = await fetch(`/api/notifications/user?userId=${userId}&limit=100`)
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch notifications')
       }
 
-      const { data, error } = await supabase
-        .from('notifications')
-        .select('*')
-        .eq('user_id', userId)
-        .order('created_at', { ascending: false })
-        .limit(100)
-
-      if (error) {
-        throw error
-      }
-
-      const mappedNotifications = (data || []).map(mapDbNotification)
+      const result = await response.json()
+      const mappedNotifications = (result.data || []).map(mapApiNotification)
       setNotifications(mappedNotifications)
     } catch (error: any) {
       console.error('Error fetching notifications:', error)
       setError(error.message || 'Failed to load notifications')
-      // Still show mock data on error
-      setNotifications(getMockNotifications(userId))
+      setNotifications([])
     } finally {
       setIsLoading(false)
       setIsRefreshing(false)
     }
-  }
+  }, [userId])
 
   useEffect(() => {
     fetchNotifications()
-  }, [userId])
-
-  // Set up real-time subscription for new notifications
-  useEffect(() => {
-    if (!supabase) return
-
-    const channel = supabase
-      .channel('notifications_changes')
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'notifications',
-          filter: `user_id=eq.${userId}`
-        },
-        (payload: any) => {
-          const newNotification = mapDbNotification(payload.new)
-          setNotifications(prev => [newNotification, ...prev])
-          toast.info('New notification received')
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'notifications',
-          filter: `user_id=eq.${userId}`
-        },
-        (payload: any) => {
-          const updatedNotification = mapDbNotification(payload.new)
-          setNotifications(prev =>
-            prev.map(notif =>
-              notif.id === updatedNotification.id ? updatedNotification : notif
-            )
-          )
-        }
-      )
-      .subscribe()
-
-    return () => {
-      supabase.removeChannel(channel)
-    }
-  }, [userId])
+  }, [fetchNotifications])
 
   const handleMarkAsRead = async (notificationId: string) => {
     // Optimistic update
@@ -166,19 +90,15 @@ export function NotificationTabs({ userId }: NotificationTabsProps) {
       )
     )
 
-    if (!supabase) return
-
     try {
-      const { error } = await supabase
-        .from('notifications')
-        .update({ 
-          is_read: true,
-          read_at: new Date().toISOString()
-        })
-        .eq('id', notificationId)
+      const response = await fetch('/api/notifications/user', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId, notificationIds: [notificationId] }),
+      })
 
-      if (error) {
-        throw error
+      if (!response.ok) {
+        throw new Error('Failed to mark as read')
       }
     } catch (error: any) {
       console.error('Error marking notification as read:', error)
@@ -206,19 +126,15 @@ export function NotificationTabs({ userId }: NotificationTabsProps) {
       )
     )
 
-    if (!supabase) return
-
     try {
-      const { error } = await supabase
-        .from('notifications')
-        .update({ 
-          is_read: true,
-          read_at: new Date().toISOString()
-        })
-        .in('id', notificationsToUpdate)
+      const response = await fetch('/api/notifications/user', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId, notificationIds: notificationsToUpdate }),
+      })
 
-      if (error) {
-        throw error
+      if (!response.ok) {
+        throw new Error('Failed to mark all as read')
       }
 
       toast.success(`All ${type} notifications marked as read`)
@@ -276,7 +192,6 @@ export function NotificationTabs({ userId }: NotificationTabsProps) {
       {/* Header with refresh button */}
       <div className="flex items-center justify-between">
         <p className="text-sm text-muted-foreground">
-          {!supabase && "Showing demo notifications. "}
           Last updated: {new Date().toLocaleTimeString()}
         </p>
         <Button

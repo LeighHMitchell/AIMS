@@ -1,6 +1,7 @@
 "use client"
 
 import React from "react"
+import { Activity } from "lucide-react"
 import {
   Select,
   SelectContent,
@@ -18,7 +19,7 @@ interface ActivityStatusFilterOption {
 const activityStatusFilterOptions: ActivityStatusFilterOption[] = [
   {
     value: "all",
-    label: "All Status Types",
+    label: "All",
     description: "Show activities with any status",
   },
   {
@@ -71,7 +72,10 @@ export function ActivityStatusFilterSelect({
   return (
     <Select value={value} onValueChange={onValueChange} disabled={disabled}>
       <SelectTrigger className={`h-9 ${className || ''}`}>
-        <SelectValue placeholder={placeholder} />
+        <div className="flex items-center gap-2">
+          <Activity className="h-4 w-4 text-muted-foreground shrink-0" />
+          <SelectValue placeholder={placeholder} />
+        </div>
       </SelectTrigger>
       <SelectContent>
         {activityStatusFilterOptions.map((option) => (
@@ -79,6 +83,9 @@ export function ActivityStatusFilterSelect({
             key={option.value}
             value={option.value}
           >
+            {option.value !== "all" && (
+              <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded mr-2">{option.value}</span>
+            )}
             {option.label}
           </SelectItem>
         ))}

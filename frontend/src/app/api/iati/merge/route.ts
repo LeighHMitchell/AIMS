@@ -114,6 +114,23 @@ export async function POST(request: NextRequest) {
     iatiAnalytics.optionSelected('merge', meta.iatiId, meta.reportingOrgRef);
     iatiAnalytics.importCompleted('merge', targetActivityId);
 
+    // Log to iati_import_logs
+    await supabase
+      .from('iati_import_logs')
+      .insert({
+        import_source: 'merge',
+        activity_id: targetActivityId,
+        iati_identifier: meta.iatiId,
+        activity_title: meta.title || targetActivity.title_narrative,
+        reporting_org_ref: meta.reportingOrgRef,
+        reporting_org_name: meta.reportingOrgName,
+        import_type: 'merge',
+        import_status: 'success',
+        iati_datastore_url: meta.iatiId
+          ? `https://datastore.iatistandard.org/search/activity?q=iati-identifier:${encodeURIComponent(meta.iatiId)}`
+          : null
+      });
+
     console.log('[IATI Merge] Successfully linked external activity to:', targetActivityId);
 
     return NextResponse.json({

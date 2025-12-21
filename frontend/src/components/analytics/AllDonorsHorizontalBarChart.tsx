@@ -15,8 +15,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { BarChart3, DollarSign, Wallet, Calendar, Search, TrendingUp, Download, FileImage, Table as TableIcon, AlertCircle } from 'lucide-react'
+import { BarChart3, DollarSign, Wallet, Calendar, Search, Download, FileImage, Table as TableIcon, AlertCircle } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 
@@ -559,15 +558,6 @@ export function AllDonorsHorizontalBarChart({ dateRange, refreshKey, onDataChang
                   <SelectItem value="70">Private Sector</SelectItem>
                 </SelectContent>
               </Select>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setShowPercentage(!showPercentage)}
-                className={showPercentage ? 'bg-slate-100' : ''}
-              >
-                <TrendingUp className="h-4 w-4 mr-2" />
-                {showPercentage ? 'Hide' : 'Show'} %
-              </Button>
             </div>
 
             {/* View Controls and Export - Right Side */}
@@ -619,15 +609,6 @@ export function AllDonorsHorizontalBarChart({ dateRange, refreshKey, onDataChang
       </CardHeader>
       <CardContent id="all-donors-chart">
         <div className="space-y-4">
-          <div className="flex items-center gap-2">
-            <Badge variant="secondary" className="text-xs">
-              Showing {chartData.length} organization{chartData.length !== 1 ? 's' : ''}
-            </Badge>
-            <Badge variant="outline" className="text-xs">
-              Total: {formatCurrency(total)}
-            </Badge>
-          </div>
-
           {chartViewMode === 'table' ? (
             <div className="rounded-md border overflow-auto max-h-[600px]">
               <Table>

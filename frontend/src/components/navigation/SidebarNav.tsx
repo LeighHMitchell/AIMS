@@ -69,6 +69,7 @@ export function SidebarNav({ userRole, canManageUsers, isLoading, isCollapsed = 
         { name: "Atlas", href: "/aid-map", show: true },
         { name: "Search", href: "/search", show: true },
         { name: "Aid Effectiveness", href: "/aid-effectiveness-dashboard", show: true },
+        { name: "Portfolios", href: "/partners", show: true },
       ]
     },
     {
@@ -95,7 +96,6 @@ export function SidebarNav({ userRole, canManageUsers, isLoading, isCollapsed = 
       defaultOpen: true,
       items: [
         { name: "Organizations", href: "/organizations", show: true },
-        { name: "Partners", href: "/partners", show: true },
         { name: "Rolodex", href: "/rolodex", show: true },
       ]
     },

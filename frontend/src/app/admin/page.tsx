@@ -7,7 +7,7 @@ import { MainLayout } from "@/components/layout/main-layout"
 import { AdminUserTable } from "@/components/AdminUserTable"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Shield, Users, FileText, AlertCircle, Settings, MessageSquare, Landmark, DollarSign, Map, HelpCircle } from "lucide-react"
+import { Shield, Users, FileText, AlertCircle, Settings, MessageSquare, Landmark, DollarSign, Map, HelpCircle, Book, FileCode2, Calendar } from "lucide-react"
 import { USER_ROLES } from "@/types/user"
 import { SystemsSettings } from "@/components/admin/SystemsSettings"
 import { FeedbackManagement } from "@/components/admin/FeedbackManagement"
@@ -15,15 +15,22 @@ import { BudgetClassificationsManagement } from "@/components/admin/BudgetClassi
 import { DomesticBudgetManagement } from "@/components/admin/DomesticBudgetManagement"
 import { SectorMappingsManagement } from "@/components/admin/SectorMappingsManagement"
 import { FAQManagement } from "@/components/admin/FAQManagement"
+import { CountrySectorVocabularyManagement } from "@/components/admin/CountrySectorVocabularyManagement"
+import { PendingValidationsManagement } from "@/components/admin/PendingValidationsManagement"
+import { IATIImportLogsManagement } from "@/components/admin/IATIImportLogsManagement"
+import { ProjectReferencesManagement } from "@/components/admin/ProjectReferencesManagement"
+import { EventManagement } from "@/components/calendar/EventManagement"
 
 function AdminPageContent() {
   const { user, isLoading } = useUser()
   const router = useRouter()
   const searchParams = useSearchParams()
   const [activeTab, setActiveTab] = useState("users")
+  const [activeSubTab, setActiveSubTab] = useState("classifications")
 
   // Valid tab values
-  const validTabs = ["users", "import-logs", "validations", "feedback", "faq", "systems", "chart-of-accounts", "domestic-budget", "sector-mappings"]
+  const validTabs = ["users", "import-logs", "validations", "feedback", "faq", "systems", "chart-of-accounts", "project-references", "calendar-events"]
+  const validSubTabs = ["classifications", "sector-mappings", "country-sectors", "domestic-budget"]
 
   useEffect(() => {
     // Redirect if user is not super_user
@@ -34,19 +41,36 @@ function AdminPageContent() {
 
   // Initialize tab from URL or default to "users"
   useEffect(() => {
-    const tabFromUrl = searchParams.get("tab")
+    const tabFromUrl = searchParams?.get("tab")
+    const subTabFromUrl = searchParams?.get("subtab")
     if (tabFromUrl && validTabs.includes(tabFromUrl)) {
       setActiveTab(tabFromUrl)
     } else {
       setActiveTab("users")
+    }
+    if (subTabFromUrl && validSubTabs.includes(subTabFromUrl)) {
+      setActiveSubTab(subTabFromUrl)
+    } else {
+      setActiveSubTab("classifications")
     }
   }, [searchParams])
 
   // Handle tab change and update URL
   const handleTabChange = (value: string) => {
     setActiveTab(value)
-    const params = new URLSearchParams(searchParams.toString())
+    const params = new URLSearchParams(searchParams?.toString() || "")
     params.set("tab", value)
+    // Clear subtab when switching main tabs
+    params.delete("subtab")
+    setActiveSubTab("classifications")
+    router.replace(`/admin?${params.toString()}`, { scroll: false })
+  }
+
+  // Handle sub-tab change and update URL
+  const handleSubTabChange = (value: string) => {
+    setActiveSubTab(value)
+    const params = new URLSearchParams(searchParams?.toString() || "")
+    params.set("subtab", value)
     router.replace(`/admin?${params.toString()}`, { scroll: false })
   }
 
@@ -127,13 +151,13 @@ function AdminPageContent() {
               <Landmark className="h-4 w-4" />
               Chart of Accounts
             </TabsTrigger>
-            <TabsTrigger value="domestic-budget" className="flex items-center gap-2">
-              <DollarSign className="h-4 w-4" />
-              Domestic Budget
+            <TabsTrigger value="project-references" className="flex items-center gap-2">
+              <FileCode2 className="h-4 w-4" />
+              Project References
             </TabsTrigger>
-            <TabsTrigger value="sector-mappings" className="flex items-center gap-2">
-              <Map className="h-4 w-4" />
-              Sector Mappings
+            <TabsTrigger value="calendar-events" className="flex items-center gap-2">
+              <Calendar className="h-4 w-4" />
+              Calendar Events
             </TabsTrigger>
           </TabsList>
 
@@ -142,43 +166,11 @@ function AdminPageContent() {
           </TabsContent>
 
           <TabsContent value="import-logs" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>IATI Import Logs</CardTitle>
-                <CardDescription>
-                  View and manage IATI data import history
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-center justify-center py-12 text-muted-foreground">
-                  <div className="text-center">
-                    <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                    <p>Import logs feature coming soon</p>
-                    <p className="text-sm mt-2">Track all IATI data imports and their status</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+            <IATIImportLogsManagement />
           </TabsContent>
 
           <TabsContent value="validations" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Pending Validations</CardTitle>
-                <CardDescription>
-                  Review and approve activities awaiting validation
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-center justify-center py-12 text-muted-foreground">
-                  <div className="text-center">
-                    <AlertCircle className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                    <p>Validation queue feature coming soon</p>
-                    <p className="text-sm mt-2">Review activities submitted for validation</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+            <PendingValidationsManagement />
           </TabsContent>
 
           <TabsContent value="feedback" className="space-y-6">
@@ -194,15 +186,50 @@ function AdminPageContent() {
           </TabsContent>
 
           <TabsContent value="chart-of-accounts" className="space-y-6">
-            <BudgetClassificationsManagement />
+            <Tabs value={activeSubTab} onValueChange={handleSubTabChange}>
+              <TabsList className="mb-4">
+                <TabsTrigger value="classifications" className="flex items-center gap-2">
+                  <Landmark className="h-4 w-4" />
+                  Classifications
+                </TabsTrigger>
+                <TabsTrigger value="sector-mappings" className="flex items-center gap-2">
+                  <Map className="h-4 w-4" />
+                  Sector Mappings
+                </TabsTrigger>
+                <TabsTrigger value="country-sectors" className="flex items-center gap-2">
+                  <Book className="h-4 w-4" />
+                  Country Sectors
+                </TabsTrigger>
+                <TabsTrigger value="domestic-budget" className="flex items-center gap-2">
+                  <DollarSign className="h-4 w-4" />
+                  Domestic Budget
+                </TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="classifications">
+                <BudgetClassificationsManagement />
+              </TabsContent>
+
+              <TabsContent value="sector-mappings">
+                <SectorMappingsManagement />
+              </TabsContent>
+
+              <TabsContent value="country-sectors">
+                <CountrySectorVocabularyManagement />
+              </TabsContent>
+
+              <TabsContent value="domestic-budget">
+                <DomesticBudgetManagement />
+              </TabsContent>
+            </Tabs>
           </TabsContent>
 
-          <TabsContent value="domestic-budget" className="space-y-6">
-            <DomesticBudgetManagement />
+          <TabsContent value="project-references" className="space-y-6">
+            <ProjectReferencesManagement />
           </TabsContent>
 
-          <TabsContent value="sector-mappings" className="space-y-6">
-            <SectorMappingsManagement />
+          <TabsContent value="calendar-events" className="space-y-6">
+            <EventManagement />
           </TabsContent>
         </Tabs>
       </div>

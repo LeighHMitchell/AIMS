@@ -15,7 +15,7 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Checkbox } from '@/components/ui/checkbox'
-import { Search, Plus, Edit2, Eye, Trash2, ExternalLink, Globe, MapPin, Users, Activity, DollarSign, Building2, AlertTriangle, Copy, Upload, X, ImageIcon, Info, TableIcon, Grid3X3, Calendar, Mail, Phone, HelpCircle, User, Lock, MoreVertical } from 'lucide-react'
+import { Search, Plus, Edit2, Eye, Trash2, ExternalLink, Globe, MapPin, Users, Activity, DollarSign, Building2, AlertTriangle, Copy, Upload, X, ImageIcon, Info, TableIcon, Grid3X3, Calendar, Mail, Phone, HelpCircle, User, Lock, MoreVertical, Download } from 'lucide-react'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
@@ -23,7 +23,6 @@ import { useDropzone } from 'react-dropzone'
 import Flag from 'react-world-flags'
 import { CreateCustomGroupModal } from '@/components/organizations/CreateCustomGroupModal'
 import { EditCustomGroupModal } from '@/components/organizations/EditCustomGroupModal'
-import { EditOrganizationModal } from '@/components/organizations/EditOrganizationModal'
 import { OrganizationTable } from '@/components/organizations/OrganizationTable'
 import { CustomGroupCard } from '@/components/organizations/CustomGroupCard'
 import {
@@ -1159,7 +1158,6 @@ function OrganizationsPageContent() {
   const [searchTerm, setSearchTerm] = useState('')
   const [activeFilter, setActiveFilter] = useState('all')
   const [selectedOrganization, setSelectedOrganization] = useState<Organization | null>(null)
-  const [editModalOpen, setEditModalOpen] = useState(false)
   const [deleteModalOpen, setDeleteModalOpen] = useState(false)
   const [summary, setSummary] = useState<OrganizationSummary | null>(null)
   const [activeTagFilters, setActiveTagFilters] = useState<Set<string>>(new Set())
@@ -1511,13 +1509,11 @@ function OrganizationsPageContent() {
   // efficiently in bulk via /api/organizations/bulk-stats endpoint
 
   const handleEditOrganization = (organization: Organization) => {
-    setSelectedOrganization(organization)
-    setEditModalOpen(true)
+    router.push(`/organizations/${organization.id}/edit`)
   }
 
   const handleAddOrganization = () => {
-    setSelectedOrganization(null)
-    setEditModalOpen(true)
+    router.push('/organizations/new')
   }
 
   const handleDeleteOrganization = (organization: Organization) => {
@@ -1525,46 +1521,6 @@ function OrganizationsPageContent() {
     setDeleteModalOpen(true)
   }
 
-  const handleSaveOrganization = async (data: Partial<Organization>) => {
-    try {
-      console.log('[OrganizationsPage] Saving organization with data:', data);
-      
-      const isCreating = !data.id;
-      const method = isCreating ? 'POST' : 'PUT';
-      
-      const response = await fetch('/api/organizations', {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data)
-      })
-      
-      // Only try to parse JSON if we have a valid response
-      let responseData;
-      try {
-        responseData = await response.json();
-      } catch (jsonError) {
-        // If JSON parsing fails, create a generic error response
-        console.error('[OrganizationsPage] Failed to parse response as JSON:', jsonError);
-        responseData = { 
-          error: `Server returned ${response.status}: ${response.statusText}` 
-        };
-      }
-      
-      if (!response.ok) {
-        console.error('[OrganizationsPage] Save failed:', responseData);
-        const action = isCreating ? 'create' : 'update';
-        throw new Error(responseData.error || `Failed to ${action} organization`)
-      }
-      
-      console.log('[OrganizationsPage] Save successful:', responseData);
-      
-      // Refresh organizations list with cache busting to ensure new org appears immediately
-      await fetchOrganizations(true)
-    } catch (error) {
-      console.error('[OrganizationsPage] Error in handleSaveOrganization:', error);
-      throw error; // Re-throw to be handled by the modal
-    }
-  }
 
   const handleConfirmDelete = async () => {
     if (!selectedOrganization) return
@@ -1690,16 +1646,23 @@ function OrganizationsPageContent() {
             <p className="text-gray-600 mt-1">Browse and explore our development partner network</p>
           </div>
           
-          <div className="flex items-center space-x-4">
-
-            <Button variant="outline" className="flex items-center space-x-2">
-              <ExternalLink className="h-4 w-4" />
-              <span>Export All Partners</span>
-            </Button>
+          <div className="flex items-center space-x-2">
             <Button className="flex items-center space-x-2" onClick={handleAddOrganization}>
               <Plus className="h-4 w-4" />
               <span>Add Organization</span>
             </Button>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button variant="outline" size="icon" aria-label="Export to CSV">
+                    <Download className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Export to CSV</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           </div>
         </div>
 
@@ -2089,17 +2052,7 @@ function OrganizationsPageContent() {
           </TabsContent>
         </Tabs>
 
-        {/* Edit Modal */}
-        <EditOrganizationModal
-          organization={selectedOrganization}
-          isOpen={editModalOpen}
-          onClose={() => {
-            setEditModalOpen(false)
-            setSelectedOrganization(null)
-          }}
-          onSave={handleSaveOrganization}
-          onDelete={handleDeleteOrganization}
-        />
+        {/* Edit Modal - Removed, now using full-page editor at /organizations/[id]/edit */}
 
         {/* Delete Confirmation Modal */}
         <DeleteConfirmationModal

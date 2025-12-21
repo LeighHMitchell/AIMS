@@ -3,12 +3,13 @@ import { getSupabaseAdmin } from '@/lib/supabase';
 import { TransactionType } from '@/types/transaction';
 import { createClient } from '@/lib/supabase-simple';
 import { fixedCurrencyConverter } from '@/lib/currency-converter-fixed';
-import { 
-  cleanTransactionFields, 
-  cleanEnumValue, 
-  cleanUUIDValue, 
-  cleanDateValue 
+import {
+  cleanTransactionFields,
+  cleanEnumValue,
+  cleanUUIDValue,
+  cleanDateValue
 } from '@/lib/transaction-field-cleaner';
+import { inferAndApplyBudgetLines } from '@/lib/transaction-budget-inference';
 
 export const dynamic = 'force-dynamic';
 
@@ -132,11 +133,15 @@ export async function GET(request: Request) {
     // Search query
     const search = searchParams.get('search') || '';
     
-    // Filters
-    const transactionType = searchParams.get('transactionType');
+    // Filters - support both array (comma-separated) and single values for backwards compatibility
+    const transactionTypes = searchParams.get('transactionTypes')?.split(',').filter(Boolean) || [];
+    const transactionType = searchParams.get('transactionType'); // Legacy single value
     const flowType = searchParams.get('flowType');
-    const financeType = searchParams.get('financeType');
-    const status = searchParams.get('status');
+    const financeTypes = searchParams.get('financeTypes')?.split(',').filter(Boolean) || [];
+    const financeType = searchParams.get('financeType'); // Legacy single value
+    const statuses = searchParams.get('statuses')?.split(',').filter(Boolean) || [];
+    const status = searchParams.get('status'); // Legacy single value
+    const organizations = searchParams.get('organizations')?.split(',').filter(Boolean) || [];
     const dateFrom = searchParams.get('dateFrom');
     const dateTo = searchParams.get('dateTo');
     const includeLinked = searchParams.get('includeLinked') !== 'false'; // Default to true
@@ -188,8 +193,10 @@ export async function GET(request: Request) {
         )
       `, { count: 'exact' });
     
-    // Apply filters
-    if (transactionType && transactionType !== 'all') {
+    // Apply filters - support both array and single value for backwards compatibility
+    if (transactionTypes.length > 0) {
+      query = query.in('transaction_type', transactionTypes);
+    } else if (transactionType && transactionType !== 'all') {
       query = query.eq('transaction_type', transactionType);
     }
 
@@ -197,12 +204,21 @@ export async function GET(request: Request) {
       query = query.eq('flow_type', flowType);
     }
 
-    if (financeType && financeType !== 'all') {
+    if (financeTypes.length > 0) {
+      query = query.in('finance_type', financeTypes);
+    } else if (financeType && financeType !== 'all') {
       query = query.eq('finance_type', financeType);
     }
 
-    if (status && status !== 'all') {
+    if (statuses.length > 0) {
+      query = query.in('status', statuses);
+    } else if (status && status !== 'all') {
       query = query.eq('status', status);
+    }
+
+    // Organization filter - filter by provider or receiver org
+    if (organizations.length > 0) {
+      query = query.or(`provider_org_id.in.(${organizations.join(',')}),receiver_org_id.in.(${organizations.join(',')})`);
     }
     
     if (dateFrom) {
@@ -559,6 +575,70 @@ async function performCurrencyConversion(
   }
 }
 
+// Helper function to infer and apply budget lines for a transaction
+async function performBudgetLineInference(transactionId: string) {
+  try {
+    console.log('[Transactions API] Starting budget line inference for transaction:', transactionId);
+    const supabase = getSupabaseAdmin();
+
+    // Fetch transaction with its data
+    const { data: transaction, error: txnError } = await supabase
+      .from('transactions')
+      .select(`
+        uuid,
+        value,
+        currency,
+        provider_org_id,
+        receiver_org_id,
+        finance_type,
+        effective_finance_type
+      `)
+      .eq('uuid', transactionId)
+      .single();
+
+    if (txnError || !transaction) {
+      console.error('[Transactions API] Error fetching transaction for inference:', txnError);
+      return;
+    }
+
+    // Get transaction sectors (from transaction_sector_lines)
+    const { data: sectorLines } = await supabase
+      .from('transaction_sector_lines')
+      .select('sector_code, sector_name, percentage')
+      .eq('transaction_id', transactionId)
+      .is('deleted_at', null);
+
+    // Build inference input
+    const input = {
+      providerOrgId: transaction.provider_org_id,
+      receiverOrgId: transaction.receiver_org_id,
+      financeType: transaction.effective_finance_type || transaction.finance_type,
+      sectors: (sectorLines || []).map((s: any) => ({
+        code: s.sector_code,
+        name: s.sector_name,
+        percentage: s.percentage,
+      })),
+      value: transaction.value || 0,
+      currency: transaction.currency || 'USD',
+    };
+
+    // Infer and apply budget lines
+    const result = await inferAndApplyBudgetLines(supabase, transactionId, input);
+
+    if (result.success) {
+      console.log('[Transactions API] Budget line inference completed:', {
+        transactionId,
+        linesCreated: result.linesCreated,
+        linesPreserved: result.linesPreserved,
+      });
+    } else {
+      console.error('[Transactions API] Budget line inference failed');
+    }
+  } catch (error) {
+    console.error('[Transactions API] Unexpected error during budget line inference:', error);
+  }
+}
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
@@ -731,13 +811,18 @@ export async function POST(request: NextRequest) {
     // Perform currency conversion for all transactions (including USD to populate USD Value field)
     // Support manual exchange rate override from the request body
     await performCurrencyConversion(
-      responseData.uuid, 
-      responseData.currency, 
-      responseData.value, 
+      responseData.uuid,
+      responseData.currency,
+      responseData.value,
       responseData.value_date || responseData.transaction_date,
       body.exchange_rate_used,
       body.value_usd,
       body.exchange_rate_manual
+    );
+
+    // Infer and apply budget lines (runs in background, doesn't block response)
+    performBudgetLineInference(responseData.uuid).catch(err =>
+      console.error('[Transactions API] Background budget inference failed:', err)
     );
 
     return NextResponse.json(responseData, { status: 201 });
@@ -953,13 +1038,18 @@ export async function PUT(request: NextRequest) {
     // Perform currency conversion for all transactions (including USD to populate USD Value field)
     // Support manual exchange rate override from the request body
     await performCurrencyConversion(
-      responseData.uuid, 
-      responseData.currency, 
-      responseData.value, 
+      responseData.uuid,
+      responseData.currency,
+      responseData.value,
       responseData.value_date || responseData.transaction_date,
       body.exchange_rate_used,
       body.value_usd,
       body.exchange_rate_manual
+    );
+
+    // Infer and apply budget lines (runs in background, doesn't block response)
+    performBudgetLineInference(responseData.uuid).catch(err =>
+      console.error('[Transactions API] Background budget inference failed:', err)
     );
 
     return NextResponse.json(responseData);

@@ -121,7 +121,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const validTypes: ClassificationType[] = ["administrative", "functional", "economic", "programme"];
+    const validTypes: ClassificationType[] = ["administrative", "functional", "functional_cofog", "economic", "programme", "revenue", "liabilities", "funding_sources"];
     if (!validTypes.includes(classificationType)) {
       return NextResponse.json(
         { error: `Invalid classification type. Must be one of: ${validTypes.join(", ")}` },

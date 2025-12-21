@@ -155,6 +155,13 @@ select:focus {
     --ring: 217 91% 60%;
  
     --radius: 0.5rem;
+
+    /* Calendar Color Scheme */
+    --calendar-primary-scarlet: 0 72% 50%; /* #dc2625 */
+    --calendar-pale-slate: 230 7% 82%; /* #cfd0d5 */
+    --calendar-blue-slate: 221 16% 35%; /* #4c5568 */
+    --calendar-cool-steel: 205 20% 57%; /* #7b95a7 */
+    --calendar-platinum: 214 33% 96%; /* #f1f4f8 */
   }
  
   .dark {
@@ -185,6 +192,13 @@ select:focus {
     --border: 217.2 32.6% 17.5%;
     --input: 217.2 32.6% 17.5%;
     --ring: 217 91% 60%;
+
+    /* Calendar Color Scheme (dark mode) */
+    --calendar-primary-scarlet: 0 72% 50%; /* #dc2625 */
+    --calendar-pale-slate: 230 7% 82%; /* #cfd0d5 */
+    --calendar-blue-slate: 221 16% 35%; /* #4c5568 */
+    --calendar-cool-steel: 205 20% 57%; /* #7b95a7 */
+    --calendar-platinum: 214 33% 96%; /* #f1f4f8 */
   }
 }
  
@@ -782,7 +796,6 @@ table td:has(div:contains("AA-AAA")) {
   right: 0px;
   width: 100px;
   height: 100%;
-  box-shadow: 0 0 10px #64748b, 0 0 5px #64748b;
   opacity: 1;
   transform: rotate(3deg) translate(0px, -4px);
 }

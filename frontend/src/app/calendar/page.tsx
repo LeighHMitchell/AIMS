@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { MainLayout } from '@/components/layout/main-layout'
 import { CalendarSkeleton } from '@/components/ui/skeleton-loader'
 import { EventCreateModal } from '@/components/calendar/EventCreateModal'
+import { EventDetailModal } from '@/components/calendar/EventDetailModal'
 import { supabase } from '@/lib/supabase'
 
 // Dynamic import for FullCalendar to avoid SSR issues
@@ -42,6 +43,8 @@ export default function CalendarPage() {
   const [filter, setFilter] = useState<'all' | 'meeting' | 'deadline' | 'workshop'>('all')
   const [view, setView] = useState<'month' | 'list'>('month')
   const [showAddModal, setShowAddModal] = useState(false)
+  const [showDetailModal, setShowDetailModal] = useState(false)
+  const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null)
   const [selectedDate, setSelectedDate] = useState<Date | null>(null)
 
   // Fetch events from API
@@ -88,11 +91,11 @@ export default function CalendarPage() {
 
   function getEventColor(type: string): string {
     switch (type) {
-      case 'meeting': return '#3b82f6'
-      case 'deadline': return '#ef4444'
-      case 'workshop': return '#10b981'
-      case 'conference': return '#8b5cf6'
-      default: return '#6b7280'
+      case 'meeting': return '#7b95a7' // Cool Steel
+      case 'deadline': return '#dc2625' // Primary Scarlet
+      case 'workshop': return '#4c5568' // Blue Slate
+      case 'conference': return '#7b95a7' // Cool Steel
+      default: return '#4c5568' // Blue Slate
     }
   }
 
@@ -102,8 +105,11 @@ export default function CalendarPage() {
   }
 
   const handleEventClick = (clickInfo: any) => {
-    const event = clickInfo.event
-    alert(`${event.title}\n${event.extendedProps.description || ''}\n${event.extendedProps.location || ''}`)
+    const clickedEvent = filteredEvents.find(e => e.id === clickInfo.event.id)
+    if (clickedEvent) {
+      setSelectedEvent(clickedEvent)
+      setShowDetailModal(true)
+    }
   }
 
   if (loading) {
@@ -143,7 +149,7 @@ export default function CalendarPage() {
           </Select>
           
           <Select value={view} onValueChange={(value: 'month' | 'list') => setView(value)}>
-            <SelectTrigger className="w-[120px]">
+            <SelectTrigger className="w-[120px] rounded-lg">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -152,7 +158,7 @@ export default function CalendarPage() {
             </SelectContent>
           </Select>
           
-          <Button onClick={() => setShowAddModal(true)}>
+          <Button onClick={() => setShowAddModal(true)} className="bg-[#dc2625] hover:bg-[#dc2625]/90 rounded-lg">
             <Plus className="h-4 w-4 mr-2" />
             Add Event
           </Button>
@@ -161,7 +167,7 @@ export default function CalendarPage() {
 
       <div className="grid gap-6 md:grid-cols-4">
         <div className="md:col-span-3">
-          <Card>
+          <Card className="bg-white border-[#cfd0d5] rounded-xl">
             <CardContent className="p-6">
               {typeof window !== 'undefined' && (
                 <FullCalendar
@@ -187,44 +193,44 @@ export default function CalendarPage() {
         </div>
 
         <div className="space-y-4">
-          <Card>
+          <Card className="bg-[#f1f4f8] border-[#cfd0d5] rounded-xl">
             <CardHeader>
-              <CardTitle className="text-lg">Quick Stats</CardTitle>
+              <CardTitle className="text-lg text-[#4c5568]">Quick Stats</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">This Month</span>
-                <Badge variant="secondary">{filteredEvents.length}</Badge>
+                <span className="text-sm text-[#4c5568]">This Month</span>
+                <Badge variant="secondary" className="bg-white text-[#4c5568]">{filteredEvents.length}</Badge>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Upcoming</span>
-                <Badge variant="outline">
+                <span className="text-sm text-[#4c5568]">Upcoming</span>
+                <Badge variant="outline" className="border-[#cfd0d5] text-[#4c5568]">
                   {filteredEvents.filter(e => new Date(e.start) > new Date()).length}
                 </Badge>
               </div>
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="bg-[#f1f4f8] border-[#cfd0d5] rounded-xl">
             <CardHeader>
-              <CardTitle className="text-lg">Legend</CardTitle>
+              <CardTitle className="text-lg text-[#4c5568]">Legend</CardTitle>
             </CardHeader>
             <CardContent className="space-y-2">
               <div className="flex items-center gap-2">
-                <div className="w-3 h-3 bg-blue-500 rounded"></div>
-                <span className="text-sm">Meetings</span>
+                <div className="w-3 h-3 rounded" style={{ backgroundColor: '#7b95a7' }}></div>
+                <span className="text-sm text-[#4c5568]">Meetings</span>
               </div>
               <div className="flex items-center gap-2">
-                <div className="w-3 h-3 bg-red-500 rounded"></div>
-                <span className="text-sm">Deadlines</span>
+                <div className="w-3 h-3 rounded" style={{ backgroundColor: '#dc2625' }}></div>
+                <span className="text-sm text-[#4c5568]">Deadlines</span>
               </div>
               <div className="flex items-center gap-2">
-                <div className="w-3 h-3 bg-green-500 rounded"></div>
-                <span className="text-sm">Workshops</span>
+                <div className="w-3 h-3 rounded" style={{ backgroundColor: '#4c5568' }}></div>
+                <span className="text-sm text-[#4c5568]">Workshops</span>
               </div>
               <div className="flex items-center gap-2">
-                <div className="w-3 h-3 bg-purple-500 rounded"></div>
-                <span className="text-sm">Conferences</span>
+                <div className="w-3 h-3 rounded" style={{ backgroundColor: '#7b95a7' }}></div>
+                <span className="text-sm text-[#4c5568]">Conferences</span>
               </div>
             </CardContent>
           </Card>
@@ -237,6 +243,19 @@ export default function CalendarPage() {
         onClose={() => setShowAddModal(false)}
         selectedDate={selectedDate}
         onEventCreated={fetchEvents}
+      />
+
+      {/* Event Detail Modal */}
+      <EventDetailModal
+        isOpen={showDetailModal}
+        onClose={() => {
+          setShowDetailModal(false)
+          setSelectedEvent(null)
+        }}
+        event={selectedEvent}
+        onEventUpdated={fetchEvents}
+        onEventDeleted={fetchEvents}
+        canEdit={true}
       />
       </div>
     </MainLayout>

@@ -2526,36 +2526,38 @@ export async function POST(
       .update(syncUpdate)
       .eq('id', activityId);
     
-    // Create import log entry
-    // For now, we'll use null for user ID since we're not implementing user auth tracking
-    const importLog = {
+    // Create import log entry for the iati_import_logs table
+    const importLogEntry = {
+      import_source: 'iati_search', // This route is typically from IATI Datastore search
       activity_id: activityId,
-      import_type: 'manual' as const,
-      result_status: updatedFields.length > 0 ? 'success' as const : 'partial' as const,
-      result_summary: {
-        fields_requested: Object.keys(fields).filter(k => fields[k]),
-        fields_updated: updatedFields.length,
-        details: {
-          sectors_updated: fields.sectors ? (iati_data.sectors?.length || 0) : null,
-          orgs_updated: fields.participating_orgs ? (iati_data.participating_orgs?.length || 0) : null,
-          transactions_added: fields.transactions ? newTransactionsCount : null,
-          policy_markers_added: fields.policy_markers ? policyMarkersCount : null
-        }
-      },
-      fields_updated: updatedFields,
-      previous_values: previousValues,
-      imported_by: null, // TODO: Implement user tracking
-      iati_version: '2.03', // Could be extracted from IATI data
-      source_url: 'IATI Datastore API'
+      iati_identifier: currentActivity.iati_identifier || iati_data.iati_identifier,
+      activity_title: currentActivity.title_narrative || iati_data.title_narrative,
+      reporting_org_ref: currentActivity.reporting_org_ref || iati_data.reporting_org?.ref,
+      reporting_org_name: currentActivity.reporting_org_name || iati_data.reporting_org?.narrative,
+      import_type: 'update_existing',
+      import_status: updatedFields.length > 0 ? 'success' : 'partial',
+      transactions_imported: fields.transactions ? newTransactionsCount : 0,
+      budgets_imported: 0, // TODO: track budget imports
+      sectors_imported: fields.sectors ? (iati_data.sectors?.length || 0) : 0,
+      locations_imported: fields.locations ? (iati_data.locations?.length || 0) : 0,
+      documents_imported: fields.documents ? (iati_data.documents?.length || 0) : 0,
+      contacts_imported: fields.contact_info ? (iati_data.contact_info?.length || 0) : 0,
+      results_imported: fields.results ? (iati_data.results?.length || 0) : 0,
+      warnings: importWarnings.length > 0 ? importWarnings : [],
+      iati_datastore_url: currentActivity.iati_identifier
+        ? `https://datastore.iatistandard.org/search/activity?q=iati-identifier:${encodeURIComponent(currentActivity.iati_identifier)}`
+        : null
     };
-    
+
     const { error: logError } = await supabase
-      .from('iati_import_log')
-      .insert(importLog);
-    
+      .from('iati_import_logs')
+      .insert(importLogEntry);
+
     if (logError) {
       console.error('[IATI Import] Error creating import log:', logError);
       // Don't throw - import was successful
+    } else {
+      console.log('[IATI Import] Import log created successfully');
     }
     
     // Return success response
@@ -2606,15 +2608,13 @@ export async function POST(
     if (activityId) {
       try {
         await getSupabaseAdmin()
-          .from('iati_import_log')
+          .from('iati_import_logs')
           .insert({
+            import_source: 'iati_search',
             activity_id: activityId,
-            import_type: 'manual',
-            result_status: 'failed',
-            result_summary: { error: error instanceof Error ? error.message : 'Unknown error' },
-            fields_updated: [],
-            error_details: error instanceof Error ? error.stack : String(error),
-            imported_by: null // TODO: Implement user tracking
+            import_type: 'update_existing',
+            import_status: 'failed',
+            error_message: error instanceof Error ? error.message : 'Unknown error'
           });
       } catch (logError) {
         console.error('[IATI Import] Failed to log error:', logError);

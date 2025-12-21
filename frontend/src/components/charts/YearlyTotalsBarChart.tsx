@@ -24,20 +24,29 @@ import {
 
 type ViewMode = 'bar' | 'line' | 'table'
 
+// Brand color palette
+const CHART_COLORS = {
+  primaryScarlet: '#dc2625',
+  paleSlate: '#cfd0d5',
+  blueSlate: '#4c5568',
+  coolSteel: '#7b95a7',
+  platinum: '#f1f4f8',
+}
+
 // Transaction type configuration
 export const TRANSACTION_TYPE_CONFIG: Record<string, { label: string; color: string }> = {
-  '1': { label: 'Incoming Commitment', color: '#3b82f6' },
-  '2': { label: 'Outgoing Commitment', color: '#8b5cf6' },
-  '3': { label: 'Disbursement', color: '#10b981' },
-  '4': { label: 'Expenditure', color: '#f59e0b' },
-  '5': { label: 'Interest Repayment', color: '#ec4899' },
-  '6': { label: 'Loan Repayment', color: '#14b8a6' },
-  '7': { label: 'Reimbursement', color: '#6366f1' },
-  '8': { label: 'Purchase of Equity', color: '#84cc16' },
-  '9': { label: 'Sale of Equity', color: '#f97316' },
-  '11': { label: 'Credit Guarantee', color: '#10b981' },
-  '12': { label: 'Incoming Funds', color: '#3b82f6' },
-  '13': { label: 'Commitment Cancellation', color: '#ef4444' },
+  '1': { label: 'Incoming Commitment', color: CHART_COLORS.blueSlate },
+  '2': { label: 'Outgoing Commitment', color: CHART_COLORS.coolSteel },
+  '3': { label: 'Disbursement', color: CHART_COLORS.primaryScarlet },
+  '4': { label: 'Expenditure', color: CHART_COLORS.paleSlate },
+  '5': { label: 'Interest Repayment', color: CHART_COLORS.blueSlate },
+  '6': { label: 'Loan Repayment', color: CHART_COLORS.coolSteel },
+  '7': { label: 'Reimbursement', color: CHART_COLORS.primaryScarlet },
+  '8': { label: 'Purchase of Equity', color: CHART_COLORS.blueSlate },
+  '9': { label: 'Sale of Equity', color: CHART_COLORS.coolSteel },
+  '11': { label: 'Credit Guarantee', color: CHART_COLORS.paleSlate },
+  '12': { label: 'Incoming Funds', color: CHART_COLORS.blueSlate },
+  '13': { label: 'Commitment Cancellation', color: CHART_COLORS.primaryScarlet },
 }
 
 // Single series data point (for budgets, planned disbursements)
@@ -113,7 +122,7 @@ export function YearlyTotalsBarChart({
   loading = false,
   height = 300,
   singleSeriesData,
-  singleSeriesColor = '#10b981',
+  singleSeriesColor = '#4c5568',
   singleSeriesLabel = 'Total',
   multiSeriesData,
   defaultCollapsed = true,

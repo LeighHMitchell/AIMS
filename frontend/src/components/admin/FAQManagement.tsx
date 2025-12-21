@@ -30,6 +30,10 @@ import {
   FileQuestion,
   Inbox,
   AlertCircle,
+  TrendingUp,
+  TrendingDown,
+  Timer,
+  Percent,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { formatDistanceToNow } from 'date-fns';
@@ -107,6 +111,16 @@ export function FAQManagement() {
     published: 0,
     rejected: 0,
     duplicate: 0,
+    // Extended stats
+    pendingThisWeek: 0,
+    pendingAvgWaitDays: 0,
+    pendingChangePercent: 0,
+    inProgressAvgDays: 0,
+    inProgressOldestDays: 0,
+    publishedThisMonth: 0,
+    publishedChangePercent: 0,
+    responseRate: 0,
+    avgResolutionDays: 0,
   });
 
   // Fetch questions
@@ -129,7 +143,22 @@ export function FAQManagement() {
         const data = await response.json();
         setQuestions(data.data || []);
         setTotalCount(data.pagination?.total || 0);
-        setStats(data.stats || { pending: 0, in_progress: 0, published: 0, rejected: 0, duplicate: 0 });
+        setStats({
+          pending: data.stats?.pending || 0,
+          in_progress: data.stats?.in_progress || 0,
+          published: data.stats?.published || 0,
+          rejected: data.stats?.rejected || 0,
+          duplicate: data.stats?.duplicate || 0,
+          pendingThisWeek: data.stats?.pendingThisWeek || 0,
+          pendingAvgWaitDays: data.stats?.pendingAvgWaitDays || 0,
+          pendingChangePercent: data.stats?.pendingChangePercent || 0,
+          inProgressAvgDays: data.stats?.inProgressAvgDays || 0,
+          inProgressOldestDays: data.stats?.inProgressOldestDays || 0,
+          publishedThisMonth: data.stats?.publishedThisMonth || 0,
+          publishedChangePercent: data.stats?.publishedChangePercent || 0,
+          responseRate: data.stats?.responseRate || 0,
+          avgResolutionDays: data.stats?.avgResolutionDays || 0,
+        });
       } else {
         toast.error('Failed to load questions');
       }
@@ -266,18 +295,75 @@ export function FAQManagement() {
                   Manage user questions and FAQ entries
                 </CardDescription>
               </div>
-              <div className="flex gap-4">
-                <div className="flex items-center gap-2 px-3 py-1 bg-yellow-50 rounded-full">
-                  <Clock className="h-4 w-4 text-yellow-500" />
-                  <span className="text-sm font-medium">{stats.pending} Pending</span>
+              <div className="flex gap-3">
+                {/* Pending Card */}
+                <div className="bg-gray-50 border border-gray-200 rounded-lg px-4 py-2 min-w-[220px]">
+                  <div className="flex items-center gap-2">
+                    <Clock className="h-4 w-4 text-gray-500" />
+                    <span className="text-xs font-medium text-gray-600">Pending</span>
+                  </div>
+                  <p className="text-2xl font-bold text-gray-900 mt-0.5">{stats.pending}</p>
+                  <div className="flex flex-col gap-0.5 mt-1 border-t border-gray-200 pt-1">
+                    <span className="text-[10px] text-gray-500">+{stats.pendingThisWeek} this week</span>
+                    <span className="text-[10px] text-gray-500">Avg {stats.pendingAvgWaitDays.toFixed(1)}d wait</span>
+                    <span className="text-[10px] text-gray-500 flex items-center gap-0.5">
+                      {stats.pendingChangePercent >= 0 ? (
+                        <TrendingUp className="h-3 w-3" />
+                      ) : (
+                        <TrendingDown className="h-3 w-3" />
+                      )}
+                      {stats.pendingChangePercent >= 0 ? '+' : ''}{stats.pendingChangePercent}% vs last month
+                    </span>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2 px-3 py-1 bg-blue-50 rounded-full">
-                  <Edit className="h-4 w-4 text-blue-500" />
-                  <span className="text-sm font-medium">{stats.in_progress} In Progress</span>
+
+                {/* In Progress Card */}
+                <div className="bg-gray-50 border border-gray-200 rounded-lg px-4 py-2 min-w-[220px]">
+                  <div className="flex items-center gap-2">
+                    <Edit className="h-4 w-4 text-gray-500" />
+                    <span className="text-xs font-medium text-gray-600">In Progress</span>
+                  </div>
+                  <p className="text-2xl font-bold text-gray-900 mt-0.5">{stats.in_progress}</p>
+                  <div className="flex flex-col gap-0.5 mt-1 border-t border-gray-200 pt-1">
+                    <span className="text-[10px] text-gray-500">Avg {stats.inProgressAvgDays.toFixed(1)}d to answer</span>
+                    <span className="text-[10px] text-gray-500">Oldest: {stats.inProgressOldestDays}d</span>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2 px-3 py-1 bg-green-50 rounded-full">
-                  <CheckCircle className="h-4 w-4 text-green-500" />
-                  <span className="text-sm font-medium">{stats.published} Published</span>
+
+                {/* Published Card */}
+                <div className="bg-gray-50 border border-gray-200 rounded-lg px-4 py-2 min-w-[220px]">
+                  <div className="flex items-center gap-2">
+                    <CheckCircle className="h-4 w-4 text-gray-500" />
+                    <span className="text-xs font-medium text-gray-600">Published</span>
+                  </div>
+                  <p className="text-2xl font-bold text-gray-900 mt-0.5">{stats.published}</p>
+                  <div className="flex flex-col gap-0.5 mt-1 border-t border-gray-200 pt-1">
+                    <span className="text-[10px] text-gray-500">+{stats.publishedThisMonth} this month</span>
+                    <span className="text-[10px] text-gray-500 flex items-center gap-0.5">
+                      {stats.publishedChangePercent >= 0 ? (
+                        <TrendingUp className="h-3 w-3" />
+                      ) : (
+                        <TrendingDown className="h-3 w-3" />
+                      )}
+                      {stats.publishedChangePercent >= 0 ? '+' : ''}{stats.publishedChangePercent}% vs last month
+                    </span>
+                  </div>
+                </div>
+
+                {/* Response Rate & Resolution Time Card */}
+                <div className="bg-gray-50 border border-gray-200 rounded-lg px-4 py-2 min-w-[220px]">
+                  <div className="flex items-center gap-2">
+                    <Percent className="h-4 w-4 text-gray-500" />
+                    <span className="text-xs font-medium text-gray-600">Performance</span>
+                  </div>
+                  <p className="text-2xl font-bold text-gray-900 mt-0.5">{stats.responseRate}%</p>
+                  <div className="flex flex-col gap-0.5 mt-1 border-t border-gray-200 pt-1">
+                    <span className="text-[10px] text-gray-500">Response rate</span>
+                    <span className="text-[10px] text-gray-500 flex items-center gap-0.5">
+                      <Timer className="h-3 w-3" />
+                      {stats.avgResolutionDays.toFixed(1)}d avg resolution
+                    </span>
+                  </div>
                 </div>
               </div>
             </div>

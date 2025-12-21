@@ -9,7 +9,9 @@ import { Card, CardContent } from "@/components/ui/card";
 import { useRouter } from "next/navigation";
 import { format } from "date-fns";
 import { toast } from "sonner";
-import { Download, ChevronLeft, ChevronRight } from "lucide-react";
+import { Download, ChevronLeft, ChevronRight, FileText, ShieldCheck, Building2 } from "lucide-react";
+import { Label } from "@/components/ui/label";
+import { MultiSelectFilter } from "@/components/ui/multi-select-filter";
 import { BudgetTable, BudgetColumnSelector, DEFAULT_VISIBLE_BUDGET_COLUMNS, BUDGET_COLUMNS_LOCALSTORAGE_KEY, type BudgetColumnId } from "@/components/budgets/BudgetTable";
 import { useBudgets } from "@/hooks/useBudgets";
 import { Budget, BudgetFilter } from "@/types/budget";
@@ -54,10 +56,10 @@ export default function BudgetsPage() {
     }
   }, [visibleColumns]);
 
-  const [filters, setFilters] = useState<BudgetFilter>({
-    type: "all",
-    status: "all",
-    organization: "all",
+  const [filters, setFilters] = useState({
+    types: [] as string[],
+    statuses: [] as string[],
+    organizations: [] as string[],
     dateFrom: "",
     dateTo: "",
   });
@@ -117,9 +119,9 @@ export default function BudgetsPage() {
       setYearlySummaryLoading(true);
       try {
         const params = new URLSearchParams();
-        if (filters.type !== 'all') params.append('type', filters.type);
-        if (filters.status !== 'all') params.append('status', filters.status);
-        if (filters.organization !== 'all') params.append('organization', filters.organization);
+        if (filters.types.length > 0) params.append('types', filters.types.join(','));
+        if (filters.statuses.length > 0) params.append('statuses', filters.statuses.join(','));
+        if (filters.organizations.length > 0) params.append('organizations', filters.organizations.join(','));
         if (searchQuery) params.append('search', searchQuery);
 
         const response = await fetch(`/api/budgets/yearly-summary?${params.toString()}`);
@@ -387,72 +389,85 @@ export default function BudgetsPage() {
         </div>
 
         {/* Search, Filters, and View Controls */}
-        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 py-4 bg-slate-50 rounded-lg px-4">
-          {/* Left Side: Search + Filters */}
-          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 flex-1">
+        <div className="flex items-end gap-3 py-3 bg-slate-50 rounded-lg px-3 border border-gray-200">
             {/* Search Input */}
-            <div className="w-full sm:w-auto sm:min-w-[240px] lg:min-w-[300px]">
+            <div className="flex flex-col gap-1">
+              <Label className="text-xs text-muted-foreground">Search</Label>
               <Input
                 placeholder="Search budgets..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full"
+                className="w-[240px] h-9"
               />
             </div>
-            
-            {/* Filters */}
-            <div className="flex flex-wrap items-center gap-3">
-              <Select value={filters.type} onValueChange={(value) => setFilters({...filters, type: value})}>
-                <SelectTrigger className="w-[140px]">
-                  <SelectValue placeholder="Type" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Types</SelectItem>
-                  <SelectItem value="1">Original</SelectItem>
-                  <SelectItem value="2">Revised</SelectItem>
-                </SelectContent>
-              </Select>
-              <Select value={filters.status} onValueChange={(value) => setFilters({...filters, status: value})}>
-                <SelectTrigger className="w-[140px]">
-                  <SelectValue placeholder="Status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Status</SelectItem>
-                  <SelectItem value="1">Indicative</SelectItem>
-                  <SelectItem value="2">Committed</SelectItem>
-                </SelectContent>
-              </Select>
-              <Select value={filters.organization} onValueChange={(value) => setFilters({...filters, organization: value})}>
-                <SelectTrigger className="w-[140px]">
-                  <SelectValue placeholder="Organization" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Organizations</SelectItem>
-                  {organizations.map((org) => (
-                    <SelectItem key={org.id} value={org.id}>
-                      {org.name && org.acronym && org.name !== org.acronym
-                        ? `${org.name} (${org.acronym})`
-                        : org.name || org.acronym}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
 
-          {/* Right Side: Column Selector + Results Count */}
-          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-            <BudgetColumnSelector
-              visibleColumns={visibleColumns}
-              onColumnsChange={setVisibleColumns}
-            />
-            {/* Results Summary */}
-            <p className="text-sm text-slate-600 whitespace-nowrap">
-              {totalBudgets === 0
-                ? "No budgets"
-                : `Showing ${(currentPage - 1) * pageLimit + 1}–${Math.min(currentPage * pageLimit, totalBudgets)} of ${totalBudgets} budgets`}
-            </p>
-          </div>
+            {/* Filters */}
+              <div className="flex flex-col gap-1">
+                <Label className="text-xs text-muted-foreground">Type</Label>
+                <MultiSelectFilter
+                  options={[
+                    { value: "1", label: "Original", code: "1" },
+                    { value: "2", label: "Revised", code: "2" },
+                  ]}
+                  value={filters.types}
+                  onChange={(value) => setFilters({...filters, types: value})}
+                  placeholder="All"
+                  searchPlaceholder="Search types..."
+                  emptyText="No types found."
+                  icon={<FileText className="h-4 w-4 text-muted-foreground shrink-0" />}
+                  className="w-[180px] h-9"
+                  dropdownClassName="w-[240px]"
+                />
+              </div>
+              <div className="flex flex-col gap-1">
+                <Label className="text-xs text-muted-foreground">Status</Label>
+                <MultiSelectFilter
+                  options={[
+                    { value: "1", label: "Indicative", code: "1" },
+                    { value: "2", label: "Committed", code: "2" },
+                  ]}
+                  value={filters.statuses}
+                  onChange={(value) => setFilters({...filters, statuses: value})}
+                  placeholder="All"
+                  searchPlaceholder="Search statuses..."
+                  emptyText="No statuses found."
+                  icon={<ShieldCheck className="h-4 w-4 text-muted-foreground shrink-0" />}
+                  className="w-[180px] h-9"
+                  dropdownClassName="w-[240px]"
+                />
+              </div>
+              <div className="flex flex-col gap-1">
+                <Label className="text-xs text-muted-foreground">Organisation</Label>
+                <MultiSelectFilter
+                  options={organizations.map((org) => ({
+                    value: org.id,
+                    label: org.name && org.acronym && org.name !== org.acronym
+                      ? `${org.name} (${org.acronym})`
+                      : org.name || org.acronym,
+                    code: org.acronym || undefined,
+                  }))}
+                  value={filters.organizations}
+                  onChange={(value) => setFilters({...filters, organizations: value})}
+                  placeholder="All"
+                  searchPlaceholder="Search organisations..."
+                  emptyText="No organisations found."
+                  icon={<Building2 className="h-4 w-4 text-muted-foreground shrink-0" />}
+                  className="w-[220px] h-9"
+                  dropdownClassName="w-[400px]"
+                />
+              </div>
+
+            {/* Spacer */}
+            <div className="flex-1" />
+
+            {/* Column Selector */}
+            <div className="flex flex-col gap-1">
+              <Label className="text-xs text-muted-foreground">Columns</Label>
+              <BudgetColumnSelector
+                visibleColumns={visibleColumns}
+                onColumnsChange={setVisibleColumns}
+              />
+            </div>
         </div>
 
         {/* Yearly Summary Chart */}
@@ -461,7 +476,7 @@ export default function BudgetsPage() {
           description="Yearly budget totals in USD (filtered)"
           loading={yearlySummaryLoading}
           singleSeriesData={yearlySummary}
-          singleSeriesColor="#6366f1"
+          singleSeriesColor="#4c5568"
           singleSeriesLabel="Budget"
           height={280}
         />

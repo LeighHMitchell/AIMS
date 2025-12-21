@@ -17,6 +17,12 @@ import {
 } from '@/components/ui/dialog';
 import { toast } from 'sonner';
 import { RolodexPerson } from '@/app/api/rolodex/route';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { 
   Grid3X3, 
   Table,
@@ -320,16 +326,6 @@ export default function RolodexPage() {
           </div>
           
           <div className="flex items-center space-x-3">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleExport}
-              disabled={loading || people.length === 0}
-            >
-              <Download className="h-4 w-4 mr-2" />
-              Export CSV
-            </Button>
-            
             <div className="flex border border-slate-200 rounded-md">
               <Button
                 variant={viewMode === 'grid' ? 'default' : 'ghost'}
@@ -353,25 +349,46 @@ export default function RolodexPage() {
           </div>
         </div>
 
-        {/* Search Bar */}
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-          <Input
-            placeholder="Search by name, email, or organization..."
-            value={searchTerm}
-            onChange={(e) => handleSearchChange(e.target.value)}
-            className="pl-10 pr-10"
-          />
-          {searchTerm && (
-            <button
-              onClick={clearSearch}
-              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
-              aria-label="Clear search"
-              title="Clear search"
-            >
-              <X className="h-4 w-4" />
-            </button>
-          )}
+        {/* Search Bar with Export */}
+        <div className="flex items-center gap-2">
+          <div className="relative flex-1 max-w-sm">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+            <Input
+              placeholder="Search by name, email, or organization..."
+              value={searchTerm}
+              onChange={(e) => handleSearchChange(e.target.value)}
+              className="pl-10 pr-10"
+            />
+            {searchTerm && (
+              <button
+                onClick={clearSearch}
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                aria-label="Clear search"
+                title="Clear search"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            )}
+          </div>
+
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={handleExport}
+                  disabled={loading || people.length === 0}
+                  aria-label="Export to CSV"
+                >
+                  <Download className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Export to CSV</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         </div>
 
         {/* Results count */}

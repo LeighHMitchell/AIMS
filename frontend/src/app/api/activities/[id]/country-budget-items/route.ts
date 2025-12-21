@@ -90,11 +90,22 @@ export async function POST(
       );
     }
 
-    // Validate vocabulary code
-    const validVocabularies = ['1', '2', '3', '4', '5'];
+    // Validate vocabulary code (1-5 are standard, 98-99 are country-specific)
+    const validVocabularies = ['1', '2', '3', '4', '5', '98', '99'];
     if (!validVocabularies.includes(body.vocabulary)) {
       return NextResponse.json(
-        { error: 'Invalid vocabulary code' },
+        { error: 'Invalid vocabulary code. Must be 1-5 (standard) or 98-99 (country-specific)' },
+        { status: 400 }
+      );
+    }
+
+    // IATI Watch Point 1: Validate vocabulary_uri for country-specific vocabularies
+    if ((body.vocabulary === '98' || body.vocabulary === '99') && !body.vocabulary_uri) {
+      return NextResponse.json(
+        {
+          error: 'vocabulary_uri is required when using vocabulary 98 or 99 (country-specific)',
+          iatiRecommendation: true
+        },
         { status: 400 }
       );
     }
@@ -113,6 +124,18 @@ export async function POST(
         errors.push(`Budget item ${index + 1}: Percentage must be between 0 and 100`);
       }
     });
+
+    // IATI Watch Point 2: Percentages must sum to exactly 100 per vocabulary
+    // This is a hard IATI rule
+    const percentageSum = body.budget_items.reduce((sum, item) => sum + (item.percentage || 0), 0);
+
+    // Allow for small rounding errors (within 0.01)
+    if (Math.abs(percentageSum - 100) > 0.01) {
+      errors.push(
+        `IATI Compliance Error: Percentages must sum to exactly 100% per vocabulary. ` +
+        `Current sum: ${percentageSum.toFixed(2)}%`
+      );
+    }
 
     if (errors.length > 0) {
       return NextResponse.json(
@@ -141,13 +164,20 @@ export async function POST(
         .delete()
         .eq('country_budget_items_id', countryBudgetItemsId);
     } else {
-      // Insert new country_budget_items
+      // Insert new country_budget_items with vocabulary_uri if provided
+      const insertData: Record<string, string> = {
+        activity_id: activityId,
+        vocabulary: body.vocabulary
+      };
+
+      // Include vocabulary_uri for country-specific vocabularies (98/99)
+      if (body.vocabulary_uri) {
+        insertData.vocabulary_uri = body.vocabulary_uri;
+      }
+
       const { data: newCbi, error: cbiError } = await supabase
         .from('country_budget_items')
-        .insert({
-          activity_id: activityId,
-          vocabulary: body.vocabulary
-        })
+        .insert(insertData)
         .select()
         .single();
 

@@ -18,6 +18,35 @@ import { SectorValidation } from '@/types/sector';
 import { v4 as uuidv4 } from 'uuid';
 import { toast } from 'sonner';
 
+// Broad/residual DAC sector codes that should trigger a guidance alert
+const BROAD_SECTOR_CODES = [
+  '43010', // Multisector aid
+  '43082', // Research / scientific institutions
+  '43050', // Non-agricultural alternative development
+  '52010', // Food aid / food security programmes
+  '43081', // Multisector education / training programmes
+  '99810', // Sectors not specified
+];
+
+// Helper to check if a sector code is broad/residual
+const isBroadSectorCode = (code: string): boolean => {
+  // Check explicit broad sector codes
+  if (BROAD_SECTOR_CODES.includes(code)) return true;
+
+  // Check for 3-digit parent codes (codes ending in 00 at positions 4-5)
+  if (code.length === 5 && code.endsWith('00')) return true;
+
+  // Check for 3-digit codes (should be 5 digits for specific sectors)
+  if (code.length === 3) return true;
+
+  return false;
+};
+
+// Helper to check if a sector code is specific (5-digit, not ending in 00)
+const isSpecificSectorCode = (code: string): boolean => {
+  return code.length === 5 && !code.endsWith('00');
+};
+
 // Helper function to detect if percentages are equally distributed
 const arePercentagesEquallyDistributed = (allocations: SectorAllocation[]): boolean => {
   if (allocations.length <= 1) return true;
@@ -74,6 +103,24 @@ export default function EnhancedSectorAllocationForm({
     errors: [] 
   });
   const [visualizationType, setVisualizationType] = useState<'donut' | 'bar'>('donut');
+
+  // Check for broad/residual sector codes and determine if warning should show
+  const broadSectorWarning = React.useMemo(() => {
+    const broadSectors = localAllocations.filter(a => isBroadSectorCode(a.code));
+    const specificSectors = localAllocations.filter(a => isSpecificSectorCode(a.code));
+
+    // Only show warning if there are broad sectors AND no specific sectors
+    // (optional behavior: don't show if at least one specific code is selected)
+    const shouldShow = broadSectors.length > 0 && specificSectors.length === 0;
+
+    return {
+      shouldShow,
+      broadSectors: broadSectors.map(a => ({
+        code: a.code,
+        label: getSectorLabel(a.code)
+      }))
+    };
+  }, [localAllocations]);
 
   // Validate allocations
   useEffect(() => {
@@ -413,7 +460,32 @@ export default function EnhancedSectorAllocationForm({
             placeholder="Search and select OECD DAC sectors..."
             className="w-full"
           />
-          
+
+          {/* Broad/Residual Sector Warning */}
+          {broadSectorWarning.shouldShow && (
+            <Alert className="border-amber-200 bg-amber-50">
+              <AlertCircle className="h-4 w-4 text-amber-600" />
+              <AlertDescription className="text-amber-800">
+                <div className="space-y-2">
+                  <p className="font-medium">Consider using more specific sector codes</p>
+                  <p className="text-sm">
+                    You've selected {broadSectorWarning.broadSectors.length === 1 ? 'a broad/residual sector code' : 'broad/residual sector codes'}:{' '}
+                    <span className="font-medium">
+                      {broadSectorWarning.broadSectors.map(s => s.code).join(', ')}
+                    </span>
+                  </p>
+                  <p className="text-sm">
+                    These are high-level or residual classifications. Selecting more specific 5-digit DAC sector codes
+                    improves reporting quality, analysis, and comparability of your data.
+                  </p>
+                  <p className="text-xs text-amber-600">
+                    You can continue with this selection if a more specific code is not applicable.
+                  </p>
+                </div>
+              </AlertDescription>
+            </Alert>
+          )}
+
           {localAllocations.length > 1 && (
             <Button 
               variant="outline" 

@@ -35,7 +35,12 @@ export function useBudgets(params: BudgetHookParams = {}) {
       
       if (params.filters) {
         Object.entries(params.filters).forEach(([key, value]) => {
-          if (value && value !== "all" && value !== "") {
+          if (Array.isArray(value)) {
+            // Handle array filters - join with comma
+            if (value.length > 0) {
+              queryParams.append(key, value.join(','));
+            }
+          } else if (value && value !== "all" && value !== "") {
             queryParams.append(key, value);
           }
         });

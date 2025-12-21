@@ -63,6 +63,19 @@ interface UseOptimizedActivitiesReturn {
     handleSort: (field: string) => void;
   };
   filters: {
+    activityStatuses: string[];
+    setActivityStatuses: (statuses: string[]) => void;
+    submissionStatuses: string[];
+    setSubmissionStatuses: (statuses: string[]) => void;
+    reportedByOrgs: string[];
+    setReportedByOrgs: (orgs: string[]) => void;
+    aidTypes: string[];
+    setAidTypes: (types: string[]) => void;
+    flowTypes: string[];
+    setFlowTypes: (types: string[]) => void;
+    tiedStatuses: string[];
+    setTiedStatuses: (statuses: string[]) => void;
+    // Legacy single-value getters for backward compatibility
     activityStatus: string;
     setActivityStatus: (status: string) => void;
     submissionStatus: string;
@@ -114,13 +127,41 @@ export function useOptimizedActivities(
   const [sortField, setSortField] = useState('updatedAt');
   const [sortOrder, setSortOrder] = useState('desc');
   
-  // Filters
-  const [activityStatus, setActivityStatus] = useState('all');
-  const [submissionStatus, setSubmissionStatus] = useState('all');
-  const [reportedBy, setReportedBy] = useState('all');
-  const [aidType, setAidType] = useState('all');
-  const [flowType, setFlowType] = useState('all');
-  const [tiedStatus, setTiedStatus] = useState('all');
+  // Filters - use arrays for multi-select
+  const [activityStatuses, setActivityStatuses] = useState<string[]>([]);
+  const [submissionStatuses, setSubmissionStatuses] = useState<string[]>([]);
+  const [reportedByOrgs, setReportedByOrgs] = useState<string[]>([]);
+  const [aidTypes, setAidTypes] = useState<string[]>([]);
+  const [flowTypes, setFlowTypes] = useState<string[]>([]);
+  const [tiedStatuses, setTiedStatuses] = useState<string[]>([]);
+
+  // Legacy single-value setters for backward compatibility
+  const setActivityStatus = useCallback((status: string) => {
+    setActivityStatuses(status === 'all' ? [] : [status]);
+  }, []);
+  const setSubmissionStatus = useCallback((status: string) => {
+    setSubmissionStatuses(status === 'all' ? [] : [status]);
+  }, []);
+  const setReportedBy = useCallback((org: string) => {
+    setReportedByOrgs(org === 'all' ? [] : [org]);
+  }, []);
+  const setAidType = useCallback((type: string) => {
+    setAidTypes(type === 'all' ? [] : [type]);
+  }, []);
+  const setFlowType = useCallback((type: string) => {
+    setFlowTypes(type === 'all' ? [] : [type]);
+  }, []);
+  const setTiedStatus = useCallback((status: string) => {
+    setTiedStatuses(status === 'all' ? [] : [status]);
+  }, []);
+
+  // Legacy single-value getters for backward compatibility
+  const activityStatus = activityStatuses.length === 1 ? activityStatuses[0] : 'all';
+  const submissionStatus = submissionStatuses.length === 1 ? submissionStatuses[0] : 'all';
+  const reportedBy = reportedByOrgs.length === 1 ? reportedByOrgs[0] : 'all';
+  const aidType = aidTypes.length === 1 ? aidTypes[0] : 'all';
+  const flowType = flowTypes.length === 1 ? flowTypes[0] : 'all';
+  const tiedStatus = tiedStatuses.length === 1 ? tiedStatuses[0] : 'all';
 
   // Performance tracking
   const [lastQueryTime, setLastQueryTime] = useState(0);
@@ -157,12 +198,12 @@ export function useOptimizedActivities(
       search: debouncedSearchQuery,
       sortField,
       sortOrder,
-      activityStatus,
-      submissionStatus,
-      reportedBy,
-      aidType,
-      flowType,
-      tiedStatus,
+      activityStatuses,
+      submissionStatuses,
+      reportedByOrgs,
+      aidTypes,
+      flowTypes,
+      tiedStatuses,
       viewMode
     });
 
@@ -202,12 +243,13 @@ export function useOptimizedActivities(
         sortField,
         sortOrder,
         ...(debouncedSearchQuery && { search: debouncedSearchQuery }),
-        ...(activityStatus !== 'all' && { activityStatus }),
-        ...(submissionStatus !== 'all' && { submissionStatus }),
-        ...(reportedBy !== 'all' && { reportedBy }),
-        ...(aidType !== 'all' && { aidType }),
-        ...(flowType !== 'all' && { flowType }),
-        ...(tiedStatus !== 'all' && { tiedStatus }),
+        // Array filters - comma-separated
+        ...(activityStatuses.length > 0 && { activityStatuses: activityStatuses.join(',') }),
+        ...(submissionStatuses.length > 0 && { submissionStatuses: submissionStatuses.join(',') }),
+        ...(reportedByOrgs.length > 0 && { reportedByOrgs: reportedByOrgs.join(',') }),
+        ...(aidTypes.length > 0 && { aidTypes: aidTypes.join(',') }),
+        ...(flowTypes.length > 0 && { flowTypes: flowTypes.join(',') }),
+        ...(tiedStatuses.length > 0 && { tiedStatuses: tiedStatuses.join(',') }),
         ...(viewMode === 'card' && { includeImages: 'true' }),
         _t: Date.now().toString() // Cache-busting timestamp
       });
@@ -303,7 +345,7 @@ export function useOptimizedActivities(
         onError(errorMessage);
       }
     }
-  }, [currentPage, pageSize, debouncedSearchQuery, sortField, sortOrder, activityStatus, submissionStatus, reportedBy, aidType, flowType, tiedStatus, viewMode, onError]);
+  }, [currentPage, pageSize, debouncedSearchQuery, sortField, sortOrder, activityStatuses, submissionStatuses, reportedByOrgs, aidTypes, flowTypes, tiedStatuses, viewMode, onError]);
 
   // Debounce search query
   useEffect(() => {
@@ -318,7 +360,7 @@ export function useOptimizedActivities(
   // Fetch data when key dependencies change
   useEffect(() => {
     fetchActivities();
-  }, [currentPage, pageSize, debouncedSearchQuery, sortField, sortOrder, activityStatus, submissionStatus, reportedBy, aidType, flowType, tiedStatus, viewMode]);
+  }, [currentPage, pageSize, debouncedSearchQuery, sortField, sortOrder, activityStatuses, submissionStatuses, reportedByOrgs, aidTypes, flowTypes, tiedStatuses, viewMode]);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -363,6 +405,20 @@ export function useOptimizedActivities(
       handleSort
     },
     filters: {
+      // Array-based multi-select filters
+      activityStatuses,
+      setActivityStatuses,
+      submissionStatuses,
+      setSubmissionStatuses,
+      reportedByOrgs,
+      setReportedByOrgs,
+      aidTypes,
+      setAidTypes,
+      flowTypes,
+      setFlowTypes,
+      tiedStatuses,
+      setTiedStatuses,
+      // Legacy single-value getters for backward compatibility
       activityStatus,
       setActivityStatus,
       submissionStatus,

@@ -48,6 +48,13 @@ module.exports = {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
+        calendar: {
+          "primary-scarlet": "#dc2625",
+          "pale-slate": "#cfd0d5",
+          "blue-slate": "#4c5568",
+          "cool-steel": "#7b95a7",
+          "platinum": "#f1f4f8",
+        },
       },
       borderRadius: {
         lg: "var(--radius)",

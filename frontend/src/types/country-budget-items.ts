@@ -26,12 +26,20 @@ export interface BudgetItem {
 }
 
 /**
+ * Valid vocabulary codes for country budget items
+ * 1-5: IATI standard vocabularies
+ * 98-99: Country-specific (requires vocabulary_uri)
+ */
+export type BudgetVocabulary = '1' | '2' | '3' | '4' | '5' | '98' | '99';
+
+/**
  * Country budget items grouped by vocabulary
  */
 export interface CountryBudgetItems {
   id?: string;
   activity_id?: string;
-  vocabulary: string; // '1' through '5'
+  vocabulary: BudgetVocabulary; // '1' through '5', or '98'/'99' for country-specific
+  vocabulary_uri?: string; // Required when vocabulary is '98' or '99' (IATI recommendation)
   budget_items: BudgetItem[];
   created_at?: string;
   updated_at?: string;

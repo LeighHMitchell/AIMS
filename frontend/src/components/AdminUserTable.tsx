@@ -1,16 +1,24 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { Switch } from "@/components/ui/switch"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
 import { mockUsers } from "@/hooks/useUser"
 import { User, ROLE_LABELS, USER_ROLES, Organization } from "@/types/user"
 import { getRoleBadgeVariant } from "@/lib/role-badge-utils"
-import { Search, UserPlus, Edit, Mail, Phone, Building2, Loader2, AlertCircle, Shield, Key } from "lucide-react"
+import { Search, UserPlus, Edit, Mail, Phone, Building2, Loader2, AlertCircle, Shield, Key, Lock, ArrowUpDown, ArrowUp, ArrowDown, Check, X } from "lucide-react"
 import { formatDistanceToNow } from "date-fns"
 import { supabase } from "@/lib/supabase"
 import { toast } from "sonner"
@@ -20,6 +28,9 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { CreateUserModal } from "@/components/admin/CreateUserModal"
 import { EditUserModal } from "@/components/admin/EditUserModal"
 import { ResetPasswordModal } from "@/components/ResetPasswordModal"
+
+type SortField = 'name' | 'organization' | 'role' | 'status' | 'lastLogin'
+type SortOrder = 'asc' | 'desc'
 
 interface ExtendedUser extends User {
   // Extended user includes all fields from User type
@@ -38,6 +49,20 @@ export function AdminUserTable() {
   const [isCreateUserModalOpen, setIsCreateUserModalOpen] = useState(false)
   const [editingUser, setEditingUser] = useState<ExtendedUser | null>(null)
   const [resetPasswordUser, setResetPasswordUser] = useState<ExtendedUser | null>(null)
+
+  // Sorting state
+  const [sortField, setSortField] = useState<SortField>('name')
+  const [sortOrder, setSortOrder] = useState<SortOrder>('asc')
+
+  // Inline editing state
+  const [editingPhoneUserId, setEditingPhoneUserId] = useState<string | null>(null)
+  const [editingEmailUserId, setEditingEmailUserId] = useState<string | null>(null)
+  const [editPhoneValue, setEditPhoneValue] = useState("")
+  const [editEmailValue, setEditEmailValue] = useState("")
+  const [savingUserId, setSavingUserId] = useState<string | null>(null)
+
+  const phoneInputRef = useRef<HTMLInputElement>(null)
+  const emailInputRef = useRef<HTMLInputElement>(null)
 
   // Security check - only super users can access this
   const canAccess = currentUser?.role === USER_ROLES.SUPER_USER
@@ -164,8 +189,39 @@ export function AdminUserTable() {
       filtered = filtered.filter(user => user.organizationId === orgFilter)
     }
 
+    // Apply sorting
+    filtered.sort((a, b) => {
+      let comparison = 0
+      switch (sortField) {
+        case 'name':
+          const nameA = a.firstName && a.lastName
+            ? `${a.firstName} ${a.lastName}`
+            : a.name || ''
+          const nameB = b.firstName && b.lastName
+            ? `${b.firstName} ${b.lastName}`
+            : b.name || ''
+          comparison = nameA.localeCompare(nameB)
+          break
+        case 'organization':
+          comparison = (a.organization?.name || '').localeCompare(b.organization?.name || '')
+          break
+        case 'role':
+          comparison = (a.role || '').localeCompare(b.role || '')
+          break
+        case 'status':
+          comparison = (a.isActive ? 1 : 0) - (b.isActive ? 1 : 0)
+          break
+        case 'lastLogin':
+          const dateA = a.lastLogin ? new Date(a.lastLogin).getTime() : 0
+          const dateB = b.lastLogin ? new Date(b.lastLogin).getTime() : 0
+          comparison = dateA - dateB
+          break
+      }
+      return sortOrder === 'asc' ? comparison : -comparison
+    })
+
     setFilteredUsers(filtered)
-  }, [searchQuery, roleFilter, orgFilter, users])
+  }, [searchQuery, roleFilter, orgFilter, users, sortField, sortOrder])
 
   // Removed local getRoleBadgeVariant function - now using unified utility
 
@@ -216,6 +272,139 @@ export function AdminUserTable() {
   const handlePasswordReset = () => {
     setResetPasswordUser(null)
     // No need to refresh data as password reset doesn't change user profile data
+  }
+
+  // Sorting handler
+  const handleSort = (field: SortField) => {
+    if (sortField === field) {
+      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')
+    } else {
+      setSortField(field)
+      setSortOrder('asc')
+    }
+  }
+
+  // Get sort icon for column headers
+  const getSortIcon = (field: SortField) => {
+    if (sortField !== field) {
+      return <ArrowUpDown className="h-4 w-4 ml-1 opacity-50" />
+    }
+    return sortOrder === 'desc'
+      ? <ArrowDown className="h-4 w-4 ml-1" />
+      : <ArrowUp className="h-4 w-4 ml-1" />
+  }
+
+  // Inline status toggle handler
+  const handleStatusToggle = async (userId: string, newStatus: boolean) => {
+    setSavingUserId(userId)
+    try {
+      const response = await fetch('/api/users/update', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: userId, is_active: newStatus })
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to update status')
+      }
+
+      // Update local state
+      setUsers(prev => prev.map(user =>
+        user.id === userId ? { ...user, isActive: newStatus } : user
+      ))
+      toast.success(`User ${newStatus ? 'activated' : 'deactivated'} successfully`)
+    } catch (error) {
+      console.error('Error updating status:', error)
+      toast.error('Failed to update user status')
+    } finally {
+      setSavingUserId(null)
+    }
+  }
+
+  // Inline phone editing handlers
+  const startPhoneEdit = (user: ExtendedUser) => {
+    setEditingPhoneUserId(user.id)
+    setEditPhoneValue(user.telephone || user.phone || '')
+    setTimeout(() => phoneInputRef.current?.focus(), 0)
+  }
+
+  const cancelPhoneEdit = () => {
+    setEditingPhoneUserId(null)
+    setEditPhoneValue('')
+  }
+
+  const savePhoneEdit = async (userId: string) => {
+    setSavingUserId(userId)
+    try {
+      const response = await fetch('/api/users/update', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: userId, telephone: editPhoneValue })
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to update phone')
+      }
+
+      // Update local state
+      setUsers(prev => prev.map(user =>
+        user.id === userId ? { ...user, telephone: editPhoneValue, phone: editPhoneValue } : user
+      ))
+      toast.success('Phone number updated')
+      setEditingPhoneUserId(null)
+      setEditPhoneValue('')
+    } catch (error) {
+      console.error('Error updating phone:', error)
+      toast.error('Failed to update phone number')
+    } finally {
+      setSavingUserId(null)
+    }
+  }
+
+  // Inline email editing handlers
+  const startEmailEdit = (user: ExtendedUser) => {
+    setEditingEmailUserId(user.id)
+    setEditEmailValue(user.email || '')
+    setTimeout(() => emailInputRef.current?.focus(), 0)
+  }
+
+  const cancelEmailEdit = () => {
+    setEditingEmailUserId(null)
+    setEditEmailValue('')
+  }
+
+  const saveEmailEdit = async (userId: string) => {
+    if (!editEmailValue || !editEmailValue.includes('@')) {
+      toast.error('Please enter a valid email address')
+      return
+    }
+
+    setSavingUserId(userId)
+    try {
+      const response = await fetch('/api/users/change-email-simple', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId, newEmail: editEmailValue })
+      })
+
+      if (!response.ok) {
+        const data = await response.json()
+        throw new Error(data.error || 'Failed to update email')
+      }
+
+      // Update local state
+      setUsers(prev => prev.map(user =>
+        user.id === userId ? { ...user, email: editEmailValue } : user
+      ))
+      toast.success('Email updated successfully')
+      setEditingEmailUserId(null)
+      setEditEmailValue('')
+    } catch (error: any) {
+      console.error('Error updating email:', error)
+      toast.error(error.message || 'Failed to update email')
+    } finally {
+      setSavingUserId(null)
+    }
   }
 
   // Security check
@@ -327,14 +516,65 @@ export function AdminUserTable() {
 
         {/* Table */}
         <div className="rounded-md border overflow-x-auto">
+          <TooltipProvider>
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>User</TableHead>
-                <TableHead>Role</TableHead>
-                <TableHead>Organization</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Last Login</TableHead>
+                <TableHead
+                  className="cursor-pointer hover:bg-muted/50 transition-colors"
+                  onClick={() => handleSort('name')}
+                >
+                  <div className="flex items-center">
+                    User
+                    {getSortIcon('name')}
+                  </div>
+                </TableHead>
+                <TableHead>
+                  <div className="flex items-center gap-1">
+                    <span
+                      className="flex items-center cursor-pointer hover:text-foreground transition-colors"
+                      onClick={() => handleSort('role')}
+                    >
+                      Role
+                      {getSortIcon('role')}
+                    </span>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Lock className="h-3.5 w-3.5 text-muted-foreground" />
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Only Super Users can modify roles</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </div>
+                </TableHead>
+                <TableHead
+                  className="cursor-pointer hover:bg-muted/50 transition-colors"
+                  onClick={() => handleSort('organization')}
+                >
+                  <div className="flex items-center">
+                    Organization
+                    {getSortIcon('organization')}
+                  </div>
+                </TableHead>
+                <TableHead
+                  className="cursor-pointer hover:bg-muted/50 transition-colors"
+                  onClick={() => handleSort('status')}
+                >
+                  <div className="flex items-center">
+                    Status
+                    {getSortIcon('status')}
+                  </div>
+                </TableHead>
+                <TableHead
+                  className="cursor-pointer hover:bg-muted/50 transition-colors"
+                  onClick={() => handleSort('lastLogin')}
+                >
+                  <div className="flex items-center">
+                    Last Login
+                    {getSortIcon('lastLogin')}
+                  </div>
+                </TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
@@ -342,47 +582,235 @@ export function AdminUserTable() {
               {filteredUsers.length > 0 ? (
                 filteredUsers.map((user) => (
                   <TableRow key={user.id}>
+                    {/* User column with name, email (clickable/editable), phone (editable) */}
                     <TableCell>
                       <div>
                         <p className="font-medium">
-                          {user.firstName && user.lastName 
-                            ? `${user.firstName}${user.middleName ? ` ${user.middleName}` : ''} ${user.lastName}` 
+                          {user.firstName && user.lastName
+                            ? `${user.firstName}${user.middleName ? ` ${user.middleName}` : ''} ${user.lastName}`
                             : user.name}
                         </p>
-                        <div className="flex items-center gap-3 text-sm text-muted-foreground mt-1">
-                          <span className="flex items-center gap-1">
-                            <Mail className="h-3 w-3" />
-                            {user.email}
-                          </span>
-                          {(user.telephone || user.phone) && (
-                            <span className="flex items-center gap-1">
-                              <Phone className="h-3 w-3" />
-                              {user.telephone || user.phone}
+                        <div className="flex flex-col gap-1 text-sm text-muted-foreground mt-1">
+                          {/* Email - clickable or inline editable */}
+                          {editingEmailUserId === user.id ? (
+                            <div className="flex items-center gap-1">
+                              <Mail className="h-3 w-3 flex-shrink-0" />
+                              <Input
+                                ref={emailInputRef}
+                                type="email"
+                                value={editEmailValue}
+                                onChange={(e) => setEditEmailValue(e.target.value)}
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter') saveEmailEdit(user.id)
+                                  if (e.key === 'Escape') cancelEmailEdit()
+                                }}
+                                onBlur={() => {
+                                  // Save on blur if value changed
+                                  if (editEmailValue !== user.email) {
+                                    saveEmailEdit(user.id)
+                                  } else {
+                                    cancelEmailEdit()
+                                  }
+                                }}
+                                className="h-6 text-xs w-48"
+                                disabled={savingUserId === user.id}
+                              />
+                              {savingUserId === user.id ? (
+                                <Loader2 className="h-3 w-3 animate-spin" />
+                              ) : (
+                                <>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-5 w-5 p-0"
+                                    onClick={() => saveEmailEdit(user.id)}
+                                  >
+                                    <Check className="h-3 w-3 text-green-600" />
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-5 w-5 p-0"
+                                    onClick={cancelEmailEdit}
+                                  >
+                                    <X className="h-3 w-3 text-red-600" />
+                                  </Button>
+                                </>
+                              )}
+                            </div>
+                          ) : (
+                            <span className="flex items-center gap-1 group">
+                              <Mail className="h-3 w-3 flex-shrink-0" />
+                              <a
+                                href={`mailto:${user.email}`}
+                                className="text-blue-600 hover:text-blue-800 hover:underline"
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                {user.email}
+                              </a>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-5 w-5 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  startEmailEdit(user)
+                                }}
+                                title="Edit email"
+                              >
+                                <Edit className="h-3 w-3 text-muted-foreground" />
+                              </Button>
+                            </span>
+                          )}
+
+                          {/* Phone - editable */}
+                          {editingPhoneUserId === user.id ? (
+                            <div className="flex items-center gap-1">
+                              <Phone className="h-3 w-3 flex-shrink-0" />
+                              <Input
+                                ref={phoneInputRef}
+                                type="tel"
+                                value={editPhoneValue}
+                                onChange={(e) => setEditPhoneValue(e.target.value)}
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter') savePhoneEdit(user.id)
+                                  if (e.key === 'Escape') cancelPhoneEdit()
+                                }}
+                                onBlur={() => {
+                                  const originalPhone = user.telephone || user.phone || ''
+                                  if (editPhoneValue !== originalPhone) {
+                                    savePhoneEdit(user.id)
+                                  } else {
+                                    cancelPhoneEdit()
+                                  }
+                                }}
+                                className="h-6 text-xs w-36"
+                                disabled={savingUserId === user.id}
+                                placeholder="Enter phone number"
+                              />
+                              {savingUserId === user.id ? (
+                                <Loader2 className="h-3 w-3 animate-spin" />
+                              ) : (
+                                <>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-5 w-5 p-0"
+                                    onClick={() => savePhoneEdit(user.id)}
+                                  >
+                                    <Check className="h-3 w-3 text-green-600" />
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-5 w-5 p-0"
+                                    onClick={cancelPhoneEdit}
+                                  >
+                                    <X className="h-3 w-3 text-red-600" />
+                                  </Button>
+                                </>
+                              )}
+                            </div>
+                          ) : (user.telephone || user.phone) ? (
+                            <span className="flex items-center gap-1 group">
+                              <Phone className="h-3 w-3 flex-shrink-0" />
+                              <span>{user.telephone || user.phone}</span>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-5 w-5 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  startPhoneEdit(user)
+                                }}
+                                title="Edit phone"
+                              >
+                                <Edit className="h-3 w-3 text-muted-foreground" />
+                              </Button>
+                            </span>
+                          ) : (
+                            <span className="flex items-center gap-1 group">
+                              <Phone className="h-3 w-3 flex-shrink-0 text-gray-300" />
+                              <span className="text-gray-400 italic text-xs">No phone</span>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-5 w-5 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  startPhoneEdit(user)
+                                }}
+                                title="Add phone"
+                              >
+                                <Edit className="h-3 w-3 text-muted-foreground" />
+                              </Button>
                             </span>
                           )}
                         </div>
                       </div>
                     </TableCell>
+
+                    {/* Role with lock icon */}
                     <TableCell>
-                      <Badge variant={getRoleBadgeVariant(user.role)}>
-                        {ROLE_LABELS[user.role as keyof typeof ROLE_LABELS] || user.role}
-                      </Badge>
+                      <div className="flex items-center gap-1.5">
+                        <Badge variant={getRoleBadgeVariant(user.role)}>
+                          {ROLE_LABELS[user.role as keyof typeof ROLE_LABELS] || user.role}
+                        </Badge>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Lock className="h-3 w-3 text-muted-foreground/50" />
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Use Edit button to change role</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </div>
                     </TableCell>
+
+                    {/* Organization with logo */}
                     <TableCell>
                       {user.organization ? (
                         <div className="flex items-center gap-2">
-                          <Building2 className="h-4 w-4 text-gray-400" />
-                          <span className="text-sm">{user.organization.name}</span>
+                          {user.organization.logo ? (
+                            <Avatar className="h-6 w-6">
+                              <AvatarImage src={user.organization.logo} alt={user.organization.name} />
+                              <AvatarFallback className="text-xs">
+                                {user.organization.acronym?.slice(0, 2) || user.organization.name.slice(0, 2).toUpperCase()}
+                              </AvatarFallback>
+                            </Avatar>
+                          ) : (
+                            <Building2 className="h-4 w-4 text-gray-400 flex-shrink-0" />
+                          )}
+                          <span className="text-sm">
+                            {user.organization.name}
+                            {user.organization.acronym && ` (${user.organization.acronym})`}
+                          </span>
                         </div>
                       ) : (
                         <span className="text-sm text-muted-foreground">No organization</span>
                       )}
                     </TableCell>
+
+                    {/* Status with inline toggle */}
                     <TableCell>
-                      <Badge variant={user.isActive ? "success" : "secondary"}>
-                        {user.isActive ? "Active" : "Inactive"}
-                      </Badge>
+                      <div className="flex items-center gap-2">
+                        <Switch
+                          checked={user.isActive ?? true}
+                          onCheckedChange={(checked) => handleStatusToggle(user.id, checked)}
+                          disabled={savingUserId === user.id}
+                          aria-label={`Toggle ${user.name} active status`}
+                        />
+                        <span className={`text-xs ${user.isActive ? 'text-green-600' : 'text-gray-500'}`}>
+                          {savingUserId === user.id ? (
+                            <Loader2 className="h-3 w-3 animate-spin" />
+                          ) : (
+                            user.isActive ? 'Active' : 'Inactive'
+                          )}
+                        </span>
+                      </div>
                     </TableCell>
+
+                    {/* Last Login */}
                     <TableCell>
                       <span className="text-sm text-muted-foreground">
                         {user.lastLogin
@@ -390,24 +818,38 @@ export function AdminUserTable() {
                           : "Never"}
                       </span>
                     </TableCell>
+
+                    {/* Actions */}
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end gap-1">
-                        <Button 
-                          variant="ghost" 
-                          size="sm"
-                          onClick={() => handleEditUser(user.id)}
-                          title="Edit user"
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button 
-                          variant="ghost" 
-                          size="sm"
-                          onClick={() => handleResetPassword(user.id)}
-                          title="Reset password"
-                        >
-                          <Key className="h-4 w-4" />
-                        </Button>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleEditUser(user.id)}
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Edit user details</p>
+                          </TooltipContent>
+                        </Tooltip>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleResetPassword(user.id)}
+                            >
+                              <Key className="h-4 w-4" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Reset password</p>
+                          </TooltipContent>
+                        </Tooltip>
                       </div>
                     </TableCell>
                   </TableRow>
@@ -421,6 +863,7 @@ export function AdminUserTable() {
               )}
             </TableBody>
           </Table>
+          </TooltipProvider>
         </div>
       </CardContent>
 

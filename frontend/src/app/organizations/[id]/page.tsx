@@ -63,8 +63,8 @@ import { PartnershipNetwork } from '@/components/organizations/PartnershipNetwor
 import { OrganisationHealthCard } from '@/components/organizations/OrganisationHealthCard'
 import { CopyableIdentifier } from '@/components/organizations/CopyableIdentifier'
 import { SectorAllocationChart } from '@/components/organizations/SectorAllocationChart'
-import { EditOrganizationModal } from '@/components/organizations/EditOrganizationModal'
 import { OrganizationAnalytics } from '@/components/organizations/analytics/OrganizationAnalytics'
+import { OrganizationFundingAnalytics } from '@/components/organizations/analytics/OrganizationFundingAnalytics'
 import SectorSunburstVisualization from '@/components/charts/SectorSunburstVisualization'
 import SectorSankeyVisualization from '@/components/charts/SectorSankeyVisualization'
 import {
@@ -193,7 +193,6 @@ export default function OrganizationProfilePage() {
   const [activeTab, setActiveTab] = useState('activities')
   const [activitiesView, setActivitiesView] = useState<'card' | 'table'>('card')
   const [hoveredPoint, setHoveredPoint] = useState<{year: number, count: number, totalValue: number, x: number, y: number} | null>(null)
-  const [editModalOpen, setEditModalOpen] = useState(false)
   const [deleteActivityId, setDeleteActivityId] = useState<string | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
   const [budgetsByYear, setBudgetsByYear] = useState<Array<{ year: number; amount: number }>>([])
@@ -1024,21 +1023,6 @@ export default function OrganizationProfilePage() {
   // Type guard - organization is guaranteed to be non-null here due to earlier checks
   if (!organization) return null
 
-  const handleEditSuccess = async () => {
-    // Refetch organization data after successful edit
-    try {
-      if (!params?.id) return
-      
-      const orgResponse = await fetch(`/api/organizations/${params.id}`)
-      if (orgResponse.ok) {
-        const orgData = await orgResponse.json()
-        setOrganization(orgData)
-      }
-    } catch (err) {
-      console.error('Failed to refresh organization data:', err)
-    }
-  }
-
   const handleEditActivity = (activityId: string) => {
     router.push(`/activities/new?id=${activityId}`)
   }
@@ -1085,15 +1069,6 @@ export default function OrganizationProfilePage() {
     <MainLayout>
       <div className="min-h-screen">
         <div className="w-full p-6">
-          {/* Edit Organization Modal */}
-          {organization && (
-            <EditOrganizationModal
-              organization={organization}
-              open={editModalOpen}
-              onOpenChange={setEditModalOpen}
-              onSuccess={handleEditSuccess}
-            />
-          )}
 
           {/* Header */}
           <div className="flex items-center justify-between mb-6">
@@ -1111,9 +1086,9 @@ export default function OrganizationProfilePage() {
                 <Download className="h-4 w-4 mr-2" />
                 Export Profile
               </Button>
-              <Button 
+              <Button
                 className="bg-slate-600 hover:bg-slate-700"
-                onClick={() => setEditModalOpen(true)}
+                onClick={() => router.push(`/organizations/${id}/edit`)}
               >
                 <Edit className="h-4 w-4 mr-2" />
                 Edit Organization
@@ -2201,12 +2176,15 @@ export default function OrganizationProfilePage() {
           {/* Main Content Tabs */}
           <Card className="border-slate-200">
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <TabsList className="grid w-full grid-cols-7 lg:grid-cols-7 bg-slate-50 border-b border-slate-200">
+              <TabsList className="grid w-full grid-cols-8 lg:grid-cols-8 bg-slate-50 border-b border-slate-200">
                 <TabsTrigger value="activities" className="data-[state=active]:bg-white data-[state=active]:text-slate-900">
                   Activities
                 </TabsTrigger>
                 <TabsTrigger value="financial-analytics" className="data-[state=active]:bg-white data-[state=active]:text-slate-900">
                   Financial Analytics
+                </TabsTrigger>
+                <TabsTrigger value="organisation-funding" className="data-[state=active]:bg-white data-[state=active]:text-slate-900">
+                  Organisation Funding
                 </TabsTrigger>
                 <TabsTrigger value="sectors" className="data-[state=active]:bg-white data-[state=active]:text-slate-900">
                   Sectors
@@ -2680,6 +2658,15 @@ export default function OrganizationProfilePage() {
                     </CardContent>
                   </Card>
                 </div>
+              </TabsContent>
+
+              <TabsContent value="organisation-funding" className="p-6">
+                {params?.id && (
+                  <OrganizationFundingAnalytics
+                    organizationId={params.id as string}
+                    organizationName={organization?.name}
+                  />
+                )}
               </TabsContent>
 
               <TabsContent value="sectors" className="p-6">

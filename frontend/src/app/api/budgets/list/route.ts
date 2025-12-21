@@ -14,28 +14,35 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '20');
     const offset = (page - 1) * limit;
 
-    // Search and filters
+    // Search and filters - support both single values and arrays
     const search = searchParams.get('search') || '';
     const type = searchParams.get('type') || 'all';
+    const types = searchParams.get('types')?.split(',').filter(Boolean) || [];
     const status = searchParams.get('status') || 'all';
+    const statuses = searchParams.get('statuses')?.split(',').filter(Boolean) || [];
     const organization = searchParams.get('organization') || 'all';
+    const organizations = searchParams.get('organizations')?.split(',').filter(Boolean) || [];
     const sortField = searchParams.get('sortField') || 'period_start';
     const sortOrder = searchParams.get('sortOrder') || 'desc';
 
-    console.log('[Budgets List API] Query params:', { page, limit, search, type, status, sortField, sortOrder });
+    console.log('[Budgets List API] Query params:', { page, limit, search, types, statuses, organizations, sortField, sortOrder });
 
     // Build query - fetch budgets first, then join activities separately
     let query = supabase
       .from('activity_budgets')
       .select('*', { count: 'exact' });
 
-    // Apply type filter
-    if (type !== 'all') {
+    // Apply type filter - support both array and single value
+    if (types.length > 0) {
+      query = query.in('type', types);
+    } else if (type !== 'all') {
       query = query.eq('type', type);
     }
 
-    // Apply status filter
-    if (status !== 'all') {
+    // Apply status filter - support both array and single value
+    if (statuses.length > 0) {
+      query = query.in('status', statuses);
+    } else if (status !== 'all') {
       query = query.eq('status', status);
     }
 

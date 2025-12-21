@@ -176,6 +176,8 @@ export default function BudgetMappingTab({
         toast.success(`Applied ${data.created} budget mappings from sectors`);
         await loadCountryBudgetItems();
         await loadSuggestions();
+        // Collapse the suggestions card after applying
+        setShowSuggestions(false);
       } else {
         const errorData = await response.json();
         toast.error(errorData.error || 'Failed to apply suggestions');
@@ -401,29 +403,30 @@ export default function BudgetMappingTab({
         <Card className="bg-white mb-6">
           <CardHeader className="pb-2">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
+              <div
+                className={`flex items-center gap-2 ${hasSuggestions ? 'cursor-pointer' : ''}`}
+                onClick={() => hasSuggestions && setShowSuggestions(!showSuggestions)}
+              >
+                {hasSuggestions && (
+                  showSuggestions ? (
+                    <ChevronDown className="h-5 w-5 text-muted-foreground" />
+                  ) : (
+                    <ChevronRight className="h-5 w-5 text-muted-foreground" />
+                  )
+                )}
                 <Sparkles className="h-5 w-5 text-muted-foreground" />
                 <CardTitle className="text-lg">Suggested Budget Mappings</CardTitle>
               </div>
               <div className="flex items-center gap-2">
                 {hasSuggestions && (
-                  <>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setShowSuggestions(!showSuggestions)}
-                    >
-                      {showSuggestions ? 'Hide' : 'Show'} Suggestions
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={loadSuggestions}
-                      disabled={loadingSuggestions}
-                    >
-                      <RefreshCw className={`h-4 w-4 ${loadingSuggestions ? 'animate-spin' : ''}`} />
-                    </Button>
-                  </>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={loadSuggestions}
+                    disabled={loadingSuggestions}
+                  >
+                    <RefreshCw className={`h-4 w-4 ${loadingSuggestions ? 'animate-spin' : ''}`} />
+                  </Button>
                 )}
               </div>
             </div>

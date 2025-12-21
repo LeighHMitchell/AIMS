@@ -1,12 +1,77 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase';
-import { 
-  TransactionSectorLine, 
-  TransactionSectorValidation, 
+import {
+  TransactionSectorLine,
+  TransactionSectorValidation,
   TransactionSectorsResponse,
   UpdateTransactionSectorsRequest,
   TransactionSectorLineFormData
 } from '@/types/transaction';
+import { inferAndApplyBudgetLines } from '@/lib/transaction-budget-inference';
+
+// Helper function to trigger budget line inference after sector changes
+async function triggerBudgetLineInference(transactionId: string) {
+  try {
+    console.log('[Sectors API] Triggering budget line inference for transaction:', transactionId);
+    const supabase = getSupabaseAdmin();
+
+    // Fetch transaction with its data
+    const { data: transaction, error: txnError } = await supabase
+      .from('transactions')
+      .select(`
+        uuid,
+        value,
+        currency,
+        provider_org_id,
+        receiver_org_id,
+        finance_type,
+        effective_finance_type
+      `)
+      .eq('uuid', transactionId)
+      .single();
+
+    if (txnError || !transaction) {
+      console.error('[Sectors API] Error fetching transaction for inference:', txnError);
+      return;
+    }
+
+    // Get updated transaction sectors
+    const { data: sectorLines } = await supabase
+      .from('transaction_sector_lines')
+      .select('sector_code, sector_name, percentage')
+      .eq('transaction_id', transactionId)
+      .is('deleted_at', null);
+
+    // Build inference input
+    const input = {
+      providerOrgId: transaction.provider_org_id,
+      receiverOrgId: transaction.receiver_org_id,
+      financeType: transaction.effective_finance_type || transaction.finance_type,
+      sectors: (sectorLines || []).map((s: any) => ({
+        code: s.sector_code,
+        name: s.sector_name,
+        percentage: s.percentage,
+      })),
+      value: transaction.value || 0,
+      currency: transaction.currency || 'USD',
+    };
+
+    // Infer and apply budget lines
+    const result = await inferAndApplyBudgetLines(supabase, transactionId, input);
+
+    if (result.success) {
+      console.log('[Sectors API] Budget line inference completed:', {
+        transactionId,
+        linesCreated: result.linesCreated,
+        linesPreserved: result.linesPreserved,
+      });
+    } else {
+      console.error('[Sectors API] Budget line inference failed');
+    }
+  } catch (error) {
+    console.error('[Sectors API] Unexpected error during budget line inference:', error);
+  }
+}
 
 // Validation function for transaction sector allocations
 function validateTransactionSectors(
@@ -293,12 +358,17 @@ export async function PUT(
         validation: finalValidation
       }
     };
-    
+
+    // Trigger budget line inference (runs in background, doesn't block response)
+    triggerBudgetLineInference(transactionId).catch(err =>
+      console.error('[Sectors API] Background budget inference failed:', err)
+    );
+
     return NextResponse.json({
       ...response,
       changes
     });
-    
+
   } catch (error) {
     console.error('Unexpected error in PUT /api/transactions/[transactionId]/sectors:', error);
     return NextResponse.json(
@@ -340,11 +410,17 @@ export async function DELETE(
     if (deleteError) {
       console.error('Error deleting sector lines:', deleteError);
       return NextResponse.json(
-        { error: 'Failed to delete sector lines' }, 
+        { error: 'Failed to delete sector lines' },
         { status: 500 }
       );
     }
-    
+
+    // Trigger budget line inference (runs in background, doesn't block response)
+    // This will update budget lines now that sectors are cleared
+    triggerBudgetLineInference(transactionId).catch(err =>
+      console.error('[Sectors API] Background budget inference failed:', err)
+    );
+
     return NextResponse.json({
       success: true,
       remaining_lines: [],
@@ -356,7 +432,7 @@ export async function DELETE(
         totalAmount: 0
       }
     });
-    
+
   } catch (error) {
     console.error('Unexpected error in DELETE /api/transactions/[transactionId]/sectors:', error);
     return NextResponse.json(

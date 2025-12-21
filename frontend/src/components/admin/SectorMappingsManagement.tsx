@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import {
   Card,
   CardContent,
@@ -11,6 +11,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
   Command,
@@ -20,6 +21,13 @@ import {
   CommandGroup,
   CommandItem,
 } from "@/components/ui/command";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { toast } from "sonner";
 import {
   Map,
@@ -36,6 +44,10 @@ import {
   Download,
   Lock,
   Unlock,
+  Building2,
+  Landmark,
+  DollarSign,
+  CreditCard,
 } from "lucide-react";
 import {
   SectorBudgetMapping,
@@ -45,6 +57,11 @@ import {
   GroupedSectorMapping,
 } from "@/types/aid-on-budget";
 import dacSectorsData from "@/data/dac-sectors.json";
+import financeTypesData from "@/data/finance-types.json";
+
+// ============================================================================
+// Types
+// ============================================================================
 
 interface SectorCategory {
   code: string;
@@ -56,7 +73,58 @@ interface SectorCategory {
   }[];
 }
 
-// Parse DAC sectors into hierarchical structure
+interface FinanceType {
+  code: string;
+  name: string;
+  description: string;
+  group: string;
+  withdrawn: boolean;
+}
+
+interface OrganizationMapping {
+  organizationId: string;
+  organizationName: string;
+  acronym?: string;
+  iatiOrgId?: string;
+  orgType?: string;
+  orgTypeName?: string;
+  mapping: {
+    id: string;
+    budgetClassificationId: string;
+    budgetClassification: BudgetClassification;
+    notes?: string;
+  } | null;
+}
+
+interface FinanceTypeMapping {
+  financeTypeCode: string;
+  financeTypeName: string;
+  description: string;
+  group: string;
+  mapping: {
+    id: string;
+    budgetClassificationId: string;
+    budgetClassification: BudgetClassification;
+    notes?: string;
+  } | null;
+}
+
+type MappingMode = "sectors" | "administrative" | "funding_sources" | "revenue" | "liabilities";
+
+interface CountrySector {
+  id: string;
+  code: string;
+  name: string;
+  description?: string;
+  level: number;
+  sortOrder: number;
+  isActive: boolean;
+}
+
+// ============================================================================
+// Helpers
+// ============================================================================
+
 function parseDacSectors(): SectorCategory[] {
   const categories: SectorCategory[] = [];
 
@@ -78,47 +146,63 @@ function parseDacSectors(): SectorCategory[] {
   return categories.sort((a, b) => a.code.localeCompare(b.code));
 }
 
-// Cell being edited
-interface EditingCell {
-  sectorCode: string;
-  sectorName: string;
-  isCategory: boolean;
-  classificationType: ClassificationType;
-  currentValue: string;
-  mappingId?: string;
-}
-
-type SortColumn = "sector" | "administrative" | "functional" | "functional_cofog" | "economic" | "programme";
-type SortDirection = "asc" | "desc";
+// ============================================================================
+// Main Component
+// ============================================================================
 
 export function SectorMappingsManagement() {
-  const [mappings, setMappings] = useState<Record<string, GroupedSectorMapping>>({});
+  const [activeMode, setActiveMode] = useState<MappingMode>("sectors");
+
+  // Sector mappings state
+  const [sectorMappings, setSectorMappings] = useState<Record<string, GroupedSectorMapping>>({});
   const [classifications, setClassifications] = useState<BudgetClassification[]>([]);
+
+  // Organization mappings state (Funding Sources)
+  const [orgMappings, setOrgMappings] = useState<OrganizationMapping[]>([]);
+
+  // Administrative mappings state (Receiver Orgs)
+  const [adminMappings, setAdminMappings] = useState<OrganizationMapping[]>([]);
+
+  // Finance type mappings state
+  const [financeTypeMappings, setFinanceTypeMappings] = useState<FinanceTypeMapping[]>([]);
+
+  // Country sectors state (from country_sector_vocabularies)
+  const [countrySectors, setCountrySectors] = useState<CountrySector[]>([]);
+  const [countrySectorsLoading, setCountrySectorsLoading] = useState(false);
+
+  // Common state
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
-  // UI state
   const [searchQuery, setSearchQuery] = useState("");
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
-  const [editingCell, setEditingCell] = useState<EditingCell | null>(null);
+  const [isLocked, setIsLocked] = useState(true);
+  const [orgTypeFilter, setOrgTypeFilter] = useState<string>("all");
+
+  // Editing state
+  const [editingCell, setEditingCell] = useState<any>(null);
   const [editValue, setEditValue] = useState<string>("");
   const [saving, setSaving] = useState(false);
   const [comboboxOpen, setComboboxOpen] = useState(false);
   const [comboboxSearch, setComboboxSearch] = useState("");
-  const [sortColumn, setSortColumn] = useState<SortColumn>("sector");
-  const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
-  const [isLocked, setIsLocked] = useState(true);
 
   const dacCategories = useMemo(() => parseDacSectors(), []);
+  const financeTypes = useMemo(() =>
+    (financeTypesData as FinanceType[]).filter(ft => !ft.withdrawn),
+    []
+  );
 
   // Group classifications by type
   const classificationsByType = useMemo(() => {
-    const grouped: Record<ClassificationType, BudgetClassification[]> = {
+    const grouped: Record<string, BudgetClassification[]> = {
       functional: [],
       functional_cofog: [],
       administrative: [],
       economic: [],
       programme: [],
+      funding_sources: [],
+      revenue: [],
+      liabilities: [],
+      country_sector: [],
     };
 
     classifications.forEach((c) => {
@@ -127,65 +211,189 @@ export function SectorMappingsManagement() {
       }
     });
 
-    return grouped;
-  }, [classifications]);
-
-  // Build hierarchical structure for COFOG (divisions with groups underneath)
-  const cofogHierarchy = useMemo(() => {
-    const cofogClassifications = classificationsByType.functional_cofog;
-    const divisions = cofogClassifications.filter(c => c.level === 1).sort((a, b) => a.sortOrder - b.sortOrder);
-
-    return divisions.map(division => ({
-      division,
-      groups: cofogClassifications
-        .filter(c => c.parentId === division.id && c.level === 2)
-        .sort((a, b) => a.sortOrder - b.sortOrder)
+    // Convert country sectors to BudgetClassification format for the dropdown
+    // This allows the existing UI components to work with country sectors
+    grouped.country_sector = countrySectors.map((cs) => ({
+      id: cs.id,
+      code: cs.code,
+      name: cs.name,
+      nameLocal: undefined,
+      description: cs.description,
+      classificationType: "country_sector" as ClassificationType,
+      parentId: undefined,
+      level: cs.level,
+      isActive: cs.isActive,
+      sortOrder: cs.sortOrder,
     }));
-  }, [classificationsByType.functional_cofog]);
 
-  // Fetch mappings
-  const fetchMappings = useCallback(async () => {
+    return grouped;
+  }, [classifications, countrySectors]);
+
+  // ============================================================================
+  // Data Fetching
+  // ============================================================================
+
+  const fetchClassifications = useCallback(async () => {
+    try {
+      const response = await fetch("/api/admin/budget-classifications?flat=true&activeOnly=true");
+      const data = await response.json();
+      if (response.ok) {
+        setClassifications(data.data || []);
+      }
+    } catch (err: any) {
+      console.error("Error fetching classifications:", err);
+    }
+  }, []);
+
+  const fetchSectorMappings = useCallback(async () => {
     try {
       setLoading(true);
       const response = await fetch("/api/admin/sector-mappings?grouped=true");
       const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || "Failed to fetch mappings");
-      }
-
-      setMappings(data.data || {});
+      if (!response.ok) throw new Error(data.error);
+      setSectorMappings(data.data || {});
       setError(null);
     } catch (err: any) {
-      console.error("Error fetching mappings:", err);
       setError(err.message || "Failed to load mappings");
     } finally {
       setLoading(false);
     }
   }, []);
 
-  // Fetch classifications
-  const fetchClassifications = useCallback(async () => {
+  const fetchOrgMappings = useCallback(async () => {
     try {
-      const response = await fetch("/api/admin/budget-classifications?flat=true");
+      setLoading(true);
+      const response = await fetch("/api/admin/organization-mappings");
       const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || "Failed to fetch classifications");
-      }
-
-      setClassifications(data.data || []);
+      if (!response.ok) throw new Error(data.error);
+      setOrgMappings(data.data || []);
+      setError(null);
     } catch (err: any) {
-      console.error("Error fetching classifications:", err);
+      setError(err.message || "Failed to load organization mappings");
+    } finally {
+      setLoading(false);
     }
   }, []);
 
-  useEffect(() => {
-    fetchMappings();
-    fetchClassifications();
-  }, [fetchMappings, fetchClassifications]);
+  const fetchAdminMappings = useCallback(async () => {
+    try {
+      setLoading(true);
+      const response = await fetch("/api/admin/organization-administrative-mappings");
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error);
+      setAdminMappings(data.data || []);
+      setError(null);
+    } catch (err: any) {
+      setError(err.message || "Failed to load administrative mappings");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
-  // Toggle category expansion
+  const fetchFinanceTypeMappings = useCallback(async (type: "revenue" | "liabilities") => {
+    try {
+      setLoading(true);
+      const response = await fetch(`/api/admin/finance-type-mappings?classificationType=${type}`);
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error);
+      setFinanceTypeMappings(data.data || []);
+      setError(null);
+    } catch (err: any) {
+      setError(err.message || "Failed to load finance type mappings");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  // Fetch country sectors from the default sector vocabulary
+  const fetchCountrySectors = useCallback(async () => {
+    try {
+      setCountrySectorsLoading(true);
+      // First get all active vocabularies
+      const vocabResponse = await fetch("/api/admin/country-sector-vocabularies?activeOnly=true");
+      const vocabData = await vocabResponse.json();
+
+      if (!vocabResponse.ok) {
+        console.error("Failed to fetch vocabularies:", vocabData.error);
+        return;
+      }
+
+      // Filter to only sector-type vocabularies
+      const sectorVocabs = vocabData.data?.filter((v: any) => v.vocabulary_type === "sector" || !v.vocabulary_type) || [];
+
+      // Find the default sector vocabulary or the first sector vocabulary
+      const defaultVocab = sectorVocabs.find((v: any) => v.is_default) || sectorVocabs[0];
+
+      if (!defaultVocab) {
+        // No vocabulary exists yet
+        setCountrySectors([]);
+        return;
+      }
+
+      // Fetch sectors from the default vocabulary
+      const sectorsResponse = await fetch(`/api/admin/country-sector-vocabularies/${defaultVocab.id}`);
+      const sectorsData = await sectorsResponse.json();
+
+      if (!sectorsResponse.ok) {
+        console.error("Failed to fetch sectors:", sectorsData.error);
+        return;
+      }
+
+      // Transform sectors to the expected format
+      // API returns { success: true, data: { ...vocabulary, sectors: [...] } }
+      const sectors: CountrySector[] = (sectorsData.data?.sectors || [])
+        .filter((s: any) => s.is_active)
+        .map((s: any) => ({
+          id: s.id,
+          code: s.code,
+          name: s.name,
+          description: s.description,
+          level: s.level || 1,
+          sortOrder: s.sort_order || 0,
+          isActive: s.is_active,
+        }));
+
+      setCountrySectors(sectors);
+    } catch (err: any) {
+      console.error("Error fetching country sectors:", err);
+    } finally {
+      setCountrySectorsLoading(false);
+    }
+  }, []);
+
+  // Initial fetch
+  useEffect(() => {
+    fetchClassifications();
+    fetchCountrySectors();
+  }, [fetchClassifications, fetchCountrySectors]);
+
+  // Fetch data based on active mode
+  useEffect(() => {
+    setSearchQuery("");
+    setExpandedCategories(new Set());
+
+    if (activeMode === "sectors") {
+      fetchSectorMappings();
+    } else if (activeMode === "administrative") {
+      fetchAdminMappings();
+    } else if (activeMode === "funding_sources") {
+      fetchOrgMappings();
+    } else if (activeMode === "revenue" || activeMode === "liabilities") {
+      fetchFinanceTypeMappings(activeMode);
+    }
+  }, [activeMode, fetchSectorMappings, fetchAdminMappings, fetchOrgMappings, fetchFinanceTypeMappings]);
+
+  // ============================================================================
+  // Common handlers
+  // ============================================================================
+
+  const cancelEditing = () => {
+    setEditingCell(null);
+    setEditValue("");
+    setComboboxOpen(false);
+    setComboboxSearch("");
+  };
+
   const toggleCategory = (categoryCode: string) => {
     const newExpanded = new Set(expandedCategories);
     if (newExpanded.has(categoryCode)) {
@@ -196,201 +404,43 @@ export function SectorMappingsManagement() {
     setExpandedCategories(newExpanded);
   };
 
-  // Expand all categories
   const expandAll = () => {
-    setExpandedCategories(new Set(dacCategories.map(c => c.code)));
+    if (activeMode === "sectors") {
+      setExpandedCategories(new Set(dacCategories.map(c => c.code)));
+    } else {
+      // For finance types, expand all groups
+      const groups = new Set(financeTypes.map(ft => ft.group));
+      setExpandedCategories(groups);
+    }
   };
 
-  // Collapse all categories
   const collapseAll = () => {
     setExpandedCategories(new Set());
   };
 
-  // Filter sectors based on search
-  // Helper to get mapping value for sorting
-  const getMappingValue = (sectorCode: string, type: ClassificationType): string => {
-    const mapping = mappings[sectorCode]?.mappings[type];
-    if (mapping?.budgetClassification) {
-      return `${mapping.budgetClassification.code} ${mapping.budgetClassification.name}`;
-    }
-    // Check inherited
-    const categoryCode = sectorCode.substring(0, 3);
-    const inherited = mappings[categoryCode]?.mappings[type];
-    if (inherited?.budgetClassification) {
-      return `${inherited.budgetClassification.code} ${inherited.budgetClassification.name}`;
-    }
-    return "";
-  };
+  // ============================================================================
+  // Sector Mappings handlers (existing logic)
+  // ============================================================================
 
-  const filteredCategories = useMemo(() => {
-    let result = dacCategories;
-
-    // Apply search filter
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase();
-      result = result
-        .map((category) => ({
-          ...category,
-          sectors: category.sectors.filter(
-            (sector) =>
-              sector.code.includes(query) ||
-              sector.name.toLowerCase().includes(query)
-          ),
-        }))
-        .filter(
-          (category) =>
-            category.code.includes(query) ||
-            category.name.toLowerCase().includes(query) ||
-            category.sectors.length > 0
-        );
-    }
-
-    // Apply sorting
-    const sortedResult = [...result].sort((a, b) => {
-      let aVal: string, bVal: string;
-
-      if (sortColumn === "sector") {
-        aVal = a.code;
-        bVal = b.code;
-      } else {
-        aVal = getMappingValue(a.code, sortColumn as ClassificationType);
-        bVal = getMappingValue(b.code, sortColumn as ClassificationType);
-      }
-
-      const comparison = aVal.localeCompare(bVal);
-      return sortDirection === "asc" ? comparison : -comparison;
-    });
-
-    // Also sort sectors within each category
-    return sortedResult.map((category) => ({
-      ...category,
-      sectors: [...category.sectors].sort((a, b) => {
-        let aVal: string, bVal: string;
-
-        if (sortColumn === "sector") {
-          aVal = a.code;
-          bVal = b.code;
-        } else {
-          aVal = getMappingValue(a.code, sortColumn as ClassificationType);
-          bVal = getMappingValue(b.code, sortColumn as ClassificationType);
-        }
-
-        const comparison = aVal.localeCompare(bVal);
-        return sortDirection === "asc" ? comparison : -comparison;
-      }),
-    }));
-  }, [dacCategories, searchQuery, sortColumn, sortDirection, mappings]);
-
-  // Toggle sort column
-  const toggleSort = (column: SortColumn) => {
-    if (sortColumn === column) {
-      setSortDirection(sortDirection === "asc" ? "desc" : "asc");
-    } else {
-      setSortColumn(column);
-      setSortDirection("asc");
-    }
-  };
-
-  // Export to CSV
-  const exportToCSV = () => {
-    const headers = ["Sector Code", "Sector Name", "Level", "Administrative", "Functional - National", "Functional - COFOG", "Economic", "Programme"];
-    const rows: string[][] = [];
-
-    // Iterate through all categories and sectors
-    for (const category of dacCategories) {
-      // Add category row
-      const catAdmin = mappings[category.code]?.mappings.administrative?.budgetClassification;
-      const catFunc = mappings[category.code]?.mappings.functional?.budgetClassification;
-      const catFuncCofog = mappings[category.code]?.mappings.functional_cofog?.budgetClassification;
-      const catEcon = mappings[category.code]?.mappings.economic?.budgetClassification;
-      const catProg = mappings[category.code]?.mappings.programme?.budgetClassification;
-
-      rows.push([
-        category.code,
-        category.name,
-        "Category",
-        catAdmin ? `${catAdmin.code} - ${catAdmin.name}` : "",
-        catFunc ? `${catFunc.code} - ${catFunc.name}` : "",
-        catFuncCofog ? `${catFuncCofog.code} - ${catFuncCofog.name}` : "",
-        catEcon ? `${catEcon.code} - ${catEcon.name}` : "",
-        catProg ? `${catProg.code} - ${catProg.name}` : "",
-      ]);
-
-      // Add sector rows
-      for (const sector of category.sectors) {
-        const secAdmin = mappings[sector.code]?.mappings.administrative?.budgetClassification ||
-          (mappings[category.code]?.mappings.administrative?.budgetClassification);
-        const secFunc = mappings[sector.code]?.mappings.functional?.budgetClassification ||
-          (mappings[category.code]?.mappings.functional?.budgetClassification);
-        const secFuncCofog = mappings[sector.code]?.mappings.functional_cofog?.budgetClassification ||
-          (mappings[category.code]?.mappings.functional_cofog?.budgetClassification);
-        const secEcon = mappings[sector.code]?.mappings.economic?.budgetClassification ||
-          (mappings[category.code]?.mappings.economic?.budgetClassification);
-        const secProg = mappings[sector.code]?.mappings.programme?.budgetClassification ||
-          (mappings[category.code]?.mappings.programme?.budgetClassification);
-
-        const hasOwnMapping = mappings[sector.code] && Object.keys(mappings[sector.code].mappings).length > 0;
-
-        rows.push([
-          sector.code,
-          sector.name,
-          hasOwnMapping ? "Sector (custom)" : "Sector (inherited)",
-          secAdmin ? `${secAdmin.code} - ${secAdmin.name}` : "",
-          secFunc ? `${secFunc.code} - ${secFunc.name}` : "",
-          secFuncCofog ? `${secFuncCofog.code} - ${secFuncCofog.name}` : "",
-          secEcon ? `${secEcon.code} - ${secEcon.name}` : "",
-          secProg ? `${secProg.code} - ${secProg.name}` : "",
-        ]);
-      }
-    }
-
-    // Create CSV content
-    const escapeCSV = (val: string) => {
-      if (val.includes(",") || val.includes('"') || val.includes("\n")) {
-        return `"${val.replace(/"/g, '""')}"`;
-      }
-      return val;
-    };
-
-    const csvContent = [
-      headers.map(escapeCSV).join(","),
-      ...rows.map((row) => row.map(escapeCSV).join(",")),
-    ].join("\n");
-
-    // Download
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = `sector-mappings-${new Date().toISOString().split("T")[0]}.csv`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-
-    toast.success("Exported sector mappings to CSV");
-  };
-
-  // Get inherited mapping for a sector
   const getInheritedMapping = (sectorCode: string): GroupedSectorMapping | null => {
     const categoryCode = sectorCode.substring(0, 3);
-    if (mappings[categoryCode] && mappings[categoryCode].isCategoryLevel) {
-      return mappings[categoryCode];
+    if (sectorMappings[categoryCode] && sectorMappings[categoryCode].isCategoryLevel) {
+      return sectorMappings[categoryCode];
     }
     return null;
   };
 
-  // Start editing a cell
-  const startEditing = (
+  const startSectorEditing = (
     sectorCode: string,
     sectorName: string,
     isCategory: boolean,
     classificationType: ClassificationType
   ) => {
-    const existing = mappings[sectorCode]?.mappings[classificationType];
+    const existing = sectorMappings[sectorCode]?.mappings[classificationType];
     const inherited = !isCategory ? getInheritedMapping(sectorCode)?.mappings[classificationType] : null;
 
     setEditingCell({
+      type: "sector",
       sectorCode,
       sectorName,
       isCategory,
@@ -403,40 +453,25 @@ export function SectorMappingsManagement() {
     setComboboxOpen(true);
   };
 
-  // Cancel editing
-  const cancelEditing = () => {
-    setEditingCell(null);
-    setEditValue("");
-    setComboboxOpen(false);
-    setComboboxSearch("");
-  };
-
-  // Save cell edit - optionally pass a value directly for immediate save on selection
-  const saveCell = async (directValue?: string) => {
-    if (!editingCell) return;
+  const saveSectorCell = async (directValue?: string) => {
+    if (!editingCell || editingCell.type !== "sector") return;
 
     const { sectorCode, sectorName, isCategory, classificationType, currentValue, mappingId } = editingCell;
     const valueToSave = directValue !== undefined ? directValue : editValue;
     const newValue = valueToSave === "__none__" ? "" : valueToSave;
 
-    // No change
     if (newValue === currentValue) {
       cancelEditing();
       return;
     }
 
     setSaving(true);
-
-    // Find the classification for local state update
-    const newClassification = newValue
-      ? classifications.find(c => c.id === newValue)
-      : undefined;
+    const newClassification = newValue ? classifications.find(c => c.id === newValue) : undefined;
 
     try {
       let newMappingId: string | undefined = mappingId;
 
       if (newValue && !mappingId) {
-        // Create new mapping
         const response = await fetch("/api/admin/sector-mappings", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -447,61 +482,43 @@ export function SectorMappingsManagement() {
             isCategoryLevel: isCategory,
           }),
         });
-
         if (!response.ok) {
           const data = await response.json();
-          throw new Error(data.error || "Failed to create mapping");
+          throw new Error(data.error);
         }
-
         const result = await response.json();
         newMappingId = result.data?.id;
         toast.success("Mapping created");
       } else if (newValue && mappingId) {
-        // Update existing mapping
         const response = await fetch(`/api/admin/sector-mappings/${mappingId}`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            budgetClassificationId: newValue,
-          }),
+          body: JSON.stringify({ budgetClassificationId: newValue }),
         });
-
         if (!response.ok) {
           const data = await response.json();
-          throw new Error(data.error || "Failed to update mapping");
+          throw new Error(data.error);
         }
-
         toast.success("Mapping updated");
       } else if (!newValue && mappingId) {
-        // Delete mapping
         const response = await fetch(`/api/admin/sector-mappings/${mappingId}`, {
           method: "DELETE",
         });
-
         if (!response.ok) {
           const data = await response.json();
-          throw new Error(data.error || "Failed to delete mapping");
+          throw new Error(data.error);
         }
-
         newMappingId = undefined;
         toast.success("Mapping removed");
       }
 
-      // Update local state instead of refetching
-      setMappings(prev => {
+      // Update local state
+      setSectorMappings(prev => {
         const updated = { ...prev };
-
         if (!updated[sectorCode]) {
-          updated[sectorCode] = {
-            sectorCode,
-            sectorName,
-            isCategoryLevel: isCategory,
-            mappings: {},
-          };
+          updated[sectorCode] = { sectorCode, sectorName, isCategoryLevel: isCategory, mappings: {} };
         }
-
         if (newValue && newClassification) {
-          // Add or update mapping
           updated[sectorCode] = {
             ...updated[sectorCode],
             mappings: {
@@ -519,226 +536,513 @@ export function SectorMappingsManagement() {
             },
           };
         } else {
-          // Remove mapping
           const { [classificationType]: removed, ...remainingMappings } = updated[sectorCode].mappings;
-          updated[sectorCode] = {
-            ...updated[sectorCode],
-            mappings: remainingMappings,
-          };
-
-          // If no mappings left, remove the sector entry
-          if (Object.keys(remainingMappings).length === 0) {
-            delete updated[sectorCode];
-          }
+          updated[sectorCode] = { ...updated[sectorCode], mappings: remainingMappings };
+          if (Object.keys(remainingMappings).length === 0) delete updated[sectorCode];
         }
-
         return updated;
       });
 
       cancelEditing();
     } catch (err: any) {
-      console.error("Error saving mapping:", err);
       toast.error(err.message || "Failed to save");
     } finally {
       setSaving(false);
     }
   };
 
-  // Get display value for a cell
-  const getCellDisplay = (
-    sectorCode: string,
-    isCategory: boolean,
-    classificationType: ClassificationType
-  ): { value: string; isInherited: boolean; classification?: BudgetClassification } => {
-    const mapping = mappings[sectorCode]?.mappings[classificationType];
+  // ============================================================================
+  // Organization Mappings handlers
+  // ============================================================================
 
-    if (mapping) {
-      return {
-        value: mapping.budgetClassification?.code || "",
-        isInherited: false,
-        classification: mapping.budgetClassification,
-      };
-    }
-
-    if (!isCategory) {
-      const inherited = getInheritedMapping(sectorCode)?.mappings[classificationType];
-      if (inherited) {
-        return {
-          value: inherited.budgetClassification?.code || "",
-          isInherited: true,
-          classification: inherited.budgetClassification,
-        };
-      }
-    }
-
-    return { value: "", isInherited: false };
+  const startOrgEditing = (org: OrganizationMapping) => {
+    setEditingCell({
+      type: "org",
+      organizationId: org.organizationId,
+      organizationName: org.organizationName,
+      currentValue: org.mapping?.budgetClassificationId || "",
+      mappingId: org.mapping?.id,
+    });
+    setEditValue(org.mapping?.budgetClassificationId || "");
+    setComboboxSearch("");
+    setComboboxOpen(true);
   };
 
-  // Render a table cell
-  const renderCell = (
+  const saveOrgCell = async (directValue?: string) => {
+    if (!editingCell || editingCell.type !== "org") return;
+
+    const { organizationId, organizationName, currentValue, mappingId } = editingCell;
+    const valueToSave = directValue !== undefined ? directValue : editValue;
+    const newValue = valueToSave === "__none__" ? "" : valueToSave;
+
+    if (newValue === currentValue) {
+      cancelEditing();
+      return;
+    }
+
+    setSaving(true);
+    const newClassification = newValue ? classifications.find(c => c.id === newValue) : undefined;
+
+    try {
+      let newMappingId: string | undefined = mappingId;
+
+      if (newValue && !mappingId) {
+        const response = await fetch("/api/admin/organization-mappings", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ organizationId, budgetClassificationId: newValue }),
+        });
+        if (!response.ok) {
+          const data = await response.json();
+          throw new Error(data.error);
+        }
+        const result = await response.json();
+        newMappingId = result.data?.id;
+        toast.success("Mapping created");
+      } else if (newValue && mappingId) {
+        const response = await fetch(`/api/admin/organization-mappings/${mappingId}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ budgetClassificationId: newValue }),
+        });
+        if (!response.ok) {
+          const data = await response.json();
+          throw new Error(data.error);
+        }
+        toast.success("Mapping updated");
+      } else if (!newValue && mappingId) {
+        const response = await fetch(`/api/admin/organization-mappings/${mappingId}`, {
+          method: "DELETE",
+        });
+        if (!response.ok) {
+          const data = await response.json();
+          throw new Error(data.error);
+        }
+        newMappingId = undefined;
+        toast.success("Mapping removed");
+      }
+
+      // Update local state
+      setOrgMappings(prev => prev.map(org => {
+        if (org.organizationId !== organizationId) return org;
+        return {
+          ...org,
+          mapping: newValue && newClassification ? {
+            id: newMappingId || "",
+            budgetClassificationId: newValue,
+            budgetClassification: newClassification,
+          } : null,
+        };
+      }));
+
+      cancelEditing();
+    } catch (err: any) {
+      toast.error(err.message || "Failed to save");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // ============================================================================
+  // Administrative Mappings handlers
+  // ============================================================================
+
+  const startAdminEditing = (org: OrganizationMapping) => {
+    setEditingCell({
+      type: "admin",
+      organizationId: org.organizationId,
+      organizationName: org.organizationName,
+      currentValue: org.mapping?.budgetClassificationId || "",
+      mappingId: org.mapping?.id,
+    });
+    setEditValue(org.mapping?.budgetClassificationId || "");
+    setComboboxSearch("");
+    setComboboxOpen(true);
+  };
+
+  const saveAdminCell = async (directValue?: string) => {
+    if (!editingCell || editingCell.type !== "admin") return;
+
+    const { organizationId, currentValue, mappingId } = editingCell;
+    const valueToSave = directValue !== undefined ? directValue : editValue;
+    const newValue = valueToSave === "__none__" ? "" : valueToSave;
+
+    if (newValue === currentValue) {
+      cancelEditing();
+      return;
+    }
+
+    setSaving(true);
+    const newClassification = newValue ? classifications.find(c => c.id === newValue) : undefined;
+
+    try {
+      let newMappingId: string | undefined = mappingId;
+
+      if (newValue && !mappingId) {
+        const response = await fetch("/api/admin/organization-administrative-mappings", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ organizationId, budgetClassificationId: newValue }),
+        });
+        if (!response.ok) {
+          const data = await response.json();
+          throw new Error(data.error);
+        }
+        const result = await response.json();
+        newMappingId = result.data?.id;
+        toast.success("Mapping created");
+      } else if (newValue && mappingId) {
+        const response = await fetch(`/api/admin/organization-administrative-mappings/${mappingId}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ budgetClassificationId: newValue }),
+        });
+        if (!response.ok) {
+          const data = await response.json();
+          throw new Error(data.error);
+        }
+        toast.success("Mapping updated");
+      } else if (!newValue && mappingId) {
+        const response = await fetch(`/api/admin/organization-administrative-mappings/${mappingId}`, {
+          method: "DELETE",
+        });
+        if (!response.ok) {
+          const data = await response.json();
+          throw new Error(data.error);
+        }
+        newMappingId = undefined;
+        toast.success("Mapping removed");
+      }
+
+      // Update local state
+      setAdminMappings(prev => prev.map(org => {
+        if (org.organizationId !== organizationId) return org;
+        return {
+          ...org,
+          mapping: newValue && newClassification ? {
+            id: newMappingId || "",
+            budgetClassificationId: newValue,
+            budgetClassification: newClassification,
+          } : null,
+        };
+      }));
+
+      cancelEditing();
+    } catch (err: any) {
+      toast.error(err.message || "Failed to save");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // ============================================================================
+  // Finance Type Mappings handlers
+  // ============================================================================
+
+  const startFinanceTypeEditing = (ft: FinanceTypeMapping) => {
+    setEditingCell({
+      type: "financeType",
+      financeTypeCode: ft.financeTypeCode,
+      financeTypeName: ft.financeTypeName,
+      currentValue: ft.mapping?.budgetClassificationId || "",
+      mappingId: ft.mapping?.id,
+    });
+    setEditValue(ft.mapping?.budgetClassificationId || "");
+    setComboboxSearch("");
+    setComboboxOpen(true);
+  };
+
+  const saveFinanceTypeCell = async (directValue?: string) => {
+    if (!editingCell || editingCell.type !== "financeType") return;
+
+    const { financeTypeCode, financeTypeName, currentValue, mappingId } = editingCell;
+    const valueToSave = directValue !== undefined ? directValue : editValue;
+    const newValue = valueToSave === "__none__" ? "" : valueToSave;
+
+    if (newValue === currentValue) {
+      cancelEditing();
+      return;
+    }
+
+    setSaving(true);
+    const newClassification = newValue ? classifications.find(c => c.id === newValue) : undefined;
+
+    try {
+      let newMappingId: string | undefined = mappingId;
+
+      if (newValue && !mappingId) {
+        const response = await fetch("/api/admin/finance-type-mappings", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            financeTypeCode,
+            financeTypeName,
+            budgetClassificationId: newValue,
+            classificationType: activeMode,
+          }),
+        });
+        if (!response.ok) {
+          const data = await response.json();
+          throw new Error(data.error);
+        }
+        const result = await response.json();
+        newMappingId = result.data?.id;
+        toast.success("Mapping created");
+      } else if (newValue && mappingId) {
+        const response = await fetch(`/api/admin/finance-type-mappings/${mappingId}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ budgetClassificationId: newValue }),
+        });
+        if (!response.ok) {
+          const data = await response.json();
+          throw new Error(data.error);
+        }
+        toast.success("Mapping updated");
+      } else if (!newValue && mappingId) {
+        const response = await fetch(`/api/admin/finance-type-mappings/${mappingId}`, {
+          method: "DELETE",
+        });
+        if (!response.ok) {
+          const data = await response.json();
+          throw new Error(data.error);
+        }
+        newMappingId = undefined;
+        toast.success("Mapping removed");
+      }
+
+      // Update local state
+      setFinanceTypeMappings(prev => prev.map(ft => {
+        if (ft.financeTypeCode !== financeTypeCode) return ft;
+        return {
+          ...ft,
+          mapping: newValue && newClassification ? {
+            id: newMappingId || "",
+            budgetClassificationId: newValue,
+            budgetClassification: newClassification,
+          } : null,
+        };
+      }));
+
+      cancelEditing();
+    } catch (err: any) {
+      toast.error(err.message || "Failed to save");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // ============================================================================
+  // Filtered data
+  // ============================================================================
+
+  const filteredSectorCategories = useMemo(() => {
+    if (!searchQuery) return dacCategories;
+    const query = searchQuery.toLowerCase();
+    return dacCategories
+      .map((category) => ({
+        ...category,
+        sectors: category.sectors.filter(
+          (sector) =>
+            sector.code.includes(query) ||
+            sector.name.toLowerCase().includes(query)
+        ),
+      }))
+      .filter(
+        (category) =>
+          category.code.includes(query) ||
+          category.name.toLowerCase().includes(query) ||
+          category.sectors.length > 0
+      );
+  }, [dacCategories, searchQuery]);
+
+  // Get unique organization types for filter
+  const uniqueOrgTypes = useMemo(() => {
+    const types = new Set<string>();
+    orgMappings.forEach((org) => {
+      if (org.orgTypeName) {
+        types.add(org.orgTypeName);
+      }
+    });
+    return Array.from(types).sort();
+  }, [orgMappings]);
+
+  const filteredOrgMappings = useMemo(() => {
+    let filtered = orgMappings;
+
+    // Apply org type filter
+    if (orgTypeFilter !== "all") {
+      filtered = filtered.filter((org) => org.orgTypeName === orgTypeFilter);
+    }
+
+    // Apply search query
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter(
+        (org) =>
+          org.organizationName.toLowerCase().includes(query) ||
+          org.acronym?.toLowerCase().includes(query) ||
+          org.iatiOrgId?.toLowerCase().includes(query) ||
+          org.orgTypeName?.toLowerCase().includes(query) ||
+          org.mapping?.budgetClassification?.name.toLowerCase().includes(query)
+      );
+    }
+
+    return filtered;
+  }, [orgMappings, searchQuery, orgTypeFilter]);
+
+  const filteredAdminMappings = useMemo(() => {
+    if (!searchQuery) return adminMappings;
+    const query = searchQuery.toLowerCase();
+    return adminMappings.filter(
+      (org) =>
+        org.organizationName.toLowerCase().includes(query) ||
+        org.acronym?.toLowerCase().includes(query) ||
+        org.iatiOrgId?.toLowerCase().includes(query) ||
+        org.orgTypeName?.toLowerCase().includes(query) ||
+        org.mapping?.budgetClassification?.name.toLowerCase().includes(query)
+    );
+  }, [adminMappings, searchQuery]);
+
+  const filteredFinanceTypeMappings = useMemo(() => {
+    if (!searchQuery) return financeTypeMappings;
+    const query = searchQuery.toLowerCase();
+    return financeTypeMappings.filter(
+      (ft) =>
+        ft.financeTypeCode.includes(query) ||
+        ft.financeTypeName.toLowerCase().includes(query) ||
+        ft.group.toLowerCase().includes(query)
+    );
+  }, [financeTypeMappings, searchQuery]);
+
+  // Group finance types by their group
+  const groupedFinanceTypes = useMemo(() => {
+    const groups: Record<string, FinanceTypeMapping[]> = {};
+    filteredFinanceTypeMappings.forEach((ft) => {
+      if (!groups[ft.group]) groups[ft.group] = [];
+      groups[ft.group].push(ft);
+    });
+    return groups;
+  }, [filteredFinanceTypeMappings]);
+
+  // ============================================================================
+  // Render classification selector
+  // ============================================================================
+
+  const renderClassificationSelector = (
+    options: BudgetClassification[],
+    onSelect: (value: string) => void
+  ) => {
+    const searchLower = comboboxSearch.toLowerCase();
+    const filteredOptions = options.filter(
+      (c) =>
+        !comboboxSearch ||
+        c.code.toLowerCase().includes(searchLower) ||
+        c.name.toLowerCase().includes(searchLower)
+    );
+
+    return (
+      <Popover open={comboboxOpen} onOpenChange={setComboboxOpen}>
+        <PopoverTrigger>
+          <div className="flex items-center justify-between min-h-[32px] px-2 py-1 text-xs border rounded-md bg-background hover:bg-accent cursor-pointer min-w-[300px] max-w-[400px]">
+            {editValue ? (
+              <span className="text-left">
+                {(() => {
+                  const sel = options.find((c) => c.id === editValue);
+                  return sel ? (
+                    <span className="inline">
+                      <span className="font-mono bg-muted px-1 py-0.5 rounded">{sel.code}</span>
+                      <span className="ml-1">{sel.name}</span>
+                    </span>
+                  ) : (
+                    "Select..."
+                  );
+                })()}
+              </span>
+            ) : (
+              <span className="text-muted-foreground">Select classification...</span>
+            )}
+            <ChevronsUpDown className="h-3 w-3 ml-2 shrink-0 opacity-50" />
+          </div>
+        </PopoverTrigger>
+        <PopoverContent align="start" side="bottom" sideOffset={4} className="w-[450px] p-0 z-[9999]" avoidCollisions={true} collisionPadding={20}>
+          <Command>
+            <CommandInput
+              placeholder="Search by code or name..."
+              value={comboboxSearch}
+              onChange={(e) => setComboboxSearch(e.target.value)}
+            />
+            <CommandList className="max-h-[300px]">
+              <CommandEmpty>No classification found.</CommandEmpty>
+              <CommandGroup>
+                <CommandItem
+                  className="flex items-center justify-start text-left"
+                  onSelect={() => {
+                    setComboboxOpen(false);
+                    setComboboxSearch("");
+                    onSelect("");
+                  }}
+                >
+                  <Check className="mr-2 h-4 w-4 flex-shrink-0 opacity-0" />
+                  <span className="text-muted-foreground">None (remove mapping)</span>
+                </CommandItem>
+              </CommandGroup>
+              <CommandGroup>
+                {filteredOptions.map((c) => (
+                  <CommandItem
+                    key={c.id}
+                    className="flex items-start justify-start text-left py-2"
+                    onSelect={() => {
+                      setComboboxOpen(false);
+                      setComboboxSearch("");
+                      onSelect(c.id);
+                    }}
+                  >
+                    <Check
+                      className={`mr-2 h-4 w-4 flex-shrink-0 mt-0.5 ${
+                        editValue === c.id ? "opacity-100" : "opacity-0"
+                      }`}
+                    />
+                    <span className="font-mono bg-muted px-1 py-0.5 rounded text-xs shrink-0">{c.code}</span>
+                    <span className="ml-2 text-sm whitespace-normal">{c.name}</span>
+                  </CommandItem>
+                ))}
+              </CommandGroup>
+            </CommandList>
+          </Command>
+        </PopoverContent>
+      </Popover>
+    );
+  };
+
+  // ============================================================================
+  // Render sector cell
+  // ============================================================================
+
+  const renderSectorCell = (
     sectorCode: string,
     sectorName: string,
     isCategory: boolean,
     classificationType: ClassificationType
   ) => {
     const isEditing =
+      editingCell?.type === "sector" &&
       editingCell?.sectorCode === sectorCode &&
       editingCell?.classificationType === classificationType;
 
     if (isEditing) {
-      const options = classificationsByType[classificationType];
-      const selectedClassification = options.find((c) => c.id === editValue);
-      const searchLower = comboboxSearch.toLowerCase();
-
-      // Filter function for search
-      const matchesSearch = (c: BudgetClassification) => {
-        if (!comboboxSearch) return true;
-        return (
-          c.code.toLowerCase().includes(searchLower) ||
-          c.name.toLowerCase().includes(searchLower) ||
-          (c.nameLocal && c.nameLocal.toLowerCase().includes(searchLower))
-        );
-      };
-
-      // For COFOG, filter the hierarchy
-      const filteredCofogHierarchy = classificationType === 'functional_cofog'
-        ? cofogHierarchy
-            .map(({ division, groups }) => ({
-              division,
-              groups: groups.filter(matchesSearch),
-              // Also check if division itself matches (to show it even if no groups match)
-              divisionMatches: matchesSearch(division)
-            }))
-            .filter(({ division, groups, divisionMatches }) => divisionMatches || groups.length > 0)
-        : [];
-
-      // For non-COFOG types, use flat filtered list
-      const filteredOptions = classificationType !== 'functional_cofog'
-        ? options.filter(matchesSearch)
-        : [];
-
-      // Render hierarchical COFOG dropdown
-      const renderCofogOptions = () => (
-        <>
-          {filteredCofogHierarchy.map(({ division, groups, divisionMatches }) => (
-            <CommandGroup key={division.id} heading={`${division.code} - ${division.name}`}>
-              {/* Allow selecting the division itself */}
-              <CommandItem
-                className="flex items-center justify-start text-left"
-                onSelect={() => {
-                  setComboboxOpen(false);
-                  setComboboxSearch("");
-                  saveCell(division.id);
-                }}
-              >
-                <Check
-                  className={`mr-2 h-4 w-4 flex-shrink-0 ${
-                    editValue === division.id ? "opacity-100" : "opacity-0"
-                  }`}
-                />
-                <span className="font-mono bg-muted px-1 py-0.5 rounded text-xs flex-shrink-0">{division.code}</span>
-                <span className="ml-2 text-sm truncate text-left font-medium">{division.name}</span>
-              </CommandItem>
-              {/* Show child groups */}
-              {groups.map((group) => (
-                <CommandItem
-                  key={group.id}
-                  className="flex items-center justify-start text-left pl-6"
-                  onSelect={() => {
-                    setComboboxOpen(false);
-                    setComboboxSearch("");
-                    saveCell(group.id);
-                  }}
-                >
-                  <Check
-                    className={`mr-2 h-4 w-4 flex-shrink-0 ${
-                      editValue === group.id ? "opacity-100" : "opacity-0"
-                    }`}
-                  />
-                  <span className="font-mono bg-muted px-1 py-0.5 rounded text-xs flex-shrink-0">{group.code}</span>
-                  <span className="ml-2 text-sm truncate text-left">{group.name}</span>
-                </CommandItem>
-              ))}
-            </CommandGroup>
-          ))}
-        </>
-      );
-
-      // Render flat list for non-COFOG types
-      const renderFlatOptions = () => (
-        <CommandGroup>
-          {filteredOptions.map((c) => (
-            <CommandItem
-              key={c.id}
-              className="flex items-center justify-start text-left"
-              onSelect={() => {
-                setComboboxOpen(false);
-                setComboboxSearch("");
-                saveCell(c.id);
-              }}
-            >
-              <Check
-                className={`mr-2 h-4 w-4 flex-shrink-0 ${
-                  editValue === c.id ? "opacity-100" : "opacity-0"
-                }`}
-              />
-              <span className="font-mono bg-muted px-1 py-0.5 rounded text-xs flex-shrink-0">{c.code}</span>
-              <span className="ml-2 text-sm truncate text-left">{c.name}</span>
-            </CommandItem>
-          ))}
-        </CommandGroup>
-      );
-
       return (
-        <div className="flex items-center gap-1 relative">
-          <Popover open={comboboxOpen} onOpenChange={setComboboxOpen}>
-            <PopoverTrigger data-popover-trigger className="text-left">
-              <div className="flex items-center justify-between h-8 px-2 text-xs border rounded-md bg-background hover:bg-accent cursor-pointer min-w-[200px]">
-                {selectedClassification ? (
-                  <span className="truncate">
-                    <span className="font-mono bg-muted px-1 py-0.5 rounded">{selectedClassification.code}</span>
-                    <span className="ml-1">{selectedClassification.name}</span>
-                  </span>
-                ) : (
-                  <span className="text-muted-foreground">Select classification...</span>
-                )}
-                <ChevronsUpDown className="h-3 w-3 ml-2 shrink-0 opacity-50" />
-              </div>
-            </PopoverTrigger>
-            <PopoverContent align="start" className="w-[400px] p-0 left-0">
-              <Command>
-                <CommandInput
-                  placeholder="Search by code or name..."
-                  value={comboboxSearch}
-                  onChange={(e) => setComboboxSearch(e.target.value)}
-                />
-                <CommandList className="max-h-[400px]">
-                  <CommandEmpty>No classification found.</CommandEmpty>
-                  <CommandGroup>
-                    <CommandItem
-                      className="flex items-center justify-start text-left"
-                      onSelect={() => {
-                        setComboboxOpen(false);
-                        setComboboxSearch("");
-                        saveCell("");
-                      }}
-                    >
-                      <Check className="mr-2 h-4 w-4 flex-shrink-0 opacity-0" />
-                      <span className="text-muted-foreground">None (remove mapping)</span>
-                    </CommandItem>
-                  </CommandGroup>
-                  {classificationType === 'functional_cofog' ? renderCofogOptions() : renderFlatOptions()}
-                </CommandList>
-              </Command>
-            </PopoverContent>
-          </Popover>
+        <div className="flex items-center gap-1">
+          {renderClassificationSelector(
+            classificationsByType[classificationType] || [],
+            saveSectorCell
+          )}
           <Button
             size="sm"
             variant="ghost"
-            className="h-8 w-8 p-0 flex-shrink-0"
+            className="h-8 w-8 p-0"
             onClick={cancelEditing}
             disabled={saving}
-            title="Cancel"
           >
             <X className="h-4 w-4 text-muted-foreground hover:text-red-600" />
           </Button>
@@ -746,25 +1050,23 @@ export function SectorMappingsManagement() {
       );
     }
 
-    const { value, isInherited, classification } = getCellDisplay(
-      sectorCode,
-      isCategory,
-      classificationType
-    );
+    const mapping = sectorMappings[sectorCode]?.mappings[classificationType];
+    const inherited = !isCategory ? getInheritedMapping(sectorCode)?.mappings[classificationType] : null;
+    const display = mapping?.budgetClassification || inherited?.budgetClassification;
+    const isInherited = !mapping && !!inherited;
 
     return (
       <button
-        className={`w-full text-left px-2 py-1 rounded transition-colors min-h-[32px] ${
+        className={`w-full text-left px-2 py-1 rounded min-h-[32px] ${
           isLocked ? "cursor-default" : "hover:bg-muted/50"
-        } ${isInherited ? "text-muted-foreground italic" : ""} ${!value ? "text-muted-foreground/50" : ""}`}
-        onClick={() => !isLocked && startEditing(sectorCode, sectorName, isCategory, classificationType)}
-        title={isLocked ? (classification ? `${classification.code} - ${classification.name}` : "No mapping") : (classification ? `${classification.code} - ${classification.name}` : "Click to add mapping")}
+        } ${isInherited ? "text-muted-foreground italic" : ""} ${!display ? "text-muted-foreground/50" : ""}`}
+        onClick={() => !isLocked && startSectorEditing(sectorCode, sectorName, isCategory, classificationType)}
         disabled={isLocked}
       >
-        {value && classification ? (
+        {display ? (
           <div className="text-xs">
-            <span className="font-mono bg-muted px-1 py-0.5 rounded">{classification.code}</span>
-            <span className="ml-1.5">{classification.name}</span>
+            <span className="font-mono bg-muted px-1 py-0.5 rounded">{display.code}</span>
+            <span className="ml-1.5">{display.name}</span>
             {isInherited && <span className="ml-1 text-[10px]">(inherited)</span>}
           </div>
         ) : (
@@ -774,13 +1076,17 @@ export function SectorMappingsManagement() {
     );
   };
 
-  if (loading) {
+  // ============================================================================
+  // Render
+  // ============================================================================
+
+  if (loading && classifications.length === 0) {
     return (
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Map className="h-5 w-5" />
-            Sector Mappings
+            Mappings
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -793,255 +1099,548 @@ export function SectorMappingsManagement() {
     );
   }
 
-  if (error) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Map className="h-5 w-5" />
-            Sector Mappings
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-col items-center justify-center py-12 text-red-600">
-            <AlertCircle className="h-8 w-8 mb-2" />
-            <p>{error}</p>
-            <Button onClick={fetchMappings} variant="outline" className="mt-4">
-              Retry
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
-
   return (
     <Card>
       <CardHeader>
-        <div className="flex items-center justify-between">
-          <div>
-            <CardTitle className="flex items-center gap-2">
-              <Map className="h-5 w-5" />
-              Sector Mappings
-            </CardTitle>
-            <CardDescription>
-              Map DAC sector codes to budget classifications. Click any cell to edit. Category mappings apply to all child sectors unless overridden.
-            </CardDescription>
-          </div>
-        </div>
+        <CardTitle className="flex items-center gap-2">
+          <Map className="h-5 w-5" />
+          Mappings
+        </CardTitle>
+        <CardDescription>
+          Map DAC sectors, organizations, and finance types to budget classifications
+        </CardDescription>
       </CardHeader>
       <CardContent>
-        {/* Search and Controls */}
-        <div className="flex gap-4 mb-4">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search sectors by code or name..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10"
-            />
-          </div>
-          <Button variant="outline" size="sm" onClick={expandAll}>
-            Expand All
-          </Button>
-          <Button variant="outline" size="sm" onClick={collapseAll}>
-            Collapse All
-          </Button>
-          <Button
-            variant={isLocked ? "outline" : "default"}
-            size="sm"
-            onClick={() => setIsLocked(!isLocked)}
-            className={isLocked ? "" : "bg-amber-500 hover:bg-amber-600 text-white"}
-            title={isLocked ? "Click to unlock editing" : "Click to lock editing"}
-          >
-            {isLocked ? (
+        <Tabs value={activeMode} onValueChange={(v) => setActiveMode(v as MappingMode)} className="space-y-4">
+          <TabsList className="grid grid-cols-5 w-full max-w-[950px]">
+            <TabsTrigger value="sectors" className="flex items-center gap-1">
+              <Map className="h-4 w-4" />
+              Sectors and Functions
+            </TabsTrigger>
+            <TabsTrigger value="administrative" className="flex items-center gap-1">
+              <Landmark className="h-4 w-4" />
+              Administrative
+            </TabsTrigger>
+            <TabsTrigger value="funding_sources" className="flex items-center gap-1">
+              <Building2 className="h-4 w-4" />
+              Funding Sources
+            </TabsTrigger>
+            <TabsTrigger value="revenue" className="flex items-center gap-1">
+              <DollarSign className="h-4 w-4" />
+              Revenue
+            </TabsTrigger>
+            <TabsTrigger value="liabilities" className="flex items-center gap-1">
+              <CreditCard className="h-4 w-4" />
+              Liabilities
+            </TabsTrigger>
+          </TabsList>
+
+          {/* Search and Controls */}
+          <div className="flex gap-4">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder={
+                  activeMode === "sectors"
+                    ? "Search sectors..."
+                    : activeMode === "administrative" || activeMode === "funding_sources"
+                    ? "Search organizations..."
+                    : "Search finance types..."
+                }
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+            {activeMode !== "funding_sources" && activeMode !== "administrative" && (
               <>
-                <Lock className="h-4 w-4 mr-1" />
-                Locked
-              </>
-            ) : (
-              <>
-                <Unlock className="h-4 w-4 mr-1" />
-                Unlocked
+                <Button variant="outline" size="sm" onClick={expandAll}>
+                  Expand All
+                </Button>
+                <Button variant="outline" size="sm" onClick={collapseAll}>
+                  Collapse All
+                </Button>
               </>
             )}
-          </Button>
-          <Button variant="outline" size="sm" onClick={exportToCSV} title="Export to CSV">
-            <Download className="h-4 w-4" />
-          </Button>
-        </div>
+            <Button
+              variant={isLocked ? "outline" : "default"}
+              size="sm"
+              onClick={() => setIsLocked(!isLocked)}
+              className={isLocked ? "" : "bg-amber-500 hover:bg-amber-600 text-white"}
+            >
+              {isLocked ? (
+                <>
+                  <Lock className="h-4 w-4 mr-1" />
+                  Locked
+                </>
+              ) : (
+                <>
+                  <Unlock className="h-4 w-4 mr-1" />
+                  Unlocked
+                </>
+              )}
+            </Button>
+          </div>
 
-        {/* Table */}
-        <div className="border rounded-lg">
-          <div className="max-h-[600px] overflow-auto">
-            <table className="w-full caption-bottom text-sm">
-              <thead className="sticky top-0 bg-background z-10 shadow-[0_1px_3px_rgba(0,0,0,0.1)]">
-                <tr className="border-b-2">
-                  <th
-                    className="h-12 px-4 py-3 text-left align-middle text-sm font-medium text-muted-foreground w-[280px] min-w-[280px] bg-background cursor-pointer hover:bg-muted/50 select-none"
-                    onClick={() => toggleSort("sector")}
-                  >
-                    <div className="flex items-center gap-2">
-                      DAC Sector
-                      {sortColumn === "sector" ? (
-                        sortDirection === "asc" ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />
-                      ) : (
-                        <ArrowUpDown className="h-4 w-4 opacity-50" />
-                      )}
-                    </div>
-                  </th>
-                  <th
-                    className="h-12 px-4 py-3 text-left align-middle text-sm font-medium text-muted-foreground min-w-[200px] bg-background cursor-pointer hover:bg-muted/50 select-none"
-                    onClick={() => toggleSort("administrative")}
-                  >
-                    <div className="flex items-center gap-2">
-                      Administrative
-                      {sortColumn === "administrative" ? (
-                        sortDirection === "asc" ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />
-                      ) : (
-                        <ArrowUpDown className="h-4 w-4 opacity-50" />
-                      )}
-                    </div>
-                  </th>
-                  <th
-                    className="h-12 px-4 py-3 text-left align-middle text-sm font-medium text-muted-foreground min-w-[200px] bg-background cursor-pointer hover:bg-muted/50 select-none"
-                    onClick={() => toggleSort("functional")}
-                  >
-                    <div className="flex items-center gap-2">
-                      Functional - National
-                      {sortColumn === "functional" ? (
-                        sortDirection === "asc" ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />
-                      ) : (
-                        <ArrowUpDown className="h-4 w-4 opacity-50" />
-                      )}
-                    </div>
-                  </th>
-                  <th
-                    className="h-12 px-4 py-3 text-left align-middle text-sm font-medium text-muted-foreground min-w-[200px] bg-background cursor-pointer hover:bg-muted/50 select-none"
-                    onClick={() => toggleSort("functional_cofog")}
-                  >
-                    <div className="flex items-center gap-2">
-                      Functional - COFOG
-                      {sortColumn === "functional_cofog" ? (
-                        sortDirection === "asc" ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />
-                      ) : (
-                        <ArrowUpDown className="h-4 w-4 opacity-50" />
-                      )}
-                    </div>
-                  </th>
-                  <th
-                    className="h-12 px-4 py-3 text-left align-middle text-sm font-medium text-muted-foreground min-w-[200px] bg-background cursor-pointer hover:bg-muted/50 select-none"
-                    onClick={() => toggleSort("economic")}
-                  >
-                    <div className="flex items-center gap-2">
-                      Economic
-                      {sortColumn === "economic" ? (
-                        sortDirection === "asc" ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />
-                      ) : (
-                        <ArrowUpDown className="h-4 w-4 opacity-50" />
-                      )}
-                    </div>
-                  </th>
-                  <th
-                    className="h-12 px-4 py-3 text-left align-middle text-sm font-medium text-muted-foreground min-w-[200px] bg-background cursor-pointer hover:bg-muted/50 select-none"
-                    onClick={() => toggleSort("programme")}
-                  >
-                    <div className="flex items-center gap-2">
-                      Programme
-                      {sortColumn === "programme" ? (
-                        sortDirection === "asc" ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />
-                      ) : (
-                        <ArrowUpDown className="h-4 w-4 opacity-50" />
-                      )}
-                    </div>
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredCategories.map((category) => {
-                  const isExpanded = expandedCategories.has(category.code);
+          {error && (
+            <div className="flex items-center gap-2 p-4 bg-red-50 text-red-700 rounded-md">
+              <AlertCircle className="h-4 w-4" />
+              {error}
+            </div>
+          )}
 
-                  return (
-                    <React.Fragment key={category.code}>
-                      {/* Category Row */}
-                      <tr className="border-b bg-muted/30 hover:bg-muted/50">
-                        <td className="p-4 align-middle font-medium">
-                          <button
-                            className="flex items-center gap-2 w-full text-left"
-                            onClick={() => toggleCategory(category.code)}
-                          >
-                            {isExpanded ? (
-                              <ChevronDown className="h-4 w-4 flex-shrink-0" />
-                            ) : (
-                              <ChevronRight className="h-4 w-4 flex-shrink-0" />
-                            )}
-                            <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded">
-                              {category.code}
+          {/* Sectors Tab */}
+          <TabsContent value="sectors" className="mt-0">
+            <div className="border rounded-lg">
+              <div className="max-h-[600px] overflow-auto">
+                <table className="w-full text-sm">
+                  <thead className="sticky top-0 bg-background z-10 shadow-sm">
+                    <tr className="border-b-2">
+                      <th className="h-12 px-4 py-3 text-left font-medium text-muted-foreground w-[280px]">DAC Sector</th>
+                      <th className="h-12 px-4 py-3 text-left font-medium text-muted-foreground min-w-[200px]">Country Sectors</th>
+                      <th className="h-12 px-4 py-3 text-left font-medium text-muted-foreground min-w-[200px]">Administrative</th>
+                      <th className="h-12 px-4 py-3 text-left font-medium text-muted-foreground min-w-[200px]">Functional - National</th>
+                      <th className="h-12 px-4 py-3 text-left font-medium text-muted-foreground min-w-[200px]">Functional - COFOG</th>
+                      <th className="h-12 px-4 py-3 text-left font-medium text-muted-foreground min-w-[200px]">Economic</th>
+                      <th className="h-12 px-4 py-3 text-left font-medium text-muted-foreground min-w-[200px]">Programme</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredSectorCategories.map((category) => {
+                      const isExpanded = expandedCategories.has(category.code);
+                      return (
+                        <React.Fragment key={category.code}>
+                          <tr className="border-b bg-muted/30 hover:bg-muted/50">
+                            <td className="p-4 font-medium">
+                              <button
+                                className="flex items-center gap-2 w-full text-left"
+                                onClick={() => toggleCategory(category.code)}
+                              >
+                                {isExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                                <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded">{category.code}</span>
+                                <span className="truncate">{category.name}</span>
+                              </button>
+                            </td>
+                            <td className="p-4">{renderSectorCell(category.code, category.name, true, "country_sector")}</td>
+                            <td className="p-4">{renderSectorCell(category.code, category.name, true, "administrative")}</td>
+                            <td className="p-4">{renderSectorCell(category.code, category.name, true, "functional")}</td>
+                            <td className="p-4">{renderSectorCell(category.code, category.name, true, "functional_cofog")}</td>
+                            <td className="p-4">{renderSectorCell(category.code, category.name, true, "economic")}</td>
+                            <td className="p-4">{renderSectorCell(category.code, category.name, true, "programme")}</td>
+                          </tr>
+                          {isExpanded &&
+                            category.sectors.map((sector) => (
+                              <tr key={sector.code} className="border-b hover:bg-muted/20">
+                                <td className="p-4 pl-10">
+                                  <div className="flex items-center gap-2">
+                                    <span className="font-mono text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{sector.code}</span>
+                                    <span className="text-sm truncate">{sector.name}</span>
+                                  </div>
+                                </td>
+                                <td className="p-4">{renderSectorCell(sector.code, sector.name, false, "country_sector")}</td>
+                                <td className="p-4">{renderSectorCell(sector.code, sector.name, false, "administrative")}</td>
+                                <td className="p-4">{renderSectorCell(sector.code, sector.name, false, "functional")}</td>
+                                <td className="p-4">{renderSectorCell(sector.code, sector.name, false, "functional_cofog")}</td>
+                                <td className="p-4">{renderSectorCell(sector.code, sector.name, false, "economic")}</td>
+                                <td className="p-4">{renderSectorCell(sector.code, sector.name, false, "programme")}</td>
+                              </tr>
+                            ))}
+                        </React.Fragment>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </TabsContent>
+
+          {/* Administrative Tab */}
+          <TabsContent value="administrative" className="mt-0">
+            <div className="border rounded-lg">
+              <div className="max-h-[600px] overflow-auto">
+                <table className="w-full text-sm">
+                  <thead className="sticky top-0 bg-background z-10 shadow-sm">
+                    <tr className="border-b-2">
+                      <th className="h-12 px-4 py-3 text-left font-medium text-muted-foreground w-[350px]">Organization (Receiver)</th>
+                      <th className="h-12 px-4 py-3 text-left font-medium text-muted-foreground w-[200px]">Organization Type</th>
+                      <th className="h-12 px-4 py-3 text-left font-medium text-muted-foreground">Administrative Classification</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredAdminMappings.map((org) => {
+                      const isEditing =
+                        editingCell?.type === "admin" &&
+                        editingCell?.organizationId === org.organizationId;
+
+                      return (
+                        <tr key={org.organizationId} className="border-b hover:bg-muted/20">
+                          <td className="p-4">
+                            <div className="flex flex-col">
+                              <span className="font-medium">
+                                {org.acronym && (
+                                  <span className="text-muted-foreground mr-1">({org.acronym})</span>
+                                )}
+                                {org.organizationName}
+                              </span>
+                              {org.iatiOrgId && (
+                                <span className="text-xs text-muted-foreground">{org.iatiOrgId}</span>
+                              )}
+                            </div>
+                          </td>
+                          <td className="p-4">
+                            <span className="text-sm text-muted-foreground">
+                              {org.orgTypeName || "—"}
                             </span>
-                            <span className="truncate">{category.name}</span>
-                          </button>
-                        </td>
-                        <td className="p-4 align-middle">
-                          {renderCell(category.code, category.name, true, "administrative")}
-                        </td>
-                        <td className="p-4 align-middle">
-                          {renderCell(category.code, category.name, true, "functional")}
-                        </td>
-                        <td className="p-4 align-middle">
-                          {renderCell(category.code, category.name, true, "functional_cofog")}
-                        </td>
-                        <td className="p-4 align-middle">
-                          {renderCell(category.code, category.name, true, "economic")}
-                        </td>
-                        <td className="p-4 align-middle">
-                          {renderCell(category.code, category.name, true, "programme")}
-                        </td>
-                      </tr>
-
-                      {/* Sector Rows */}
-                      {isExpanded &&
-                        category.sectors.map((sector) => (
-                          <tr key={sector.code} className="border-b hover:bg-muted/20">
-                            <td className="p-4 align-middle pl-10">
-                              <div className="flex items-center gap-2">
-                                <span className="font-mono text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
-                                  {sector.code}
-                                </span>
-                                <span className="text-sm truncate" title={sector.name}>
-                                  {sector.name}
-                                </span>
+                          </td>
+                          <td className="p-4">
+                            {isEditing ? (
+                              <div className="flex items-center gap-1">
+                                {renderClassificationSelector(
+                                  classificationsByType.administrative || [],
+                                  saveAdminCell
+                                )}
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  className="h-8 w-8 p-0"
+                                  onClick={cancelEditing}
+                                  disabled={saving}
+                                >
+                                  <X className="h-4 w-4" />
+                                </Button>
                               </div>
-                            </td>
-                            <td className="p-4 align-middle">
-                              {renderCell(sector.code, sector.name, false, "administrative")}
-                            </td>
-                            <td className="p-4 align-middle">
-                              {renderCell(sector.code, sector.name, false, "functional")}
-                            </td>
-                            <td className="p-4 align-middle">
-                              {renderCell(sector.code, sector.name, false, "functional_cofog")}
-                            </td>
-                            <td className="p-4 align-middle">
-                              {renderCell(sector.code, sector.name, false, "economic")}
-                            </td>
-                            <td className="p-4 align-middle">
-                              {renderCell(sector.code, sector.name, false, "programme")}
+                            ) : (
+                              <button
+                                className={`w-full text-left px-2 py-1 rounded min-h-[32px] ${
+                                  isLocked ? "cursor-default" : "hover:bg-muted/50"
+                                } ${!org.mapping ? "text-muted-foreground/50" : ""}`}
+                                onClick={() => !isLocked && startAdminEditing(org)}
+                                disabled={isLocked}
+                              >
+                                {org.mapping?.budgetClassification ? (
+                                  <div className="text-xs">
+                                    <span className="font-mono bg-muted px-1 py-0.5 rounded">
+                                      {org.mapping.budgetClassification.code}
+                                    </span>
+                                    <span className="ml-1.5">{org.mapping.budgetClassification.name}</span>
+                                  </div>
+                                ) : (
+                                  <span className="text-xs">—</span>
+                                )}
+                              </button>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            <div className="mt-2 text-xs text-muted-foreground">
+              {filteredAdminMappings.length} receiver organizations
+            </div>
+          </TabsContent>
+
+          {/* Funding Sources Tab */}
+          <TabsContent value="funding_sources" className="mt-0">
+            {/* Organization Type Filter */}
+            <div className="mb-4 flex items-center gap-2">
+              <label className="text-sm font-medium text-muted-foreground">Organization Type:</label>
+              <Select value={orgTypeFilter} onValueChange={setOrgTypeFilter}>
+                <SelectTrigger className="w-[220px]">
+                  <SelectValue placeholder="All Types" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Types</SelectItem>
+                  {uniqueOrgTypes.map((type) => (
+                    <SelectItem key={type} value={type}>
+                      {type}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="border rounded-lg">
+              <div className="max-h-[600px] overflow-auto">
+                <table className="w-full text-sm">
+                  <thead className="sticky top-0 bg-background z-10 shadow-sm">
+                    <tr className="border-b-2">
+                      <th className="h-12 px-4 py-3 text-left font-medium text-muted-foreground w-[350px]">Organization</th>
+                      <th className="h-12 px-4 py-3 text-left font-medium text-muted-foreground w-[200px]">Organization Type</th>
+                      <th className="h-12 px-4 py-3 text-left font-medium text-muted-foreground">Funding Source</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredOrgMappings.map((org) => {
+                      const isEditing =
+                        editingCell?.type === "org" &&
+                        editingCell?.organizationId === org.organizationId;
+
+                      return (
+                        <tr key={org.organizationId} className="border-b hover:bg-muted/20">
+                          <td className="p-4">
+                            <div className="flex flex-col">
+                              <span className="font-medium">
+                                {org.acronym && (
+                                  <span className="text-muted-foreground mr-1">({org.acronym})</span>
+                                )}
+                                {org.organizationName}
+                              </span>
+                              {org.iatiOrgId && (
+                                <span className="text-xs text-muted-foreground">{org.iatiOrgId}</span>
+                              )}
+                            </div>
+                          </td>
+                          <td className="p-4">
+                            <span className="text-sm text-muted-foreground">
+                              {org.orgTypeName || "—"}
+                            </span>
+                          </td>
+                          <td className="p-4">
+                            {isEditing ? (
+                              <div className="flex items-center gap-1">
+                                {renderClassificationSelector(
+                                  classificationsByType.funding_sources || [],
+                                  saveOrgCell
+                                )}
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  className="h-8 w-8 p-0"
+                                  onClick={cancelEditing}
+                                  disabled={saving}
+                                >
+                                  <X className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            ) : (
+                              <button
+                                className={`w-full text-left px-2 py-1 rounded min-h-[32px] ${
+                                  isLocked ? "cursor-default" : "hover:bg-muted/50"
+                                } ${!org.mapping ? "text-muted-foreground/50" : ""}`}
+                                onClick={() => !isLocked && startOrgEditing(org)}
+                                disabled={isLocked}
+                              >
+                                {org.mapping?.budgetClassification ? (
+                                  <div className="text-xs">
+                                    <span className="font-mono bg-muted px-1 py-0.5 rounded">
+                                      {org.mapping.budgetClassification.code}
+                                    </span>
+                                    <span className="ml-1.5">{org.mapping.budgetClassification.name}</span>
+                                  </div>
+                                ) : (
+                                  <span className="text-xs">—</span>
+                                )}
+                              </button>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            <div className="mt-2 text-xs text-muted-foreground">
+              {filteredOrgMappings.length} organizations
+              {orgTypeFilter !== "all" && ` (filtered by ${orgTypeFilter})`}
+            </div>
+          </TabsContent>
+
+          {/* Revenue Tab */}
+          <TabsContent value="revenue" className="mt-0">
+            <div className="border rounded-lg">
+              <div className="max-h-[600px] overflow-auto">
+                <table className="w-full text-sm">
+                  <thead className="sticky top-0 bg-background z-10 shadow-sm">
+                    <tr className="border-b-2">
+                      <th className="h-12 px-4 py-3 text-left font-medium text-muted-foreground w-[400px]">Finance Type</th>
+                      <th className="h-12 px-4 py-3 text-left font-medium text-muted-foreground">Revenue Classification</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {Object.entries(groupedFinanceTypes).map(([group, types]) => {
+                      const isExpanded = expandedCategories.has(group);
+                      return (
+                        <React.Fragment key={group}>
+                          <tr className="border-b bg-muted/30">
+                            <td colSpan={2} className="p-4 font-medium">
+                              <button
+                                className="flex items-center gap-2 w-full text-left"
+                                onClick={() => toggleCategory(group)}
+                              >
+                                {isExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                                <span>{group}</span>
+                                <span className="text-xs text-muted-foreground">({types.length})</span>
+                              </button>
                             </td>
                           </tr>
-                        ))}
-                    </React.Fragment>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        </div>
+                          {isExpanded &&
+                            types.map((ft) => {
+                              const isEditing =
+                                editingCell?.type === "financeType" &&
+                                editingCell?.financeTypeCode === ft.financeTypeCode;
+
+                              return (
+                                <tr key={ft.financeTypeCode} className="border-b hover:bg-muted/20">
+                                  <td className="p-4 pl-10">
+                                    <div className="flex items-center gap-2">
+                                      <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded">
+                                        {ft.financeTypeCode}
+                                      </span>
+                                      <span className="text-sm">{ft.financeTypeName}</span>
+                                    </div>
+                                  </td>
+                                  <td className="p-4">
+                                    {isEditing ? (
+                                      <div className="flex items-center gap-1">
+                                        {renderClassificationSelector(
+                                          classificationsByType.revenue || [],
+                                          saveFinanceTypeCell
+                                        )}
+                                        <Button
+                                          size="sm"
+                                          variant="ghost"
+                                          className="h-8 w-8 p-0"
+                                          onClick={cancelEditing}
+                                          disabled={saving}
+                                        >
+                                          <X className="h-4 w-4" />
+                                        </Button>
+                                      </div>
+                                    ) : (
+                                      <button
+                                        className={`w-full text-left px-2 py-1 rounded min-h-[32px] ${
+                                          isLocked ? "cursor-default" : "hover:bg-muted/50"
+                                        } ${!ft.mapping ? "text-muted-foreground/50" : ""}`}
+                                        onClick={() => !isLocked && startFinanceTypeEditing(ft)}
+                                        disabled={isLocked}
+                                      >
+                                        {ft.mapping?.budgetClassification ? (
+                                          <div className="text-xs">
+                                            <span className="font-mono bg-muted px-1 py-0.5 rounded">
+                                              {ft.mapping.budgetClassification.code}
+                                            </span>
+                                            <span className="ml-1.5">{ft.mapping.budgetClassification.name}</span>
+                                          </div>
+                                        ) : (
+                                          <span className="text-xs">—</span>
+                                        )}
+                                      </button>
+                                    )}
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                        </React.Fragment>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </TabsContent>
+
+          {/* Liabilities Tab */}
+          <TabsContent value="liabilities" className="mt-0">
+            <div className="border rounded-lg">
+              <div className="max-h-[600px] overflow-auto">
+                <table className="w-full text-sm">
+                  <thead className="sticky top-0 bg-background z-10 shadow-sm">
+                    <tr className="border-b-2">
+                      <th className="h-12 px-4 py-3 text-left font-medium text-muted-foreground w-[400px]">Finance Type</th>
+                      <th className="h-12 px-4 py-3 text-left font-medium text-muted-foreground">Liabilities Classification</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {Object.entries(groupedFinanceTypes).map(([group, types]) => {
+                      const isExpanded = expandedCategories.has(group);
+                      return (
+                        <React.Fragment key={group}>
+                          <tr className="border-b bg-muted/30">
+                            <td colSpan={2} className="p-4 font-medium">
+                              <button
+                                className="flex items-center gap-2 w-full text-left"
+                                onClick={() => toggleCategory(group)}
+                              >
+                                {isExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                                <span>{group}</span>
+                                <span className="text-xs text-muted-foreground">({types.length})</span>
+                              </button>
+                            </td>
+                          </tr>
+                          {isExpanded &&
+                            types.map((ft) => {
+                              const isEditing =
+                                editingCell?.type === "financeType" &&
+                                editingCell?.financeTypeCode === ft.financeTypeCode;
+
+                              return (
+                                <tr key={ft.financeTypeCode} className="border-b hover:bg-muted/20">
+                                  <td className="p-4 pl-10">
+                                    <div className="flex items-center gap-2">
+                                      <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded">
+                                        {ft.financeTypeCode}
+                                      </span>
+                                      <span className="text-sm">{ft.financeTypeName}</span>
+                                    </div>
+                                  </td>
+                                  <td className="p-4">
+                                    {isEditing ? (
+                                      <div className="flex items-center gap-1">
+                                        {renderClassificationSelector(
+                                          classificationsByType.liabilities || [],
+                                          saveFinanceTypeCell
+                                        )}
+                                        <Button
+                                          size="sm"
+                                          variant="ghost"
+                                          className="h-8 w-8 p-0"
+                                          onClick={cancelEditing}
+                                          disabled={saving}
+                                        >
+                                          <X className="h-4 w-4" />
+                                        </Button>
+                                      </div>
+                                    ) : (
+                                      <button
+                                        className={`w-full text-left px-2 py-1 rounded min-h-[32px] ${
+                                          isLocked ? "cursor-default" : "hover:bg-muted/50"
+                                        } ${!ft.mapping ? "text-muted-foreground/50" : ""}`}
+                                        onClick={() => !isLocked && startFinanceTypeEditing(ft)}
+                                        disabled={isLocked}
+                                      >
+                                        {ft.mapping?.budgetClassification ? (
+                                          <div className="text-xs">
+                                            <span className="font-mono bg-muted px-1 py-0.5 rounded">
+                                              {ft.mapping.budgetClassification.code}
+                                            </span>
+                                            <span className="ml-1.5">{ft.mapping.budgetClassification.name}</span>
+                                          </div>
+                                        ) : (
+                                          <span className="text-xs">—</span>
+                                        )}
+                                      </button>
+                                    )}
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                        </React.Fragment>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </TabsContent>
+        </Tabs>
 
         {/* Legend */}
         <div className="mt-4 flex gap-6 text-xs text-muted-foreground">
           <span>{isLocked ? "Unlock to edit mappings" : "Click any cell to edit"}</span>
-          <span className="italic">Italic = inherited from category</span>
+          {activeMode === "sectors" && <span className="italic">Italic = inherited from category</span>}
           <span>— = no mapping</span>
         </div>
       </CardContent>

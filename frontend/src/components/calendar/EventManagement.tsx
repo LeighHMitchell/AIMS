@@ -16,7 +16,7 @@ interface CalendarEvent {
   end?: string
   location?: string
   type: 'meeting' | 'deadline' | 'workshop' | 'conference' | 'other'
-  status: 'pending' | 'approved'
+  status: 'pending' | 'approved' | 'rejected'
   organizerId: string
   organizerName: string
   attendees?: string[]
@@ -28,7 +28,7 @@ export function EventManagement() {
   const { user, permissions } = useUser()
   const [events, setEvents] = useState<CalendarEvent[]>([])
   const [loading, setLoading] = useState(true)
-  const [filter, setFilter] = useState<'all' | 'pending' | 'approved'>('pending')
+  const [filter, setFilter] = useState<'all' | 'pending' | 'approved' | 'rejected'>('pending')
 
   const fetchEvents = async () => {
     try {
@@ -76,25 +76,27 @@ export function EventManagement() {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'pending':
-        return <Badge variant="outline" className="text-yellow-600 border-yellow-600">Pending</Badge>
+        return <Badge variant="outline" className="text-[#4c5568] border-[#cfd0d5] bg-[#f1f4f8]">Pending</Badge>
       case 'approved':
         return <Badge variant="outline" className="text-green-600 border-green-600">Approved</Badge>
+      case 'rejected':
+        return <Badge variant="outline" className="text-[#dc2625] border-[#dc2625]">Rejected</Badge>
       default:
-        return <Badge variant="secondary">{status}</Badge>
+        return <Badge variant="secondary" className="bg-[#f1f4f8] text-[#4c5568]">{status}</Badge>
     }
   }
 
   const getTypeBadge = (type: string) => {
     const colors = {
-      meeting: 'bg-blue-100 text-blue-800',
-      deadline: 'bg-red-100 text-red-800',
-      workshop: 'bg-green-100 text-green-800',
-      conference: 'bg-purple-100 text-purple-800',
-      other: 'bg-gray-100 text-gray-800'
+      meeting: 'bg-[#f1f4f8] text-[#7b95a7] border-[#cfd0d5]',
+      deadline: 'bg-[#f1f4f8] text-[#dc2625] border-[#dc2625]',
+      workshop: 'bg-[#f1f4f8] text-[#4c5568] border-[#cfd0d5]',
+      conference: 'bg-[#f1f4f8] text-[#7b95a7] border-[#cfd0d5]',
+      other: 'bg-[#f1f4f8] text-[#4c5568] border-[#cfd0d5]'
     }
     
     return (
-      <Badge className={colors[type as keyof typeof colors] || colors.other}>
+      <Badge variant="outline" className={colors[type as keyof typeof colors] || colors.other}>
         {type.charAt(0).toUpperCase() + type.slice(1)}
       </Badge>
     )
@@ -102,9 +104,9 @@ export function EventManagement() {
 
   if (!permissions?.canManageUsers) {
     return (
-      <Card>
+      <Card className="bg-[#f1f4f8] border-[#cfd0d5]">
         <CardContent className="p-6">
-          <p className="text-muted-foreground">You don't have permission to manage events.</p>
+          <p className="text-[#4c5568]">You don't have permission to manage events.</p>
         </CardContent>
       </Card>
     )
@@ -114,12 +116,12 @@ export function EventManagement() {
     return (
       <div className="space-y-4">
         {[1, 2, 3].map(i => (
-          <Card key={i}>
+          <Card key={i} className="bg-[#f1f4f8] border-[#cfd0d5]">
             <CardContent className="p-6">
               <div className="animate-pulse space-y-3">
-                <div className="h-4 bg-gray-200 rounded w-1/2"></div>
-                <div className="h-3 bg-gray-200 rounded w-full"></div>
-                <div className="h-3 bg-gray-200 rounded w-3/4"></div>
+                <div className="h-4 bg-[#cfd0d5] rounded w-1/2"></div>
+                <div className="h-3 bg-[#cfd0d5] rounded w-full"></div>
+                <div className="h-3 bg-[#cfd0d5] rounded w-3/4"></div>
               </div>
             </CardContent>
           </Card>
@@ -132,11 +134,11 @@ export function EventManagement() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold flex items-center gap-2">
+          <h2 className="text-2xl font-bold flex items-center gap-2 text-[#4c5568]">
             <Calendar className="h-6 w-6" />
             Event Management
           </h2>
-          <p className="text-muted-foreground">Review and approve community events</p>
+          <p className="text-[#4c5568]">Review and approve community events</p>
         </div>
         
         <div className="flex gap-2">
@@ -144,6 +146,7 @@ export function EventManagement() {
             variant={filter === 'pending' ? 'default' : 'outline'}
             onClick={() => setFilter('pending')}
             size="sm"
+            className={filter === 'pending' ? 'bg-[#dc2625] hover:bg-[#dc2625]/90' : 'border-[#cfd0d5] text-[#4c5568]'}
           >
             Pending ({events.filter(e => e.status === 'pending').length})
           </Button>
@@ -151,13 +154,23 @@ export function EventManagement() {
             variant={filter === 'approved' ? 'default' : 'outline'}
             onClick={() => setFilter('approved')}
             size="sm"
+            className={filter === 'approved' ? 'bg-[#dc2625] hover:bg-[#dc2625]/90' : 'border-[#cfd0d5] text-[#4c5568]'}
           >
             Approved ({events.filter(e => e.status === 'approved').length})
+          </Button>
+          <Button
+            variant={filter === 'rejected' ? 'default' : 'outline'}
+            onClick={() => setFilter('rejected')}
+            size="sm"
+            className={filter === 'rejected' ? 'bg-[#dc2625] hover:bg-[#dc2625]/90' : 'border-[#cfd0d5] text-[#4c5568]'}
+          >
+            Rejected ({events.filter(e => e.status === 'rejected').length})
           </Button>
           <Button
             variant={filter === 'all' ? 'default' : 'outline'}
             onClick={() => setFilter('all')}
             size="sm"
+            className={filter === 'all' ? 'bg-[#dc2625] hover:bg-[#dc2625]/90' : 'border-[#cfd0d5] text-[#4c5568]'}
           >
             All ({events.length})
           </Button>
@@ -166,26 +179,26 @@ export function EventManagement() {
 
       <div className="space-y-4">
         {filteredEvents.length === 0 ? (
-          <Card>
+          <Card className="bg-[#f1f4f8] border-[#cfd0d5]">
             <CardContent className="p-6 text-center">
-              <Calendar className="h-12 w-12 mx-auto text-gray-400 mb-4" />
-              <p className="text-muted-foreground">
+              <Calendar className="h-12 w-12 mx-auto text-[#7b95a7] mb-4" />
+              <p className="text-[#4c5568]">
                 {filter === 'pending' ? 'No pending events to review' : `No ${filter} events found`}
               </p>
             </CardContent>
           </Card>
         ) : (
           filteredEvents.map(event => (
-            <Card key={event.id}>
+            <Card key={event.id} className="bg-[#f1f4f8] border-[#cfd0d5]">
               <CardHeader>
                 <div className="flex items-start justify-between">
                   <div className="space-y-2">
                     <div className="flex items-center gap-2">
-                      <CardTitle className="text-lg">{event.title}</CardTitle>
-                      {getStatusBadge(event.status)}
-                      {getTypeBadge(event.type)}
-                    </div>
-                    <CardDescription>{event.description}</CardDescription>
+                    <CardTitle className="text-lg text-[#4c5568]">{event.title}</CardTitle>
+                    {getStatusBadge(event.status)}
+                    {getTypeBadge(event.type)}
+                  </div>
+                  <CardDescription className="text-[#4c5568]">{event.description}</CardDescription>
                   </div>
                   
                   {event.status === 'pending' && (
@@ -202,7 +215,7 @@ export function EventManagement() {
                         size="sm"
                         variant="outline"
                         onClick={() => handleStatusChange(event.id, 'rejected')}
-                        className="text-red-600 border-red-600 hover:bg-red-50"
+                        className="text-[#dc2625] border-[#dc2625] hover:bg-[#dc2625]/10"
                       >
                         <X className="h-4 w-4 mr-1" />
                         Reject
@@ -215,7 +228,7 @@ export function EventManagement() {
               <CardContent>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <div className="flex items-center gap-2 text-sm text-[#4c5568]">
                       <Clock className="h-4 w-4" />
                       <span>
                         {new Date(event.start).toLocaleString()}
@@ -224,13 +237,13 @@ export function EventManagement() {
                     </div>
                     
                     {event.location && (
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <div className="flex items-center gap-2 text-sm text-[#4c5568]">
                         <MapPin className="h-4 w-4" />
                         <span>{event.location}</span>
                       </div>
                     )}
                     
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <div className="flex items-center gap-2 text-sm text-[#4c5568]">
                       <Users className="h-4 w-4" />
                       <span>Organized by {event.organizerName}</span>
                     </div>
@@ -238,15 +251,15 @@ export function EventManagement() {
                   
                   {event.attendees && event.attendees.length > 0 && (
                     <div>
-                      <p className="text-sm font-medium mb-2">Attendees ({event.attendees.length})</p>
+                      <p className="text-sm font-medium mb-2 text-[#4c5568]">Attendees ({event.attendees.length})</p>
                       <div className="flex flex-wrap gap-1">
                         {event.attendees.slice(0, 3).map((attendee, index) => (
-                          <Badge key={index} variant="secondary" className="text-xs">
+                          <Badge key={index} variant="secondary" className="text-xs bg-[#f1f4f8] text-[#4c5568] border-[#cfd0d5]">
                             {attendee}
                           </Badge>
                         ))}
                         {event.attendees.length > 3 && (
-                          <Badge variant="secondary" className="text-xs">
+                          <Badge variant="secondary" className="text-xs bg-[#f1f4f8] text-[#4c5568] border-[#cfd0d5]">
                             +{event.attendees.length - 3} more
                           </Badge>
                         )}

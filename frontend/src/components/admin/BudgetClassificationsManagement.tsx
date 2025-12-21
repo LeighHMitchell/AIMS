@@ -93,7 +93,7 @@ function TreeNode({
   return (
     <div className="border-b last:border-b-0">
       <div
-        className={`flex items-center gap-2 py-2 px-3 hover:bg-muted/50 group ${
+        className={`flex items-center gap-4 py-2 px-3 hover:bg-muted/50 group ${
           !node.isActive ? "opacity-60" : ""
         }`}
         style={{ paddingLeft: `${level * 20 + 12}px` }}
@@ -117,25 +117,25 @@ function TreeNode({
         </button>
 
         {/* Code */}
-        <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded">
+        <span className="font-mono text-xs bg-muted px-1 py-0.5 rounded inline-block w-[80px] flex-shrink-0">
           {node.code}
         </span>
 
         {/* Name */}
-        <span className="flex-1 text-sm truncate">{node.name}</span>
+        <span className="text-sm truncate flex-1 min-w-0">{node.name}</span>
 
         {/* Local Name */}
-        <span className="hidden md:block text-xs text-muted-foreground italic w-[180px] truncate text-right">
+        <span className="hidden md:block text-xs text-muted-foreground italic flex-1 min-w-0 truncate">
           {node.nameLocal || "—"}
         </span>
 
         {/* Description */}
-        <span className="hidden lg:block text-xs text-muted-foreground w-[200px] truncate">
+        <span className="hidden lg:block text-xs text-muted-foreground flex-[2] min-w-0 truncate">
           {node.description || "—"}
         </span>
 
         {/* Status */}
-        <span className="w-[100px] flex justify-center">
+        <span className="w-[100px] flex flex-shrink-0">
           {!node.isActive ? (
             <Badge variant="secondary" className="text-xs">
               Inactive
@@ -148,7 +148,7 @@ function TreeNode({
         </span>
 
         {/* Type Badge */}
-        <span className="w-[160px] flex">
+        <span className="w-[160px] flex flex-shrink-0">
           <Badge
             variant="outline"
             className={`text-xs ${
@@ -160,6 +160,12 @@ function TreeNode({
                 ? "border-green-300 text-green-700"
                 : node.classificationType === "economic"
                 ? "border-orange-300 text-orange-700"
+                : node.classificationType === "revenue"
+                ? "border-emerald-300 text-emerald-700"
+                : node.classificationType === "liabilities"
+                ? "border-rose-300 text-rose-700"
+                : node.classificationType === "funding_sources"
+                ? "border-indigo-300 text-indigo-700"
                 : "border-purple-300 text-purple-700"
             }`}
           >
@@ -612,6 +618,9 @@ export function BudgetClassificationsManagement() {
                   <SelectItem value="administrative">Administrative</SelectItem>
                   <SelectItem value="economic">Economic</SelectItem>
                   <SelectItem value="programme">Programme</SelectItem>
+                  <SelectItem value="revenue">Revenue</SelectItem>
+                  <SelectItem value="liabilities">Liabilities</SelectItem>
+                  <SelectItem value="funding_sources">Funding Sources</SelectItem>
                 </SelectContent>
               </Select>
 
@@ -675,10 +684,10 @@ export function BudgetClassificationsManagement() {
             <div className="border rounded-lg">
               {/* Sticky Header */}
               <div className="sticky top-0 z-10 bg-muted/80 backdrop-blur-sm border-b">
-                <div className="flex items-center gap-2 py-3 px-3 text-sm font-medium text-muted-foreground">
+                <div className="flex items-center gap-4 py-3 px-3 text-sm font-medium text-muted-foreground">
                   <div className="w-5 flex-shrink-0" /> {/* Spacer for expand icon */}
                   <button
-                    className="flex items-center gap-1 hover:text-foreground transition-colors"
+                    className="flex items-center gap-1 hover:text-foreground transition-colors w-[80px] flex-shrink-0"
                     onClick={() => toggleSort("code")}
                   >
                     Code
@@ -693,7 +702,7 @@ export function BudgetClassificationsManagement() {
                     )}
                   </button>
                   <button
-                    className="flex-1 flex items-center gap-1 hover:text-foreground transition-colors"
+                    className="flex items-center gap-1 hover:text-foreground transition-colors flex-1 min-w-0"
                     onClick={() => toggleSort("name")}
                   >
                     Name
@@ -708,7 +717,7 @@ export function BudgetClassificationsManagement() {
                     )}
                   </button>
                   <button
-                    className="hidden md:flex items-center gap-1 justify-end hover:text-foreground transition-colors w-[180px]"
+                    className="hidden md:flex items-center gap-1 hover:text-foreground transition-colors flex-1 min-w-0"
                     onClick={() => toggleSort("nameLocal")}
                   >
                     Local Name
@@ -722,9 +731,9 @@ export function BudgetClassificationsManagement() {
                       <ArrowUpDown className="h-3 w-3 opacity-50" />
                     )}
                   </button>
-                  <div className="hidden lg:block w-[200px]">Description</div>
+                  <div className="hidden lg:flex flex-[2] min-w-0">Description</div>
                   <button
-                    className="flex items-center justify-center gap-1 hover:text-foreground transition-colors w-[100px]"
+                    className="flex items-center gap-1 hover:text-foreground transition-colors w-[100px] flex-shrink-0 pl-2"
                     onClick={() => toggleSort("status")}
                   >
                     Status
@@ -738,7 +747,7 @@ export function BudgetClassificationsManagement() {
                       <ArrowUpDown className="h-3 w-3 opacity-50" />
                     )}
                   </button>
-                  <div className="w-[160px]">Type</div>
+                  <div className="w-[160px] flex-shrink-0 pl-2">Type</div>
                   <div className="w-8 flex-shrink-0" /> {/* Spacer for actions */}
                 </div>
               </div>

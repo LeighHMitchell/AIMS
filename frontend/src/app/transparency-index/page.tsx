@@ -166,7 +166,7 @@ export default function TransparencyIndexPage() {
 
   return (
     <MainLayout>
-      <div className="space-y-8 max-w-7xl mx-auto">
+      <div className="space-y-8">
       <header className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
           <ShieldCheck className="h-8 w-8 text-blue-600" />

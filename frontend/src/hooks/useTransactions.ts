@@ -4,14 +4,14 @@ import { toast } from "sonner";
 interface TransactionFilter {
   searchQuery?: string;
   filters?: {
-    transactionType: string;
-    aidType: string;
-    flowType: string;
-    financeType: string;
-    organization: string;
-    dateFrom: string;
-    dateTo: string;
-    status: string;
+    transactionTypes?: string[];
+    aidType?: string;
+    flowType?: string;
+    financeTypes?: string[];
+    organizations?: string[];
+    dateFrom?: string;
+    dateTo?: string;
+    statuses?: string[];
     transactionSource?: string;
   };
   sortField?: string;
@@ -52,7 +52,12 @@ export function useTransactions(params: TransactionFilter = {}) {
       
       if (params.filters) {
         Object.entries(params.filters).forEach(([key, value]) => {
-          if (value && value !== "all" && value !== "") {
+          if (Array.isArray(value)) {
+            // Handle array filters - join with comma
+            if (value.length > 0) {
+              queryParams.append(key, value.join(','));
+            }
+          } else if (value && value !== "all" && value !== "") {
             queryParams.append(key, value);
           }
         });

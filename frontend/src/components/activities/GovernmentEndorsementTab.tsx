@@ -16,17 +16,32 @@ import { useGovernmentEndorsement } from '@/hooks/use-government-endorsement';
 import { GovernmentEndorsementFormData, VALIDATION_STATUS_OPTIONS, IATI_DOCUMENT_CATEGORIES } from '@/types/government-endorsement';
 import { useUser } from '@/hooks/useUser';
 import { toast } from 'sonner';
-import { 
-  CheckCircle, 
-  AlertCircle, 
-  Clock, 
-  FileText, 
-  Calendar, 
-  Building, 
+import {
+  CheckCircle,
+  AlertCircle,
+  Clock,
+  FileText,
+  Calendar,
+  Building,
   Upload,
   Trash2,
-  Save
+  Save,
+  Plus,
+  Edit2,
+  Star,
+  FileCode2
 } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import {
+  ProjectReference,
+  ProjectReferenceFormData,
+  ReferenceType,
+  REFERENCE_TYPE_LABELS,
+  REFERENCE_TYPE_DESCRIPTIONS,
+  toProjectReference,
+  ProjectReferenceRow,
+} from '@/types/project-references';
 import { format } from 'date-fns';
 
 interface GovernmentEndorsementTabProps {
@@ -53,6 +68,21 @@ export default function GovernmentEndorsementTab({
   const [formData, setFormData] = useState<GovernmentEndorsementFormData>({});
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
+
+  // Project References state
+  const [projectReferences, setProjectReferences] = useState<ProjectReference[]>([]);
+  const [loadingRefs, setLoadingRefs] = useState(true);
+  const [showRefDialog, setShowRefDialog] = useState(false);
+  const [editingRef, setEditingRef] = useState<ProjectReference | null>(null);
+  const [refFormData, setRefFormData] = useState<ProjectReferenceFormData>({
+    referenceType: 'government',
+    code: '',
+    name: '',
+    vocabulary: '',
+    isPrimary: false,
+    notes: '',
+  });
+  const [savingRef, setSavingRef] = useState(false);
 
   // Check if user can edit (government users or super users)
   const canEdit = !readOnly && (
@@ -117,6 +147,138 @@ export default function GovernmentEndorsementTab({
         setHasUnsavedChanges(false);
         setLastSaved(null);
       }
+    }
+  };
+
+  // Fetch project references
+  const fetchProjectReferences = async () => {
+    setLoadingRefs(true);
+    try {
+      const response = await fetch(`/api/activities/${activityId}/project-references`);
+      if (response.ok) {
+        const data = await response.json();
+        setProjectReferences(data.data || []);
+      }
+    } catch (error) {
+      console.error('Error fetching project references:', error);
+    } finally {
+      setLoadingRefs(false);
+    }
+  };
+
+  useEffect(() => {
+    if (activityId) {
+      fetchProjectReferences();
+    }
+  }, [activityId]);
+
+  // Project reference handlers
+  const openRefDialog = (ref?: ProjectReference) => {
+    if (ref) {
+      setEditingRef(ref);
+      setRefFormData({
+        referenceType: ref.referenceType,
+        code: ref.code,
+        name: ref.name || '',
+        vocabulary: ref.vocabulary || '',
+        isPrimary: ref.isPrimary,
+        notes: ref.notes || '',
+      });
+    } else {
+      setEditingRef(null);
+      setRefFormData({
+        referenceType: 'government',
+        code: '',
+        name: '',
+        vocabulary: '',
+        isPrimary: false,
+        notes: '',
+      });
+    }
+    setShowRefDialog(true);
+  };
+
+  const handleRefFormChange = (field: keyof ProjectReferenceFormData, value: string | boolean) => {
+    setRefFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleSaveRef = async () => {
+    if (!refFormData.code.trim()) {
+      toast.error('Code is required');
+      return;
+    }
+
+    setSavingRef(true);
+    try {
+      const url = `/api/activities/${activityId}/project-references`;
+      const method = editingRef ? 'PUT' : 'POST';
+      const body = editingRef
+        ? { ...refFormData, referenceId: editingRef.id }
+        : refFormData;
+
+      const response = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+
+      if (response.ok) {
+        toast.success(editingRef ? 'Reference updated' : 'Reference added');
+        setShowRefDialog(false);
+        fetchProjectReferences();
+      } else {
+        const error = await response.json();
+        toast.error(error.error || 'Failed to save reference');
+      }
+    } catch (error) {
+      toast.error('Failed to save reference');
+    } finally {
+      setSavingRef(false);
+    }
+  };
+
+  const handleDeleteRef = async (refId: string) => {
+    if (!window.confirm('Delete this project reference?')) return;
+
+    try {
+      const response = await fetch(
+        `/api/activities/${activityId}/project-references?referenceId=${refId}`,
+        { method: 'DELETE' }
+      );
+
+      if (response.ok) {
+        toast.success('Reference deleted');
+        fetchProjectReferences();
+      } else {
+        toast.error('Failed to delete reference');
+      }
+    } catch (error) {
+      toast.error('Failed to delete reference');
+    }
+  };
+
+  const handleSetPrimary = async (ref: ProjectReference) => {
+    setSavingRef(true);
+    try {
+      const response = await fetch(`/api/activities/${activityId}/project-references`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          referenceId: ref.id,
+          isPrimary: true,
+        }),
+      });
+
+      if (response.ok) {
+        toast.success('Primary reference updated');
+        fetchProjectReferences();
+      } else {
+        toast.error('Failed to set primary reference');
+      }
+    } catch (error) {
+      toast.error('Failed to set primary reference');
+    } finally {
+      setSavingRef(false);
     }
   };
 
@@ -489,6 +651,212 @@ export default function GovernmentEndorsementTab({
           </div>
         </CardContent>
       </Card>
+
+      {/* Project References Section */}
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <CardTitle className="flex items-center gap-2">
+            <FileCode2 className="h-5 w-5" />
+            Project References
+          </CardTitle>
+          {canEdit && (
+            <Button size="sm" onClick={() => openRefDialog()}>
+              <Plus className="h-4 w-4 mr-2" />
+              Add Reference
+            </Button>
+          )}
+        </CardHeader>
+        <CardContent>
+          <p className="text-sm text-muted-foreground mb-4">
+            Link this activity to government budget codes, donor project IDs, or internal tracking numbers.
+            These references enable reconciliation with the national budget system.
+          </p>
+
+          {loadingRefs ? (
+            <div className="space-y-2">
+              <Skeleton className="h-10 w-full" />
+              <Skeleton className="h-10 w-full" />
+            </div>
+          ) : projectReferences.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              <FileCode2 className="h-8 w-8 mx-auto mb-2 opacity-50" />
+              <p>No project references added yet.</p>
+              {canEdit && (
+                <Button variant="outline" size="sm" className="mt-2" onClick={() => openRefDialog()}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add First Reference
+                </Button>
+              )}
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Type</TableHead>
+                  <TableHead>Code</TableHead>
+                  <TableHead>Name</TableHead>
+                  <TableHead>Vocabulary</TableHead>
+                  <TableHead className="w-[100px]">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {projectReferences.map((ref) => (
+                  <TableRow key={ref.id}>
+                    <TableCell>
+                      <Badge variant={
+                        ref.referenceType === 'government' ? 'default' :
+                        ref.referenceType === 'donor' ? 'secondary' : 'outline'
+                      }>
+                        {REFERENCE_TYPE_LABELS[ref.referenceType]}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="font-mono">
+                      <div className="flex items-center gap-2">
+                        {ref.code}
+                        {ref.isPrimary && (
+                          <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
+                        )}
+                      </div>
+                    </TableCell>
+                    <TableCell>{ref.name || '-'}</TableCell>
+                    <TableCell className="text-muted-foreground">{ref.vocabulary || '-'}</TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-1">
+                        {canEdit && !ref.isPrimary && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleSetPrimary(ref)}
+                            title="Set as primary"
+                            disabled={savingRef}
+                          >
+                            <Star className="h-4 w-4" />
+                          </Button>
+                        )}
+                        {canEdit && (
+                          <>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => openRefDialog(ref)}
+                            >
+                              <Edit2 className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleDeleteRef(ref.id)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </>
+                        )}
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Project Reference Dialog */}
+      <Dialog open={showRefDialog} onOpenChange={setShowRefDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {editingRef ? 'Edit Project Reference' : 'Add Project Reference'}
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Reference Type</Label>
+              <Select
+                value={refFormData.referenceType}
+                onValueChange={(value: ReferenceType) => handleRefFormChange('referenceType', value)}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {(Object.keys(REFERENCE_TYPE_LABELS) as ReferenceType[]).map((type) => (
+                    <SelectItem key={type} value={type}>
+                      <div>
+                        <div className="font-medium">{REFERENCE_TYPE_LABELS[type]}</div>
+                        <div className="text-xs text-gray-500">{REFERENCE_TYPE_DESCRIPTIONS[type]}</div>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Code *</Label>
+              <Input
+                value={refFormData.code}
+                onChange={(e) => handleRefFormChange('code', e.target.value)}
+                placeholder="e.g., PIP-2024-001, DFID-12345"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Name</Label>
+              <Input
+                value={refFormData.name || ''}
+                onChange={(e) => handleRefFormChange('name', e.target.value)}
+                placeholder="Human-readable name (optional)"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Vocabulary</Label>
+              <Input
+                value={refFormData.vocabulary || ''}
+                onChange={(e) => handleRefFormChange('vocabulary', e.target.value)}
+                placeholder="e.g., national_pip, ministry_code"
+              />
+              <p className="text-xs text-muted-foreground">
+                The standard or system this code comes from
+              </p>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                id="isPrimary"
+                checked={refFormData.isPrimary}
+                onChange={(e) => handleRefFormChange('isPrimary', e.target.checked)}
+                className="h-4 w-4"
+              />
+              <Label htmlFor="isPrimary" className="cursor-pointer">
+                Primary reference for this type
+              </Label>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Notes</Label>
+              <Textarea
+                value={refFormData.notes || ''}
+                onChange={(e) => handleRefFormChange('notes', e.target.value)}
+                placeholder="Additional notes..."
+                rows={2}
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowRefDialog(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleSaveRef} disabled={savingRef}>
+              {savingRef ? 'Saving...' : editingRef ? 'Update' : 'Add'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {!canEdit && (
         <Alert>

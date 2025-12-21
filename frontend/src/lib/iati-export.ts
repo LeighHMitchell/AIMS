@@ -276,7 +276,56 @@ export function generateActivityXML(
       xml.push(`  <capital-spend percentage="${capitalSpend}" />`);
     }
   }
-  
+
+  // Country Budget Items (IATI Watch Point 1 & 2 compliant)
+  if (activity.country_budget_items && activity.country_budget_items.length > 0) {
+    xml.push('');
+    xml.push('  <!-- Country Budget Items -->');
+    activity.country_budget_items.forEach((cbi: any) => {
+      // Build attributes for country-budget-items element
+      const cbiAttrs: string[] = [`vocabulary="${escapeXML(cbi.vocabulary)}"`];
+
+      // IATI Watch Point 1: Include vocabulary-uri for country-specific vocabularies (98/99)
+      if ((cbi.vocabulary === '98' || cbi.vocabulary === '99') && cbi.vocabulary_uri) {
+        cbiAttrs.push(`vocabulary-uri="${escapeXML(cbi.vocabulary_uri)}"`);
+      }
+
+      xml.push(`  <country-budget-items ${cbiAttrs.join(' ')}>`);
+
+      // Add budget items
+      if (cbi.budget_items && cbi.budget_items.length > 0) {
+        cbi.budget_items.forEach((item: any) => {
+          const itemAttrs = [`code="${escapeXML(item.code)}"`, `percentage="${item.percentage}"`];
+
+          // Check if there's a description
+          if (item.description) {
+            xml.push(`    <budget-item ${itemAttrs.join(' ')}>`);
+            xml.push(`      <description>`);
+
+            // Handle multi-language descriptions
+            if (typeof item.description === 'object') {
+              Object.entries(item.description).forEach(([lang, text]) => {
+                if (text) {
+                  const langAttr = lang !== 'en' ? ` xml:lang="${lang}"` : '';
+                  xml.push(`        <narrative${langAttr}>${escapeXML(String(text))}</narrative>`);
+                }
+              });
+            } else if (typeof item.description === 'string' && item.description) {
+              xml.push(`        <narrative>${escapeXML(item.description)}</narrative>`);
+            }
+
+            xml.push(`      </description>`);
+            xml.push(`    </budget-item>`);
+          } else {
+            xml.push(`    <budget-item ${itemAttrs.join(' ')} />`);
+          }
+        });
+      }
+
+      xml.push(`  </country-budget-items>`);
+    });
+  }
+
   // Transactions
   if (transactions.length > 0) {
     xml.push('');
@@ -289,7 +338,7 @@ export function generateActivityXML(
       xml.push(transactionXML);
     });
   }
-  
+
   xml.push('</iati-activity>');
   
   return xml.join('\n');

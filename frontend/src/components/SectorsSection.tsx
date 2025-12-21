@@ -9,6 +9,29 @@ import { Plus, Trash2, AlertCircle, PieChart, ExternalLink } from "lucide-react"
 import { DAC_CODES } from "@/data/dac-codes";
 import { useRouter } from "next/navigation";
 
+// Broad/residual DAC sector codes that should trigger a guidance alert
+const BROAD_SECTOR_CODES = [
+  '43010', // Multisector aid
+  '43082', // Research / scientific institutions
+  '43050', // Non-agricultural alternative development
+  '52010', // Food aid / food security programmes
+  '43081', // Multisector education / training programmes
+  '99810', // Sectors not specified
+];
+
+// Helper to check if a sector code is broad/residual
+const isBroadSectorCode = (code: string): boolean => {
+  if (BROAD_SECTOR_CODES.includes(code)) return true;
+  if (code.length === 5 && code.endsWith('00')) return true;
+  if (code.length === 3) return true;
+  return false;
+};
+
+// Helper to check if a sector code is specific (5-digit, not ending in 00)
+const isSpecificSectorCode = (code: string): boolean => {
+  return code.length === 5 && !code.endsWith('00');
+};
+
 // Convert DAC_CODES to the format used by this component
 const SECTOR_CODES = DAC_CODES.map(code => ({
   code: code.dac5_code,
@@ -38,6 +61,14 @@ export default function SectorsSection({ sectors: initialSectors = [], onChange 
 
   const totalPercentage = sectors.reduce((sum, sector) => sum + sector.percentage, 0);
   const hasPrimary = sectors.some(s => s.type === "primary");
+
+  // Check for broad/residual sector codes
+  const broadSectorWarning = React.useMemo(() => {
+    const broadSectors = sectors.filter(s => isBroadSectorCode(s.code));
+    const specificSectors = sectors.filter(s => isSpecificSectorCode(s.code));
+    const shouldShow = broadSectors.length > 0 && specificSectors.length === 0;
+    return { shouldShow, broadSectors };
+  }, [sectors]);
 
   const addSector = () => {
     if (!newSector.code || newSector.percentage <= 0) return;
@@ -129,6 +160,26 @@ export default function SectorsSection({ sectors: initialSectors = [], onChange 
               <div className="text-sm">
                 <p className="font-medium text-amber-900">Percentage allocation is {totalPercentage}%</p>
                 <p className="text-amber-700">Total sector allocation should equal 100%</p>
+              </div>
+            </div>
+          )}
+
+          {/* Broad/Residual Sector Warning */}
+          {broadSectorWarning.shouldShow && (
+            <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-lg flex items-start gap-2">
+              <AlertCircle className="h-4 w-4 text-amber-600 mt-0.5" />
+              <div className="text-sm">
+                <p className="font-medium text-amber-900">Consider using more specific sector codes</p>
+                <p className="text-amber-700">
+                  You've selected {broadSectorWarning.broadSectors.length === 1 ? 'a broad/residual sector code' : 'broad/residual sector codes'}:{' '}
+                  <span className="font-medium">{broadSectorWarning.broadSectors.map(s => s.code).join(', ')}</span>
+                </p>
+                <p className="text-amber-700 mt-1">
+                  These are high-level or residual classifications. Selecting more specific 5-digit DAC sector codes improves reporting quality, analysis, and comparability.
+                </p>
+                <p className="text-xs text-amber-600 mt-1">
+                  You can continue with this selection if a more specific code is not applicable.
+                </p>
               </div>
             </div>
           )}

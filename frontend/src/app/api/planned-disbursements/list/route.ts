@@ -14,27 +14,34 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '20');
     const offset = (page - 1) * limit;
 
-    // Search and filters
+    // Search and filters - support both single values and arrays
     const search = searchParams.get('search') || '';
     const type = searchParams.get('type') || 'all';
+    const types = searchParams.get('types')?.split(',').filter(Boolean) || [];
     const organization = searchParams.get('organization') || 'all';
+    const organizations = searchParams.get('organizations')?.split(',').filter(Boolean) || [];
     const sortField = searchParams.get('sortField') || 'period_start';
     const sortOrder = searchParams.get('sortOrder') || 'desc';
 
-    console.log('[Planned Disbursements List API] Query params:', { page, limit, search, type, sortField, sortOrder });
+    console.log('[Planned Disbursements List API] Query params:', { page, limit, search, types, organizations, sortField, sortOrder });
 
     // Build query - fetch disbursements first
     let query = supabase
       .from('planned_disbursements')
       .select('*', { count: 'exact' });
 
-    // Apply type filter
-    if (type !== 'all') {
+    // Apply type filter - support both array and single value
+    if (types.length > 0) {
+      query = query.in('type', types);
+    } else if (type !== 'all') {
       query = query.eq('type', type);
     }
 
-    // Apply organization filter
-    if (organization !== 'all') {
+    // Apply organization filter - support both array and single value
+    if (organizations.length > 0) {
+      const orgConditions = organizations.map(org => `provider_org_id.eq.${org},receiver_org_id.eq.${org}`).join(',');
+      query = query.or(orgConditions);
+    } else if (organization !== 'all') {
       query = query.or(`provider_org_id.eq.${organization},receiver_org_id.eq.${organization}`);
     }
 

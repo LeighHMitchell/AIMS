@@ -250,7 +250,7 @@ export default function PartnerProfilePage() {
   return (
     <MainLayout>
       <div className="min-h-screen bg-slate-50">
-        <div className="p-8 max-w-7xl mx-auto">
+        <div className="p-8">
           {/* Back button */}
           <Button
             variant="ghost"

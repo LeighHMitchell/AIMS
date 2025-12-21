@@ -27,6 +27,13 @@ import { MultiSelect } from '@/components/ui/multi-select'
 import { HelpTextTooltip } from '@/components/ui/help-text-tooltip'
 import { Switch } from '@/components/ui/switch'
 import { Label } from '@/components/ui/label'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { 
   splitBudgetAcrossYears, 
   splitPlannedDisbursementAcrossYears, 
@@ -36,6 +43,15 @@ import { FINANCIAL_OVERVIEW_COLORS, BRAND_COLORS } from '@/components/analytics/
 
 type DataMode = 'cumulative' | 'periodic'
 type ChartType = 'line' | 'bar' | 'area' | 'table' | 'total'
+type TimeRange = '3m' | '6m' | '12m' | '3y' | '5y'
+
+const TIME_RANGE_OPTIONS: { value: TimeRange; label: string }[] = [
+  { value: '3m', label: 'Last 3 months' },
+  { value: '6m', label: 'Last 6 months' },
+  { value: '12m', label: 'Last 12 months' },
+  { value: '3y', label: 'Last 3 years' },
+  { value: '5y', label: 'Last 5 years' },
+]
 
 interface CumulativeFinancialOverviewProps {
   dateRange?: {
@@ -64,6 +80,33 @@ export function CumulativeFinancialOverview({
   const [selectedActivities, setSelectedActivities] = useState<string[]>([])
   const [activities, setActivities] = useState<Array<{ id: string; title: string; iati_identifier?: string }>>([])
   const [allocationMethod, setAllocationMethod] = useState<'proportional' | 'period-start'>('proportional')
+  const [selectedTimeRange, setSelectedTimeRange] = useState<TimeRange>('5y')
+
+  // Calculate effective date range based on selected time range
+  const effectiveDateRange = useMemo(() => {
+    const now = new Date()
+    const from = new Date()
+
+    switch (selectedTimeRange) {
+      case '3m':
+        from.setMonth(now.getMonth() - 3)
+        break
+      case '6m':
+        from.setMonth(now.getMonth() - 6)
+        break
+      case '12m':
+        from.setFullYear(now.getFullYear() - 1)
+        break
+      case '3y':
+        from.setFullYear(now.getFullYear() - 3)
+        break
+      case '5y':
+        from.setFullYear(now.getFullYear() - 5)
+        break
+    }
+
+    return { from, to: now }
+  }, [selectedTimeRange])
 
   // Fetch activities list for filter
   useEffect(() => {
@@ -102,7 +145,8 @@ export function CumulativeFinancialOverview({
         // Fetch all transactions
         console.log('[CumulativeFinancialOverview] === FETCHING TRANSACTIONS ===')
         console.log('[CumulativeFinancialOverview] Query filters:', {
-          dateRange: dateRange ? { from: dateRange.from.toISOString(), to: dateRange.to.toISOString() } : 'none',
+          effectiveDateRange: { from: effectiveDateRange.from.toISOString(), to: effectiveDateRange.to.toISOString() },
+          selectedTimeRange,
           donor: filters?.donor || 'none',
           selectedActivities: selectedActivities.length > 0 ? selectedActivities : 'none'
         })
@@ -113,12 +157,10 @@ export function CumulativeFinancialOverview({
           .eq('status', 'actual')
           .order('transaction_date', { ascending: true })
 
-        // Apply date range filter
-        if (dateRange) {
-          transactionsQuery = transactionsQuery
-            .gte('transaction_date', dateRange.from.toISOString())
-            .lte('transaction_date', dateRange.to.toISOString())
-        }
+        // Apply date range filter based on selected time range
+        transactionsQuery = transactionsQuery
+          .gte('transaction_date', effectiveDateRange.from.toISOString())
+          .lte('transaction_date', effectiveDateRange.to.toISOString())
 
         // Apply donor filter
         if (filters?.donor) {
@@ -177,11 +219,10 @@ export function CumulativeFinancialOverview({
           .select('period_start, period_end, amount, usd_amount, currency, activity_id')
           .order('period_start', { ascending: true })
 
-        if (dateRange) {
-          plannedDisbursementsQuery = plannedDisbursementsQuery
-            .gte('period_start', dateRange.from.toISOString())
-            .lte('period_start', dateRange.to.toISOString())
-        }
+        // Apply date range filter based on selected time range
+        plannedDisbursementsQuery = plannedDisbursementsQuery
+          .gte('period_start', effectiveDateRange.from.toISOString())
+          .lte('period_start', effectiveDateRange.to.toISOString())
 
         // Apply activity filter
         if (selectedActivities.length > 0) {
@@ -200,11 +241,10 @@ export function CumulativeFinancialOverview({
           .select('period_start, period_end, value, usd_value, currency, activity_id')
           .order('period_start', { ascending: true })
 
-        if (dateRange) {
-          budgetsQuery = budgetsQuery
-            .gte('period_start', dateRange.from.toISOString())
-            .lte('period_start', dateRange.to.toISOString())
-        }
+        // Apply date range filter based on selected time range
+        budgetsQuery = budgetsQuery
+          .gte('period_start', effectiveDateRange.from.toISOString())
+          .lte('period_start', effectiveDateRange.to.toISOString())
 
         // Apply activity filter
         if (selectedActivities.length > 0) {
@@ -492,7 +532,7 @@ export function CumulativeFinancialOverview({
     }
 
     fetchData()
-  }, [dateRange, filters, refreshKey, selectedActivities, allocationMethod])
+  }, [effectiveDateRange, filters, refreshKey, selectedActivities, allocationMethod])
 
   // No filtering - use all available data
   const filteredData = useMemo(() => {
@@ -836,11 +876,30 @@ export function CumulativeFinancialOverview({
           <div className="flex items-center justify-between gap-2 flex-wrap">
             {/* Filters - Left Side */}
             <div className="flex items-center gap-2 flex-wrap">
+              {/* Time Range Filter */}
+              <div className="w-[160px]">
+                <Select
+                  value={selectedTimeRange}
+                  onValueChange={(value) => setSelectedTimeRange(value as TimeRange)}
+                >
+                  <SelectTrigger className="h-9 bg-white">
+                    <SelectValue placeholder="Time Range" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {TIME_RANGE_OPTIONS.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
               {/* Activity Multi-Select */}
               <div className="w-[280px]">
                 <MultiSelect
                   options={activities.map(activity => ({
-                    label: activity.iati_identifier 
+                    label: activity.iati_identifier
                       ? `${activity.title} (${activity.iati_identifier})`
                       : activity.title,
                     value: activity.id

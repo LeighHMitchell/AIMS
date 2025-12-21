@@ -232,7 +232,7 @@ export function SectorHierarchyFilter({
           <div className="flex items-center gap-2 truncate">
             <Layers2 className="h-4 w-4 text-gray-600 shrink-0" />
             {totalSelected === 0 ? (
-              <span className="text-sm text-muted-foreground">Filter by sector</span>
+              <span className="text-sm">All</span>
             ) : (
               <span className="text-sm truncate">
                 {getSelectionSummary()}

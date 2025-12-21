@@ -118,6 +118,23 @@ export async function POST(request: NextRequest) {
     iatiAnalytics.optionSelected('fork', meta.iatiId, meta.reportingOrgRef);
     iatiAnalytics.importCompleted('fork', activity.id);
 
+    // Log to iati_import_logs
+    await supabase
+      .from('iati_import_logs')
+      .insert({
+        import_source: 'fork',
+        activity_id: activity.id,
+        iati_identifier: meta.iatiId,
+        activity_title: meta.title || meta.reportingOrgName,
+        reporting_org_ref: meta.reportingOrgRef,
+        reporting_org_name: meta.reportingOrgName,
+        import_type: 'fork_as_draft',
+        import_status: 'success',
+        iati_datastore_url: meta.iatiId
+          ? `https://datastore.iatistandard.org/search/activity?q=iati-identifier:${encodeURIComponent(meta.iatiId)}`
+          : null
+      });
+
     console.log('[IATI Fork] Successfully created forked activity:', activity.id);
 
     return NextResponse.json({
