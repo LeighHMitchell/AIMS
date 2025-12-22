@@ -70,6 +70,7 @@ export function SidebarNav({ userRole, canManageUsers, isLoading, isCollapsed = 
         { name: "Search", href: "/search", show: true },
         { name: "Aid Effectiveness", href: "/aid-effectiveness-dashboard", show: true },
         { name: "Portfolios", href: "/partners", show: true },
+        { name: "Reports", href: "/reports", show: true },
       ]
     },
     {

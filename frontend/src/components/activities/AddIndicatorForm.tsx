@@ -80,11 +80,12 @@ export function AddIndicatorForm({
 
       toast.success('Indicator created successfully');
 
-      // Create baseline if provided
-      if (formData.baseline && parseFloat(formData.baseline)) {
+      // Create baseline if provided (including 0 as a valid value)
+      const parsedBaseline = parseFloat(formData.baseline);
+      if (formData.baseline !== '' && !isNaN(parsedBaseline)) {
         const baselineData: any = {
           indicator_id: responseData.id,
-          value: parseFloat(formData.baseline)
+          value: parsedBaseline
         };
         
         // Add baseline year if provided

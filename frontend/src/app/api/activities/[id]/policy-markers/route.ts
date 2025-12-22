@@ -31,7 +31,7 @@ export async function GET(
     // Get policy markers for the activity - using manual approach due to schema cache issue
     const { data: activityMarkers, error: markersError } = await supabase
       .from('activity_policy_markers')
-      .select('id, significance, rationale, created_at, updated_at, policy_marker_id')
+      .select('id, significance, rationale, visibility, created_at, updated_at, policy_marker_id')
       .eq('activity_id', id)
       .order('created_at', { ascending: true });
 
@@ -49,7 +49,7 @@ export async function GET(
       const markerIds = activityMarkers.map(m => m.policy_marker_id);
       const { data: markerDetails, error: detailsError } = await supabase
         .from('policy_markers')
-        .select('id, uuid, code, name, description, marker_type, vocabulary, vocabulary_uri, iati_code, is_iati_standard')
+        .select('id, uuid, code, name, description, marker_type, vocabulary, vocabulary_uri, iati_code, is_iati_standard, default_visibility')
         .in('uuid', markerIds);
 
       if (detailsError) {
@@ -228,7 +228,8 @@ export async function POST(
         activity_id: id,
         policy_marker_id: marker.policy_marker_id, // Now correctly using UUID
         significance: marker.significance, // Already validated and parsed as integer
-        rationale: marker.rationale || null
+        rationale: marker.rationale || null,
+        visibility: marker.visibility || null // NULL means inherit from policy_markers.default_visibility
       }));
 
       console.log('[Policy Markers API] Inserting policy markers:', JSON.stringify(policyMarkersData, null, 2));
@@ -251,7 +252,7 @@ export async function POST(
     // Return the updated policy markers - using manual approach due to schema cache issue
     const { data: updatedActivityMarkers, error: fetchError } = await supabase
       .from('activity_policy_markers')
-      .select('id, significance, rationale, created_at, updated_at, policy_marker_id')
+      .select('id, significance, rationale, visibility, created_at, updated_at, policy_marker_id')
       .eq('activity_id', id)
       .order('created_at', { ascending: true });
 
@@ -260,7 +261,7 @@ export async function POST(
       const markerIds = updatedActivityMarkers.map(m => m.policy_marker_id);
       const { data: markerDetails, error: detailsError } = await supabase
         .from('policy_markers')
-        .select('id, uuid, code, name, description, marker_type, vocabulary, vocabulary_uri, iati_code, is_iati_standard')
+        .select('id, uuid, code, name, description, marker_type, vocabulary, vocabulary_uri, iati_code, is_iati_standard, default_visibility')
         .in('uuid', markerIds);
 
       if (!detailsError) {

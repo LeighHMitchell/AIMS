@@ -142,7 +142,8 @@ export async function POST(request: Request) {
       display_order: 999, // Place custom markers at the end
       vocabulary: body.vocabulary?.toString() || '99',
       vocabulary_uri: body.vocabulary_uri?.trim() || null,
-      iati_code: body.iati_code?.trim() || null
+      iati_code: body.iati_code?.trim() || null,
+      default_visibility: body.default_visibility || 'public' // Default to public if not specified
     };
 
     console.log('[Policy Markers API] Creating marker:', JSON.stringify(markerData, null, 2));
@@ -247,6 +248,13 @@ export async function PUT(request: Request) {
     }
     if (body.vocabulary_uri !== undefined) {
       updatedData.vocabulary_uri = body.vocabulary_uri?.trim() || null;
+    }
+    if (body.default_visibility !== undefined) {
+      // Validate visibility value
+      const validVisibilities = ['public', 'organization', 'hidden'];
+      if (validVisibilities.includes(body.default_visibility)) {
+        updatedData.default_visibility = body.default_visibility;
+      }
     }
 
     const { data: updatedMarker, error } = await getSupabaseAdmin()

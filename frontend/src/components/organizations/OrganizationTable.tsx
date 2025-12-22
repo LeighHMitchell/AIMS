@@ -13,6 +13,8 @@ import {
   Building2,
   DollarSign,
   Copy,
+  FileText,
+  FileSpreadsheet,
 } from "lucide-react";
 import { getCountryCode } from "@/lib/country-utils";
 import { Badge } from "@/components/ui/badge";
@@ -74,6 +76,8 @@ interface OrganizationTableProps {
   onSort: (field: SortField) => void;
   onEdit: (org: Organization) => void;
   onDelete: (org: Organization) => void;
+  onExportPDF?: (orgId: string) => void;
+  onExportExcel?: (orgId: string) => void;
 }
 
 // Format currency helper - returns JSX with gray currency code
@@ -159,6 +163,8 @@ export const OrganizationTable: React.FC<OrganizationTableProps> = ({
   onSort,
   onEdit,
   onDelete,
+  onExportPDF,
+  onExportExcel,
 }) => {
   const router = useRouter();
 
@@ -395,7 +401,7 @@ export const OrganizationTable: React.FC<OrganizationTableProps> = ({
                             <MoreVertical className="h-4 w-4" />
                           </Button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-32">
+                        <DropdownMenuContent align="end" className="w-40">
                           <DropdownMenuItem
                             onClick={(e) => {
                               e.stopPropagation();
@@ -416,6 +422,30 @@ export const OrganizationTable: React.FC<OrganizationTableProps> = ({
                             <Edit2 className="mr-2 h-4 w-4" />
                             Edit
                           </DropdownMenuItem>
+                          {onExportPDF && (
+                            <DropdownMenuItem
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onExportPDF(org.id);
+                              }}
+                              className="cursor-pointer"
+                            >
+                              <FileText className="mr-2 h-4 w-4" />
+                              Export as PDF
+                            </DropdownMenuItem>
+                          )}
+                          {onExportExcel && (
+                            <DropdownMenuItem
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onExportExcel(org.id);
+                              }}
+                              className="cursor-pointer"
+                            >
+                              <FileSpreadsheet className="mr-2 h-4 w-4" />
+                              Export as Excel
+                            </DropdownMenuItem>
+                          )}
                           <DropdownMenuItem
                             onClick={(e) => {
                               e.stopPropagation();

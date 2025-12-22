@@ -55,9 +55,11 @@ import {
   Plus, Download, Edit2, Trash2, AlertCircle, ArrowUp, ArrowDown, ArrowUpDown, ChevronLeft, ChevronRight, Users, Grid3X3, TableIcon, Search, MoreVertical, Edit,
   PencilLine, BookOpenCheck, BookLock, CheckCircle2, AlertTriangle, Circle, Info, ReceiptText, Handshake, Shuffle, Link2,
   FileCheck, ShieldCheck, Globe, DatabaseZap, RefreshCw, Copy, Check, Blocks, DollarSign, Settings, ExternalLink, FileCode, Columns3, ChevronDown, Heart,
-  Building2, ArrowRightLeft, X
+  Building2, ArrowRightLeft, X, FileText, FileSpreadsheet, Bookmark, BookmarkCheck
 } from "lucide-react";
+import { exportActivityToPDF, exportActivityToExcel } from "@/lib/activity-export";
 import { useUser } from "@/hooks/useUser";
+import { useBookmarks } from "@/hooks/use-bookmarks";
 import { Transaction, TIED_STATUS_LABELS } from "@/types/transaction";
 import { LEGACY_TRANSACTION_TYPE_MAP } from "@/utils/transactionMigrationHelper";
 import { USER_ROLES } from "@/types/user";
@@ -920,9 +922,10 @@ function ActivitiesPageContent() {
   const [legacySortField, setLegacySortField] = useState<SortField>('updatedAt');
   const [legacySortOrder, setLegacySortOrder] = useState<SortOrder>('desc');
   
-  const router = useRouter();
+const router = useRouter();
   const { user, isLoading: userLoading } = useUser();
-  
+  const { isBookmarked, toggleBookmark } = useBookmarks();
+
   // Track if we've ever successfully loaded data to prevent flash of empty state
   const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
@@ -1370,6 +1373,29 @@ function ActivitiesPageContent() {
             : error instanceof Error ? error.message : "Failed to delete activity"
         );
       }
+    }
+  };
+
+  // Export handlers
+  const handleExportActivityPDF = async (activityId: string) => {
+    toast.loading("Generating PDF...", { id: "export-pdf" });
+    try {
+      await exportActivityToPDF(activityId);
+      toast.success("PDF exported successfully", { id: "export-pdf" });
+    } catch (error) {
+      console.error("Error exporting activity to PDF:", error);
+      toast.error("Failed to export PDF", { id: "export-pdf" });
+    }
+  };
+
+  const handleExportActivityExcel = async (activityId: string) => {
+    toast.loading("Generating Excel...", { id: "export-excel" });
+    try {
+      await exportActivityToExcel(activityId);
+      toast.success("Excel exported successfully", { id: "export-excel" });
+    } catch (error) {
+      console.error("Error exporting activity to Excel:", error);
+      toast.error("Failed to export Excel", { id: "export-excel" });
     }
   };
 
@@ -3787,7 +3813,26 @@ function ActivitiesPageContent() {
                                 <MoreVertical className="h-4 w-4" />
                               </Button>
                             </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="w-40">
+                            <DropdownMenuContent align="end" className="w-48">
+                              <DropdownMenuItem
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  toggleBookmark(activity.id);
+                                }}
+                                className="cursor-pointer"
+                              >
+                                {isBookmarked(activity.id) ? (
+                                  <>
+                                    <BookmarkCheck className="mr-2 h-4 w-4 text-slate-600" />
+                                    Remove Bookmark
+                                  </>
+                                ) : (
+                                  <>
+                                    <Bookmark className="mr-2 h-4 w-4" />
+                                    Add Bookmark
+                                  </>
+                                )}
+                              </DropdownMenuItem>
                               {canUserEditActivity(user, activity) && (
                                 <DropdownMenuItem 
                                   onClick={() => router.push(`/activities/new?id=${activity.id}`)}
@@ -3797,7 +3842,7 @@ function ActivitiesPageContent() {
                                   Edit
                                 </DropdownMenuItem>
                               )}
-                              <DropdownMenuItem 
+<DropdownMenuItem
                                 onClick={() => {
                                   toast.info("Export to IATI XML feature coming soon");
                                 }}
@@ -3806,7 +3851,21 @@ function ActivitiesPageContent() {
                                 <FileCode className="mr-2 h-4 w-4" />
                                 Export to XML
                               </DropdownMenuItem>
-                              <DropdownMenuItem 
+                              <DropdownMenuItem
+                                onClick={() => handleExportActivityPDF(activity.id)}
+                                className="cursor-pointer"
+                              >
+                                <FileText className="mr-2 h-4 w-4" />
+                                Export as PDF
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() => handleExportActivityExcel(activity.id)}
+                                className="cursor-pointer"
+                              >
+                                <FileSpreadsheet className="mr-2 h-4 w-4" />
+                                Export as Excel
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
                                 onClick={() => setDeleteActivityId(activity.id)}
                                 className="cursor-pointer text-red-600 hover:text-red-700 hover:bg-red-50"
                               >

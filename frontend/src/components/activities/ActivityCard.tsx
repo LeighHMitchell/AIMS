@@ -3,7 +3,8 @@
 import React, { useRef } from 'react';
 import Link from 'next/link';
 import html2canvas from 'html2canvas';
-import { Calendar, MoreVertical, Edit3, Trash2, Clock, Download, Copy } from 'lucide-react';
+import { Calendar, MoreVertical, Edit3, Trash2, Clock, Download, Copy, Bookmark, BookmarkCheck } from 'lucide-react';
+import { useBookmarks } from '@/hooks/use-bookmarks';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -113,6 +114,7 @@ const ActivityCard: React.FC<ActivityCardProps> = ({
   isLoading = false 
 }) => {
   const cardRef = useRef<HTMLDivElement>(null);
+  const { isBookmarked, toggleBookmark } = useBookmarks();
   
 
 
@@ -230,7 +232,27 @@ const ActivityCard: React.FC<ActivityCardProps> = ({
               <MoreVertical className="h-4 w-4 text-gray-600" />
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-40">
+          <DropdownMenuContent align="end" className="w-48">
+            <DropdownMenuItem 
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                toggleBookmark(activity.id);
+              }} 
+              className="cursor-pointer"
+            >
+              {isBookmarked(activity.id) ? (
+                <>
+                  <BookmarkCheck className="mr-2 h-4 w-4 text-slate-600" />
+                  Remove Bookmark
+                </>
+              ) : (
+                <>
+                  <Bookmark className="mr-2 h-4 w-4" />
+                  Add Bookmark
+                </>
+              )}
+            </DropdownMenuItem>
             <DropdownMenuItem onClick={handleExport} className="cursor-pointer">
               <Download className="mr-2 h-4 w-4" />
               Export as JPG

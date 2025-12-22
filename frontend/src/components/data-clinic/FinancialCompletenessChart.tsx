@@ -191,8 +191,10 @@ export function FinancialCompletenessChart({ data, loading }: FinancialCompleten
           comparison = a.percentage_spent - b.percentage_spent;
           break;
         case 'severity':
-          const severityOrder = { mild: 1, moderate: 2, severe: 3 };
-          comparison = severityOrder[getSeverity(a.percentage_spent)] - severityOrder[getSeverity(b.percentage_spent)];
+          // null (no overspending) sorts first (0), then mild (1), moderate (2), severe (3)
+          const severityOrder: Record<string, number> = { mild: 1, moderate: 2, severe: 3 };
+          const getSeverityOrder = (pct: number) => severityOrder[getSeverity(pct) ?? ''] ?? 0;
+          comparison = getSeverityOrder(a.percentage_spent) - getSeverityOrder(b.percentage_spent);
           break;
       }
       return sortDirection === 'asc' ? comparison : -comparison;

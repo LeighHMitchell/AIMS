@@ -5,6 +5,7 @@ import { MainLayout } from "@/components/layout/main-layout"
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useRouter } from "next/navigation"
 import { useUser } from "@/hooks/useUser"
 import { USER_ROLES } from "@/types/user"
@@ -14,11 +15,14 @@ import {
   AlertCircle,
   Shield,
   Building2,
+  LayoutDashboard,
+  Bookmark,
 } from "lucide-react"
 import { Skeleton } from "@/components/ui/skeleton"
 import { DashboardStatsSkeleton } from "@/components/ui/skeleton-loader"
 
 // Import new dashboard components
+import { HeroVisualizationCards } from "@/components/dashboard/HeroVisualizationCards"
 import { OrgSummaryCards } from "@/components/dashboard/OrgSummaryCards"
 import { RecencyCards } from "@/components/dashboard/RecencyCards"
 import { ActionsRequiredPanel } from "@/components/dashboard/ActionsRequiredPanel"
@@ -26,6 +30,7 @@ import { OrgActivitiesTable } from "@/components/dashboard/OrgActivitiesTable"
 import { OrgTransactionsTable } from "@/components/dashboard/OrgTransactionsTable"
 import { OrgActivitiesMap } from "@/components/dashboard/OrgActivitiesMap"
 import { OrgSankeyFlow } from "@/components/dashboard/OrgSankeyFlow"
+import { BookmarkedActivitiesTable } from "@/components/dashboard/BookmarkedActivitiesTable"
 
 export default function Dashboard() {
   const router = useRouter();
@@ -210,44 +215,69 @@ export default function Dashboard() {
               </div>
             )}
 
-            {/* Row 1: Summary Cards */}
-            <OrgSummaryCards organizationId={user.organizationId} />
+            {/* Dashboard Tabs */}
+            <Tabs defaultValue="overview" className="w-full">
+              <TabsList className="mb-6">
+                <TabsTrigger value="overview" className="flex items-center gap-2">
+                  <LayoutDashboard className="h-4 w-4" />
+                  Overview
+                </TabsTrigger>
+                <TabsTrigger value="bookmarks" className="flex items-center gap-2">
+                  <Bookmark className="h-4 w-4" />
+                  Bookmarks
+                </TabsTrigger>
+              </TabsList>
 
-            {/* Row 2: Recency Cards */}
-            <RecencyCards organizationId={user.organizationId} />
+              {/* Overview Tab Content */}
+              <TabsContent value="overview" className="space-y-6">
+                {/* Row 1: Hero Visualization Cards (charts) */}
+                <HeroVisualizationCards organizationId={user.organizationId} />
 
-            {/* Row 3: Actions Required Panel (Highest Priority) */}
-            <ActionsRequiredPanel
-              organizationId={user.organizationId}
-              userId={user.id}
-            />
+                {/* Row 2: Summary Stats Cards */}
+                <OrgSummaryCards organizationId={user.organizationId} />
 
-            {/* Row 4: Activity Lists Grid */}
-            <div className="grid gap-6 lg:grid-cols-2">
-              <OrgActivitiesTable
-                organizationId={user.organizationId}
-                variant="recently_edited"
-              />
-              <OrgActivitiesTable
-                organizationId={user.organizationId}
-                variant="closing_soon"
-              />
-            </div>
+                {/* Row 3: Recency Cards */}
+                <RecencyCards organizationId={user.organizationId} />
 
-            {/* Row 5: Main Activities Table */}
-            <OrgActivitiesTable
-              organizationId={user.organizationId}
-              variant="main"
-            />
+                {/* Row 3: Actions Required Panel (Highest Priority) */}
+                <ActionsRequiredPanel
+                  organizationId={user.organizationId}
+                  userId={user.id}
+                />
 
-            {/* Row 6: Transactions Table */}
-            <OrgTransactionsTable organizationId={user.organizationId} />
+                {/* Row 4: Activity Lists Grid */}
+                <div className="grid gap-6 lg:grid-cols-2">
+                  <OrgActivitiesTable
+                    organizationId={user.organizationId}
+                    variant="recently_edited"
+                  />
+                  <OrgActivitiesTable
+                    organizationId={user.organizationId}
+                    variant="closing_soon"
+                  />
+                </div>
 
-            {/* Row 7: Visualizations Grid */}
-            <div className="grid gap-6 lg:grid-cols-2">
-              <OrgActivitiesMap organizationId={user.organizationId} />
-              <OrgSankeyFlow organizationId={user.organizationId} />
-            </div>
+                {/* Row 5: Main Activities Table */}
+                <OrgActivitiesTable
+                  organizationId={user.organizationId}
+                  variant="main"
+                />
+
+                {/* Row 6: Transactions Table */}
+                <OrgTransactionsTable organizationId={user.organizationId} />
+
+                {/* Row 7: Visualizations Grid */}
+                <div className="grid gap-6 lg:grid-cols-2">
+                  <OrgActivitiesMap organizationId={user.organizationId} />
+                  <OrgSankeyFlow organizationId={user.organizationId} />
+                </div>
+              </TabsContent>
+
+              {/* Bookmarks Tab Content */}
+              <TabsContent value="bookmarks">
+                <BookmarkedActivitiesTable />
+              </TabsContent>
+            </Tabs>
           </div>
         </div>
       </div>

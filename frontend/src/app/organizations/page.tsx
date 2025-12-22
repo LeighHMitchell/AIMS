@@ -15,7 +15,8 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Checkbox } from '@/components/ui/checkbox'
-import { Search, Plus, Edit2, Eye, Trash2, ExternalLink, Globe, MapPin, Users, Activity, DollarSign, Building2, AlertTriangle, Copy, Upload, X, ImageIcon, Info, TableIcon, Grid3X3, Calendar, Mail, Phone, HelpCircle, User, Lock, MoreVertical, Download } from 'lucide-react'
+import { Search, Plus, Edit2, Eye, Trash2, ExternalLink, Globe, MapPin, Users, Activity, DollarSign, Building2, AlertTriangle, Copy, Upload, X, ImageIcon, Info, TableIcon, Grid3X3, Calendar, Mail, Phone, HelpCircle, User, Lock, MoreVertical, Download, FileText, FileSpreadsheet } from 'lucide-react'
+import { exportOrganizationToPDF, exportOrganizationToExcel } from '@/lib/organization-export'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
@@ -885,9 +886,11 @@ const OrganizationCard: React.FC<{
   organization: Organization
   onEdit: (org: Organization) => void
   onDelete: (org: Organization) => void
+  onExportPDF: (orgId: string) => void
+  onExportExcel: (orgId: string) => void
   availableTypes: OrganizationType[]
   onTagClick: (tag: string) => void
-}> = ({ organization, onEdit, onDelete, availableTypes, onTagClick }) => {
+}> = ({ organization, onEdit, onDelete, onExportPDF, onExportExcel, availableTypes, onTagClick }) => {
   const router = useRouter()
 
   const handleView = () => {
@@ -954,6 +957,14 @@ const OrganizationCard: React.FC<{
               <DropdownMenuItem onClick={() => onEdit(organization)}>
                 <Edit2 className="h-4 w-4 mr-2" />
                 Edit
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => onExportPDF(organization.id)}>
+                <FileText className="h-4 w-4 mr-2" />
+                Export as PDF
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => onExportExcel(organization.id)}>
+                <FileSpreadsheet className="h-4 w-4 mr-2" />
+                Export as Excel
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem 
@@ -1547,6 +1558,29 @@ function OrganizationsPageContent() {
     await fetchOrganizations(true)
   }
 
+  // Export handlers
+  const handleExportOrgPDF = async (orgId: string) => {
+    toast.loading("Generating PDF...", { id: "export-pdf" });
+    try {
+      await exportOrganizationToPDF(orgId);
+      toast.success("PDF exported successfully", { id: "export-pdf" });
+    } catch (error) {
+      console.error("Error exporting organization to PDF:", error);
+      toast.error("Failed to export PDF", { id: "export-pdf" });
+    }
+  };
+
+  const handleExportOrgExcel = async (orgId: string) => {
+    toast.loading("Generating Excel...", { id: "export-excel" });
+    try {
+      await exportOrganizationToExcel(orgId);
+      toast.success("Excel exported successfully", { id: "export-excel" });
+    } catch (error) {
+      console.error("Error exporting organization to Excel:", error);
+      toast.error("Failed to export Excel", { id: "export-excel" });
+    }
+  };
+
   // Handle tag click for filtering
   const handleTagClick = (tag: string) => {
     setActiveTagFilters(prev => {
@@ -1948,6 +1982,8 @@ function OrganizationsPageContent() {
                           organization={organization}
                           onEdit={handleEditOrganization}
                           onDelete={handleDeleteOrganization}
+                          onExportPDF={handleExportOrgPDF}
+                          onExportExcel={handleExportOrgExcel}
                           availableTypes={availableTypes}
                           onTagClick={handleTagClick}
                         />
@@ -1962,6 +1998,8 @@ function OrganizationsPageContent() {
                       onSort={handleSort}
                       onEdit={handleEditOrganization}
                       onDelete={handleDeleteOrganization}
+                      onExportPDF={handleExportOrgPDF}
+                      onExportExcel={handleExportOrgExcel}
                     />
                   )}
                   

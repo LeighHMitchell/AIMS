@@ -42,14 +42,14 @@ export function exportToCSV(data: Array<{ label: string; value: any }>, filename
 /**
  * Format a date for CSV export
  * @param date - Date string or Date object
- * @param format - Optional format string (default: MMM d, yyyy)
+ * @param formatString - Optional format string (default: MMM d, yyyy)
  */
-export function formatDateForCSV(date: string | Date | null | undefined, format: string = 'MMM d, yyyy'): string {
+export function formatDateForCSV(date: string | Date | null | undefined, formatString: string = 'MMM d, yyyy'): string {
   if (!date) return '—';
   
   try {
     const { format } = require('date-fns');
-    return format(new Date(date), format);
+    return format(new Date(date), formatString);
   } catch (error) {
     console.error('Error formatting date:', error);
     return String(date);
@@ -83,6 +83,67 @@ export function formatArrayForCSV(array: any[] | null | undefined, separator: st
   }
   
   return array.map(item => String(item)).join(separator);
+}
+
+/**
+ * Export tabular data to CSV format and trigger download
+ * @param data - Array of objects representing rows
+ * @param headers - Array of header definitions with key (data property) and label (column header)
+ * @param filename - Name for the downloaded file (without .csv extension)
+ */
+export function exportTableToCSV(
+  data: Record<string, unknown>[],
+  headers: { key: string; label: string }[],
+  filename: string
+): void {
+  // Escape CSV values - wrap in quotes and escape existing quotes
+  const escapeCSV = (value: unknown): string => {
+    if (value === null || value === undefined || value === '') {
+      return '';
+    }
+    const stringValue = String(value);
+    // Escape quotes by doubling them, then wrap in quotes if contains special chars
+    if (stringValue.includes(',') || stringValue.includes('"') || stringValue.includes('\n') || stringValue.includes('\r')) {
+      return `"${stringValue.replace(/"/g, '""')}"`;
+    }
+    return stringValue;
+  };
+
+  // Helper to get nested property value
+  const getNestedValue = (obj: Record<string, unknown>, path: string): unknown => {
+    return path.split('.').reduce((current: unknown, key: string) => {
+      if (current && typeof current === 'object' && key in (current as Record<string, unknown>)) {
+        return (current as Record<string, unknown>)[key];
+      }
+      return undefined;
+    }, obj);
+  };
+
+  // Generate header row
+  const headerRow = headers.map(h => escapeCSV(h.label)).join(',');
+
+  // Generate data rows
+  const dataRows = data.map(row => 
+    headers.map(h => escapeCSV(getNestedValue(row, h.key))).join(',')
+  );
+
+  // Combine header and data rows
+  const csvContent = [headerRow, ...dataRows].join('\n');
+
+  // Create blob and download
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  
+  link.setAttribute('href', url);
+  link.setAttribute('download', `${filename}.csv`);
+  link.style.visibility = 'hidden';
+  
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  
+  URL.revokeObjectURL(url);
 }
 
 

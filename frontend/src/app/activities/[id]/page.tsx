@@ -68,7 +68,9 @@ import {
   ArrowUpDown,
   ArrowUp,
   ArrowDown,
-  LayoutGrid
+  LayoutGrid,
+  Bookmark,
+  BookmarkCheck
 } from "lucide-react"
 import { toast } from "sonner"
 import { Transaction } from "@/types/transaction"
@@ -85,6 +87,7 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { useUser } from "@/hooks/useUser"
+import { useBookmarks } from "@/hooks/use-bookmarks"
 import { fetchActivityWithCache, invalidateActivityCache, forceActivityCacheRefresh } from '@/lib/activity-cache'
 import { CommentsDrawer } from "@/components/activities/CommentsDrawer"
 import { TRANSACTION_TYPE_LABELS } from "@/types/transaction"
@@ -395,6 +398,7 @@ export default function ActivityDetailPage() {
   const [transactionsLoading, setTransactionsLoading] = useState(true)
   const router = useRouter()
   const { user } = useUser()
+  const { isBookmarked, toggleBookmark, isToggling } = useBookmarks()
   const searchParams = useSearchParams()
   const [copiedId, setCopiedId] = useState<string | null>(null)
   const [partnershipsSortField, setPartnershipsSortField] = useState<string>('organization')
@@ -1498,6 +1502,24 @@ export default function ActivityDetailPage() {
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
+              <Button
+                variant="outline"
+                className="border-slate-300 text-slate-700 hover:bg-slate-100"
+                onClick={() => activity?.id && toggleBookmark(activity.id)}
+                disabled={isToggling || !activity?.id}
+              >
+                {activity?.id && isBookmarked(activity.id) ? (
+                  <>
+                    <BookmarkCheck className="h-4 w-4 mr-2 text-slate-600" />
+                    Bookmarked
+                  </>
+                ) : (
+                  <>
+                    <Bookmark className="h-4 w-4 mr-2" />
+                    Bookmark
+                  </>
+                )}
+              </Button>
               <Link 
                 href={`/activities/new?id=${activity?.id}`}
                 className="inline-flex items-center justify-center rounded-md bg-slate-600 px-4 py-2 text-sm font-medium text-white hover:bg-slate-700 transition-colors"

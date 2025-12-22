@@ -1,0 +1,257 @@
+import { NextResponse, NextRequest } from 'next/server';
+import { getSupabaseAdmin } from '@/lib/supabase';
+
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
+// Helper to validate UUID format
+function isValidUUID(uuid: string): boolean {
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  return uuidRegex.test(uuid);
+}
+
+export interface BudgetTrendPoint {
+  year: number;
+  amount: number;
+}
+
+export interface TransactionTrendPoint {
+  month: string;
+  count: number;
+  amount: number;
+}
+
+export interface SectorBreakdown {
+  code: string;
+  name: string;
+  percentage: number;
+  activityCount: number;
+}
+
+export interface HeroStatsData {
+  totalActivities: number;
+  unpublishedCount: number;
+  pendingValidationCount: number;
+  validatedCount: number;
+  budgetTrend: BudgetTrendPoint[];
+  plannedBudgetTrend: BudgetTrendPoint[];
+  transactionTrend: TransactionTrendPoint[];
+  sectorBreakdown: SectorBreakdown[];
+}
+
+export async function GET(request: NextRequest) {
+  try {
+    const supabase = getSupabaseAdmin();
+    if (!supabase) {
+      return NextResponse.json(
+        { error: 'Database connection failed' },
+        { status: 500 }
+      );
+    }
+
+    // Parse query parameters
+    const searchParams = request.nextUrl.searchParams;
+    const organizationId = searchParams.get('organizationId');
+
+    if (!organizationId) {
+      return NextResponse.json(
+        { error: 'organizationId is required' },
+        { status: 400 }
+      );
+    }
+
+    if (!isValidUUID(organizationId)) {
+      return NextResponse.json(
+        { error: 'Invalid organizationId format' },
+        { status: 400 }
+      );
+    }
+
+    // Step 1: Get all activity IDs for this organization
+    const { data: activitiesData, error: activitiesError } = await supabase
+      .from('activities')
+      .select('id, publication_status, submission_status')
+      .eq('reporting_org_id', organizationId);
+
+    if (activitiesError) {
+      console.error('[Hero Stats] Activities error:', activitiesError);
+    }
+
+    const activities = activitiesData || [];
+    const activityIds = activities.map(a => a.id);
+
+    // If no activities, return empty data
+    if (activityIds.length === 0) {
+      const emptyResponse: HeroStatsData = {
+        totalActivities: 0,
+        unpublishedCount: 0,
+        pendingValidationCount: 0,
+        validatedCount: 0,
+        budgetTrend: [],
+        plannedBudgetTrend: [],
+        transactionTrend: [],
+        sectorBreakdown: [],
+      };
+      return NextResponse.json(emptyResponse);
+    }
+
+    // Step 2: Fetch all related data using activity IDs
+    const [
+      budgetsResult,
+      plannedDisbursementsResult,
+      transactionsResult,
+      sectorsResult,
+    ] = await Promise.all([
+      // Get budgets for these activities
+      supabase
+        .from('budgets')
+        .select('value, value_usd, usd_value, period_start, activity_id')
+        .in('activity_id', activityIds),
+
+      // Get planned disbursements for these activities
+      supabase
+        .from('planned_disbursements')
+        .select('value, value_usd, usd_value, period_start, activity_id')
+        .in('activity_id', activityIds),
+
+      // Get transactions for these activities (all time for better visualization)
+      supabase
+        .from('transactions')
+        .select('id, value, value_usd, transaction_date, activity_id')
+        .in('activity_id', activityIds),
+
+      // Get sector allocations for these activities
+      supabase
+        .from('activity_sectors')
+        .select('sector_code, sector_name, percentage, activity_id')
+        .in('activity_id', activityIds),
+    ]);
+
+    // Log any errors for debugging
+    if (budgetsResult.error) console.error('[Hero Stats] Budgets error:', budgetsResult.error);
+    if (plannedDisbursementsResult.error) console.error('[Hero Stats] Planned disbursements error:', plannedDisbursementsResult.error);
+    if (transactionsResult.error) console.error('[Hero Stats] Transactions error:', transactionsResult.error);
+    if (sectorsResult.error) console.error('[Hero Stats] Sectors error:', sectorsResult.error);
+
+    console.log('[Hero Stats] Data counts:', {
+      activities: activities.length,
+      budgets: budgetsResult.data?.length || 0,
+      plannedDisbursements: plannedDisbursementsResult.data?.length || 0,
+      transactions: transactionsResult.data?.length || 0,
+      sectors: sectorsResult.data?.length || 0,
+    });
+
+    // Process activity counts (using already fetched activities)
+    const totalActivities = activities.length;
+    const unpublishedCount = activities.filter(
+      (a) => a.publication_status === 'draft' || a.publication_status === 'unpublished'
+    ).length;
+    const pendingValidationCount = activities.filter(
+      (a) => a.submission_status === 'submitted'
+    ).length;
+    const validatedCount = activities.filter(
+      (a) => a.submission_status === 'validated'
+    ).length;
+
+    // Process budget trend by year
+    const budgetsByYear = new Map<number, number>();
+    (budgetsResult.data || []).forEach((budget: any) => {
+      const year = budget.period_start
+        ? new Date(budget.period_start).getFullYear()
+        : new Date().getFullYear();
+      // Try different possible column names for USD value
+      const amount = budget.usd_value || budget.value_usd || budget.value || 0;
+      budgetsByYear.set(year, (budgetsByYear.get(year) || 0) + amount);
+    });
+
+    const budgetTrend: BudgetTrendPoint[] = Array.from(budgetsByYear.entries())
+      .map(([year, amount]) => ({ year, amount }))
+      .sort((a, b) => a.year - b.year)
+      .slice(-5); // Last 5 years
+
+    // Process planned disbursements trend by year
+    const plannedByYear = new Map<number, number>();
+    (plannedDisbursementsResult.data || []).forEach((pd: any) => {
+      const year = pd.period_start
+        ? new Date(pd.period_start).getFullYear()
+        : new Date().getFullYear();
+      // Try different possible column names for USD value
+      const amount = pd.usd_value || pd.value_usd || pd.value || 0;
+      plannedByYear.set(year, (plannedByYear.get(year) || 0) + amount);
+    });
+
+    const plannedBudgetTrend: BudgetTrendPoint[] = Array.from(plannedByYear.entries())
+      .map(([year, amount]) => ({ year, amount }))
+      .sort((a, b) => a.year - b.year)
+      .slice(-5); // Last 5 years
+
+    // Process transaction trend by year (for better visualization with historical data)
+    const transactionsByYear = new Map<number, { count: number; amount: number }>();
+    
+    (transactionsResult.data || []).forEach((tx: any) => {
+      if (tx.transaction_date) {
+        const d = new Date(tx.transaction_date);
+        const year = d.getFullYear();
+        if (!transactionsByYear.has(year)) {
+          transactionsByYear.set(year, { count: 0, amount: 0 });
+        }
+        const existing = transactionsByYear.get(year)!;
+        existing.count += 1;
+        existing.amount += tx.value_usd || tx.value || 0;
+      }
+    });
+
+    // Convert to array format, using year as the "month" field for compatibility
+    const transactionTrend: TransactionTrendPoint[] = Array.from(transactionsByYear.entries())
+      .map(([year, data]) => ({ 
+        month: year.toString(), // Use year as string for chart display
+        count: data.count, 
+        amount: data.amount 
+      }))
+      .sort((a, b) => a.month.localeCompare(b.month))
+      .slice(-5); // Last 5 years
+
+    // Process sector breakdown
+    const sectorMap = new Map<string, { name: string; totalPercentage: number; activityIds: Set<string> }>();
+    (sectorsResult.data || []).forEach((sector: any) => {
+      const code = sector.sector_code?.substring(0, 3) || 'Unknown'; // DAC3 level
+      const name = sector.sector_name || 'Unknown Sector';
+      
+      if (!sectorMap.has(code)) {
+        sectorMap.set(code, { name, totalPercentage: 0, activityIds: new Set() });
+      }
+      const existing = sectorMap.get(code)!;
+      existing.totalPercentage += sector.percentage || 0;
+      existing.activityIds.add(sector.activity_id);
+    });
+
+    const sectorBreakdown: SectorBreakdown[] = Array.from(sectorMap.entries())
+      .map(([code, data]) => ({
+        code,
+        name: data.name.split(' - ')[0] || data.name, // Get short name
+        percentage: Math.round(data.totalPercentage / Math.max(data.activityIds.size, 1)),
+        activityCount: data.activityIds.size,
+      }))
+      .sort((a, b) => b.activityCount - a.activityCount)
+      .slice(0, 6); // Top 6 sectors
+
+    const response: HeroStatsData = {
+      totalActivities,
+      unpublishedCount,
+      pendingValidationCount,
+      validatedCount,
+      budgetTrend,
+      plannedBudgetTrend,
+      transactionTrend,
+      sectorBreakdown,
+    };
+
+    return NextResponse.json(response);
+  } catch (error) {
+    console.error('[Dashboard Hero Stats] Error:', error);
+    return NextResponse.json(
+      { error: 'Failed to fetch hero stats data' },
+      { status: 500 }
+    );
+  }
+}

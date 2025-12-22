@@ -7,7 +7,7 @@ export type Severity = 'mild' | 'moderate' | 'severe';
 export interface FinancialCompletenessMetrics {
   overspendUsd: number;
   percentageSpent: number;
-  severity: Severity;
+  severity: Severity | null;  // null when not overspending (< 100%)
 }
 
 /**
@@ -30,11 +30,14 @@ export function calculatePercentageSpent(disbursed: number, budgeted: number): n
 
 /**
  * Determine severity level based on percentage spent
+ * - null: <100% (not overspending)
  * - mild: 100-150% (overspent but not dramatically)
  * - moderate: 150-200% (significant overspend)
  * - severe: >200% (critical overspend)
  */
-export function getSeverity(percentageSpent: number): Severity {
+export function getSeverity(percentageSpent: number): Severity | null {
+  // Not overspending - return null to indicate no severity issue
+  if (percentageSpent < 100) return null;
   if (percentageSpent < 150) return 'mild';
   if (percentageSpent < 200) return 'moderate';
   return 'severe';
@@ -42,9 +45,12 @@ export function getSeverity(percentageSpent: number): Severity {
 
 /**
  * Get the color associated with a severity level
+ * Returns green for null (no overspending), slate-400 for unknown
  */
-export function getSeverityColor(severity: Severity): string {
+export function getSeverityColor(severity: Severity | null): string {
   switch (severity) {
+    case null:
+      return '#22c55e'; // green-500 - no overspending issue
     case 'mild':
       return '#fbbf24'; // amber-400
     case 'moderate':
@@ -58,9 +64,11 @@ export function getSeverityColor(severity: Severity): string {
 
 /**
  * Get severity color directly from percentage
+ * Returns green for < 100%, amber for mild, orange for moderate, red for severe
  */
 export function getSeverityColorFromPercentage(percentageSpent: number): string {
-  return getSeverityColor(getSeverity(percentageSpent));
+  const severity = getSeverity(percentageSpent);
+  return getSeverityColor(severity);
 }
 
 /**

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { Info, Leaf, Users, Wrench, CheckCircle, ChevronDown, ChevronRight, Globe, Plus, X, Trash2 } from 'lucide-react';
+import { Info, Leaf, Users, Wrench, CheckCircle, ChevronDown, ChevronRight, Globe, Plus, X, Trash2, Building2, EyeOff } from 'lucide-react';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
@@ -18,6 +18,8 @@ import { usePolicyMarkersAutosave } from '@/hooks/use-policy-markers-autosave';
 import { useUser } from '@/hooks/useUser';
 
 // Types
+type VisibilityLevel = 'public' | 'organization' | 'hidden';
+
 interface IATIPolicyMarker {
   id: string; // Keep for backward compatibility
   uuid: string; // The actual UUID used for references
@@ -28,12 +30,16 @@ interface IATIPolicyMarker {
   vocabulary: string;
   iati_code: string;
   is_iati_standard: boolean;
+  default_visibility?: VisibilityLevel;
+  vocabulary_name?: string;
+  vocabulary_uri?: string;
 }
 
 interface ActivityPolicyMarker {
   policy_marker_id: string;
   significance: 0 | 1 | 2 | 3 | 4;
   rationale?: string;
+  visibility?: VisibilityLevel | null; // null means inherit from default
 }
 
 interface PolicyMarkersSectionProps {
@@ -96,6 +102,34 @@ const HELP_CONTENT = {
   ]
 };
 
+// Visibility options for custom policy markers
+const VISIBILITY_OPTIONS: { value: VisibilityLevel; label: string; description: string }[] = [
+  { value: 'public', label: 'Public', description: 'Visible to everyone including external viewers' },
+  { value: 'organization', label: 'Organization-only', description: 'Visible to logged-in users only' },
+  { value: 'hidden', label: 'Hidden', description: 'Visible to activity editors and admins only' }
+];
+
+// Visibility icon component
+const VisibilityIcon = ({ visibility, className = "h-3 w-3" }: { visibility: VisibilityLevel | null | undefined; className?: string }) => {
+  switch (visibility) {
+    case 'organization':
+      return <Building2 className={`${className} text-amber-600`} />;
+    case 'hidden':
+      return <EyeOff className={`${className} text-red-600`} />;
+    default:
+      return <Globe className={`${className} text-green-600`} />;
+  }
+};
+
+// Get visibility label
+const getVisibilityLabel = (visibility: VisibilityLevel | null | undefined): string => {
+  switch (visibility) {
+    case 'organization': return 'Organization-only';
+    case 'hidden': return 'Hidden';
+    default: return 'Public';
+  }
+};
+
 // Fallback IATI markers (12 official ones)
 const FALLBACK_IATI_MARKERS: IATIPolicyMarker[] = [
   // Environmental (Rio Markers)
@@ -137,7 +171,8 @@ export default function PolicyMarkersSectionIATIWithCustom({ activityId, policyM
     vocabulary_name: '',
     code: '',
     significance: 0,
-    vocabulary_uri: ''
+    vocabulary_uri: '',
+    default_visibility: 'public' as VisibilityLevel
   });
 
   // Initialize selected markers from props
@@ -252,6 +287,59 @@ export default function PolicyMarkersSectionIATIWithCustom({ activityId, policyM
     }
   };
 
+  // Update marker visibility override for this activity
+  const updateMarkerVisibility = (markerUuid: string, visibility: VisibilityLevel | null) => {
+    const newSelectedMarkers = new Map(selectedMarkers);
+    const existingMarker = newSelectedMarkers.get(markerUuid);
+    
+    if (existingMarker) {
+      newSelectedMarkers.set(markerUuid, {
+        ...existingMarker,
+        visibility
+      });
+      
+      setSelectedMarkers(newSelectedMarkers);
+      
+      const markersArray = Array.from(newSelectedMarkers.values());
+      onChange(markersArray);
+      
+      if (policyMarkersAutosave) {
+        const validMarkers = markersArray.filter(m => m.significance && m.significance > 0);
+        policyMarkersAutosave.triggerFieldSave(validMarkers);
+      }
+      
+      setHasUnsavedChanges?.(true);
+    }
+  };
+
+  // Get effective visibility for a marker (activity override or default)
+  const getEffectiveVisibility = (marker: IATIPolicyMarker, activityMarker?: ActivityPolicyMarker): VisibilityLevel => {
+    if (marker.is_iati_standard) return 'public';
+    return activityMarker?.visibility ?? marker.default_visibility ?? 'public';
+  };
+
+  // Check if a marker is visible based on user context
+  // - readOnly + no user = external/anonymous viewer → only public markers
+  // - readOnly + user = logged-in viewer (non-editor) → public + organization markers  
+  // - !readOnly = editor → all markers visible
+  const isMarkerVisible = (marker: IATIPolicyMarker): boolean => {
+    // IATI standard markers are always visible
+    if (marker.is_iati_standard) return true;
+    
+    const markerUuid = marker.uuid || marker.id;
+    const activityMarker = selectedMarkers.get(markerUuid);
+    const visibility = getEffectiveVisibility(marker, activityMarker);
+    
+    // Editors can see all markers
+    if (!readOnly) return true;
+    
+    // External/anonymous viewers can only see public markers
+    if (!user) return visibility === 'public';
+    
+    // Logged-in non-editors can see public and organization markers
+    return visibility !== 'hidden';
+  };
+
   // Add custom policy marker
   const addCustomMarker = async () => {
     if (!customMarkerForm.name.trim()) {
@@ -298,7 +386,8 @@ export default function PolicyMarkersSectionIATIWithCustom({ activityId, policyM
           iati_code: customMarkerForm.code.trim(),
           is_iati_standard: false,
           is_active: true,
-          vocabulary_uri: customMarkerForm.vocabulary_uri.trim() || null
+          vocabulary_uri: customMarkerForm.vocabulary_uri.trim() || null,
+          default_visibility: customMarkerForm.default_visibility
         }),
       });
 
@@ -339,7 +428,8 @@ export default function PolicyMarkersSectionIATIWithCustom({ activityId, policyM
         vocabulary_name: '',
         code: '',
         significance: 0,
-        vocabulary_uri: ''
+        vocabulary_uri: '',
+        default_visibility: 'public'
       });
       
       setShowAddCustomDialog(false);
@@ -364,7 +454,8 @@ export default function PolicyMarkersSectionIATIWithCustom({ activityId, policyM
       vocabulary_name: marker.vocabulary_name || '',
       code: marker.code.startsWith('CUSTOM_') ? marker.code.substring(7) : marker.code, // Remove CUSTOM_ prefix for display
       significance: 0,
-      vocabulary_uri: marker.vocabulary_uri || ''
+      vocabulary_uri: marker.vocabulary_uri || '',
+      default_visibility: marker.default_visibility || 'public'
     });
     setShowEditCustomDialog(true);
   };
@@ -402,7 +493,8 @@ export default function PolicyMarkersSectionIATIWithCustom({ activityId, policyM
           marker_type: customMarkerForm.marker_type,
           code: customMarkerForm.code.trim(),
           vocabulary_name: customMarkerForm.vocabulary_name.trim(),
-          vocabulary_uri: customMarkerForm.vocabulary_uri.trim() || null
+          vocabulary_uri: customMarkerForm.vocabulary_uri.trim() || null,
+          default_visibility: customMarkerForm.default_visibility
         }),
       });
 
@@ -435,7 +527,8 @@ export default function PolicyMarkersSectionIATIWithCustom({ activityId, policyM
         vocabulary_name: '',
         code: '',
         significance: 0,
-        vocabulary_uri: ''
+        vocabulary_uri: '',
+        default_visibility: 'public'
       });
       setShowEditCustomDialog(false);
       setEditingMarkerId(null);
@@ -505,11 +598,20 @@ export default function PolicyMarkersSectionIATIWithCustom({ activityId, policyM
     return selectedMarker?.rationale || '';
   };
 
+  // Get current visibility override for a marker
+  const getMarkerVisibilityOverride = (markerUuid: string): VisibilityLevel | null | undefined => {
+    const selectedMarker = selectedMarkers.get(markerUuid);
+    return selectedMarker?.visibility;
+  };
+
   // Render marker card
   const renderMarkerCard = (marker: IATIPolicyMarker) => {
     const markerUuid = marker.uuid || marker.id; // Use UUID, fallback to ID
     const significance = getMarkerSignificance(markerUuid);
     const rationale = getMarkerRationale(markerUuid);
+    const visibilityOverride = getMarkerVisibilityOverride(markerUuid);
+    const activityMarker = selectedMarkers.get(markerUuid);
+    const effectiveVisibility = getEffectiveVisibility(marker, activityMarker);
     const isSelected = significance > 0;
 
     return (
@@ -528,6 +630,24 @@ export default function PolicyMarkersSectionIATIWithCustom({ activityId, policyM
                   <Badge variant="outline" className="text-xs border-slate-400 text-slate-600">
                     Custom
                   </Badge>
+                )}
+                {/* Visibility indicator for custom markers */}
+                {!marker.is_iati_standard && (
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <span className="cursor-help">
+                          <VisibilityIcon visibility={effectiveVisibility} />
+                        </span>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p className="text-xs">{getVisibilityLabel(effectiveVisibility)}</p>
+                        {visibilityOverride && (
+                          <p className="text-xs text-muted-foreground">(Activity override)</p>
+                        )}
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
                 )}
               </div>
               <h4 className="font-medium text-xs text-slate-900 leading-tight">{marker.name}</h4>
@@ -578,6 +698,47 @@ export default function PolicyMarkersSectionIATIWithCustom({ activityId, policyM
                   rows={2}
                 />
               )}
+            </div>
+          )}
+          
+          {/* Visibility override for selected custom markers */}
+          {isSelected && !marker.is_iati_standard && !readOnly && (
+            <div>
+              <Label className="text-xs font-medium mb-1 block text-slate-700">
+                Visibility for this activity
+              </Label>
+              <Select
+                value={visibilityOverride ?? 'default'}
+                onValueChange={(value) => {
+                  if (value === 'default') {
+                    updateMarkerVisibility(markerUuid, null);
+                  } else {
+                    updateMarkerVisibility(markerUuid, value as VisibilityLevel);
+                  }
+                }}
+              >
+                <SelectTrigger className="h-8 text-xs">
+                  <SelectValue placeholder="Using default" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="default">
+                    <div className="flex items-center gap-2">
+                      <span className="text-slate-400">Use default</span>
+                      <span className="text-xs text-muted-foreground">
+                        ({getVisibilityLabel(marker.default_visibility)})
+                      </span>
+                    </div>
+                  </SelectItem>
+                  {VISIBILITY_OPTIONS.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      <div className="flex items-center gap-2">
+                        <VisibilityIcon visibility={option.value} />
+                        <span>{option.label}</span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           )}
           
@@ -756,6 +917,31 @@ export default function PolicyMarkersSectionIATIWithCustom({ activityId, policyM
                   />
                 </div>
                 
+                <div>
+                  <Label htmlFor="custom-visibility">Default Visibility</Label>
+                  <Select
+                    value={customMarkerForm.default_visibility}
+                    onValueChange={(value) => setCustomMarkerForm(prev => ({ ...prev, default_visibility: value as VisibilityLevel }))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select visibility" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {VISIBILITY_OPTIONS.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                          <div className="flex items-center gap-2">
+                            <VisibilityIcon visibility={option.value} />
+                            <span>{option.label}</span>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-gray-500 mt-1">
+                    {VISIBILITY_OPTIONS.find(o => o.value === customMarkerForm.default_visibility)?.description}
+                  </p>
+                </div>
+                
                 <div className="flex justify-end gap-2">
                   <Button variant="outline" onClick={() => setShowAddCustomDialog(false)}>
                     Cancel
@@ -877,6 +1063,31 @@ export default function PolicyMarkersSectionIATIWithCustom({ activityId, policyM
                   />
                 </div>
                 
+                <div>
+                  <Label htmlFor="edit-custom-visibility">Default Visibility</Label>
+                  <Select
+                    value={customMarkerForm.default_visibility}
+                    onValueChange={(value) => setCustomMarkerForm(prev => ({ ...prev, default_visibility: value as VisibilityLevel }))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select visibility" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {VISIBILITY_OPTIONS.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                          <div className="flex items-center gap-2">
+                            <VisibilityIcon visibility={option.value} />
+                            <span>{option.label}</span>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-gray-500 mt-1">
+                    {VISIBILITY_OPTIONS.find(o => o.value === customMarkerForm.default_visibility)?.description}
+                  </p>
+                </div>
+                
                 <div className="flex justify-end gap-2">
                   <Button variant="outline" onClick={() => setShowEditCustomDialog(false)}>
                     Cancel
@@ -895,12 +1106,13 @@ export default function PolicyMarkersSectionIATIWithCustom({ activityId, policyM
       {/* Single View - All Targeted Policy Markers */}
       {readOnly ? (
         <div className="space-y-4">
-          {/* Filter to show only targeted markers (significance > 0) */}
+          {/* Filter to show only targeted markers (significance > 0) and apply visibility filtering */}
           {(() => {
             const targetedMarkers = availableMarkers.filter(marker => {
               const markerUuid = marker.uuid || marker.id;
               const significance = getMarkerSignificance(markerUuid);
-              return significance > 0;
+              // Only show markers that are targeted AND visible to the current user
+              return significance > 0 && isMarkerVisible(marker);
             });
 
             if (targetedMarkers.length === 0) {

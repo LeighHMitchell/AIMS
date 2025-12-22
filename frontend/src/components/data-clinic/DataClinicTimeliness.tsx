@@ -7,6 +7,7 @@ import { AlertCircle, Calendar } from "lucide-react"
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from "recharts"
 import { supabase } from "@/lib/supabase"
 import { ActivityFreshnessChart } from "./ActivityFreshnessChart"
+import { StaleTransactionsTable } from "./StaleTransactionsTable"
 
 interface TimelinessData {
   year: number
@@ -283,6 +284,9 @@ export function DataClinicTimeliness() {
 
   return (
     <div className="space-y-6">
+      {/* Activities Without Recent Transactions */}
+      <StaleTransactionsTable />
+
       {/* Activity Data Freshness Chart */}
       <ActivityFreshnessChart />
 

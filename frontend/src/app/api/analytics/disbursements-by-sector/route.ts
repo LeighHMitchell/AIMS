@@ -1,5 +1,36 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase';
+import sectorGroupData from '@/data/SectorGroup.json';
+
+// Build sector hierarchy lookup map for O(1) access
+interface SectorHierarchy {
+  groupCode: string;
+  groupName: string;
+  categoryCode: string;
+  categoryName: string;
+}
+
+const sectorHierarchyMap = new Map<string, SectorHierarchy>();
+(sectorGroupData.data as any[]).forEach((sector) => {
+  sectorHierarchyMap.set(sector.code, {
+    groupCode: sector['codeforiati:group-code'] || '998',
+    groupName: sector['codeforiati:group-name'] || 'Other / Uncategorized',
+    categoryCode: sector['codeforiati:category-code'] || '998',
+    categoryName: sector['codeforiati:category-name'] || 'Unallocated / Unspecified',
+  });
+});
+
+// Default hierarchy for sectors not in the lookup
+const defaultHierarchy: SectorHierarchy = {
+  groupCode: '998',
+  groupName: 'Other / Uncategorized',
+  categoryCode: '998',
+  categoryName: 'Unallocated / Unspecified',
+};
+
+function getSectorHierarchy(sectorCode: string): SectorHierarchy {
+  return sectorHierarchyMap.get(sectorCode) || defaultHierarchy;
+}
 
 export async function GET(request: NextRequest) {
   try {
@@ -114,10 +145,14 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // Process data by sector and year
+    // Process data by sector and year (with hierarchy information)
     const sectorDataMap = new Map<string, {
       sectorCode: string;
       sectorName: string;
+      groupCode: string;
+      groupName: string;
+      categoryCode: string;
+      categoryName: string;
       yearlyData: Map<number, { planned: number; actual: number }>;
     }>();
 
@@ -127,12 +162,17 @@ export async function GET(request: NextRequest) {
       if (activity.activity_sectors && activity.activity_sectors.length > 0) {
         activitySectorsMap.set(activity.id, activity.activity_sectors);
         
-        // Initialize sectors in our map
+        // Initialize sectors in our map with hierarchy info
         activity.activity_sectors.forEach((sector: any) => {
           if (!sectorDataMap.has(sector.sector_code)) {
+            const hierarchy = getSectorHierarchy(sector.sector_code);
             sectorDataMap.set(sector.sector_code, {
               sectorCode: sector.sector_code,
               sectorName: sector.sector_name,
+              groupCode: hierarchy.groupCode,
+              groupName: hierarchy.groupName,
+              categoryCode: hierarchy.categoryCode,
+              categoryName: hierarchy.categoryName,
               yearlyData: new Map()
             });
           }
@@ -177,10 +217,15 @@ export async function GET(request: NextRequest) {
         sectorLines.forEach(line => {
           let sectorData = sectorDataMap.get(line.sector_code);
           if (!sectorData) {
-            // Add new sector if not already tracked
+            // Add new sector if not already tracked (with hierarchy info)
+            const hierarchy = getSectorHierarchy(line.sector_code);
             sectorData = {
               sectorCode: line.sector_code,
               sectorName: line.sector_name,
+              groupCode: hierarchy.groupCode,
+              groupName: hierarchy.groupName,
+              categoryCode: hierarchy.categoryCode,
+              categoryName: hierarchy.categoryName,
               yearlyData: new Map()
             };
             sectorDataMap.set(line.sector_code, sectorData);
@@ -194,9 +239,14 @@ export async function GET(request: NextRequest) {
         // Use legacy transaction-level sector
         let sectorData = sectorDataMap.get(transaction.sector_code);
         if (!sectorData) {
+          const hierarchy = getSectorHierarchy(transaction.sector_code);
           sectorData = {
             sectorCode: transaction.sector_code,
             sectorName: 'Unknown Sector',
+            groupCode: hierarchy.groupCode,
+            groupName: hierarchy.groupName,
+            categoryCode: hierarchy.categoryCode,
+            categoryName: hierarchy.categoryName,
             yearlyData: new Map()
           };
           sectorDataMap.set(transaction.sector_code, sectorData);
@@ -224,11 +274,15 @@ export async function GET(request: NextRequest) {
       resultSectors = resultSectors.filter(s => s.sectorCode === sector);
     }
 
-    // Convert to response format
+    // Convert to response format (with hierarchy info)
     const result = {
       sectors: resultSectors.map(sector => ({
         sectorCode: sector.sectorCode,
         sectorName: sector.sectorName,
+        groupCode: sector.groupCode,
+        groupName: sector.groupName,
+        categoryCode: sector.categoryCode,
+        categoryName: sector.categoryName,
         years: Array.from(sector.yearlyData.entries()).map(([year, data]) => ({
           year,
           planned: data.planned,

@@ -66,10 +66,20 @@ export async function GET(request: NextRequest) {
     const relevantMarkerIds = relevantMarkers.map(m => m.id)
 
     // Step 2: Get activity-policy marker relationships with significance
-    // Try both 'score' and 'significance' column names for compatibility
+    // Join with policy_markers to get default_visibility for filtering
     const { data: activityMarkers, error: activityMarkersError } = await supabase
       .from('activity_policy_markers')
-      .select('activity_id, policy_marker_id, score, significance')
+      .select(`
+        activity_id, 
+        policy_marker_id, 
+        score, 
+        significance,
+        visibility,
+        policy_markers!activity_policy_markers_policy_marker_uuid_fkey (
+          default_visibility,
+          is_iati_standard
+        )
+      `)
       .in('policy_marker_id', relevantMarkerIds)
 
     if (activityMarkersError) {
@@ -126,6 +136,16 @@ export async function GET(request: NextRequest) {
     activityMarkers.forEach((am: any) => {
       const marker = relevantMarkers.find(m => m.id === am.policy_marker_id)
       if (!marker) return
+
+      // Determine effective visibility: use override if set, otherwise use default
+      const policyMarker = am.policy_markers
+      const effectiveVisibility = am.visibility || policyMarker?.default_visibility || 'public'
+      
+      // Filter: Only include markers with 'public' visibility
+      // IATI standard markers are always visible (always public)
+      if (!policyMarker?.is_iati_standard && effectiveVisibility !== 'public') {
+        return // Skip non-public custom markers
+      }
 
       // Use significance if available, otherwise fall back to score
       const significance = am.significance !== undefined ? am.significance : am.score

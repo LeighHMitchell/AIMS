@@ -3,7 +3,8 @@
 import React, { useRef, useState, memo } from 'react';
 import Link from 'next/link';
 
-import { Calendar, MoreVertical, Edit3, Trash2, Clock, Copy } from 'lucide-react';
+import { Calendar, MoreVertical, Edit3, Trash2, Clock, Copy, Bookmark, BookmarkCheck } from 'lucide-react';
+import { useBookmarks } from '@/hooks/use-bookmarks';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -129,6 +130,7 @@ const ActivityCardWithSDG: React.FC<ActivityCardWithSDGProps> = ({
   maxSDGDisplay = 5
 }) => {
   const cardRef = useRef<HTMLDivElement>(null);
+  const { isBookmarked, toggleBookmark } = useBookmarks();
 
 
   // Currency formatting utility with compact notation
@@ -279,8 +281,27 @@ const ActivityCardWithSDG: React.FC<ActivityCardWithSDGProps> = ({
               <MoreVertical className="h-4 w-4 text-gray-600" />
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-40">
-
+<DropdownMenuContent align="end" className="w-48">
+            <DropdownMenuItem 
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                toggleBookmark(activity.id);
+              }} 
+              className="cursor-pointer"
+            >
+              {isBookmarked(activity.id) ? (
+                <>
+                  <BookmarkCheck className="mr-2 h-4 w-4 text-slate-600" />
+                  Remove Bookmark
+                </>
+              ) : (
+                <>
+                  <Bookmark className="mr-2 h-4 w-4" />
+                  Add Bookmark
+                </>
+              )}
+            </DropdownMenuItem>
             {onEdit && (
               <DropdownMenuItem onClick={handleEdit} className="cursor-pointer">
                 <Edit3 className="mr-2 h-4 w-4" />
@@ -288,8 +309,8 @@ const ActivityCardWithSDG: React.FC<ActivityCardWithSDGProps> = ({
               </DropdownMenuItem>
             )}
             {onDelete && (
-              <DropdownMenuItem 
-                onClick={handleDelete} 
+              <DropdownMenuItem
+                onClick={handleDelete}
                 className="cursor-pointer text-red-600 hover:text-red-700 hover:bg-red-50"
               >
                 <Trash2 className="mr-2 h-4 w-4" />

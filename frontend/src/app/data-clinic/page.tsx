@@ -15,7 +15,7 @@ import { DataClinicFinancialDates } from "@/components/data-clinic/DataClinicFin
 import { DataClinicBudgets } from "@/components/data-clinic/DataClinicBudgets";
 import { DataClinicFinancialCompleteness } from "@/components/data-clinic/DataClinicFinancialCompleteness";
 import { DataClinicDuplicates } from "@/components/data-clinic/DataClinicDuplicates";
-import { Stethoscope, Bug, RefreshCw, Copy } from "lucide-react";
+import { Stethoscope, Bug, RefreshCw, Copy, FileText, ArrowLeftRight, Wallet, Building2, Clock, CalendarDays, PieChart } from "lucide-react";
 import { toast } from "sonner";
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
@@ -105,17 +105,38 @@ export default function DataClinicPage() {
           {/* Tabs */}
           <Tabs defaultValue="activities" className="w-full">
             <TabsList className="mb-6">
-              <TabsTrigger value="activities">Activities</TabsTrigger>
-              <TabsTrigger value="transactions">Transactions</TabsTrigger>
-              <TabsTrigger value="budgets">Budgets</TabsTrigger>
-              <TabsTrigger value="organizations">Organizations</TabsTrigger>
+              <TabsTrigger value="activities" className="flex items-center gap-1">
+                <FileText className="h-3 w-3" />
+                Activities
+              </TabsTrigger>
+              <TabsTrigger value="transactions" className="flex items-center gap-1">
+                <ArrowLeftRight className="h-3 w-3" />
+                Transactions
+              </TabsTrigger>
+              <TabsTrigger value="budgets" className="flex items-center gap-1">
+                <Wallet className="h-3 w-3" />
+                Budgets
+              </TabsTrigger>
+              <TabsTrigger value="organizations" className="flex items-center gap-1">
+                <Building2 className="h-3 w-3" />
+                Organizations
+              </TabsTrigger>
               <TabsTrigger value="duplicates" className="flex items-center gap-1">
                 <Copy className="h-3 w-3" />
                 Duplicates
               </TabsTrigger>
-              <TabsTrigger value="timeliness">Timeliness</TabsTrigger>
-              <TabsTrigger value="financial-dates">Financial Dates</TabsTrigger>
-              <TabsTrigger value="financial-completeness">Financial Completeness</TabsTrigger>
+              <TabsTrigger value="timeliness" className="flex items-center gap-1">
+                <Clock className="h-3 w-3" />
+                Timeliness
+              </TabsTrigger>
+              <TabsTrigger value="financial-dates" className="flex items-center gap-1">
+                <CalendarDays className="h-3 w-3" />
+                Financial Dates
+              </TabsTrigger>
+              <TabsTrigger value="financial-completeness" className="flex items-center gap-1">
+                <PieChart className="h-3 w-3" />
+                Financial Completeness
+              </TabsTrigger>
             </TabsList>
 
             <TabsContent value="activities">

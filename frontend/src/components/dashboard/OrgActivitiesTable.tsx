@@ -21,6 +21,7 @@ import {
   ArrowRight,
   Calendar,
   AlertTriangle,
+  Pencil,
 } from 'lucide-react';
 import type { ActivityTableVariant } from '@/types/dashboard';
 
@@ -292,9 +293,8 @@ export function OrgActivitiesTable({
                 )}
                 {variant === 'recently_edited' && (
                   <>
-                    <TableHead className="text-right">Total Budgeted</TableHead>
-                    <TableHead className="text-right">Planned Disb.</TableHead>
                     <TableHead>Last Updated</TableHead>
+                    <TableHead className="w-[60px]"></TableHead>
                   </>
                 )}
                 {variant === 'closing_soon' && (
@@ -364,20 +364,23 @@ export function OrgActivitiesTable({
 
                   {variant === 'recently_edited' && (
                     <>
-                      <TableCell className="text-right">
-                        <span className="font-medium">
-                          {activity.totalBudget ? formatCurrency(activity.totalBudget, activity.currency) : '-'}
-                        </span>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <span className="font-medium">
-                          {activity.totalPlannedDisbursements ? formatCurrency(activity.totalPlannedDisbursements, activity.currency) : '-'}
-                        </span>
-                      </TableCell>
                       <TableCell>
                         <span className="text-sm text-slate-600" title={format(new Date(activity.lastUpdated), 'PPpp')}>
                           {formatDistanceToNow(new Date(activity.lastUpdated), { addSuffix: true })}
                         </span>
+                      </TableCell>
+                      <TableCell>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-8 w-8 p-0"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            router.push(`/activities/${activity.id}/edit`);
+                          }}
+                        >
+                          <Pencil className="h-4 w-4 text-slate-500 hover:text-slate-700" />
+                        </Button>
                       </TableCell>
                     </>
                   )}

@@ -102,6 +102,12 @@ import { SectorAnalyticsFilters, SectorMetrics, SectorAnalyticsResponse } from '
 // Funding Over Time Analytics
 import { FundingOverTimeAnalytics } from '@/components/analytics/FundingOverTimeAnalytics'
 
+// Planned and Actual Disbursement by Sector (new chart)
+import { PlannedActualDisbursementBySector } from '@/components/analytics/PlannedActualDisbursementBySector'
+
+// Sector Disbursement Over Time (time series chart)
+import { SectorDisbursementOverTime } from '@/components/analytics/SectorDisbursementOverTime'
+
 interface KPIData {
   totalDisbursed: number
   commitmentsDisbursedPercent: number
@@ -703,7 +709,23 @@ export default function AnalyticsDashboardPage() {
                 </TabsList>
 
                 <TabsContent value="main">
-                  {/* Cumulative Financial Overview - Full Width at Top */}
+                  {/* Planned and Actual Disbursement by Sector - Full Width at Top */}
+                  <div className="mb-6">
+                    <PlannedActualDisbursementBySector
+                      dateRange={dateRange}
+                      refreshKey={refreshKey}
+                    />
+                  </div>
+
+                  {/* Sector Disbursement Over Time - Full Width */}
+                  <div className="mb-6">
+                    <SectorDisbursementOverTime
+                      dateRange={dateRange}
+                      refreshKey={refreshKey}
+                    />
+                  </div>
+
+                  {/* Cumulative Financial Overview - Full Width */}
                   <div className="mb-6">
                     <CumulativeFinancialOverview
                       dateRange={dateRange}

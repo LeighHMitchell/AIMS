@@ -41,6 +41,15 @@ interface FinanceTypeFlowChartProps {
 
 type ViewMode = 'bar' | 'line' | 'area' | 'table'
 type TimeMode = 'periodic' | 'cumulative'
+type TimeRange = '3m' | '6m' | '12m' | '3y' | '5y'
+
+const TIME_RANGE_OPTIONS: { value: TimeRange; label: string }[] = [
+  { value: '3m', label: 'Last 3 months' },
+  { value: '6m', label: 'Last 6 months' },
+  { value: '12m', label: 'Last 12 months' },
+  { value: '3y', label: 'Last 3 years' },
+  { value: '5y', label: 'Last 5 years' },
+]
 
 // Use imported brand colors for flow types and transaction types
 // FLOW_TYPE_COLORS and TRANSACTION_TYPE_CHART_COLORS are imported from sectorColorMap
@@ -109,9 +118,37 @@ export function FinanceTypeFlowChart({
   const [selectedTransactionTypes, setSelectedTransactionTypes] = useState<string[]>(['1']) // Default to Incoming Commitment (code 1) - most commonly has finance type data
   const [viewMode, setViewMode] = useState<ViewMode>('bar')
   const [timeMode, setTimeMode] = useState<TimeMode>('periodic')
+  const [selectedTimeRange, setSelectedTimeRange] = useState<TimeRange>('5y')
   
   // Allocation method toggle (for future use when budgets/disbursements are added)
   const [allocationMethod, setAllocationMethod] = useState<'proportional' | 'period-start'>('proportional')
+
+  // Calculate date range based on time range selection
+  const effectiveDateRange = useMemo(() => {
+    const now = new Date()
+    let from: Date
+
+    switch (selectedTimeRange) {
+      case '3m':
+        from = new Date(now.getFullYear(), now.getMonth() - 3, 1)
+        break
+      case '6m':
+        from = new Date(now.getFullYear(), now.getMonth() - 6, 1)
+        break
+      case '12m':
+        from = new Date(now.getFullYear() - 1, now.getMonth(), 1)
+        break
+      case '3y':
+        from = new Date(now.getFullYear() - 3, 0, 1)
+        break
+      case '5y':
+      default:
+        from = new Date(now.getFullYear() - 5, 0, 1)
+        break
+    }
+
+    return { from, to: now }
+  }, [selectedTimeRange])
 
   // Transaction type options
   const transactionTypes = [
@@ -164,12 +201,10 @@ export function FinanceTypeFlowChart({
           .eq('status', 'actual')
           .order('transaction_date', { ascending: true })
 
-        // Apply date range filter if provided
-        if (dateRange) {
-          query = query
-            .gte('transaction_date', dateRange.from.toISOString())
-            .lte('transaction_date', dateRange.to.toISOString())
-        }
+        // Apply date range filter - use effectiveDateRange (from time range selector)
+        query = query
+          .gte('transaction_date', effectiveDateRange.from.toISOString())
+          .lte('transaction_date', effectiveDateRange.to.toISOString())
 
         const { data: transactions, error: transactionsError } = await query
 
@@ -279,7 +314,7 @@ export function FinanceTypeFlowChart({
     }
 
     fetchData()
-  }, [dateRange, refreshKey, allocationMethod]) // Removed selectedTransactionTypes - filter client-side instead
+  }, [effectiveDateRange, refreshKey, allocationMethod]) // Removed selectedTransactionTypes - filter client-side instead
 
   // Aggregate data - restructured to show flow types on X-axis
   const chartData = useMemo(() => {
@@ -686,6 +721,25 @@ export function FinanceTypeFlowChart({
           <div className="flex items-center justify-between gap-2 flex-wrap">
             {/* Filters - Left Side */}
             <div className="flex items-center gap-2 flex-wrap">
+              {/* Time Range Filter */}
+              <div className="w-[140px]">
+                <Select
+                  value={selectedTimeRange}
+                  onValueChange={(value) => setSelectedTimeRange(value as TimeRange)}
+                >
+                  <SelectTrigger className="h-9 bg-white">
+                    <SelectValue placeholder="Time Range" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {TIME_RANGE_OPTIONS.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
               {/* Flow Type Multi-Select */}
               <div className="w-[240px]">
                 <MultiSelect
