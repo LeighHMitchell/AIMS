@@ -52,6 +52,14 @@ export async function PUT(
       console.log('[API] Some contact fields not available yet:', error)
     }
 
+    // Add address component fields
+    if (body.address_line_1 !== undefined) updateData.address_line_1 = body.address_line_1 || null
+    if (body.address_line_2 !== undefined) updateData.address_line_2 = body.address_line_2 || null
+    if (body.city !== undefined) updateData.city = body.city || null
+    if (body.state_province !== undefined) updateData.state_province = body.state_province || null
+    if (body.country !== undefined) updateData.country = body.country || null
+    if (body.postal_code !== undefined) updateData.postal_code = body.postal_code || null
+
     const { data, error } = await supabase
       .from('users')
       .update(updateData)
@@ -91,7 +99,15 @@ export async function PUT(
       organization: data.organizations,
       contactType: data.contact_type,
       faxNumber: data.fax_number,
-      notes: data.notes
+      notes: data.notes,
+      // Address component fields
+      addressLine1: data.address_line_1,
+      addressLine2: data.address_line_2,
+      city: data.city,
+      stateProvince: data.state_province,
+      country: data.country,
+      postalCode: data.postal_code,
+      mailingAddress: data.mailing_address
     };
     
     return NextResponse.json(transformedData, { status: 200 })

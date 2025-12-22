@@ -1409,46 +1409,6 @@ export default function TransactionList({
         {/* Filters for when hideSummaryCards is true - portaled to Activity Profile Page */}
         {isMounted && hideSummaryCards && renderFilters?.(
           <div className="flex items-center gap-2 flex-nowrap">
-            {/* Transaction Type Filter - only show when transactions exist */}
-            {transactions.length > 0 && (
-              <Select value={transactionTypeFilter} onValueChange={setTransactionTypeFilter}>
-                <SelectTrigger className="w-[140px] h-9">
-                  <SelectValue placeholder="Transaction Type" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Transaction Types</SelectItem>
-                  {uniqueTransactionTypes.map(type => (
-                    <SelectItem key={type} value={type}>
-                      <span className="flex items-center gap-2">
-                        <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{type}</span>
-                        <span>{TRANSACTION_TYPE_LABELS[type as keyof typeof TRANSACTION_TYPE_LABELS] || type}</span>
-                      </span>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            )}
-            
-            {/* Finance Type Filter - only show when transactions exist */}
-            {transactions.length > 0 && (
-              <Select value={financeTypeFilter} onValueChange={setFinanceTypeFilter}>
-                <SelectTrigger className="w-[140px] h-9">
-                  <SelectValue placeholder="Finance Type" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Finance Types</SelectItem>
-                  {uniqueFinanceTypes.map(type => (
-                    <SelectItem key={type} value={type}>
-                      <span className="flex items-center gap-2">
-                        <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{type}</span>
-                        <span>{FINANCE_TYPE_LABELS[type] || type}</span>
-                      </span>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            )}
-            
             {/* Grouped View Toggle - only show when transactions exist */}
             {transactions.length > 0 && (
               <div className="flex items-center gap-2 px-3 py-1.5 border rounded-md bg-background">
@@ -1498,6 +1458,46 @@ export default function TransactionList({
               onColumnsChange={setVisibleColumns} 
             />
             
+            {/* Transaction Type Filter - only show when transactions exist */}
+            {transactions.length > 0 && (
+              <Select value={transactionTypeFilter} onValueChange={setTransactionTypeFilter}>
+                <SelectTrigger className="w-[280px] h-9">
+                  <SelectValue placeholder="Transaction Type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Transaction Types</SelectItem>
+                  {uniqueTransactionTypes.map(type => (
+                    <SelectItem key={type} value={type}>
+                      <span className="flex items-center gap-2">
+                        <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{type}</span>
+                        <span>{TRANSACTION_TYPE_LABELS[type as keyof typeof TRANSACTION_TYPE_LABELS] || type}</span>
+                      </span>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+            
+            {/* Finance Type Filter - only show when transactions exist */}
+            {transactions.length > 0 && (
+              <Select value={financeTypeFilter} onValueChange={setFinanceTypeFilter}>
+                <SelectTrigger className="w-[280px] h-9">
+                  <SelectValue placeholder="Finance Type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Finance Types</SelectItem>
+                  {uniqueFinanceTypes.map(type => (
+                    <SelectItem key={type} value={type}>
+                      <span className="flex items-center gap-2">
+                        <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{type}</span>
+                        <span>{FINANCE_TYPE_LABELS[type] || type}</span>
+                      </span>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+            
             {/* Export Button - always visible */}
             <Button variant="outline" size="sm" onClick={handleExport} data-export title="Export">
               <Download className="h-4 w-4" />
@@ -1531,7 +1531,8 @@ export default function TransactionList({
             </div>
           ) : (
             <>
-            <div className="rounded-md border overflow-x-auto">
+            <div className="rounded-md border">
+              <div className="overflow-x-auto">
               <Table className="table-fixed min-w-max">
                 <TableHeader className="bg-muted/50 border-b border-border/70">
                   <TableRow>
@@ -2616,8 +2617,9 @@ export default function TransactionList({
                   })}
               </TableBody>
               </Table>
+              </div>
             </div>
-            
+
             {/* Pagination Controls - Hide in grouped view */}
             {!groupedView && transactions.length > 0 && (
               <div className="flex items-center justify-between mt-4 px-2">

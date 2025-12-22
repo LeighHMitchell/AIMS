@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useUser } from "@/hooks/useUser";
+import { LoadingText } from "@/components/ui/loading-text";
 
 export function AuthGuard({ children }: { children: React.ReactNode }) {
   const { user, isLoading } = useUser();
@@ -29,7 +30,7 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
       {isMounted && isLoading && (
         <div className="fixed inset-0 bg-white/80 backdrop-blur-sm z-50 flex flex-col items-center justify-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mb-4"></div>
-          <p className="text-muted-foreground">Loading...</p>
+          <LoadingText>Loading...</LoadingText>
         </div>
       )}
       {/* Show redirect message only after mount and when not loading and no user */}

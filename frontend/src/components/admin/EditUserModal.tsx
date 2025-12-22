@@ -49,6 +49,7 @@ interface EditUserForm {
   faxNumber?: string
   website?: string
   mailingAddress?: string
+  addressComponents?: AddressComponents
   notes?: string
   profilePicture?: string
   role: UserRole
@@ -74,6 +75,21 @@ const parsePhoneNumber = (fullPhone: string): { countryCode: string; phoneNumber
   
   // Default to Myanmar if no match
   return { countryCode: "+95", phoneNumber: fullPhone }
+}
+
+// Helper function to build address components from user data
+const buildAddressComponents = (user: User | null): AddressComponents => {
+  if (!user) return {}
+  
+  return {
+    fullAddress: user.mailingAddress || '',
+    addressLine1: user.addressLine1 || '',
+    addressLine2: user.addressLine2 || '',
+    city: user.city || '',
+    state: user.stateProvince || '',
+    country: user.country || '',
+    postalCode: user.postalCode || ''
+  }
 }
 
 export function EditUserModal({ isOpen, onClose, onUserUpdated, user, organizations = [] }: EditUserModalProps) {
@@ -109,6 +125,7 @@ export function EditUserModal({ isOpen, onClose, onUserUpdated, user, organizati
         faxNumber: faxPhone.phoneNumber,
         website: user.website || "",
         mailingAddress: user.mailingAddress || "",
+        addressComponents: buildAddressComponents(user),
         notes: user.notes || "",
         profilePicture: user.profilePicture || "",
         role: user.role as UserRole,
@@ -136,6 +153,7 @@ export function EditUserModal({ isOpen, onClose, onUserUpdated, user, organizati
   const handleAddressChange = (address: AddressComponents) => {
     setForm(prev => ({ 
       ...prev!, 
+      addressComponents: address,
       mailingAddress: address.fullAddress || ""
     }))
   }
@@ -193,6 +211,13 @@ export function EditUserModal({ isOpen, onClose, onUserUpdated, user, organizati
         fax_number: faxPhone.trim() || null,
         website: form.website?.trim() || null,
         mailing_address: form.mailingAddress?.trim() || null,
+        // Address component fields
+        address_line_1: form.addressComponents?.addressLine1?.trim() || null,
+        address_line_2: form.addressComponents?.addressLine2?.trim() || null,
+        city: form.addressComponents?.city?.trim() || null,
+        state_province: form.addressComponents?.state?.trim() || null,
+        country: form.addressComponents?.country?.trim() || null,
+        postal_code: form.addressComponents?.postalCode?.trim() || null,
         notes: form.notes?.trim() || null,
         avatar_url: form.profilePicture || null,
         updated_at: new Date().toISOString(),
@@ -536,7 +561,7 @@ export function EditUserModal({ isOpen, onClose, onUserUpdated, user, organizati
             <div>
               <Label htmlFor="mailingAddress">Mailing Address</Label>
               <AddressSearch
-                value={{ fullAddress: form?.mailingAddress || "" }}
+                value={form?.addressComponents || { fullAddress: form?.mailingAddress || "" }}
                 onChange={handleAddressChange}
               />
             </div>

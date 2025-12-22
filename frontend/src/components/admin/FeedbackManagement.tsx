@@ -10,6 +10,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { LoadingText } from '@/components/ui/loading-text';
 import { FEEDBACK_TYPES, FEEDBACK_STATUS_TYPES, FEEDBACK_PRIORITY_TYPES } from '@/data/feedback-types';
 import { ALL_APP_FEATURES, APP_FEATURES } from '@/data/app-features';
 import { MessageSquare, Eye, Edit, Calendar, User, HelpCircle, MessageCircle, Lightbulb, Bug, Zap, Paperclip, Download, Image, FileText, Archive, ArchiveRestore, Trash, ChevronLeft, ChevronRight, Circle, CheckCircle, AlertCircle, XCircle, ArrowUpDown, ArrowUp, ArrowDown, CircleDot, Play, CheckCircle2, Lock, Minus, AlertTriangle, Flame, Check, ChevronsUpDown, Search, Plus } from 'lucide-react';
@@ -575,8 +576,8 @@ export function FeedbackManagement() {
       <Card>
         <CardContent className="p-0">
           {loading ? (
-            <div className="py-8 text-center text-muted-foreground">
-              Loading feedback...
+            <div className="py-8 text-center">
+              <LoadingText>Loading feedback...</LoadingText>
             </div>
           ) : filteredFeedback.length === 0 ? (
             <div className="py-8 text-center text-muted-foreground">

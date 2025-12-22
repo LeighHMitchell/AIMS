@@ -63,8 +63,9 @@ interface HeroVisualizationCardsProps {
   organizationId: string;
 }
 
-const DONUT_COLORS = ['#3b82f6', '#6366f1', '#8b5cf6', '#a855f7', '#d946ef', '#ec4899', '#f43f5e', '#f97316'];
-const BAR_COLORS = ['#3b82f6', '#60a5fa', '#93c5fd', '#bfdbfe', '#dbeafe'];
+// Color palette: Primary Scarlet, Pale Slate, Blue Slate, Cool Steel, Platinum
+const DONUT_COLORS = ['#dc2625', '#4c5568', '#7b95a7', '#cfd0d5', '#f1f4f8', '#dc2625', '#4c5568', '#7b95a7'];
+const BAR_COLORS = ['#dc2625', '#4c5568', '#7b95a7', '#cfd0d5', '#f1f4f8'];
 
 const formatCurrency = (value: number): string => {
   if (value >= 1000000000) return `$${(value / 1000000000).toFixed(1)}B`;
@@ -183,7 +184,7 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
           </Button>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-slate-600 flex items-center gap-2">
-              <DollarSign className="h-4 w-4 text-blue-600" />
+              <DollarSign className="h-4 w-4 text-slate-500" />
               Total Budgets
             </CardTitle>
             <p className="text-lg font-bold text-slate-900">{formatCurrency(totalBudget)}</p>
@@ -232,7 +233,7 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
           </Button>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-slate-600 flex items-center gap-2">
-              <CalendarClock className="h-4 w-4 text-indigo-600" />
+              <CalendarClock className="h-4 w-4 text-slate-500" />
               Planned Disbursements
             </CardTitle>
             <p className="text-lg font-bold text-slate-900">{formatCurrency(totalPlanned)}</p>
@@ -253,9 +254,9 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
                       labelFormatter={(label) => `Year ${label}`}
                       contentStyle={{ fontSize: 12 }}
                     />
-                    <Bar dataKey="amount" fill="#6366f1" radius={[4, 4, 0, 0]}>
+                    <Bar dataKey="amount" radius={[4, 4, 0, 0]}>
                       {data.plannedBudgetTrend.map((_, index) => (
-                        <Cell key={`cell-${index}`} fill={`hsl(239, ${70 - index * 10}%, ${50 + index * 5}%)`} />
+                        <Cell key={`cell-${index}`} fill={BAR_COLORS[index % BAR_COLORS.length]} />
                       ))}
                     </Bar>
                   </BarChart>
@@ -281,7 +282,7 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
           </Button>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-slate-600 flex items-center gap-2">
-              <ArrowRightLeft className="h-4 w-4 text-orange-600" />
+              <ArrowRightLeft className="h-4 w-4 text-slate-500" />
               Transactions
             </CardTitle>
             <p className="text-lg font-bold text-slate-900">{totalTransactions.toLocaleString()} total</p>
@@ -302,7 +303,11 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
                       labelFormatter={(label) => `Year ${label}`}
                       contentStyle={{ fontSize: 12 }}
                     />
-                    <Bar dataKey="count" fill="#f97316" radius={[2, 2, 0, 0]} />
+                    <Bar dataKey="count" radius={[2, 2, 0, 0]}>
+                      {data.transactionTrend.map((_, index) => (
+                        <Cell key={`cell-${index}`} fill={BAR_COLORS[index % BAR_COLORS.length]} />
+                      ))}
+                    </Bar>
                   </BarChart>
                 </ResponsiveContainer>
               ) : (
@@ -326,7 +331,7 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
           </Button>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-slate-600 flex items-center gap-2">
-              <PieChartIcon className="h-4 w-4 text-green-600" />
+              <PieChartIcon className="h-4 w-4 text-slate-500" />
               Sectors
             </CardTitle>
             <p className="text-lg font-bold text-slate-900">{totalSectors} sectors</p>
@@ -379,7 +384,7 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
             <YAxis tickFormatter={formatCurrency} tick={{ fontSize: 12 }} />
             <Tooltip formatter={(value: number) => formatCurrency(value)} />
             <Legend />
-            <Bar dataKey="amount" name="Budget" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+            <Bar dataKey="amount" name="Budget" fill="#dc2625" radius={[4, 4, 0, 0]} />
           </BarChart>
         </ResponsiveContainer>
       </ExpandedChartModal>
@@ -395,7 +400,7 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
             <YAxis tickFormatter={formatCurrency} tick={{ fontSize: 12 }} />
             <Tooltip formatter={(value: number) => formatCurrency(value)} />
             <Legend />
-            <Bar dataKey="amount" name="Planned Disbursements" fill="#6366f1" radius={[4, 4, 0, 0]} />
+            <Bar dataKey="amount" name="Planned Disbursements" fill="#4c5568" radius={[4, 4, 0, 0]} />
           </BarChart>
         </ResponsiveContainer>
       </ExpandedChartModal>
@@ -414,7 +419,7 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
               labelFormatter={(label) => `Year ${label}`}
             />
             <Legend />
-            <Bar dataKey="count" name="Transaction Count" fill="#f97316" radius={[4, 4, 0, 0]} />
+            <Bar dataKey="count" name="Transaction Count" fill="#7b95a7" radius={[4, 4, 0, 0]} />
           </BarChart>
         </ResponsiveContainer>
       </ExpandedChartModal>

@@ -4,6 +4,7 @@ import { useState } from "react"
 import { useUser } from "@/hooks/useUser"
 import { MainLayout } from "@/components/layout/main-layout"
 import { NotificationTabs } from "@/components/NotificationTabs"
+import { LoadingText } from "@/components/ui/loading-text"
 import { Bell } from "lucide-react"
 
 export default function NotificationsPage() {
@@ -13,7 +14,7 @@ export default function NotificationsPage() {
     return (
       <MainLayout>
         <div className="flex items-center justify-center min-h-[60vh]">
-          <p className="text-muted-foreground">Loading notifications...</p>
+          <LoadingText>Loading notifications...</LoadingText>
         </div>
       </MainLayout>
     )

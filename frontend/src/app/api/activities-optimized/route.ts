@@ -256,7 +256,9 @@ export async function GET(request: NextRequest) {
     
     let summariesMap = new Map();
     let budgetMap = new Map();
+    const budgetOriginalMap = new Map<string, number>();
     const plannedDisbursementMap = new Map<string, number>();
+    const plannedDisbursementOriginalMap = new Map<string, number>();
     
     // Organization entry type with logo support
     type OrgEntry = {
@@ -286,9 +288,13 @@ export async function GET(request: NextRequest) {
         console.log('[AIMS Optimized] Budget data fetched:', budgets.length, 'entries');
         budgets.forEach((b: any) => {
           const current = budgetMap.get(b.activity_id) || 0;
+          const currentOriginal = budgetOriginalMap.get(b.activity_id) || 0;
           // Use USD converted value for aggregation
           const budgetValue = b.usd_value || 0;
           budgetMap.set(b.activity_id, current + budgetValue);
+          // Sum original currency values
+          const originalValue = b.value || 0;
+          budgetOriginalMap.set(b.activity_id, currentOriginal + originalValue);
         });
         console.log('[AIMS Optimized] Budget map:', Object.fromEntries(budgetMap));
       } else {
@@ -298,7 +304,7 @@ export async function GET(request: NextRequest) {
       // Fetch planned disbursements totals
       const { data: plannedDisbursements, error: plannedDisbursementError } = await supabase
         .from('planned_disbursements')
-        .select('activity_id, usd_amount')
+        .select('activity_id, amount, currency, usd_amount')
         .in('activity_id', activityIds);
 
       if (plannedDisbursementError) {
@@ -307,8 +313,12 @@ export async function GET(request: NextRequest) {
         console.log('[AIMS Optimized] Planned disbursement data fetched:', plannedDisbursements.length, 'entries');
         plannedDisbursements.forEach((pd: any) => {
           const current = plannedDisbursementMap.get(pd.activity_id) || 0;
+          const currentOriginal = plannedDisbursementOriginalMap.get(pd.activity_id) || 0;
           const pdValue = pd.usd_amount || 0;
           plannedDisbursementMap.set(pd.activity_id, current + pdValue);
+          // Sum original currency values
+          const originalValue = pd.amount || 0;
+          plannedDisbursementOriginalMap.set(pd.activity_id, currentOriginal + originalValue);
         });
         console.log('[AIMS Optimized] Planned disbursement map:', Object.fromEntries(plannedDisbursementMap));
       } else {
@@ -524,13 +534,22 @@ export async function GET(request: NextRequest) {
               inflows: 0,
               totalTransactions: 0,
               totalBudget: budgetMap.get(t.activity_id) || 0,
+              totalBudgetOriginal: budgetOriginalMap.get(t.activity_id) || 0,
               totalDisbursed: 0,
-              totalPlannedDisbursementsUSD: plannedDisbursementMap.get(t.activity_id) || 0
+              totalPlannedDisbursementsUSD: plannedDisbursementMap.get(t.activity_id) || 0,
+              totalPlannedDisbursementsOriginal: plannedDisbursementOriginalMap.get(t.activity_id) || 0
             };
             
             // Ensure planned disbursements are included
             if (!current.totalPlannedDisbursementsUSD) {
               current.totalPlannedDisbursementsUSD = plannedDisbursementMap.get(t.activity_id) || 0;
+            }
+            if (!current.totalPlannedDisbursementsOriginal) {
+              current.totalPlannedDisbursementsOriginal = plannedDisbursementOriginalMap.get(t.activity_id) || 0;
+            }
+            // Ensure budget original is included
+            if (!current.totalBudgetOriginal) {
+              current.totalBudgetOriginal = budgetOriginalMap.get(t.activity_id) || 0;
             }
             
             current.totalTransactions++;
@@ -570,13 +589,16 @@ export async function GET(request: NextRequest) {
               inflows: 0,
               totalTransactions: 0,
               totalBudget: budgetMap.get(activityId) || 0,
+              totalBudgetOriginal: budgetOriginalMap.get(activityId) || 0,
               totalDisbursed: 0,
-              totalPlannedDisbursementsUSD: plannedDisbursementMap.get(activityId) || 0
+              totalPlannedDisbursementsUSD: plannedDisbursementMap.get(activityId) || 0,
+              totalPlannedDisbursementsOriginal: plannedDisbursementOriginalMap.get(activityId) || 0
             });
           } else {
             // Add planned disbursements to existing summary
             const summary = summariesMap.get(activityId)!;
             summary.totalPlannedDisbursementsUSD = plannedDisbursementMap.get(activityId) || 0;
+            summary.totalPlannedDisbursementsOriginal = plannedDisbursementOriginalMap.get(activityId) || 0;
           }
         });
       }
@@ -590,14 +612,23 @@ export async function GET(request: NextRequest) {
         expenditures: 0,
         inflows: 0,
         totalTransactions: 0,
-        totalBudget: 0,
+        totalBudget: budgetMap.get(activity.id) || 0,
+        totalBudgetOriginal: budgetOriginalMap.get(activity.id) || 0,
         totalDisbursed: 0,
-        totalPlannedDisbursementsUSD: plannedDisbursementMap.get(activity.id) || 0
+        totalPlannedDisbursementsUSD: plannedDisbursementMap.get(activity.id) || 0,
+        totalPlannedDisbursementsOriginal: plannedDisbursementOriginalMap.get(activity.id) || 0
       };
       
       // Ensure planned disbursements are included even if summary exists
       if (!summary.totalPlannedDisbursementsUSD) {
         summary.totalPlannedDisbursementsUSD = plannedDisbursementMap.get(activity.id) || 0;
+      }
+      if (!summary.totalPlannedDisbursementsOriginal) {
+        summary.totalPlannedDisbursementsOriginal = plannedDisbursementOriginalMap.get(activity.id) || 0;
+      }
+      // Ensure budget original is included
+      if (!summary.totalBudgetOriginal) {
+        summary.totalBudgetOriginal = budgetOriginalMap.get(activity.id) || 0;
       }
       
       console.log(`[AIMS Optimized] Activity ${activity.id} summary:`, summary);

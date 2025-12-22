@@ -104,14 +104,14 @@ export async function GET(request: NextRequest) {
     ] = await Promise.all([
       // Get budgets for these activities
       supabase
-        .from('budgets')
-        .select('value, value_usd, usd_value, period_start, activity_id')
+        .from('activity_budgets')
+        .select('value, currency, usd_value, period_start, activity_id')
         .in('activity_id', activityIds),
 
       // Get planned disbursements for these activities
       supabase
         .from('planned_disbursements')
-        .select('value, value_usd, usd_value, period_start, activity_id')
+        .select('amount, currency, usd_amount, period_start, activity_id')
         .in('activity_id', activityIds),
 
       // Get transactions for these activities (all time for better visualization)
@@ -159,8 +159,8 @@ export async function GET(request: NextRequest) {
       const year = budget.period_start
         ? new Date(budget.period_start).getFullYear()
         : new Date().getFullYear();
-      // Try different possible column names for USD value
-      const amount = budget.usd_value || budget.value_usd || budget.value || 0;
+      // Use usd_value, fallback to value if currency is USD
+      const amount = budget.usd_value || (budget.currency === 'USD' ? budget.value : 0) || 0;
       budgetsByYear.set(year, (budgetsByYear.get(year) || 0) + amount);
     });
 
@@ -175,8 +175,8 @@ export async function GET(request: NextRequest) {
       const year = pd.period_start
         ? new Date(pd.period_start).getFullYear()
         : new Date().getFullYear();
-      // Try different possible column names for USD value
-      const amount = pd.usd_value || pd.value_usd || pd.value || 0;
+      // Use usd_amount, fallback to amount if currency is USD
+      const amount = pd.usd_amount || (pd.currency === 'USD' ? pd.amount : 0) || 0;
       plannedByYear.set(year, (plannedByYear.get(year) || 0) + amount);
     });
 

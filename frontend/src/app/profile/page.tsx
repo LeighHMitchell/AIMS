@@ -24,6 +24,7 @@ import { EmailChangeConfirmDialog } from "@/components/EmailChangeConfirmDialog"
 import { PasswordChangeDialog } from "@/components/PasswordChangeDialog";
 import { supabase } from "@/lib/supabase";
 import { CONTACT_TYPES } from "@/data/contact-types";
+import { LoadingText } from "@/components/ui/loading-text";
 import { 
   Building2, 
   User, 
@@ -588,7 +589,7 @@ export default function ProfilePage() {
     return (
       <MainLayout>
         <div className="flex items-center justify-center min-h-[60vh]">
-          <p className="text-muted-foreground">Loading profile...</p>
+          <LoadingText>Loading profile...</LoadingText>
         </div>
       </MainLayout>
     );

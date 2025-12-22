@@ -81,6 +81,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Checkbox } from "@/components/ui/checkbox";
+import { LoadingText } from "@/components/ui/loading-text";
 
 // Transaction type to icon mapping
 const TRANSACTION_TYPE_ICONS: Record<string, React.FC<any>> = {
@@ -608,7 +609,9 @@ export function TransactionTable({
     return (
       <div className="p-8 text-center">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto"></div>
-        <p className="mt-4 text-gray-600">Loading transactions...</p>
+        <div className="mt-4">
+          <LoadingText>Loading transactions...</LoadingText>
+        </div>
       </div>
     );
   }

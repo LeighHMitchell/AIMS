@@ -16,6 +16,7 @@ import { ActivityComment, CommentReply } from '@/types/comment';
 import { useUser } from '@/hooks/useUser';
 import { toast } from 'sonner';
 import { getRoleBadgeVariant, getRoleDisplayLabel } from '@/lib/role-badge-utils';
+import { LoadingText } from '@/components/ui/loading-text';
 import {
   MessageSquare,
   Send,
@@ -873,7 +874,9 @@ export function EnhancedActivityComments({
             {/* Comments List */}
             <div className="space-y-4">
               {loading ? (
-                <div className="text-center py-8 text-gray-500">Loading comments...</div>
+                <div className="text-center py-8">
+                  <LoadingText>Loading comments...</LoadingText>
+                </div>
               ) : displayedComments.length === 0 ? (
                 <div className="text-center py-8 text-gray-500">
                   No {activeTab} comments yet.

@@ -2607,7 +2607,7 @@ export default function OrganizationProfilePage() {
                           </div>
                           
                           {/* Transaction Table */}
-                          <div className="overflow-x-auto">
+                          <div className="rounded-md border overflow-x-auto">
                             <Table>
                               <TableHeader>
                                 <TableRow>

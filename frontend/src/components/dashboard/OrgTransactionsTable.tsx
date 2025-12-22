@@ -30,6 +30,7 @@ interface TransactionRow {
   currency: string;
   transactionDate: string;
   activityId: string;
+  activityIatiIdentifier: string | null;
   activityTitle: string;
   counterpartyOrgName: string;
   status: string;
@@ -111,7 +112,8 @@ export function OrgTransactionsTable({
               currency: t.currency || 'USD',
               transactionDate: t.transaction_date,
               activityId: t.activity_id,
-              activityTitle: t.activity_title || 'Unknown Activity',
+              activityIatiIdentifier: t.activity?.iati_identifier || null,
+              activityTitle: t.activity?.title_narrative || t.activity_title || 'Unknown Activity',
               counterpartyOrgName,
               status: t.status || 'actual',
               isProvider,
@@ -211,12 +213,11 @@ export function OrgTransactionsTable({
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="w-[30px]"></TableHead>
-                <TableHead>Type</TableHead>
-                <TableHead>Value</TableHead>
-                <TableHead>Date</TableHead>
                 <TableHead>Activity</TableHead>
-                <TableHead>Counterparty</TableHead>
+                <TableHead>Date</TableHead>
+                <TableHead>Value</TableHead>
+                <TableHead>Recipient</TableHead>
+                <TableHead>Type</TableHead>
                 <TableHead>Status</TableHead>
               </TableRow>
             </TableHeader>
@@ -228,20 +229,23 @@ export function OrgTransactionsTable({
                   onClick={() => handleRowClick(transaction.activityId)}
                 >
                   <TableCell>
-                    {transaction.isProvider ? (
-                      <ArrowUpRight className="h-4 w-4 text-red-500" title="Outgoing" />
-                    ) : (
-                      <ArrowDownLeft className="h-4 w-4 text-green-500" title="Incoming" />
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    <span className="text-sm">{transaction.transactionTypeName}</span>
-                  </TableCell>
-                  <TableCell>
-                    <span className={`font-medium ${transaction.isProvider ? 'text-red-600' : 'text-green-600'}`}>
-                      {transaction.isProvider ? '-' : '+'}
-                      {formatCurrency(transaction.value, transaction.currency)}
-                    </span>
+                    <div className="space-y-1">
+                      <div className="flex items-start gap-2">
+                        {transaction.isProvider ? (
+                          <ArrowUpRight className="h-4 w-4 text-red-500 mt-0.5 flex-shrink-0" title="Outgoing" />
+                        ) : (
+                          <ArrowDownLeft className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" title="Incoming" />
+                        )}
+                        <span className="text-sm whitespace-normal break-words">
+                          {transaction.activityTitle}
+                        </span>
+                      </div>
+                      <div className="pl-6">
+                        <span className="text-xs font-mono bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded">
+                          {transaction.activityIatiIdentifier || transaction.activityId}
+                        </span>
+                      </div>
+                    </div>
                   </TableCell>
                   <TableCell>
                     <span className="text-sm text-slate-600">
@@ -249,9 +253,15 @@ export function OrgTransactionsTable({
                     </span>
                   </TableCell>
                   <TableCell>
-                    <span className="text-sm truncate max-w-[200px] block" title={transaction.activityTitle}>
-                      {transaction.activityTitle}
-                    </span>
+                    <div className="flex items-center gap-1">
+                      <span className={`font-medium ${transaction.isProvider ? 'text-red-600' : 'text-green-600'}`}>
+                        {transaction.isProvider ? '-' : '+'}
+                        {formatCurrency(transaction.value, transaction.currency)}
+                      </span>
+                      <span className="text-xs text-gray-500">
+                        {transaction.currency}
+                      </span>
+                    </div>
                   </TableCell>
                   <TableCell>
                     <span className="text-sm text-slate-600 truncate max-w-[150px] block" title={transaction.counterpartyOrgName}>
@@ -259,7 +269,10 @@ export function OrgTransactionsTable({
                     </span>
                   </TableCell>
                   <TableCell>
-                    <Badge variant={transaction.status === 'actual' ? 'default' : 'secondary'}>
+                    <span className="text-sm">{transaction.transactionTypeName}</span>
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant="outline" className="bg-transparent border border-slate-300 text-slate-700">
                       {transaction.status}
                     </Badge>
                   </TableCell>

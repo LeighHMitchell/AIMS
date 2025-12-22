@@ -1796,10 +1796,10 @@ export default function ActivityDetailPage() {
                           )}
                           <Badge 
                             className={
-                              activity.activityStatus === "completed" || activity.activityStatus === "4" ? "bg-green-100 text-green-800" : 
-                              activity.activityStatus === "implementation" || activity.activityStatus === "2" ? "bg-blue-100 text-blue-800" :
-                              activity.activityStatus === "cancelled" || activity.activityStatus === "5" ? "bg-red-100 text-red-800" : 
-                              "bg-slate-100 text-slate-800"
+                              activity.activityStatus === "completed" || activity.activityStatus === "4" ? "bg-green-100 text-green-800 hover:bg-green-200" : 
+                              activity.activityStatus === "implementation" || activity.activityStatus === "2" ? "bg-blue-100 text-blue-800 hover:bg-blue-200" :
+                              activity.activityStatus === "cancelled" || activity.activityStatus === "5" ? "bg-red-100 text-red-800 hover:bg-red-200" : 
+                              "bg-slate-100 text-slate-800 hover:bg-slate-200"
                             }
                           >
                             {activity.activityStatus === "2" ? "Implementation" :
@@ -1814,7 +1814,6 @@ export default function ActivityDetailPage() {
                           {/* Publication Status Badge */}
                           {activity.publicationStatus && (
                             <Badge 
-                              variant={activity.publicationStatus === 'published' ? 'default' : 'secondary'}
                               className={
                                 activity.publicationStatus === 'published' 
                                   ? 'bg-green-100 text-green-800 hover:bg-green-200' 
@@ -1834,8 +1833,8 @@ export default function ActivityDetailPage() {
                                     <Badge 
                                       variant={activity.syncStatus === 'live' || activity.syncStatus === 'outdated' ? "outline" : undefined}
                                       className={activity.syncStatus === 'live' || activity.syncStatus === 'outdated' 
-                                        ? "border-slate-300 text-slate-700" 
-                                        : "bg-[#124e5f] text-white"}
+                                        ? "border-slate-300 text-slate-700 hover:bg-slate-50" 
+                                        : "bg-[#124e5f] text-white hover:bg-[#0d3a47]"}
                                     >
                                       {activity.syncStatus === 'live' ? (
                                         <>
@@ -1870,7 +1869,7 @@ export default function ActivityDetailPage() {
                               </TooltipProvider>
                               {/* Humanitarian Badge */}
                               {activity.humanitarian && (
-                                <Badge className="bg-red-600 text-white">
+                                <Badge className="bg-red-600 text-white hover:bg-red-700">
                                   Humanitarian
                                 </Badge>
                               )}

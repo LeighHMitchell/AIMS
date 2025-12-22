@@ -117,8 +117,10 @@ function TreeNode({
         </button>
 
         {/* Code */}
-        <span className="font-mono text-xs bg-muted px-1 py-0.5 rounded inline-block w-[80px] flex-shrink-0">
-          {node.code}
+        <span className="w-[80px] flex-shrink-0">
+          <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded inline-block">
+            {node.code}
+          </span>
         </span>
 
         {/* Name */}
@@ -135,7 +137,7 @@ function TreeNode({
         </span>
 
         {/* Status */}
-        <span className="w-[100px] flex flex-shrink-0">
+        <span className="w-[100px] flex flex-shrink-0 pl-2">
           {!node.isActive ? (
             <Badge variant="secondary" className="text-xs">
               Inactive
@@ -148,7 +150,7 @@ function TreeNode({
         </span>
 
         {/* Type Badge */}
-        <span className="w-[160px] flex flex-shrink-0">
+        <span className="w-[160px] flex flex-shrink-0 pl-2">
           <Badge
             variant="outline"
             className={`text-xs ${

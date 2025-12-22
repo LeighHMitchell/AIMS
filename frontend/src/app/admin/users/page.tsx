@@ -77,12 +77,31 @@ const splitTelephone = (telephone: string) => {
   return { countryCode: "+95", phoneNumber: telephone };
 };
 
+// Helper function to build address components from user's stored address fields
+const buildUserAddressComponents = (user: User): AddressComponents => {
+  // If user has stored address fields, use them
+  if (user.addressLine1 || user.addressLine2 || user.city || user.stateProvince || user.country || user.postalCode) {
+    return {
+      addressLine1: user.addressLine1 || '',
+      addressLine2: user.addressLine2 || '',
+      street: user.addressLine2 || '',
+      city: user.city || '',
+      state: user.stateProvince || '',
+      country: user.country || '',
+      postalCode: user.postalCode || '',
+      fullAddress: user.mailingAddress || ''
+    };
+  }
+  // Otherwise, try to parse from mailing address string
+  return parseMailingAddress(user.mailingAddress || '');
+};
+
 // Helper function to convert mailing address string to address components
 const parseMailingAddress = (mailingAddress: string): AddressComponents => {
   if (!mailingAddress) return {};
-  
+
   const parts = mailingAddress.split(',').map(part => part.trim());
-  
+
   if (parts.length >= 4) {
     return {
       addressLine1: parts[0] || '',
@@ -195,21 +214,28 @@ export default function UserManagement() {
             id: user.id,
             name: user.name,
             email: user.email,
-            firstName: user.first_name,
-            middleName: user.middle_name,
-            lastName: user.last_name,
-            profilePicture: user.avatar_url,
+            firstName: user.firstName || user.first_name,
+            middleName: user.middleName || user.middle_name,
+            lastName: user.lastName || user.last_name,
+            profilePicture: user.profilePicture || user.avatar_url,
             title: user.title || "",
-            jobTitle: user.job_title || "",
+            jobTitle: user.jobTitle || user.job_title || "",
             department: user.department || "",
             telephone: user.telephone,
             website: user.website || "",
-            mailingAddress: user.mailing_address || "",
+            mailingAddress: user.mailingAddress || user.mailing_address || "",
+            // Address component fields
+            addressLine1: user.addressLine1 || user.address_line_1 || "",
+            addressLine2: user.addressLine2 || user.address_line_2 || "",
+            city: user.city || "",
+            stateProvince: user.stateProvince || user.state_province || "",
+            country: user.country || "",
+            postalCode: user.postalCode || user.postal_code || "",
             bio: user.bio || "",
-            preferredLanguage: user.preferred_language || "en",
+            preferredLanguage: user.preferredLanguage || user.preferred_language || "en",
             timezone: user.timezone || "UTC",
             role: user.role,
-            organizationId: user.organization_id,
+            organizationId: user.organizationId || user.organization_id,
             organization: user.organization ? {
               id: user.organization.id,
               name: user.organization.name,
@@ -332,6 +358,13 @@ export default function UserManagement() {
         telephone: updatedUser.telephone,
         website: updatedUser.website,
         mailing_address: updatedUser.mailingAddress,
+        // Address component fields
+        address_line_1: updatedUser.addressLine1 || null,
+        address_line_2: updatedUser.addressLine2 || null,
+        city: updatedUser.city || null,
+        state_province: updatedUser.stateProvince || null,
+        country: updatedUser.country || null,
+        postal_code: updatedUser.postalCode || null,
         bio: updatedUser.bio,
         preferred_language: updatedUser.preferredLanguage,
         timezone: updatedUser.timezone,
@@ -370,6 +403,13 @@ export default function UserManagement() {
           phone: data.telephone || "",
           website: data.website || "",
           mailingAddress: data.mailing_address || "",
+          // Address component fields
+          addressLine1: data.addressLine1 || data.address_line_1 || "",
+          addressLine2: data.addressLine2 || data.address_line_2 || "",
+          city: data.city || "",
+          stateProvince: data.stateProvince || data.state_province || "",
+          country: data.country || "",
+          postalCode: data.postalCode || data.postal_code || "",
           bio: data.bio || "",
           preferredLanguage: data.preferred_language || "en",
           timezone: data.timezone || "UTC",
@@ -935,7 +975,7 @@ function UserEditor({
     ...splitTelephone(user.telephone || user.phone || ""),
     website: user.website || "",
     mailingAddress: user.mailingAddress || "",
-    addressComponents: parseMailingAddress(user.mailingAddress || ""),
+    addressComponents: buildUserAddressComponents(user),
     bio: user.bio || "",
     preferredLanguage: user.preferredLanguage || "en",
     timezone: user.timezone || "UTC",
@@ -999,6 +1039,13 @@ function UserEditor({
       phone: formData.countryCode + formData.phoneNumber, // backward compatibility
       website: formData.website,
       mailingAddress: formatMailingAddress(formData.addressComponents),
+      // Include individual address component fields
+      addressLine1: formData.addressComponents.addressLine1 || '',
+      addressLine2: formData.addressComponents.addressLine2 || '',
+      city: formData.addressComponents.city || '',
+      stateProvince: formData.addressComponents.state || '',
+      country: formData.addressComponents.country || '',
+      postalCode: formData.addressComponents.postalCode || '',
       bio: formData.bio,
       preferredLanguage: formData.preferredLanguage,
       timezone: formData.timezone,

@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { TextScramble } from "@/components/motion-primitives/text-scramble";
 import Script from "next/script";
 
 export default function LandingPage() {
@@ -59,7 +60,12 @@ export default function LandingPage() {
               </div>
               
               <h1 className="text-5xl lg:text-6xl font-bold text-gray-900 mb-8 leading-tight">
-                Track Development Finance Flows <span className="text-gray-600">with Precision and Transparency</span>
+                <TextScramble as="span" duration={1.2}>
+                  Track Development Finance Flows
+                </TextScramble>{' '}
+                <TextScramble as="span" duration={1.2} className="text-gray-600">
+                  with Precision and Transparency
+                </TextScramble>
               </h1>
               
               <p className="text-lg text-gray-600 mb-12 leading-relaxed max-w-xl">

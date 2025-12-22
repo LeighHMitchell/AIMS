@@ -60,8 +60,8 @@ export function OrgSummaryCards({ organizationId }: OrgSummaryCardsProps) {
       icon: Activity,
       description: 'Activities reported by your organization',
       onClick: () => handleCardClick(),
-      color: 'text-blue-600',
-      bgColor: 'hover:bg-blue-50',
+      color: 'text-slate-500',
+      bgColor: 'hover:bg-slate-50',
     },
     {
       title: 'Unpublished',
@@ -69,8 +69,8 @@ export function OrgSummaryCards({ organizationId }: OrgSummaryCardsProps) {
       icon: FileEdit,
       description: 'Draft activities awaiting publication',
       onClick: () => handleCardClick('publicationStatus=draft'),
-      color: 'text-gray-600',
-      bgColor: 'hover:bg-gray-50',
+      color: 'text-slate-500',
+      bgColor: 'hover:bg-slate-50',
     },
     {
       title: 'Pending Validation',
@@ -78,8 +78,8 @@ export function OrgSummaryCards({ organizationId }: OrgSummaryCardsProps) {
       icon: Clock,
       description: 'Activities submitted for government review',
       onClick: () => handleCardClick('submissionStatuses=submitted'),
-      color: 'text-orange-600',
-      bgColor: 'hover:bg-orange-50',
+      color: 'text-slate-500',
+      bgColor: 'hover:bg-slate-50',
     },
     {
       title: 'Validated',
@@ -87,8 +87,8 @@ export function OrgSummaryCards({ organizationId }: OrgSummaryCardsProps) {
       icon: CheckCircle,
       description: 'Activities approved by government',
       onClick: () => handleCardClick('submissionStatuses=validated'),
-      color: 'text-green-600',
-      bgColor: 'hover:bg-green-50',
+      color: 'text-slate-500',
+      bgColor: 'hover:bg-slate-50',
     },
   ];
 
@@ -97,7 +97,7 @@ export function OrgSummaryCards({ organizationId }: OrgSummaryCardsProps) {
       {cards.map((card) => (
         <Card
           key={card.title}
-          className={`bg-white cursor-pointer transition-all ${card.bgColor} hover:shadow-md`}
+          className={`bg-white cursor-pointer ${card.bgColor} hover:shadow-md`}
           onClick={card.onClick}
         >
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">

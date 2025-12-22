@@ -70,7 +70,15 @@ export async function GET(request: NextRequest) {
       organization: user.organizations,
       contactType: user.contact_type,
       faxNumber: user.fax_number,
-      notes: user.notes
+      notes: user.notes,
+      // Address component fields
+      mailingAddress: user.mailing_address,
+      addressLine1: user.address_line_1,
+      addressLine2: user.address_line_2,
+      city: user.city,
+      stateProvince: user.state_province,
+      country: user.country,
+      postalCode: user.postal_code
     });
     
     const transformedData = Array.isArray(data) 
@@ -78,6 +86,18 @@ export async function GET(request: NextRequest) {
       : transformUser(data);
     
     console.log('[AIMS] Successfully fetched from Supabase');
+    // Debug: Log address fields for first user
+    if (Array.isArray(data) && data.length > 0) {
+      console.log('[AIMS] Sample user address fields from DB:', {
+        address_line_1: data[0].address_line_1,
+        address_line_2: data[0].address_line_2,
+        city: data[0].city,
+        state_province: data[0].state_province,
+        country: data[0].country,
+        postal_code: data[0].postal_code,
+        mailing_address: data[0].mailing_address
+      });
+    }
     return NextResponse.json(transformedData);
     
   } catch (error) {
@@ -145,6 +165,14 @@ export async function POST(request: NextRequest) {
     if (body.fax_number !== undefined) userProfileData.fax_number = body.fax_number
     if (body.notes !== undefined) userProfileData.notes = body.notes
     if (body.avatar_url !== undefined) userProfileData.avatar_url = body.avatar_url
+
+    // Add address component fields
+    if (body.address_line_1 !== undefined) userProfileData.address_line_1 = body.address_line_1
+    if (body.address_line_2 !== undefined) userProfileData.address_line_2 = body.address_line_2
+    if (body.city !== undefined) userProfileData.city = body.city
+    if (body.state_province !== undefined) userProfileData.state_province = body.state_province
+    if (body.country !== undefined) userProfileData.country = body.country
+    if (body.postal_code !== undefined) userProfileData.postal_code = body.postal_code
 
     const { data, error } = await supabase
       .from('users')
@@ -315,7 +343,15 @@ export async function PUT(request: NextRequest) {
       organization: data.organizations,
       contactType: data.contact_type,
       faxNumber: data.fax_number,
-      notes: data.notes
+      notes: data.notes,
+      // Address component fields
+      mailingAddress: data.mailing_address,
+      addressLine1: data.address_line_1,
+      addressLine2: data.address_line_2,
+      city: data.city,
+      stateProvince: data.state_province,
+      country: data.country,
+      postalCode: data.postal_code
     };
     
     return NextResponse.json(transformedData);

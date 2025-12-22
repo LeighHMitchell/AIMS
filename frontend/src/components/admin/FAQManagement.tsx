@@ -11,6 +11,7 @@ import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { LoadingText } from '@/components/ui/loading-text';
 import {
   HelpCircle,
   Eye,
@@ -538,8 +539,8 @@ function QuestionTable({
     <Card>
       <CardContent className="p-0">
         {loading ? (
-          <div className="py-8 text-center text-muted-foreground">
-            Loading questions...
+          <div className="py-8 text-center">
+            <LoadingText>Loading questions...</LoadingText>
           </div>
         ) : questions.length === 0 ? (
           <div className="py-12 text-center text-muted-foreground">

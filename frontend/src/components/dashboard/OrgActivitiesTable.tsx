@@ -38,7 +38,9 @@ interface ActivityRow {
   status: string;
   activityStatus?: string;
   totalBudget?: number;
+  totalBudgetOriginal?: number;
   totalPlannedDisbursements?: number;
+  totalPlannedDisbursementsOriginal?: number;
   currency?: string;
   plannedStartDate?: string;
   plannedEndDate?: string;
@@ -159,7 +161,9 @@ export function OrgActivitiesTable({
             status: activity.publication_status || 'draft',
             activityStatus: activity.activity_status,
             totalBudget: activity.totalBudget || activity.total_budget || 0,
+            totalBudgetOriginal: activity.totalBudgetOriginal || 0,
             totalPlannedDisbursements: activity.totalPlannedDisbursementsUSD || activity.totalPlannedDisbursements || 0,
+            totalPlannedDisbursementsOriginal: activity.totalPlannedDisbursementsOriginal || 0,
             currency: activity.default_currency || 'USD',
             plannedStartDate: activity.planned_start_date,
             plannedEndDate: activity.planned_end_date,
@@ -284,6 +288,7 @@ export function OrgActivitiesTable({
                 <TableHead className={variant === 'main' ? 'w-[30%]' : 'w-[35%]'}>Activity</TableHead>
                 {variant === 'main' && (
                   <>
+                    <TableHead>Activity Status</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead className="text-right">Budget</TableHead>
                     <TableHead className="text-right">Planned Disb.</TableHead>
@@ -314,18 +319,13 @@ export function OrgActivitiesTable({
                 >
                   <TableCell>
                     <div>
-                      <p className="font-medium truncate max-w-[280px]" title={activity.title}>
+                      <p className="font-medium break-words" title={activity.title}>
                         {activity.title}
                       </p>
                       {activity.iatiIdentifier && (
-                        <p className="text-xs text-slate-500 truncate max-w-[280px] font-mono" title={activity.iatiIdentifier}>
+                        <p className="text-xs text-slate-500 truncate max-w-[280px] font-mono bg-gray-100 px-2 py-1 rounded mt-1 inline-block" title={activity.iatiIdentifier}>
                           {activity.iatiIdentifier}
                         </p>
-                      )}
-                      {variant !== 'recently_edited' && activity.activityStatus && (
-                        <span className={`text-xs px-1.5 py-0.5 rounded mt-1 inline-block ${ACTIVITY_STATUS_LABELS[activity.activityStatus]?.color || 'bg-gray-100'}`}>
-                          {ACTIVITY_STATUS_LABELS[activity.activityStatus]?.label || activity.activityStatus}
-                        </span>
                       )}
                     </div>
                   </TableCell>
@@ -333,19 +333,62 @@ export function OrgActivitiesTable({
                   {variant === 'main' && (
                     <>
                       <TableCell>
+                        {activity.activityStatus && (
+                          <span className={`text-xs px-1.5 py-0.5 rounded inline-block ${ACTIVITY_STATUS_LABELS[activity.activityStatus]?.color || 'bg-gray-100'}`}>
+                            {ACTIVITY_STATUS_LABELS[activity.activityStatus]?.label || activity.activityStatus}
+                          </span>
+                        )}
+                      </TableCell>
+                      <TableCell>
                         <Badge variant={activity.status === 'published' ? 'default' : 'secondary'}>
                           {activity.status}
                         </Badge>
                       </TableCell>
                       <TableCell className="text-right">
-                        <span className="font-medium">
-                          {activity.totalBudget ? formatCurrency(activity.totalBudget, activity.currency) : '-'}
-                        </span>
+                        {activity.totalBudgetOriginal && activity.totalBudgetOriginal > 0 ? (
+                          <div className="flex flex-col items-end">
+                            <span className="font-medium">
+                              {formatCurrency(activity.totalBudgetOriginal, activity.currency)}
+                              <span className="text-xs text-gray-500 ml-1 font-normal">
+                                {activity.currency}
+                              </span>
+                            </span>
+                            {activity.totalBudget && activity.totalBudget > 0 && (
+                              <span className="text-xs text-gray-500 mt-0.5">
+                                {formatCurrency(activity.totalBudget, 'USD')}
+                              </span>
+                            )}
+                          </div>
+                        ) : activity.totalBudget && activity.totalBudget > 0 ? (
+                          <span className="font-medium">
+                            {formatCurrency(activity.totalBudget, 'USD')}
+                          </span>
+                        ) : (
+                          '-'
+                        )}
                       </TableCell>
                       <TableCell className="text-right">
-                        <span className="font-medium">
-                          {activity.totalPlannedDisbursements ? formatCurrency(activity.totalPlannedDisbursements, activity.currency) : '-'}
-                        </span>
+                        {activity.totalPlannedDisbursementsOriginal && activity.totalPlannedDisbursementsOriginal > 0 ? (
+                          <div className="flex flex-col items-end">
+                            <span className="font-medium">
+                              {formatCurrency(activity.totalPlannedDisbursementsOriginal, activity.currency)}
+                              <span className="text-xs text-gray-500 ml-1 font-normal">
+                                {activity.currency}
+                              </span>
+                            </span>
+                            {activity.totalPlannedDisbursements && activity.totalPlannedDisbursements > 0 && (
+                              <span className="text-xs text-gray-500 mt-0.5">
+                                {formatCurrency(activity.totalPlannedDisbursements, 'USD')}
+                              </span>
+                            )}
+                          </div>
+                        ) : activity.totalPlannedDisbursements && activity.totalPlannedDisbursements > 0 ? (
+                          <span className="font-medium">
+                            {formatCurrency(activity.totalPlannedDisbursements, 'USD')}
+                          </span>
+                        ) : (
+                          '-'
+                        )}
                       </TableCell>
                       <TableCell>
                         {activity.validationStatus && (

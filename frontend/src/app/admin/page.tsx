@@ -20,6 +20,7 @@ import { PendingValidationsManagement } from "@/components/admin/PendingValidati
 import { IATIImportLogsManagement } from "@/components/admin/IATIImportLogsManagement"
 import { ProjectReferencesManagement } from "@/components/admin/ProjectReferencesManagement"
 import { EventManagement } from "@/components/calendar/EventManagement"
+import { LoadingText } from "@/components/ui/loading-text"
 
 function AdminPageContent() {
   const { user, isLoading } = useUser()
@@ -78,7 +79,7 @@ function AdminPageContent() {
     return (
       <MainLayout>
         <div className="flex items-center justify-center min-h-[60vh]">
-          <p className="text-muted-foreground">Loading admin panel...</p>
+          <LoadingText>Loading admin panel...</LoadingText>
         </div>
       </MainLayout>
     )

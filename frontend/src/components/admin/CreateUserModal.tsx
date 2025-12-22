@@ -50,6 +50,7 @@ interface CreateUserForm {
   faxNumber?: string
   website?: string
   mailingAddress?: string
+  addressComponents?: AddressComponents
   notes?: string
   profilePicture?: string
   role: UserRole
@@ -80,6 +81,7 @@ const initialFormState: CreateUserForm = {
   faxNumber: "",
   website: "",
   mailingAddress: "",
+  addressComponents: {},
   notes: "",
   profilePicture: "",
   role: USER_ROLES.DEV_PARTNER_TIER_2,
@@ -152,6 +154,7 @@ export function CreateUserModal({ isOpen, onClose, onUserCreated, organizations 
   const handleAddressChange = (address: AddressComponents) => {
     setForm(prev => ({ 
       ...prev, 
+      addressComponents: address,
       mailingAddress: address.fullAddress || ""
     }))
   }
@@ -223,6 +226,13 @@ export function CreateUserModal({ isOpen, onClose, onUserCreated, organizations 
         fax_number: faxPhone.trim() || null,
         website: form.website?.trim() || null,
         mailing_address: form.mailingAddress?.trim() || null,
+        // Address component fields
+        address_line_1: form.addressComponents?.addressLine1?.trim() || null,
+        address_line_2: form.addressComponents?.addressLine2?.trim() || null,
+        city: form.addressComponents?.city?.trim() || null,
+        state_province: form.addressComponents?.state?.trim() || null,
+        country: form.addressComponents?.country?.trim() || null,
+        postal_code: form.addressComponents?.postalCode?.trim() || null,
         notes: form.notes?.trim() || null,
         avatar_url: form.profilePicture?.trim() || null,
         password: finalPassword,
@@ -684,7 +694,7 @@ export function CreateUserModal({ isOpen, onClose, onUserCreated, organizations 
             <div>
               <Label htmlFor="mailingAddress">Mailing Address</Label>
               <AddressSearch
-                value={{ fullAddress: form.mailingAddress || "" }}
+                value={form.addressComponents || { fullAddress: form.mailingAddress || "" }}
                 onChange={handleAddressChange}
               />
             </div>

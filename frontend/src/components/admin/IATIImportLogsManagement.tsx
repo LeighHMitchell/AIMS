@@ -28,6 +28,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { formatDistanceToNow, format } from 'date-fns';
+import { LoadingText } from '@/components/ui/loading-text';
 import Link from 'next/link';
 
 interface ImportLog {
@@ -307,9 +308,9 @@ export function IATIImportLogsManagement() {
           <Card>
             <CardContent className="p-0">
               {loading ? (
-                <div className="py-12 text-center text-muted-foreground">
+                <div className="py-12 text-center">
                   <RefreshCw className="h-8 w-8 text-gray-400 mx-auto mb-4 animate-spin" />
-                  <p>Loading import logs...</p>
+                  <LoadingText>Loading import logs...</LoadingText>
                 </div>
               ) : recentStream.length === 0 ? (
                 <div className="py-12 text-center text-muted-foreground">

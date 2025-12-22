@@ -6,6 +6,7 @@ import { CoordinationCirclePack } from "@/components/analytics/CoordinationCircl
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { LoadingText } from "@/components/ui/loading-text";
 import { AlertCircle, Network, RefreshCw, Users, Layers, Activity, DollarSign } from "lucide-react";
 import type { CoordinationView, CoordinationResponse } from "@/types/coordination";
 
@@ -225,7 +226,7 @@ export default function CoordinationPage() {
                 <div className="flex items-center justify-center h-[600px]">
                   <div className="text-center">
                     <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-slate-900 mx-auto mb-4" />
-                    <p className="text-slate-600">Loading coordination data...</p>
+                    <LoadingText>Loading coordination data...</LoadingText>
                   </div>
                 </div>
               ) : (

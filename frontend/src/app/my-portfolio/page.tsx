@@ -23,6 +23,7 @@ import { formatCurrency } from "@/lib/format"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Skeleton } from "@/components/ui/skeleton"
+import { LoadingText } from "@/components/ui/loading-text"
 import Link from "next/link"
 import { SectorDistributionChart } from "@/components/charts/SectorDistributionChart"
 import { ActivityTimelineHeatmap } from "@/components/charts/ActivityTimelineHeatmap"
@@ -59,7 +60,9 @@ export default function MyPortfolioPage() {
         <div className="space-y-8">
           <div>
             <h1 className="text-3xl font-bold tracking-tight">My Portfolio</h1>
-            <p className="text-muted-foreground mt-2">Loading your portfolio data...</p>
+            <div className="mt-2">
+              <LoadingText>Loading your portfolio data...</LoadingText>
+            </div>
           </div>
           <div className="flex items-center justify-center h-64">
             <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
