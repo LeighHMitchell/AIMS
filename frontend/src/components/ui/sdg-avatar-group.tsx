@@ -113,7 +113,7 @@ export function SDGAvatarGroup({
                     className="block"
                   >
                     <div
-                      className={`${sizeClass} rounded-full border-2 border-white bg-white shadow-sm hover:shadow-md transition-shadow duration-200 overflow-hidden`}
+                      className={`${sizeClass} border-2 border-white bg-white shadow-sm hover:shadow-md transition-shadow duration-200 overflow-hidden`}
                       style={{ zIndex: displaySDGs.length - index }}
                     >
                       <img
@@ -126,7 +126,7 @@ export function SDGAvatarGroup({
                           target.style.display = 'none';
                           const parent = target.parentElement;
                           if (parent) {
-                            parent.className = `${sizeClass} rounded-full border-2 border-white bg-blue-100 flex items-center justify-center text-xs font-semibold text-blue-700`;
+                            parent.className = `${sizeClass} border-2 border-white bg-blue-100 flex items-center justify-center text-xs font-semibold text-blue-700`;
                             parent.textContent = goalNumber.toString();
                           }
                         }}
@@ -137,7 +137,7 @@ export function SDGAvatarGroup({
               })}
               {remainingCount > 0 && (
                 <div
-                  className={`${sizeClass} rounded-full border-2 border-white bg-gray-100 flex items-center justify-center text-[10px] font-medium text-gray-600 shadow-sm`}
+                  className={`${sizeClass} border-2 border-white bg-gray-100 flex items-center justify-center text-[10px] font-medium text-gray-600 shadow-sm`}
                   style={{ zIndex: 0 }}
                 >
                   +{remainingCount}
@@ -158,7 +158,7 @@ export function SDGAvatarGroup({
               
               return (
                 <div key={goalNumber} className="flex items-center gap-2">
-                  <div className="h-5 w-5 rounded-full overflow-hidden border border-gray-200 flex-shrink-0">
+                  <div className="h-5 w-5 overflow-hidden border border-gray-200 flex-shrink-0">
                     <img
                       src={getSDGImageURL(goalNumber)}
                       alt={`SDG ${goalNumber}`}
@@ -189,6 +189,7 @@ export function SDGAvatarGroup({
     </TooltipProvider>
   );
 }
+
 
 
 

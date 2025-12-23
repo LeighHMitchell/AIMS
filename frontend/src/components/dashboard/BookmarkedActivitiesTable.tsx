@@ -58,11 +58,9 @@ const ACTIVITY_STATUS_LABELS: Record<string, { label: string; color: string }> =
   '6': { label: 'Suspended', color: 'bg-orange-100 text-orange-700' },
 };
 
-// Format currency
-function formatCurrency(value: number, currency: string = 'USD'): string {
+// Format currency without $ sign
+function formatCurrencyAmount(value: number, currency: string = 'USD'): string {
   return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency,
     notation: 'compact',
     maximumFractionDigits: 1,
   }).format(value);
@@ -194,7 +192,8 @@ export function BookmarkedActivitiesTable() {
               <TableRow>
                 <TableHead className="w-[35%]">Activity</TableHead>
                 <TableHead>Reported By</TableHead>
-                <TableHead>Status</TableHead>
+                <TableHead>Activity Status</TableHead>
+                <TableHead>Publication Status</TableHead>
                 <TableHead className="text-right">Budget</TableHead>
                 <TableHead>Updated</TableHead>
                 <TableHead className="w-[60px]"></TableHead>
@@ -245,26 +244,32 @@ export function BookmarkedActivitiesTable() {
                     </div>
                   </TableCell>
                   <TableCell>
-                    <div className="flex flex-col gap-1">
-                      {activity.activity_status && (
-                        <span className={`text-xs px-1.5 py-0.5 rounded inline-block w-fit ${ACTIVITY_STATUS_LABELS[activity.activity_status]?.color || 'bg-gray-100'}`}>
-                          {ACTIVITY_STATUS_LABELS[activity.activity_status]?.label || activity.activity_status}
-                        </span>
-                      )}
-                      <Badge variant={activity.publication_status === 'published' ? 'default' : 'secondary'} className="w-fit">
-                        {activity.publication_status || 'draft'}
-                      </Badge>
-                    </div>
+                    {activity.activity_status ? (
+                      <span className={`text-xs px-1.5 py-0.5 rounded inline-block w-fit ${ACTIVITY_STATUS_LABELS[activity.activity_status]?.color || 'bg-gray-100 text-gray-700'}`}>
+                        {ACTIVITY_STATUS_LABELS[activity.activity_status]?.label || activity.activity_status}
+                      </span>
+                    ) : (
+                      <span className="text-slate-400">-</span>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant={activity.publication_status === 'published' ? 'default' : 'secondary'} className="w-fit">
+                      {activity.publication_status || 'draft'}
+                    </Badge>
                   </TableCell>
                   <TableCell className="text-right">
                     {activity.totalBudgetOriginal && activity.totalBudgetOriginal > 0 ? (
                       <div className="text-sm">
                         <div className="font-medium">
-                          {formatCurrency(activity.totalBudgetOriginal, activity.totalBudgetCurrency || 'USD')}
+                          <span className="text-xs text-gray-500 mr-1">
+                            {activity.totalBudgetCurrency || 'USD'}
+                          </span>
+                          {formatCurrencyAmount(activity.totalBudgetOriginal, activity.totalBudgetCurrency || 'USD')}
                         </div>
                         {activity.totalBudgetCurrency && activity.totalBudgetCurrency !== 'USD' && activity.totalBudgetUSD && activity.totalBudgetUSD > 0 && (
                           <div className="text-xs text-slate-500">
-                            {formatCurrency(activity.totalBudgetUSD, 'USD')}
+                            <span className="text-xs text-gray-500 mr-1">USD</span>
+                            {formatCurrencyAmount(activity.totalBudgetUSD, 'USD')}
                           </div>
                         )}
                       </div>

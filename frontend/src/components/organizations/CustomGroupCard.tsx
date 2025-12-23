@@ -150,13 +150,12 @@ export function CustomGroupCard({ group, onEdit, onDelete }: CustomGroupCardProp
         >
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                className="h-8 w-8 bg-white hover:bg-gray-50 shadow-md border border-gray-300 rounded-full"
-              >
-                <MoreVertical className="h-4 w-4 text-gray-600" />
-              </Button>
+            <Button 
+              variant="outline" 
+              size="icon"
+            >
+              <MoreVertical className="h-4 w-4" />
+            </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuItem onClick={() => onEdit(group)}>

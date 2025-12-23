@@ -44,6 +44,10 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useRouter } from "next/navigation";
@@ -584,7 +588,7 @@ const COLUMN_CONFIGS: ColumnConfig[] = [
   { id: 'sdgs', label: 'SDGs', group: 'sdgs', width: 'min-w-[120px]', defaultVisible: false, align: 'left' },
 
   // Budget status column
-  { id: 'budgetStatus', label: 'Budget Status', group: 'default', width: 'min-w-[130px]', defaultVisible: true, align: 'center' },
+  { id: 'budgetStatus', label: 'Budget Status', group: 'governmentSystemsAlignment', width: 'min-w-[130px]', defaultVisible: false, align: 'center' },
 
   // Description columns
   { id: 'descriptionGeneral', label: 'Activity Description – General', group: 'descriptions', width: 'min-w-[200px]', defaultVisible: false, align: 'left' },
@@ -631,6 +635,7 @@ const COLUMN_GROUPS = {
   durations: 'Activity Durations',
   dates: 'Activity Dates',
   sdgs: 'SDGs',
+  governmentSystemsAlignment: 'Government Systems Alignment',
 };
 
 const DEFAULT_VISIBLE_COLUMNS: ColumnId[] = COLUMN_CONFIGS
@@ -3806,14 +3811,14 @@ const router = useRouter();
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                               <Button
-                                size="sm"
-                                variant="ghost"
-                                className="h-8 w-8 p-0"
+                                variant="outline"
+                                size="icon"
+                                className="h-8 w-8"
                               >
                                 <MoreVertical className="h-4 w-4" />
                               </Button>
                             </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="w-48">
+                            <DropdownMenuContent align="end" className="w-56">
                               <DropdownMenuItem
                                 onClick={(e) => {
                                   e.preventDefault();
@@ -3842,29 +3847,39 @@ const router = useRouter();
                                   Edit
                                 </DropdownMenuItem>
                               )}
-<DropdownMenuItem
-                                onClick={() => {
-                                  toast.info("Export to IATI XML feature coming soon");
-                                }}
-                                className="cursor-pointer"
-                              >
-                                <FileCode className="mr-2 h-4 w-4" />
-                                Export to XML
-                              </DropdownMenuItem>
-                              <DropdownMenuItem
-                                onClick={() => handleExportActivityPDF(activity.id)}
-                                className="cursor-pointer"
-                              >
-                                <FileText className="mr-2 h-4 w-4" />
-                                Export as PDF
-                              </DropdownMenuItem>
-                              <DropdownMenuItem
-                                onClick={() => handleExportActivityExcel(activity.id)}
-                                className="cursor-pointer"
-                              >
-                                <FileSpreadsheet className="mr-2 h-4 w-4" />
-                                Export as Excel
-                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuSub>
+                                <DropdownMenuSubTrigger>
+                                  <FileText className="mr-2 h-4 w-4" />
+                                  Export
+                                </DropdownMenuSubTrigger>
+                                <DropdownMenuSubContent className="w-48">
+                                  <DropdownMenuItem
+                                    onClick={() => {
+                                      toast.info("Export to IATI XML feature coming soon");
+                                    }}
+                                    className="cursor-pointer"
+                                  >
+                                    <FileCode className="mr-2 h-4 w-4" />
+                                    Export to XML
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem
+                                    onClick={() => handleExportActivityPDF(activity.id)}
+                                    className="cursor-pointer"
+                                  >
+                                    <FileText className="mr-2 h-4 w-4" />
+                                    Export as PDF
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem
+                                    onClick={() => handleExportActivityExcel(activity.id)}
+                                    className="cursor-pointer"
+                                  >
+                                    <FileSpreadsheet className="mr-2 h-4 w-4" />
+                                    Export as Excel
+                                  </DropdownMenuItem>
+                                </DropdownMenuSubContent>
+                              </DropdownMenuSub>
+                              <DropdownMenuSeparator />
                               <DropdownMenuItem
                                 onClick={() => setDeleteActivityId(activity.id)}
                                 className="cursor-pointer text-red-600 hover:text-red-700 hover:bg-red-50"

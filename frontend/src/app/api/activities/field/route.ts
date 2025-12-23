@@ -984,6 +984,14 @@ export async function POST(request: Request) {
       }
     }
 
+    // Always update the activity-level timestamps when any field changes
+    if (Object.keys(updateData).length > 0) {
+      updateData.updated_at = new Date().toISOString();
+      if (body.user?.id) {
+        updateData.updated_by = body.user.id;
+      }
+    }
+
     // Update activity
     let updatedActivity;
     let updateError;
@@ -1034,18 +1042,27 @@ export async function POST(request: Request) {
         );
       }
     } else {
-      // For sectors, locations, policy markers, working groups, and contacts, fetch the activity for response data
+      // For sectors, locations, policy markers, working groups, and contacts:
+      // Update the activity timestamps to reflect that the activity was edited
+      const timestampUpdate: any = {
+        updated_at: new Date().toISOString()
+      };
+      if (body.user?.id) {
+        timestampUpdate.updated_by = body.user.id;
+      }
+      
       const fetchResult = await getSupabaseAdmin()
         .from('activities')
-        .select('*')
+        .update(timestampUpdate)
         .eq('id', body.activityId)
+        .select('*')
         .single();
       updatedActivity = fetchResult.data;
       updateError = fetchResult.error;
       if (updateError) {
-        console.error('[Field API] Error fetching activity after field update:', updateError);
+        console.error('[Field API] Error updating activity timestamps after field update:', updateError);
         return NextResponse.json(
-          { error: updateError.message || 'Failed to fetch activity after field update' },
+          { error: updateError.message || 'Failed to update activity after field update' },
           { status: 500 }
         );
       }

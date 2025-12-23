@@ -63,7 +63,7 @@ export async function GET(request: NextRequest) {
       // Last activity created
       supabase
         .from('activities')
-        .select('id, title_narrative, created_at')
+        .select('id, title_narrative, iati_identifier, created_at')
         .eq('reporting_org_id', organizationId)
         .order('created_at', { ascending: false })
         .limit(1)
@@ -122,6 +122,7 @@ export async function GET(request: NextRequest) {
         id: lastCreatedResult.data.id,
         title: lastCreatedResult.data.title_narrative || 'Untitled Activity',
         timestamp: lastCreatedResult.data.created_at,
+        iatiIdentifier: lastCreatedResult.data.iati_identifier || undefined,
       };
     }
 

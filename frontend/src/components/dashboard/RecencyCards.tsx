@@ -116,17 +116,24 @@ export function RecencyCards({ organizationId }: RecencyCardsProps) {
         </CardHeader>
         <CardContent>
           {lastCreated ? (
-            <>
-              <p className="font-medium text-slate-900 truncate" title={lastCreated.title}>
+            <div>
+              <p className="font-medium text-slate-900 leading-snug" title={lastCreated.title}>
                 {lastCreated.title}
               </p>
+              {lastCreated.iatiIdentifier && (
+                <p className="mt-1.5">
+                  <code className="text-xs font-mono bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded">
+                    {lastCreated.iatiIdentifier}
+                  </code>
+                </p>
+              )}
               <p
-                className="text-xs text-slate-500 mt-1"
+                className="text-xs text-slate-500 mt-1.5"
                 title={formatTimestamp(lastCreated.timestamp).absolute}
               >
                 {formatTimestamp(lastCreated.timestamp).relative}
               </p>
-            </>
+            </div>
           ) : (
             <p className="text-sm text-slate-500 italic">No activities created yet</p>
           )}

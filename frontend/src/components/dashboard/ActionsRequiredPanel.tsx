@@ -24,47 +24,60 @@ interface ActionsRequiredPanelProps {
   limit?: number;
 }
 
+// Color palette:
+// Primary Scarlet: #dc2625 - highest priority
+// Blue Slate: #4c5568 - high priority  
+// Cool Steel: #7b95a7 - medium priority
+// Pale Slate: #cfd0d5 - lower priority
+// Platinum: #f1f4f8 - lowest priority
+
 // Action type configuration
 const ACTION_CONFIG: Record<ActionType, {
   icon: React.ElementType;
   color: string;
   bgColor: string;
   badgeVariant: 'destructive' | 'warning' | 'default' | 'secondary' | 'outline';
+  badgeStyle?: string;
   label: string;
 }> = {
   validation_returned: {
     icon: AlertCircle,
-    color: 'text-red-600',
-    bgColor: 'bg-red-50',
+    color: 'text-[#dc2625]',
+    bgColor: 'bg-[#dc2625]/10',
     badgeVariant: 'destructive',
+    badgeStyle: 'bg-[#dc2625] text-white hover:bg-[#dc2625]/90',
     label: 'Validation Returned',
   },
   missing_data: {
     icon: AlertTriangle,
-    color: 'text-orange-600',
-    bgColor: 'bg-orange-50',
-    badgeVariant: 'warning',
+    color: 'text-[#4c5568]',
+    bgColor: 'bg-[#4c5568]/10',
+    badgeVariant: 'secondary',
+    badgeStyle: 'bg-[#4c5568] text-white hover:bg-[#4c5568]/90',
     label: 'Missing Data',
   },
   closing_soon: {
     icon: Clock,
-    color: 'text-yellow-600',
-    bgColor: 'bg-yellow-50',
+    color: 'text-[#7b95a7]',
+    bgColor: 'bg-[#7b95a7]/10',
     badgeVariant: 'default',
+    badgeStyle: 'bg-[#7b95a7] text-white hover:bg-[#7b95a7]/90',
     label: 'Closing Soon',
   },
   out_of_date: {
     icon: History,
-    color: 'text-gray-600',
-    bgColor: 'bg-gray-50',
+    color: 'text-[#4c5568]',
+    bgColor: 'bg-[#cfd0d5]/30',
     badgeVariant: 'secondary',
+    badgeStyle: 'bg-[#cfd0d5] text-[#4c5568] hover:bg-[#cfd0d5]/90',
     label: 'Needs Update',
   },
   new_comment: {
     icon: MessageSquare,
-    color: 'text-blue-600',
-    bgColor: 'bg-blue-50',
+    color: 'text-[#7b95a7]',
+    bgColor: 'bg-[#f1f4f8]',
     badgeVariant: 'outline',
+    badgeStyle: 'bg-[#f1f4f8] text-[#4c5568] border-[#cfd0d5] hover:bg-[#cfd0d5]/50',
     label: 'New Comment',
   },
 };
@@ -243,7 +256,10 @@ export function ActionsRequiredPanel({
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1">
-                    <Badge variant={config.badgeVariant} className="text-xs">
+                    <Badge 
+                      variant={config.badgeVariant} 
+                      className={`text-xs ${config.badgeStyle || ''}`}
+                    >
                       {config.label}
                     </Badge>
                   </div>

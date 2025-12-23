@@ -544,13 +544,15 @@ export function GlobalSearchBar({
                             {getResultIcon(suggestion as any)}
                           </div>
                           <div className="flex-1 min-w-0">
-                            <div className="font-medium text-sm truncate text-gray-900">
-                              {suggestion.title}
-                            </div>
+                            <div 
+                              className="font-medium text-sm truncate text-gray-900"
+                              dangerouslySetInnerHTML={{ __html: suggestion.title }}
+                            />
                             {suggestion.subtitle && (
-                              <div className="text-xs text-gray-500 mt-1 truncate">
-                                {suggestion.subtitle}
-                              </div>
+                              <div 
+                                className="text-xs text-gray-500 mt-1 truncate"
+                                dangerouslySetInnerHTML={{ __html: suggestion.subtitle }}
+                              />
                             )}
                             {suggestion.metadata?.category && (
                               <div className="text-xs text-gray-400 mt-1">
@@ -623,7 +625,7 @@ export function GlobalSearchBar({
                             </div>
                             <div className="flex-1 min-w-0">
                               <div className="font-medium text-sm truncate text-gray-900">
-                                {result.title}
+                                <span dangerouslySetInnerHTML={{ __html: result.title }} />
                                 {result.type === 'organization' && result.metadata?.acronym && (
                                   <span className="ml-2">({result.metadata.acronym})</span>
                                 )}
@@ -634,9 +636,10 @@ export function GlobalSearchBar({
                               {result.type === 'organization' && (
                                 <div className="text-xs text-gray-500 mt-1">
                                   {result.subtitle && (
-                                    <div className="truncate">
-                                      {result.subtitle}
-                                    </div>
+                                    <div 
+                                      className="truncate"
+                                      dangerouslySetInnerHTML={{ __html: result.subtitle }}
+                                    />
                                   )}
                                 </div>
                               )}
@@ -661,9 +664,10 @@ export function GlobalSearchBar({
                                 </div>
                               )}
                               {result.type === 'user' && result.subtitle && (
-                                <div className="text-xs text-gray-500 mt-1 truncate">
-                                  {result.subtitle}
-                                </div>
+                                <div 
+                                  className="text-xs text-gray-500 mt-1 truncate"
+                                  dangerouslySetInnerHTML={{ __html: result.subtitle }}
+                                />
                               )}
                               {result.type === 'sector' && (
                                 <div className="text-xs text-gray-500 mt-1">

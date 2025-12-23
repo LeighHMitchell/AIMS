@@ -9,6 +9,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
@@ -273,15 +274,14 @@ const ActivityCardWithSDG: React.FC<ActivityCardWithSDGProps> = ({
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button
-              variant="ghost"
+              variant="outline"
               size="icon"
-              className="h-8 w-8 bg-white hover:bg-gray-50 shadow-md border border-gray-300 rounded-full"
               onClick={(e) => e.stopPropagation()}
             >
-              <MoreVertical className="h-4 w-4 text-gray-600" />
+              <MoreVertical className="h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>
-<DropdownMenuContent align="end" className="w-48">
+<DropdownMenuContent align="end" className="w-56">
             <DropdownMenuItem 
               onClick={(e) => {
                 e.preventDefault();
@@ -309,13 +309,16 @@ const ActivityCardWithSDG: React.FC<ActivityCardWithSDGProps> = ({
               </DropdownMenuItem>
             )}
             {onDelete && (
-              <DropdownMenuItem
-                onClick={handleDelete}
-                className="cursor-pointer text-red-600 hover:text-red-700 hover:bg-red-50"
-              >
-                <Trash2 className="mr-2 h-4 w-4" />
-                Delete
-              </DropdownMenuItem>
+              <>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onClick={handleDelete}
+                  className="cursor-pointer text-red-600 hover:text-red-700 hover:bg-red-50"
+                >
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  Delete
+                </DropdownMenuItem>
+              </>
             )}
           </DropdownMenuContent>
         </DropdownMenu>

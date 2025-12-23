@@ -34,7 +34,9 @@ import {
   Merge,
   Loader2,
   ArrowLeft,
+  ArrowRight,
   Search,
+  MessageSquare,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import {
@@ -67,6 +69,13 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet"
+import { OrganizationComments } from './OrganizationComments'
 
 const REGIONAL_OPTIONS = [
   { code: '998', name: 'Global or Regional', isRegion: true }
@@ -124,15 +133,7 @@ const SaveIndicator = ({
     )
   }
 
-  if (lastSave && !isCreating) {
-    return (
-      <div className="flex items-center gap-1 text-green-600 text-xs">
-        <CheckCircle className="h-3 w-3" />
-        Saved {lastSave.toLocaleTimeString()}
-      </div>
-    )
-  }
-
+  // Don't show saved indicator - removed per user request
   return null
 }
 
@@ -233,11 +234,14 @@ const ImageUpload: React.FC<{
   label: string
   recommendedSize: string
   isLogo?: boolean
-}> = ({ value, onChange, label, recommendedSize, isLogo = false }) => {
+  disabled?: boolean
+}> = ({ value, onChange, label, recommendedSize, isLogo = false, disabled = false }) => {
   const [uploading, setUploading] = useState(false)
   const [preview, setPreview] = useState<string | null>(value || null)
 
   const onDrop = useCallback(async (acceptedFiles: File[]) => {
+    if (disabled) return
+    
     const file = acceptedFiles[0]
     if (!file) return
 
@@ -268,7 +272,7 @@ const ImageUpload: React.FC<{
     } finally {
       setUploading(false)
     }
-  }, [onChange, label])
+  }, [onChange, label, disabled])
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
@@ -276,7 +280,7 @@ const ImageUpload: React.FC<{
       'image/*': ['.png', '.jpg', '.jpeg', '.gif', '.webp']
     },
     maxFiles: 1,
-    disabled: uploading
+    disabled: uploading || disabled
   })
 
   const removeImage = () => {
@@ -305,6 +309,7 @@ const ImageUpload: React.FC<{
             variant="destructive"
             size="sm"
             onClick={removeImage}
+            disabled={disabled}
             className="absolute top-2 right-2"
           >
             <X className="h-4 w-4" />
@@ -313,9 +318,9 @@ const ImageUpload: React.FC<{
       ) : (
         <div
           {...getRootProps()}
-          className={`border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors
-            ${isDragActive ? 'border-primary bg-primary/5' : 'border-gray-300 hover:border-gray-400'}
-            ${uploading ? 'opacity-50 cursor-not-allowed' : ''}
+          className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors
+            ${isDragActive && !disabled ? 'border-primary bg-primary/5' : 'border-gray-300 hover:border-gray-400'}
+            ${uploading || disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
             h-40`}
         >
           <input {...getInputProps()} />
@@ -423,6 +428,10 @@ export function OrganizationEditor({
   const [isMerging, setIsMerging] = useState(false)
   const [showMergeConfirm, setShowMergeConfirm] = useState(false)
   const [loadingMergePreview, setLoadingMergePreview] = useState(false)
+  
+  // Comments drawer state
+  const [isCommentsDrawerOpen, setIsCommentsDrawerOpen] = useState(false)
+  const [savingAll, setSavingAll] = useState(false)
 
   // Set initial section from URL parameter
   useEffect(() => {
@@ -486,7 +495,15 @@ export function OrganizationEditor({
   const updateField = async (fieldName: string, value: any, displayName: string) => {
     // If creating and no organizationId yet, try to create organization if we have required fields
     if (isCreating && !organizationId) {
-      const updatedFormData = { ...formData, [fieldName]: value }
+      // Update formData first, then check if we can create
+      let updatedFormData: Partial<Organization> = { ...formData, [fieldName]: value }
+      setFormData(prev => {
+        updatedFormData = { ...prev, [fieldName]: value }
+        return updatedFormData
+      })
+      
+      // Small delay to ensure state is updated
+      await new Promise(resolve => setTimeout(resolve, 0))
       
       // Check if we have all required fields to create
       if (updatedFormData.name?.trim() && updatedFormData.acronym?.trim() && 
@@ -495,6 +512,7 @@ export function OrganizationEditor({
         setSaving(prev => ({ ...prev, [fieldName]: true }))
         
         try {
+          console.log('[OrganizationEditor] Creating organization with data:', updatedFormData)
           const response = await fetch('/api/organizations', {
             method: 'POST',
             headers: {
@@ -509,6 +527,7 @@ export function OrganizationEditor({
           }
 
           const newOrganization = await response.json()
+          console.log('[OrganizationEditor] Organization created:', newOrganization.id)
           setOrganizationId(newOrganization.id)
           
           if (onCreate) {
@@ -524,7 +543,7 @@ export function OrganizationEditor({
           // Update form data with the new org data
           setFormData(prev => ({ ...prev, ...newOrganization, [fieldName]: value }))
         } catch (error) {
-          console.error(`Error creating organization:`, error)
+          console.error(`[OrganizationEditor] Error creating organization:`, error)
           toast.error(`Failed to create organization`, {
             position: 'top-right',
             duration: 3000
@@ -535,7 +554,12 @@ export function OrganizationEditor({
         return
       } else {
         // Just update local state for now
-        setFormData(prev => ({ ...prev, [fieldName]: value }))
+        console.log('[OrganizationEditor] Not all required fields filled yet:', {
+          name: updatedFormData.name?.trim(),
+          acronym: updatedFormData.acronym?.trim(),
+          type: updatedFormData.Organisation_Type_Code?.trim(),
+          country: updatedFormData.country_represented?.trim()
+        })
         return
       }
     }
@@ -574,6 +598,19 @@ export function OrganizationEditor({
     }
   }
 
+  // Helper function to determine if a field should be disabled
+  const isFieldDisabled = (fieldName: string): boolean => {
+    // Always disabled if currently saving
+    if (saving[fieldName]) return true
+    
+    // When creating a new organization, disable all fields (except name) until name is entered
+    if (isCreating && !organizationId && fieldName !== 'name') {
+      return !formData.name?.trim()
+    }
+    
+    return false
+  }
+
   // Handle form changes with optimistic updates
   const handleFieldChange = (fieldName: string, value: string) => {
     setFormData(prev => ({ ...prev, [fieldName]: value }))
@@ -581,14 +618,13 @@ export function OrganizationEditor({
 
   // Handle field blur events for saving
   const handleFieldBlur = async (fieldName: string, value: string, displayName: string) => {
-    if (!isCreating || organizationId) {
-      await updateField(fieldName, value, displayName)
-    }
+    // Always call updateField - it handles both creating and updating
+    await updateField(fieldName, value, displayName)
   }
 
   // Fetch all organizations for merge dropdown
   useEffect(() => {
-    if (activeSection === 'aliases' && organizationId && !isCreating) {
+    if (activeSection === 'merge' && organizationId && !isCreating) {
       const fetchOrganizations = async () => {
         try {
           const response = await fetch('/api/organizations')
@@ -725,12 +761,37 @@ export function OrganizationEditor({
       branding: 'Branding',
       contact: 'Contact & Social Media',
       aliases: 'Aliases',
+      merge: 'Merge',
       'funding-envelope': 'Organisation Funding Envelope',
       budgets: 'IATI Budgets',
       documents: 'IATI Documents',
       'iati-prefs': 'IATI Import Preferences'
     }
     return labels[sectionId] || sectionId
+  }
+
+  // Define all navigation sections in order
+  const allSections = [
+    'general', 'branding', 'contact', 'aliases', 'merge',
+    'funding-envelope', 'iati-import', 'budgets', 'documents', 'iati-prefs'
+  ]
+
+  // Navigation helpers
+  const currentSectionIndex = allSections.indexOf(activeSection)
+  const isLastSection = currentSectionIndex === allSections.length - 1
+  const isFirstSection = currentSectionIndex === 0
+  const nextSection = !isLastSection ? allSections[currentSectionIndex + 1] : null
+  const previousSection = !isFirstSection ? allSections[currentSectionIndex - 1] : null
+
+  // Save and go to next section
+  const handleSaveAndNext = async () => {
+    if (nextSection) {
+      setSavingAll(true)
+      // Small delay to allow any pending autosaves to complete
+      await new Promise(resolve => setTimeout(resolve, 300))
+      handleSectionChange(nextSection)
+      setSavingAll(false)
+    }
   }
 
   // Tab completion status calculation
@@ -750,6 +811,10 @@ export function OrganizationEditor({
     },
     aliases: {
       isComplete: ((formData.alias_refs?.length || 0) > 0 || (formData.name_aliases?.length || 0) > 0),
+      isInProgress: false
+    },
+    merge: {
+      isComplete: false, // Always optional
       isInProgress: false
     },
     'funding-envelope': {
@@ -879,7 +944,7 @@ export function OrganizationEditor({
             <OrganizationEditorNavigation
               activeSection={activeSection}
               onSectionChange={handleSectionChange}
-              organizationCreated={!!organizationId}
+              organizationCreated={!!organizationId || !!(isCreating && formData.name?.trim())}
               tabCompletionStatus={tabCompletionStatus}
               disabled={Object.values(saving).some(v => v)}
             />
@@ -888,7 +953,7 @@ export function OrganizationEditor({
 
         {/* Main Content Panel */}
         <main className="flex-1 overflow-y-auto bg-white">
-          <div className="organization-editor pl-0 pr-6 md:pr-8 py-6 pb-24">
+          <div className="organization-editor pl-0 pr-6 md:pr-8 py-6 pb-32">
             {/* Header */}
             <div className="flex items-center justify-between border-b border-gray-200 pb-4 mb-6">
               <div className="flex items-center gap-4">
@@ -919,6 +984,29 @@ export function OrganizationEditor({
 
             {/* Section Content */}
             <div className="fade-in">
+            {/* Organization Header Info - Show when organization exists or has name */}
+            {(organizationId || formData.name) && (
+              <div className="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <div>
+                      <h2 className="text-xl font-semibold text-gray-900">
+                        {formData.name || 'Untitled Organization'}
+                        {formData.acronym && (
+                          <span className="text-lg text-gray-600 ml-2">({formData.acronym})</span>
+                        )}
+                      </h2>
+                      {organizationId && (
+                        <p className="text-sm text-gray-500 mt-1 font-mono">
+                          ID: {organizationId}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+            
             {/* Section Header */}
             <div className="flex items-center gap-3 mb-6">
               <h2 className="text-2xl font-semibold">{getSectionLabel(activeSection)}</h2>
@@ -944,11 +1032,10 @@ export function OrganizationEditor({
                           value={formData.name || ''}
                           onChange={(e) => handleFieldChange('name', e.target.value)}
                           onBlur={(e) => handleFieldBlur('name', e.target.value, 'Name')}
-                          disabled={saving.name}
+                          disabled={isFieldDisabled('name')}
                           placeholder="Danish International Development Agency"
                           className="w-full"
                         />
-                        <SaveIndicator saving={saving} lastSaved={lastSaved} isCreating={isCreating} fieldName="name" />
                       </div>
                     </FieldWrapper>
 
@@ -960,11 +1047,10 @@ export function OrganizationEditor({
                           value={formData.acronym || ''}
                           onChange={(e) => handleFieldChange('acronym', e.target.value)}
                           onBlur={(e) => handleFieldBlur('acronym', e.target.value, 'Acronym')}
-                          disabled={saving.acronym}
+                          disabled={isFieldDisabled('acronym')}
                           placeholder="DANIDA"
                           className="w-full"
                         />
-                        <SaveIndicator saving={saving} lastSaved={lastSaved} isCreating={isCreating} fieldName="acronym" />
                       </div>
                     </FieldWrapper>
 
@@ -980,6 +1066,7 @@ export function OrganizationEditor({
                           }}
                           open={countrySelectOpen}
                           onOpenChange={setCountrySelectOpen}
+                          disabled={isFieldDisabled('country_represented')}
                         >
                           <SelectTrigger className="w-full">
                             <SelectValue placeholder="Select country or region">
@@ -1090,7 +1177,6 @@ export function OrganizationEditor({
                             })()}
                           </SelectContent>
                         </Select>
-                        <SaveIndicator saving={saving} lastSaved={lastSaved} isCreating={isCreating} fieldName="country_represented" />
                       </div>
                     </FieldWrapper>
 
@@ -1103,7 +1189,7 @@ export function OrganizationEditor({
                             handleFieldChange('Organisation_Type_Code', value)
                             handleFieldBlur('Organisation_Type_Code', value, 'Organisation Type')
                           }}
-                          disabled={loadingTypes}
+                          disabled={loadingTypes || isFieldDisabled('Organisation_Type_Code')}
                         >
                           <SelectTrigger className="w-full [&>span]:line-clamp-none [&>span]:whitespace-nowrap">
                             <SelectValue placeholder={loadingTypes ? "Loading types..." : "Select organisation type"}>
@@ -1136,7 +1222,6 @@ export function OrganizationEditor({
                               ))}
                           </SelectContent>
                         </Select>
-                        <SaveIndicator saving={saving} lastSaved={lastSaved} isCreating={isCreating} fieldName="Organisation_Type_Code" />
                       </div>
                     </FieldWrapper>
                   </div>
@@ -1149,11 +1234,10 @@ export function OrganizationEditor({
                         value={formData.description || ''}
                         onChange={(e) => handleFieldChange('description', e.target.value)}
                         onBlur={(e) => handleFieldBlur('description', e.target.value, 'Description')}
-                        disabled={saving.description}
+                        disabled={isFieldDisabled('description')}
                         placeholder="Brief description of the organization"
                         className="resize-y min-h-[120px]"
                       />
-                      <SaveIndicator saving={saving} lastSaved={lastSaved} isCreating={isCreating} fieldName="description" />
                     </div>
                   </FieldWrapper>
 
@@ -1170,7 +1254,7 @@ export function OrganizationEditor({
                               value={formData.iati_org_id || ''}
                               onChange={(e) => handleFieldChange('iati_org_id', e.target.value)}
                               onBlur={(e) => handleFieldBlur('iati_org_id', e.target.value, 'IATI Organisation Identifier')}
-                              disabled={saving.iati_org_id}
+                              disabled={isFieldDisabled('iati_org_id')}
                               placeholder="DK-CVR-20228799"
                               className="pr-10"
                             />
@@ -1187,7 +1271,6 @@ export function OrganizationEditor({
                             )}
                           </div>
                         </div>
-                        <SaveIndicator saving={saving} lastSaved={lastSaved} isCreating={isCreating} fieldName="iati_org_id" />
                       </div>
                     </FieldWrapper>
 
@@ -1223,6 +1306,7 @@ export function OrganizationEditor({
                             handleFieldChange('default_currency', value)
                             handleFieldBlur('default_currency', value, 'Default Currency')
                           }}
+                          disabled={isFieldDisabled('default_currency')}
                         >
                           <SelectTrigger className="w-full [&>span]:line-clamp-none [&>span]:whitespace-nowrap">
                             <SelectValue placeholder="Select currency">
@@ -1317,7 +1401,6 @@ export function OrganizationEditor({
                             </SelectItem>
                           </SelectContent>
                         </Select>
-                        <SaveIndicator saving={saving} lastSaved={lastSaved} isCreating={isCreating} fieldName="default_currency" />
                       </div>
                     </FieldWrapper>
 
@@ -1330,6 +1413,7 @@ export function OrganizationEditor({
                             handleFieldChange('default_language', value)
                             handleFieldBlur('default_language', value, 'Default Language')
                           }}
+                          disabled={isFieldDisabled('default_language')}
                         >
                           <SelectTrigger className="w-full [&>span]:line-clamp-none [&>span]:whitespace-nowrap">
                             <SelectValue placeholder="Select language">
@@ -1417,7 +1501,6 @@ export function OrganizationEditor({
                             </SelectItem>
                           </SelectContent>
                         </Select>
-                        <SaveIndicator saving={saving} lastSaved={lastSaved} isCreating={isCreating} fieldName="default_language" />
                       </div>
                     </FieldWrapper>
                   </div>
@@ -1450,8 +1533,8 @@ export function OrganizationEditor({
                         label="Logo"
                         recommendedSize="512×512px"
                         isLogo={true}
+                        disabled={isFieldDisabled('logo')}
                       />
-                      <SaveIndicator saving={saving} lastSaved={lastSaved} isCreating={isCreating} fieldName="logo" />
                     </div>
 
                     <div className="flex-grow">
@@ -1464,8 +1547,8 @@ export function OrganizationEditor({
                         label="Banner"
                         recommendedSize="1200×300px"
                         isLogo={false}
+                        disabled={isFieldDisabled('banner')}
                       />
-                      <SaveIndicator saving={saving} lastSaved={lastSaved} isCreating={isCreating} fieldName="banner" />
                     </div>
                   </div>
                 </CardContent>
@@ -1498,12 +1581,11 @@ export function OrganizationEditor({
                               value={formData.email || ''}
                               onChange={(e) => handleFieldChange('email', e.target.value)}
                               onBlur={(e) => handleFieldBlur('email', e.target.value, 'Email')}
-                              disabled={saving.email}
+                              disabled={isFieldDisabled('email')}
                               placeholder="contact@organization.org"
                               className="flex-1"
                             />
                           </div>
-                          <SaveIndicator saving={saving} lastSaved={lastSaved} isCreating={isCreating} fieldName="email" />
                         </div>
                       </FieldWrapper>
 
@@ -1515,12 +1597,11 @@ export function OrganizationEditor({
                               value={formData.phone || ''}
                               onChange={(e) => handleFieldChange('phone', e.target.value)}
                               onBlur={(e) => handleFieldBlur('phone', e.target.value, 'Phone')}
-                              disabled={saving.phone}
+                              disabled={isFieldDisabled('phone')}
                               placeholder="+1 234 567 8900"
                               className="flex-1"
                             />
                           </div>
-                          <SaveIndicator saving={saving} lastSaved={lastSaved} isCreating={isCreating} fieldName="phone" />
                         </div>
                       </FieldWrapper>
 
@@ -1533,12 +1614,11 @@ export function OrganizationEditor({
                               value={formData.website || ''}
                               onChange={(e) => handleFieldChange('website', e.target.value)}
                               onBlur={(e) => handleFieldBlur('website', e.target.value, 'Website')}
-                              disabled={saving.website}
+                              disabled={isFieldDisabled('website')}
                               placeholder="https://www.organization.org"
                               className="flex-1"
                             />
                           </div>
-                          <SaveIndicator saving={saving} lastSaved={lastSaved} isCreating={isCreating} fieldName="website" />
                         </div>
                       </FieldWrapper>
 
@@ -1551,13 +1631,12 @@ export function OrganizationEditor({
                                 value={formData.address || ''}
                                 onChange={(e) => handleFieldChange('address', e.target.value)}
                                 onBlur={(e) => handleFieldBlur('address', e.target.value, 'Address')}
-                                disabled={saving.address}
+                                disabled={isFieldDisabled('address')}
                                 placeholder="Full mailing address"
                                 rows={3}
                                 className="resize-y min-h-[80px] flex-1"
                               />
                             </div>
-                            <SaveIndicator saving={saving} lastSaved={lastSaved} isCreating={isCreating} fieldName="address" />
                           </div>
                         </FieldWrapper>
                       </div>
@@ -1578,12 +1657,11 @@ export function OrganizationEditor({
                               value={formData.social_twitter || ''}
                               onChange={(e) => handleFieldChange('social_twitter', e.target.value)}
                               onBlur={(e) => handleFieldBlur('social_twitter', e.target.value, 'Twitter')}
-                              disabled={saving.social_twitter}
+                              disabled={isFieldDisabled('social_twitter')}
                               placeholder="https://twitter.com/yourorg or @yourorg"
                               className="flex-1"
                             />
                           </div>
-                          <SaveIndicator saving={saving} lastSaved={lastSaved} isCreating={isCreating} fieldName="social_twitter" />
                         </div>
                       </FieldWrapper>
 
@@ -1595,12 +1673,11 @@ export function OrganizationEditor({
                               value={formData.social_facebook || ''}
                               onChange={(e) => handleFieldChange('social_facebook', e.target.value)}
                               onBlur={(e) => handleFieldBlur('social_facebook', e.target.value, 'Facebook')}
-                              disabled={saving.social_facebook}
+                              disabled={isFieldDisabled('social_facebook')}
                               placeholder="https://facebook.com/yourorg"
                               className="flex-1"
                             />
                           </div>
-                          <SaveIndicator saving={saving} lastSaved={lastSaved} isCreating={isCreating} fieldName="social_facebook" />
                         </div>
                       </FieldWrapper>
 
@@ -1612,12 +1689,11 @@ export function OrganizationEditor({
                               value={formData.social_linkedin || ''}
                               onChange={(e) => handleFieldChange('social_linkedin', e.target.value)}
                               onBlur={(e) => handleFieldBlur('social_linkedin', e.target.value, 'LinkedIn')}
-                              disabled={saving.social_linkedin}
+                              disabled={isFieldDisabled('social_linkedin')}
                               placeholder="https://linkedin.com/company/yourorg"
                               className="flex-1"
                             />
                           </div>
-                          <SaveIndicator saving={saving} lastSaved={lastSaved} isCreating={isCreating} fieldName="social_linkedin" />
                         </div>
                       </FieldWrapper>
 
@@ -1629,12 +1705,11 @@ export function OrganizationEditor({
                               value={formData.social_instagram || ''}
                               onChange={(e) => handleFieldChange('social_instagram', e.target.value)}
                               onBlur={(e) => handleFieldBlur('social_instagram', e.target.value, 'Instagram')}
-                              disabled={saving.social_instagram}
+                              disabled={isFieldDisabled('social_instagram')}
                               placeholder="https://instagram.com/yourorg or @yourorg"
                               className="flex-1"
                             />
                           </div>
-                          <SaveIndicator saving={saving} lastSaved={lastSaved} isCreating={isCreating} fieldName="social_instagram" />
                         </div>
                       </FieldWrapper>
 
@@ -1646,12 +1721,11 @@ export function OrganizationEditor({
                               value={formData.social_youtube || ''}
                               onChange={(e) => handleFieldChange('social_youtube', e.target.value)}
                               onBlur={(e) => handleFieldBlur('social_youtube', e.target.value, 'YouTube')}
-                              disabled={saving.social_youtube}
+                              disabled={isFieldDisabled('social_youtube')}
                               placeholder="https://youtube.com/@yourorg"
                               className="flex-1"
                             />
                           </div>
-                          <SaveIndicator saving={saving} lastSaved={lastSaved} isCreating={isCreating} fieldName="social_youtube" />
                         </div>
                       </FieldWrapper>
                     </div>
@@ -1699,8 +1773,8 @@ export function OrganizationEditor({
                           }
                         }}
                         id="alias_refs"
+                        disabled={isFieldDisabled('alias_refs')}
                       />
-                      <SaveIndicator saving={saving} lastSaved={lastSaved} isCreating={isCreating} fieldName="alias_refs" />
                     </FieldWrapper>
 
                     {/* Alternate Names */}
@@ -1717,19 +1791,28 @@ export function OrganizationEditor({
                           }
                         }}
                         id="name_aliases"
+                        disabled={isFieldDisabled('name_aliases')}
                       />
-                      <SaveIndicator saving={saving} lastSaved={lastSaved} isCreating={isCreating} fieldName="name_aliases" />
                     </FieldWrapper>
                   </div>
+                </CardContent>
+              </Card>
+              </div>
+            )}
 
-                  {/* Merge Another Organization Section */}
-                  {!isCreating && organizationId && (
-                    <div className="border-t pt-6 space-y-4">
-                      <div className="flex items-center gap-2">
-                        <Merge className="h-5 w-5 text-gray-600" />
-                        <h3 className="text-base font-semibold text-gray-900">Merge Another Organization</h3>
-                      </div>
-                      
+            {/* Merge Section */}
+            {activeSection === 'merge' && (
+              <div className="space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Merge className="h-5 w-5" />
+                    Merge Another Organization
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  {!isCreating && organizationId ? (
+                    <>
                       <p className="text-sm text-gray-600">
                         Merge a duplicate organization into this one. All activities, transactions, and references 
                         will be transferred to this organization, and the duplicate will be deleted.
@@ -1829,7 +1912,11 @@ export function OrganizationEditor({
                           after all its references are transferred to this organization.
                         </p>
                       </div>
-                    </div>
+                    </>
+                  ) : (
+                    <p className="text-sm text-gray-500">
+                      You can merge organizations once the organization has been created.
+                    </p>
                   )}
                 </CardContent>
               </Card>
@@ -1925,6 +2012,79 @@ export function OrganizationEditor({
 
             </div>
           </div>
+          
+          {/* Sticky Footer with Navigation Buttons */}
+          <footer className="fixed bottom-0 left-80 right-0 bg-white border-t border-gray-200 px-6 py-4 z-40">
+            <div className="flex items-center justify-between max-w-full">
+              {/* Left side: empty for balance */}
+              <div className="w-32"></div>
+
+              {/* Center: Empty space */}
+              <div className="flex-1"></div>
+
+              {/* Right side: Comments + Back + Save + Save & Next */}
+              <div className="flex items-center gap-3">
+                {/* Comments Button */}
+                {organizationId && (
+                  <Button
+                    variant="outline"
+                    className="px-4 py-3 text-base font-semibold"
+                    onClick={() => setIsCommentsDrawerOpen(true)}
+                  >
+                    <MessageSquare className="mr-2 h-5 w-5" />
+                    Comments
+                  </Button>
+                )}
+
+                {/* Back Button */}
+                <Button
+                  variant="outline"
+                  className="px-6 py-3 text-base font-semibold"
+                  onClick={() => previousSection && handleSectionChange(previousSection)}
+                  disabled={isFirstSection || Object.values(saving).some(v => v)}
+                >
+                  <ArrowLeft className="mr-2 h-5 w-5" />
+                  Back
+                </Button>
+
+                {/* Save Status Button */}
+                {organizationId && (
+                  <Button
+                    variant="outline"
+                    className="px-6 py-3 text-base font-semibold"
+                    disabled={true}
+                  >
+                    {Object.values(saving).some(v => v) ? (
+                      <>
+                        <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                        Saving...
+                      </>
+                    ) : (
+                      <>
+                        <CheckCircle className="mr-2 h-5 w-5 text-green-600" />
+                        Saved
+                      </>
+                    )}
+                  </Button>
+                )}
+
+                {/* Save & Next Button */}
+                <Button
+                  variant="default"
+                  className="px-6 py-3 text-base font-semibold min-w-[160px]"
+                  onClick={handleSaveAndNext}
+                  disabled={isLastSection || Object.values(saving).some(v => v) || savingAll}
+                >
+                  Save & Next
+                  {savingAll ? (
+                    <Loader2 className="ml-2 h-5 w-5 animate-spin" />
+                  ) : (
+                    <ArrowRight className="ml-2 h-5 w-5" />
+                  )}
+                </Button>
+              </div>
+            </div>
+          </footer>
         </main>
       </div>
 
@@ -1980,7 +2140,29 @@ export function OrganizationEditor({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Comments Drawer */}
+      <Sheet open={isCommentsDrawerOpen} onOpenChange={setIsCommentsDrawerOpen}>
+        <SheetContent className="w-[500px] sm:w-[600px] overflow-y-auto">
+          <SheetHeader>
+            <SheetTitle className="flex items-center gap-2">
+              <MessageSquare className="h-5 w-5" />
+              Organization Comments
+            </SheetTitle>
+          </SheetHeader>
+          <div className="mt-6">
+            {organizationId && (
+              <OrganizationComments
+                organizationId={organizationId}
+                contextSection={activeSection}
+                allowContextSwitch={true}
+              />
+            )}
+          </div>
+        </SheetContent>
+      </Sheet>
     </>
   )
 }
+
 

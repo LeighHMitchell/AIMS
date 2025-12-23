@@ -942,11 +942,10 @@ const OrganizationCard: React.FC<{
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button 
-                variant="ghost" 
-                size="icon" 
-                className="h-10 w-10 bg-gray-700/60 hover:bg-gray-700/80 rounded-full"
+                variant="outline" 
+                size="icon"
               >
-                <MoreVertical className="h-5 w-5 text-white" />
+                <MoreVertical className="h-5 w-5" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">

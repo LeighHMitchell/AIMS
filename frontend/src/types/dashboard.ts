@@ -8,6 +8,7 @@ export interface RecencyItem {
   id: string;
   title: string;
   timestamp: string;
+  iatiIdentifier?: string;
 }
 
 // Extended recency item for edited activities with user context

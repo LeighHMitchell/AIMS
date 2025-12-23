@@ -11,15 +11,19 @@ import { useUser } from "@/hooks/useUser"
 import { USER_ROLES } from "@/types/user"
 import { getRoleBadgeVariant, getRoleDisplayLabel } from "@/lib/role-badge-utils"
 import {
-  Plus,
   AlertCircle,
   Shield,
   Building2,
   LayoutDashboard,
   Bookmark,
+  ListTodo,
+  MapPin,
+  ArrowRightLeft,
+  Stethoscope,
 } from "lucide-react"
 import { Skeleton } from "@/components/ui/skeleton"
 import { DashboardStatsSkeleton } from "@/components/ui/skeleton-loader"
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
 
 // Import new dashboard components
 import { HeroVisualizationCards } from "@/components/dashboard/HeroVisualizationCards"
@@ -31,6 +35,7 @@ import { OrgTransactionsTable } from "@/components/dashboard/OrgTransactionsTabl
 import { OrgActivitiesMap } from "@/components/dashboard/OrgActivitiesMap"
 import { OrgSankeyFlow } from "@/components/dashboard/OrgSankeyFlow"
 import { BookmarkedActivitiesTable } from "@/components/dashboard/BookmarkedActivitiesTable"
+import { MissingImagesCard } from "@/components/dashboard/MissingImagesCard"
 
 export default function Dashboard() {
   const router = useRouter();
@@ -40,7 +45,7 @@ export default function Dashboard() {
   if (isLoading) {
     return (
       <MainLayout>
-        <div className="min-h-screen bg-slate-50">
+        <div className="min-h-screen">
           <div className="p-8">
             <div className="space-y-6">
               {/* Header Skeleton */}
@@ -95,7 +100,7 @@ export default function Dashboard() {
   if (!user) {
     return (
       <MainLayout>
-        <div className="min-h-screen bg-slate-50">
+        <div className="min-h-screen">
           <div className="p-8">
             <div className="flex items-center justify-center min-h-[60vh]">
               <Card className="max-w-lg bg-white">
@@ -125,7 +130,7 @@ export default function Dashboard() {
   if (!user.organizationId) {
     return (
       <MainLayout>
-        <div className="min-h-screen bg-slate-50">
+        <div className="min-h-screen">
           <div className="p-8">
             <div className="flex items-center justify-center min-h-[60vh]">
               <Card className="max-w-lg bg-white">
@@ -173,32 +178,58 @@ export default function Dashboard() {
   // Main dashboard view - organization scoped
   return (
     <MainLayout>
-      <div className="min-h-screen bg-slate-50">
+      <div className="min-h-screen">
         <div className="p-8">
           <div className="space-y-6">
             {/* Header */}
-            <div className="flex items-center justify-between">
+            <div className="flex items-start gap-5">
+              {/* Organization Logo */}
+              {user.organization?.logo ? (
+                <Avatar className="h-24 w-24 ring-2 ring-slate-200">
+                  <AvatarImage src={user.organization.logo} alt={user.organization.name} className="object-cover" />
+                  <AvatarFallback className="bg-slate-100 text-slate-600 text-2xl font-semibold">
+                    {user.organization.acronym?.slice(0, 2) || user.organization.name.slice(0, 2).toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
+              ) : (
+                <div className="h-24 w-24 rounded-full bg-slate-100 flex items-center justify-center ring-2 ring-slate-200">
+                  <Building2 className="h-12 w-12 text-slate-400" />
+                </div>
+              )}
+              
+              {/* Text Content */}
               <div>
-                <h1 className="text-3xl font-bold">Dashboard</h1>
-                <div className="flex items-center gap-2 mt-2">
-                  <p className="text-muted-foreground">Welcome back, {user.name}</p>
+                {/* Welcome message with role badge on same line */}
+                <div className="flex items-center gap-3">
+                  <p className="text-2xl text-slate-700">
+                    Welcome, <span className="font-semibold">
+                      {user.firstName || user.name.split(' ')[0]}
+                    </span>
+                  </p>
                   <Badge variant={getRoleBadgeVariant(user.role)}>
                     {getRoleDisplayLabel(user.role)}
                   </Badge>
                 </div>
+                
+                {/* Position and department */}
+                {(user.jobTitle || user.department) && (
+                  <p className="text-base font-semibold text-slate-700 mt-2">
+                    {user.jobTitle && user.department
+                      ? `${user.jobTitle}, ${user.department}`
+                      : user.jobTitle || user.department}
+                  </p>
+                )}
+                
+                {/* Organization info - name and acronym on same line */}
                 {user.organization && (
-                  <div className="flex items-center gap-1 mt-1 text-sm text-slate-500">
-                    <Building2 className="h-4 w-4" />
-                    <span>{user.organization.name}</span>
-                  </div>
+                  <p className="text-xl font-medium text-slate-900 mt-2">
+                    {user.organization.name}
+                    {user.organization.acronym && (
+                      <span> ({user.organization.acronym})</span>
+                    )}
+                  </p>
                 )}
               </div>
-              {permissions.canCreateActivities && (
-                <Button onClick={() => router.push("/activities/new")}>
-                  <Plus className="h-4 w-4 mr-2" />
-                  New Activity
-                </Button>
-              )}
             </div>
 
             {/* Super User Alert */}
@@ -222,6 +253,22 @@ export default function Dashboard() {
                   <LayoutDashboard className="h-4 w-4" />
                   Overview
                 </TabsTrigger>
+                <TabsTrigger value="activities" className="flex items-center gap-2">
+                  <ListTodo className="h-4 w-4" />
+                  Activities
+                </TabsTrigger>
+                <TabsTrigger value="locations" className="flex items-center gap-2">
+                  <MapPin className="h-4 w-4" />
+                  Locations
+                </TabsTrigger>
+                <TabsTrigger value="flows" className="flex items-center gap-2">
+                  <ArrowRightLeft className="h-4 w-4" />
+                  Aid Flows
+                </TabsTrigger>
+                <TabsTrigger value="data-clinic" className="flex items-center gap-2">
+                  <Stethoscope className="h-4 w-4" />
+                  Data Clinic
+                </TabsTrigger>
                 <TabsTrigger value="bookmarks" className="flex items-center gap-2">
                   <Bookmark className="h-4 w-4" />
                   Bookmarks
@@ -239,13 +286,25 @@ export default function Dashboard() {
                 {/* Row 3: Recency Cards */}
                 <RecencyCards organizationId={user.organizationId} />
 
-                {/* Row 3: Actions Required Panel (Highest Priority) */}
+                {/* Row 4: Actions Required Panel (Highest Priority) */}
                 <ActionsRequiredPanel
                   organizationId={user.organizationId}
                   userId={user.id}
                 />
 
-                {/* Row 4: Activity Lists Grid */}
+                {/* Row 5: Transactions Table */}
+                <OrgTransactionsTable organizationId={user.organizationId} />
+              </TabsContent>
+
+              {/* Activities Tab Content */}
+              <TabsContent value="activities" className="space-y-6">
+                {/* Main Activities Table */}
+                <OrgActivitiesTable
+                  organizationId={user.organizationId}
+                  variant="main"
+                />
+
+                {/* Recently Edited and Closing Soon */}
                 <div className="grid gap-6 lg:grid-cols-2">
                   <OrgActivitiesTable
                     organizationId={user.organizationId}
@@ -256,21 +315,21 @@ export default function Dashboard() {
                     variant="closing_soon"
                   />
                 </div>
+              </TabsContent>
 
-                {/* Row 5: Main Activities Table */}
-                <OrgActivitiesTable
-                  organizationId={user.organizationId}
-                  variant="main"
-                />
+              {/* Locations Tab Content */}
+              <TabsContent value="locations" className="space-y-6">
+                <OrgActivitiesMap organizationId={user.organizationId} />
+              </TabsContent>
 
-                {/* Row 6: Transactions Table */}
-                <OrgTransactionsTable organizationId={user.organizationId} />
+              {/* Aid Flows Tab Content */}
+              <TabsContent value="flows" className="space-y-6">
+                <OrgSankeyFlow organizationId={user.organizationId} />
+              </TabsContent>
 
-                {/* Row 7: Visualizations Grid */}
-                <div className="grid gap-6 lg:grid-cols-2">
-                  <OrgActivitiesMap organizationId={user.organizationId} />
-                  <OrgSankeyFlow organizationId={user.organizationId} />
-                </div>
+              {/* Data Clinic Tab Content */}
+              <TabsContent value="data-clinic" className="space-y-6">
+                <MissingImagesCard organizationId={user.organizationId} />
               </TabsContent>
 
               {/* Bookmarks Tab Content */}

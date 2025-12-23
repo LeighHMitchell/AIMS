@@ -158,6 +158,8 @@ export async function POST(request: Request) {
           documents: body.documents ? JSON.stringify(body.documents) : existingActivity.documents,
           general_info: body.general_info || existingActivity.general_info || {},
           last_edited_by: body.user?.id ? cleanUUIDValue(body.user.id) : null,
+          updated_at: new Date().toISOString(),
+          updated_by: body.user?.id ? cleanUUIDValue(body.user.id) : null,
         };
       } catch (error: any) {
         return NextResponse.json(

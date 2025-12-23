@@ -205,11 +205,7 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
                       labelFormatter={(label) => `Year ${label}`}
                       contentStyle={{ fontSize: 12 }}
                     />
-                    <Bar dataKey="amount" radius={[4, 4, 0, 0]}>
-                      {data.budgetTrend.map((_, index) => (
-                        <Cell key={`cell-${index}`} fill={BAR_COLORS[index % BAR_COLORS.length]} />
-                      ))}
-                    </Bar>
+                    <Bar dataKey="amount" radius={[4, 4, 0, 0]} fill="#dc2625" />
                   </BarChart>
                 </ResponsiveContainer>
               ) : (
@@ -456,3 +452,4 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
     </>
   );
 }
+

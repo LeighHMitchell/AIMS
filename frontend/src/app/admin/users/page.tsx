@@ -605,7 +605,7 @@ export default function UserManagement() {
   return (
     <ProtectedRoute allowedRoles={[USER_ROLES.SUPER_USER]}>
       <MainLayout>
-        <div className="min-h-screen bg-slate-50">
+        <div className="min-h-screen">
           <div className="p-8 max-w-full mx-auto">
             <div className="mb-8">
               <h1 className="text-3xl font-bold mb-2">User & Organization Management</h1>

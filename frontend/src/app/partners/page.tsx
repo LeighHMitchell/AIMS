@@ -677,7 +677,7 @@ export default function PartnersPage() {
   if (error || !summaryData) {
     return (
       <MainLayout>
-        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="min-h-screen flex items-center justify-center">
           <div className="text-center">
             <p className="text-red-600 mb-4">{error || 'Failed to load data'}</p>
             <Button onClick={fetchSummaryData} variant="outline">
@@ -692,7 +692,7 @@ export default function PartnersPage() {
 
   return (
     <MainLayout>
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen">
         <div className="max-w-screen-2xl mx-auto px-6 py-4 space-y-6">
           {/* Header */}
           <div className="mb-6">

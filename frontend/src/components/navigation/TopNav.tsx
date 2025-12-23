@@ -245,9 +245,11 @@ export function TopNav({ user, canCreateActivities, isInActivityEditor = false, 
                   </DropdownMenuSubContent>
                 </DropdownMenuSub>
                 {user.role === USER_ROLES.SUPER_USER && (
-                  <DropdownMenuItem onClick={() => router.push("/admin")}>
-                    <Shield className="mr-2 h-4 w-4" />
-                    <span>Admin</span>
+                  <DropdownMenuItem asChild>
+                    <Link href="/admin" target="_blank" rel="noopener noreferrer">
+                      <Shield className="mr-2 h-4 w-4" />
+                      <span>Admin</span>
+                    </Link>
                   </DropdownMenuItem>
                 )}
                 <DropdownMenuSeparator />

@@ -96,11 +96,9 @@ const VARIANT_CONFIG: Record<ActivityTableVariant, {
   },
 };
 
-// Format currency
+// Format currency without symbol
 function formatCurrency(value: number, currency: string = 'USD'): string {
   return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency,
     notation: 'compact',
     maximumFractionDigits: 1,
   }).format(value);
@@ -348,19 +346,21 @@ export function OrgActivitiesTable({
                         {activity.totalBudgetOriginal && activity.totalBudgetOriginal > 0 ? (
                           <div className="flex flex-col items-end">
                             <span className="font-medium">
-                              {formatCurrency(activity.totalBudgetOriginal, activity.currency)}
-                              <span className="text-xs text-gray-500 ml-1 font-normal">
+                              <span className="text-xs text-gray-500 mr-1 font-normal">
                                 {activity.currency}
                               </span>
+                              {formatCurrency(activity.totalBudgetOriginal, activity.currency)}
                             </span>
                             {activity.totalBudget && activity.totalBudget > 0 && (
                               <span className="text-xs text-gray-500 mt-0.5">
+                                <span className="mr-1">USD</span>
                                 {formatCurrency(activity.totalBudget, 'USD')}
                               </span>
                             )}
                           </div>
                         ) : activity.totalBudget && activity.totalBudget > 0 ? (
                           <span className="font-medium">
+                            <span className="text-xs text-gray-500 mr-1 font-normal">USD</span>
                             {formatCurrency(activity.totalBudget, 'USD')}
                           </span>
                         ) : (
@@ -371,19 +371,21 @@ export function OrgActivitiesTable({
                         {activity.totalPlannedDisbursementsOriginal && activity.totalPlannedDisbursementsOriginal > 0 ? (
                           <div className="flex flex-col items-end">
                             <span className="font-medium">
-                              {formatCurrency(activity.totalPlannedDisbursementsOriginal, activity.currency)}
-                              <span className="text-xs text-gray-500 ml-1 font-normal">
+                              <span className="text-xs text-gray-500 mr-1 font-normal">
                                 {activity.currency}
                               </span>
+                              {formatCurrency(activity.totalPlannedDisbursementsOriginal, activity.currency)}
                             </span>
                             {activity.totalPlannedDisbursements && activity.totalPlannedDisbursements > 0 && (
                               <span className="text-xs text-gray-500 mt-0.5">
+                                <span className="mr-1">USD</span>
                                 {formatCurrency(activity.totalPlannedDisbursements, 'USD')}
                               </span>
                             )}
                           </div>
                         ) : activity.totalPlannedDisbursements && activity.totalPlannedDisbursements > 0 ? (
                           <span className="font-medium">
+                            <span className="text-xs text-gray-500 mr-1 font-normal">USD</span>
                             {formatCurrency(activity.totalPlannedDisbursements, 'USD')}
                           </span>
                         ) : (

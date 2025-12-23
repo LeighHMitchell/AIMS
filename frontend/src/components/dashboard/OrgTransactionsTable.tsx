@@ -54,11 +54,9 @@ const TRANSACTION_TYPE_LABELS: Record<string, string> = {
   '13': 'Incoming Pledge',
 };
 
-// Format currency
+// Format currency without symbol
 function formatCurrency(value: number, currency: string = 'USD'): string {
   return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency,
     notation: 'compact',
     maximumFractionDigits: 1,
   }).format(value);
@@ -256,10 +254,10 @@ export function OrgTransactionsTable({
                     <div className="flex items-center gap-1">
                       <span className={`font-medium ${transaction.isProvider ? 'text-red-600' : 'text-green-600'}`}>
                         {transaction.isProvider ? '-' : '+'}
+                        <span className="text-xs text-gray-500 mr-1 font-normal">
+                          {transaction.currency}
+                        </span>
                         {formatCurrency(transaction.value, transaction.currency)}
-                      </span>
-                      <span className="text-xs text-gray-500">
-                        {transaction.currency}
                       </span>
                     </div>
                   </TableCell>

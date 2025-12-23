@@ -9,8 +9,8 @@ export default function NewOrganizationPage() {
   const router = useRouter()
 
   const handleCreate = (organizationId: string) => {
-    // Redirect to edit page once organization is created
-    router.push(`/organizations/${organizationId}/edit`)
+    // Update URL silently without causing a page refresh
+    window.history.replaceState(null, '', `/organizations/${organizationId}/edit`)
   }
 
   return (
@@ -26,3 +26,4 @@ export default function NewOrganizationPage() {
     </MainLayout>
   )
 }
+

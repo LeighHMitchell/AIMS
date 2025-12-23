@@ -384,9 +384,10 @@ function SearchPageContent() {
                             <div className="flex-1 min-w-0">
                               <div className="flex items-start justify-between">
                                 <div className="flex-1 min-w-0">
-                                  <h3 className="text-lg font-semibold text-gray-900 truncate">
-                                    {result.title}
-                                  </h3>
+                                  <h3 
+                                    className="text-lg font-semibold text-gray-900 truncate"
+                                    dangerouslySetInnerHTML={{ __html: result.title }}
+                                  />
                                   {result.type === 'activity' && (
                                     <div className="mt-1 text-sm text-gray-600 space-y-1">
                                       {result.metadata?.partner_id && (
@@ -398,14 +399,16 @@ function SearchPageContent() {
                                     </div>
                                   )}
                                   {result.type === 'organization' && result.subtitle && (
-                                    <div className="mt-1 text-sm text-gray-600">
-                                      {result.subtitle}
-                                    </div>
+                                    <div 
+                                      className="mt-1 text-sm text-gray-600"
+                                      dangerouslySetInnerHTML={{ __html: result.subtitle }}
+                                    />
                                   )}
                                   {result.type === 'user' && result.subtitle && (
-                                    <div className="mt-1 text-sm text-gray-600">
-                                      {result.subtitle}
-                                    </div>
+                                    <div 
+                                      className="mt-1 text-sm text-gray-600"
+                                      dangerouslySetInnerHTML={{ __html: result.subtitle }}
+                                    />
                                   )}
                                   {result.type === 'sector' && (
                                     <div className="mt-1 text-sm text-gray-600">

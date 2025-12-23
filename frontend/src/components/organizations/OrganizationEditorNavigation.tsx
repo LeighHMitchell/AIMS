@@ -71,7 +71,8 @@ export default function OrganizationEditorNavigation({
       title: "Contact",
       sections: [
         { id: "contact", label: "Contact & Social" },
-        { id: "aliases", label: "Aliases" }
+        { id: "aliases", label: "Aliases" },
+        { id: "merge", label: "Merge" }
       ]
     },
     {
@@ -181,7 +182,7 @@ export default function OrganizationEditorNavigation({
                           {buttonContent}
                         </TooltipTrigger>
                         <TooltipContent side="right" className="max-w-xs">
-                          <p>This section will be unlocked once the organization is created. To proceed, add a Name, Acronym, Organization Type, and Location Represented in the General tab.</p>
+                          <p>This section will be unlocked once you enter an organization name in the General tab.</p>
                         </TooltipContent>
                       </Tooltip>
                     ) : buttonContent
@@ -196,4 +197,5 @@ export default function OrganizationEditorNavigation({
     </TooltipProvider>
   )
 }
+
 
