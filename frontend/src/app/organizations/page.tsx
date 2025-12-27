@@ -1858,9 +1858,9 @@ function OrganizationsPageContent() {
 
         {/* Filter Tabs */}
         <Tabs value={activeFilter} onValueChange={setActiveFilter} className="w-full">
-          <TabsList className="grid w-full grid-cols-3 md:grid-cols-5 lg:grid-cols-9">
+          <TabsList className="p-1 h-auto bg-background gap-1 border mb-6 flex flex-wrap">
             {IATI_TABS.map((tab) => (
-              <TabsTrigger key={tab.value} value={tab.value} className="text-xs">
+              <TabsTrigger key={tab.value} value={tab.value} className="text-xs data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
                 {tab.label}
               </TabsTrigger>
             ))}

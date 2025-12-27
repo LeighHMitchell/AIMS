@@ -790,3 +790,5 @@ export function EventDetailModal({
     </div>
   )
 }
+
+

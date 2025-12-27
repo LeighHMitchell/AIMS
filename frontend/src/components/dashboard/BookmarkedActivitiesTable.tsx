@@ -203,7 +203,7 @@ export function BookmarkedActivitiesTable() {
               {activities.map((activity) => (
                 <TableRow
                   key={activity.id}
-                  className="cursor-pointer hover:bg-slate-50"
+                  className="cursor-pointer hover:bg-muted/50"
                   onClick={() => handleRowClick(activity.id)}
                 >
                   <TableCell>
@@ -215,9 +215,9 @@ export function BookmarkedActivitiesTable() {
                         )}
                       </p>
                       {activity.iati_identifier && (
-                        <p className="text-xs font-mono bg-gray-100 text-slate-600 px-1.5 py-0.5 rounded inline-block mt-1">
+                        <span className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded inline-block mt-1">
                           {activity.iati_identifier}
-                        </p>
+                        </span>
                       )}
                     </div>
                   </TableCell>

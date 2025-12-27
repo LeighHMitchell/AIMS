@@ -1558,7 +1558,8 @@ export default function FinancialAnalyticsTab({
     return null
   }
 
-  const COLORS = ['#3B82F6', '#64748B', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899', '#14B8A6']
+  // Color palette: Primary Scarlet, Pale Slate, Blue Slate, Cool Steel, Platinum
+  const COLORS = ['#dc2625', '#4c5568', '#7b95a7', '#cfd0d5', '#f1f4f8']
 
   // Process cumulative overview data - all transaction types, planned disbursements, and budgets
   const cumulativeOverviewData = useMemo(() => {
@@ -2035,13 +2036,13 @@ export default function FinancialAnalyticsTab({
     // Create array of data for bar chart
     const data = []
     const seriesConfig = {
-      'Incoming Funds': { color: '#1e40af' },
-      'Incoming Commitments': { color: '#3b82f6' },
-      'Outgoing Commitments': { color: '#0f172a' },
-      'Disbursements': { color: '#475569' },
-      'Expenditures': { color: '#64748b' },
-      'Planned Disbursements': { color: '#1e3a8a' },
-      'Budgets': { color: '#334155' }
+      'Incoming Funds': { color: '#dc2625' },
+      'Incoming Commitments': { color: '#4c5568' },
+      'Outgoing Commitments': { color: '#7b95a7' },
+      'Disbursements': { color: '#dc2625' },
+      'Expenditures': { color: '#4c5568' },
+      'Planned Disbursements': { color: '#7b95a7' },
+      'Budgets': { color: '#cfd0d5' }
     }
 
     Object.entries(seriesConfig).forEach(([name, config]) => {
@@ -2082,8 +2083,8 @@ export default function FinancialAnalyticsTab({
     }
 
     const data = [
-      { name: 'Budget', value: totalBudget, color: '#3B82F6' },
-      { name: 'Actual Spending', value: totalActual, color: '#64748B' }
+      { name: 'Budget', value: totalBudget, color: '#dc2625' },
+      { name: 'Actual Spending', value: totalActual, color: '#4c5568' }
     ]
 
     // Sort from largest to smallest
@@ -2458,7 +2459,7 @@ export default function FinancialAnalyticsTab({
                     </thead>
                     <tbody>
                       {filteredCumulativeOverviewData.map((row, index) => (
-                        <tr key={index} className="border-b border-slate-100 hover:bg-slate-50">
+                        <tr key={index} className="border-b border-slate-100 hover:bg-muted/50">
                           <td className="py-2.5 px-4 font-medium text-slate-900">{row.displayDate}</td>
                           {activeSeries.has('Incoming Funds') && (
                             <td className="text-right py-2.5 px-4 text-slate-700">{formatTooltipValue(row['Incoming Funds'])}</td>
@@ -2556,9 +2557,9 @@ export default function FinancialAnalyticsTab({
                         <Line
                           type="monotone"
                           dataKey="Incoming Funds"
-                          stroke={hiddenSeries.has('Incoming Funds') ? '#cbd5e1' : '#2563eb'}
+                          stroke={hiddenSeries.has('Incoming Funds') ? '#cfd0d5' : '#dc2625'}
                           strokeWidth={hiddenSeries.has('Incoming Funds') ? 1 : 3}
-                          dot={{ fill: hiddenSeries.has('Incoming Funds') ? '#cbd5e1' : '#2563eb', r: 4 }}
+                          dot={{ fill: hiddenSeries.has('Incoming Funds') ? '#cfd0d5' : '#dc2625', r: 4 }}
                           isAnimationActive={true}
                           animationDuration={600}
                           animationEasing="ease-in-out"
@@ -2569,10 +2570,10 @@ export default function FinancialAnalyticsTab({
                         <Line
                           type="monotone"
                           dataKey="Incoming Commitments"
-                          stroke={hiddenSeries.has('Incoming Commitments') ? '#cbd5e1' : '#10b981'}
+                          stroke={hiddenSeries.has('Incoming Commitments') ? '#cfd0d5' : '#4c5568'}
                           strokeWidth={hiddenSeries.has('Incoming Commitments') ? 1 : 3}
                           strokeDasharray="8 4"
-                          dot={{ fill: hiddenSeries.has('Incoming Commitments') ? '#cbd5e1' : '#10b981', r: 4 }}
+                          dot={{ fill: hiddenSeries.has('Incoming Commitments') ? '#cfd0d5' : '#4c5568', r: 4 }}
                           isAnimationActive={true}
                           animationDuration={600}
                           animationEasing="ease-in-out"
@@ -2583,10 +2584,10 @@ export default function FinancialAnalyticsTab({
                         <Line
                           type="monotone"
                           dataKey="Outgoing Commitments"
-                          stroke={hiddenSeries.has('Outgoing Commitments') ? '#cbd5e1' : '#f59e0b'}
+                          stroke={hiddenSeries.has('Outgoing Commitments') ? '#cfd0d5' : '#7b95a7'}
                           strokeWidth={hiddenSeries.has('Outgoing Commitments') ? 1 : 3}
                           strokeDasharray="12 6"
-                          dot={{ fill: hiddenSeries.has('Outgoing Commitments') ? '#cbd5e1' : '#f59e0b', r: 4 }}
+                          dot={{ fill: hiddenSeries.has('Outgoing Commitments') ? '#cfd0d5' : '#7b95a7', r: 4 }}
                           isAnimationActive={true}
                           animationDuration={600}
                           animationEasing="ease-in-out"
@@ -2597,9 +2598,9 @@ export default function FinancialAnalyticsTab({
                         <Line
                           type="monotone"
                           dataKey="Disbursements"
-                          stroke={hiddenSeries.has('Disbursements') ? '#cbd5e1' : '#ef4444'}
+                          stroke={hiddenSeries.has('Disbursements') ? '#cfd0d5' : '#dc2625'}
                           strokeWidth={hiddenSeries.has('Disbursements') ? 1 : 3}
-                          dot={{ fill: hiddenSeries.has('Disbursements') ? '#cbd5e1' : '#ef4444', r: 4 }}
+                          dot={{ fill: hiddenSeries.has('Disbursements') ? '#cfd0d5' : '#dc2625', r: 4 }}
                           isAnimationActive={true}
                           animationDuration={600}
                           animationEasing="ease-in-out"
@@ -2610,10 +2611,10 @@ export default function FinancialAnalyticsTab({
                         <Line
                           type="monotone"
                           dataKey="Expenditures"
-                          stroke={hiddenSeries.has('Expenditures') ? '#cbd5e1' : '#8b5cf6'}
+                          stroke={hiddenSeries.has('Expenditures') ? '#cfd0d5' : '#4c5568'}
                           strokeWidth={hiddenSeries.has('Expenditures') ? 1 : 3}
                           strokeDasharray="4 4"
-                          dot={{ fill: hiddenSeries.has('Expenditures') ? '#cbd5e1' : '#8b5cf6', r: 4 }}
+                          dot={{ fill: hiddenSeries.has('Expenditures') ? '#cfd0d5' : '#4c5568', r: 4 }}
                           isAnimationActive={true}
                           animationDuration={600}
                           animationEasing="ease-in-out"
@@ -2624,10 +2625,10 @@ export default function FinancialAnalyticsTab({
                         <Line
                           type="monotone"
                           dataKey="Planned Disbursements"
-                          stroke={hiddenSeries.has('Planned Disbursements') ? '#cbd5e1' : '#06b6d4'}
+                          stroke={hiddenSeries.has('Planned Disbursements') ? '#cfd0d5' : '#7b95a7'}
                           strokeWidth={hiddenSeries.has('Planned Disbursements') ? 1 : 2.5}
                           strokeDasharray="5 5"
-                          dot={{ fill: hiddenSeries.has('Planned Disbursements') ? '#cbd5e1' : '#06b6d4', r: 3 }}
+                          dot={{ fill: hiddenSeries.has('Planned Disbursements') ? '#cfd0d5' : '#7b95a7', r: 3 }}
                           isAnimationActive={true}
                           animationDuration={600}
                           animationEasing="ease-in-out"
@@ -2638,7 +2639,7 @@ export default function FinancialAnalyticsTab({
                         <Line
                           type="linear"
                           dataKey="Budgets"
-                          stroke={hiddenSeries.has('Budgets') ? '#cbd5e1' : '#64748b'}
+                          stroke={hiddenSeries.has('Budgets') ? '#cfd0d5' : '#cfd0d5'}
                           strokeWidth={hiddenSeries.has('Budgets') ? 1 : 2.5}
                           strokeDasharray="3 3"
                           dot={false}
@@ -2707,7 +2708,7 @@ export default function FinancialAnalyticsTab({
                         <Area
                           type="monotone"
                           dataKey="Incoming Funds"
-                          stroke={hiddenSeries.has('Incoming Funds') ? '#cbd5e1' : '#2563eb'}
+                          stroke={hiddenSeries.has('Incoming Funds') ? '#cfd0d5' : '#dc2625'}
                           strokeWidth={hiddenSeries.has('Incoming Funds') ? 1 : 2}
                           fill={hiddenSeries.has('Incoming Funds') ? 'transparent' : 'url(#colorIncomingFunds)'}
                           isAnimationActive={true}
@@ -2720,7 +2721,7 @@ export default function FinancialAnalyticsTab({
                         <Area
                           type="monotone"
                           dataKey="Incoming Commitments"
-                          stroke={hiddenSeries.has('Incoming Commitments') ? '#cbd5e1' : '#10b981'}
+                          stroke={hiddenSeries.has('Incoming Commitments') ? '#cfd0d5' : '#4c5568'}
                           strokeWidth={hiddenSeries.has('Incoming Commitments') ? 1 : 2}
                           fill={hiddenSeries.has('Incoming Commitments') ? 'transparent' : 'url(#colorIncomingCommitments)'}
                           isAnimationActive={true}
@@ -2733,7 +2734,7 @@ export default function FinancialAnalyticsTab({
                         <Area
                           type="monotone"
                           dataKey="Outgoing Commitments"
-                          stroke={hiddenSeries.has('Outgoing Commitments') ? '#cbd5e1' : '#f59e0b'}
+                          stroke={hiddenSeries.has('Outgoing Commitments') ? '#cfd0d5' : '#7b95a7'}
                           strokeWidth={hiddenSeries.has('Outgoing Commitments') ? 1 : 2}
                           fill={hiddenSeries.has('Outgoing Commitments') ? 'transparent' : 'url(#colorOutgoingCommitments)'}
                           isAnimationActive={true}
@@ -2746,7 +2747,7 @@ export default function FinancialAnalyticsTab({
                         <Area
                           type="monotone"
                           dataKey="Disbursements"
-                          stroke={hiddenSeries.has('Disbursements') ? '#cbd5e1' : '#ef4444'}
+                          stroke={hiddenSeries.has('Disbursements') ? '#cfd0d5' : '#dc2625'}
                           strokeWidth={hiddenSeries.has('Disbursements') ? 1 : 2}
                           fill={hiddenSeries.has('Disbursements') ? 'transparent' : 'url(#colorDisbursements)'}
                           isAnimationActive={true}
@@ -2759,7 +2760,7 @@ export default function FinancialAnalyticsTab({
                         <Area
                           type="monotone"
                           dataKey="Expenditures"
-                          stroke={hiddenSeries.has('Expenditures') ? '#cbd5e1' : '#8b5cf6'}
+                          stroke={hiddenSeries.has('Expenditures') ? '#cfd0d5' : '#4c5568'}
                           strokeWidth={hiddenSeries.has('Expenditures') ? 1 : 2}
                           fill={hiddenSeries.has('Expenditures') ? 'transparent' : 'url(#colorExpenditures)'}
                           isAnimationActive={true}
@@ -2772,7 +2773,7 @@ export default function FinancialAnalyticsTab({
                         <Area
                           type="monotone"
                           dataKey="Planned Disbursements"
-                          stroke={hiddenSeries.has('Planned Disbursements') ? '#cbd5e1' : '#06b6d4'}
+                          stroke={hiddenSeries.has('Planned Disbursements') ? '#cfd0d5' : '#7b95a7'}
                           strokeWidth={hiddenSeries.has('Planned Disbursements') ? 1 : 2}
                           strokeDasharray="5 5"
                           fill={hiddenSeries.has('Planned Disbursements') ? 'transparent' : 'url(#colorPlannedDisbursements)'}
@@ -2786,7 +2787,7 @@ export default function FinancialAnalyticsTab({
                         <Area
                           type="linear"
                           dataKey="Budgets"
-                          stroke={hiddenSeries.has('Budgets') ? '#cbd5e1' : '#64748b'}
+                          stroke={hiddenSeries.has('Budgets') ? '#cfd0d5' : '#cfd0d5'}
                           strokeWidth={hiddenSeries.has('Budgets') ? 1 : 2}
                           strokeDasharray="3 3"
                           fill={hiddenSeries.has('Budgets') ? 'transparent' : 'url(#colorBudgets)'}
@@ -2824,7 +2825,7 @@ export default function FinancialAnalyticsTab({
                       {activeSeries.has('Incoming Funds') && (
                         <Bar
                           dataKey="Incoming Funds"
-                          fill={hiddenSeries.has('Incoming Funds') ? '#cbd5e1' : '#1e40af'}
+                          fill={hiddenSeries.has('Incoming Funds') ? '#cfd0d5' : '#dc2625'}
                           radius={[4, 4, 0, 0]}
                           isAnimationActive={true}
                           animationDuration={600}
@@ -2835,7 +2836,7 @@ export default function FinancialAnalyticsTab({
                       {activeSeries.has('Incoming Commitments') && (
                         <Bar
                           dataKey="Incoming Commitments"
-                          fill={hiddenSeries.has('Incoming Commitments') ? '#cbd5e1' : '#3b82f6'}
+                          fill={hiddenSeries.has('Incoming Commitments') ? '#cfd0d5' : '#4c5568'}
                           radius={[4, 4, 0, 0]}
                           isAnimationActive={true}
                           animationDuration={600}
@@ -2846,7 +2847,7 @@ export default function FinancialAnalyticsTab({
                       {activeSeries.has('Outgoing Commitments') && (
                         <Bar
                           dataKey="Outgoing Commitments"
-                          fill={hiddenSeries.has('Outgoing Commitments') ? '#cbd5e1' : '#0f172a'}
+                          fill={hiddenSeries.has('Outgoing Commitments') ? '#cfd0d5' : '#7b95a7'}
                           radius={[4, 4, 0, 0]}
                           isAnimationActive={true}
                           animationDuration={600}
@@ -2857,7 +2858,7 @@ export default function FinancialAnalyticsTab({
                       {activeSeries.has('Disbursements') && (
                         <Bar
                           dataKey="Disbursements"
-                          fill={hiddenSeries.has('Disbursements') ? '#cbd5e1' : '#475569'}
+                          fill={hiddenSeries.has('Disbursements') ? '#cfd0d5' : '#dc2625'}
                           radius={[4, 4, 0, 0]}
                           isAnimationActive={true}
                           animationDuration={600}
@@ -2868,7 +2869,7 @@ export default function FinancialAnalyticsTab({
                       {activeSeries.has('Expenditures') && (
                         <Bar
                           dataKey="Expenditures"
-                          fill={hiddenSeries.has('Expenditures') ? '#cbd5e1' : '#64748b'}
+                          fill={hiddenSeries.has('Expenditures') ? '#cfd0d5' : '#4c5568'}
                           radius={[4, 4, 0, 0]}
                           isAnimationActive={true}
                           animationDuration={600}
@@ -2879,7 +2880,7 @@ export default function FinancialAnalyticsTab({
                       {activeSeries.has('Planned Disbursements') && (
                         <Bar
                           dataKey="Planned Disbursements"
-                          fill={hiddenSeries.has('Planned Disbursements') ? '#cbd5e1' : '#1e3a8a'}
+                          fill={hiddenSeries.has('Planned Disbursements') ? '#cfd0d5' : '#7b95a7'}
                           radius={[4, 4, 0, 0]}
                           isAnimationActive={true}
                           animationDuration={600}
@@ -2890,7 +2891,7 @@ export default function FinancialAnalyticsTab({
                       {activeSeries.has('Budgets') && (
                         <Bar
                           dataKey="Budgets"
-                          fill={hiddenSeries.has('Budgets') ? '#cbd5e1' : '#334155'}
+                          fill={hiddenSeries.has('Budgets') ? '#cfd0d5' : '#cfd0d5'}
                           radius={[4, 4, 0, 0]}
                           isAnimationActive={true}
                           animationDuration={600}
@@ -3059,7 +3060,7 @@ export default function FinancialAnalyticsTab({
                   </thead>
                   <tbody>
                     {filteredBudgetVsActual.map((row, index) => (
-                      <tr key={index} className="border-b border-slate-100 hover:bg-slate-50">
+                      <tr key={index} className="border-b border-slate-100 hover:bg-muted/50">
                         <td className="py-2.5 px-4 font-medium text-slate-900">{budgetGroupBy === 'year' ? row.year : row.period}</td>
                         <td className="text-right py-2.5 px-4 text-slate-700">{formatTooltipValue(row.budget)}</td>
                         <td className="text-right py-2.5 px-4 text-slate-700">{formatTooltipValue(row.actual)}</td>
@@ -3098,7 +3099,7 @@ export default function FinancialAnalyticsTab({
                       dataKey="timestamp"
                       type="number"
                       scale="time"
-                      domain={['dataMin', 'dataMax']}
+                      domain={[(dataMin) => dataMin - 15768000000, (dataMax) => dataMax + 15768000000]}
                       ticks={generateYearTicks(processedBudgetVsActual)}
                       tickFormatter={(timestamp) => format(new Date(timestamp), 'yyyy')}
                       stroke="#64748B"
@@ -3107,16 +3108,16 @@ export default function FinancialAnalyticsTab({
                       textAnchor="middle"
                       height={40}
                     />
-                    <YAxis tickFormatter={formatCurrency} stroke="#64748B" fontSize={12} />
+                    <YAxis domain={[0, (dataMax) => dataMax * 1.1]} tickFormatter={formatCurrency} stroke="#64748B" fontSize={12} />
                     <Tooltip content={<CustomTooltip />} />
                     <Legend content={<CustomInteractiveLegend hiddenSeries={hiddenBudgetSeries} onToggleSeries={handleToggleBudgetSeries} />} />
                     <Line
                       type="monotone"
                       dataKey="budget"
                       name="Budget"
-                      stroke={hiddenBudgetSeries.has('Budget') ? '#cbd5e1' : '#3B82F6'}
+                      stroke={hiddenBudgetSeries.has('Budget') ? '#cfd0d5' : '#dc2625'}
                       strokeWidth={hiddenBudgetSeries.has('Budget') ? 1 : 2.5}
-                      dot={{ fill: hiddenBudgetSeries.has('Budget') ? '#cbd5e1' : '#3B82F6', r: 3 }}
+                      dot={{ fill: hiddenBudgetSeries.has('Budget') ? '#cfd0d5' : '#dc2625', r: 3 }}
                       isAnimationActive={true}
                       animationDuration={600}
                       animationEasing="ease-in-out"
@@ -3126,9 +3127,9 @@ export default function FinancialAnalyticsTab({
                       type="monotone"
                       dataKey="actual"
                       name="Actual Spending"
-                      stroke={hiddenBudgetSeries.has('Actual Spending') ? '#cbd5e1' : '#64748B'}
+                      stroke={hiddenBudgetSeries.has('Actual Spending') ? '#cfd0d5' : '#4c5568'}
                       strokeWidth={hiddenBudgetSeries.has('Actual Spending') ? 1 : 2.5}
-                      dot={{ fill: hiddenBudgetSeries.has('Actual Spending') ? '#cbd5e1' : '#64748B', r: 3 }}
+                      dot={{ fill: hiddenBudgetSeries.has('Actual Spending') ? '#cfd0d5' : '#4c5568', r: 3 }}
                       isAnimationActive={true}
                       animationDuration={600}
                       animationEasing="ease-in-out"
@@ -3146,7 +3147,7 @@ export default function FinancialAnalyticsTab({
                       dataKey="timestamp"
                       type="number"
                       scale="time"
-                      domain={['dataMin', 'dataMax']}
+                      domain={[(dataMin) => dataMin - 15768000000, (dataMax) => dataMax + 15768000000]}
                       ticks={generateYearTicks(processedBudgetVsActual)}
                       tickFormatter={(timestamp) => format(new Date(timestamp), 'yyyy')}
                       stroke="#64748B"
@@ -3155,13 +3156,13 @@ export default function FinancialAnalyticsTab({
                       textAnchor="middle"
                       height={40}
                     />
-                    <YAxis tickFormatter={formatCurrency} stroke="#64748B" fontSize={12} />
+                    <YAxis domain={[0, (dataMax) => dataMax * 1.1]} tickFormatter={formatCurrency} stroke="#64748B" fontSize={12} />
                     <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(0, 0, 0, 0.05)' }} />
                     <Legend content={<CustomInteractiveLegend hiddenSeries={hiddenBudgetSeries} onToggleSeries={handleToggleBudgetSeries} />} />
                     <Bar
                       dataKey="budget"
                       name="Budget"
-                      fill={hiddenBudgetSeries.has('Budget') ? '#cbd5e1' : '#3B82F6'}
+                      fill={hiddenBudgetSeries.has('Budget') ? '#cfd0d5' : '#dc2625'}
                       radius={[4, 4, 0, 0]}
                       isAnimationActive={true}
                       animationDuration={600}
@@ -3171,7 +3172,7 @@ export default function FinancialAnalyticsTab({
                     <Bar
                       dataKey="actual"
                       name="Actual Spending"
-                      fill={hiddenBudgetSeries.has('Actual Spending') ? '#cbd5e1' : '#64748B'}
+                      fill={hiddenBudgetSeries.has('Actual Spending') ? '#cfd0d5' : '#4c5568'}
                       radius={[4, 4, 0, 0]}
                       isAnimationActive={true}
                       animationDuration={600}
@@ -3325,7 +3326,7 @@ export default function FinancialAnalyticsTab({
                       const total = filteredFundingSourceData.providers.reduce((sum, s) => sum + s.value, 0)
                       const percentage = ((flow.value / total) * 100).toFixed(1)
                       return (
-                        <tr key={index} className="border-b border-slate-100 hover:bg-slate-50">
+                        <tr key={index} className="border-b border-slate-100 hover:bg-muted/50">
                           <td className="py-2.5 px-4 font-medium text-slate-900">{flow.provider}</td>
                           <td className="py-2.5 px-4 font-medium text-slate-700">{flow.receiver}</td>
                           <td className="text-right py-2.5 px-4 text-slate-700">{formatCurrency(flow.value)}</td>

@@ -219,13 +219,8 @@ export function ActionsRequiredPanel({
         <div className="flex items-center justify-between">
           <div>
             <CardTitle className="flex items-center gap-2">
-              <AlertTriangle className="h-5 w-5 text-orange-500" />
+              <AlertTriangle className="h-5 w-5 text-slate-600" />
               Actions Required
-              {total > 0 && (
-                <Badge variant="secondary" className="ml-2">
-                  {total}
-                </Badge>
-              )}
             </CardTitle>
             <CardDescription>
               Tasks that need your attention, sorted by priority

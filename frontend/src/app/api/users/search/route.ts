@@ -20,6 +20,7 @@ export async function GET(request: NextRequest) {
     const supabase = getSupabaseAdmin();
 
     // Search users by first_name, last_name, or email
+    // Use explicit relationship name to avoid ambiguity with multiple foreign keys
     const { data: users, error } = await supabase
       .from('users')
       .select(`
@@ -28,7 +29,7 @@ export async function GET(request: NextRequest) {
         last_name,
         email,
         organization_id,
-        organizations (
+        organizations!users_organization_id_fkey (
           id,
           name,
           acronym

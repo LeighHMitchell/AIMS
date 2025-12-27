@@ -312,7 +312,7 @@ export function OrgActivitiesTable({
               {activities.map((activity) => (
                 <TableRow
                   key={activity.id}
-                  className="cursor-pointer hover:bg-slate-50"
+                  className="cursor-pointer hover:bg-muted/50"
                   onClick={() => handleRowClick(activity.id)}
                 >
                   <TableCell>
@@ -321,9 +321,9 @@ export function OrgActivitiesTable({
                         {activity.title}
                       </p>
                       {activity.iatiIdentifier && (
-                        <p className="text-xs text-slate-500 truncate max-w-[280px] font-mono bg-gray-100 px-2 py-1 rounded mt-1 inline-block" title={activity.iatiIdentifier}>
+                        <span className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded inline-block mt-1 truncate max-w-[280px]" title={activity.iatiIdentifier}>
                           {activity.iatiIdentifier}
-                        </p>
+                        </span>
                       )}
                     </div>
                   </TableCell>

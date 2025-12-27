@@ -15,9 +15,9 @@ import {
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, getSortIcon } from '@/components/ui/table'
 import { SectorMetrics, SectorAnalyticsFilters, SectorSortField, SortDirection } from '@/types/sector-analytics'
-import { BarChart3, Download, AlignLeft, AlignVerticalSpaceAround, Users, FolderKanban, Table as TableIcon, Search, ArrowUpDown, FileImage } from 'lucide-react'
+import { BarChart3, Download, AlignLeft, AlignVerticalSpaceAround, Users, FolderKanban, Table as TableIcon, Search, FileImage } from 'lucide-react'
 import { AlertCircle } from 'lucide-react'
 import { CHART_BAR_COLORS } from './sectorColorMap'
 
@@ -428,11 +428,11 @@ export function SectorBarChart({ data, filters }: SectorBarChartProps) {
     <Button
       variant="ghost"
       size="sm"
-      className={`h-8 px-2 font-medium ${sortField === field ? 'text-slate-900' : 'text-slate-600'}`}
+      className="h-8 px-2 font-medium hover:bg-muted/80"
       onClick={() => handleSort(field)}
     >
       <span>{label}</span>
-      <ArrowUpDown className={`ml-1.5 h-3 w-3 ${sortField === field ? 'opacity-100' : 'opacity-50'}`} />
+      <span className="ml-1">{getSortIcon(field, sortField, sortDirection)}</span>
     </Button>
   )
 
@@ -784,27 +784,27 @@ export function SectorBarChart({ data, filters }: SectorBarChartProps) {
           /* Table View */
           <div className="rounded-md border overflow-auto max-h-[600px]">
             <Table>
-              <TableHeader>
-                <TableRow className="sticky top-0 bg-white z-10 shadow-sm">
-                  <TableHead className="bg-white min-w-[200px]">
+              <TableHeader className="sticky top-0 z-10">
+                <TableRow>
+                  <TableHead className="min-w-[200px]">
                     <SortButton field="name" label="Sector" />
                   </TableHead>
-                  <TableHead className="text-right bg-white">
+                  <TableHead className="text-right">
                     <SortButton field="planned" label="Planned" />
                   </TableHead>
-                  <TableHead className="text-right bg-white">
+                  <TableHead className="text-right">
                     <SortButton field="actual" label="Actual" />
                   </TableHead>
-                  <TableHead className="text-right bg-white">
+                  <TableHead className="text-right">
                     <SortButton field="commitments" label="Commitments" />
                   </TableHead>
-                  <TableHead className="text-right bg-white">
+                  <TableHead className="text-right">
                     <SortButton field="budgets" label="Budgets" />
                   </TableHead>
-                  <TableHead className="text-right bg-white">
+                  <TableHead className="text-right">
                     <SortButton field="projects" label="Projects" />
                   </TableHead>
-                  <TableHead className="text-right bg-white">
+                  <TableHead className="text-right">
                     <SortButton field="partners" label="Partners" />
                   </TableHead>
                 </TableRow>
@@ -819,7 +819,7 @@ export function SectorBarChart({ data, filters }: SectorBarChartProps) {
                 ) : (
                   <>
                     {tableData.map((item, index) => (
-                      <TableRow key={index} className="hover:bg-slate-50">
+                      <TableRow key={index} className="hover:bg-muted/50">
                         <TableCell className="font-medium">
                           <div>
                             <div className="flex items-center gap-2">

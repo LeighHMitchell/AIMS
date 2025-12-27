@@ -364,16 +364,24 @@ const ActivityCard: React.FC<ActivityCardProps> = ({
               {/* Activity ID and IATI ID - Always displayed */}
               <div className="space-y-2">
                 <div className="flex items-center gap-2">
-                  <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">Activity ID</span>
-                  <span className="text-sm font-mono text-gray-700 bg-gray-50 px-2 py-1 rounded">
-                    {activity.partner_id || 'Activity ID not reported'}
-                  </span>
+                  <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Activity ID</span>
+                  {activity.partner_id ? (
+                    <span className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded">
+                      {activity.partner_id}
+                    </span>
+                  ) : (
+                    <span className="text-xs text-muted-foreground">Activity ID not reported</span>
+                  )}
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">IATI ID</span>
-                  <span className="text-sm font-mono text-gray-700 bg-gray-50 px-2 py-1 rounded">
-                    {activity.iati_id || 'IATI Identifier not reported'}
-                  </span>
+                  <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">IATI ID</span>
+                  {activity.iati_id ? (
+                    <span className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded">
+                      {activity.iati_id}
+                    </span>
+                  ) : (
+                    <span className="text-xs text-muted-foreground">IATI Identifier not reported</span>
+                  )}
                 </div>
               </div>
             </div>

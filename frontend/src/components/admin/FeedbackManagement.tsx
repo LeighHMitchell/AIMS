@@ -9,11 +9,11 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, getSortIcon } from '@/components/ui/table';
 import { LoadingText } from '@/components/ui/loading-text';
 import { FEEDBACK_TYPES, FEEDBACK_STATUS_TYPES, FEEDBACK_PRIORITY_TYPES } from '@/data/feedback-types';
 import { ALL_APP_FEATURES, APP_FEATURES } from '@/data/app-features';
-import { MessageSquare, Eye, Edit, Calendar, User, HelpCircle, MessageCircle, Lightbulb, Bug, Zap, Paperclip, Download, Image, FileText, Archive, ArchiveRestore, Trash, ChevronLeft, ChevronRight, Circle, CheckCircle, AlertCircle, XCircle, ArrowUpDown, ArrowUp, ArrowDown, CircleDot, Play, CheckCircle2, Lock, Minus, AlertTriangle, Flame, Check, ChevronsUpDown, Search, Plus } from 'lucide-react';
+import { MessageSquare, Eye, Edit, Calendar, User, HelpCircle, MessageCircle, Lightbulb, Bug, Zap, Paperclip, Download, Image, FileText, Archive, ArchiveRestore, Trash, ChevronLeft, ChevronRight, Circle, CheckCircle, AlertCircle, XCircle, CircleDot, Play, CheckCircle2, Lock, Minus, AlertTriangle, Flame, Check, ChevronsUpDown, Search, Plus } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { formatDistanceToNow } from 'date-fns';
 import { useUser } from '@/hooks/useUser';
@@ -110,14 +110,6 @@ const getPriorityIcon = (priority: string) => {
 };
 
 // Helper function to get sort icon
-const getSortIcon = (field: string, currentSortField: string, currentSortDirection: 'asc' | 'desc') => {
-  if (field !== currentSortField) {
-    return <ArrowUpDown className="h-4 w-4 text-gray-400" />;
-  }
-  return currentSortDirection === 'asc' 
-    ? <ArrowUp className="h-4 w-4 text-gray-400" />
-    : <ArrowDown className="h-4 w-4 text-gray-400" />;
-};
 
 // Helper function to get status icon and color
 const getStatusIcon = (status: string) => {
@@ -593,66 +585,66 @@ export function FeedbackManagement() {
                 <TableRow>
                   <TableHead className="w-[50px]">Type</TableHead>
                   <TableHead 
-                    className="cursor-pointer hover:bg-gray-50 select-none"
+                    className="cursor-pointer hover:bg-muted/80 transition-colors"
                     onClick={() => handleSort('subject')}
                   >
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1">
                       Subject
                       {getSortIcon('subject', sortField, sortDirection)}
                     </div>
                   </TableHead>
                   <TableHead 
-                    className="cursor-pointer hover:bg-gray-50 select-none"
+                    className="cursor-pointer hover:bg-muted/80 transition-colors"
                     onClick={() => handleSort('feature')}
                   >
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1">
                       Feature
                       {getSortIcon('feature', sortField, sortDirection)}
                     </div>
                   </TableHead>
                   <TableHead 
-                    className="cursor-pointer hover:bg-gray-50 select-none"
+                    className="cursor-pointer hover:bg-muted/80 transition-colors"
                     onClick={() => handleSort('user')}
                   >
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1">
                       User
                       {getSortIcon('user', sortField, sortDirection)}
                     </div>
                   </TableHead>
                   <TableHead 
-                    className="cursor-pointer hover:bg-gray-50 select-none"
+                    className="cursor-pointer hover:bg-muted/80 transition-colors"
                     onClick={() => handleSort('status')}
                   >
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1">
                       Status
                       {getSortIcon('status', sortField, sortDirection)}
                     </div>
                   </TableHead>
                   <TableHead 
-                    className="cursor-pointer hover:bg-gray-50 select-none"
+                    className="cursor-pointer hover:bg-muted/80 transition-colors"
                     onClick={() => handleSort('priority')}
                   >
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1">
                       Priority
                       {getSortIcon('priority', sortField, sortDirection)}
                     </div>
                   </TableHead>
                   <TableHead>Attachment</TableHead>
                   <TableHead 
-                    className="cursor-pointer hover:bg-gray-50 select-none"
+                    className="cursor-pointer hover:bg-muted/80 transition-colors"
                     onClick={() => handleSort('created_at')}
                   >
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1">
                       Created
                       {getSortIcon('created_at', sortField, sortDirection)}
                     </div>
                   </TableHead>
                   {showArchived && (
                     <TableHead 
-                      className="cursor-pointer hover:bg-gray-50 select-none"
+                      className="cursor-pointer hover:bg-muted/80 transition-colors"
                       onClick={() => handleSort('archived_at')}
                     >
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-1">
                         Archived
                         {getSortIcon('archived_at', sortField, sortDirection)}
                       </div>
@@ -666,7 +658,7 @@ export function FeedbackManagement() {
                   const categoryInfo = getCategoryInfo(item.category);
                   const CategoryIcon = getIconComponent(categoryInfo.icon);
                   return (
-                    <TableRow key={item.id} className="hover:bg-gray-50">
+                    <TableRow key={item.id} className="hover:bg-muted/50">
                       <TableCell>
                         <div className="flex items-center justify-center">
                           <CategoryIcon className="h-4 w-4 text-gray-600" />

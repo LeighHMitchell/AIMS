@@ -317,7 +317,7 @@ export default function ActivityContactsTab({ activityId }: ActivityContactsTabP
               const typeInfo = validateIatiContactType(contact.type);
               
               return (
-                <TableRow key={contact.id} className="hover:bg-slate-50">
+                <TableRow key={contact.id} className="hover:bg-muted/50">
                   <TableCell>
                     <div className="flex items-center gap-3">
                       <div className="w-8 h-8 rounded-full overflow-hidden bg-slate-100 flex-shrink-0">
@@ -437,6 +437,8 @@ export default function ActivityContactsTab({ activityId }: ActivityContactsTabP
     </div>
   );
 }
+
+
 
 
 

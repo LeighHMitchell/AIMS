@@ -4,8 +4,8 @@
   "private": true,
   "//": "Deploy trigger - force Vercel rebuild v4 - Production ready with GitHub Actions",
   "scripts": {
-    "dev": "next dev -H 0.0.0.0",
-    "dev-safe": "NODE_OPTIONS=\"--max-old-space-size=4096\" next dev -H 0.0.0.0",
+    "dev": "next dev",
+    "dev-safe": "NODE_OPTIONS=\"--max-old-space-size=4096\" next dev",
     "build": "next build",
     "build:analyze": "ANALYZE=true npm run build",
     "start": "next start",
@@ -17,6 +17,7 @@
     "precommit": "npm run type-check && npm run lint",
     "create-test-users": "tsx src/scripts/create-test-users.ts",
     "sync-users": "tsx src/scripts/sync-auth-users.ts",
+    "sync-oauth-users": "tsx src/scripts/sync-missing-oauth-users.ts",
     "create-test-user": "tsx src/scripts/create-test-user.ts",
     "create-auth-user": "tsx src/scripts/create-auth-user.ts",
     "backfill:usd": "tsx scripts/backfill-usd-values.ts",

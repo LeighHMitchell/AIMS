@@ -66,6 +66,7 @@ export async function GET(request: NextRequest) {
       suffix: user.suffix,
       gender: user.gender,
       profilePicture: user.avatar_url, // Map avatar_url to profilePicture
+      authProvider: user.auth_provider, // Track how user authenticates
       organisation: user.organisation || user.organizations?.name,
       organization: user.organizations,
       contactType: user.contact_type,
@@ -339,6 +340,7 @@ export async function PUT(request: NextRequest) {
       suffix: data.suffix,
       gender: data.gender,
       profilePicture: data.avatar_url, // Map avatar_url to profilePicture
+      authProvider: data.auth_provider, // Track how user authenticates
       organisation: data.organisation || data.organizations?.name,
       organization: data.organizations,
       contactType: data.contact_type,

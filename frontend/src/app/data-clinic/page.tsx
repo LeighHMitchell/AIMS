@@ -104,24 +104,24 @@ export default function DataClinicPage() {
 
           {/* Tabs */}
           <Tabs defaultValue="activities" className="w-full">
-            <TabsList className="mb-6">
-              <TabsTrigger value="activities" className="flex items-center gap-1">
+            <TabsList className="p-1 h-auto bg-background gap-1 border mb-6">
+              <TabsTrigger value="activities" className="flex items-center gap-1 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
                 <FileText className="h-3 w-3" />
                 Activities
               </TabsTrigger>
-              <TabsTrigger value="transactions" className="flex items-center gap-1">
+              <TabsTrigger value="transactions" className="flex items-center gap-1 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
                 <ArrowLeftRight className="h-3 w-3" />
                 Transactions
               </TabsTrigger>
-              <TabsTrigger value="budgets" className="flex items-center gap-1">
+              <TabsTrigger value="budgets" className="flex items-center gap-1 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
                 <Wallet className="h-3 w-3" />
                 Budgets
               </TabsTrigger>
-              <TabsTrigger value="organizations" className="flex items-center gap-1">
+              <TabsTrigger value="organizations" className="flex items-center gap-1 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
                 <Building2 className="h-3 w-3" />
                 Organizations
               </TabsTrigger>
-              <TabsTrigger value="duplicates" className="flex items-center gap-1">
+              <TabsTrigger value="duplicates" className="flex items-center gap-1 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
                 <Copy className="h-3 w-3" />
                 Duplicates
               </TabsTrigger>

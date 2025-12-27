@@ -32,11 +32,12 @@ const ROLE_LABELS: Record<string, string> = {
   '4': 'Implementing'
 }
 
+// Color palette: Primary Scarlet, Blue Slate, Cool Steel, Pale Slate
 const ROLE_COLORS: Record<string, string> = {
-  '1': '#F59E0B',
-  '2': '#8B5CF6',
-  '3': '#3B82F6',
-  '4': '#10B981'
+  '1': '#dc2625',
+  '2': '#4c5568',
+  '3': '#7b95a7',
+  '4': '#cfd0d5'
 }
 
 export default function OrganizationRoleFlow({ data, transactions = [] }: OrganizationRoleFlowProps) {
@@ -190,8 +191,8 @@ export default function OrganizationRoleFlow({ data, transactions = [] }: Organi
           />
           <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(0, 0, 0, 0.05)' }} />
           <Legend />
-          <Bar dataKey="organizations" name="Number of Organizations" fill="#3B82F6" radius={[4, 4, 0, 0]} />
-          <Bar dataKey="totalValue" name="Total Value (USD)" fill="#10B981" radius={[4, 4, 0, 0]} />
+          <Bar dataKey="organizations" name="Number of Organizations" fill="#dc2625" radius={[4, 4, 0, 0]} />
+          <Bar dataKey="totalValue" name="Total Value (USD)" fill="#4c5568" radius={[4, 4, 0, 0]} />
         </BarChart>
       </ResponsiveContainer>
       

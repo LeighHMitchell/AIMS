@@ -387,3 +387,5 @@ COMMENT ON FUNCTION search_all IS 'Unified full-text search across all entities 
 COMMENT ON FUNCTION search_suggestions IS 'Fast autocomplete suggestions using prefix matching. Optimized for speed over comprehensiveness.';
 COMMENT ON FUNCTION search_count IS 'Returns count of matching results by entity type for faceted search.';
 
+
+

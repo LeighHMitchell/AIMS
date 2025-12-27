@@ -131,8 +131,19 @@ const formatCurrency = (amount?: number): string => {
 
 // Format number without currency symbol
 const formatNumber = (amount?: number): string => {
-  if (!amount || amount === 0) return '-'
+  if (amount === undefined || amount === null) return '-'
   return new Intl.NumberFormat('en-US', {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0
+  }).format(amount)
+}
+
+// Format currency with $ symbol
+const formatBudget = (amount?: number): string => {
+  if (amount === undefined || amount === null) return '$0'
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
     minimumFractionDigits: 0,
     maximumFractionDigits: 0
   }).format(amount)
@@ -326,6 +337,7 @@ const createSectorBarCompact = (sectors?: SectorData[]): string => {
 }
 
 // Create Summary View tooltip content (shown on hover)
+// Using same color palette as popup
 const createTooltipContent = (location: LocationData): string => {
   const statusInfo = getStatusInfo(location.activity?.status)
   
@@ -333,28 +345,28 @@ const createTooltipContent = (location: LocationData): string => {
   
   // Activity Title - with word wrap
   if (location.activity?.title) {
-    html += `<div style="font-weight: 700; font-size: 14px; color: #111827; margin-bottom: 12px; line-height: 1.4; word-wrap: break-word; overflow-wrap: break-word; white-space: normal;">${location.activity.title}</div>`
+    html += `<div style="font-weight: 700; font-size: 14px; color: #4c5568; margin-bottom: 12px; line-height: 1.4; word-wrap: break-word; overflow-wrap: break-word; white-space: normal;">${location.activity.title}</div>`
   }
   
   // Divider
-  html += `<hr style="border: none; border-top: 1px solid #e5e7eb; margin: 0 0 12px 0;" />`
+  html += `<hr style="border: none; border-top: 1px solid #cfd0d5; margin: 0 0 12px 0;" />`
   
   // Details grid - consistent with popup
   html += `<div style="display: grid; grid-template-columns: 85px 1fr; gap: 8px 10px; font-size: 11px; margin-bottom: 12px;">`
   
   // Location
-  html += `<div style="color: #6b7280; font-weight: 500;">Location</div>
-    <div style="color: #111827;">${location.location_name || 'Unnamed'}</div>`
+  html += `<div style="color: #7b95a7; font-weight: 500;">Location</div>
+    <div style="color: #4c5568;">${location.location_name || 'Unnamed'}</div>`
   
   // Organisation
   if (location.activity?.organization_name) {
-    html += `<div style="color: #6b7280; font-weight: 500;">Organisation</div>
-      <div style="color: #111827;">${location.activity.organization_name}</div>`
+    html += `<div style="color: #7b95a7; font-weight: 500;">Organisation</div>
+      <div style="color: #4c5568;">${location.activity.organization_name}</div>`
   }
   
   // Status
-  html += `<div style="color: #6b7280; font-weight: 500;">Status</div>
-    <div style="color: #111827;">${statusInfo.label}</div>`
+  html += `<div style="color: #7b95a7; font-weight: 500;">Status</div>
+    <div style="color: #4c5568;">${statusInfo.label}</div>`
   
   html += `</div>`
   
@@ -363,50 +375,51 @@ const createTooltipContent = (location: LocationData): string => {
 }
 
 // Create Expanded View popup content (shown on click)
+// Color Palette:
+// - Primary Scarlet: #dc2625 (accents)
+// - Pale Slate: #cfd0d5 (borders/dividers)
+// - Blue Slate: #4c5568 (primary text)
+// - Cool Steel: #7b95a7 (labels/secondary)
+// - Platinum: #f1f4f8 (backgrounds)
 const createPopupContent = (location: LocationData): string => {
   const lat = Number(location.latitude)
   const lng = Number(location.longitude)
   const statusInfo = getStatusInfo(location.activity?.status)
   
-  let html = `<div style="font-family: system-ui, -apple-system, sans-serif; min-width: 300px; max-width: 360px;">`
+  let html = `<div style="font-family: system-ui, -apple-system, sans-serif; min-width: 380px; max-width: 450px; background: #ffffff;">`
   
-  // Activity Overview Header
-  html += `<div style="margin-bottom: 8px;">
-    <h1 style="font-size: 16px; font-weight: 700; color: #111827; margin: 0;">Activity Overview</h1>
-  </div>`
-  
-  // Title Section - Activity Title only
+  // Title Section - Activity Title only (no "Activity Overview" header)
   html += `<div style="margin-bottom: 14px;">
-    <h2 style="font-size: 18px; font-weight: 700; color: #111827; margin: 0; line-height: 1.35;">${location.activity?.title || 'Untitled Activity'}</h2>
+    <h2 style="font-size: 18px; font-weight: 700; color: #4c5568; margin: 0; line-height: 1.35;">${location.activity?.title || 'Untitled Activity'}</h2>
   </div>`
   
   // Divider
-  html += `<hr style="border: none; border-top: 1px solid #e5e7eb; margin: 0 0 14px 0;" />`
+  html += `<hr style="border: none; border-top: 1px solid #cfd0d5; margin: 0 0 14px 0;" />`
   
   // Details Grid
   html += `<div style="display: grid; grid-template-columns: 85px 1fr; gap: 8px 10px; font-size: 11px; margin-bottom: 16px;">`
   
   // Location Type
-  html += `<div style="color: #6b7280; font-weight: 500;">Location Type</div>
-    <div style="color: #111827;">${formatSiteType(location.site_type) || location.location_type || '-'}</div>`
+  html += `<div style="color: #7b95a7; font-weight: 500;">Location Type</div>
+    <div style="color: #4c5568;">${formatSiteType(location.site_type) || location.location_type || '-'}</div>`
   
   // Address
-  html += `<div style="color: #6b7280; font-weight: 500;">Address</div>
-    <div style="color: #111827; line-height: 1.4;">${getFullAddress(location)}</div>`
+  html += `<div style="color: #7b95a7; font-weight: 500;">Address</div>
+    <div style="color: #4c5568; line-height: 1.4;">${getFullAddress(location)}</div>`
   
   // Organisation
-  html += `<div style="color: #6b7280; font-weight: 500;">Organisation</div>
-    <div style="color: #111827;">${location.activity?.organization_name || '-'}</div>`
+  html += `<div style="color: #7b95a7; font-weight: 500;">Organisation</div>
+    <div style="color: #4c5568;">${location.activity?.organization_name || '-'}</div>`
   
   // Status
-  html += `<div style="color: #6b7280; font-weight: 500;">Status</div>
-    <div style="color: #111827;">${statusInfo.label}</div>`
+  html += `<div style="color: #7b95a7; font-weight: 500;">Status</div>
+    <div style="color: #4c5568;">${statusInfo.label}</div>`
   
   // Coordinates
-  html += `<div style="color: #6b7280; font-weight: 500;">Coordinates</div>
+  html += `<div style="color: #7b95a7; font-weight: 500;">Coordinates</div>
     <div style="display: flex; align-items: center;">
-      <span style="font-family: ui-monospace, monospace; font-size: 10px; color: #374151; background: #f3f4f6; padding: 4px 8px; border-radius: 4px;">${lat.toFixed(6)}°, ${lng.toFixed(6)}°</span>
-      <button onclick="event.stopPropagation(); event.preventDefault(); navigator.clipboard.writeText('${lat.toFixed(6)}, ${lng.toFixed(6)}'); this.innerHTML='<span style=\\'font-size:9px;color:#059669;\\'>Copied</span>'; setTimeout(() => this.innerHTML='<svg width=\\'12\\' height=\\'12\\' viewBox=\\'0 0 24 24\\' fill=\\'none\\' stroke=\\'currentColor\\' stroke-width=\\'2\\'><rect x=\\'9\\' y=\\'9\\' width=\\'13\\' height=\\'13\\' rx=\\'2\\'/><path d=\\'M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1\\'/></svg>', 2000);" style="margin-left: 6px; padding: 2px; background: none; border: none; cursor: pointer; color: #9ca3af; display: flex;" title="Copy">
+      <span style="font-family: ui-monospace, monospace; font-size: 10px; color: #4c5568; background: #f1f4f8; padding: 4px 8px; border-radius: 4px;">${lat.toFixed(6)}°, ${lng.toFixed(6)}°</span>
+      <button onclick="event.stopPropagation(); event.preventDefault(); navigator.clipboard.writeText('${lat.toFixed(6)}, ${lng.toFixed(6)}'); this.innerHTML='<span style=\\'font-size:9px;color:#dc2625;\\'>Copied</span>'; setTimeout(() => this.innerHTML='<svg width=\\'12\\' height=\\'12\\' viewBox=\\'0 0 24 24\\' fill=\\'none\\' stroke=\\'currentColor\\' stroke-width=\\'2\\'><rect x=\\'9\\' y=\\'9\\' width=\\'13\\' height=\\'13\\' rx=\\'2\\'/><path d=\\'M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1\\'/></svg>', 2000);" style="margin-left: 6px; padding: 2px; background: none; border: none; cursor: pointer; color: #7b95a7; display: flex;" title="Copy">
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
       </button>
     </div>`
@@ -418,27 +431,27 @@ const createPopupContent = (location: LocationData): string => {
   
   // Financial Summary
   html += `<div style="margin-bottom: 16px;">
-    <h3 style="font-size: 11px; font-weight: 700; color: #111827; margin: 0 0 8px 0;">Financial Summary</h3>
-    <div style="border: 1px solid #e5e7eb; border-radius: 6px; overflow: hidden; font-size: 11px;">
-      <div style="display: flex; justify-content: space-between; padding: 10px 12px; border-bottom: 1px solid #f3f4f6;">
-        <span style="color: #374151;">Total Budgeted</span>
-        <span style="font-weight: 700; color: #111827;">${formatNumber(location.activity?.totalBudget)}</span>
+    <h3 style="font-size: 11px; font-weight: 700; color: #4c5568; margin: 0 0 8px 0;">Financial Summary</h3>
+    <div style="border: 1px solid #cfd0d5; border-radius: 6px; overflow: hidden; font-size: 11px;">
+      <div style="display: flex; justify-content: space-between; padding: 10px 12px; border-bottom: 1px solid #cfd0d5;">
+        <span style="color: #7b95a7;">Total Budgeted</span>
+        <span style="font-weight: 700; color: #4c5568;">${formatBudget(location.activity?.totalBudget)}</span>
       </div>
-      <div style="display: flex; justify-content: space-between; padding: 10px 12px; background: rgba(249, 250, 251, 0.5);">
-        <span style="color: #374151;">Total Planned Disbursements</span>
-        <span style="font-weight: 700; color: #111827;">${formatNumber(location.activity?.totalPlannedDisbursement)}</span>
+      <div style="display: flex; justify-content: space-between; padding: 10px 12px; background: #f1f4f8;">
+        <span style="color: #7b95a7;">Total Planned Disbursements</span>
+        <span style="font-weight: 700; color: #4c5568;">${formatBudget(location.activity?.totalPlannedDisbursement)}</span>
       </div>
     </div>
   </div>`
   
   // Project Timeline
   html += `<div>
-    <h3 style="font-size: 11px; font-weight: 700; color: #111827; margin: 0 0 8px 0;">Project Timeline</h3>
+    <h3 style="font-size: 11px; font-weight: 700; color: #4c5568; margin: 0 0 8px 0;">Project Timeline</h3>
     <div style="font-size: 10px; display: grid; grid-template-columns: 1fr 1fr; gap: 6px 16px;">
-      <div style="color: #4b5563;">Planned Start: <span style="font-weight: 600; color: #111827;">${formatDate(location.activity?.plannedStartDate)}</span></div>
-      <div style="color: #4b5563;">Planned End: <span style="font-weight: 600; color: #111827;">${formatDate(location.activity?.plannedEndDate)}</span></div>
-      <div style="color: #4b5563;">Actual Start: <span style="font-weight: 600; color: #111827;">${formatDate(location.activity?.actualStartDate)}</span></div>
-      <div style="color: #4b5563;">Actual End: <span style="font-weight: 600; color: #111827;">${location.activity?.actualEndDate ? formatDate(location.activity.actualEndDate) : 'N/A'}</span></div>
+      <div style="color: #7b95a7;">Planned Start: <span style="font-weight: 600; color: #4c5568;">${formatDate(location.activity?.plannedStartDate)}</span></div>
+      <div style="color: #7b95a7;">Planned End: <span style="font-weight: 600; color: #4c5568;">${formatDate(location.activity?.plannedEndDate)}</span></div>
+      <div style="color: #7b95a7;">Actual Start: <span style="font-weight: 600; color: #4c5568;">${formatDate(location.activity?.actualStartDate)}</span></div>
+      <div style="color: #7b95a7;">Actual End: <span style="font-weight: 600; color: #4c5568;">${location.activity?.actualEndDate ? formatDate(location.activity.actualEndDate) : 'N/A'}</span></div>
     </div>
   </div>`
   
@@ -536,20 +549,10 @@ export default function AidMapMarkersLayer({ locations }: AidMapMarkersLayerProp
       
       // Add popup to outer marker (Expanded View)
       marker.bindPopup(createPopupContent(location), {
-        maxWidth: 450,
+        maxWidth: 500,
         className: 'location-popup',
-        autoPan: false // Disable auto-pan, we'll handle it ourselves
-      })
-      
-      // Pan map so marker is at bottom middle when popup opens
-      marker.on('popupopen', () => {
-        const mapSize = map.getSize()
-        const markerPoint = map.latLngToContainerPoint([lat, lng])
-        // Calculate new center: move marker to bottom 25% of map
-        const targetY = mapSize.y * 0.75
-        const offsetY = markerPoint.y - targetY
-        const newCenter = map.containerPointToLatLng([mapSize.x / 2, mapSize.y / 2 + offsetY])
-        map.panTo(newCenter, { animate: true, duration: 0.3 })
+        autoPan: true,
+        autoPanPadding: [50, 80] // Padding from edges [horizontal, vertical]
       })
       
       // Add both to layer group

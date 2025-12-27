@@ -2008,7 +2008,7 @@ export default function PlannedDisbursementsTab({
                             <TableCell className="py-3 px-4 text-right whitespace-nowrap">
                               <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
-                                  <Button variant="ghost" className="h-8 w-8 p-0" disabled={isReadOnly}>
+                                  <Button variant="outline" size="icon" className="h-8 w-8" disabled={isReadOnly}>
                                     <span className="sr-only">Open menu</span>
                                     <MoreVertical className="h-4 w-4" />
                                   </Button>

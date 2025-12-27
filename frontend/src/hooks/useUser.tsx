@@ -51,13 +51,74 @@ export function UserProvider({ children }: { children: ReactNode }) {
           console.log('[useUser] Supabase auth event:', event);
           
           if (event === 'SIGNED_IN' && session?.user) {
-            // Don't override user data if we already have it loaded
-            // The login API provides complete user data including profilePicture
-            console.log('[useUser] Supabase SIGNED_IN event - skipping user override to preserve login API data');
+            // Check if we already have a user loaded (from email/password login)
+            const currentStoredUser = localStorage.getItem('aims_user');
+            const authSource = localStorage.getItem('aims_auth_source');
+            
+            if (currentStoredUser) {
+              try {
+                const parsed = JSON.parse(currentStoredUser);
+                
+                // If this is the same user, no need to update
+                if (parsed.id === session.user.id) {
+                  console.log('[useUser] User already loaded (same ID), skipping fetch');
+                  return;
+                }
+                
+                // If current user was logged in via email/password, DON'T override with OAuth session
+                // This prevents the OAuth session from hijacking email/password logins
+                if (authSource === 'email_password') {
+                  console.log('[useUser] Current user was logged in via email/password, not overriding with OAuth session');
+                  console.log('[useUser] Current user:', parsed.email, 'OAuth session:', session.user.email);
+                  return;
+                }
+              } catch (e) {
+                // Continue to fetch user
+              }
+            }
+            
+            // Mark this as an OAuth login
+            localStorage.setItem('aims_auth_source', 'oauth');
+            
+            // Fetch user profile from our users table (needed for OAuth logins)
+            console.log('[useUser] Fetching user profile for OAuth login:', session.user.email);
+            try {
+              const response = await fetch(`/api/users?email=${encodeURIComponent(session.user.email)}`);
+              if (response.ok) {
+                const userData = await response.json();
+                // Handle both array and single object responses
+                const userRecord = Array.isArray(userData) ? userData[0] : userData;
+                if (userRecord && userRecord.email) {
+                  console.log('[useUser] Loaded user profile after OAuth:', userRecord.email);
+                  handleSetUser(userRecord);
+                } else {
+                  console.warn('[useUser] No user profile found for:', session.user.email);
+                  // Create a minimal user object from OAuth data
+                  const minimalUser = {
+                    id: session.user.id,
+                    email: session.user.email,
+                    name: session.user.user_metadata?.full_name || session.user.email.split('@')[0],
+                    firstName: session.user.user_metadata?.full_name?.split(' ')[0] || '',
+                    lastName: session.user.user_metadata?.full_name?.split(' ').slice(1).join(' ') || '',
+                    profilePicture: session.user.user_metadata?.avatar_url || session.user.user_metadata?.picture,
+                    role: 'public_user' as const,
+                    isActive: true,
+                    createdAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString(),
+                  };
+                  handleSetUser(minimalUser);
+                }
+              } else {
+                console.error('[useUser] Failed to fetch user profile:', response.status);
+              }
+            } catch (fetchError) {
+              console.error('[useUser] Error fetching user profile after OAuth:', fetchError);
+            }
           }
           
           if (event === 'SIGNED_OUT') {
             console.log('[useUser] User signed out from Supabase');
+            localStorage.removeItem('aims_auth_source');
             handleSetUser(null);
           }
         }
@@ -120,6 +181,9 @@ export function UserProvider({ children }: { children: ReactNode }) {
     } catch (error) {
       console.error('[useUser] Logout error:', error);
     }
+    
+    // Clear auth source tracking
+    localStorage.removeItem('aims_auth_source');
     
     handleSetUser(null);
     router.push('/login');

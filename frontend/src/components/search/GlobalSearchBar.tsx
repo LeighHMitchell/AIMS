@@ -654,11 +654,17 @@ export function GlobalSearchBar({
                                     </div>
                                   )}
                                   {(result.metadata?.partner_id || result.metadata?.iati_id) && (
-                                    <div className="truncate">
-                                      {[result.metadata?.partner_id, result.metadata?.iati_id]
-                                        .filter(Boolean)
-                                        .join(' • ')
-                                      }
+                                    <div className="flex items-center gap-1 flex-wrap mt-1">
+                                      {result.metadata?.partner_id && (
+                                        <span className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded truncate">
+                                          {result.metadata.partner_id}
+                                        </span>
+                                      )}
+                                      {result.metadata?.iati_id && (
+                                        <span className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded truncate">
+                                          {result.metadata.iati_id}
+                                        </span>
+                                      )}
                                     </div>
                                   )}
                                 </div>

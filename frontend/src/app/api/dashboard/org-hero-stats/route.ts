@@ -19,6 +19,7 @@ export interface TransactionTrendPoint {
   month: string;
   count: number;
   amount: number;
+  types?: Record<string, number>; // transaction_type -> count
 }
 
 export interface SectorBreakdown {
@@ -99,7 +100,8 @@ export async function GET(request: NextRequest) {
     const [
       budgetsResult,
       plannedDisbursementsResult,
-      transactionsResult,
+      transactionsOnActivitiesResult,
+      transactionsAsPartyResult,
       sectorsResult,
     ] = await Promise.all([
       // Get budgets for these activities
@@ -114,11 +116,17 @@ export async function GET(request: NextRequest) {
         .select('amount, currency, usd_amount, period_start, activity_id')
         .in('activity_id', activityIds),
 
-      // Get transactions for these activities (all time for better visualization)
+      // Get transactions for these activities (owned by org)
       supabase
         .from('transactions')
-        .select('id, value, value_usd, transaction_date, activity_id')
+        .select('uuid, value, value_usd, transaction_date, activity_id, transaction_type')
         .in('activity_id', activityIds),
+
+      // Get transactions where org is provider or receiver (on any activity)
+      supabase
+        .from('transactions')
+        .select('uuid, value, value_usd, transaction_date, activity_id, transaction_type')
+        .or(`provider_org_id.eq.${organizationId},receiver_org_id.eq.${organizationId}`),
 
       // Get sector allocations for these activities
       supabase
@@ -130,14 +138,27 @@ export async function GET(request: NextRequest) {
     // Log any errors for debugging
     if (budgetsResult.error) console.error('[Hero Stats] Budgets error:', budgetsResult.error);
     if (plannedDisbursementsResult.error) console.error('[Hero Stats] Planned disbursements error:', plannedDisbursementsResult.error);
-    if (transactionsResult.error) console.error('[Hero Stats] Transactions error:', transactionsResult.error);
+    if (transactionsOnActivitiesResult.error) console.error('[Hero Stats] Transactions on activities error:', transactionsOnActivitiesResult.error);
+    if (transactionsAsPartyResult.error) console.error('[Hero Stats] Transactions as party error:', transactionsAsPartyResult.error);
     if (sectorsResult.error) console.error('[Hero Stats] Sectors error:', sectorsResult.error);
+
+    // Combine transactions from both sources, deduplicating by uuid
+    const transactionMap = new Map<string, any>();
+    (transactionsOnActivitiesResult.data || []).forEach((tx: any) => {
+      transactionMap.set(tx.uuid, tx);
+    });
+    (transactionsAsPartyResult.data || []).forEach((tx: any) => {
+      transactionMap.set(tx.uuid, tx);
+    });
+    const allTransactions = Array.from(transactionMap.values());
 
     console.log('[Hero Stats] Data counts:', {
       activities: activities.length,
       budgets: budgetsResult.data?.length || 0,
       plannedDisbursements: plannedDisbursementsResult.data?.length || 0,
-      transactions: transactionsResult.data?.length || 0,
+      transactionsOnActivities: transactionsOnActivitiesResult.data?.length || 0,
+      transactionsAsParty: transactionsAsPartyResult.data?.length || 0,
+      totalTransactions: allTransactions.length,
       sectors: sectorsResult.data?.length || 0,
     });
 
@@ -185,19 +206,27 @@ export async function GET(request: NextRequest) {
       .sort((a, b) => a.year - b.year)
       .slice(-5); // Last 5 years
 
-    // Process transaction trend by year (for better visualization with historical data)
-    const transactionsByYear = new Map<number, { count: number; amount: number }>();
+    // Process transaction trend by year with type breakdown
+    const transactionsByYear = new Map<number, { 
+      count: number; 
+      amount: number; 
+      types: Map<string, number>;
+    }>();
     
-    (transactionsResult.data || []).forEach((tx: any) => {
+    allTransactions.forEach((tx: any) => {
       if (tx.transaction_date) {
         const d = new Date(tx.transaction_date);
         const year = d.getFullYear();
         if (!transactionsByYear.has(year)) {
-          transactionsByYear.set(year, { count: 0, amount: 0 });
+          transactionsByYear.set(year, { count: 0, amount: 0, types: new Map() });
         }
         const existing = transactionsByYear.get(year)!;
         existing.count += 1;
         existing.amount += tx.value_usd || tx.value || 0;
+        
+        // Count by transaction type
+        const txType = tx.transaction_type || 'unknown';
+        existing.types.set(txType, (existing.types.get(txType) || 0) + 1);
       }
     });
 
@@ -206,7 +235,8 @@ export async function GET(request: NextRequest) {
       .map(([year, data]) => ({ 
         month: year.toString(), // Use year as string for chart display
         count: data.count, 
-        amount: data.amount 
+        amount: data.amount,
+        types: Object.fromEntries(data.types) // Convert Map to object
       }))
       .sort((a, b) => a.month.localeCompare(b.month))
       .slice(-5); // Last 5 years
@@ -255,3 +285,6 @@ export async function GET(request: NextRequest) {
     );
   }
 }
+
+
+

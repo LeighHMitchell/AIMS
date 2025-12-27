@@ -6,6 +6,12 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/com
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
 import { useRouter } from "next/navigation"
 import { useUser } from "@/hooks/useUser"
 import { USER_ROLES } from "@/types/user"
@@ -206,9 +212,33 @@ export default function Dashboard() {
                       {user.firstName || user.name.split(' ')[0]}
                     </span>
                   </p>
-                  <Badge variant={getRoleBadgeVariant(user.role)}>
-                    {getRoleDisplayLabel(user.role)}
-                  </Badge>
+                  {user.role === USER_ROLES.SUPER_USER ? (
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Badge variant={getRoleBadgeVariant(user.role)}>
+                            {getRoleDisplayLabel(user.role)}
+                          </Badge>
+                        </TooltipTrigger>
+                        <TooltipContent className="max-w-xs">
+                          <div className="space-y-1">
+                            <div className="flex items-center gap-2">
+                              <Shield className="h-4 w-4" />
+                              <p className="font-semibold">Super User Access</p>
+                            </div>
+                            <p className="text-sm">
+                              You have full system access. This dashboard shows data scoped to your organization.
+                              Use the Admin panel to view system-wide data.
+                            </p>
+                          </div>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  ) : (
+                    <Badge variant={getRoleBadgeVariant(user.role)}>
+                      {getRoleDisplayLabel(user.role)}
+                    </Badge>
+                  )}
                 </div>
                 
                 {/* Position and department */}
@@ -232,44 +262,48 @@ export default function Dashboard() {
               </div>
             </div>
 
-            {/* Super User Alert */}
-            {user.role === USER_ROLES.SUPER_USER && (
-              <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-                <div className="flex items-center gap-2">
-                  <Shield className="h-5 w-5 text-red-600" />
-                  <p className="text-sm font-medium text-red-800">Super User Access</p>
-                </div>
-                <p className="text-sm text-red-700 mt-1">
-                  You have full system access. This dashboard shows data scoped to your organization.
-                  Use the Admin panel to view system-wide data.
-                </p>
-              </div>
-            )}
-
             {/* Dashboard Tabs */}
             <Tabs defaultValue="overview" className="w-full">
-              <TabsList className="mb-6">
-                <TabsTrigger value="overview" className="flex items-center gap-2">
+              <TabsList className="p-1 h-auto bg-background gap-1 border mb-6">
+                <TabsTrigger 
+                  value="overview" 
+                  className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+                >
                   <LayoutDashboard className="h-4 w-4" />
                   Overview
                 </TabsTrigger>
-                <TabsTrigger value="activities" className="flex items-center gap-2">
+                <TabsTrigger 
+                  value="activities" 
+                  className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+                >
                   <ListTodo className="h-4 w-4" />
                   Activities
                 </TabsTrigger>
-                <TabsTrigger value="locations" className="flex items-center gap-2">
+                <TabsTrigger 
+                  value="locations" 
+                  className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+                >
                   <MapPin className="h-4 w-4" />
                   Locations
                 </TabsTrigger>
-                <TabsTrigger value="flows" className="flex items-center gap-2">
+                <TabsTrigger 
+                  value="flows" 
+                  className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+                >
                   <ArrowRightLeft className="h-4 w-4" />
                   Aid Flows
                 </TabsTrigger>
-                <TabsTrigger value="data-clinic" className="flex items-center gap-2">
+                <TabsTrigger 
+                  value="data-clinic" 
+                  className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+                >
                   <Stethoscope className="h-4 w-4" />
                   Data Clinic
                 </TabsTrigger>
-                <TabsTrigger value="bookmarks" className="flex items-center gap-2">
+                <TabsTrigger 
+                  value="bookmarks" 
+                  className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+                >
                   <Bookmark className="h-4 w-4" />
                   Bookmarks
                 </TabsTrigger>

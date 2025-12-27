@@ -218,7 +218,7 @@ export default function MetadataTab({ activityId }: MetadataTabProps) {
     activityId,
     userId: user?.id,
     onSuccess: () => {
-      toast.success('Language saved', { position: 'top-right' });
+      toast.success('Language saved', { position: 'top-center' });
     },
   });
 

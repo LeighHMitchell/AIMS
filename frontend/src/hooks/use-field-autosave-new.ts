@@ -666,7 +666,7 @@ export function useDefaultAidTypeAutosave(activityId?: string, userId?: string) 
     userId,
     debounceMs: 1000, // Save quickly for defaults
     onSuccess: () => {
-      toast.success('Default Aid Type saved', { position: 'top-right' });
+      toast.success('Default Aid Type saved', { position: 'top-center' });
     },
   });
 }
@@ -677,7 +677,7 @@ export function useDefaultFinanceTypeAutosave(activityId?: string, userId?: stri
     userId,
     debounceMs: 1000,
     onSuccess: () => {
-      toast.success('Default Finance Type saved', { position: 'top-right' });
+      toast.success('Default Finance Type saved', { position: 'top-center' });
     },
   });
 }
@@ -688,7 +688,7 @@ export function useDefaultCurrencyAutosave(activityId?: string, userId?: string)
     userId,
     debounceMs: 1000,
     onSuccess: () => {
-      toast.success('Default Currency saved', { position: 'top-right' });
+      toast.success('Default Currency saved', { position: 'top-center' });
     },
   });
 }
@@ -699,7 +699,7 @@ export function useDefaultTiedStatusAutosave(activityId?: string, userId?: strin
     userId,
     debounceMs: 1000,
     onSuccess: () => {
-      toast.success('Default Tied Status saved', { position: 'top-right' });
+      toast.success('Default Tied Status saved', { position: 'top-center' });
     },
   });
 }
@@ -710,7 +710,7 @@ export function useDefaultFlowTypeAutosave(activityId?: string, userId?: string)
     userId,
     debounceMs: 1000,
     onSuccess: () => {
-      toast.success('Default Flow Type saved', { position: 'top-right' });
+      toast.success('Default Flow Type saved', { position: 'top-center' });
     },
   });
 }
@@ -780,7 +780,7 @@ export function useDefaultModalityAutosave(activityId?: string, userId?: string)
     userId,
     debounceMs: 1000,
     onSuccess: () => {
-      toast.success('Default Modality saved', { position: 'top-right' });
+      toast.success('Default Modality saved', { position: 'top-center' });
     },
   });
 }
@@ -791,7 +791,7 @@ export function useDefaultModalityOverrideAutosave(activityId?: string, userId?:
     userId,
     debounceMs: 1000,
     onSuccess: () => {
-      toast.success('Default Modality Override saved', { position: 'top-right' });
+      toast.success('Default Modality Override saved', { position: 'top-center' });
     },
   });
 }
@@ -802,7 +802,7 @@ export function useDefaultAidModalityAutosave(activityId?: string, userId?: stri
     userId,
     debounceMs: 1000,
     onSuccess: () => {
-      toast.success('Default Aid Modality saved', { position: 'top-right' });
+      toast.success('Default Aid Modality saved', { position: 'top-center' });
     },
   });
 }
@@ -822,7 +822,7 @@ export function useDefaultAidModalityOverrideAutosave(activityId?: string, userI
     userId,
     debounceMs: 1000,
     onSuccess: () => {
-      toast.success('Default Aid Modality Override saved', { position: 'top-right' });
+      toast.success('Default Aid Modality Override saved', { position: 'top-center' });
     },
   });
 }
@@ -833,7 +833,7 @@ export function useDefaultDisbursementChannelAutosave(activityId?: string, userI
     userId,
     debounceMs: 1000,
     onSuccess: () => {
-      toast.success('Default Disbursement Channel saved', { position: 'top-right' });
+      toast.success('Default Disbursement Channel saved', { position: 'top-center' });
     },
   });
 }

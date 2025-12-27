@@ -113,12 +113,12 @@ export function DuplicatePairCard({ pair, onDismiss, isSuperUser }: DuplicatePai
       <div className="space-y-1 text-xs text-muted-foreground">
         {entity.iati_identifier && (
           <div>
-            <code className="bg-muted px-1 rounded">{entity.iati_identifier}</code>
+            <span className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded">{entity.iati_identifier}</span>
           </div>
         )}
         {entity.other_identifier && !entity.iati_identifier && (
           <div>
-            <code className="bg-muted px-1 rounded">{entity.other_identifier}</code>
+            <span className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded">{entity.other_identifier}</span>
           </div>
         )}
         {entity.created_by_org_name && (
@@ -379,6 +379,8 @@ export function DuplicatePairCard({ pair, onDismiss, isSuperUser }: DuplicatePai
     </>
   );
 }
+
+
 
 
 

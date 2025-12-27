@@ -28,6 +28,11 @@ export function getRoleBadgeVariant(role: string | undefined | null): "default" 
     return "light-green";
   }
   
+  // Public User - Gray/Secondary (read-only OAuth users)
+  if (role === USER_ROLES.PUBLIC_USER || role === 'public_user') {
+    return "secondary";
+  }
+  
   // Default for all other roles (organization roles, activity roles, etc.)
   return "outline";
 }
@@ -45,11 +50,13 @@ export function getRoleDisplayLabel(role: string | undefined | null): string {
     [USER_ROLES.DEV_PARTNER_TIER_2]: "Review & Approval", 
     [USER_ROLES.GOV_PARTNER_TIER_1]: "Government Partner Tier 1",
     [USER_ROLES.GOV_PARTNER_TIER_2]: "Government Partner Tier 2",
+    [USER_ROLES.PUBLIC_USER]: "Public User",
     'admin': "Administrator",
     'development_partner_tier_1': "Data Submission", 
     'development_partner_tier_2': "Review & Approval",
     'government_partner_tier_1': "Government Partner Tier 1",
     'government_partner_tier_2': "Government Partner Tier 2",
+    'public_user': "Public User",
     'orphan': "Unassigned User"
   };
   

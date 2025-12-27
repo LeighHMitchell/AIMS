@@ -22,3 +22,5 @@ WHERE table_name = 'users'
 AND table_schema = 'public'
 AND column_name IN ('address_line_1', 'address_line_2', 'city', 'state_province', 'country', 'postal_code', 'mailing_address')
 ORDER BY column_name;
+
+

@@ -18,7 +18,8 @@ import {
   Tooltip,
   Legend,
   ResponsiveContainer,
-  Cell
+  Cell,
+  ReferenceLine
 } from 'recharts'
 import { 
   TrendingUp, 
@@ -29,11 +30,17 @@ import {
   Download,
   Building2,
   Loader2,
-  AlertCircle
+  AlertCircle,
+  Info
 } from 'lucide-react'
-import { getTemporalCategory } from '@/types/organization-funding-envelope'
-import { exportChartToCSV, exportChartToJPG } from '@/lib/chart-export'
+import { exportChartToJPG, downloadCSV, convertToCSV } from '@/lib/chart-export'
 import { toast } from 'sonner'
+import {
+  Tooltip as UITooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
 
 // Color scheme
 const COLORS = {
@@ -41,34 +48,72 @@ const COLORS = {
   paleSlate: '#cfd0d5',
   blueSlate: '#4c5568',
   coolSteel: '#7b95a7',
-  platinum: '#f1f4f8'
+  platinum: '#f1f4f8',
+  // Data type specific colors
+  actual: '#059669',      // Green for confirmed actuals
+  partial: '#d97706',     // Amber for current year partial
+  indicative: '#6366f1',  // Indigo for future indicative
 }
 
-// Color palette for multiple donors
-const DONOR_COLORS = [
-  COLORS.primaryScarlet,
-  COLORS.blueSlate,
-  COLORS.coolSteel,
-  '#e11d48', // Pink/Red variant
-  '#7c3aed', // Purple variant
-  '#059669', // Green variant
-  '#ea580c', // Orange variant
-  '#0369a1', // Blue variant
-]
-
-interface FundingEnvelopeDataPoint {
+// Interface for the new unified API response
+interface FundingTimeSeriesPoint {
   organization_id: string
   organization_name: string
   organization_acronym: string | null
   year: number
-  amount: number
   amount_usd: number
-  currency: string
-  status: string
-  category: 'past' | 'current' | 'future'
+  data_source: 'transactions' | 'organization_budgets'
+  data_type: 'actual' | 'partial' | 'indicative'
+  transaction_count?: number
+}
+
+interface ApiResponse {
+  data: FundingTimeSeriesPoint[]
+  metadata: {
+    currentYear: number
+    organizationCount: number
+    dataSourcesUsed: string[]
+    note: string
+  }
 }
 
 type ChartViewType = 'line' | 'bar' | 'area' | 'table'
+
+// Legend item component for data types
+const DataTypeLegendItem = ({ color, label, isDashed = false }: { color: string; label: string; isDashed?: boolean }) => (
+  <div className="flex items-center gap-2 text-sm">
+    <div className="flex items-center">
+      {isDashed ? (
+        <svg width="24" height="2" className="flex-shrink-0">
+          <line x1="0" y1="1" x2="24" y2="1" stroke={color} strokeWidth="2" strokeDasharray="4 2" />
+        </svg>
+      ) : (
+        <div className="w-6 h-0.5 flex-shrink-0" style={{ backgroundColor: color }} />
+      )}
+    </div>
+    <span className="text-gray-600">{label}</span>
+  </div>
+)
+
+// Get color for data type
+const getDataTypeColor = (dataType: string) => {
+  switch (dataType) {
+    case 'actual': return COLORS.actual
+    case 'partial': return COLORS.partial
+    case 'indicative': return COLORS.indicative
+    default: return COLORS.blueSlate
+  }
+}
+
+// Get label for data type
+const getDataTypeLabel = (dataType: string) => {
+  switch (dataType) {
+    case 'actual': return 'Actual'
+    case 'partial': return 'YTD'
+    case 'indicative': return 'Indicative'
+    default: return dataType
+  }
+}
 
 export function FundingOverTimeAnalytics() {
   const [selectedDonors, setSelectedDonors] = useState<string[]>([])
@@ -76,12 +121,13 @@ export function FundingOverTimeAnalytics() {
   const [loading, setLoading] = useState(false)
   const [organizations, setOrganizations] = useState<Array<{ id: string; name: string; acronym: string | null }>>([])
   const [loadingOrgs, setLoadingOrgs] = useState(true)
-  const [envelopeData, setEnvelopeData] = useState<FundingEnvelopeDataPoint[]>([])
+  const [timeSeriesData, setTimeSeriesData] = useState<FundingTimeSeriesPoint[]>([])
+  const [metadata, setMetadata] = useState<ApiResponse['metadata'] | null>(null)
   const chartRef = useRef<HTMLDivElement>(null)
 
   const currentYear = new Date().getFullYear()
 
-  // Fetch organizations that have funding envelopes
+  // Fetch organizations that have funding data (either transactions or envelopes)
   useEffect(() => {
     const fetchOrganizations = async () => {
       try {
@@ -107,26 +153,29 @@ export function FundingOverTimeAnalytics() {
     fetchOrganizations()
   }, [])
 
-  // Fetch funding envelope data when donors are selected
+  // Fetch unified time series data when donors are selected
   useEffect(() => {
     const fetchData = async () => {
       if (selectedDonors.length === 0) {
-        setEnvelopeData([])
+        setTimeSeriesData([])
+        setMetadata(null)
         return
       }
 
       try {
         setLoading(true)
         const response = await fetch(
-          `/api/analytics/funding-envelopes?organizationIds=${selectedDonors.join(',')}`
+          `/api/analytics/funding-over-time?organizationIds=${selectedDonors.join(',')}`
         )
-        if (!response.ok) throw new Error('Failed to fetch funding envelope data')
-        const data = await response.json()
-        setEnvelopeData(data)
+        if (!response.ok) throw new Error('Failed to fetch funding time series data')
+        const result: ApiResponse = await response.json()
+        setTimeSeriesData(result.data)
+        setMetadata(result.metadata)
       } catch (error) {
-        console.error('Error fetching funding envelope data:', error)
+        console.error('Error fetching funding time series data:', error)
         toast.error('Failed to load funding data')
-        setEnvelopeData([])
+        setTimeSeriesData([])
+        setMetadata(null)
       } finally {
         setLoading(false)
       }
@@ -136,12 +185,11 @@ export function FundingOverTimeAnalytics() {
   }, [selectedDonors])
 
   // Prepare chart data - group by year with each donor as a separate series
-  // Also track temporal category for each data point for coloring
   const chartData = useMemo(() => {
-    if (!envelopeData || envelopeData.length === 0) return []
+    if (!timeSeriesData || timeSeriesData.length === 0) return []
 
     // Get all unique years
-    const years = Array.from(new Set(envelopeData.map(d => d.year))).sort((a, b) => a - b)
+    const years = Array.from(new Set(timeSeriesData.map(d => d.year))).sort((a, b) => a - b)
     
     // Get all selected organizations
     const selectedOrgs = selectedDonors.map(id => {
@@ -149,29 +197,31 @@ export function FundingOverTimeAnalytics() {
       return org ? { id, name: org.name, acronym: org.acronym } : null
     }).filter(Boolean) as Array<{ id: string; name: string; acronym: string | null }>
 
-    // Build data structure: array of year objects with each donor as a property
-    // Also include category info for each donor-year combination
+    // Build data structure
     return years.map(year => {
       const yearData: any = { year }
       
       selectedOrgs.forEach(org => {
-        const orgData = envelopeData.find(
+        const orgData = timeSeriesData.find(
           d => d.organization_id === org.id && d.year === year
         )
         const displayName = org.acronym || org.name
         if (orgData) {
           yearData[displayName] = orgData.amount_usd || 0
-          // Store category for coloring: `${displayName}_category`
-          yearData[`${displayName}_category`] = orgData.category
+          yearData[`${displayName}_data_type`] = orgData.data_type
+          yearData[`${displayName}_data_source`] = orgData.data_source
+          yearData[`${displayName}_transaction_count`] = orgData.transaction_count
         } else {
           yearData[displayName] = 0
-          yearData[`${displayName}_category`] = 'past' // Default
+          // Infer data type based on year
+          yearData[`${displayName}_data_type`] = year < currentYear ? 'actual' : (year === currentYear ? 'partial' : 'indicative')
+          yearData[`${displayName}_data_source`] = year <= currentYear ? 'transactions' : 'organization_budgets'
         }
       })
 
       return yearData
     })
-  }, [envelopeData, selectedDonors, organizations])
+  }, [timeSeriesData, selectedDonors, organizations, currentYear])
 
   // Get organization names for legend
   const donorNames = useMemo(() => {
@@ -193,10 +243,9 @@ export function FundingOverTimeAnalytics() {
     return `$${value.toFixed(0)}`
   }
 
-  // Custom tooltip
+  // Custom tooltip with data source info
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
-      // Deduplicate payload by donor name (since multiple segments share the same dataKey)
       const uniqueEntries = new Map()
       payload.forEach((entry: any) => {
         if (entry.name && !uniqueEntries.has(entry.name)) {
@@ -204,6 +253,7 @@ export function FundingOverTimeAnalytics() {
         }
       })
       const deduplicatedPayload = Array.from(uniqueEntries.values())
+      const yearLabel = typeof label === 'number' ? label : parseInt(label)
 
       return (
         <div className="bg-white border border-gray-200 rounded-lg shadow-lg overflow-hidden" style={{ borderColor: COLORS.paleSlate }}>
@@ -219,82 +269,74 @@ export function FundingOverTimeAnalytics() {
                 <th className="px-3 py-2 text-right font-semibold" style={{ color: COLORS.blueSlate, borderBottom: `1px solid ${COLORS.paleSlate}` }}>
                   Amount
                 </th>
+                <th className="px-3 py-2 text-center font-semibold" style={{ color: COLORS.blueSlate, borderBottom: `1px solid ${COLORS.paleSlate}` }}>
+                  Type
+                </th>
               </tr>
             </thead>
             <tbody>
-              {deduplicatedPayload.map((entry: any, index: number) => (
-                <tr key={index} style={{ backgroundColor: index % 2 === 0 ? '#ffffff' : COLORS.platinum }}>
-                  <td className="px-3 py-2" style={{ color: entry.color || COLORS.primaryScarlet, borderBottom: `1px solid ${COLORS.paleSlate}` }}>
-                    {entry.name}
-                  </td>
-                  <td className="px-3 py-2 text-right font-medium" style={{ color: COLORS.blueSlate, borderBottom: `1px solid ${COLORS.paleSlate}` }}>
-                    {formatCurrency(entry.value)}
-                  </td>
-                </tr>
-              ))}
+              {deduplicatedPayload.map((entry: any, index: number) => {
+                const dataType = entry.payload?.[`${entry.name}_data_type`] || 'actual'
+                const txCount = entry.payload?.[`${entry.name}_transaction_count`]
+                
+                return (
+                  <tr key={index} style={{ backgroundColor: index % 2 === 0 ? '#ffffff' : COLORS.platinum }}>
+                    <td className="px-3 py-2" style={{ color: entry.color || COLORS.primaryScarlet, borderBottom: `1px solid ${COLORS.paleSlate}` }}>
+                      {entry.name}
+                    </td>
+                    <td className="px-3 py-2 text-right font-medium" style={{ color: COLORS.blueSlate, borderBottom: `1px solid ${COLORS.paleSlate}` }}>
+                      {formatCurrency(entry.value)}
+                      {txCount && <span className="text-xs text-gray-400 ml-1">({txCount} txns)</span>}
+                    </td>
+                    <td className="px-3 py-2 text-center" style={{ borderBottom: `1px solid ${COLORS.paleSlate}` }}>
+                      <Badge 
+                        variant="outline" 
+                        className="text-xs"
+                        style={{ 
+                          borderColor: getDataTypeColor(dataType),
+                          color: getDataTypeColor(dataType)
+                        }}
+                      >
+                        {getDataTypeLabel(dataType)}
+                      </Badge>
+                    </td>
+                  </tr>
+                )
+              })}
             </tbody>
           </table>
+          <div className="px-3 py-2 text-xs text-gray-500" style={{ borderTop: `1px solid ${COLORS.paleSlate}`, backgroundColor: COLORS.platinum }}>
+            {yearLabel < currentYear && 'Source: Activity transactions (disbursements + expenditures)'}
+            {yearLabel === currentYear && 'Source: Activity transactions (year-to-date)'}
+            {yearLabel > currentYear && 'Source: Organisation indicative budgets'}
+          </div>
         </div>
       )
     }
     return null
   }
 
-  // Prepare data segments for line/area charts (past/current/future styling)
-  const getChartSegments = () => {
-    if (!envelopeData || envelopeData.length === 0) return { past: [], current: [], future: [] }
-
-    const years = Array.from(new Set(envelopeData.map(d => d.year))).sort((a, b) => a - b)
-    const selectedOrgs = selectedDonors.map(id => {
-      const org = organizations.find(o => o.id === id)
-      return org ? { id, name: org.name, acronym: org.acronym } : null
-    }).filter(Boolean) as Array<{ id: string; name: string; acronym: string | null }>
-
-    const segments: {
-      past: Array<{ year: number; [key: string]: any }>
-      current: Array<{ year: number; [key: string]: any }>
-      future: Array<{ year: number; [key: string]: any }>
-    } = {
-      past: [],
-      current: [],
-      future: []
-    }
-
-    years.forEach(year => {
-      const yearData: any = { year }
-      let hasFuture = false
-      let hasCurrent = false
-      let hasPast = false
-
-      selectedOrgs.forEach(org => {
-        const orgData = envelopeData.find(d => d.organization_id === org.id && d.year === year)
-        const displayName = org.acronym || org.name
-        if (orgData) {
-          yearData[displayName] = orgData.amount_usd || 0
-          if (orgData.category === 'future') hasFuture = true
-          else if (orgData.category === 'current') hasCurrent = true
-          else hasPast = true
-        } else {
-          yearData[displayName] = 0
-        }
-      })
-
-      if (hasFuture) segments.future.push(yearData)
-      else if (hasCurrent) segments.current.push(yearData)
-      else segments.past.push(yearData)
-    })
-
-    return segments
-  }
-
-  // Handle CSV export
+  // Handle CSV export with metadata columns
   const handleExportCSV = () => {
-    if (chartData.length === 0) {
+    if (timeSeriesData.length === 0) {
       toast.error('No data to export')
       return
     }
 
-    exportChartToCSV(chartData, 'Funding Over Time')
+    // Prepare export data with metadata columns
+    const exportData = timeSeriesData.map(point => ({
+      organization_name: point.organization_name,
+      organization_acronym: point.organization_acronym || '',
+      year: point.year,
+      amount_usd: point.amount_usd,
+      data_source: point.data_source,
+      data_type: point.data_type,
+      transaction_count: point.transaction_count || ''
+    }))
+
+    const csvContent = convertToCSV(exportData)
+    const timestamp = new Date().toISOString().split('T')[0]
+    downloadCSV(csvContent, `funding-over-time-${timestamp}.csv`)
     toast.success('CSV exported successfully')
   }
 
@@ -320,7 +362,6 @@ export function FundingOverTimeAnalytics() {
     value: org.id
   }))
 
-  const segments = getChartSegments()
   const minYear = chartData.length > 0 ? Math.min(...chartData.map(d => d.year)) : currentYear
   const maxYear = chartData.length > 0 ? Math.max(...chartData.map(d => d.year)) : currentYear
 
@@ -330,14 +371,39 @@ export function FundingOverTimeAnalytics() {
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
-            <div>
-              <CardTitle className="flex items-center gap-2">
-                <TrendingUp className="h-5 w-5" style={{ color: COLORS.primaryScarlet }} />
-                Funding Over Time
-              </CardTitle>
-              <CardDescription className="mt-1">
-                Compare indicative organisation-level funding across multiple donors over time
-              </CardDescription>
+            <div className="flex items-center gap-3">
+              <div>
+                <CardTitle className="flex items-center gap-2">
+                  <TrendingUp className="h-5 w-5" style={{ color: COLORS.primaryScarlet }} />
+                  Funding Over Time
+                </CardTitle>
+                <CardDescription className="mt-1">
+                  Compare funding across multiple donors over time
+                </CardDescription>
+              </div>
+              {/* Info tooltip explaining data sources */}
+              <TooltipProvider>
+                <UITooltip>
+                  <TooltipTrigger asChild>
+                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                      <Info className="h-4 w-4 text-gray-400 hover:text-gray-600" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent className="max-w-sm p-4 bg-white border shadow-lg">
+                    <div className="space-y-2 text-sm">
+                      <p className="font-semibold text-gray-900">About this data</p>
+                      <ul className="space-y-1 text-gray-600">
+                        <li><span className="font-medium" style={{ color: COLORS.actual }}>Past years:</span> Aggregated from published IATI activity transactions (disbursements + expenditures)</li>
+                        <li><span className="font-medium" style={{ color: COLORS.partial }}>Current year:</span> Year-to-date transaction totals (partial data)</li>
+                        <li><span className="font-medium" style={{ color: COLORS.indicative }}>Future years:</span> Indicative organisation-level budgets (subject to change)</li>
+                      </ul>
+                      <p className="text-xs text-gray-500 pt-2 border-t">
+                        Future projections should not be treated as commitments.
+                      </p>
+                    </div>
+                  </TooltipContent>
+                </UITooltip>
+              </TooltipProvider>
             </div>
           </div>
         </CardHeader>
@@ -428,6 +494,19 @@ export function FundingOverTimeAnalytics() {
         </CardContent>
       </Card>
 
+      {/* Data Type Legend */}
+      {selectedDonors.length > 0 && chartData.length > 0 && (
+        <Card>
+          <CardContent className="py-3">
+            <div className="flex flex-wrap items-center gap-6 justify-center">
+              <DataTypeLegendItem color={COLORS.actual} label="Actuals (activity transactions)" />
+              <DataTypeLegendItem color={COLORS.partial} label="Current year (partial YTD)" />
+              <DataTypeLegendItem color={COLORS.indicative} label="Future years (indicative budgets)" isDashed />
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Chart/Table Display */}
       {selectedDonors.length === 0 ? (
         <Card>
@@ -454,139 +533,68 @@ export function FundingOverTimeAnalytics() {
             <div className="text-center" style={{ color: COLORS.blueSlate }}>
               <AlertCircle className="h-12 w-12 mx-auto mb-4" style={{ color: COLORS.paleSlate }} />
               <p className="font-medium mb-1">No data available</p>
-              <p className="text-sm">The selected organizations don't have funding envelope data for this period</p>
+              <p className="text-sm">The selected organizations don&apos;t have funding data for this period</p>
             </div>
           </CardContent>
         </Card>
       ) : (
         <Card ref={chartRef}>
           <CardContent className="pt-6">
-            {chartView === 'line' && (() => {
-              // Create segments for each donor based on temporal categories
-              const lineSegments: Array<{
-                name: string
-                data: any[]
-                color: string
-                strokeDasharray?: string
-                showInLegend: boolean
-                donorName: string
-              }> = []
-
-              donorNames.forEach((name, donorIndex) => {
-                // Separate data by category for this donor
-                const pastPoints: any[] = []
-                const currentPoints: any[] = []
-                const futurePoints: any[] = []
-
-                chartData.forEach(point => {
-                  if (point[name] !== undefined && point[name] !== null) {
-                    const category = point[`${name}_category`] as 'past' | 'current' | 'future'
-                    if (category === 'past') {
-                      pastPoints.push(point)
-                    } else if (category === 'current') {
-                      currentPoints.push(point)
-                    } else {
-                      futurePoints.push(point)
-                    }
-                  }
-                })
-
-                // Past segment - solid red
-                if (pastPoints.length > 0) {
-                  lineSegments.push({
-                    name: donorIndex === 0 ? name : '',
-                    donorName: name,
-                    data: pastPoints,
-                    color: COLORS.primaryScarlet,
-                    showInLegend: donorIndex === 0
-                  })
-                }
-
-                // Current segment - solid cool steel (connect from last past point if exists)
-                if (currentPoints.length > 0) {
-                  const currentSegment = pastPoints.length > 0 
-                    ? [pastPoints[pastPoints.length - 1], ...currentPoints]
-                    : currentPoints
-                  lineSegments.push({
-                    name: '',
-                    donorName: name,
-                    data: currentSegment,
-                    color: COLORS.coolSteel,
-                    showInLegend: false
-                  })
-                }
-
-                // Future segment - dashed blue slate (connect from last current/past point)
-                if (futurePoints.length > 0) {
-                  const lastPoint = currentPoints.length > 0
-                    ? currentPoints[currentPoints.length - 1]
-                    : (pastPoints.length > 0 ? pastPoints[pastPoints.length - 1] : null)
-                  
-                  const futureSegment = lastPoint && lastPoint.year < futurePoints[0].year
-                    ? [lastPoint, ...futurePoints]
-                    : futurePoints
-                  
-                  lineSegments.push({
-                    name: '',
-                    donorName: name,
-                    data: futureSegment,
-                    color: COLORS.blueSlate,
-                    strokeDasharray: '8 4',
-                    showInLegend: false
-                  })
-                }
-              })
-
-              return (
-                <ResponsiveContainer width="100%" height={500}>
-                  <LineChart>
-                    <CartesianGrid strokeDasharray="3 3" stroke={COLORS.paleSlate} />
-                    <XAxis
-                      dataKey="year"
-                      type="number"
-                      domain={[minYear, maxYear]}
-                      tickCount={maxYear - minYear + 1}
-                      allowDecimals={false}
+            {chartView === 'line' && (
+              <ResponsiveContainer width="100%" height={500}>
+                <LineChart data={chartData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke={COLORS.paleSlate} />
+                  <XAxis
+                    dataKey="year"
+                    stroke={COLORS.blueSlate}
+                    tick={{ fill: COLORS.blueSlate }}
+                  />
+                  <YAxis
+                    stroke={COLORS.blueSlate}
+                    tick={{ fill: COLORS.blueSlate }}
+                    tickFormatter={formatCurrency}
+                  />
+                  <Tooltip content={<CustomTooltip />} />
+                  <Legend />
+                  {/* Vertical reference line at current year boundary */}
+                  <ReferenceLine 
+                    x={currentYear} 
+                    stroke={COLORS.partial} 
+                    strokeDasharray="4 4"
+                    strokeWidth={2}
+                    label={{ value: 'Now', position: 'top', fill: COLORS.partial, fontSize: 12 }}
+                  />
+                  {donorNames.map((name, index) => (
+                    <Line
+                      key={name}
+                      type="monotone"
+                      dataKey={name}
+                      name={name}
                       stroke={COLORS.blueSlate}
-                      tick={{ fill: COLORS.blueSlate }}
+                      strokeWidth={2}
+                      dot={(props: any) => {
+                        if (!props || !props.payload) return null
+                        const dataType = props.payload[`${name}_data_type`]
+                        const color = getDataTypeColor(dataType)
+                        const isIndicative = dataType === 'indicative'
+                        return (
+                          <circle 
+                            cx={props.cx} 
+                            cy={props.cy} 
+                            r={isIndicative ? 5 : 4} 
+                            fill={color}
+                            stroke={isIndicative ? color : 'none'}
+                            strokeWidth={isIndicative ? 2 : 0}
+                            fillOpacity={isIndicative ? 0.3 : 1}
+                          />
+                        )
+                      }}
+                      connectNulls={true}
                     />
-                    <YAxis
-                      stroke={COLORS.blueSlate}
-                      tick={{ fill: COLORS.blueSlate }}
-                      tickFormatter={formatCurrency}
-                    />
-                    <Tooltip content={<CustomTooltip />} />
-                    <Legend />
-                    {lineSegments.map((segment, idx) => (
-                      <Line
-                        key={`line-${segment.donorName}-${idx}`}
-                        type="monotone"
-                        data={segment.data}
-                        dataKey={segment.donorName}
-                        {...(segment.showInLegend ? { name: segment.name } : {})}
-                        stroke={segment.color}
-                        strokeWidth={2}
-                        {...(segment.strokeDasharray ? { strokeDasharray: segment.strokeDasharray } : {})}
-                        dot={(props: any) => {
-                          if (!props || !props.payload) return null
-                          const year = props.payload.year
-                          const point = segment.data.find(d => d.year === year)
-                          if (!point) return null
-                          const category = point[`${segment.donorName}_category`] as 'past' | 'current' | 'future'
-                          let dotColor = COLORS.primaryScarlet
-                          if (category === 'current') dotColor = COLORS.coolSteel
-                          else if (category === 'future') dotColor = COLORS.blueSlate
-                          return <circle cx={props.cx} cy={props.cy} r={4} fill={dotColor} />
-                        }}
-                        connectNulls={true}
-                        legendType={segment.showInLegend ? undefined : 'none'}
-                        isAnimationActive={false}
-                      />
-                    ))}
-                  </LineChart>
-                </ResponsiveContainer>
-              )
-            })()}
+                  ))}
+                </LineChart>
+              </ResponsiveContainer>
+            )}
 
             {chartView === 'bar' && (
               <ResponsiveContainer width="100%" height={500}>
@@ -604,6 +612,12 @@ export function FundingOverTimeAnalytics() {
                   />
                   <Tooltip content={<CustomTooltip />} />
                   <Legend />
+                  <ReferenceLine 
+                    x={currentYear} 
+                    stroke={COLORS.partial} 
+                    strokeDasharray="4 4"
+                    strokeWidth={2}
+                  />
                   {donorNames.map((name) => (
                     <Bar
                       key={name}
@@ -612,16 +626,17 @@ export function FundingOverTimeAnalytics() {
                       radius={[4, 4, 0, 0]}
                     >
                       {chartData.map((entry, index) => {
-                        const category = entry[`${name}_category`] as 'past' | 'current' | 'future'
-                        let color = COLORS.primaryScarlet
-                        if (category === 'past') {
-                          color = COLORS.primaryScarlet
-                        } else if (category === 'current') {
-                          color = COLORS.coolSteel
-                        } else {
-                          color = COLORS.blueSlate
-                        }
-                        return <Cell key={`cell-${name}-${index}`} fill={color} />
+                        const dataType = entry[`${name}_data_type`] as string
+                        return (
+                          <Cell 
+                            key={`cell-${name}-${index}`} 
+                            fill={getDataTypeColor(dataType)}
+                            fillOpacity={dataType === 'indicative' ? 0.6 : 1}
+                            stroke={dataType === 'indicative' ? getDataTypeColor(dataType) : 'none'}
+                            strokeWidth={dataType === 'indicative' ? 2 : 0}
+                            strokeDasharray={dataType === 'indicative' ? '4 2' : undefined}
+                          />
+                        )
                       })}
                     </Bar>
                   ))}
@@ -645,17 +660,22 @@ export function FundingOverTimeAnalytics() {
                   />
                   <Tooltip content={<CustomTooltip />} />
                   <Legend />
-                  {donorNames.map((name, index) => {
-                    const color = DONOR_COLORS[index % DONOR_COLORS.length]
+                  <ReferenceLine 
+                    x={currentYear} 
+                    stroke={COLORS.partial} 
+                    strokeDasharray="4 4"
+                    strokeWidth={2}
+                  />
+                  {donorNames.map((name) => {
                     return (
                       <Area
                         key={name}
                         type="monotone"
                         dataKey={name}
                         name={name}
-                        stroke={color}
-                        fill={color}
-                        fillOpacity={0.5}
+                        stroke={COLORS.blueSlate}
+                        fill={COLORS.blueSlate}
+                        fillOpacity={0.4}
                         strokeWidth={2}
                         connectNulls={true}
                       />
@@ -672,6 +692,9 @@ export function FundingOverTimeAnalytics() {
                     <tr style={{ backgroundColor: COLORS.platinum }}>
                       <th className="border p-3 text-left font-semibold" style={{ color: COLORS.blueSlate, borderColor: COLORS.paleSlate }}>
                         Year
+                      </th>
+                      <th className="border p-3 text-center font-semibold" style={{ color: COLORS.blueSlate, borderColor: COLORS.paleSlate }}>
+                        Data Type
                       </th>
                       {donorNames.map((name) => (
                         <th
@@ -690,10 +713,23 @@ export function FundingOverTimeAnalytics() {
                   <tbody>
                     {chartData.map((row, index) => {
                       const rowTotal = donorNames.reduce((sum, name) => sum + (row[name] || 0), 0)
+                      const firstDonorDataType = row[`${donorNames[0]}_data_type`] as string
                       return (
                         <tr key={index} style={{ backgroundColor: index % 2 === 0 ? '#ffffff' : COLORS.platinum }}>
                           <td className="border p-3 font-medium" style={{ color: COLORS.blueSlate, borderColor: COLORS.paleSlate }}>
                             {row.year}
+                          </td>
+                          <td className="border p-3 text-center" style={{ borderColor: COLORS.paleSlate }}>
+                            <Badge 
+                              variant="outline"
+                              style={{ 
+                                borderColor: getDataTypeColor(firstDonorDataType),
+                                color: getDataTypeColor(firstDonorDataType)
+                              }}
+                            >
+                              {firstDonorDataType === 'actual' ? 'Actual' : 
+                               firstDonorDataType === 'partial' ? 'Partial (YTD)' : 'Indicative'}
+                            </Badge>
                           </td>
                           {donorNames.map((name) => (
                             <td
@@ -724,10 +760,11 @@ export function FundingOverTimeAnalytics() {
           <div className="flex items-start gap-3">
             <AlertCircle className="h-5 w-5 mt-0.5" style={{ color: COLORS.primaryScarlet }} />
             <div className="text-sm" style={{ color: COLORS.blueSlate }}>
-              <p className="font-medium mb-1">Important: Non-Aggregatable Data</p>
+              <p className="font-medium mb-1">Important: Data Interpretation</p>
               <p>
-                These figures represent indicative organisation-level funding from the perspective of each organisation only. 
-                They are intended for planning and coordination purposes and must not be aggregated across organisations or treated as national totals.
+                <strong>Past years</strong> show confirmed transaction data (disbursements and expenditures). 
+                <strong> Current year</strong> figures are year-to-date and will update as new transactions are recorded. 
+                <strong> Future years</strong> reflect indicative organisation-level budgets and are subject to change—they should not be treated as firm commitments.
               </p>
             </div>
           </div>

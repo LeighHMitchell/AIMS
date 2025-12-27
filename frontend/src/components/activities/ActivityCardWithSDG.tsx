@@ -417,7 +417,11 @@ const ActivityCardWithSDG: React.FC<ActivityCardWithSDGProps> = ({
               
               {/* Activity ID and IATI ID - Always displayed */}
               <div className="text-xs text-muted-foreground line-clamp-1 flex items-center gap-1">
-                <span>{activity.partner_id || 'Activity ID not reported'}</span>
+                {activity.partner_id ? (
+                  <span className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded">{activity.partner_id}</span>
+                ) : (
+                  <span className="text-muted-foreground">Activity ID not reported</span>
+                )}
                 {activity.partner_id && (
                   <button
                     type="button"
@@ -429,7 +433,11 @@ const ActivityCardWithSDG: React.FC<ActivityCardWithSDGProps> = ({
                     <Copy className="w-3 h-3" />
                   </button>
                 )}
-                <span className="text-slate-400 ml-2">{activity.iati_id || 'IATI Identifier not reported'}</span>
+                {activity.iati_id ? (
+                  <span className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded ml-2">{activity.iati_id}</span>
+                ) : (
+                  <span className="text-muted-foreground ml-2">IATI Identifier not reported</span>
+                )}
                 {activity.iati_id && (
                   <button
                     type="button"

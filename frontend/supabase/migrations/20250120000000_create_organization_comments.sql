@@ -93,3 +93,5 @@ CREATE POLICY "Users can create organization comment replies" ON organization_co
 CREATE POLICY "Users can update organization comment replies" ON organization_comment_replies
     FOR UPDATE
     USING (true);
+
+

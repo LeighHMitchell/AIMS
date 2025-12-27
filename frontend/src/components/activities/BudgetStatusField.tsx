@@ -86,7 +86,7 @@ export function BudgetStatusField({
     userId,
     immediate: true,
     onSuccess: () => {
-      toast.success("Budget status saved", { position: "top-right" });
+      toast.success("Budget status saved", { position: "top-center" });
     },
   });
 
@@ -95,7 +95,7 @@ export function BudgetStatusField({
     userId,
     debounceMs: 1000,
     onSuccess: () => {
-      toast.success("On-budget percentage saved", { position: "top-right" });
+      toast.success("On-budget percentage saved", { position: "top-center" });
     },
   });
 
@@ -104,7 +104,7 @@ export function BudgetStatusField({
     userId,
     debounceMs: 2000,
     onSuccess: () => {
-      toast.success("Budget notes saved", { position: "top-right" });
+      toast.success("Budget notes saved", { position: "top-center" });
     },
   });
 

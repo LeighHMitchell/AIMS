@@ -2958,42 +2958,42 @@ export default function ActivityDetailPage() {
           {/* Main Content Tabs */}
           <Card className="border-0">
             <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
-              <TabsList className={`grid w-full ${(user?.role?.includes('gov_partner') || user?.role === 'super_user') ? 'grid-cols-12' : 'grid-cols-11'} bg-slate-50 border-b border-slate-200`}>
-                <TabsTrigger value="finances" className="data-[state=active]:bg-white data-[state=active]:text-slate-900">
+              <TabsList className="p-1 h-auto bg-background gap-1 border mb-6 flex flex-wrap">
+                <TabsTrigger value="finances" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
                   Finances
                 </TabsTrigger>
-                <TabsTrigger value="financial-analytics" className="data-[state=active]:bg-white data-[state=active]:text-slate-900">
+                <TabsTrigger value="financial-analytics" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
                   Financial Analytics
                 </TabsTrigger>
-                <TabsTrigger value="sectors" className="data-[state=active]:bg-white data-[state=active]:text-slate-900">
+                <TabsTrigger value="sectors" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
                   Sectors
                 </TabsTrigger>
-                <TabsTrigger value="partnerships" className="data-[state=active]:bg-white data-[state=active]:text-slate-900">
+                <TabsTrigger value="partnerships" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
                   Partnerships
                 </TabsTrigger>
-                <TabsTrigger value="geography" className="data-[state=active]:bg-white data-[state=active]:text-slate-900">
+                <TabsTrigger value="geography" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
                   Locations
                 </TabsTrigger>
-                <TabsTrigger value="results" className="data-[state=active]:bg-white data-[state=active]:text-slate-900">
+                <TabsTrigger value="results" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
                   Results
                 </TabsTrigger>
-                <TabsTrigger value="sdg" className="data-[state=active]:bg-white data-[state=active]:text-slate-900">
+                <TabsTrigger value="sdg" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
                   SDG Alignment
                 </TabsTrigger>
-                <TabsTrigger value="policy-markers" className="data-[state=active]:bg-white data-[state=active]:text-slate-900">
+                <TabsTrigger value="policy-markers" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
                   Policy Markers
                 </TabsTrigger>
-                <TabsTrigger value="library" className="data-[state=active]:bg-white data-[state=active]:text-slate-900">
+                <TabsTrigger value="library" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
                   Library
                 </TabsTrigger>
-                <TabsTrigger value="related-activities" className="data-[state=active]:bg-white data-[state=active]:text-slate-900">
+                <TabsTrigger value="related-activities" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
                   Related Activities
                 </TabsTrigger>
-                <TabsTrigger value="contacts" className="data-[state=active]:bg-white data-[state=active]:text-slate-900">
+                <TabsTrigger value="contacts" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
                   Contacts
                 </TabsTrigger>
                 {(user?.role?.includes('gov_partner') || user?.role === 'super_user') && (
-                  <TabsTrigger value="government-inputs" className="data-[state=active]:bg-white data-[state=active]:text-slate-900">
+                  <TabsTrigger value="government-inputs" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
                     Gov Inputs
                   </TabsTrigger>
                 )}

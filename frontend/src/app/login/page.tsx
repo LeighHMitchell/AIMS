@@ -9,6 +9,8 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle, LogIn } from "lucide-react";
 import { toast } from "sonner";
 import { useUser } from "@/hooks/useUser";
+import { GmailLogin } from "@/components/auth/GmailLogin";
+import { supabase } from "@/lib/supabase";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -26,6 +28,15 @@ export default function LoginPage() {
     try {
       console.log("[Login] Attempting login for:", email);
       
+      // IMPORTANT: Sign out of any existing Supabase OAuth session first
+      // This prevents OAuth sessions from hijacking email/password logins
+      try {
+        await supabase.auth.signOut();
+        console.log("[Login] Cleared any existing Supabase session");
+      } catch (signOutError) {
+        console.log("[Login] No existing session to clear");
+      }
+      
       const response = await fetch("/api/auth/login", {
         method: "POST",
         headers: {
@@ -41,6 +52,9 @@ export default function LoginPage() {
       }
 
       console.log("[Login] Login successful:", data.user);
+      
+      // Mark this as an email/password login (prevents OAuth session from overriding)
+      localStorage.setItem('aims_auth_source', 'email_password');
       
       // Set user in context (this will also save to localStorage)
       setUser(data.user);
@@ -137,6 +151,19 @@ export default function LoginPage() {
               )}
             </Button>
           </form>
+
+          {/* Divider */}
+          <div className="relative my-6">
+            <div className="absolute inset-0 flex items-center">
+              <span className="w-full border-t border-gray-300" />
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-[#F6F5F4] px-2 text-gray-500">Or continue with</span>
+            </div>
+          </div>
+
+          {/* Google Sign-In */}
+          <GmailLogin redirectTo="/auth/callback?next=/activities" />
 
         </CardContent>
       </Card>

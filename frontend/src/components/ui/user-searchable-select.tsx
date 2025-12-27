@@ -95,14 +95,14 @@ export function UserSearchableSelect({
   };
 
   return (
-    <div className="flex gap-2">
+    <div className={cn("flex gap-2", className)}>
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
           <Button
             variant="outline"
             role="combobox"
             aria-expanded={open}
-            className={cn("justify-between flex-1", className)}
+            className="justify-between flex-1 w-full"
             disabled={disabled}
           >
             {selectedUser ? (

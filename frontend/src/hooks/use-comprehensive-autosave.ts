@@ -322,7 +322,7 @@ export function useComprehensiveAutosave(
         if (showSuccessToast && isManual) {
           toast.success('Core activity data saved. Save manually for complete data.', {
             duration: 3000,
-            position: 'top-right'
+            position: 'top-center'
           });
         } else if (!isManual) {
           // For autosave, show a less intrusive message
@@ -375,7 +375,7 @@ export function useComprehensiveAutosave(
       });
 
       if (showSuccessToast && isManual) {
-        toast.success('Changes saved successfully', { position: 'top-right' });
+        toast.success('Changes saved successfully', { position: 'top-center' });
       }
 
       onSaveSuccess?.(responseData);
@@ -428,7 +428,7 @@ export function useComprehensiveAutosave(
                 }
               },
               duration: 8000,
-              position: 'top-right'
+              position: 'top-center'
             });
           } else {
             toast.error(`Autosave failed: ${err.message.includes('HTTP') ? 'Connection issue' : 'Unknown error'}`, {
@@ -440,7 +440,7 @@ export function useComprehensiveAutosave(
                 }
               },
               duration: 6000,
-              position: 'top-right'
+              position: 'top-center'
             });
           }
         }

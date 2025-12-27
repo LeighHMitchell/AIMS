@@ -509,7 +509,7 @@ export function DataClinicBudgets() {
                   </tr>
                 ) : (
                   filteredBudgets.map((budget) => (
-                    <tr key={budget.id} className="border-b hover:bg-gray-50">
+                    <tr key={budget.id} className="border-b hover:bg-muted/50">
                       {isSuperUser && (
                         <td className="p-4">
                           <Checkbox

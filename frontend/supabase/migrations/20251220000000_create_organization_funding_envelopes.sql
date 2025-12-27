@@ -111,3 +111,5 @@ CREATE POLICY "Authenticated users can delete funding envelopes" ON organization
 -- RLS Policies for history table
 CREATE POLICY "Anyone can read funding envelope history" ON organization_funding_envelope_history
   FOR SELECT USING (true);
+
+

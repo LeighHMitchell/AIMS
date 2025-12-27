@@ -201,3 +201,5 @@ SELECT
   SUM(CASE WHEN status = 'indicative' THEN 1 ELSE 0 END) AS future_entries
 FROM organization_funding_envelopes
 WHERE created_at >= NOW() - INTERVAL '1 minute';
+
+

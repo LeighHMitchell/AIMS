@@ -330,26 +330,26 @@ function SearchPageContent() {
         {/* Results */}
         {query && !error && (
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-7 mb-6">
-              <TabsTrigger value="all" className="text-sm">
+            <TabsList className="p-1 h-auto bg-background gap-1 border mb-6 flex flex-wrap">
+              <TabsTrigger value="all" className="text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
                 All ({resultCounts.all})
               </TabsTrigger>
-              <TabsTrigger value="activity" className="text-sm">
+              <TabsTrigger value="activity" className="text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
                 Activities ({resultCounts.activity})
               </TabsTrigger>
-              <TabsTrigger value="organization" className="text-sm">
+              <TabsTrigger value="organization" className="text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
                 Organizations ({resultCounts.organization})
               </TabsTrigger>
-              <TabsTrigger value="user" className="text-sm">
+              <TabsTrigger value="user" className="text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
                 Users ({resultCounts.user})
               </TabsTrigger>
-              <TabsTrigger value="sector" className="text-sm">
+              <TabsTrigger value="sector" className="text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
                 Sectors ({resultCounts.sector})
               </TabsTrigger>
-              <TabsTrigger value="tag" className="text-sm">
+              <TabsTrigger value="tag" className="text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
                 Tags ({resultCounts.tag})
               </TabsTrigger>
-              <TabsTrigger value="contact" className="text-sm">
+              <TabsTrigger value="contact" className="text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
                 Contacts ({resultCounts.contact})
               </TabsTrigger>
             </TabsList>

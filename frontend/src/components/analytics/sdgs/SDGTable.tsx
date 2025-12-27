@@ -2,10 +2,10 @@
 
 import React, { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, getSortIcon } from '@/components/ui/table'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
-import { Download, AlertCircle, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react'
+import { Download, AlertCircle } from 'lucide-react'
 import { SDG_GOALS } from '@/data/sdg-targets'
 
 interface SDGTableProps {
@@ -163,24 +163,15 @@ export function SDGTable({
   }
 
   const SortButton = ({ field, children }: { field: SortField; children: React.ReactNode }) => {
-    const isActive = sortField === field
     return (
       <Button
         variant="ghost"
         size="sm"
-        className="h-8 -ml-3 hover:bg-slate-100"
+        className="h-8 -ml-3 hover:bg-muted/80"
         onClick={() => handleSort(field)}
       >
         {children}
-        {isActive ? (
-          sortDirection === 'asc' ? (
-            <ArrowUp className="h-3 w-3 ml-1" />
-          ) : (
-            <ArrowDown className="h-3 w-3 ml-1" />
-          )
-        ) : (
-          <ArrowUpDown className="h-3 w-3 ml-1 text-slate-400" />
-        )}
+        <span className="ml-1">{getSortIcon(field, sortField, sortDirection)}</span>
       </Button>
     )
   }
@@ -238,19 +229,19 @@ export function SDGTable({
       <CardContent>
         <div className="rounded-md border overflow-auto max-h-[600px]">
           <Table>
-            <TableHeader>
-              <TableRow className="sticky top-0 bg-white z-10">
-                <TableHead className="bg-white">
+            <TableHeader className="sticky top-0 z-10">
+              <TableRow>
+                <TableHead>
                   <SortButton field="sdgGoal">SDG</SortButton>
                 </TableHead>
-                <TableHead className="bg-white">SDG Name</TableHead>
-                <TableHead className="text-right bg-white">
+                <TableHead>SDG Name</TableHead>
+                <TableHead className="text-right">
                   <SortButton field="activityCount">Number of Activities</SortButton>
                 </TableHead>
-                <TableHead className="text-right bg-white">
+                <TableHead className="text-right">
                   <SortButton field="totalBudget">Total Activity Budget (USD)</SortButton>
                 </TableHead>
-                <TableHead className="text-right bg-white">
+                <TableHead className="text-right">
                   <SortButton field="totalPlannedDisbursements">Total Planned Disbursements (USD)</SortButton>
                 </TableHead>
               </TableRow>
@@ -283,6 +274,9 @@ export function SDGTable({
     </Card>
   )
 }
+
+
+
 
 
 

@@ -9,6 +9,7 @@ import { EnhancedFinancesSection } from "@/components/activities/EnhancedFinance
 import ImprovedSectorAllocationForm from "@/components/activities/ImprovedSectorAllocationForm";
 import OrganisationsSection from "@/components/OrganisationsSection";
 import ContactsTab from "@/components/contacts/ContactsTab";
+import FocalPointsTab from "@/components/activities/FocalPointsTab";
 import { GovernmentInputsSectionEnhanced } from "@/components/GovernmentInputsSectionEnhanced";
 import { AutosaveBannerUpload, AutosaveIconUpload } from "@/components/ui/autosave-upload";
 import { toast } from "sonner";
@@ -565,10 +566,10 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
   const handleCopy = async (text: string, fieldName: string) => {
     try {
       await navigator.clipboard.writeText(text);
-      toast.success(`${fieldName} copied to clipboard`, { position: 'top-right' });
+      toast.success(`${fieldName} copied to clipboard`, { position: 'top-center' });
     } catch (err) {
       console.error('Failed to copy text: ', err);
-      toast.error('Failed to copy to clipboard', { position: 'top-right' });
+      toast.error('Failed to copy to clipboard', { position: 'top-center' });
     }
   };
 
@@ -645,7 +646,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
       </div>,
       {
         duration: Infinity, // Will be dismissed when creation completes
-        position: 'top-right',
+        position: 'top-center',
         style: {
           background: 'rgb(251, 146, 60)', // Orange-400
           color: 'white',
@@ -692,7 +693,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
         </div>,
         {
           duration: 4000,
-          position: 'top-right'
+          position: 'top-center'
         }
       );
       
@@ -713,7 +714,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
   useEffect(() => {
     if (!general.id && !hasShownInitialToast.current) {
       toast.info("Start by entering an Activity Title to create the activity and unlock all form fields!", {
-        position: 'top-right',
+        position: 'top-center',
         duration: 5000,
       });
       hasShownInitialToast.current = true;
@@ -1477,7 +1478,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
                     </div>,
                     {
                       duration: 4000,
-                      position: 'top-right'
+                      position: 'top-center'
                     }
                   );
                 }}
@@ -2547,6 +2548,10 @@ function SectionContent({ section, general, setGeneral, sectors, setSectors, tra
         activityId={general.id}
         readOnly={!permissions?.canEditActivity}
         onContactsChange={setContacts}
+      />;
+    case "focal_points":
+      return <FocalPointsTab 
+        activityId={general.id}
       />;
     case "government":
       return <GovernmentInputsSectionEnhanced 
@@ -3954,6 +3959,7 @@ function NewActivityPageContent() {
       subnational_breakdown: "Subnational Breakdown",
       organisations: "Participating Organisations",
       contacts: "Activity Contacts",
+      focal_points: "Focal Points",
       linked_activities: "Linked Activities",
       finances: "Transactions",
       results: "Results",
@@ -3985,6 +3991,7 @@ function NewActivityPageContent() {
       sectors: "This tab defines the focus areas of the activity. You select sub-sectors, and the system automatically links each choice to its corresponding sector and sector category. You can assign multiple sub-sectors and use percentage shares to show how the activity budget is divided. The allocations must add up to 100 percent, and a visual summary displays the distribution.",
       organisations: "This tab records the official roles of organisations involved in the activity. Participating organisations may be listed as extending partners, implementing partners, or government partners. Extending partners are entities that channel funds onward, implementing partners are responsible for delivering the activity, and government partners provide oversight or maintain responsibility under agreements such as MoUs. These roles define the structure of participation for reporting.",
       contacts: "The Contacts tab records key individuals associated with the activity, including their name, role, organisation, and contact details. It can also include a short narrative description of their responsibilities or function within the project. Adding contacts helps identify focal points for communication and coordination, while multiple entries allow both general enquiries and specific role-based contacts to be captured.",
+      focal_points: "The Focal Points tab designates the individuals accountable for maintaining and validating the activity record. Recipient government focal points are officials who review or endorse the activity, while development partner focal points are the main contacts responsible for updating and managing the information on behalf of their organisations. Super users can assign focal points directly, and current focal points can hand off their role to another user who must accept the transfer.",
       "linked_activities": "The Linked Activities tab shows connections between this activity and others, defined through recognised relationship types such as parent, child, or related projects. Each linked activity is displayed with its title, identifier, and reporting organisation, along with its relationship to the current activity. A relationship visualisation provides a clear overview of how activities are structured and connected across partners.",
       tags: "Add custom tags to categorise this activity and make it easier to find through search and reporting. You can click on any tag to edit it inline. When creating tags, use clear and specific terms, such as \"water-infrastructure\" instead of simply \"water,\" to ensure accuracy. Tags ignore letter cases and will always be saved in lowercase. For consistency, try to reuse existing tags whenever possible. Careful tagging not only improves searchability but also strengthens the quality of filtering and reporting across activities.",
       working_groups: "In this section you can map the activity to the relevant technical or sector working groups. Doing so ensures that the activity is visible within the appropriate coordination structures, helps align it with other initiatives in the same area, and supports joint planning, monitoring and reporting. By linking your activity to the correct working group, you contribute to better coordination across partners and provide government and sector leads with a clearer picture of collective efforts.",
@@ -4297,7 +4304,7 @@ function NewActivityPageContent() {
     const sections = [
       "iati", "xml-import", 
       "general", "sectors", "humanitarian", "locations",
-      "organisations", "contacts", "linked_activities",
+      "organisations", "contacts", "focal_points", "linked_activities",
       "finances", "planned-disbursements", "budgets", "forward-spending-survey", "results", "capital-spend", "financing-terms", "conditions",
       "sdg", "country-budget", "tags", "working_groups", "policy_markers",
       "documents", "aid_effectiveness",
@@ -4313,7 +4320,7 @@ function NewActivityPageContent() {
     const sections = [
       "iati", "xml-import", 
       "general", "sectors", "humanitarian", "locations",
-      "organisations", "contacts", "linked_activities",
+      "organisations", "contacts", "focal_points", "linked_activities",
       "finances", "planned-disbursements", "budgets", "forward-spending-survey", "results", "capital-spend", "financing-terms", "conditions",
       "sdg", "country-budget", "tags", "working_groups", "policy_markers",
       "documents", "aid_effectiveness",
@@ -4500,7 +4507,7 @@ function NewActivityPageContent() {
           </div>,
           {
             duration: 4000,
-            position: 'top-right'
+            position: 'top-center'
           }
         );
       } else {
@@ -4843,7 +4850,7 @@ function NewActivityPageContent() {
                                  (!general.title?.trim() || !general.description?.trim() || 
                                   !general.activityStatus || !general.plannedStartDate || !general.plannedEndDate)
                                }
-                               className="data-[state=checked]:bg-green-600 scale-125"
+                               className="data-[state=checked]:bg-[#4C5568] scale-125"
                              />
                            </div>
                          </TooltipTrigger>

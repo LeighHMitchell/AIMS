@@ -3,9 +3,6 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import Flag from "react-world-flags";
 import {
-  ArrowUp,
-  ArrowDown,
-  ArrowUpDown,
   Eye,
   Edit2,
   Trash2,
@@ -30,6 +27,10 @@ import {
   DropdownMenuTrigger,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
   Table,
@@ -38,6 +39,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
+  getSortIcon,
 } from "@/components/ui/table";
 
 type Organization = {
@@ -168,14 +170,6 @@ export const OrganizationTable: React.FC<OrganizationTableProps> = ({
 }) => {
   const router = useRouter();
 
-  const getSortIcon = (field: SortField) => {
-    if (sortField !== field) {
-      return <ArrowUpDown className="h-4 w-4 text-gray-400" />;
-    }
-    return sortOrder === 'asc'
-      ? <ArrowUp className="h-4 w-4 text-gray-400" />
-      : <ArrowDown className="h-4 w-4 text-gray-400" />;
-  };
 
   const handleRowClick = (orgId: string, e: React.MouseEvent) => {
     // Don't navigate if clicking on action buttons
@@ -198,63 +192,63 @@ export const OrganizationTable: React.FC<OrganizationTableProps> = ({
     <div className="bg-white rounded-md shadow-sm border border-gray-200 overflow-hidden">
       <div className="overflow-x-auto">
         <Table>
-          <TableHeader className="bg-muted/50 border-b border-border">
+          <TableHeader>
             <TableRow>
               <TableHead
-                className="h-12 px-4 py-3 text-left align-middle text-sm font-medium text-muted-foreground cursor-pointer hover:bg-muted/80 transition-colors w-[28%]"
+                className="cursor-pointer hover:bg-muted/80 transition-colors w-[28%]"
                 onClick={() => onSort('name')}
               >
                 <div className="flex items-center gap-1">
                   <span>Organization Name</span>
-                  {getSortIcon('name')}
+                  {getSortIcon('name', sortField, sortOrder)}
                 </div>
               </TableHead>
               <TableHead
-                className="h-12 px-4 py-3 text-left align-middle text-sm font-medium text-muted-foreground cursor-pointer hover:bg-muted/80 transition-colors w-[13%]"
+                className="cursor-pointer hover:bg-muted/80 transition-colors w-[13%]"
                 onClick={() => onSort('type')}
               >
                 <div className="flex items-center gap-1">
                   <span>Type</span>
-                  {getSortIcon('type')}
+                  {getSortIcon('type', sortField, sortOrder)}
                 </div>
               </TableHead>
               <TableHead
-                className="h-12 px-4 py-3 text-left align-middle text-sm font-medium text-muted-foreground cursor-pointer hover:bg-muted/80 transition-colors w-[12%]"
+                className="cursor-pointer hover:bg-muted/80 transition-colors w-[12%]"
                 onClick={() => onSort('location')}
               >
                 <div className="flex items-center gap-1">
                   <span>Location</span>
-                  {getSortIcon('location')}
+                  {getSortIcon('location', sortField, sortOrder)}
                 </div>
               </TableHead>
               <TableHead
-                className="h-12 px-4 py-3 text-center align-middle text-sm font-medium text-muted-foreground cursor-pointer hover:bg-muted/80 transition-colors w-[9%]"
+                className="text-center cursor-pointer hover:bg-muted/80 transition-colors w-[9%]"
                 onClick={() => onSort('activities')}
               >
                 <div className="flex items-center justify-center gap-1">
                   <span>Activities</span>
-                  {getSortIcon('activities')}
+                  {getSortIcon('activities', sortField, sortOrder)}
                 </div>
               </TableHead>
               <TableHead
-                className="h-12 px-4 py-3 text-right align-middle text-sm font-medium text-muted-foreground cursor-pointer hover:bg-muted/80 transition-colors w-[13%]"
+                className="text-right cursor-pointer hover:bg-muted/80 transition-colors w-[13%]"
                 onClick={() => onSort('funding')}
               >
                 <div className="flex items-center justify-end gap-1">
                   <span>Funding</span>
-                  {getSortIcon('funding')}
+                  {getSortIcon('funding', sortField, sortOrder)}
                 </div>
               </TableHead>
               <TableHead
-                className="h-12 px-4 py-3 text-left align-middle text-sm font-medium text-muted-foreground cursor-pointer hover:bg-muted/80 transition-colors w-[12%]"
+                className="cursor-pointer hover:bg-muted/80 transition-colors w-[12%]"
                 onClick={() => onSort('created_at')}
               >
                 <div className="flex items-center gap-1">
                   <span>Date Created</span>
-                  {getSortIcon('created_at')}
+                  {getSortIcon('created_at', sortField, sortOrder)}
                 </div>
               </TableHead>
-              <TableHead className="h-12 px-4 py-3 text-right align-middle text-sm font-medium text-muted-foreground w-[13%]">
+              <TableHead className="text-right w-[13%]">
                 Actions
               </TableHead>
             </TableRow>
@@ -393,15 +387,15 @@ export const OrganizationTable: React.FC<OrganizationTableProps> = ({
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <Button
-                            size="sm"
-                            variant="ghost"
-                            className="h-8 w-8 p-0"
+                            variant="outline"
+                            size="icon"
+                            className="h-8 w-8"
                             onClick={(e) => e.stopPropagation()}
                           >
                             <MoreVertical className="h-4 w-4" />
                           </Button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-40">
+                        <DropdownMenuContent align="end" className="w-56">
                           <DropdownMenuItem
                             onClick={(e) => {
                               e.stopPropagation();
@@ -422,30 +416,40 @@ export const OrganizationTable: React.FC<OrganizationTableProps> = ({
                             <Edit2 className="mr-2 h-4 w-4" />
                             Edit
                           </DropdownMenuItem>
-                          {onExportPDF && (
-                            <DropdownMenuItem
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                onExportPDF(org.id);
-                              }}
-                              className="cursor-pointer"
-                            >
+                          <DropdownMenuSeparator />
+                          <DropdownMenuSub>
+                            <DropdownMenuSubTrigger>
                               <FileText className="mr-2 h-4 w-4" />
-                              Export as PDF
-                            </DropdownMenuItem>
-                          )}
-                          {onExportExcel && (
-                            <DropdownMenuItem
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                onExportExcel(org.id);
-                              }}
-                              className="cursor-pointer"
-                            >
-                              <FileSpreadsheet className="mr-2 h-4 w-4" />
-                              Export as Excel
-                            </DropdownMenuItem>
-                          )}
+                              Export
+                            </DropdownMenuSubTrigger>
+                            <DropdownMenuSubContent className="w-48">
+                              {onExportPDF && (
+                                <DropdownMenuItem
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    onExportPDF(org.id);
+                                  }}
+                                  className="cursor-pointer"
+                                >
+                                  <FileText className="mr-2 h-4 w-4" />
+                                  Export as PDF
+                                </DropdownMenuItem>
+                              )}
+                              {onExportExcel && (
+                                <DropdownMenuItem
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    onExportExcel(org.id);
+                                  }}
+                                  className="cursor-pointer"
+                                >
+                                  <FileSpreadsheet className="mr-2 h-4 w-4" />
+                                  Export as Excel
+                                </DropdownMenuItem>
+                              )}
+                            </DropdownMenuSubContent>
+                          </DropdownMenuSub>
+                          <DropdownMenuSeparator />
                           <DropdownMenuItem
                             onClick={(e) => {
                               e.stopPropagation();

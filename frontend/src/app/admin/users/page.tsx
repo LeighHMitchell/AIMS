@@ -613,8 +613,8 @@ export default function UserManagement() {
             </div>
 
             <Tabs value={activeTab} onValueChange={setActiveTab}>
-              <TabsList className="mb-6">
-                <TabsTrigger value="users" className="flex items-center gap-2">
+              <TabsList className="p-1 h-auto bg-background gap-1 border mb-6">
+                <TabsTrigger value="users" className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
                   <Users className="h-4 w-4" />
                   Users
                 </TabsTrigger>
@@ -1063,10 +1063,10 @@ function UserEditor({
   return (
     <div className="space-y-6">
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="personal">Personal Info</TabsTrigger>
-          <TabsTrigger value="contact">Contact & Address</TabsTrigger>
-          <TabsTrigger value="system">System & Role</TabsTrigger>
+        <TabsList className="p-1 h-auto bg-background gap-1 border mb-6 flex flex-wrap">
+          <TabsTrigger value="personal" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Personal Info</TabsTrigger>
+          <TabsTrigger value="contact" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Contact & Address</TabsTrigger>
+          <TabsTrigger value="system" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">System & Role</TabsTrigger>
         </TabsList>
 
         {/* Personal Information Tab */}

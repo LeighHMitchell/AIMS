@@ -110,7 +110,7 @@ export function RecencyCards({ organizationId }: RecencyCardsProps) {
       >
         <CardHeader className="pb-2">
           <CardTitle className="text-sm font-medium text-slate-600 flex items-center gap-2">
-            <Plus className="h-4 w-4 text-green-600" />
+            <Plus className="h-4 w-4 text-slate-600" />
             Last Activity Created
           </CardTitle>
         </CardHeader>
@@ -149,7 +149,7 @@ export function RecencyCards({ organizationId }: RecencyCardsProps) {
       >
         <CardHeader className="pb-2">
           <CardTitle className="text-sm font-medium text-slate-600 flex items-center gap-2">
-            <Edit className="h-4 w-4 text-blue-600" />
+            <Edit className="h-4 w-4 text-slate-600" />
             Last Activity Edited
           </CardTitle>
         </CardHeader>
@@ -186,7 +186,7 @@ export function RecencyCards({ organizationId }: RecencyCardsProps) {
       >
         <CardHeader className="pb-2">
           <CardTitle className="text-sm font-medium text-slate-600 flex items-center gap-2">
-            <CheckCircle className="h-4 w-4 text-purple-600" />
+            <CheckCircle className="h-4 w-4 text-slate-600" />
             Last Validation Event
           </CardTitle>
         </CardHeader>

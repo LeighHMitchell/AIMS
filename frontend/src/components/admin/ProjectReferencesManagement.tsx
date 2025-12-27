@@ -653,9 +653,9 @@ export function ProjectReferencesManagement() {
                       }}
                     >
                       <div className="font-medium">{a.title || "Untitled"}</div>
-                      <div className="text-xs text-muted-foreground font-mono">
+                      <span className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded inline-block mt-1">
                         {a.iati_identifier}
-                      </div>
+                      </span>
                     </button>
                   ))}
                 </div>

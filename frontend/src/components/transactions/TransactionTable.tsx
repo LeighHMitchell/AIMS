@@ -45,9 +45,6 @@ import {
   FileText,
   FileCode,
   Loader2,
-  ArrowUp,
-  ArrowDown,
-  ArrowUpDown,
 } from "lucide-react";
 import { TransactionValueDisplay } from "@/components/currency/TransactionValueDisplay";
 import { OrganizationLogo } from "@/components/ui/organization-logo";
@@ -79,6 +76,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
+  getSortIcon,
 } from "@/components/ui/table";
 import { Checkbox } from "@/components/ui/checkbox";
 import { LoadingText } from "@/components/ui/loading-text";
@@ -562,16 +560,6 @@ export function TransactionTable({
     return <Icon className="h-4 w-4" />;
   };
 
-  const getSortIcon = (field: string) => {
-    if (sortField !== field) {
-      return <ArrowUpDown className="h-3 w-3 text-gray-400" />;
-    }
-    return sortOrder === "asc" ? (
-      <ArrowUp className="h-3 w-3 text-gray-400" />
-    ) : (
-      <ArrowDown className="h-3 w-3 text-gray-400" />
-    );
-  };
 
   const getStatusIcon = (status: string | undefined) => {
     const actualStatus = status === 'actual' || status === 'A';
@@ -636,10 +624,10 @@ export function TransactionTable({
     <TooltipProvider>
     <div>
       <Table>
-        <TableHeader className="bg-muted/50 border-b border-border/70">
+        <TableHeader>
           <TableRow>
             {/* Checkbox - always visible */}
-            <TableHead className="text-sm font-medium text-foreground/90 py-3 px-4 w-10 text-center">
+            <TableHead className="w-10 text-center">
               {onSelectAll && selectedIds && (
                 <div className="flex items-center justify-center" key={`select-all-wrapper-${transactions.length}`}>
                   <Checkbox
@@ -658,33 +646,33 @@ export function TransactionTable({
             {/* Activity */}
             {isColumnVisible('activity') && variant === "full" && (
               <TableHead 
-                className="text-sm font-medium text-foreground/90 py-3 px-4 cursor-pointer hover:bg-muted/30 transition-colors"
+                className="cursor-pointer hover:bg-muted/80 transition-colors"
                 onClick={() => onSort("activity")}
               >
                 <div className="flex items-center gap-1">
                   <span>Activity</span>
-                  {getSortIcon("activity")}
+                  {getSortIcon("activity", sortField, sortOrder)}
                 </div>
               </TableHead>
             )}
             
             {/* Activity ID */}
             {isColumnVisible('activityId') && (
-              <TableHead className="text-sm font-medium text-foreground/90 py-3 px-4">
+              <TableHead>
                 Activity ID
               </TableHead>
             )}
             
             {/* IATI Identifier */}
             {isColumnVisible('iatiIdentifier') && (
-              <TableHead className="text-sm font-medium text-foreground/90 py-3 px-4">
+              <TableHead>
                 IATI Identifier
               </TableHead>
             )}
             
             {/* Reporting Org */}
             {isColumnVisible('reportingOrg') && (
-              <TableHead className="text-sm font-medium text-foreground/90 py-3 px-4">
+              <TableHead>
                 Reporting Org
               </TableHead>
             )}
@@ -692,12 +680,12 @@ export function TransactionTable({
             {/* Transaction Date */}
             {isColumnVisible('transactionDate') && (
               <TableHead 
-                className="text-sm font-medium text-foreground/90 py-3 px-4 cursor-pointer hover:bg-muted/30 transition-colors"
+                className="cursor-pointer hover:bg-muted/80 transition-colors"
                 onClick={() => onSort("transaction_date")}
               >
                 <div className="flex items-center gap-1">
                   <span>Date</span>
-                  {getSortIcon("transaction_date")}
+                  {getSortIcon("transaction_date", sortField, sortOrder)}
                 </div>
               </TableHead>
             )}
@@ -705,26 +693,26 @@ export function TransactionTable({
             {/* Transaction Type */}
             {isColumnVisible('transactionType') && (
               <TableHead
-                className="text-sm font-medium text-foreground/90 py-3 px-4 cursor-pointer hover:bg-muted/30 transition-colors"
+                className="cursor-pointer hover:bg-muted/80 transition-colors"
                 onClick={() => onSort("transaction_type")}
               >
                 <div className="flex items-center gap-1">
                   <span>Type</span>
-                  {getSortIcon("transaction_type")}
+                  {getSortIcon("transaction_type", sortField, sortOrder)}
                 </div>
               </TableHead>
             )}
             
             {/* Linked Status */}
             {isColumnVisible('linkedStatus') && (
-              <TableHead className="text-sm font-medium text-foreground/90 py-3 px-4 text-center">
+              <TableHead className="text-center">
                 Linked
               </TableHead>
             )}
             
             {/* Acceptance Status */}
             {isColumnVisible('acceptanceStatus') && (
-              <TableHead className="text-sm font-medium text-foreground/90 py-3 px-4 text-center">
+              <TableHead className="text-center">
                 Acceptance
               </TableHead>
             )}
@@ -732,26 +720,26 @@ export function TransactionTable({
             {/* Provider → Receiver */}
             {isColumnVisible('organizations') && (
               <TableHead 
-                className="text-sm font-medium text-foreground/90 py-3 px-4 cursor-pointer hover:bg-muted/30 transition-colors"
+                className="cursor-pointer hover:bg-muted/80 transition-colors"
                 onClick={() => onSort("provider_org_name")}
               >
                 <div className="flex items-center gap-1">
                   <span>Provider → Receiver</span>
-                  {getSortIcon("provider_org_name")}
+                  {getSortIcon("provider_org_name", sortField, sortOrder)}
                 </div>
               </TableHead>
             )}
             
             {/* Provider Activity */}
             {isColumnVisible('providerActivity') && (
-              <TableHead className="text-sm font-medium text-foreground/90 py-3 px-4">
+              <TableHead>
                 Provider Activity
               </TableHead>
             )}
             
             {/* Receiver Activity */}
             {isColumnVisible('receiverActivity') && (
-              <TableHead className="text-sm font-medium text-foreground/90 py-3 px-4">
+              <TableHead>
                 Receiver Activity
               </TableHead>
             )}
@@ -759,19 +747,19 @@ export function TransactionTable({
             {/* Amount */}
             {isColumnVisible('amount') && (
               <TableHead
-                className="text-sm font-medium text-foreground/90 py-3 px-4 text-right cursor-pointer hover:bg-muted/30 transition-colors"
+                className="text-right cursor-pointer hover:bg-muted/80 transition-colors"
                 onClick={() => onSort("value")}
               >
                 <div className="flex items-center justify-end gap-1">
                   <span>Amount</span>
-                  {getSortIcon("value")}
+                  {getSortIcon("value", sortField, sortOrder)}
                 </div>
               </TableHead>
             )}
             
             {/* Currency */}
             {isColumnVisible('currency') && (
-              <TableHead className="text-sm font-medium text-foreground/90 py-3 px-4 text-center">
+              <TableHead className="text-center">
                 Currency
               </TableHead>
             )}
@@ -779,12 +767,12 @@ export function TransactionTable({
             {/* Value Date */}
             {isColumnVisible('valueDate') && (
               <TableHead
-                className="text-sm font-medium text-foreground/90 py-3 px-4 cursor-pointer hover:bg-muted/30 transition-colors"
+                className="cursor-pointer hover:bg-muted/80 transition-colors"
                 onClick={() => onSort("value_date")}
               >
                 <div className="flex items-center gap-1">
                   <span>Value Date</span>
-                  {getSortIcon("value_date")}
+                  {getSortIcon("value_date", sortField, sortOrder)}
                 </div>
               </TableHead>
             )}
@@ -792,91 +780,91 @@ export function TransactionTable({
             {/* USD Value */}
             {isColumnVisible('usdValue') && (
               <TableHead
-                className="text-sm font-medium text-foreground/90 py-3 px-4 text-right cursor-pointer hover:bg-muted/30 transition-colors"
+                className="text-right cursor-pointer hover:bg-muted/80 transition-colors"
                 onClick={() => onSort("value_usd")}
               >
                 <div className="flex items-center justify-end gap-1">
                   <span>USD Value</span>
-                  {getSortIcon("value_usd")}
+                  {getSortIcon("value_usd", sortField, sortOrder)}
                 </div>
               </TableHead>
             )}
             
             {/* Finance Type - shown in both compact and full variants */}
             {isColumnVisible('financeType') && (
-              <TableHead className="text-sm font-medium text-foreground/90 py-3 px-4 cursor-pointer hover:bg-muted/30 transition-colors" onClick={() => onSort("finance_type")}>
+              <TableHead className="cursor-pointer hover:bg-muted/80 transition-colors" onClick={() => onSort("finance_type")}>
                 <div className="flex items-center gap-1">
                   <span>Finance Type</span>
-                  {getSortIcon("finance_type")}
+                  {getSortIcon("finance_type", sortField, sortOrder)}
                 </div>
               </TableHead>
             )}
             
             {/* Aid Type */}
             {isColumnVisible('aidType') && (
-              <TableHead className="text-sm font-medium text-foreground/90 py-3 px-4">
+              <TableHead>
                 Aid Type
               </TableHead>
             )}
             
             {/* Flow Type */}
             {isColumnVisible('flowType') && (
-              <TableHead className="text-sm font-medium text-foreground/90 py-3 px-4">
+              <TableHead>
                 Flow Type
               </TableHead>
             )}
             
             {/* Tied Status */}
             {isColumnVisible('tiedStatus') && (
-              <TableHead className="text-sm font-medium text-foreground/90 py-3 px-4">
+              <TableHead>
                 Tied Status
               </TableHead>
             )}
             
             {/* Humanitarian */}
             {isColumnVisible('humanitarian') && (
-              <TableHead className="text-sm font-medium text-foreground/90 py-3 px-4 text-center">
+              <TableHead className="text-center">
                 Humanitarian
               </TableHead>
             )}
             
             {/* Description */}
             {isColumnVisible('description') && (
-              <TableHead className="text-sm font-medium text-foreground/90 py-3 px-4">
+              <TableHead>
                 Description
               </TableHead>
             )}
             
             {/* Disbursement Channel */}
             {isColumnVisible('disbursementChannel') && (
-              <TableHead className="text-sm font-medium text-foreground/90 py-3 px-4">
+              <TableHead>
                 Channel
               </TableHead>
             )}
             
             {/* Validated Status */}
             {isColumnVisible('validatedStatus') && (
-              <TableHead className="text-sm font-medium text-foreground/90 py-3 px-4 text-center">
+              <TableHead className="text-center">
                 Validated
               </TableHead>
             )}
             
             {/* Transaction UUID */}
             {isColumnVisible('transactionUuid') && (
-              <TableHead className="text-sm font-medium text-foreground/90 py-3 px-4">
+              <TableHead>
                 UUID
               </TableHead>
             )}
             
             {/* Transaction Reference */}
             {isColumnVisible('transactionReference') && (
-              <TableHead className="text-sm font-medium text-foreground/90 py-3 px-4">
+              <TableHead>
                 Reference
               </TableHead>
             )}
 
             {/* Actions - always visible */}
-            <TableHead className="text-sm font-medium text-foreground/90 py-3 px-4 text-right">
+            <TableHead className="text-right">
               Actions
             </TableHead>
           </TableRow>
@@ -1089,9 +1077,13 @@ export function TransactionTable({
                 {/* IATI Identifier */}
                 {isColumnVisible('iatiIdentifier') && (
                   <td className="py-3 px-4 whitespace-nowrap">
-                    <span className="text-xs font-mono text-muted-foreground">
-                      {transaction.activity?.iati_identifier || '—'}
-                    </span>
+                    {transaction.activity?.iati_identifier ? (
+                      <span className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded">
+                        {transaction.activity.iati_identifier}
+                      </span>
+                    ) : (
+                      <span className="text-muted-foreground">—</span>
+                    )}
                   </td>
                 )}
                 
@@ -1561,8 +1553,9 @@ export function TransactionTable({
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button
-                      variant="ghost"
-                      className="h-8 w-8 p-0"
+                      variant="outline"
+                      size="icon"
+                      className="h-8 w-8"
                       aria-label="Open menu"
                     >
                       <span className="sr-only">Open menu</span>

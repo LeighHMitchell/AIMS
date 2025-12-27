@@ -16,6 +16,9 @@ interface LogActivityParams {
     oldValue?: any;
     newValue?: any;
     details?: string;
+    ipAddress?: string;
+    userAgent?: string;
+    reason?: string;
   };
 }
 
@@ -46,15 +49,16 @@ export async function logActivity(params: LogActivityParams): Promise<void> {
         const { error } = await supabase
           .from('activity_logs')
           .insert([{
-            action_type: params.actionType,
-            entity_type: params.entityType,
-            entity_id: params.entityId,
-            activity_id: params.activityId,
-            activity_title: params.activityTitle,
+            action: params.actionType,
             user_id: params.user.id,
-            user_name: params.user.name,
-            user_role: params.user.role,
-            metadata: params.metadata,
+            activity_id: params.activityId || null,
+            details: {
+              entityType: params.entityType,
+              entityId: params.entityId,
+              activityTitle: params.activityTitle,
+              user: params.user,
+              metadata: params.metadata,
+            },
           }]);
         
         if (error) {
@@ -486,6 +490,54 @@ export const ActivityLogger = {
       },
       metadata: {
         details: `Removed tag "${tag}" from activity`,
+      },
+    }),
+
+  // Session-related logs
+  userLoggedIn: (user: any, metadata?: { ipAddress?: string; userAgent?: string }) =>
+    logActivity({
+      actionType: 'login',
+      entityType: 'session',
+      entityId: user.id,
+      user: {
+        id: user.id,
+        name: user.name,
+        role: user.role,
+      },
+      metadata: {
+        details: `${user.name} logged in`,
+        ...metadata,
+      },
+    }),
+
+  userLoggedOut: (user: any) =>
+    logActivity({
+      actionType: 'logout',
+      entityType: 'session',
+      entityId: user.id,
+      user: {
+        id: user.id,
+        name: user.name,
+        role: user.role,
+      },
+      metadata: {
+        details: `${user.name} logged out`,
+      },
+    }),
+
+  userLoginFailed: (email: string, reason?: string) =>
+    logActivity({
+      actionType: 'login_failed',
+      entityType: 'session',
+      entityId: email,
+      user: {
+        id: 'unknown',
+        name: email,
+        role: 'unknown',
+      },
+      metadata: {
+        details: `Failed login attempt for ${email}`,
+        reason,
       },
     }),
 }; 

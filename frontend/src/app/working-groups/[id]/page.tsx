@@ -272,7 +272,7 @@ export default function WorkingGroupProfilePage() {
             
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="icon">
+                <Button variant="outline" size="icon" className="h-8 w-8">
                   <MoreVertical className="h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
@@ -337,16 +337,16 @@ export default function WorkingGroupProfilePage() {
 
         {/* Tabs */}
         <Tabs defaultValue="members" className="space-y-6">
-          <TabsList>
-            <TabsTrigger value="members" className="gap-2">
+          <TabsList className="p-1 h-auto bg-background gap-1 border mb-6">
+            <TabsTrigger value="members" className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
               <Users className="h-4 w-4" />
               Members ({workingGroup.members.length})
             </TabsTrigger>
-            <TabsTrigger value="activities" className="gap-2">
+            <TabsTrigger value="activities" className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
               <Calendar className="h-4 w-4" />
               Activities ({workingGroup.activities.length})
             </TabsTrigger>
-            <TabsTrigger value="documents" className="gap-2">
+            <TabsTrigger value="documents" className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
               <FileText className="h-4 w-4" />
               Documents ({workingGroup.documents.length})
             </TabsTrigger>
@@ -395,7 +395,7 @@ export default function WorkingGroupProfilePage() {
                       </div>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon">
+                          <Button variant="outline" size="icon" className="h-8 w-8">
                             <MoreVertical className="h-4 w-4" />
                           </Button>
                         </DropdownMenuTrigger>

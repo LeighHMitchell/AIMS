@@ -10,7 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, getSortIcon } from '@/components/ui/table';
 import { LoadingText } from '@/components/ui/loading-text';
 import {
   HelpCircle,
@@ -21,9 +21,6 @@ import {
   User,
   ChevronLeft,
   ChevronRight,
-  ArrowUpDown,
-  ArrowUp,
-  ArrowDown,
   MessageSquare,
   CheckCircle,
   XCircle,
@@ -76,14 +73,6 @@ const getStatusIcon = (status: FAQQuestionStatus) => {
 };
 
 // Helper function to get sort icon
-const getSortIcon = (field: string, currentSortField: string, currentSortDirection: 'asc' | 'desc') => {
-  if (field !== currentSortField) {
-    return <ArrowUpDown className="h-4 w-4 text-gray-400" />;
-  }
-  return currentSortDirection === 'asc'
-    ? <ArrowUp className="h-4 w-4 text-gray-400" />
-    : <ArrowDown className="h-4 w-4 text-gray-400" />;
-};
 
 export function FAQManagement() {
   const { user } = useUser();
@@ -554,10 +543,10 @@ function QuestionTable({
               <TableRow>
                 <TableHead className="w-[50px]">Status</TableHead>
                 <TableHead
-                  className="cursor-pointer hover:bg-gray-50 select-none"
+                  className="cursor-pointer hover:bg-muted/80 transition-colors"
                   onClick={() => onSort('question')}
                 >
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1">
                     Question
                     {getSortIcon('question', sortField, sortDirection)}
                   </div>
@@ -565,10 +554,10 @@ function QuestionTable({
                 <TableHead>Submitted By</TableHead>
                 <TableHead>Tags</TableHead>
                 <TableHead
-                  className="cursor-pointer hover:bg-gray-50 select-none"
+                  className="cursor-pointer hover:bg-muted/80 transition-colors"
                   onClick={() => onSort('createdAt')}
                 >
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1">
                     Submitted
                     {getSortIcon('createdAt', sortField, sortDirection)}
                   </div>
@@ -580,7 +569,7 @@ function QuestionTable({
               {questions.map((question) => {
                 const { icon: StatusIcon, color } = getStatusIcon(question.status);
                 return (
-                  <TableRow key={question.id} className="hover:bg-gray-50">
+                  <TableRow key={question.id} className="hover:bg-muted/50">
                     <TableCell>
                       <Tooltip>
                         <TooltipTrigger>

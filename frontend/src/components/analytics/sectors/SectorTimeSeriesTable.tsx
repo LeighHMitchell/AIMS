@@ -8,10 +8,11 @@ import {
   TableHead,
   TableHeader,
   TableRow,
+  getSortIcon,
 } from '@/components/ui/table'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { ArrowUpDown, Search, Download } from 'lucide-react'
+import { Search, Download } from 'lucide-react'
 import { SectorTimeSeriesData } from '@/types/sector-analytics'
 import { formatTooltipCurrency } from './sectorTimeSeriesQueries'
 
@@ -176,11 +177,11 @@ export function SectorTimeSeriesTable({
     <Button
       variant="ghost"
       size="sm"
-      className={`h-8 px-2 font-medium ${sortField === field ? 'text-slate-900' : 'text-slate-600'}`}
+      className="h-8 px-2 font-medium hover:bg-muted/80"
       onClick={() => handleSort(field)}
     >
       <span>{label}</span>
-      <ArrowUpDown className={`ml-1.5 h-3 w-3 ${sortField === field ? 'opacity-100' : 'opacity-50'}`} />
+      <span className="ml-1">{getSortIcon(field, sortField, sortDirection)}</span>
     </Button>
   )
 
@@ -224,21 +225,21 @@ export function SectorTimeSeriesTable({
       {/* Table */}
       <div className="rounded-md border overflow-auto max-h-[500px]">
         <Table>
-          <TableHeader>
-            <TableRow className="sticky top-0 bg-white z-10 shadow-sm">
-              <TableHead className="bg-white">
+          <TableHeader className="sticky top-0 z-10">
+            <TableRow>
+              <TableHead>
                 <SortButton field="year" label="Year" />
               </TableHead>
-              <TableHead className="bg-white min-w-[200px]">
+              <TableHead className="min-w-[200px]">
                 <SortButton field="sector" label="Sector" />
               </TableHead>
-              <TableHead className="text-right bg-white">
+              <TableHead className="text-right">
                 <SortButton field={dataType} label={dataType === 'planned' ? 'Planned' : 'Actual'} />
               </TableHead>
-              <TableHead className="text-right bg-white">
+              <TableHead className="text-right">
                 <SortButton field="activities" label="No. of Activities" />
               </TableHead>
-              <TableHead className="text-right bg-white">
+              <TableHead className="text-right">
                 <SortButton field="partners" label="No. of Partners" />
               </TableHead>
             </TableRow>
@@ -253,7 +254,7 @@ export function SectorTimeSeriesTable({
             ) : (
               <>
                 {filteredAndSortedData.map((row, index) => (
-                  <TableRow key={`${row.year}-${row.sector}-${index}`} className="hover:bg-slate-50">
+                  <TableRow key={`${row.year}-${row.sector}-${index}`} className="hover:bg-muted/50">
                     <TableCell className="font-medium text-slate-900">
                       {row.year}
                     </TableCell>
@@ -296,6 +297,8 @@ export function SectorTimeSeriesTable({
     </div>
   )
 }
+
+
 
 
 

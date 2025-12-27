@@ -21,7 +21,7 @@ export async function GET(request: NextRequest) {
     let query = supabase
       .from('users')
       .select(`
-        id, email, role, first_name, last_name, title, organisation, department, job_title, avatar_url, bio, phone, telephone, website,
+        id, email, role, first_name, last_name, title, organisation, department, job_title, avatar_url, bio, phone, telephone, website, is_active, last_login,
         organization_id,
         organizations:organization_id (
           id,
@@ -84,6 +84,8 @@ export async function GET(request: NextRequest) {
         phone: user.phone || user.telephone,
         website: user.website,
         bio: user.bio,
+        is_active: user.is_active ?? true, // Default to true if not set
+        last_login: user.last_login,
         organization: organization ? {
           id: organization.id,
           name: organization.name,

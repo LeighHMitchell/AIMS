@@ -457,7 +457,7 @@ export default function ImprovedSectorAllocationForm({
       
       // Set new timeout for debounced toast
       userActionTimeoutRef.current = setTimeout(() => {
-        toast.success('Sectors saved successfully!', { position: 'top-right', duration: 2000 });
+        toast.success('Sectors saved successfully!', { position: 'top-center', duration: 2000 });
         userActionInProgressRef.current = false;
         pendingSaveCompletedRef.current = false;
         userActionTimeoutRef.current = null;
@@ -486,7 +486,7 @@ export default function ImprovedSectorAllocationForm({
         return updated;
       });
       
-      toast.error('Failed to save sectors. Please try again.', { position: 'top-right', duration: 3000 });
+      toast.error('Failed to save sectors. Please try again.', { position: 'top-center', duration: 3000 });
     }
   }, [sectorsAutosave.state.error]);
 
@@ -604,7 +604,7 @@ export default function ImprovedSectorAllocationForm({
           if (Math.abs(newTotal - 100) > 0.01) {
             setTimeout(() => {
               toast.info(`Total allocation is ${newTotal.toFixed(1)}%. You may need to adjust percentages to reach 100%.`, {
-                position: 'top-right',
+                position: 'top-center',
                 duration: 4000
               });
             }, 100);

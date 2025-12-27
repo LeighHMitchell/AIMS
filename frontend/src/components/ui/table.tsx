@@ -1,5 +1,6 @@
 import * as React from "react"
 import { cn } from "@/lib/utils"
+import { ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react"
 
 const Table = React.forwardRef<
   HTMLTableElement,
@@ -19,7 +20,7 @@ const TableHeader = React.forwardRef<
   HTMLTableSectionElement,
   React.HTMLAttributes<HTMLTableSectionElement>
 >(({ className, ...props }, ref) => (
-  <thead ref={ref} className={cn("[&_tr]:border-b", className)} {...props} />
+  <thead ref={ref} className={cn("bg-muted/50 border-b border-border [&_tr]:border-b", className)} {...props} />
 ))
 TableHeader.displayName = "TableHeader"
 
@@ -104,6 +105,31 @@ const TableCaption = React.forwardRef<
 ))
 TableCaption.displayName = "TableCaption"
 
+/**
+ * Utility function for consistent sort icon rendering across all tables
+ * @param field - The field name for this column
+ * @param sortField - The currently sorted field
+ * @param sortOrder - The current sort order ('asc' or 'desc')
+ * @returns JSX element with the appropriate sort icon
+ */
+function getSortIcon(
+  field: string,
+  sortField: string,
+  sortOrder: 'asc' | 'desc'
+): React.ReactElement {
+  if (sortField !== field) {
+    return <ArrowUpDown className="h-4 w-4 text-muted-foreground/50" />;
+  }
+  return sortOrder === 'asc'
+    ? <ArrowUp className="h-4 w-4 text-muted-foreground" />
+    : <ArrowDown className="h-4 w-4 text-muted-foreground" />;
+}
+
+/**
+ * Standard class names for sortable table headers
+ */
+const sortableHeaderClasses = "cursor-pointer hover:bg-muted/80 transition-colors";
+
 export {
   Table,
   TableHeader,
@@ -113,4 +139,6 @@ export {
   TableRow,
   TableCell,
   TableCaption,
+  getSortIcon,
+  sortableHeaderClasses,
 } 

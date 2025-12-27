@@ -538,7 +538,7 @@ export function DataClinicActivities() {
                   </tr>
                 ) : (
                   filteredActivities.map((activity) => (
-                    <tr key={activity.id} className="border-b hover:bg-gray-50">
+                    <tr key={activity.id} className="border-b hover:bg-muted/50">
                       {isSuperUser && (
                         <td className="p-4">
                           <Checkbox

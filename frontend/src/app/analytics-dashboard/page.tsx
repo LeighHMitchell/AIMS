@@ -692,20 +692,20 @@ export default function AnalyticsDashboardPage() {
           )}
 
           <Tabs defaultValue="main" className="space-y-6">
-                <TabsList className="flex flex-wrap w-full gap-1">
-                  <TabsTrigger value="main">Main</TabsTrigger>
-                  <TabsTrigger value="sectors">Sectors</TabsTrigger>
-                  <TabsTrigger value="humanitarian">Humanitarian</TabsTrigger>
-                  <TabsTrigger value="activity-status">Activity Status</TabsTrigger>
-                  <TabsTrigger value="policy-markers">Policy Markers</TabsTrigger>
-                  <TabsTrigger value="sdgs">SDGs</TabsTrigger>
-                  <TabsTrigger value="participating-orgs">Participating Orgs</TabsTrigger>
-                  <TabsTrigger value="network">Network</TabsTrigger>
-                  <TabsTrigger value="calendar">Calendar</TabsTrigger>
-                  <TabsTrigger value="top10">Top 10</TabsTrigger>
-                  <TabsTrigger value="aid-on-budget">Aid on Budget</TabsTrigger>
-                  <TabsTrigger value="funding-over-time">Funding Over Time</TabsTrigger>
-                  <TabsTrigger value="under-development">Under Development</TabsTrigger>
+                <TabsList className="p-1 h-auto bg-background gap-1 border mb-6 flex flex-wrap">
+                  <TabsTrigger value="main" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Main</TabsTrigger>
+                  <TabsTrigger value="sectors" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Sectors</TabsTrigger>
+                  <TabsTrigger value="humanitarian" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Humanitarian</TabsTrigger>
+                  <TabsTrigger value="activity-status" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Activity Status</TabsTrigger>
+                  <TabsTrigger value="policy-markers" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Policy Markers</TabsTrigger>
+                  <TabsTrigger value="sdgs" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">SDGs</TabsTrigger>
+                  <TabsTrigger value="participating-orgs" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Participating Orgs</TabsTrigger>
+                  <TabsTrigger value="network" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Network</TabsTrigger>
+                  <TabsTrigger value="calendar" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Calendar</TabsTrigger>
+                  <TabsTrigger value="top10" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Top 10</TabsTrigger>
+                  <TabsTrigger value="aid-on-budget" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Aid on Budget</TabsTrigger>
+                  <TabsTrigger value="funding-over-time" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Funding Over Time</TabsTrigger>
+                  <TabsTrigger value="under-development" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Under Development</TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="main">

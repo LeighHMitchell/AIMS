@@ -97,3 +97,5 @@ export async function notifyAdminsOfNewEvent(
   const successCount = results.filter(Boolean).length;
   console.log(`[Calendar Notifications] Notified ${successCount}/${managerIds.length} admins`);
 }
+
+

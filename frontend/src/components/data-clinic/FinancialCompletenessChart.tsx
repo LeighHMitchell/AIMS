@@ -467,7 +467,7 @@ export function FinancialCompletenessChart({ data, loading }: FinancialCompleten
                   return (
                     <TableRow
                       key={item.id}
-                      className="cursor-pointer hover:bg-slate-50"
+                      className="cursor-pointer hover:bg-muted/50"
                       onClick={() => router.push(`/activities/${item.id}`)}
                     >
                       <TableCell className="font-medium">

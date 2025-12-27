@@ -8,10 +8,10 @@ export function usePolicyMarkersAutosave(activityId: string | undefined, userId:
     enabled: !!activityId && !!userId,
     debounceMs: 1000, // 1 second debounce for quick feedback
     onSuccess: (data: any) => {
-      toast.success('Policy markers saved', { position: 'top-right' });
+      toast.success('Policy markers saved', { position: 'top-center' });
     },
     onError: (error: Error) => {
-      toast.error(`Failed to save policy markers: ${error.message}`, { position: 'top-right' });
+      toast.error(`Failed to save policy markers: ${error.message}`, { position: 'top-center' });
     }
   });
 }

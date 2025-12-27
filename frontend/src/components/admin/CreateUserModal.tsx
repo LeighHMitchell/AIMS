@@ -162,8 +162,6 @@ export function CreateUserModal({ isOpen, onClose, onUserCreated, organizations 
   const validateForm = (): string | null => {
     if (!form.email.trim()) return "Email is required"
     if (!form.firstName.trim()) return "First name is required"
-    if (!form.lastName.trim()) return "Last name is required"
-    if (!form.phoneNumber?.trim()) return "Phone number is required"
     if (form.generatePassword && !form.password.trim()) return "Password is required"
     
     // Email validation
@@ -483,7 +481,7 @@ export function CreateUserModal({ isOpen, onClose, onUserCreated, organizations 
                 />
               </div>
               <div>
-                <Label htmlFor="lastName">Last Name *</Label>
+                <Label htmlFor="lastName">Last Name</Label>
                 <Input
                   id="lastName"
                   value={form.lastName}
@@ -653,7 +651,7 @@ export function CreateUserModal({ isOpen, onClose, onUserCreated, organizations 
                 phoneNumber={form.phoneNumber}
                 onCountryCodeChange={(code) => handleFormChange("countryCode", code)}
                 onPhoneNumberChange={(number) => handleFormChange("phoneNumber", number)}
-                phoneLabel="Primary Phone *"
+                phoneLabel="Primary Phone"
                 phonePlaceholder="Enter phone number"
               />
             </div>

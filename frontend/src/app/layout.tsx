@@ -37,7 +37,7 @@ export default function RootLayout({
               </LoadingBarProvider>
             </Suspense>
             <Toaster 
-              position="top-right" 
+              position="top-center" 
               richColors 
               closeButton 
               duration={5000}

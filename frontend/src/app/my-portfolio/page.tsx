@@ -246,11 +246,11 @@ export default function MyPortfolioPage() {
 
         {/* Charts and Additional Sections */}
         <Tabs defaultValue="timeline" className="space-y-4">
-          <TabsList>
-            <TabsTrigger value="timeline">Timeline</TabsTrigger>
-            <TabsTrigger value="sectors">Sectors</TabsTrigger>
-            <TabsTrigger value="validation">Validation Status</TabsTrigger>
-            <TabsTrigger value="participating">Participating Org</TabsTrigger>
+          <TabsList className="p-1 h-auto bg-background gap-1 border mb-6">
+            <TabsTrigger value="timeline" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Timeline</TabsTrigger>
+            <TabsTrigger value="sectors" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Sectors</TabsTrigger>
+            <TabsTrigger value="validation" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Validation Status</TabsTrigger>
+            <TabsTrigger value="participating" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Participating Org</TabsTrigger>
           </TabsList>
 
           <TabsContent value="timeline" className="space-y-4">

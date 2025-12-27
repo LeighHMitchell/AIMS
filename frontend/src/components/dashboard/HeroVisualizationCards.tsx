@@ -13,6 +13,8 @@ import {
 import {
   BarChart,
   Bar,
+  LineChart,
+  Line,
   PieChart,
   Pie,
   Cell,
@@ -39,7 +41,24 @@ interface TransactionTrendPoint {
   month: string;
   count: number;
   amount: number;
+  types?: Record<string, number>; // transaction_type -> count
 }
+
+// Transaction type labels (from IATI standard)
+const TRANSACTION_TYPE_LABELS: Record<string, string> = {
+  '1': 'Incoming Commitment',
+  '2': 'Outgoing Commitment',
+  '3': 'Disbursement',
+  '4': 'Expenditure',
+  '5': 'Interest Repayment',
+  '6': 'Loan Repayment',
+  '7': 'Reimbursement',
+  '8': 'Purchase of Equity',
+  '9': 'Sale of Equity',
+  '11': 'Credit Guarantee',
+  '12': 'Incoming Funds',
+  '13': 'Commitment Cancellation',
+};
 
 interface SectorBreakdown {
   code: string;
@@ -66,6 +85,50 @@ interface HeroVisualizationCardsProps {
 // Color palette: Primary Scarlet, Pale Slate, Blue Slate, Cool Steel, Platinum
 const DONUT_COLORS = ['#dc2625', '#4c5568', '#7b95a7', '#cfd0d5', '#f1f4f8', '#dc2625', '#4c5568', '#7b95a7'];
 const BAR_COLORS = ['#dc2625', '#4c5568', '#7b95a7', '#cfd0d5', '#f1f4f8'];
+
+// Color palette for transaction types (cycles through brand colors)
+const TRANSACTION_TYPE_COLOR_PALETTE = [
+  '#dc2625', // Primary Scarlet
+  '#cfd0d5', // Pale Slate
+  '#4c5568', // Blue Slate
+  '#7b95a7', // Cool Steel
+  '#f1f4f8', // Platinum
+];
+
+// Get color for a transaction type (cycles through palette)
+const getTransactionTypeColor = (typeCode: string, index: number): string => {
+  return TRANSACTION_TYPE_COLOR_PALETTE[index % TRANSACTION_TYPE_COLOR_PALETTE.length];
+};
+
+// Helper to get unique transaction types from trend data
+const getUniqueTransactionTypes = (transactionTrend: TransactionTrendPoint[]): string[] => {
+  const typeSet = new Set<string>();
+  transactionTrend.forEach(point => {
+    if (point.types) {
+      Object.keys(point.types).forEach(type => typeSet.add(type));
+    }
+  });
+  // Sort by type code for consistent ordering
+  return Array.from(typeSet).sort((a, b) => parseInt(a) - parseInt(b));
+};
+
+// Helper to transform transaction trend data for line chart (flatten types object)
+const transformDataForLineChart = (
+  transactionTrend: TransactionTrendPoint[],
+  uniqueTypes: string[]
+): any[] => {
+  return transactionTrend.map(point => {
+    const transformed: any = {
+      month: point.month,
+      count: point.count,
+      amount: point.amount,
+    };
+    uniqueTypes.forEach(type => {
+      transformed[`type_${type}`] = point.types?.[type] || 0;
+    });
+    return transformed;
+  });
+};
 
 const formatCurrency = (value: number): string => {
   if (value >= 1000000000) return `$${(value / 1000000000).toFixed(1)}B`;
@@ -279,33 +342,81 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-slate-600 flex items-center gap-2">
               <ArrowRightLeft className="h-4 w-4 text-slate-500" />
-              Transactions
+              Transactions by Type
             </CardTitle>
             <p className="text-lg font-bold text-slate-900">{totalTransactions.toLocaleString()} total</p>
           </CardHeader>
           <CardContent className="pt-0">
             <div className="h-24">
               {data?.transactionTrend && data.transactionTrend.length > 0 ? (
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={data.transactionTrend} margin={{ top: 5, right: 5, left: 0, bottom: 5 }}>
-                    <XAxis 
-                      dataKey="month" 
-                      tick={{ fontSize: 10, fill: '#64748b' }}
-                      axisLine={false}
-                      tickLine={false}
-                    />
-                    <Tooltip 
-                      formatter={(value: number) => [value, 'Transactions']}
-                      labelFormatter={(label) => `Year ${label}`}
-                      contentStyle={{ fontSize: 12 }}
-                    />
-                    <Bar dataKey="count" radius={[2, 2, 0, 0]}>
-                      {data.transactionTrend.map((_, index) => (
-                        <Cell key={`cell-${index}`} fill={BAR_COLORS[index % BAR_COLORS.length]} />
-                      ))}
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
+                (() => {
+                  const uniqueTypes = getUniqueTransactionTypes(data.transactionTrend);
+                  const hasTypeData = uniqueTypes.length > 0;
+                  const lineChartData = hasTypeData 
+                    ? transformDataForLineChart(data.transactionTrend, uniqueTypes)
+                    : data.transactionTrend;
+                  
+                  return (
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart data={lineChartData} margin={{ top: 5, right: 5, left: 0, bottom: 5 }}>
+                        <XAxis 
+                          dataKey="month" 
+                          tick={{ fontSize: 10, fill: '#64748b' }}
+                          axisLine={false}
+                          tickLine={false}
+                        />
+                        <Tooltip 
+                          content={({ active, payload, label }) => {
+                            if (active && payload && payload.length) {
+                              const dataPoint = data.transactionTrend.find(t => t.month === label);
+                              return (
+                                <div className="bg-white p-2 border border-slate-200 rounded shadow-lg text-xs">
+                                  <p className="font-semibold mb-1">Year {label}</p>
+                                  {dataPoint?.types && Object.entries(dataPoint.types)
+                                    .sort(([, a], [, b]) => b - a)
+                                    .map(([type, count], idx) => (
+                                      <div key={type} className="flex justify-between gap-4">
+                                        <span style={{ color: getTransactionTypeColor(type, uniqueTypes.indexOf(type)) }}>
+                                          {TRANSACTION_TYPE_LABELS[type] || `Type ${type}`}
+                                        </span>
+                                        <span className="font-medium">{count}</span>
+                                      </div>
+                                    ))}
+                                  <div className="border-t border-slate-200 mt-1 pt-1 flex justify-between gap-4 font-semibold">
+                                    <span>Total</span>
+                                    <span>{dataPoint?.count || 0}</span>
+                                  </div>
+                                </div>
+                              );
+                            }
+                            return null;
+                          }}
+                        />
+                        {hasTypeData ? (
+                          uniqueTypes.map((type, index) => (
+                            <Line 
+                              key={type}
+                              type="monotone"
+                              dataKey={`type_${type}`}
+                              stroke={getTransactionTypeColor(type, index)}
+                              strokeWidth={2}
+                              dot={false}
+                              name={TRANSACTION_TYPE_LABELS[type] || `Type ${type}`}
+                            />
+                          ))
+                        ) : (
+                          <Line 
+                            type="monotone"
+                            dataKey="count" 
+                            stroke={BAR_COLORS[0]}
+                            strokeWidth={2}
+                            dot={false}
+                          />
+                        )}
+                      </LineChart>
+                    </ResponsiveContainer>
+                  );
+                })()
               ) : (
                 <div className="h-full flex items-center justify-center text-slate-400 text-sm">
                   No transaction data
@@ -404,20 +515,86 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
       <ExpandedChartModal
         open={expandedChart === 'transactions'}
         onClose={() => setExpandedChart(null)}
-        title="Transactions Over Time"
+        title="Transactions by Type Over Time"
       >
-        <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={data?.transactionTrend || []} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
-            <XAxis dataKey="month" tick={{ fontSize: 12 }} />
-            <YAxis tick={{ fontSize: 12 }} />
-            <Tooltip 
-              formatter={(value: number) => [value, 'Transactions']}
-              labelFormatter={(label) => `Year ${label}`}
-            />
-            <Legend />
-            <Bar dataKey="count" name="Transaction Count" fill="#7b95a7" radius={[4, 4, 0, 0]} />
-          </BarChart>
-        </ResponsiveContainer>
+        {(() => {
+          const uniqueTypes = data?.transactionTrend ? getUniqueTransactionTypes(data.transactionTrend) : [];
+          const hasTypeData = uniqueTypes.length > 0;
+          const lineChartData = hasTypeData && data?.transactionTrend
+            ? transformDataForLineChart(data.transactionTrend, uniqueTypes)
+            : data?.transactionTrend || [];
+          
+          return (
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={lineChartData} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
+                <XAxis dataKey="month" tick={{ fontSize: 12 }} />
+                <YAxis tick={{ fontSize: 12 }} />
+                <Tooltip 
+                  content={({ active, payload, label }) => {
+                    if (active && payload && payload.length && data?.transactionTrend) {
+                      const dataPoint = data.transactionTrend.find(t => t.month === label);
+                      return (
+                        <div className="bg-white p-3 border border-slate-200 rounded-lg shadow-lg text-sm">
+                          <p className="font-semibold text-slate-900 mb-2 pb-2 border-b border-slate-200">Year {label}</p>
+                          {dataPoint?.types && Object.entries(dataPoint.types)
+                            .sort(([, a], [, b]) => b - a)
+                            .map(([type, count]) => (
+                              <div key={type} className="flex justify-between gap-6 py-0.5">
+                                <span className="flex items-center gap-2">
+                                  <span 
+                                    className="w-3 h-3 rounded-sm" 
+                                    style={{ backgroundColor: getTransactionTypeColor(type, uniqueTypes.indexOf(type)) }}
+                                  />
+                                  {TRANSACTION_TYPE_LABELS[type] || `Type ${type}`}
+                                </span>
+                                <span className="font-medium">{count}</span>
+                              </div>
+                            ))}
+                          <div className="border-t border-slate-200 mt-2 pt-2 flex justify-between gap-6 font-semibold">
+                            <span>Total</span>
+                            <span>{dataPoint?.count || 0}</span>
+                          </div>
+                        </div>
+                      );
+                    }
+                    return null;
+                  }}
+                />
+                <Legend 
+                  formatter={(value) => {
+                    // Extract type code from the name
+                    const typeCode = uniqueTypes.find(t => 
+                      TRANSACTION_TYPE_LABELS[t] === value || `Type ${t}` === value
+                    );
+                    return TRANSACTION_TYPE_LABELS[typeCode || ''] || value;
+                  }}
+                />
+                {hasTypeData ? (
+                  uniqueTypes.map((type, index) => (
+                    <Line 
+                      key={type}
+                      type="monotone"
+                      dataKey={`type_${type}`}
+                      stroke={getTransactionTypeColor(type, index)}
+                      strokeWidth={2}
+                      dot={{ r: 4 }}
+                      name={TRANSACTION_TYPE_LABELS[type] || `Type ${type}`}
+                    />
+                  ))
+                ) : (
+                  <Line 
+                    type="monotone"
+                    dataKey="count" 
+                    stroke="#7b95a7"
+                    strokeWidth={2}
+                    dot={{ r: 4 }}
+                    name="Transaction Count"
+                  />
+                )}
+              </LineChart>
+            </ResponsiveContainer>
+          );
+        })()}
       </ExpandedChartModal>
 
       <ExpandedChartModal
@@ -452,4 +629,6 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
     </>
   );
 }
+
+
 

@@ -2176,29 +2176,29 @@ export default function OrganizationProfilePage() {
           {/* Main Content Tabs */}
           <Card className="border-slate-200">
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <TabsList className="grid w-full grid-cols-8 lg:grid-cols-8 bg-slate-50 border-b border-slate-200">
-                <TabsTrigger value="activities" className="data-[state=active]:bg-white data-[state=active]:text-slate-900">
+              <TabsList className="p-1 h-auto bg-background gap-1 border mb-6 flex flex-wrap">
+                <TabsTrigger value="activities" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
                   Activities
                 </TabsTrigger>
-                <TabsTrigger value="financial-analytics" className="data-[state=active]:bg-white data-[state=active]:text-slate-900">
+                <TabsTrigger value="financial-analytics" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
                   Financial Analytics
                 </TabsTrigger>
-                <TabsTrigger value="organisation-funding" className="data-[state=active]:bg-white data-[state=active]:text-slate-900">
+                <TabsTrigger value="organisation-funding" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
                   Organisation Funding
                 </TabsTrigger>
-                <TabsTrigger value="sectors" className="data-[state=active]:bg-white data-[state=active]:text-slate-900">
+                <TabsTrigger value="sectors" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
                   Sectors
                 </TabsTrigger>
-                <TabsTrigger value="partnerships" className="data-[state=active]:bg-white data-[state=active]:text-slate-900">
+                <TabsTrigger value="partnerships" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
                   Partnerships
                 </TabsTrigger>
-                <TabsTrigger value="geography" className="data-[state=active]:bg-white data-[state=active]:text-slate-900">
+                <TabsTrigger value="geography" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
                   Geography
                 </TabsTrigger>
-                <TabsTrigger value="contacts" className="data-[state=active]:bg-white data-[state=active]:text-slate-900">
+                <TabsTrigger value="contacts" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
                   Contacts
                 </TabsTrigger>
-                <TabsTrigger value="documents" className="data-[state=active]:bg-white data-[state=active]:text-slate-900">
+                <TabsTrigger value="documents" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
                   Documents
                 </TabsTrigger>
               </TabsList>
@@ -2280,9 +2280,9 @@ export default function OrganizationProfilePage() {
                                     <DropdownMenu>
                                       <DropdownMenuTrigger asChild>
                                         <Button 
-                                          variant="ghost" 
-                                          size="sm" 
-                                          className="text-slate-600 hover:text-slate-900 flex-shrink-0"
+                                          variant="outline" 
+                                          size="icon" 
+                                          className="h-8 w-8"
                                           onClick={(e) => e.stopPropagation()}
                                         >
                                           <MoreVertical className="h-4 w-4" />
@@ -2503,9 +2503,9 @@ export default function OrganizationProfilePage() {
                                   <DropdownMenu>
                                     <DropdownMenuTrigger asChild>
                                       <Button 
-                                        variant="ghost" 
-                                        size="sm" 
-                                        className="text-slate-600 hover:text-slate-900"
+                                        variant="outline" 
+                                        size="icon" 
+                                        className="h-8 w-8"
                                       >
                                         <MoreVertical className="h-4 w-4" />
                                       </Button>

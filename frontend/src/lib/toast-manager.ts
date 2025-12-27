@@ -7,7 +7,7 @@ const toastQueue = new Map<string, NodeJS.Timeout>();
 // Toast configuration
 const TOAST_CONFIG = {
   duration: 5000,
-  position: 'top-right' as const,
+  position: 'top-center' as const,
   closeButton: true,
 };
 
@@ -133,7 +133,7 @@ export function showFieldSaveSuccess(fieldName: string, options?: {
       toast.success(`${fieldName.replace(/_/g, ' ')} updated`, {
         id,
         duration: 2000, // Shorter duration for field updates
-        position: 'bottom-right', // Different position to avoid conflicts
+        position: 'top-center',
         onDismiss: () => activeToasts.delete(id),
         onAutoClose: () => activeToasts.delete(id),
       });
@@ -189,7 +189,7 @@ export function showAutoCreateSuccess(message: string) {
   toast.success(message, {
     id,
     duration: 3000,
-    position: 'bottom-right',
+    position: 'top-center',
     onDismiss: () => activeToasts.delete(id),
     onAutoClose: () => activeToasts.delete(id),
   });

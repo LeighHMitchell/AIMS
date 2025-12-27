@@ -376,11 +376,11 @@ export default function PartnerProfilePage() {
 
           {/* Tabs Navigation */}
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-            <TabsList className="bg-white">
-              <TabsTrigger value="about">About</TabsTrigger>
-              <TabsTrigger value="financials">Financials</TabsTrigger>
-              <TabsTrigger value="activities">Activities</TabsTrigger>
-              <TabsTrigger value="people">People</TabsTrigger>
+            <TabsList className="p-1 h-auto bg-background gap-1 border mb-6">
+              <TabsTrigger value="about" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">About</TabsTrigger>
+              <TabsTrigger value="financials" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Financials</TabsTrigger>
+              <TabsTrigger value="activities" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Activities</TabsTrigger>
+              <TabsTrigger value="people" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">People</TabsTrigger>
             </TabsList>
 
             {/* About Tab */}

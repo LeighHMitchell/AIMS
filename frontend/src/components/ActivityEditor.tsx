@@ -78,13 +78,13 @@ export default function ActivityEditor({ activityId, initialData = {} }: Activit
       if (error) throw error;
       
       toast.success(`${displayName} saved successfully`, {
-        position: 'top-right',
+        position: 'top-center',
         duration: 2000
       });
     } catch (error) {
       console.error(`Error saving ${fieldName}:`, error);
       toast.error(`Failed to save ${displayName}`, {
-        position: 'top-right',
+        position: 'top-center',
         duration: 3000
       });
     } finally {

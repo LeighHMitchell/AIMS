@@ -562,13 +562,13 @@ export function ActivityFreshnessChart() {
                 {sortedActivities.slice(0, 100).map((activity) => (
                   <TableRow
                     key={activity.id}
-                    className="cursor-pointer hover:bg-slate-50"
+                    className="cursor-pointer hover:bg-muted/50"
                     onClick={() => router.push(`/activities/${activity.id}`)}
                   >
                     <TableCell className="font-medium">
                       <span className="line-clamp-2">{activity.title_narrative || 'Untitled'}</span>
                       {activity.iati_identifier && (
-                        <span className="block text-xs text-slate-500 mt-0.5">
+                        <span className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded inline-block mt-1">
                           {activity.iati_identifier}
                         </span>
                       )}

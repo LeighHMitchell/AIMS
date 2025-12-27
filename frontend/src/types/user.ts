@@ -4,6 +4,7 @@ export const USER_ROLES = {
   DEV_PARTNER_TIER_2: "dev_partner_tier_2",
   GOV_PARTNER_TIER_1: "gov_partner_tier_1", 
   GOV_PARTNER_TIER_2: "gov_partner_tier_2",
+  PUBLIC_USER: "public_user", // Read-only access for OAuth users
 } as const;
 
 export const ROLE_LABELS = {
@@ -12,6 +13,7 @@ export const ROLE_LABELS = {
   [USER_ROLES.DEV_PARTNER_TIER_2]: "Review & Approval",
   [USER_ROLES.GOV_PARTNER_TIER_1]: "Government Partner Tier 1",
   [USER_ROLES.GOV_PARTNER_TIER_2]: "Government Partner Tier 2",
+  [USER_ROLES.PUBLIC_USER]: "Public User",
   'admin': "Administrator", // Legacy admin role
 } as const;
 
@@ -74,6 +76,7 @@ export interface User {
   notes?: string;
   isActive: boolean;
   lastLogin?: string;
+  authProvider?: 'email' | 'google' | 'apple'; // How the user authenticates
   createdAt: string;
   updatedAt: string;
   createdBy?: string;
@@ -122,6 +125,16 @@ export function getUserPermissions(role: UserRole | string): UserPermissions {
         canManageOrganizations: false,
         canEditAllActivities: false,
         canViewAllActivities: false
+      };
+    
+    case USER_ROLES.PUBLIC_USER:
+      return {
+        canCreateActivities: false,
+        canValidateActivities: false,
+        canManageUsers: false,
+        canManageOrganizations: false,
+        canEditAllActivities: false,
+        canViewAllActivities: true // Can view but not edit
       };
     
     default:

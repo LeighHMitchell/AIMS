@@ -420,13 +420,13 @@ export function StaleTransactionsTable() {
               </TableHeader>
               <TableBody>
                 {sortedActivities.slice(0, 100).map((activity) => (
-                  <TableRow key={activity.id} className="hover:bg-slate-50">
+                  <TableRow key={activity.id} className="hover:bg-muted/50">
                     <TableCell>
                       <span className="font-medium line-clamp-2">
                         {activity.title_narrative || 'Untitled'}
                       </span>
                       {activity.iati_identifier && (
-                        <span className="inline-block text-xs text-slate-600 mt-1 font-mono bg-slate-100 px-1.5 py-0.5 rounded">
+                        <span className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded inline-block mt-1">
                           {activity.iati_identifier}
                         </span>
                       )}
@@ -499,3 +499,6 @@ export function StaleTransactionsTable() {
     </Card>
   );
 }
+
+
+

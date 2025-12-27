@@ -210,7 +210,7 @@ export function FinancialCompletenessTable({ data, onRowClick }: FinancialComple
                 return (
                   <TableRow
                     key={item.id}
-                    className="cursor-pointer hover:bg-slate-50"
+                    className="cursor-pointer hover:bg-muted/50"
                     onClick={() => onRowClick?.(item)}
                   >
                     {visibleColumns.has('title') && (
@@ -219,8 +219,14 @@ export function FinancialCompletenessTable({ data, onRowClick }: FinancialComple
                       </TableCell>
                     )}
                     {visibleColumns.has('iati_identifier') && (
-                      <TableCell className="font-mono text-sm text-slate-600">
-                        {item.iati_identifier || '—'}
+                      <TableCell>
+                        {item.iati_identifier ? (
+                          <span className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded">
+                            {item.iati_identifier}
+                          </span>
+                        ) : (
+                          <span className="text-muted-foreground">—</span>
+                        )}
                       </TableCell>
                     )}
                     {visibleColumns.has('organization') && (
@@ -312,6 +318,8 @@ export function FinancialCompletenessTable({ data, onRowClick }: FinancialComple
     </div>
   );
 }
+
+
 
 
 

@@ -4,9 +4,6 @@ import Link from "next/link";
 import {
   ChevronUp,
   ChevronDown,
-  ArrowUp,
-  ArrowDown,
-  ArrowUpDown,
   Edit,
   Trash2,
   MoreVertical,
@@ -40,6 +37,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
+  getSortIcon,
 } from "@/components/ui/table";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
@@ -424,16 +422,6 @@ export function PlannedDisbursementsTable({
     });
   };
 
-  const getSortIcon = (field: string) => {
-    if (sortField !== field) {
-      return <ArrowUpDown className="h-3 w-3 text-gray-400" />;
-    }
-    return sortOrder === "asc" ? (
-      <ArrowUp className="h-3 w-3 text-gray-400" />
-    ) : (
-      <ArrowDown className="h-3 w-3 text-gray-400" />
-    );
-  };
 
   const formatCurrency = (value: number, currency: string = "USD") => {
     const safeCurrency = currency && currency.length === 3 && /^[A-Z]{3}$/.test(currency.toUpperCase())
@@ -502,9 +490,9 @@ export function PlannedDisbursementsTable({
     <TooltipProvider>
       <div>
         <Table>
-          <TableHeader className="bg-muted/50 border-b border-border/70">
+          <TableHeader>
             <TableRow>
-              <TableHead className="text-sm font-medium text-foreground/90 py-3 px-4 w-10 text-center">
+              <TableHead className="w-10 text-center">
                 {onSelectAll && selectedIds && (
                   <div className="flex items-center justify-center" key={`select-all-wrapper-${disbursements.length}`}>
                     <Checkbox
@@ -521,92 +509,92 @@ export function PlannedDisbursementsTable({
               </TableHead>
               {isColumnVisible('activity') && (
                 <TableHead
-                  className="text-sm font-medium text-foreground/90 py-3 px-4 cursor-pointer hover:bg-muted/30 transition-colors"
+                  className="cursor-pointer hover:bg-muted/80 transition-colors"
                   onClick={() => onSort("activity")}
                 >
                   <div className="flex items-center gap-1">
                     <span>Activity</span>
-                    {getSortIcon("activity")}
+                    {getSortIcon("activity", sortField, sortOrder)}
                   </div>
                 </TableHead>
               )}
               {isColumnVisible('periodStart') && (
                 <TableHead
-                  className="text-sm font-medium text-foreground/90 py-3 px-4 cursor-pointer hover:bg-muted/30 transition-colors"
+                  className="cursor-pointer hover:bg-muted/80 transition-colors"
                   onClick={() => onSort("period_start")}
                 >
                   <div className="flex items-center gap-1">
                     <span>Start Date</span>
-                    {getSortIcon("period_start")}
+                    {getSortIcon("period_start", sortField, sortOrder)}
                   </div>
                 </TableHead>
               )}
               {isColumnVisible('periodEnd') && (
                 <TableHead
-                  className="text-sm font-medium text-foreground/90 py-3 px-4 cursor-pointer hover:bg-muted/30 transition-colors"
+                  className="cursor-pointer hover:bg-muted/80 transition-colors"
                   onClick={() => onSort("period_end")}
                 >
                   <div className="flex items-center gap-1">
                     <span>End Date</span>
-                    {getSortIcon("period_end")}
+                    {getSortIcon("period_end", sortField, sortOrder)}
                   </div>
                 </TableHead>
               )}
               {isColumnVisible('type') && (
                 <TableHead
-                  className="text-sm font-medium text-foreground/90 py-3 px-4 cursor-pointer hover:bg-muted/30 transition-colors"
+                  className="cursor-pointer hover:bg-muted/80 transition-colors"
                   onClick={() => onSort("type")}
                 >
                   <div className="flex items-center gap-1">
                     <span>Type</span>
-                    {getSortIcon("type")}
+                    {getSortIcon("type", sortField, sortOrder)}
                   </div>
                 </TableHead>
               )}
               {isColumnVisible('providerReceiver') && (
-                <TableHead className="text-sm font-medium text-foreground/90 py-3 px-4">
+                <TableHead>
                   Provider / Receiver
                 </TableHead>
               )}
               {isColumnVisible('amount') && (
                 <TableHead
-                  className="text-sm font-medium text-foreground/90 py-3 px-4 text-right cursor-pointer hover:bg-muted/30 transition-colors"
+                  className="text-right cursor-pointer hover:bg-muted/80 transition-colors"
                   onClick={() => onSort("value")}
                 >
                   <div className="flex items-center justify-end gap-1">
                     <span>Amount</span>
-                    {getSortIcon("value")}
+                    {getSortIcon("value", sortField, sortOrder)}
                   </div>
                 </TableHead>
               )}
               {isColumnVisible('valueDate') && (
                 <TableHead
-                  className="text-sm font-medium text-foreground/90 py-3 px-4 cursor-pointer hover:bg-muted/30 transition-colors"
+                  className="cursor-pointer hover:bg-muted/80 transition-colors"
                   onClick={() => onSort("value_date")}
                 >
                   <div className="flex items-center gap-1">
                     <span>Value Date</span>
-                    {getSortIcon("value_date")}
+                    {getSortIcon("value_date", sortField, sortOrder)}
                   </div>
                 </TableHead>
               )}
               {isColumnVisible('valueUsd') && (
                 <TableHead
-                  className="text-sm font-medium text-foreground/90 py-3 px-4 text-right cursor-pointer hover:bg-muted/30 transition-colors"
+                  className="text-right cursor-pointer hover:bg-muted/80 transition-colors"
                   onClick={() => onSort("value_usd")}
                 >
                   <div className="flex items-center justify-end gap-1">
                     <span>USD Value</span>
-                    {getSortIcon("value_usd")}
+                    {getSortIcon("value_usd", sortField, sortOrder)}
                   </div>
                 </TableHead>
               )}
               {isColumnVisible('notes') && (
-                <TableHead className="text-sm font-medium text-foreground/90 py-3 px-4 text-center w-10">
+                <TableHead className="text-center w-10">
                   Notes
                 </TableHead>
               )}
-              <TableHead className="text-sm font-medium text-foreground/90 py-3 px-4 text-right">
+              <TableHead className="text-right">
                 Actions
               </TableHead>
             </TableRow>
@@ -665,9 +653,9 @@ export function PlannedDisbursementsTable({
                             {activityTitle}
                           </div>
                           {disbursement.activity?.iati_identifier && (
-                            <div className="text-xs text-muted-foreground font-mono">
+                            <span className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded inline-block mt-1">
                               {disbursement.activity.iati_identifier}
-                            </div>
+                            </span>
                           )}
                         </div>
                       </td>
@@ -867,8 +855,9 @@ export function PlannedDisbursementsTable({
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <Button
-                            variant="ghost"
-                            className="h-8 w-8 p-0"
+                            variant="outline"
+                            size="icon"
+                            className="h-8 w-8"
                             aria-label="Open menu"
                           >
                             <span className="sr-only">Open menu</span>

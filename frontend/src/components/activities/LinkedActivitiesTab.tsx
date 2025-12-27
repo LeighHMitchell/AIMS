@@ -303,7 +303,7 @@ const LinkedActivitiesTab: React.FC<LinkedActivitiesTabProps> = ({
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
                     {activities.map((la) => (
-                      <tr key={la.id} className="hover:bg-gray-50">
+                      <tr key={la.id} className="hover:bg-muted/50">
                         <td className="px-6 py-4 whitespace-nowrap">
                           {la.isExternal ? (
                             <div className="flex items-center gap-2">

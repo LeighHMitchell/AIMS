@@ -174,7 +174,7 @@ export default function EnhancedSectorAllocationForm({
       
       if (overAllocationError) {
         toast.error(overAllocationError, {
-          position: 'top-right',
+          position: 'top-center',
           duration: 4000,
         });
       }
@@ -350,7 +350,7 @@ export default function EnhancedSectorAllocationForm({
           if (Math.abs(newTotal - 100) > 0.01) {
             setTimeout(() => {
               toast.info(`Total allocation is ${newTotal.toFixed(1)}%. You may need to adjust percentages to reach 100%.`, {
-                position: 'top-right',
+                position: 'top-center',
                 duration: 4000
               });
             }, 100);

@@ -16,6 +16,7 @@ import {
 } from '@/components/ui/table';
 import { format } from 'date-fns';
 import { ArrowRight, ArrowUpRight, ArrowDownLeft, DollarSign } from 'lucide-react';
+import { OrganizationLogo } from '@/components/ui/organization-logo';
 
 interface OrgTransactionsTableProps {
   organizationId: string;
@@ -28,11 +29,15 @@ interface TransactionRow {
   transactionTypeName: string;
   value: number;
   currency: string;
+  valueUsd?: number;
   transactionDate: string;
   activityId: string;
   activityIatiIdentifier: string | null;
   activityTitle: string;
-  counterpartyOrgName: string;
+  providerOrgName: string;
+  receiverOrgName: string;
+  providerOrgLogo?: string | null;
+  receiverOrgLogo?: string | null;
   status: string;
   isProvider: boolean;
 }
@@ -98,9 +103,6 @@ export function OrgTransactionsTable({
         const processedTransactions: TransactionRow[] = transactionsData
           .map((t: any) => {
             const isProvider = t.provider_org_id === organizationId;
-            const counterpartyOrgName = isProvider
-              ? t.receiver_org_name || 'Unknown Receiver'
-              : t.provider_org_name || 'Unknown Provider';
 
             return {
               id: t.uuid || t.id,
@@ -108,11 +110,15 @@ export function OrgTransactionsTable({
               transactionTypeName: TRANSACTION_TYPE_LABELS[t.transaction_type] || `Type ${t.transaction_type}`,
               value: t.value || 0,
               currency: t.currency || 'USD',
+              valueUsd: t.value_usd || (t.currency === 'USD' ? t.value : undefined),
               transactionDate: t.transaction_date,
               activityId: t.activity_id,
               activityIatiIdentifier: t.activity?.iati_identifier || null,
               activityTitle: t.activity?.title_narrative || t.activity_title || 'Unknown Activity',
-              counterpartyOrgName,
+              providerOrgName: t.provider_org_name || 'Unknown',
+              receiverOrgName: t.receiver_org_name || 'Unknown',
+              providerOrgLogo: t.provider_org_logo,
+              receiverOrgLogo: t.receiver_org_logo,
               status: t.status || 'actual',
               isProvider,
             };
@@ -211,10 +217,11 @@ export function OrgTransactionsTable({
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Activity</TableHead>
-                <TableHead>Date</TableHead>
-                <TableHead>Value</TableHead>
-                <TableHead>Recipient</TableHead>
+                <TableHead className="min-w-[300px]">Activity</TableHead>
+                <TableHead className="min-w-[120px]">Date</TableHead>
+                <TableHead className="min-w-[120px]">Original Value</TableHead>
+                <TableHead className="min-w-[110px]">USD Value</TableHead>
+                <TableHead className="min-w-[250px]">Provider → Receiver</TableHead>
                 <TableHead>Type</TableHead>
                 <TableHead>Status</TableHead>
               </TableRow>
@@ -223,16 +230,16 @@ export function OrgTransactionsTable({
               {transactions.map((transaction) => (
                 <TableRow
                   key={transaction.id}
-                  className="cursor-pointer hover:bg-slate-50"
+                  className="cursor-pointer hover:bg-muted/50"
                   onClick={() => handleRowClick(transaction.activityId)}
                 >
-                  <TableCell>
+                  <TableCell className="min-w-[300px]">
                     <div className="space-y-1">
                       <div className="flex items-start gap-2">
                         {transaction.isProvider ? (
-                          <ArrowUpRight className="h-4 w-4 text-red-500 mt-0.5 flex-shrink-0" title="Outgoing" />
+                          <ArrowUpRight className="h-4 w-4 text-slate-600 mt-0.5 flex-shrink-0" title="Outgoing" />
                         ) : (
-                          <ArrowDownLeft className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" title="Incoming" />
+                          <ArrowDownLeft className="h-4 w-4 text-slate-600 mt-0.5 flex-shrink-0" title="Incoming" />
                         )}
                         <span className="text-sm whitespace-normal break-words">
                           {transaction.activityTitle}
@@ -246,14 +253,13 @@ export function OrgTransactionsTable({
                     </div>
                   </TableCell>
                   <TableCell>
-                    <span className="text-sm text-slate-600">
-                      {transaction.transactionDate ? format(new Date(transaction.transactionDate), 'MMM d, yyyy') : '-'}
+                    <span className="text-sm text-slate-600 whitespace-nowrap">
+                      {transaction.transactionDate ? format(new Date(transaction.transactionDate), 'd MMMM yyyy') : '-'}
                     </span>
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-1">
-                      <span className={`font-medium ${transaction.isProvider ? 'text-red-600' : 'text-green-600'}`}>
-                        {transaction.isProvider ? '-' : '+'}
+                      <span className="font-medium text-slate-700">
                         <span className="text-xs text-gray-500 mr-1 font-normal">
                           {transaction.currency}
                         </span>
@@ -262,9 +268,39 @@ export function OrgTransactionsTable({
                     </div>
                   </TableCell>
                   <TableCell>
-                    <span className="text-sm text-slate-600 truncate max-w-[150px] block" title={transaction.counterpartyOrgName}>
-                      {transaction.counterpartyOrgName}
-                    </span>
+                    {transaction.valueUsd != null ? (
+                      <div className="flex items-center gap-1">
+                        <span className="font-medium text-slate-700">
+                          <span className="text-xs text-gray-500 mr-1 font-normal">
+                            USD
+                          </span>
+                          {formatCurrency(transaction.valueUsd, 'USD')}
+                        </span>
+                      </div>
+                    ) : (
+                      <span className="text-sm text-slate-400">-</span>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-1.5" title={`${transaction.providerOrgName} → ${transaction.receiverOrgName}`}>
+                      <OrganizationLogo 
+                        logo={transaction.providerOrgLogo} 
+                        name={transaction.providerOrgName}
+                        size="sm"
+                      />
+                      <span className="text-sm text-slate-600 truncate max-w-[120px]">
+                        {transaction.providerOrgName}
+                      </span>
+                      <span className="text-slate-400">→</span>
+                      <OrganizationLogo 
+                        logo={transaction.receiverOrgLogo} 
+                        name={transaction.receiverOrgName}
+                        size="sm"
+                      />
+                      <span className="text-sm text-slate-600 truncate max-w-[120px]">
+                        {transaction.receiverOrgName}
+                      </span>
+                    </div>
                   </TableCell>
                   <TableCell>
                     <span className="text-sm">{transaction.transactionTypeName}</span>

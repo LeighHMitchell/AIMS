@@ -12,8 +12,9 @@ import {
   TableHead,
   TableHeader,
   TableRow,
+  getSortIcon,
 } from '@/components/ui/table';
-import { Search, ArrowUpDown, ArrowUp, ArrowDown, Filter } from 'lucide-react';
+import { Search, Filter } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import {
   Select,
@@ -95,16 +96,6 @@ export function ProjectsTable({ projects, currency = 'USD' }: ProjectsTableProps
     }
   };
 
-  const getSortIcon = (field: SortField) => {
-    if (sortField !== field) {
-      return <ArrowUpDown className="h-3 w-3 text-gray-400" />;
-    }
-    return sortDirection === 'asc' ? (
-      <ArrowUp className="h-3 w-3 text-gray-400" />
-    ) : (
-      <ArrowDown className="h-3 w-3 text-gray-400" />
-    );
-  };
 
   const filteredAndSortedProjects = useMemo(() => {
     let filtered = projects;
@@ -196,61 +187,61 @@ export function ProjectsTable({ projects, currency = 'USD' }: ProjectsTableProps
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>
-                <TableRow className="bg-slate-50">
+                <TableRow>
                   <TableHead
-                    className="cursor-pointer hover:bg-slate-100"
+                    className="cursor-pointer hover:bg-muted/80 transition-colors"
                     onClick={() => handleSort('title')}
                   >
-                    <div className="flex items-center">
+                    <div className="flex items-center gap-1">
                       Name
-                      {getSortIcon('title')}
+                      {getSortIcon('title', sortField, sortDirection)}
                     </div>
                   </TableHead>
                   <TableHead
-                    className="cursor-pointer hover:bg-slate-100"
+                    className="cursor-pointer hover:bg-muted/80 transition-colors"
                     onClick={() => handleSort('iati_identifier')}
                   >
-                    <div className="flex items-center">
+                    <div className="flex items-center gap-1">
                       ID
-                      {getSortIcon('iati_identifier')}
+                      {getSortIcon('iati_identifier', sortField, sortDirection)}
                     </div>
                   </TableHead>
                   <TableHead
-                    className="cursor-pointer hover:bg-slate-100"
+                    className="cursor-pointer hover:bg-muted/80 transition-colors"
                     onClick={() => handleSort('status')}
                   >
-                    <div className="flex items-center">
+                    <div className="flex items-center gap-1">
                       Status
-                      {getSortIcon('status')}
+                      {getSortIcon('status', sortField, sortDirection)}
                     </div>
                   </TableHead>
                   <TableHead
-                    className="cursor-pointer hover:bg-slate-100"
+                    className="cursor-pointer hover:bg-muted/80 transition-colors"
                     onClick={() => handleSort('sectors')}
                   >
-                    <div className="flex items-center">
+                    <div className="flex items-center gap-1">
                       Sector
-                      {getSortIcon('sectors')}
+                      {getSortIcon('sectors', sortField, sortDirection)}
                     </div>
                   </TableHead>
                   <TableHead>Development Partners</TableHead>
                   <TableHead>Executing Agency</TableHead>
                   <TableHead
-                    className="text-right cursor-pointer hover:bg-slate-100"
+                    className="text-right cursor-pointer hover:bg-muted/80 transition-colors"
                     onClick={() => handleSort('commitments')}
                   >
-                    <div className="flex items-center justify-end">
+                    <div className="flex items-center justify-end gap-1">
                       Commitment
-                      {getSortIcon('commitments')}
+                      {getSortIcon('commitments', sortField, sortDirection)}
                     </div>
                   </TableHead>
                   <TableHead
-                    className="text-right cursor-pointer hover:bg-slate-100"
+                    className="text-right cursor-pointer hover:bg-muted/80 transition-colors"
                     onClick={() => handleSort('disbursements')}
                   >
-                    <div className="flex items-center justify-end">
+                    <div className="flex items-center justify-end gap-1">
                       Disbursement
-                      {getSortIcon('disbursements')}
+                      {getSortIcon('disbursements', sortField, sortDirection)}
                     </div>
                   </TableHead>
                 </TableRow>
@@ -266,7 +257,7 @@ export function ProjectsTable({ projects, currency = 'USD' }: ProjectsTableProps
                   paginatedProjects.map((project) => (
                     <TableRow
                       key={project.id}
-                      className="cursor-pointer hover:bg-slate-50"
+                      className="cursor-pointer hover:bg-muted/50"
                       onClick={() => handleRowClick(project.id)}
                     >
                       <TableCell className="font-medium max-w-xs">
@@ -274,8 +265,14 @@ export function ProjectsTable({ projects, currency = 'USD' }: ProjectsTableProps
                           {project.title}
                         </div>
                       </TableCell>
-                      <TableCell className="text-sm text-slate-600">
-                        {project.iati_identifier || '-'}
+                      <TableCell>
+                        {project.iati_identifier ? (
+                          <span className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded">
+                            {project.iati_identifier}
+                          </span>
+                        ) : (
+                          <span className="text-muted-foreground">—</span>
+                        )}
                       </TableCell>
                       <TableCell>
                         <Badge

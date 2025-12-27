@@ -20,10 +20,14 @@ const Command = React.forwardRef<
 ))
 Command.displayName = "Command"
 
+interface CommandInputProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'onChange'> {
+  onValueChange?: (value: string) => void;
+}
+
 const CommandInput = React.forwardRef<
   HTMLInputElement,
-  React.InputHTMLAttributes<HTMLInputElement>
->(({ className, ...props }, ref) => (
+  CommandInputProps
+>(({ className, onValueChange, ...props }, ref) => (
   <div className="flex items-center border-b px-3">
     <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
     <input
@@ -32,6 +36,7 @@ const CommandInput = React.forwardRef<
         "flex h-11 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50",
         className
       )}
+      onChange={(e) => onValueChange?.(e.target.value)}
       {...props}
     />
   </div>

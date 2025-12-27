@@ -10,15 +10,6 @@ function isValidUUID(uuid: string): boolean {
   return uuidRegex.test(uuid);
 }
 
-interface MapMarker {
-  id: string;
-  activityId: string;
-  activityTitle: string;
-  latitude: number;
-  longitude: number;
-  locationName: string;
-}
-
 export async function GET(request: NextRequest) {
   try {
     const supabase = getSupabaseAdmin();
@@ -47,66 +38,183 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Fetch activities with their locations
-    const { data: activities, error: queryError } = await supabase
+    // First get all activity IDs for this organization
+    const { data: orgActivities, error: activitiesError } = await supabase
       .from('activities')
-      .select(`
-        id,
-        title_narrative,
-        locations
-      `)
-      .eq('reporting_org_id', organizationId)
-      .not('locations', 'is', null);
+      .select('id')
+      .eq('reporting_org_id', organizationId);
 
-    if (queryError) {
-      console.error('[Dashboard Org Locations] Query error:', queryError);
+    if (activitiesError) {
+      console.error('[Dashboard Org Locations] Activities query error:', activitiesError);
       return NextResponse.json(
-        { error: 'Failed to fetch activity locations' },
+        { error: 'Failed to fetch activities' },
         { status: 500 }
       );
     }
 
-    // Extract markers from activity locations
-    const markers: MapMarker[] = [];
+    const activityIds = orgActivities?.map(a => a.id) || [];
 
-    activities?.forEach((activity: { id: string; title_narrative: string; locations: any }) => {
-      const locations = activity.locations;
-      if (!locations) return;
+    if (activityIds.length === 0) {
+      return NextResponse.json({ 
+        success: true,
+        locations: [] 
+      });
+    }
 
-      // Process site locations
-      if (locations.site_locations?.length > 0) {
-        locations.site_locations.forEach((site: any, index: number) => {
-          if (site.latitude && site.longitude) {
-            markers.push({
-              id: `${activity.id}-site-${index}`,
-              activityId: activity.id,
-              activityTitle: activity.title_narrative || 'Untitled Activity',
-              latitude: parseFloat(site.latitude),
-              longitude: parseFloat(site.longitude),
-              locationName: site.name || site.admin1 || 'Site Location',
-            });
-          }
-        });
-      }
+    // Fetch locations from activity_locations table
+    const { data: locations, error: locationsError } = await supabase
+      .from('activity_locations')
+      .select('*')
+      .in('activity_id', activityIds)
+      .not('latitude', 'is', null)
+      .not('longitude', 'is', null);
 
-      // Process broad coverage locations with coordinates
-      if (locations.broad_coverage_locations?.length > 0) {
-        locations.broad_coverage_locations.forEach((coverage: any, index: number) => {
-          if (coverage.latitude && coverage.longitude) {
-            markers.push({
-              id: `${activity.id}-broad-${index}`,
-              activityId: activity.id,
-              activityTitle: activity.title_narrative || 'Untitled Activity',
-              latitude: parseFloat(coverage.latitude),
-              longitude: parseFloat(coverage.longitude),
-              locationName: coverage.name || 'Broad Coverage',
-            });
-          }
-        });
-      }
+    if (locationsError) {
+      console.error('[Dashboard Org Locations] Locations query error:', locationsError);
+      return NextResponse.json(
+        { error: 'Failed to fetch locations' },
+        { status: 500 }
+      );
+    }
+
+    if (!locations || locations.length === 0) {
+      return NextResponse.json({ 
+        success: true,
+        locations: [] 
+      });
+    }
+
+    // Fetch full activity details with organization info
+    const { data: activities, error: activityDetailsError } = await supabase
+      .from('activities')
+      .select(`
+        id,
+        title_narrative,
+        activity_status,
+        reporting_org_id,
+        planned_start_date,
+        actual_start_date,
+        planned_end_date,
+        actual_end_date,
+        organizations (
+          name
+        )
+      `)
+      .in('id', activityIds);
+
+    if (activityDetailsError) {
+      console.warn('[Dashboard Org Locations] Warning: Could not fetch activity details:', activityDetailsError);
+    }
+
+    // Fetch sectors for these activities
+    const { data: sectors, error: sectorsError } = await supabase
+      .from('activity_sectors')
+      .select('activity_id, sector_code, sector_name, category_code, category_name, level, percentage')
+      .in('activity_id', activityIds);
+
+    if (sectorsError) {
+      console.warn('[Dashboard Org Locations] Warning: Could not fetch sectors:', sectorsError);
+    }
+
+    // Fetch budgets for these activities (from activity_budgets table)
+    const { data: budgets, error: budgetsError } = await supabase
+      .from('activity_budgets')
+      .select('activity_id, usd_value')
+      .in('activity_id', activityIds);
+
+    if (budgetsError) {
+      console.warn('[Dashboard Org Locations] Warning: Could not fetch budgets:', budgetsError);
+    }
+
+    // Fetch planned disbursements
+    const { data: plannedDisbursements, error: pdError } = await supabase
+      .from('planned_disbursements')
+      .select('activity_id, usd_amount')
+      .in('activity_id', activityIds);
+
+    if (pdError) {
+      console.warn('[Dashboard Org Locations] Warning: Could not fetch planned disbursements:', pdError);
+    }
+
+    // Create lookup maps
+    const activitiesMap = new Map();
+    activities?.forEach(activity => {
+      activitiesMap.set(activity.id, activity);
     });
 
-    return NextResponse.json({ markers });
+    const sectorsMap = new Map<string, any[]>();
+    sectors?.forEach(sector => {
+      if (!sectorsMap.has(sector.activity_id)) {
+        sectorsMap.set(sector.activity_id, []);
+      }
+      sectorsMap.get(sector.activity_id)!.push({
+        code: sector.sector_code,
+        name: sector.sector_name,
+        categoryCode: sector.category_code,
+        categoryName: sector.category_name,
+        level: sector.level,
+        percentage: sector.percentage || 0
+      });
+    });
+
+    const budgetsMap = new Map<string, number>();
+    budgets?.forEach(budget => {
+      const current = budgetsMap.get(budget.activity_id) || 0;
+      budgetsMap.set(budget.activity_id, current + (parseFloat(budget.usd_value) || 0));
+    });
+
+    const pdMap = new Map<string, number>();
+    plannedDisbursements?.forEach(pd => {
+      const current = pdMap.get(pd.activity_id) || 0;
+      pdMap.set(pd.activity_id, current + (parseFloat(pd.usd_amount) || 0));
+    });
+
+    // Transform locations to match Atlas format
+    const transformedLocations = locations.map((location: any) => {
+      const activity = activitiesMap.get(location.activity_id);
+      
+      return {
+        id: location.id,
+        activity_id: location.activity_id,
+        location_type: location.location_type,
+        location_name: location.location_name,
+        description: location.description,
+        latitude: parseFloat(location.latitude),
+        longitude: parseFloat(location.longitude),
+        address: location.address,
+        site_type: location.site_type,
+        admin_unit: location.admin_unit,
+        coverage_scope: location.coverage_scope,
+        state_region_code: location.state_region_code,
+        state_region_name: location.state_region_name,
+        township_code: location.township_code,
+        township_name: location.township_name,
+        district_name: location.district_name,
+        village_name: location.village_name,
+        city: location.city,
+        created_at: location.created_at,
+        updated_at: location.updated_at,
+        activity: activity ? {
+          id: activity.id,
+          title: activity.title_narrative,
+          status: activity.activity_status,
+          organization_id: activity.reporting_org_id,
+          organization_name: activity.organizations?.name,
+          sectors: sectorsMap.get(location.activity_id) || [],
+          totalBudget: budgetsMap.get(location.activity_id) || 0,
+          totalPlannedDisbursement: pdMap.get(location.activity_id) || 0,
+          plannedStartDate: activity.planned_start_date,
+          plannedEndDate: activity.planned_end_date,
+          actualStartDate: activity.actual_start_date,
+          actualEndDate: activity.actual_end_date
+        } : null
+      };
+    });
+
+    return NextResponse.json({ 
+      success: true,
+      locations: transformedLocations 
+    });
   } catch (error) {
     console.error('[Dashboard Org Locations] Error:', error);
     return NextResponse.json(

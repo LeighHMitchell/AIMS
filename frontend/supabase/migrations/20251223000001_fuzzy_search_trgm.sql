@@ -95,3 +95,5 @@ ON activity_sectors USING gin(sector_name gin_trgm_ops);
 
 COMMENT ON EXTENSION pg_trgm IS 'Trigram extension for fuzzy text matching and typo tolerance';
 
+
+

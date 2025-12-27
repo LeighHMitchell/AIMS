@@ -31,6 +31,9 @@ import {
   FileDown,
   AlertCircle,
   Clock,
+  LogIn,
+  LogOut,
+  AlertTriangle,
 } from 'lucide-react';
 
 // Icon mapping for different action types
@@ -58,6 +61,9 @@ const getActionIcon = (actionType: string, entityType?: string) => {
     status_change: <RefreshCw className="h-4 w-4 text-purple-600" />,
     add_tag: <Plus className="h-4 w-4 text-blue-600" />,
     remove_tag: <XCircle className="h-4 w-4 text-orange-600" />,
+    login: <LogIn className="h-4 w-4 text-green-600" />,
+    logout: <LogOut className="h-4 w-4 text-gray-600" />,
+    login_failed: <AlertTriangle className="h-4 w-4 text-red-600" />,
   };
   return iconMap[actionType] || <AlertCircle className="h-4 w-4 text-gray-600" />;
 };
@@ -130,6 +136,14 @@ const getActionDescription = (log: ActivityLog) => {
       return metadata?.details || `added a tag to "${activityTitle}"`;
     case 'remove_tag':
       return metadata?.details || `removed a tag from "${activityTitle}"`;
+    case 'login':
+      return 'logged in';
+    case 'logout':
+      return 'logged out';
+    case 'login_failed':
+      return metadata?.reason 
+        ? `failed login attempt: ${metadata.reason}` 
+        : 'failed login attempt';
     default:
       return `performed ${actionType} on ${entityType}`;
   }
@@ -341,6 +355,9 @@ export default function ActivityLogsPage() {
                   <SelectItem value="edit_transaction">Edit Transaction</SelectItem>
                   <SelectItem value="delete_transaction">Delete Transaction</SelectItem>
                   <SelectItem value="status_change">Status Change</SelectItem>
+                  <SelectItem value="login">Login</SelectItem>
+                  <SelectItem value="logout">Logout</SelectItem>
+                  <SelectItem value="login_failed">Failed Login</SelectItem>
                 </SelectContent>
               </Select>
 
@@ -353,6 +370,7 @@ export default function ActivityLogsPage() {
                   <SelectItem value="activity">Activities</SelectItem>
                   <SelectItem value="transaction">Transactions</SelectItem>
                   <SelectItem value="contact">Contacts</SelectItem>
+                  <SelectItem value="session">Sessions</SelectItem>
                   <SelectItem value="partner">Partners</SelectItem>
                 </SelectContent>
               </Select>

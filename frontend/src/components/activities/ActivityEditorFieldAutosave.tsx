@@ -71,7 +71,7 @@ export function ActivityEditorFieldAutosave({
         // New activity was created
         onActivityCreated?.(data);
       }
-      toast.success('Activity Status saved', { position: 'top-right' });
+      toast.success('Activity Status saved', { position: 'top-center' });
     }
   });
   

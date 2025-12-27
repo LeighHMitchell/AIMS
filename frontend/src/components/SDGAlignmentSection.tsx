@@ -127,7 +127,7 @@ export default function SDGAlignmentSection({
           setLastSaved(new Date());
           setSavedMappings([...updatedMappings]); // Track which mappings are saved
           toast.success('SDG mappings saved successfully', { 
-            position: 'top-right',
+            position: 'top-center',
             duration: 2000 
           });
         } else {
@@ -135,7 +135,7 @@ export default function SDGAlignmentSection({
         }
       } catch (error) {
         console.error('Error saving SDG mappings:', error);
-        toast.error('Failed to save SDG mappings', { position: 'top-right' });
+        toast.error('Failed to save SDG mappings', { position: 'top-center' });
       } finally {
         setIsSaving(false);
       }

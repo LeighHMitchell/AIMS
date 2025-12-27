@@ -317,7 +317,7 @@ export function RelatedActivitiesTab({ activityId, activityTitle = 'Current Acti
                   </TableHeader>
                   <TableBody>
                     {relatedActivities.map((activity) => (
-                      <TableRow key={activity.id} className="hover:bg-slate-50">
+                      <TableRow key={activity.id} className="hover:bg-muted/50">
                         <TableCell>
                           {activity.direction === 'incoming' ? (
                             <ArrowLeft className="h-4 w-4 text-green-600" title="Incoming" />

@@ -139,8 +139,14 @@ const ActivityRow: React.FC<{
       )}
       onClick={() => onNavigate(activity.id)}
     >
-      <TableCell className="font-mono text-xs text-muted-foreground max-w-[150px] truncate">
-        {activity.iati_identifier || '-'}
+      <TableCell className="max-w-[150px]">
+        {activity.iati_identifier ? (
+          <span className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded truncate inline-block max-w-full">
+            {activity.iati_identifier}
+          </span>
+        ) : (
+          <span className="text-muted-foreground">—</span>
+        )}
       </TableCell>
       <TableCell className="max-w-[300px]">
         <div className="truncate font-medium">{activity.title || 'Untitled Activity'}</div>

@@ -1,73 +1,74 @@
 /**
  * Centralized color palette for all charts in the application
- * Deep dark blues and slate tones for a professional, cohesive look
+ * Color palette: Primary Scarlet, Pale Slate, Blue Slate, Cool Steel, Platinum
  */
 
-// Primary color palette - Deep blues and slates
+// Primary color palette
 export const CHART_COLORS = {
-  // Primary blues (darkest to lighter)
+  // Primary palette colors
   primary: {
-    darkest: '#0F172A',   // slate-900 - Darkest blue-black
-    darker: '#1E293B',    // slate-800 - Deep navy
-    dark: '#334155',      // slate-700 - Dark slate blue
-    medium: '#475569',    // slate-600 - Medium slate
-    light: '#64748B',     // slate-500 - Light slate
-    lighter: '#94A3B8',   // slate-400 - Lighter slate
+    scarlet: '#dc2625',   // Primary Scarlet - main accent color
+    blueSlate: '#4c5568', // Blue Slate - dark secondary
+    coolSteel: '#7b95a7', // Cool Steel - medium secondary
+    paleSlate: '#cfd0d5', // Pale Slate - light gray
+    platinum: '#f1f4f8',  // Platinum - off-white/background
+    // Legacy mappings for compatibility
+    darkest: '#4c5568',   // Blue Slate
+    darker: '#4c5568',    // Blue Slate
+    dark: '#4c5568',      // Blue Slate
+    medium: '#7b95a7',    // Cool Steel
+    light: '#cfd0d5',     // Pale Slate
+    lighter: '#f1f4f8',   // Platinum
   },
 
-  // Accent colors - Deep blues with variety
+  // Accent colors mapped to palette
   accent: {
-    navy: '#1E3A8A',      // blue-900 - Deep navy blue
-    royal: '#1D4ED8',     // blue-700 - Royal blue
-    sky: '#2563EB',       // blue-600 - Sky blue
-    cyan: '#0891B2',      // cyan-600 - Deep cyan
-    teal: '#0F766E',      // teal-700 - Deep teal
-    indigo: '#4338CA',    // indigo-700 - Deep indigo
+    navy: '#4c5568',      // Blue Slate
+    royal: '#dc2625',     // Primary Scarlet
+    sky: '#7b95a7',       // Cool Steel
+    cyan: '#7b95a7',      // Cool Steel
+    teal: '#4c5568',      // Blue Slate
+    indigo: '#4c5568',    // Blue Slate
   },
 
   // Semantic colors (status-related)
   semantic: {
-    success: '#0F766E',   // teal-700 - Success/positive
-    warning: '#B45309',   // amber-700 - Warning
-    danger: '#991B1B',    // red-800 - Danger/error
-    info: '#1D4ED8',      // blue-700 - Information
+    success: '#4c5568',   // Blue Slate
+    warning: '#dc2625',   // Primary Scarlet
+    danger: '#dc2625',    // Primary Scarlet
+    info: '#7b95a7',      // Cool Steel
   }
 }
 
 // Chart-specific color arrays for multi-series data
+// Primary Scarlet, Blue Slate, Cool Steel, Pale Slate, Platinum
 export const CHART_COLOR_PALETTE = [
-  CHART_COLORS.primary.darkest,   // #0F172A
-  CHART_COLORS.accent.navy,       // #1E3A8A
-  CHART_COLORS.primary.dark,      // #334155
-  CHART_COLORS.accent.royal,      // #1D4ED8
-  CHART_COLORS.primary.medium,    // #475569
-  CHART_COLORS.accent.sky,        // #2563EB
-  CHART_COLORS.accent.cyan,       // #0891B2
-  CHART_COLORS.accent.teal,       // #0F766E
-  CHART_COLORS.primary.light,     // #64748B
-  CHART_COLORS.accent.indigo,     // #4338CA
-  CHART_COLORS.primary.lighter,   // #94A3B8
+  '#dc2625',  // Primary Scarlet
+  '#4c5568',  // Blue Slate
+  '#7b95a7',  // Cool Steel
+  '#cfd0d5',  // Pale Slate
+  '#f1f4f8',  // Platinum
 ] as const
 
 // Specific color assignments for common data types
 export const DATA_COLORS = {
-  budget: CHART_COLORS.accent.navy,          // #1E3A8A - Navy for budget/commitments
-  disbursements: CHART_COLORS.accent.sky,    // #2563EB - Sky blue for disbursements
-  expenditures: CHART_COLORS.accent.cyan,    // #0891B2 - Cyan for expenditures
-  actual: CHART_COLORS.accent.royal,         // #1D4ED8 - Royal blue for actual values
-  planned: CHART_COLORS.primary.light,       // #64748B - Light slate for planned values
-  totalSpending: CHART_COLORS.primary.darkest, // #0F172A - Darkest for totals
-  commitments: CHART_COLORS.accent.indigo,   // #4338CA - Indigo for commitments
+  budget: '#dc2625',          // Primary Scarlet - for budget
+  disbursements: '#4c5568',   // Blue Slate - for disbursements
+  expenditures: '#7b95a7',    // Cool Steel - for expenditures
+  actual: '#4c5568',          // Blue Slate - for actual values
+  planned: '#cfd0d5',         // Pale Slate - for planned values
+  totalSpending: '#dc2625',   // Primary Scarlet - for totals
+  commitments: '#7b95a7',     // Cool Steel - for commitments
 
   // Organization types
-  government: CHART_COLORS.accent.navy,      // #1E3A8A
-  ngo: CHART_COLORS.accent.royal,            // #1D4ED8
-  multilateral: CHART_COLORS.accent.cyan,    // #0891B2
-  private: CHART_COLORS.primary.dark,        // #334155
+  government: '#dc2625',      // Primary Scarlet
+  ngo: '#4c5568',             // Blue Slate
+  multilateral: '#7b95a7',    // Cool Steel
+  private: '#cfd0d5',         // Pale Slate
 
   // Transaction types
-  incoming: CHART_COLORS.accent.teal,        // #0F766E
-  outgoing: CHART_COLORS.accent.royal,       // #1D4ED8
+  incoming: '#dc2625',        // Primary Scarlet
+  outgoing: '#4c5568',        // Blue Slate
 }
 
 // Gradient definitions for area charts

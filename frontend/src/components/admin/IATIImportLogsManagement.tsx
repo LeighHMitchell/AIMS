@@ -337,7 +337,7 @@ export function IATIImportLogsManagement() {
                       const StatusIcon = statusConfig.icon;
 
                       return (
-                        <TableRow key={log.id} className="hover:bg-gray-50">
+                        <TableRow key={log.id} className="hover:bg-muted/50">
                           <TableCell>
                             <div className={`inline-flex items-center justify-center w-8 h-8 rounded-full ${statusConfig.bgColor}`}>
                               <StatusIcon className={`h-4 w-4 ${statusConfig.color}`} />
@@ -348,9 +348,13 @@ export function IATIImportLogsManagement() {
                               <div className="font-medium truncate max-w-[250px]">
                                 {log.activity_title || 'Untitled Activity'}
                               </div>
-                              <div className="text-xs text-gray-500 font-mono">
-                                {log.iati_identifier || 'No IATI ID'}
-                              </div>
+                              {log.iati_identifier ? (
+                                <span className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded inline-block mt-1">
+                                  {log.iati_identifier}
+                                </span>
+                              ) : (
+                                <span className="text-xs text-muted-foreground mt-1 inline-block">No IATI ID</span>
+                              )}
                             </div>
                           </TableCell>
                           <TableCell>

@@ -55,3 +55,5 @@ ON activity_policy_markers(visibility);
 -- Step 4: Create index on default_visibility for efficient filtering
 CREATE INDEX IF NOT EXISTS idx_policy_markers_default_visibility 
 ON policy_markers(default_visibility);
+
+

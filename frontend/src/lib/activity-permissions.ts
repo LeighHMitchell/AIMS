@@ -1,4 +1,5 @@
 import { User, USER_ROLES } from '@/types/user';
+import { FocalPoint, FocalPointType } from '@/types/focal-points';
 
 export interface ActivityContributor {
   id: string;
@@ -146,4 +147,123 @@ export function canViewContribution(
   
   // Can only view own contributions
   return contributionOrgId === user.organizationId;
+}
+
+// ============================================
+// Focal Point Permission Helpers
+// ============================================
+
+/**
+ * Check if a user is a focal point for an activity
+ */
+export function isFocalPoint(
+  user: User | null,
+  focalPoints: FocalPoint[],
+  type?: FocalPointType
+): boolean {
+  if (!user || !user.email) return false;
+  
+  return focalPoints.some(fp => {
+    const matchesEmail = fp.email === user.email;
+    const matchesUserId = fp.user_id === user.id;
+    const isActiveStatus = fp.status === 'assigned' || fp.status === 'accepted';
+    const matchesType = type ? fp.type === type : true;
+    
+    return (matchesEmail || matchesUserId) && isActiveStatus && matchesType;
+  });
+}
+
+/**
+ * Check if a user can handoff their focal point role
+ */
+export function canHandoffFocalPoint(
+  user: User | null,
+  focalPoints: FocalPoint[],
+  type: FocalPointType
+): boolean {
+  if (!user) return false;
+  
+  // User must be an active focal point of the specified type
+  const userFocalPoint = focalPoints.find(fp => {
+    const matchesEmail = fp.email === user.email;
+    const matchesUserId = fp.user_id === user.id;
+    const isActiveStatus = fp.status === 'assigned' || fp.status === 'accepted';
+    const matchesType = fp.type === type;
+    
+    return (matchesEmail || matchesUserId) && isActiveStatus && matchesType;
+  });
+  
+  return !!userFocalPoint;
+}
+
+/**
+ * Check if a user has a pending handoff offer
+ */
+export function hasPendingHandoff(
+  user: User | null,
+  focalPoints: FocalPoint[],
+  type?: FocalPointType
+): FocalPoint | null {
+  if (!user || !user.id) return null;
+  
+  return focalPoints.find(fp => {
+    const isPendingToUser = fp.handed_off_to === user.id;
+    const isPendingStatus = fp.status === 'pending_handoff';
+    const matchesType = type ? fp.type === type : true;
+    
+    return isPendingToUser && isPendingStatus && matchesType;
+  }) || null;
+}
+
+/**
+ * Check if a user can assign focal points (super user only)
+ */
+export function canAssignFocalPoints(user: User | null): boolean {
+  if (!user) return false;
+  return user.role === USER_ROLES.SUPER_USER;
+}
+
+/**
+ * Check if a user can remove a focal point
+ */
+export function canRemoveFocalPoint(
+  user: User | null,
+  focalPoint: FocalPoint
+): boolean {
+  if (!user) return false;
+  
+  // Super users can remove any focal point
+  if (user.role === USER_ROLES.SUPER_USER) return true;
+  
+  // Focal points can remove themselves
+  const isSelf = focalPoint.email === user.email || focalPoint.user_id === user.id;
+  return isSelf;
+}
+
+/**
+ * Get focal point permissions for a user
+ */
+export interface FocalPointPermissions {
+  canAssignFocalPoints: boolean;
+  canHandoffGovernmentFocalPoint: boolean;
+  canHandoffDevelopmentPartnerFocalPoint: boolean;
+  hasPendingGovernmentHandoff: boolean;
+  hasPendingDevelopmentPartnerHandoff: boolean;
+  isGovernmentFocalPoint: boolean;
+  isDevelopmentPartnerFocalPoint: boolean;
+}
+
+export function getFocalPointPermissions(
+  user: User | null,
+  focalPoints: FocalPoint[]
+): FocalPointPermissions {
+  return {
+    canAssignFocalPoints: canAssignFocalPoints(user),
+    canHandoffGovernmentFocalPoint: canHandoffFocalPoint(user, focalPoints, 'government_focal_point'),
+    canHandoffDevelopmentPartnerFocalPoint: canHandoffFocalPoint(user, focalPoints, 'development_partner_focal_point'),
+    hasPendingGovernmentHandoff: !!hasPendingHandoff(user, focalPoints, 'government_focal_point'),
+    hasPendingDevelopmentPartnerHandoff: !!hasPendingHandoff(user, focalPoints, 'development_partner_focal_point'),
+    isGovernmentFocalPoint: isFocalPoint(user, focalPoints, 'government_focal_point'),
+    isDevelopmentPartnerFocalPoint: isFocalPoint(user, focalPoints, 'development_partner_focal_point'),
+  };
 } 

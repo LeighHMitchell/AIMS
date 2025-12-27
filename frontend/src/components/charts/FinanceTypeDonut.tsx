@@ -22,17 +22,18 @@ interface FinanceTypeDonutProps {
   defaultCurrency?: string;
 }
 
+// Color palette: Primary Scarlet, Pale Slate, Blue Slate, Cool Steel, Platinum
 const COLOR_PALETTE = [
-  "#1e40af", // blue-800
-  "#3b82f6", // blue-500
-  "#0f172a", // slate-900
-  "#475569", // slate-600
-  "#64748b", // slate-500
-  "#334155", // slate-700
-  "#0ea5e9", // sky-500
-  "#10b981", // emerald-500
-  "#f59e0b", // amber-500
-  "#94a3b8", // slate-400
+  "#dc2625", // Primary Scarlet
+  "#4c5568", // Blue Slate
+  "#7b95a7", // Cool Steel
+  "#cfd0d5", // Pale Slate
+  "#f1f4f8", // Platinum
+  "#dc2625", // Primary Scarlet (repeat)
+  "#4c5568", // Blue Slate
+  "#7b95a7", // Cool Steel
+  "#cfd0d5", // Pale Slate
+  "#f1f4f8", // Platinum
 ];
 
 // Format currency in short form with two decimals
@@ -222,19 +223,29 @@ export default function FinanceTypeDonut({
                   if (active && payload && payload.length) {
                     const data = payload[0].payload;
                     return (
-                      <div className="bg-white p-2 border border-gray-200 rounded shadow-lg">
-                        <p className="text-xs font-semibold mb-2 text-slate-900">
-                          {data.name}
-                        </p>
-                        <table className="text-xs">
+                      <div className="bg-white p-3 border border-slate-200 rounded-lg shadow-lg min-w-[180px]">
+                        <div className="flex items-center gap-2 mb-2 pb-2 border-b border-slate-100">
+                          <div 
+                            className="w-3 h-3 rounded-full flex-shrink-0" 
+                            style={{ backgroundColor: data.color }}
+                          />
+                          <p className="text-sm font-semibold text-slate-900">
+                            {data.name}
+                          </p>
+                        </div>
+                        <table className="w-full text-xs">
                           <tbody>
-                            <tr>
-                              <td className="pr-3 py-0.5 text-slate-600">Amount:</td>
-                              <td className="text-right py-0.5 font-medium text-slate-900">{formatCurrencyShort(data.value)}</td>
+                            <tr className="border-b border-slate-100">
+                              <td className="px-1 py-1.5 text-slate-600">Code</td>
+                              <td className="text-right px-1 py-1.5 font-mono font-medium text-slate-900">{data.code}</td>
+                            </tr>
+                            <tr className="border-b border-slate-100">
+                              <td className="px-1 py-1.5 text-slate-600">Amount</td>
+                              <td className="text-right px-1 py-1.5 font-medium text-slate-900">{formatCurrencyShort(data.value)}</td>
                             </tr>
                             <tr>
-                              <td className="pr-3 py-0.5 text-slate-600">Percentage:</td>
-                              <td className="text-right py-0.5 font-medium text-slate-900">{data.percentage}%</td>
+                              <td className="px-1 py-1.5 text-slate-600">Share</td>
+                              <td className="text-right px-1 py-1.5 font-medium text-slate-900">{data.percentage}%</td>
                             </tr>
                           </tbody>
                         </table>

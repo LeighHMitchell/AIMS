@@ -353,7 +353,7 @@ export function PolicyMarkersAnalyticsTab({ policyMarkers, activityTitle }: Poli
                 {sortedMarkers.map((marker) => {
                   const IconComponent = getIconForMarker(marker.policy_marker_details?.iati_code);
                   return (
-                    <TableRow key={marker.policy_marker_id} className="hover:bg-slate-50">
+                    <TableRow key={marker.policy_marker_id} className="hover:bg-muted/50">
                       <TableCell>
                         <div className="flex items-center gap-3">
                           <IconComponent className="w-5 h-5 text-slate-600" />

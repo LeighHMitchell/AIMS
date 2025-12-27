@@ -1613,7 +1613,7 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">
-                      <tr className="hover:bg-slate-50/50 transition-colors">
+                      <tr className="hover:bg-muted/50 transition-colors">
                         <td className="px-2 py-1 text-slate-700">Budgets</td>
                         <td className="px-2 py-1 text-right text-slate-600">
                           {financialData.loading ? '...' : (financialData.budgetCount ?? 0)}
@@ -1622,7 +1622,7 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
                           {financialData.loading ? 'Loading...' : renderCurrency(financialData.totalBudget ?? 0, financialData.currency)}
                         </td>
                       </tr>
-                      <tr className="hover:bg-slate-50/50 transition-colors">
+                      <tr className="hover:bg-muted/50 transition-colors">
                         <td className="px-2 py-1 text-slate-700">Planned Disbursements</td>
                         <td className="px-2 py-1 text-right text-slate-600">
                           {financialData.loading ? '...' : (financialData.plannedDisbursementCount ?? 0)}
@@ -1651,7 +1651,7 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
                           .map((txType) => {
                             const txData = financialData.transactionTypes![txType];
                             return (
-                              <tr key={txType} className="hover:bg-slate-50/50 transition-colors">
+                              <tr key={txType} className="hover:bg-muted/50 transition-colors">
                                 <td className="px-2 py-1 text-slate-700">{txData.label}</td>
                                 <td className="px-2 py-1 text-right text-slate-600">
                                   {financialData.loading ? '...' : txData.count}

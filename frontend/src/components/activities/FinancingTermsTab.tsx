@@ -625,7 +625,7 @@ export function FinancingTermsTab({
                 </thead>
                 <tbody>
                   {loanStatuses.map((status) => (
-                    <tr key={status.id} className="border-b hover:bg-gray-50">
+                    <tr key={status.id} className="border-b hover:bg-muted/50">
                       <td className="p-2 font-medium">{status.year}</td>
                       <td className="p-2">{status.currency}</td>
                       <td className="p-2">{status.value_date || '-'}</td>

@@ -162,8 +162,6 @@ export function EditUserModal({ isOpen, onClose, onUserUpdated, user, organizati
     if (!form) return "Form not initialized"
     if (!form.email.trim()) return "Email is required"
     if (!form.firstName.trim()) return "First name is required"
-    if (!form.lastName.trim()) return "Last name is required"
-    if (!form.phoneNumber?.trim()) return "Phone number is required"
     
     // Email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
@@ -383,7 +381,7 @@ export function EditUserModal({ isOpen, onClose, onUserUpdated, user, organizati
                 />
               </div>
               <div>
-                <Label htmlFor="lastName">Last Name *</Label>
+                <Label htmlFor="lastName">Last Name</Label>
                 <Input
                   id="lastName"
                   value={form.lastName}
@@ -529,7 +527,7 @@ export function EditUserModal({ isOpen, onClose, onUserUpdated, user, organizati
                 phoneNumber={form.phoneNumber}
                 onCountryCodeChange={(code) => handleFormChange("countryCode", code)}
                 onPhoneNumberChange={(number) => handleFormChange("phoneNumber", number)}
-                phoneLabel="Primary Phone *"
+                phoneLabel="Primary Phone"
                 phonePlaceholder="Enter phone number"
               />
             </div>

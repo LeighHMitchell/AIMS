@@ -194,13 +194,13 @@ export default function EnhancedActivityEditor({ activityId, initialData = {} }:
       
       setLastSaved(prev => ({ ...prev, [fieldName]: new Date() }));
       toast.success(`${displayName} saved successfully`, {
-        position: 'top-right',
+        position: 'top-center',
         duration: 2000
       });
     } catch (error) {
       console.error(`Error saving ${fieldName}:`, error);
       toast.error(`Failed to save ${displayName}`, {
-        position: 'top-right',
+        position: 'top-center',
         duration: 3000
       });
     } finally {
@@ -249,7 +249,7 @@ export default function EnhancedActivityEditor({ activityId, initialData = {} }:
       setFormData(prev => ({ ...prev, activity_scope: activityScope }));
       setLastSaved(prev => ({ ...prev, activity_scope: new Date() }));
       toast.success('Activity Scope saved successfully', {
-        position: 'top-right',
+        position: 'top-center',
         duration: 2000,
       });
     } catch (error) {
@@ -459,13 +459,13 @@ export default function EnhancedActivityEditor({ activityId, initialData = {} }:
 
       setLastSaved(prev => ({ ...prev, other_identifiers: new Date() }));
       toast.success('Other identifiers saved successfully', {
-        position: 'top-right',
+        position: 'top-center',
         duration: 2000
       });
     } catch (error) {
       console.error('Error saving other identifiers:', error);
       toast.error('Failed to save other identifiers', {
-        position: 'top-right',
+        position: 'top-center',
         duration: 3000
       });
     } finally {

@@ -2708,6 +2708,11 @@ const router = useRouter();
                           href={`/activities/${activity.id}`}
                           className="cursor-pointer block"
                           onClick={async (e) => {
+                            // Allow Cmd+Click (Mac) or Ctrl+Click (Windows) to open in new tab
+                            if (e.metaKey || e.ctrlKey) {
+                              return; // Let the default link behavior happen
+                            }
+                            
                             e.preventDefault();
                             // Verify activity exists before navigating (lightweight check)
                             try {
@@ -2788,7 +2793,7 @@ const router = useRouter();
                               <div className="text-xs text-muted-foreground flex items-center gap-1 text-left overflow-hidden">
                                 {activity.partnerId && (
                                   <div className="flex items-center gap-1 flex-shrink-0">
-                                    <span className="truncate max-w-[200px]">{activity.partnerId}</span>
+                                    <span className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded truncate max-w-[200px]">{activity.partnerId}</span>
                                     <button
                                       onClick={(e) => {
                                         e.stopPropagation();
@@ -2809,7 +2814,7 @@ const router = useRouter();
 
                                 {activity.iatiIdentifier && (
                                   <div className={`flex items-center gap-1 flex-shrink min-w-0 ${activity.partnerId ? 'ml-2' : ''}`}>
-                                    <span className="text-slate-400 truncate">{activity.iatiIdentifier}</span>
+                                    <span className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded truncate">{activity.iatiIdentifier}</span>
                                     <button
                                       onClick={(e) => {
                                         e.stopPropagation();

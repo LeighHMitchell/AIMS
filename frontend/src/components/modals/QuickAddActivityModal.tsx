@@ -248,7 +248,7 @@ export function QuickAddActivityModal({ isOpen, onClose, user }: QuickAddActivit
         </div>,
         {
           duration: 8000,
-          position: 'top-right',
+          position: 'top-center',
         }
       );
 

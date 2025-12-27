@@ -44,20 +44,33 @@ export async function POST(request: NextRequest) {
     
     if (authError || !authData.user) {
       console.error('[Auth Login] Authentication failed:', authError?.message);
+      
+      // Log failed login attempt
+      try {
+        const { ActivityLogger } = await import('@/lib/activity-logger');
+        await ActivityLogger.userLoginFailed(email, authError?.message || 'Invalid credentials');
+      } catch (logError) {
+        console.error('[Auth Login] Failed to log failed login event:', logError);
+      }
+      
       return NextResponse.json({ error: 'Invalid email or password' }, { status: 401 });
     }
     
-    // Get user profile data from our users table using admin client
+    // Update last_login and get user profile data from our users table
+    const now = new Date().toISOString();
     const { data: userData, error: userError } = await adminClient
       .from('users')
-      .select('*')
+      .update({ last_login: now, updated_at: now })
       .eq('id', authData.user.id)
+      .select('*')
       .single();
     
     if (userError || !userData) {
-      console.error('[Auth Login] User profile not found:', userError);
+      console.error('[Auth Login] User profile not found or update failed:', userError);
       return NextResponse.json({ error: 'User profile not found' }, { status: 401 });
     }
+    
+    console.log('[Auth Login] Updated last_login for user:', userData.email);
     
     // Get organization data if user has one
     let organization = null;
@@ -88,12 +101,27 @@ export async function POST(request: NextRequest) {
       phone: userData.phone || '',
       telephone: userData.telephone || userData.phone || '',
       isActive: userData.is_active !== false,
-      lastLogin: new Date().toISOString(),
+      lastLogin: userData.last_login,
       createdAt: userData.created_at,
       updatedAt: userData.updated_at,
     };
     
     console.log('[Auth Login] Login successful for:', user.email, 'Role:', user.role);
+    
+    // Log successful login
+    try {
+      const { ActivityLogger } = await import('@/lib/activity-logger');
+      const userAgent = request.headers.get('user-agent') || undefined;
+      const forwardedFor = request.headers.get('x-forwarded-for');
+      const ipAddress = forwardedFor?.split(',')[0]?.trim() || undefined;
+      
+      await ActivityLogger.userLoggedIn(user, { 
+        ipAddress, 
+        userAgent 
+      });
+    } catch (logError) {
+      console.error('[Auth Login] Failed to log login event:', logError);
+    }
     
     return NextResponse.json({ 
       success: true, 

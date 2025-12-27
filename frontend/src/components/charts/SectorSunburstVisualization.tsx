@@ -29,15 +29,16 @@ interface Props {
 }
 
 // Extended color palette for unique colors per segment
+// Color palette: Primary Scarlet, Pale Slate, Blue Slate, Cool Steel, Platinum
 const BASE_COLORS = [
-  '#E3120B', '#006BA2', '#3EBCD2', '#379A8B', '#EBB434', '#B4BA39', '#9A607F', '#D1B07C',
-  '#FF6B6C', '#1270A8', '#25ADC2', '#4DAD9E', '#C89608', '#9DA521', '#C98CAC', '#FFC2E3',
-  '#C7303C', '#00588D', '#0092A7', '#00786B', '#8D6300', '#667100', '#925977', '#826636',
-  '#DB444B', '#0C4A6E', '#0E7490', '#065F46', '#A16207', '#4D7C0F', '#7C2D12', '#92400E',
-  '#F87171', '#60A5FA', '#34D399', '#FBBF24', '#A78BFA', '#FB7185', '#38BDF8', '#4ADE80',
-  '#EF4444', '#3B82F6', '#64748b', '#475569', '#8B5CF6', '#EC4899', '#06B6D4', '#22C55E',
-  '#DC2626', '#2563EB', '#059669', '#D97706', '#7C3AED', '#DB2777', '#0891B2', '#16A34A',
-  '#B91C1C', '#1D4ED8', '#047857', '#B45309', '#6D28D9', '#BE185D', '#0E7490', '#15803D'
+  '#dc2625', '#4c5568', '#7b95a7', '#cfd0d5', '#f1f4f8',
+  '#dc2625', '#4c5568', '#7b95a7', '#cfd0d5', '#f1f4f8',
+  '#dc2625', '#4c5568', '#7b95a7', '#cfd0d5', '#f1f4f8',
+  '#dc2625', '#4c5568', '#7b95a7', '#cfd0d5', '#f1f4f8',
+  '#dc2625', '#4c5568', '#7b95a7', '#cfd0d5', '#f1f4f8',
+  '#dc2625', '#4c5568', '#7b95a7', '#cfd0d5', '#f1f4f8',
+  '#dc2625', '#4c5568', '#7b95a7', '#cfd0d5', '#f1f4f8',
+  '#dc2625', '#4c5568', '#7b95a7', '#cfd0d5', '#f1f4f8'
 ];
 
 // Function to generate darker and lighter shades from a base color

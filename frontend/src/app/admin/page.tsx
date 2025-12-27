@@ -7,7 +7,7 @@ import { MainLayout } from "@/components/layout/main-layout"
 import { AdminUserTable } from "@/components/AdminUserTable"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Shield, Users, FileText, AlertCircle, Settings, MessageSquare, Landmark, DollarSign, Map, HelpCircle, Book, FileCode2, Calendar } from "lucide-react"
+import { Shield, Users, FileText, AlertCircle, Settings, MessageSquare, Landmark, DollarSign, Map, HelpCircle, Book, FileCode2, Calendar, Activity } from "lucide-react"
 import { USER_ROLES } from "@/types/user"
 import { SystemsSettings } from "@/components/admin/SystemsSettings"
 import { FeedbackManagement } from "@/components/admin/FeedbackManagement"
@@ -20,6 +20,7 @@ import { PendingValidationsManagement } from "@/components/admin/PendingValidati
 import { IATIImportLogsManagement } from "@/components/admin/IATIImportLogsManagement"
 import { ProjectReferencesManagement } from "@/components/admin/ProjectReferencesManagement"
 import { EventManagement } from "@/components/calendar/EventManagement"
+import { UserActivityDashboard } from "@/components/admin/UserActivityDashboard"
 import { LoadingText } from "@/components/ui/loading-text"
 
 function AdminPageContent() {
@@ -30,7 +31,7 @@ function AdminPageContent() {
   const [activeSubTab, setActiveSubTab] = useState("classifications")
 
   // Valid tab values
-  const validTabs = ["users", "import-logs", "validations", "feedback", "faq", "systems", "chart-of-accounts", "project-references", "calendar-events"]
+  const validTabs = ["users", "user-activity", "import-logs", "validations", "feedback", "faq", "systems", "chart-of-accounts", "project-references", "calendar-events"]
   const validSubTabs = ["classifications", "sector-mappings", "country-sectors", "domestic-budget"]
 
   useEffect(() => {
@@ -123,40 +124,44 @@ function AdminPageContent() {
         </div>
 
         <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
-          <TabsList>
-            <TabsTrigger value="users" className="flex items-center gap-2">
+          <TabsList className="p-1 h-auto bg-background gap-1 border mb-6 flex flex-wrap">
+            <TabsTrigger value="users" className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
               <Users className="h-4 w-4" />
               User Management
             </TabsTrigger>
-            <TabsTrigger value="import-logs" className="flex items-center gap-2">
+            <TabsTrigger value="user-activity" className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+              <Activity className="h-4 w-4" />
+              User Activity
+            </TabsTrigger>
+            <TabsTrigger value="import-logs" className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
               <FileText className="h-4 w-4" />
               IATI Import Logs
             </TabsTrigger>
-            <TabsTrigger value="validations" className="flex items-center gap-2">
+            <TabsTrigger value="validations" className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
               <AlertCircle className="h-4 w-4" />
               Pending Validations
             </TabsTrigger>
-            <TabsTrigger value="feedback" className="flex items-center gap-2">
+            <TabsTrigger value="feedback" className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
               <MessageSquare className="h-4 w-4" />
               Feedback
             </TabsTrigger>
-            <TabsTrigger value="faq" className="flex items-center gap-2">
+            <TabsTrigger value="faq" className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
               <HelpCircle className="h-4 w-4" />
               FAQ
             </TabsTrigger>
-            <TabsTrigger value="systems" className="flex items-center gap-2">
+            <TabsTrigger value="systems" className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
               <Settings className="h-4 w-4" />
               Systems Settings
             </TabsTrigger>
-            <TabsTrigger value="chart-of-accounts" className="flex items-center gap-2">
+            <TabsTrigger value="chart-of-accounts" className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
               <Landmark className="h-4 w-4" />
               Chart of Accounts
             </TabsTrigger>
-            <TabsTrigger value="project-references" className="flex items-center gap-2">
+            <TabsTrigger value="project-references" className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
               <FileCode2 className="h-4 w-4" />
               Project References
             </TabsTrigger>
-            <TabsTrigger value="calendar-events" className="flex items-center gap-2">
+            <TabsTrigger value="calendar-events" className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
               <Calendar className="h-4 w-4" />
               Calendar Events
             </TabsTrigger>
@@ -164,6 +169,10 @@ function AdminPageContent() {
 
           <TabsContent value="users" className="space-y-6">
             <AdminUserTable />
+          </TabsContent>
+
+          <TabsContent value="user-activity" className="space-y-6">
+            <UserActivityDashboard />
           </TabsContent>
 
           <TabsContent value="import-logs" className="space-y-6">
@@ -188,20 +197,20 @@ function AdminPageContent() {
 
           <TabsContent value="chart-of-accounts" className="space-y-6">
             <Tabs value={activeSubTab} onValueChange={handleSubTabChange}>
-              <TabsList className="mb-4">
-                <TabsTrigger value="classifications" className="flex items-center gap-2">
+              <TabsList className="p-1 h-auto bg-background gap-1 border mb-4">
+                <TabsTrigger value="classifications" className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
                   <Landmark className="h-4 w-4" />
                   Classifications
                 </TabsTrigger>
-                <TabsTrigger value="sector-mappings" className="flex items-center gap-2">
+                <TabsTrigger value="sector-mappings" className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
                   <Map className="h-4 w-4" />
                   Sector Mappings
                 </TabsTrigger>
-                <TabsTrigger value="country-sectors" className="flex items-center gap-2">
+                <TabsTrigger value="country-sectors" className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
                   <Book className="h-4 w-4" />
                   Country Sectors
                 </TabsTrigger>
-                <TabsTrigger value="domestic-budget" className="flex items-center gap-2">
+                <TabsTrigger value="domestic-budget" className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
                   <DollarSign className="h-4 w-4" />
                   Domestic Budget
                 </TabsTrigger>

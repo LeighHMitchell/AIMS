@@ -2,12 +2,12 @@
 
 import React, { useState, useMemo } from 'react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, getSortIcon } from '@/components/ui/table'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { SectorMetrics, SectorSortField, SortDirection } from '@/types/sector-analytics'
-import { Search, ArrowUpDown, Download, Table as TableIcon } from 'lucide-react'
+import { Search, Download, Table as TableIcon } from 'lucide-react'
 
 interface SectorSummaryTableProps {
   data: SectorMetrics[]
@@ -163,11 +163,11 @@ export function SectorSummaryTable({ data }: SectorSummaryTableProps) {
     <Button
       variant="ghost"
       size="sm"
-      className={`h-8 px-2 font-medium ${sortField === field ? 'text-slate-900' : 'text-slate-600'}`}
+      className="h-8 px-2 font-medium hover:bg-muted/80"
       onClick={() => handleSort(field)}
     >
       <span>{label}</span>
-      <ArrowUpDown className={`ml-1.5 h-3 w-3 ${sortField === field ? 'opacity-100' : 'opacity-50'}`} />
+      <span className="ml-1">{getSortIcon(field, sortField, sortDirection)}</span>
     </Button>
   )
 
@@ -225,27 +225,27 @@ export function SectorSummaryTable({ data }: SectorSummaryTableProps) {
       <CardContent>
         <div className="rounded-md border overflow-auto max-h-[600px]">
           <Table>
-            <TableHeader>
-              <TableRow className="sticky top-0 bg-white z-10 shadow-sm">
-                <TableHead className="bg-white min-w-[200px]">
+            <TableHeader className="sticky top-0 z-10">
+              <TableRow>
+                <TableHead className="min-w-[200px]">
                   <SortButton field="name" label="Sector" />
                 </TableHead>
-                <TableHead className="text-right bg-white">
+                <TableHead className="text-right">
                   <SortButton field="planned" label="Planned" />
                 </TableHead>
-                <TableHead className="text-right bg-white">
+                <TableHead className="text-right">
                   <SortButton field="actual" label="Actual" />
                 </TableHead>
-                <TableHead className="text-right bg-white">
+                <TableHead className="text-right">
                   <SortButton field="commitments" label="Commitments" />
                 </TableHead>
-                <TableHead className="text-right bg-white">
+                <TableHead className="text-right">
                   <SortButton field="budgets" label="Budgets" />
                 </TableHead>
-                <TableHead className="text-right bg-white">
+                <TableHead className="text-right">
                   <SortButton field="projects" label="Projects" />
                 </TableHead>
-                <TableHead className="text-right bg-white">
+                <TableHead className="text-right">
                   <SortButton field="partners" label="Partners" />
                 </TableHead>
               </TableRow>
@@ -260,7 +260,7 @@ export function SectorSummaryTable({ data }: SectorSummaryTableProps) {
               ) : (
                 <>
                   {filteredAndSortedData.map((item, index) => (
-                    <TableRow key={index} className="hover:bg-slate-50">
+                    <TableRow key={index} className="hover:bg-muted/50">
                       <TableCell className="font-medium">
                         <div>
                           <div className="font-semibold text-slate-900">{item.sectorName}</div>
