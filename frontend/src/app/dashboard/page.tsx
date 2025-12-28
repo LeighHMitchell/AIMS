@@ -42,6 +42,7 @@ import { OrgActivitiesMap } from "@/components/dashboard/OrgActivitiesMap"
 import { OrgSankeyFlow } from "@/components/dashboard/OrgSankeyFlow"
 import { BookmarkedActivitiesTable } from "@/components/dashboard/BookmarkedActivitiesTable"
 import { MissingImagesCard } from "@/components/dashboard/MissingImagesCard"
+import { FocalPointCheckCard } from "@/components/dashboard/FocalPointCheckCard"
 
 export default function Dashboard() {
   const router = useRouter();
@@ -363,6 +364,7 @@ export default function Dashboard() {
 
               {/* Data Clinic Tab Content */}
               <TabsContent value="data-clinic" className="space-y-6">
+                <FocalPointCheckCard organizationId={user.organizationId} />
                 <MissingImagesCard organizationId={user.organizationId} />
               </TabsContent>
 

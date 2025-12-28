@@ -36,6 +36,7 @@ interface UserSearchableSelectProps {
   searchPlaceholder?: string;
   disabled?: boolean;
   className?: string;
+  selectedUserData?: UserOption | null; // Allow passing pre-selected user data for display
 }
 
 export function UserSearchableSelect({
@@ -45,13 +46,15 @@ export function UserSearchableSelect({
   searchPlaceholder = "Search users...",
   disabled = false,
   className,
+  selectedUserData,
 }: UserSearchableSelectProps) {
   const [open, setOpen] = React.useState(false);
   const [users, setUsers] = React.useState<UserOption[]>([]);
   const [loading, setLoading] = React.useState(false);
   const [query, setQuery] = React.useState("");
 
-  const selectedUser = users.find((user) => user.value === value);
+  // Use provided selectedUserData if available, otherwise look up from search results
+  const selectedUser = selectedUserData || users.find((user) => user.value === value);
 
   const searchUsers = React.useCallback(async (searchQuery: string) => {
     if (searchQuery.length < 2) {

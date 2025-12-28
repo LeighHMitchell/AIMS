@@ -22,6 +22,7 @@ import { PhoneFields } from "@/components/ui/phone-fields";
 import { AddressComponents } from "@/components/ui/address-search";
 import { EmailChangeConfirmDialog } from "@/components/EmailChangeConfirmDialog";
 import { PasswordChangeDialog } from "@/components/PasswordChangeDialog";
+import { DeleteAccountModal } from "@/components/DeleteAccountModal";
 import { supabase } from "@/lib/supabase";
 import { CONTACT_TYPES } from "@/data/contact-types";
 import { LoadingText } from "@/components/ui/loading-text";
@@ -32,6 +33,7 @@ import {
   Phone, 
   Shield, 
   AlertCircle, 
+  AlertTriangle,
   Settings, 
   Bell, 
   Lock, 
@@ -50,7 +52,9 @@ import {
   Upload,
   Eye,
   EyeOff,
-  Printer
+  Printer,
+  Trash2,
+  Loader2
 } from "lucide-react";
 
 // Helper function to split telephone into country code and phone number
@@ -218,6 +222,8 @@ export default function ProfilePage() {
   const [activeTab, setActiveTab] = useState("personal");
   const [isEditing, setIsEditing] = useState(false);
   const [emailChangeDialogOpen, setEmailChangeDialogOpen] = useState(false);
+  const [deleteAccountDialogOpen, setDeleteAccountDialogOpen] = useState(false);
+  const [isExportingData, setIsExportingData] = useState(false);
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [selectedOrgId, setSelectedOrgId] = useState<string>('');
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -443,6 +449,55 @@ export default function ProfilePage() {
       console.error('[Profile] Error changing email:', error);
       throw error; // Re-throw to be handled by the dialog
     }
+  };
+
+  const handleExportData = async () => {
+    if (!user) return;
+    
+    setIsExportingData(true);
+    try {
+      const response = await fetch(`/api/users/export-data?userId=${user.id}`);
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to export data');
+      }
+
+      // Get the filename from content-disposition header or generate one
+      const contentDisposition = response.headers.get('content-disposition');
+      let fileName = `aims-data-export-${new Date().toISOString().split('T')[0]}.json`;
+      if (contentDisposition) {
+        const match = contentDisposition.match(/filename="(.+)"/);
+        if (match) {
+          fileName = match[1];
+        }
+      }
+
+      // Create blob and download
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = fileName;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+
+      toast.success("Data exported successfully");
+    } catch (err) {
+      console.error('Export error:', err);
+      toast.error(err instanceof Error ? err.message : "Failed to export data");
+    } finally {
+      setIsExportingData(false);
+    }
+  };
+
+  const handleAccountDeleted = () => {
+    // Clear local storage and redirect to login
+    localStorage.removeItem('user');
+    localStorage.removeItem('supabase.auth.token');
+    window.location.href = '/login?deleted=true';
   };
 
   const handleSave = async () => {
@@ -1109,6 +1164,78 @@ export default function ProfilePage() {
                 </div>
               </CardContent>
             </Card>
+
+            {/* Danger Zone */}
+            <Card className="border-destructive/50">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-destructive">
+                  <AlertTriangle className="h-5 w-5" />
+                  Danger Zone
+                </CardTitle>
+                <CardDescription>
+                  Irreversible actions for your account
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {/* Export Data */}
+                <div className="flex items-center justify-between p-4 border rounded-lg">
+                  <div className="flex items-center gap-3">
+                    <Download className="h-5 w-5 text-muted-foreground" />
+                    <div>
+                      <p className="font-medium">Download My Data</p>
+                      <p className="text-sm text-muted-foreground">
+                        Export all your personal data as a JSON file
+                      </p>
+                    </div>
+                  </div>
+                  <Button 
+                    variant="outline"
+                    onClick={handleExportData}
+                    disabled={isExportingData}
+                  >
+                    {isExportingData ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Exporting...
+                      </>
+                    ) : (
+                      <>
+                        <Download className="h-4 w-4 mr-2" />
+                        Export Data
+                      </>
+                    )}
+                  </Button>
+                </div>
+
+                {/* Delete Account */}
+                <div className="flex items-center justify-between p-4 border border-destructive/30 rounded-lg bg-destructive/5">
+                  <div className="flex items-center gap-3">
+                    <Trash2 className="h-5 w-5 text-destructive" />
+                    <div>
+                      <p className="font-medium text-destructive">Delete Account</p>
+                      {user.role === 'super_user' || user.role === 'admin' ? (
+                        <p className="text-sm text-muted-foreground">
+                          Admin accounts must be deleted by another administrator from Admin → Users
+                        </p>
+                      ) : (
+                        <p className="text-sm text-muted-foreground">
+                          Permanently delete your account and all associated data
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                  {user.role !== 'super_user' && user.role !== 'admin' && (
+                    <Button 
+                      variant="destructive"
+                      onClick={() => setDeleteAccountDialogOpen(true)}
+                    >
+                      <Trash2 className="h-4 w-4 mr-2" />
+                      Delete Account
+                    </Button>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
           </TabsContent>
         </Tabs>
 
@@ -1120,6 +1247,16 @@ export default function ProfilePage() {
           currentEmail={user.email}
           userName={user.name || user.email}
           userId={user.id}
+        />
+
+        {/* Delete Account Dialog */}
+        <DeleteAccountModal
+          isOpen={deleteAccountDialogOpen}
+          onClose={() => setDeleteAccountDialogOpen(false)}
+          onDeleted={handleAccountDeleted}
+          userEmail={user.email}
+          userId={user.id}
+          userName={user.name || user.email}
         />
       </div>
     </MainLayout>

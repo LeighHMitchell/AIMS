@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -26,8 +26,11 @@ import {
   Globe, 
   Users, 
   AlertCircle,
-  MailPlus
+  MailPlus,
+  Building2,
+  UserCheck
 } from 'lucide-react';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { validateIatiContactType } from '@/lib/contact-utils';
 
 type ViewMode = 'grid' | 'table';
@@ -55,16 +58,38 @@ interface Contact {
   importedFromIati?: boolean;
 }
 
+interface FocalPoint {
+  id: string;
+  name: string;
+  email: string;
+  type: 'government_focal_point' | 'development_partner_focal_point';
+  status: string;
+  job_title?: string;
+  avatar_url?: string;
+  organisation?: string;
+  organization?: {
+    id: string;
+    name: string;
+    acronym?: string;
+  } | null;
+}
+
 interface ActivityContactsTabProps {
   activityId: string;
 }
 
 export default function ActivityContactsTab({ activityId }: ActivityContactsTabProps) {
   const [contacts, setContacts] = useState<Contact[]>([]);
+  const [focalPoints, setFocalPoints] = useState<{ government: FocalPoint[], development_partner: FocalPoint[] }>({
+    government: [],
+    development_partner: []
+  });
   const [loading, setLoading] = useState(true);
+  const [focalPointsLoading, setFocalPointsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
 
+  // Fetch contacts
   useEffect(() => {
     async function fetchContacts() {
       if (!activityId) return;
@@ -89,6 +114,35 @@ export default function ActivityContactsTab({ activityId }: ActivityContactsTabP
     }
     
     fetchContacts();
+  }, [activityId]);
+
+  // Fetch focal points
+  useEffect(() => {
+    async function fetchFocalPoints() {
+      if (!activityId) return;
+      
+      try {
+        setFocalPointsLoading(true);
+        const response = await fetch(`/api/activities/${activityId}/focal-points`);
+        
+        if (!response.ok) {
+          console.error('Failed to fetch focal points');
+          return;
+        }
+        
+        const data = await response.json();
+        setFocalPoints({
+          government: data.government_focal_points || [],
+          development_partner: data.development_partner_focal_points || []
+        });
+      } catch (err) {
+        console.error('Error fetching focal points:', err);
+      } finally {
+        setFocalPointsLoading(false);
+      }
+    }
+    
+    fetchFocalPoints();
   }, [activityId]);
 
   // Generate initials for avatar fallback
@@ -398,8 +452,119 @@ export default function ActivityContactsTab({ activityId }: ActivityContactsTabP
     );
   };
 
+  // Helper to get initials for focal point avatars
+  const getFocalPointInitials = (name: string) => {
+    return name
+      .split(' ')
+      .map(n => n[0])
+      .join('')
+      .toUpperCase()
+      .slice(0, 2);
+  };
+
+  // Render focal point card
+  const renderFocalPointCard = (focalPoint: FocalPoint, type: 'government' | 'development_partner') => {
+    const orgName = focalPoint.organization?.name || focalPoint.organisation;
+    const orgAcronym = focalPoint.organization?.acronym;
+    
+    return (
+      <div 
+        key={focalPoint.id}
+        className="flex items-start gap-3 p-4 bg-white border border-slate-200 rounded-lg"
+      >
+        <Avatar className="h-10 w-10 flex-shrink-0">
+          {focalPoint.avatar_url && (
+            <AvatarImage src={focalPoint.avatar_url} alt={focalPoint.name} />
+          )}
+          <AvatarFallback className="text-sm font-medium bg-slate-100">
+            {getFocalPointInitials(focalPoint.name)}
+          </AvatarFallback>
+        </Avatar>
+        
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 flex-wrap">
+            <h4 className="font-medium text-slate-900">{focalPoint.name}</h4>
+            <Badge variant="outline" className={
+              type === 'government' 
+                ? 'bg-emerald-50 text-emerald-700 border-emerald-200' 
+                : 'bg-blue-50 text-blue-700 border-blue-200'
+            }>
+              {type === 'government' ? 'Government' : 'Development Partner'}
+            </Badge>
+          </div>
+          
+          <p className="text-sm text-slate-600 mt-0.5">{focalPoint.email}</p>
+          
+          {focalPoint.job_title && (
+            <p className="text-sm text-slate-500">{focalPoint.job_title}</p>
+          )}
+          
+          {orgName && (
+            <p className="text-sm text-slate-500 flex items-center gap-1.5 mt-1">
+              <Building2 className="h-3.5 w-3.5 text-slate-400 flex-shrink-0" />
+              {orgName}
+              {orgAcronym && ` (${orgAcronym})`}
+            </p>
+          )}
+        </div>
+      </div>
+    );
+  };
+
+  // Render focal points section
+  const renderFocalPointsSection = () => {
+    const hasFocalPoints = focalPoints.government.length > 0 || focalPoints.development_partner.length > 0;
+    
+    if (focalPointsLoading) {
+      return (
+        <Card className="mb-6">
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-base">
+              <UserCheck className="h-5 w-5 text-slate-600" />
+              Activity Focal Points
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              {[1, 2].map((i) => (
+                <div key={i} className="h-24 bg-slate-100 rounded-lg animate-pulse"></div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      );
+    }
+    
+    if (!hasFocalPoints) {
+      return null;
+    }
+    
+    return (
+      <Card className="mb-6">
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-base">
+            <UserCheck className="h-5 w-5 text-slate-600" />
+            Activity Focal Points
+          </CardTitle>
+          <CardDescription className="text-xs">
+            Key contacts responsible for this activity. Reach out to them for project information.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            {focalPoints.government.map(fp => renderFocalPointCard(fp, 'government'))}
+            {focalPoints.development_partner.map(fp => renderFocalPointCard(fp, 'development_partner'))}
+          </div>
+        </CardContent>
+      </Card>
+    );
+  };
+
   return (
     <div className="space-y-6">
+      {/* Focal Points Section */}
+      {renderFocalPointsSection()}
+
       {/* Header with view toggle */}
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-semibold text-slate-900">

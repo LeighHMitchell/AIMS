@@ -2328,7 +2328,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
   );
 }
 
-function SectionContent({ section, general, setGeneral, sectors, setSectors, transactions, setTransactions, refreshTransactions, transactionId, extendingPartners, setExtendingPartners, implementingPartners, setImplementingPartners, governmentPartners, setGovernmentPartners, fundingPartners, setFundingPartners, contacts, setContacts, updateContacts, governmentInputs, setGovernmentInputs, sdgMappings, setSdgMappings, tags, setTags, workingGroups, setWorkingGroups, policyMarkers, setPolicyMarkers, specificLocations, setSpecificLocations, coverageAreas, setCoverageAreas, countries, setCountries, regions, setRegions, advancedLocations, setAdvancedLocations, permissions, setSectorValidation, setSectorsCompletionStatusWithLogging, activityScope, setActivityScope, user, getDateFieldStatus, setHasUnsavedChanges, updateActivityNestedField, setShowActivityCreatedAlert, onTitleAutosaveState, tabCompletionStatus, budgets, setBudgets, budgetNotProvided, setBudgetNotProvided, plannedDisbursements, setPlannedDisbursements, handlePlannedDisbursementsChange, handleResultsChange, documents, setDocuments, documentsAutosave, setIatiSyncState, subnationalBreakdowns, setSubnationalBreakdowns, onSectionChange, getNextSection, getPreviousSection, setParticipatingOrgsCount, setLinkedActivitiesCount, setResultsCount, setCapitalSpendPercentage, setConditionsCount, setFinancingTermsCount, setCountryBudgetItemsCount, setForwardSpendCount, clearSavedFormData, loadedTabs, setHumanitarian, setHumanitarianScopes }: any) {
+function SectionContent({ section, general, setGeneral, sectors, setSectors, transactions, setTransactions, refreshTransactions, transactionId, extendingPartners, setExtendingPartners, implementingPartners, setImplementingPartners, governmentPartners, setGovernmentPartners, fundingPartners, setFundingPartners, contacts, setContacts, updateContacts, governmentInputs, setGovernmentInputs, sdgMappings, setSdgMappings, tags, setTags, workingGroups, setWorkingGroups, policyMarkers, setPolicyMarkers, specificLocations, setSpecificLocations, coverageAreas, setCoverageAreas, countries, setCountries, regions, setRegions, advancedLocations, setAdvancedLocations, permissions, setSectorValidation, setSectorsCompletionStatusWithLogging, activityScope, setActivityScope, user, getDateFieldStatus, setHasUnsavedChanges, updateActivityNestedField, setShowActivityCreatedAlert, onTitleAutosaveState, tabCompletionStatus, budgets, setBudgets, budgetNotProvided, setBudgetNotProvided, plannedDisbursements, setPlannedDisbursements, handlePlannedDisbursementsChange, handleResultsChange, documents, setDocuments, documentsAutosave, setIatiSyncState, subnationalBreakdowns, setSubnationalBreakdowns, onSectionChange, getNextSection, getPreviousSection, setParticipatingOrgsCount, setLinkedActivitiesCount, setResultsCount, setCapitalSpendPercentage, setConditionsCount, setFinancingTermsCount, setCountryBudgetItemsCount, setForwardSpendCount, clearSavedFormData, loadedTabs, setHumanitarian, setHumanitarianScopes, setFocalPointsCount }: any) {
 
   // Calculate total budget in USD for country budget mappings
   const totalBudgetUSD = useMemo(() => {
@@ -2552,6 +2552,7 @@ function SectionContent({ section, general, setGeneral, sectors, setSectors, tra
     case "focal_points":
       return <FocalPointsTab 
         activityId={general.id}
+        onFocalPointsChange={(focalPoints) => setFocalPointsCount(focalPoints.length)}
       />;
     case "government":
       return <GovernmentInputsSectionEnhanced 
@@ -2866,6 +2867,7 @@ function NewActivityPageContent() {
   const [conditionsCount, setConditionsCount] = useState<number>(0);
   const [financingTermsCount, setFinancingTermsCount] = useState<number>(0);
   const [countryBudgetItemsCount, setCountryBudgetItemsCount] = useState<number>(0);
+  const [focalPointsCount, setFocalPointsCount] = useState<number>(0);
 
   // Track sidebar collapse state to avoid covering the collapse button
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -4235,6 +4237,10 @@ function NewActivityPageContent() {
         isComplete: contactsCompletion.isComplete,
         isInProgress: contactsCompletion.isInProgress 
       } : { isComplete: false, isInProgress: false },
+      focal_points: { 
+        isComplete: focalPointsCount > 0, 
+        isInProgress: false 
+      },
       linked_activities: linkedActivitiesCompletion ? { 
         isComplete: linkedActivitiesCompletion.isComplete,
         isInProgress: linkedActivitiesCompletion.isInProgress 
@@ -4297,7 +4303,7 @@ function NewActivityPageContent() {
         isInProgress: governmentEndorsementCompletion.isInProgress
       } : { isComplete: false, isInProgress: false }
     }
-  }, [general, sectors, getDateFieldStatus, sectorValidation, specificLocations, countries, regions, tags, workingGroups, policyMarkers, hasUnsavedChanges, transactions, budgets, budgetNotProvided, plannedDisbursements, forwardSpendCount, humanitarian, humanitarianScopes, sdgMappings, iatiSyncState, subnationalBreakdowns, extendingPartners, implementingPartners, governmentPartners, participatingOrgsCount, linkedActivitiesCount, resultsCount, capitalSpendPercentage, conditionsCount, financingTermsCount, documents, contacts, countryBudgetItemsCount, metadataData, xmlImportStatus, governmentEndorsementData]);
+  }, [general, sectors, getDateFieldStatus, sectorValidation, specificLocations, countries, regions, tags, workingGroups, policyMarkers, hasUnsavedChanges, transactions, budgets, budgetNotProvided, plannedDisbursements, forwardSpendCount, humanitarian, humanitarianScopes, sdgMappings, iatiSyncState, subnationalBreakdowns, extendingPartners, implementingPartners, governmentPartners, participatingOrgsCount, linkedActivitiesCount, resultsCount, capitalSpendPercentage, conditionsCount, financingTermsCount, documents, contacts, countryBudgetItemsCount, focalPointsCount, metadataData, xmlImportStatus, governmentEndorsementData]);
 
   // Helper to get next section id - moved here to avoid temporal dead zone
   const getNextSection = useCallback((currentId: string) => {
@@ -5006,6 +5012,7 @@ function NewActivityPageContent() {
                     loadedTabs={loadedTabs}
                     setHumanitarian={setHumanitarian}
                     setHumanitarianScopes={setHumanitarianScopes}
+                    setFocalPointsCount={setFocalPointsCount}
                   />
                 </div>
               )}

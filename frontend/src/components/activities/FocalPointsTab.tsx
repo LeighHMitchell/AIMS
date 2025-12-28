@@ -13,7 +13,7 @@ import { useUserRole } from '@/hooks/useUserRole';
 import { toast } from 'sonner';
 import { 
   UserPlus, 
-  ArrowRight, 
+  HandPlatter, 
   Check, 
   X, 
   Users, 
@@ -23,6 +23,7 @@ import {
   Trash2,
   Clock
 } from 'lucide-react';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { FocalPointHandoffModal } from './FocalPointHandoffModal';
 import { 
   FocalPoint, 
@@ -53,6 +54,24 @@ export default function FocalPointsTab({
   const [handoffModalOpen, setHandoffModalOpen] = useState(false);
   const [handoffType, setHandoffType] = useState<FocalPointType>('government_focal_point');
   const [currentFocalPointForHandoff, setCurrentFocalPointForHandoff] = useState<FocalPoint | null>(null);
+
+  // Pre-fill selectedUser with logged-in user on mount for quick self-assignment
+  useEffect(() => {
+    if (user && !selectedUser) {
+      const currentUserAsOption: UserOption = {
+        id: user.id,
+        firstName: user.firstName || '',
+        lastName: user.lastName || '',
+        name: user.name || `${user.firstName || ''} ${user.lastName || ''}`.trim(),
+        email: user.email,
+        organizationId: user.organizationId,
+        organization: user.organisation || user.organization?.name,
+        value: user.id,
+        label: user.name || `${user.firstName || ''} ${user.lastName || ''}`.trim(),
+      };
+      setSelectedUser(currentUserAsOption);
+    }
+  }, [user]);
 
   const allFocalPoints = [...governmentFocalPoints, ...developmentPartnerFocalPoints];
   const permissions = getFocalPointPermissions(user, allFocalPoints);
@@ -304,6 +323,16 @@ export default function FocalPointsTab({
     }
   };
 
+  // Helper to get initials from name
+  const getInitials = (name: string) => {
+    return name
+      .split(' ')
+      .map(n => n[0])
+      .join('')
+      .toUpperCase()
+      .slice(0, 2);
+  };
+
   const renderFocalPointCard = (focalPoint: FocalPoint) => {
     const showHandoffButton = canHandoff(focalPoint);
     const showRemoveButton = canRemove(focalPoint);
@@ -313,44 +342,60 @@ export default function FocalPointsTab({
       <Card key={focalPoint.id} className="border-slate-200">
         <CardContent className="pt-6">
           <div className="flex items-start justify-between gap-4">
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 mb-2 flex-wrap">
-                <h3 className="font-semibold text-slate-900">{focalPoint.name}</h3>
-                {getStatusBadge(focalPoint.status)}
-                {isCurrentUserFocalPoint(focalPoint) && (
-                  <Badge variant="secondary" className="bg-slate-100">
-                    You
-                  </Badge>
+            <div className="flex items-start gap-3 flex-1 min-w-0">
+              {/* Profile Picture */}
+              <Avatar className="h-10 w-10 flex-shrink-0">
+                {focalPoint.avatar_url && (
+                  <AvatarImage src={focalPoint.avatar_url} alt={focalPoint.name} />
                 )}
-              </div>
+                <AvatarFallback className="text-sm font-medium bg-slate-100">
+                  {getInitials(focalPoint.name)}
+                </AvatarFallback>
+              </Avatar>
               
-              <p className="text-sm text-slate-600 mb-1">{focalPoint.email}</p>
-              
-              {focalPoint.job_title && (
-                <p className="text-sm text-slate-500">{focalPoint.job_title}</p>
-              )}
-              
-              {focalPoint.organization && (
-                <p className="text-sm text-slate-500">
-                  {focalPoint.organization.name}
-                  {focalPoint.organization.acronym && ` (${focalPoint.organization.acronym})`}
-                </p>
-              )}
-              
-              {focalPoint.organisation && !focalPoint.organization && (
-                <p className="text-sm text-slate-500">{focalPoint.organisation}</p>
-              )}
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-2 flex-wrap">
+                  <h3 className="font-semibold text-slate-900">{focalPoint.name}</h3>
+                  {getStatusBadge(focalPoint.status)}
+                  {isCurrentUserFocalPoint(focalPoint) && (
+                    <Badge variant="secondary" className="bg-slate-100">
+                      You
+                    </Badge>
+                  )}
+                </div>
+                
+                <p className="text-sm text-slate-600 mb-1">{focalPoint.email}</p>
+                
+                {focalPoint.job_title && (
+                  <p className="text-sm text-slate-500">{focalPoint.job_title}</p>
+                )}
+                
+                {focalPoint.organization && (
+                  <p className="text-sm text-slate-500 flex items-center gap-1.5">
+                    <Building2 className="h-3.5 w-3.5 text-slate-400 flex-shrink-0" />
+                    {focalPoint.organization.name}
+                    {focalPoint.organization.acronym && ` (${focalPoint.organization.acronym})`}
+                  </p>
+                )}
+                
+                {focalPoint.organisation && !focalPoint.organization && (
+                  <p className="text-sm text-slate-500 flex items-center gap-1.5">
+                    <Building2 className="h-3.5 w-3.5 text-slate-400 flex-shrink-0" />
+                    {focalPoint.organisation}
+                  </p>
+                )}
 
-              <div className="mt-3 text-xs text-slate-400 space-y-1">
-                {focalPoint.assigned_by_name && (
-                  <p>Assigned by {focalPoint.assigned_by_name}</p>
-                )}
-                {focalPoint.handed_off_by_name && focalPoint.status !== 'pending_handoff' && (
-                  <p>Handed off by {focalPoint.handed_off_by_name}</p>
-                )}
-                {focalPoint.status === 'pending_handoff' && focalPoint.handed_off_by_name && (
-                  <p>Handoff initiated by {focalPoint.handed_off_by_name}</p>
-                )}
+                <div className="mt-3 text-xs text-slate-400 space-y-1">
+                  {focalPoint.assigned_by_name && (
+                    <p>Assigned by {focalPoint.assigned_by_name}</p>
+                  )}
+                  {focalPoint.handed_off_by_name && focalPoint.status !== 'pending_handoff' && (
+                    <p>Handed off by {focalPoint.handed_off_by_name}</p>
+                  )}
+                  {focalPoint.status === 'pending_handoff' && focalPoint.handed_off_by_name && (
+                    <p>Handoff initiated by {focalPoint.handed_off_by_name}</p>
+                  )}
+                </div>
               </div>
             </div>
 
@@ -366,7 +411,7 @@ export default function FocalPointsTab({
                     {isLoading && actionLoading?.startsWith('handoff') ? (
                       <Loader2 className="h-4 w-4 mr-1 animate-spin" />
                     ) : (
-                      <ArrowRight className="h-4 w-4 mr-1" />
+                      <HandPlatter className="h-4 w-4 mr-1" />
                     )}
                     Handoff
                   </Button>
@@ -487,6 +532,7 @@ export default function FocalPointsTab({
                 <label className="text-sm font-medium mb-2 block">Select User</label>
                 <UserSearchableSelect
                   value={selectedUser?.id}
+                  selectedUserData={selectedUser}
                   onValueChange={(userId, userData) => {
                     setSelectedUser(userId && userData ? userData : null);
                   }}

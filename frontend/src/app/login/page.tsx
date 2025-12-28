@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -164,6 +165,25 @@ export default function LoginPage() {
 
           {/* Google Sign-In */}
           <GmailLogin redirectTo="/auth/callback?next=/activities" />
+
+          {/* Terms and Privacy Links */}
+          <div className="mt-6 pt-4 border-t border-gray-200">
+            <div className="flex justify-center gap-4 text-sm text-gray-600">
+              <Link 
+                href="/terms-of-service" 
+                className="hover:text-gray-900 underline"
+              >
+                Terms of Service
+              </Link>
+              <span className="text-gray-400">•</span>
+              <Link 
+                href="/privacy-policy" 
+                className="hover:text-gray-900 underline"
+              >
+                Privacy Policy
+              </Link>
+            </div>
+          </div>
 
         </CardContent>
       </Card>
