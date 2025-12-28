@@ -71,7 +71,7 @@ export default function FocalPointsTab({
       };
       setSelectedUser(currentUserAsOption);
     }
-  }, [user]);
+  }, [user, selectedUser]);
 
   const allFocalPoints = [...governmentFocalPoints, ...developmentPartnerFocalPoints];
   const permissions = getFocalPointPermissions(user, allFocalPoints);
@@ -87,25 +87,24 @@ export default function FocalPointsTab({
       const data = await response.json();
       setGovernmentFocalPoints(data.government_focal_points || []);
       setDevelopmentPartnerFocalPoints(data.development_partner_focal_points || []);
-      
-      // Notify parent of changes
-      if (onFocalPointsChange) {
-        onFocalPointsChange([
-          ...(data.government_focal_points || []),
-          ...(data.development_partner_focal_points || [])
-        ]);
-      }
     } catch (error) {
       console.error('Error fetching focal points:', error);
       toast.error('Failed to load focal points');
     } finally {
       setLoading(false);
     }
-  }, [activityId, onFocalPointsChange]);
+  }, [activityId]);
 
   useEffect(() => {
     fetchFocalPoints();
   }, [fetchFocalPoints]);
+
+  // Notify parent when focal points change (separate effect to avoid re-fetch loops)
+  useEffect(() => {
+    if (onFocalPointsChange) {
+      onFocalPointsChange([...governmentFocalPoints, ...developmentPartnerFocalPoints]);
+    }
+  }, [governmentFocalPoints, developmentPartnerFocalPoints, onFocalPointsChange]);
 
   const handleAssign = async (type: FocalPointType) => {
     if (!selectedUser || !user) {

@@ -101,12 +101,15 @@ export function UserSearchableSelect({
     <div className={cn("flex gap-2", className)}>
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
-          <Button
-            variant="outline"
+          <button
+            type="button"
             role="combobox"
             aria-expanded={open}
-            className="justify-between flex-1 w-full"
             disabled={disabled}
+            className={cn(
+              "flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
+              "flex-1"
+            )}
           >
             {selectedUser ? (
               <div className="flex items-center gap-2 truncate">
@@ -117,7 +120,7 @@ export function UserSearchableSelect({
               <span className="text-muted-foreground">{placeholder}</span>
             )}
             <Search className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-          </Button>
+          </button>
         </PopoverTrigger>
         <PopoverContent className="w-[400px] p-0" align="start">
           <Command shouldFilter={false}>
