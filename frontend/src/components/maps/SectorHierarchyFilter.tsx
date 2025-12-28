@@ -232,9 +232,9 @@ export function SectorHierarchyFilter({
           <div className="flex items-center gap-2 truncate">
             <Layers2 className="h-4 w-4 text-gray-600 shrink-0" />
             {totalSelected === 0 ? (
-              <span className="text-sm">All</span>
+              <span className="text-xs">All Sectors</span>
             ) : (
-              <span className="text-sm truncate">
+              <span className="text-xs truncate">
                 {getSelectionSummary()}
               </span>
             )}
@@ -282,7 +282,7 @@ export function SectorHierarchyFilter({
                   <CommandGroup 
                     heading={
                       <div className="flex items-center justify-between w-full">
-                        <span className="font-semibold text-primary">
+                        <span className="font-semibold text-foreground">
                           <code className="px-1.5 py-0.5 bg-gray-100 text-gray-700 rounded text-xs font-mono mr-2">{group.code}</code>
                           {group.name}
                         </span>

@@ -38,11 +38,13 @@ import {
   ArrowUpDown,
   ArrowUp,
   ArrowDown,
-  Globe
+  Globe,
+  FileText
 } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { PartnerFundingSummarySkeleton } from "@/components/skeletons";
+import { OrganizationLogo } from "@/components/ui/organization-logo";
 
 type SortField = 'name' | 'activeProjects' | 'totalAmount' | '2022' | '2023' | '2024' | '2025' | '2026' | '2027';
 type SortOrder = 'asc' | 'desc';
@@ -109,6 +111,9 @@ export default function PartnersPage() {
   const [selectedOrg, setSelectedOrg] = useState<OrganizationMetrics | null>(null);
   const [expandedOrgs, setExpandedOrgs] = useState<Set<string>>(new Set());
   const [orgActivities, setOrgActivities] = useState<Record<string, any[]>>({});
+  const [loadingOrgs, setLoadingOrgs] = useState<Set<string>>(new Set());
+  const [loadingCountries, setLoadingCountries] = useState<Set<string>>(new Set());
+  const [expandLevel, setExpandLevel] = useState<0 | 1 | 2>(0); // 0 = collapsed, 1 = orgs expanded, 2 = activities expanded
 
   // Fetch summary data
   const fetchSummaryData = async () => {
@@ -181,12 +186,21 @@ export default function PartnersPage() {
   };
 
   // Toggle country expansion
-  const toggleCountry = (countryId: string) => {
+  const toggleCountry = async (countryId: string) => {
     const newExpanded = new Set(expandedCountries);
     if (newExpanded.has(countryId)) {
       newExpanded.delete(countryId);
     } else {
+      // Show loading spinner
+      setLoadingCountries(prev => new Set([...prev, countryId]));
       newExpanded.add(countryId);
+      // Small delay to show spinner (simulates loading)
+      await new Promise(resolve => setTimeout(resolve, 150));
+      setLoadingCountries(prev => {
+        const next = new Set(prev);
+        next.delete(countryId);
+        return next;
+      });
     }
     setExpandedCountries(newExpanded);
   };
@@ -197,9 +211,16 @@ export default function PartnersPage() {
     if (newExpanded.has(orgId)) {
       newExpanded.delete(orgId);
     } else {
+      // Show loading spinner
+      setLoadingOrgs(prev => new Set([...prev, orgId]));
       newExpanded.add(orgId);
       // Always fetch activities to ensure we have the latest data for current transaction type
       await fetchOrgActivities(orgId);
+      setLoadingOrgs(prev => {
+        const next = new Set(prev);
+        next.delete(orgId);
+        return next;
+      });
     }
     setExpandedOrgs(newExpanded);
   };
@@ -219,6 +240,69 @@ export default function PartnersPage() {
       }
     } catch (error) {
       console.error('Error fetching organization activities:', error);
+    }
+  };
+
+  // Expand All handler - two levels: first countries/orgs, then activities
+  const handleExpandAll = async () => {
+    if (!summaryData) return;
+    
+    if (groupBy === 'type') {
+      if (expandLevel === 0) {
+        // Level 0 -> 1: Expand all countries
+        const countryIds = summaryData.predefinedGroups.map((g: GroupData) => g.id);
+        setExpandedCountries(new Set(countryIds));
+        setExpandLevel(1);
+      } else if (expandLevel === 1) {
+        // Level 1 -> 2: Expand all organizations and fetch their activities
+        const allOrgs: string[] = [];
+        const orgsWithActivities: string[] = [];
+        summaryData.predefinedGroups.forEach((group: GroupData) => {
+          group.organizations.forEach((org: OrganizationMetrics) => {
+            allOrgs.push(org.id);
+            // Only track loading for orgs that have active projects
+            if (org.activeProjects && org.activeProjects > 0) {
+              orgsWithActivities.push(org.id);
+            }
+          });
+        });
+        
+        // Only set orgs with activities as loading
+        setLoadingOrgs(new Set(orgsWithActivities));
+        setExpandedOrgs(new Set(allOrgs));
+        
+        // Fetch activities only for orgs that have active projects (batched)
+        const batchSize = 5;
+        for (let i = 0; i < orgsWithActivities.length; i += batchSize) {
+          const batch = orgsWithActivities.slice(i, i + batchSize);
+          await Promise.all(batch.map(orgId => fetchOrgActivities(orgId)));
+        }
+        
+        setLoadingOrgs(new Set());
+        setExpandLevel(2);
+      }
+    } else {
+      // For Custom Groups tab
+      const customIds = summaryData.customGroups.map((g: GroupData) => g.id);
+      setExpandedGroups(new Set(customIds));
+    }
+  };
+
+  // Collapse All handler - two levels: first activities, then countries/orgs
+  const handleCollapseAll = () => {
+    if (groupBy === 'type') {
+      if (expandLevel === 2) {
+        // Level 2 -> 1: Collapse activities only
+        setExpandedOrgs(new Set());
+        setExpandLevel(1);
+      } else {
+        // Level 1 or 0 -> 0: Collapse everything
+        setExpandedCountries(new Set());
+        setExpandedOrgs(new Set());
+        setExpandLevel(0);
+      }
+    } else {
+      setExpandedGroups(new Set());
     }
   };
 
@@ -417,8 +501,11 @@ export default function PartnersPage() {
                 onClick={() => toggleCountry(country.id)}
                 className="p-1 hover:bg-gray-300 rounded transition-colors"
                 title={isCountryExpanded ? "Collapse organizations" : "Expand organizations"}
+                disabled={loadingCountries.has(country.id)}
               >
-                {isCountryExpanded ? (
+                {loadingCountries.has(country.id) ? (
+                  <Loader2 className="h-4 w-4 text-gray-500 animate-spin" />
+                ) : isCountryExpanded ? (
                   <ChevronDown className="h-4 w-4 text-gray-500" />
                 ) : (
                   <ChevronRight className="h-4 w-4 text-gray-500" />
@@ -468,13 +555,17 @@ export default function PartnersPage() {
                     onClick={() => toggleOrganization(org.id)}
                     className="p-1 hover:bg-gray-300 rounded transition-colors"
                     title={isOrgExpanded ? "Collapse activities" : "Expand activities"}
+                    disabled={loadingOrgs.has(org.id)}
                   >
-                    {isOrgExpanded ? (
+                    {loadingOrgs.has(org.id) ? (
+                      <Loader2 className="h-4 w-4 text-gray-500 animate-spin" />
+                    ) : isOrgExpanded ? (
                       <ChevronDown className="h-4 w-4 text-gray-500" />
                     ) : (
                       <ChevronRight className="h-4 w-4 text-gray-500" />
                     )}
                   </button>
+                  <OrganizationLogo logo={org.logo} name={org.name} size="sm" />
                   <a
                     href={`/organizations/${org.id}`}
                     className="text-left text-blue-700 hover:text-blue-900 hover:underline font-semibold"
@@ -518,6 +609,23 @@ export default function PartnersPage() {
                   <td className="py-2 px-2 pl-16">
                     <div className="flex items-center gap-2">
                       <div className="w-3 h-px bg-gray-300"></div>
+                      {/* Activity Icon */}
+                      {activity.icon ? (
+                        <div className="w-5 h-5 flex-shrink-0 rounded overflow-hidden border border-gray-200 bg-white">
+                          <img 
+                            src={activity.icon} 
+                            alt="" 
+                            className="w-full h-full object-contain"
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).style.display = 'none';
+                            }}
+                          />
+                        </div>
+                      ) : (
+                        <div className="w-5 h-5 flex-shrink-0 bg-gray-100 rounded flex items-center justify-center">
+                          <FileText className="h-3 w-3 text-gray-400" />
+                        </div>
+                      )}
                       <a
                         href={`/activities/${activity.id}`}
                         className="text-left text-blue-600 hover:text-blue-800 hover:underline text-sm font-medium"
@@ -584,13 +692,17 @@ export default function PartnersPage() {
                 onClick={() => toggleOrganization(org.id)}
                 className="p-1 hover:bg-gray-300 rounded transition-colors"
                 title={isOrgExpanded ? "Collapse activities" : "Expand activities"}
+                disabled={loadingOrgs.has(org.id)}
               >
-                {isOrgExpanded ? (
+                {loadingOrgs.has(org.id) ? (
+                  <Loader2 className="h-4 w-4 text-gray-500 animate-spin" />
+                ) : isOrgExpanded ? (
                   <ChevronDown className="h-4 w-4 text-gray-500" />
                 ) : (
                   <ChevronRight className="h-4 w-4 text-gray-500" />
                 )}
               </button>
+              <OrganizationLogo logo={org.logo} name={org.name} size="sm" />
               <a
                 href={`/organizations/${org.id}`}
                 className="text-left text-blue-700 hover:text-blue-900 hover:underline font-semibold"
@@ -629,6 +741,23 @@ export default function PartnersPage() {
             <td className="py-2 px-2 pl-16">
               <div className="flex items-center gap-2">
                 <div className="w-3 h-px bg-gray-300"></div>
+                {/* Activity Icon */}
+                {activity.icon ? (
+                  <div className="w-5 h-5 flex-shrink-0 rounded overflow-hidden border border-gray-200 bg-white">
+                    <img 
+                      src={activity.icon} 
+                      alt="" 
+                      className="w-full h-full object-contain"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).style.display = 'none';
+                      }}
+                    />
+                  </div>
+                ) : (
+                  <div className="w-5 h-5 flex-shrink-0 bg-gray-100 rounded flex items-center justify-center">
+                    <FileText className="h-3 w-3 text-gray-400" />
+                  </div>
+                )}
                 <a
                   href={`/activities/${activity.id}`}
                   className="text-left text-blue-600 hover:text-blue-800 hover:underline text-sm font-medium"
@@ -805,33 +934,18 @@ export default function PartnersPage() {
                 <Button 
                   variant="outline" 
                   size="sm"
-                  onClick={() => {
-                    if (groupBy === 'type') {
-                      // For Development Partners tab, expand all countries
-                      const countryIds = summaryData.predefinedGroups.map((g: GroupData) => g.id);
-                      setExpandedCountries(new Set(countryIds));
-                    } else {
-                      // For Custom Groups tab, expand all custom groups
-                      const customIds = summaryData.customGroups.map((g: GroupData) => g.id);
-                      setExpandedGroups(new Set(customIds));
-                    }
-                  }}
+                  onClick={handleExpandAll}
+                  disabled={expandLevel === 2}
                 >
-                  Expand All
+                  {expandLevel === 0 ? 'Expand Countries/Organisations' : expandLevel === 1 ? 'Expand Activities' : 'Expand All'}
                 </Button>
                 <Button 
                   variant="outline" 
                   size="sm"
-                  onClick={() => {
-                    if (groupBy === 'type') {
-                      setExpandedCountries(new Set());
-                      setExpandedOrgs(new Set());
-                    } else {
-                      setExpandedGroups(new Set());
-                    }
-                  }}
+                  onClick={handleCollapseAll}
+                  disabled={expandLevel === 0 && expandedCountries.size === 0 && expandedOrgs.size === 0}
                 >
-                  Collapse All
+                  {expandLevel === 2 ? 'Collapse Activities' : 'Collapse All'}
                 </Button>
               </div>
             </div>

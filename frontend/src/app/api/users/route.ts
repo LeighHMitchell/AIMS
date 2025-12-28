@@ -31,6 +31,7 @@ export async function GET(request: NextRequest) {
         id,
         name,
         acronym,
+        logo,
         type,
         country
       )
@@ -300,6 +301,8 @@ export async function PUT(request: NextRequest) {
         organizations:organization_id (
           id,
           name,
+          acronym,
+          logo,
           type,
           country
         )

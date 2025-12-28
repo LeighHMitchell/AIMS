@@ -70,7 +70,8 @@ import {
   ArrowDown,
   LayoutGrid,
   Bookmark,
-  BookmarkCheck
+  BookmarkCheck,
+  Layers
 } from "lucide-react"
 import { toast } from "sonner"
 import { Transaction } from "@/types/transaction"
@@ -189,6 +190,42 @@ const HIERARCHY_LEVELS: HierarchyOption[] = [
     description: "Task or output-level work (most detailed level)"
   }
 ];
+
+// Map layer configurations - same as Atlas
+type MapLayerType = 'cartodb_voyager' | 'osm_standard' | 'osm_humanitarian' | 'cyclosm' | 'opentopo' | 'satellite_esri';
+
+const MAP_LAYERS: Record<MapLayerType, { name: string; url: string; attribution: string }> = {
+  cartodb_voyager: {
+    name: 'Streets (CartoDB Voyager)',
+    url: 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
+    attribution: '© OpenStreetMap contributors, © CARTO'
+  },
+  osm_standard: {
+    name: 'OpenStreetMap Standard',
+    url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+    attribution: '© OpenStreetMap contributors'
+  },
+  osm_humanitarian: {
+    name: 'Humanitarian (HOT)',
+    url: 'https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png',
+    attribution: '© OpenStreetMap contributors, © HOT'
+  },
+  cyclosm: {
+    name: 'CyclOSM Transport',
+    url: 'https://{s}.tile-cyclosm.openstreetmap.fr/cyclosm/{z}/{x}/{y}.png',
+    attribution: '© OpenStreetMap contributors, © CyclOSM'
+  },
+  opentopo: {
+    name: 'OpenTopo Terrain',
+    url: 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',
+    attribution: '© OpenStreetMap contributors, © OpenTopoMap'
+  },
+  satellite_esri: {
+    name: 'ESRI Satellite',
+    url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+    attribution: '© Esri'
+  }
+};
 
 // Aid Type mappings
 const AID_TYPE_LABELS: Record<string, string> = {
@@ -507,6 +544,7 @@ export default function ActivityDetailPage() {
   const [sectorBreakdownView, setSectorBreakdownView] = useState<'chart' | 'table'>('chart')
   const [sectorFlowView, setSectorFlowView] = useState<'flow' | 'distribution'>('flow')
   const [locationsView, setLocationsView] = useState<'cards' | 'table'>('cards')
+  const [mapLayer, setMapLayer] = useState<MapLayerType>('cartodb_voyager')
   const [sectorViewMode, setSectorViewMode] = useState<'sankey' | 'pie' | 'bar' | 'table'>('sankey')
   const [sectorMetricMode, setSectorMetricMode] = useState<'percentage' | 'budget' | 'planned' | 'actual'>('percentage')
   const [sectorBarGroupingMode, setSectorBarGroupingMode] = useState<'sector' | 'category' | 'group'>('group')
@@ -4407,13 +4445,31 @@ export default function ActivityDetailPage() {
                   <div className="md:col-span-2">
                     <Card className="border-slate-200 h-full">
                       <CardHeader>
-                        <CardTitle className="text-slate-900 flex items-center gap-2">
-                          <MapPin className="h-5 w-5" />
-                          Activity Locations Map
-                        </CardTitle>
-                        <CardDescription>
-                          Map showing all activity locations in Myanmar
-                        </CardDescription>
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <CardTitle className="text-slate-900 flex items-center gap-2">
+                              <MapPin className="h-5 w-5" />
+                              Activity Locations Map
+                            </CardTitle>
+                            <CardDescription>
+                              Map showing all activity locations in Myanmar
+                            </CardDescription>
+                          </div>
+                          {/* Map Layer Selector */}
+                          <Select value={mapLayer} onValueChange={(value) => setMapLayer(value as MapLayerType)}>
+                            <SelectTrigger className="w-[400px]">
+                              <Layers className="h-4 w-4 mr-2" />
+                              <SelectValue placeholder="Map type" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {Object.entries(MAP_LAYERS).map(([key, layer]) => (
+                                <SelectItem key={key} value={key}>
+                                  {layer.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
                       </CardHeader>
                       <CardContent>
                         {activityLocations.length > 0 ? (
@@ -4429,9 +4485,9 @@ export default function ActivityDetailPage() {
                               }))}
                               mapCenter={[19.0, 96.5]}
                               mapZoom={6}
-                              currentLayer="default"
-                              layerUrl="https://maps.wikimedia.org/osm-intl/{z}/{x}/{y}.png"
-                              layerAttribution='&copy; OpenStreetMap contributors'
+                              currentLayer={mapLayer}
+                              layerUrl={MAP_LAYERS[mapLayer].url}
+                              layerAttribution={MAP_LAYERS[mapLayer].attribution}
                             />
                           </div>
                         ) : (

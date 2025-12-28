@@ -21,8 +21,11 @@ import {
   Sparkles,
   Upload,
   Loader2,
+  Download,
 } from 'lucide-react';
 import { useUser } from '@/hooks/useUser';
+import { toast } from 'sonner';
+import { convertToCSV, downloadCSV, CSVColumn } from '@/lib/csv-utils';
 
 interface MissingImagesCardProps {
   organizationId: string;
@@ -103,6 +106,66 @@ export function MissingImagesCard({
 
   const handleViewAll = () => {
     router.push('/activities');
+  };
+
+  const handleDownloadCSV = async () => {
+    try {
+      const params = new URLSearchParams({
+        organization_id: organizationId,
+      });
+
+      const response = await fetch(`/api/activities?${params.toString()}`);
+      if (!response.ok) throw new Error('Failed to fetch data');
+
+      const data = await response.json();
+      const activitiesData = Array.isArray(data) ? data : (data.activities || []);
+
+      interface MissingImageActivity {
+        id: string;
+        title: string;
+        iatiIdentifier: string;
+        hasIcon: boolean;
+        hasBanner: boolean;
+        activityStatus: string;
+        publicationStatus: string;
+      }
+
+      const missingImages: MissingImageActivity[] = activitiesData
+        .filter((activity: any) => !activity.banner || !activity.icon)
+        .map((activity: any) => ({
+          id: activity.id,
+          title: activity.title || activity.title_narrative || 'Untitled Activity',
+          iatiIdentifier: activity.iatiIdentifier || activity.iati_identifier || '',
+          hasIcon: !!activity.icon,
+          hasBanner: !!activity.banner,
+          activityStatus: activity.activity_status || '',
+          publicationStatus: activity.publication_status || '',
+        }));
+
+      if (missingImages.length === 0) {
+        toast.info('No activities to export');
+        return;
+      }
+
+      const columns: CSVColumn<MissingImageActivity>[] = [
+        { header: 'Activity ID', accessor: 'id' },
+        { header: 'IATI Identifier', accessor: 'iatiIdentifier' },
+        { header: 'Activity Title', accessor: 'title' },
+        { header: 'Has Logo', accessor: 'hasIcon' },
+        { header: 'Has Banner', accessor: 'hasBanner' },
+        { header: 'Missing Logo', accessor: (row) => !row.hasIcon },
+        { header: 'Missing Banner', accessor: (row) => !row.hasBanner },
+        { header: 'Activity Status', accessor: 'activityStatus' },
+        { header: 'Publication Status', accessor: 'publicationStatus' },
+      ];
+
+      const csv = convertToCSV(missingImages, columns);
+      downloadCSV(csv, 'activities_missing_images');
+      toast.success(`Exported ${missingImages.length} activities`);
+    } catch (err) {
+      console.error('CSV export error:', err);
+      toast.error('Failed to export CSV');
+    }
   };
 
   const handleUploadClick = (e: React.MouseEvent, activityId: string, type: ImageType) => {
@@ -352,12 +415,22 @@ export function MissingImagesCard({
               Click or drag images onto the boxes to upload
             </CardDescription>
           </div>
-          {total > limit && (
-            <Button variant="outline" size="sm" onClick={handleViewAll}>
-              View all
-              <ArrowRight className="h-4 w-4 ml-1" />
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleDownloadCSV}
+              title="Download as CSV"
+            >
+              <Download className="h-4 w-4" />
             </Button>
-          )}
+            {total > limit && (
+              <Button variant="outline" size="sm" onClick={handleViewAll}>
+                View all
+                <ArrowRight className="h-4 w-4 ml-1" />
+              </Button>
+            )}
+          </div>
         </div>
       </CardHeader>
       <CardContent>

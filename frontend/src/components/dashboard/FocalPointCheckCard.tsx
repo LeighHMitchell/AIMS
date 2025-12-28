@@ -19,8 +19,11 @@ import {
   CheckCircle2,
   Sparkles,
   AlertCircle,
+  Download,
 } from 'lucide-react';
 import { FocalPointAvatarGroup, FocalPointInfo } from '@/components/ui/focal-point-avatar-group';
+import { toast } from 'sonner';
+import { convertToCSV, downloadCSV, CSVColumn } from '@/lib/csv-utils';
 
 interface FocalPointCheckCardProps {
   organizationId: string;
@@ -91,6 +94,54 @@ export function FocalPointCheckCard({
 
   const handleViewAll = () => {
     router.push('/activities');
+  };
+
+  const handleDownloadCSV = async () => {
+    try {
+      const params = new URLSearchParams({
+        organization_id: organizationId,
+      });
+
+      const response = await fetch(`/api/data-clinic/focal-points?${params.toString()}`);
+      if (!response.ok) throw new Error('Failed to fetch data');
+
+      const data = await response.json();
+      const allActivities: ActivityWithFocalPoints[] = data.activities || [];
+
+      if (allActivities.length === 0) {
+        toast.info('No activities to export');
+        return;
+      }
+
+      const columns: CSVColumn<ActivityWithFocalPoints>[] = [
+        { header: 'Activity ID', accessor: 'id' },
+        { header: 'IATI Identifier', accessor: 'iatiIdentifier' },
+        { header: 'Activity Title', accessor: 'title' },
+        { 
+          header: 'Missing Government FP', 
+          accessor: (row) => row.governmentFocalPoints.length === 0 
+        },
+        { 
+          header: 'Missing Development Partner FP', 
+          accessor: (row) => row.developmentPartnerFocalPoints.length === 0 
+        },
+        { 
+          header: 'Government Focal Points', 
+          accessor: (row) => row.governmentFocalPoints.map(fp => `${fp.name} (${fp.email})`).join('; ') 
+        },
+        { 
+          header: 'Development Partner Focal Points', 
+          accessor: (row) => row.developmentPartnerFocalPoints.map(fp => `${fp.name} (${fp.email})`).join('; ') 
+        },
+      ];
+
+      const csv = convertToCSV(allActivities, columns);
+      downloadCSV(csv, 'activities_missing_focal_points');
+      toast.success(`Exported ${allActivities.length} activities`);
+    } catch (err) {
+      console.error('CSV export error:', err);
+      toast.error('Failed to export CSV');
+    }
   };
 
   // Convert FocalPoint to FocalPointInfo for the avatar group
@@ -182,12 +233,22 @@ export function FocalPointCheckCard({
               Activities missing government and/or development partner focal points
             </CardDescription>
           </div>
-          {total > limit && (
-            <Button variant="outline" size="sm" onClick={handleViewAll}>
-              View all
-              <ArrowRight className="h-4 w-4 ml-1" />
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleDownloadCSV}
+              title="Download as CSV"
+            >
+              <Download className="h-4 w-4" />
             </Button>
-          )}
+            {total > limit && (
+              <Button variant="outline" size="sm" onClick={handleViewAll}>
+                View all
+                <ArrowRight className="h-4 w-4 ml-1" />
+              </Button>
+            )}
+          </div>
         </div>
       </CardHeader>
       <CardContent>

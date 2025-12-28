@@ -69,6 +69,8 @@ export async function PUT(
         organizations:organization_id (
           id,
           name,
+          acronym,
+          logo,
           type,
           country
         )

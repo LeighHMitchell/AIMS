@@ -177,7 +177,7 @@ export function OrganizationCombobox({
             role="combobox"
             aria-expanded={open}
             className={cn(
-              "w-full justify-between font-normal px-4 py-2 text-base h-auto border-gray-300 hover:bg-gray-50 focus:outline-none focus:ring-1 focus:ring-gray-400 focus:border-gray-400 hover:text-gray-900",
+              "w-full justify-between font-normal px-4 py-2 text-base h-10 border-gray-300 hover:bg-gray-50 focus:outline-none focus:ring-1 focus:ring-gray-400 focus:border-gray-400 hover:text-gray-900",
               className
             )}
           >
@@ -186,7 +186,7 @@ export function OrganizationCombobox({
             if (selected) {
               return (
                 <div className="flex items-center gap-3 text-left w-full min-w-0">
-                  {/* Organization logo - only show if logo exists */}
+                  {/* Organization logo */}
                   {selected.logo ? (
                     <div className="w-6 h-6 flex-shrink-0">
                       <Image
@@ -196,7 +196,6 @@ export function OrganizationCombobox({
                         height={24}
                         className="rounded-sm object-contain"
                         onError={(e) => {
-                          console.log(`[OrganizationCombobox] Selected logo failed to load for ${selected.name}:`, selected.logo);
                           (e.target as HTMLImageElement).style.display = 'none'
                         }}
                       />
@@ -207,32 +206,10 @@ export function OrganizationCombobox({
                     </div>
                   )}
                   
-                  <div className="flex flex-col min-w-0 flex-1">
-                    <div className="flex items-baseline gap-2">
-                      <span className="truncate font-normal text-sm leading-relaxed text-gray-900 hover:text-gray-900">
-                        {getOrganizationDisplay(selected)}
-                      </span>
-                      {(selected.iati_org_id || selected.iati_identifier) && (
-                        <span className="flex-shrink-0 text-xs font-mono text-gray-600 bg-gray-100 px-2 py-1 rounded hover:text-gray-600">
-                          {selected.iati_org_id || selected.iati_identifier}
-                        </span>
-                      )}
-                    </div>
-                    {(() => {
-                      const orgTypeText = selected.Organisation_Type_Name || selected.type;
-                      const parts = [];
-                      if (orgTypeText) parts.push(orgTypeText);
-                      if (selected.country) parts.push(selected.country);
-                      if (parts.length > 0) {
-                        return (
-                          <span className="text-xs text-gray-500 truncate">
-                            {parts.join(' · ')}
-                          </span>
-                        );
-                      }
-                      return null;
-                    })()}
-                  </div>
+                  {/* Organization name with acronym */}
+                  <span className="truncate font-normal text-sm text-gray-900 flex-1">
+                    {selected.name}{selected.acronym && selected.acronym !== selected.name ? ` (${selected.acronym})` : ''}
+                  </span>
                 </div>
               );
             }
@@ -303,10 +280,10 @@ export function OrganizationCombobox({
                     <CommandItem
                       key={org.id}
                       onSelect={() => handleSelect(org.id)}
-                      className="py-3"
+                      className="py-2"
                     >
                       <div className="flex items-center gap-3 w-full">
-                        {/* Organization logo - only show if logo exists */}
+                        {/* Organization logo */}
                         {org.logo ? (
                           <div className="w-6 h-6 flex-shrink-0">
                             <Image
@@ -316,7 +293,6 @@ export function OrganizationCombobox({
                               height={24}
                               className="rounded-sm object-contain"
                               onError={(e) => {
-                                console.log(`[OrganizationCombobox] Logo failed to load for ${org.name}:`, org.logo);
                                 (e.target as HTMLImageElement).style.display = 'none'
                               }}
                             />
@@ -327,30 +303,10 @@ export function OrganizationCombobox({
                           </div>
                         )}
                         
-                        <div className="flex flex-col flex-1 min-w-0">
-                          <div className="flex items-baseline gap-2">
-                            <span className="font-normal text-gray-900 text-sm truncate hover:text-gray-900">{org.name}{org.acronym ? ` (${org.acronym})` : ''}</span>
-                            {(org.iati_org_id || org.iati_identifier) && (
-                              <span className="flex-shrink-0 text-xs font-mono text-gray-600 bg-gray-100 px-2 py-1 rounded hover:text-gray-600">
-                                {org.iati_org_id || org.iati_identifier}
-                              </span>
-                            )}
-                          </div>
-                          {(() => {
-                            const orgTypeText = org.Organisation_Type_Name || org.type;
-                            const parts = [];
-                            if (orgTypeText) parts.push(orgTypeText);
-                            if (org.country) parts.push(org.country);
-                            if (parts.length > 0) {
-                              return (
-                                <span className="text-xs text-gray-500 truncate">
-                                  {parts.join(' · ')}
-                                </span>
-                              );
-                            }
-                            return null;
-                          })()}
-                        </div>
+                        {/* Organization name with acronym */}
+                        <span className="font-normal text-gray-900 text-sm truncate flex-1">
+                          {org.name}{org.acronym && org.acronym !== org.name ? ` (${org.acronym})` : ''}
+                        </span>
                       </div>
                     </CommandItem>
                   ))}

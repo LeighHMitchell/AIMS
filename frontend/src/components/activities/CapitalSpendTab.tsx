@@ -19,6 +19,15 @@ interface CapitalSpendTabProps {
   onCapitalSpendChange?: (percentage: number | null) => void;
 }
 
+// Color palette for Capital Spend Breakdown chart
+const CAPITAL_SPEND_PALETTE = {
+  'Primary Scarlet': '#dc2625',
+  'Pale Slate': '#cfd0d5',
+  'Blue Slate': '#4c5568',
+  'Cool Steel': '#7b95a7',
+  'Platinum': '#f1f4f8'
+};
+
 // Donut chart component for capital spend breakdown
 function CapitalSpendDonutChart({ capitalPercentage }: { capitalPercentage: number | null }) {
   if (capitalPercentage === null || capitalPercentage === undefined) {
@@ -38,13 +47,13 @@ function CapitalSpendDonutChart({ capitalPercentage }: { capitalPercentage: numb
     {
       name: 'Capital Spend',
       value: capitalPercentage,
-      color: '#3b82f6', // blue-500
+      color: CAPITAL_SPEND_PALETTE['Primary Scarlet'],
       description: 'Fixed assets, infrastructure'
     },
     {
       name: 'Recurrent Spend',
       value: recurrentPercentage,
-      color: '#64748b', // slate-500
+      color: CAPITAL_SPEND_PALETTE['Pale Slate'],
       description: 'Operational, running costs'
     }
   ].sort((a, b) => b.value - a.value); // Sort by value descending (largest first)
@@ -91,7 +100,7 @@ function CapitalSpendDonutChart({ capitalPercentage }: { capitalPercentage: numb
             wrapperStyle={{
               paddingTop: '20px',
               fontSize: '12px',
-              color: '#64748b'
+              color: CAPITAL_SPEND_PALETTE['Blue Slate']
             }}
           />
         </PieChart>

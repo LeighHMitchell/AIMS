@@ -471,7 +471,8 @@ export function EditUserModal({ isOpen, onClose, onUserUpdated, user, organizati
                   acronym: org.acronym,
                   type: org.type,
                   country: org.country,
-                  iati_org_id: org.iati_org_id
+                  iati_org_id: org.iati_org_id,
+                  logo: org.logo
                 })) || []}
                 value={form.organizationId}
                 onValueChange={handleOrganizationChange}

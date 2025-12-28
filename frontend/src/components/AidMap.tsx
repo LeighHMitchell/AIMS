@@ -15,14 +15,21 @@ import {
   MapPin, 
   Flame, 
   BarChart3, 
-  CircleDot 
+  CircleDot,
+  ChevronsUpDown,
+  Check,
+  Building2
 } from 'lucide-react';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
+import { cn } from '@/lib/utils';
 import dynamic from 'next/dynamic';
 import { Skeleton } from '@/components/ui/skeleton-loader';
 import { EnhancedSubnationalBreakdown } from '@/components/activities/EnhancedSubnationalBreakdown';
 import { SectorHierarchyFilter, SectorFilterSelection, matchesSectorFilter } from '@/components/maps/SectorHierarchyFilter';
 import { MapSearch } from '@/components/maps/MapSearch';
 import { ACTIVITY_STATUS_GROUPS } from '@/data/activity-status-types';
+import { useOrganizations } from '@/hooks/use-organizations';
 import { getCountryCoordinates, DEFAULT_MAP_CENTER, DEFAULT_MAP_ZOOM } from '@/data/country-coordinates';
 
 // Dynamic import for MyanmarRegionsMap to avoid SSR issues
@@ -249,12 +256,17 @@ export default function AidMap() {
   const [shouldResetMap, setShouldResetMap] = useState(false);
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [orgFilter, setOrgFilter] = useState<string>('all');
+  const [orgFilterOpen, setOrgFilterOpen] = useState(false);
+  const [orgFilterSearch, setOrgFilterSearch] = useState('');
   const [sectorFilter, setSectorFilter] = useState<SectorFilterSelection>({
     sectorCategories: [],
     sectors: [],
     subSectors: [],
   });
   const mapRef = useRef<any>(null);
+
+  // Fetch organizations with logos
+  const { organizations: allOrganizations } = useOrganizations();
 
   // Home country coordinates from system settings
   const [homeCountryCenter, setHomeCountryCenter] = useState<[number, number]>(DEFAULT_MAP_CENTER);
@@ -435,16 +447,29 @@ export default function AidMap() {
     return filtered;
   }, [validLocations, statusFilter, orgFilter, sectorFilter]);
 
-  // Get unique organizations for filter
+  // Get unique organizations for filter with logo data
   const organizations = useMemo(() => {
-    const orgs = new Set<string>();
+    const orgNames = new Set<string>();
     locations.forEach(location => {
       if (location.activity?.organization_name) {
-        orgs.add(location.activity.organization_name);
+        orgNames.add(location.activity.organization_name);
       }
     });
-    return Array.from(orgs).sort();
-  }, [locations]);
+    
+    // Match organization names with full org data (including logos)
+    const orgList = Array.from(orgNames).map(name => {
+      const fullOrg = allOrganizations.find(org => 
+        org.name === name || org.acronym === name
+      );
+      return {
+        name,
+        logo: fullOrg?.logo,
+        acronym: fullOrg?.acronym,
+      };
+    });
+    
+    return orgList.sort((a, b) => a.name.localeCompare(b.name));
+  }, [locations, allOrganizations]);
 
   // Use subnational breakdown data from database
   const regionBreakdowns = subnationalData?.breakdowns || {};
@@ -540,11 +565,11 @@ export default function AidMap() {
           {/* Map */}
           <div className="h-[92vh] min-h-[800px] w-full relative rounded-lg overflow-hidden border border-gray-200">
             {/* All Controls - single top row */}
-            <div className="absolute top-3 left-3 right-3 z-[1000] flex items-center gap-1.5">
+            <div className="absolute top-3 left-3 right-3 z-[1000] flex items-center gap-2">
               {/* Filters */}
               <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-[120px] bg-white shadow-md border-gray-300 text-xs h-9">
-                  <SelectValue placeholder="Status" />
+                <SelectTrigger className="!w-[130px] min-w-[130px] bg-white shadow-md border-gray-300 text-xs h-9 [&>span]:line-clamp-none">
+                  <SelectValue placeholder="All Statuses" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Statuses</SelectItem>
@@ -563,31 +588,111 @@ export default function AidMap() {
                 </SelectContent>
               </Select>
               
-              <Select value={orgFilter} onValueChange={setOrgFilter}>
-                <SelectTrigger className="w-[130px] bg-white shadow-md border-gray-300 text-xs h-9">
-                  <SelectValue placeholder="Organization" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Organizations</SelectItem>
-                  {organizations.map((org) => (
-                    <SelectItem key={org} value={org}>
-                      {org}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Popover open={orgFilterOpen} onOpenChange={setOrgFilterOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={orgFilterOpen}
+                    className="!w-[200px] min-w-[200px] justify-between bg-white shadow-md border-gray-300 text-xs h-9 font-normal"
+                  >
+                    <div className="flex items-center gap-2 truncate">
+                      {orgFilter === 'all' ? (
+                        <Building2 className="h-4 w-4 text-gray-500 shrink-0" />
+                      ) : (
+                        (() => {
+                          const selectedOrg = organizations.find(o => o.name === orgFilter);
+                          return selectedOrg?.logo ? (
+                            <img src={selectedOrg.logo} alt="" className="h-4 w-4 rounded-sm object-contain shrink-0" />
+                          ) : (
+                            <Building2 className="h-4 w-4 text-gray-500 shrink-0" />
+                          );
+                        })()
+                      )}
+                      <span className="truncate">
+                        {orgFilter === 'all' ? 'All Organizations' : orgFilter}
+                      </span>
+                    </div>
+                    <ChevronsUpDown className="h-3.5 w-3.5 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[350px] p-0" align="start">
+                  <Command>
+                    <CommandInput 
+                      placeholder="Search organizations..." 
+                      value={orgFilterSearch}
+                      onValueChange={setOrgFilterSearch}
+                      className="text-xs"
+                    />
+                    <CommandList>
+                      <CommandEmpty>No organization found.</CommandEmpty>
+                      <CommandGroup>
+                        <CommandItem
+                          value="all"
+                          onSelect={() => {
+                            setOrgFilter('all');
+                            setOrgFilterOpen(false);
+                            setOrgFilterSearch('');
+                          }}
+                          className="flex items-center text-xs"
+                        >
+                          <Check className={cn("h-3.5 w-3.5 mr-2 shrink-0", orgFilter === 'all' ? "opacity-100" : "opacity-0")} />
+                          <Building2 className="h-5 w-5 mr-2 text-gray-400 shrink-0" />
+                          <span>All Organizations</span>
+                        </CommandItem>
+                        {organizations
+                          .filter(org => 
+                            org.name.toLowerCase().includes(orgFilterSearch.toLowerCase()) ||
+                            (org.acronym && org.acronym.toLowerCase().includes(orgFilterSearch.toLowerCase()))
+                          )
+                          .map((org) => (
+                            <CommandItem
+                              key={org.name}
+                              value={org.name}
+                              onSelect={() => {
+                                setOrgFilter(org.name);
+                                setOrgFilterOpen(false);
+                                setOrgFilterSearch('');
+                              }}
+                              className="flex items-center text-xs"
+                            >
+                              <Check className={cn("h-3.5 w-3.5 mr-2 shrink-0", orgFilter === org.name ? "opacity-100" : "opacity-0")} />
+                              <div className="h-5 w-5 mr-2 shrink-0 flex items-center justify-center">
+                                {org.logo ? (
+                                  <img 
+                                    src={org.logo} 
+                                    alt={org.name} 
+                                    className="h-5 w-5 rounded-sm object-contain"
+                                    onError={(e) => {
+                                      (e.target as HTMLImageElement).style.display = 'none';
+                                      (e.target as HTMLImageElement).nextElementSibling?.classList.remove('hidden');
+                                    }}
+                                  />
+                                ) : null}
+                                <Building2 className={cn("h-4 w-4 text-gray-400", org.logo ? "hidden" : "")} />
+                              </div>
+                              <span className="truncate">
+                                {org.name}{org.acronym && org.acronym !== org.name ? ` (${org.acronym})` : ''}
+                              </span>
+                            </CommandItem>
+                          ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
               
               <SectorHierarchyFilter
                 selected={sectorFilter}
                 onChange={setSectorFilter}
-                className="w-[130px] bg-white shadow-md border-gray-300 h-9 text-xs"
+                className="!w-[280px] min-w-[280px] bg-white shadow-md border-gray-300 h-9 text-xs"
               />
               
               {/* Search */}
               <MapSearch
                 onLocationSelect={handleLocationSearch}
-                className="w-[160px]"
-                placeholder="Search..."
+                className="w-[180px]"
+                placeholder="Search location..."
               />
               
               {/* Spacer to push map controls to the right */}
@@ -596,7 +701,7 @@ export default function AidMap() {
               {/* Map Controls - grouped with more spacing */}
               <div className="flex items-center gap-2 shrink-0">
                 <Select value={mapLayer} onValueChange={(value) => setMapLayer(value as MapLayerType)}>
-                  <SelectTrigger className="w-[150px] bg-white shadow-md border-gray-300 text-xs h-9">
+                  <SelectTrigger className="!w-[200px] min-w-[200px] bg-white shadow-md border-gray-300 text-xs h-9 [&>span]:line-clamp-none">
                     <SelectValue placeholder="Map type" />
                   </SelectTrigger>
                   <SelectContent>

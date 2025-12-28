@@ -107,7 +107,8 @@ export async function GET(
         created_at,
         updated_at,
         created_by_org_name,
-        created_by_org_acronym
+        created_by_org_acronym,
+        icon
       `)
       .in('id', Array.from(allActivityIds))
       .in('activity_status', ['2', '3']) // Only active statuses
