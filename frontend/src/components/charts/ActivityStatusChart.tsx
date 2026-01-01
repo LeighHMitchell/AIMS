@@ -37,11 +37,13 @@ interface ActivityDetail {
 interface ActivityStatusChartProps {
   filters: any;
   onDataChange?: (data: any[]) => void;
+  compact?: boolean;
 }
 
 export const ActivityStatusChart: React.FC<ActivityStatusChartProps> = ({
   filters,
   onDataChange,
+  compact = false,
 }) => {
   const [data, setData] = useState<{
     activityStatus: StatusData[];
@@ -79,8 +81,11 @@ export const ActivityStatusChart: React.FC<ActivityStatusChartProps> = ({
         throw new Error(result.error);
       }
 
-      setData(result.data);
+      const chartData = result.data;
+      setData(chartData);
       setActivityDetails(result.activityDetails || []);
+      // Pass all status data for export
+      onDataChange?.(chartData);
     } catch (error) {
       console.error('Error fetching activity status data:', error);
       setError(error instanceof Error ? error.message : 'Failed to load chart data');
@@ -159,6 +164,51 @@ export const ActivityStatusChart: React.FC<ActivityStatusChartProps> = ({
     return null;
   };
 
+  const currentData = getCurrentData();
+
+  // Compact mode renders just the chart without filters
+  if (compact) {
+    if (loading) {
+      return (
+        <div className="h-full flex items-center justify-center">
+          <Loader2 className="h-6 w-6 animate-spin text-slate-400" />
+        </div>
+      );
+    }
+    if (error || !currentData || currentData.length === 0) {
+      return (
+        <div className="h-full flex items-center justify-center text-slate-500">
+          <p className="text-sm">{error || 'No data available'}</p>
+        </div>
+      );
+    }
+    return (
+      <div className="h-full w-full">
+        <ResponsiveContainer width="100%" height="100%">
+          <PieChart>
+            <Pie
+              data={currentData}
+              cx="50%"
+              cy="50%"
+              outerRadius={70}
+              innerRadius={40}
+              dataKey="count"
+              nameKey="status"
+              paddingAngle={2}
+              label={({ status, percentage }) => `${Math.round(percentage)}%`}
+              labelLine={false}
+            >
+              {currentData.map((_, index) => (
+                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+              ))}
+            </Pie>
+            <Tooltip content={<CustomTooltip />} />
+          </PieChart>
+        </ResponsiveContainer>
+      </div>
+    );
+  }
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-96">
@@ -180,8 +230,6 @@ export const ActivityStatusChart: React.FC<ActivityStatusChartProps> = ({
       </div>
     );
   }
-
-  const currentData = getCurrentData();
 
   if (!currentData || currentData.length === 0) {
     return (

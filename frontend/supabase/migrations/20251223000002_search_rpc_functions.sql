@@ -389,3 +389,4 @@ COMMENT ON FUNCTION search_count IS 'Returns count of matching results by entity
 
 
 
+

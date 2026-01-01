@@ -22,13 +22,30 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { AlertCircle, Download, BarChart3, LineChart as LineChartIcon, TrendingUp as TrendingUpIcon, Table as TableIcon, X, Image } from 'lucide-react'
-import { supabase } from '@/lib/supabase'
 import { MultiSelect } from '@/components/ui/multi-select'
 import { HelpTextTooltip } from '@/components/ui/help-text-tooltip'
 import { Switch } from '@/components/ui/switch'
 import { Label } from '@/components/ui/label'
 import { splitTransactionAcrossYears } from '@/utils/year-allocation'
 import { FLOW_TYPE_COLORS, TRANSACTION_TYPE_CHART_COLORS, BRAND_COLORS } from '@/components/analytics/sectors/sectorColorMap'
+// Inline currency formatter to avoid initialization issues
+const formatCurrencyAbbreviated = (value: number): string => {
+  const isNegative = value < 0
+  const absValue = Math.abs(value)
+
+  let formatted = ''
+  if (absValue >= 1000000000) {
+    formatted = `$${(absValue / 1000000000).toFixed(1)}b`
+  } else if (absValue >= 1000000) {
+    formatted = `$${(absValue / 1000000).toFixed(1)}m`
+  } else if (absValue >= 1000) {
+    formatted = `$${(absValue / 1000).toFixed(1)}k`
+  } else {
+    formatted = `$${absValue.toFixed(0)}`
+  }
+
+  return isNegative ? `-${formatted}` : formatted
+}
 
 interface FinanceTypeFlowChartProps {
   dateRange?: {
@@ -37,6 +54,7 @@ interface FinanceTypeFlowChartProps {
   }
   refreshKey?: number
   onDataChange?: (data: any[]) => void
+  compact?: boolean
 }
 
 type ViewMode = 'bar' | 'line' | 'area' | 'table'
@@ -106,7 +124,8 @@ const generateFinanceTypeShades = (baseColor: string, financeType: string, index
 export function FinanceTypeFlowChart({
   dateRange,
   refreshKey,
-  onDataChange
+  onDataChange,
+  compact = false
 }: FinanceTypeFlowChartProps) {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -166,55 +185,29 @@ export function FinanceTypeFlowChart({
     { code: '13', name: 'Commitment Cancellation' }
   ]
 
-  // Fetch data from Supabase
+  // Fetch data from consolidated API (with server-side caching)
   useEffect(() => {
     const fetchData = async () => {
       try {
         setLoading(true)
         setError(null)
 
-        // Fetch flow types and finance types from API
-        const flowTypesResponse = await fetch('/api/analytics/flow-types')
-        const flowTypesData = await flowTypesResponse.json()
+        // Build query params
+        const params = new URLSearchParams({
+          dateFrom: effectiveDateRange.from.toISOString(),
+          dateTo: effectiveDateRange.to.toISOString()
+        })
 
-        const financeTypesResponse = await fetch('/api/analytics/finance-types')
-        const financeTypesData = await financeTypesResponse.json()
-
-        // Fetch all transactions with their activity defaults for finance_type and flow_type
-        // Join with activities to get default values when transaction values are null
-        let query = supabase
-          .from('transactions')
-          .select(`
-            transaction_date,
-            finance_type,
-            flow_type,
-            value,
-            value_usd,
-            currency,
-            transaction_type,
-            activity_id,
-            activities!transactions_activity_id_fkey1 (
-              default_finance_type,
-              default_flow_type
-            )
-          `)
-          .eq('status', 'actual')
-          .order('transaction_date', { ascending: true })
-
-        // Apply date range filter - use effectiveDateRange (from time range selector)
-        query = query
-          .gte('transaction_date', effectiveDateRange.from.toISOString())
-          .lte('transaction_date', effectiveDateRange.to.toISOString())
-
-        const { data: transactions, error: transactionsError } = await query
-
-        if (transactionsError) {
-          console.error('[FinanceTypeFlowChart] Error fetching transactions:', transactionsError)
-          setError('Failed to fetch transaction data')
-          return
+        // Fetch all data from consolidated API (flow types, finance types, and transactions)
+        const response = await fetch(`/api/analytics/finance-type-flow-data?${params}`)
+        
+        if (!response.ok) {
+          throw new Error('Failed to fetch data')
         }
 
-        if (!transactions || transactions.length === 0) {
+        const data = await response.json()
+
+        if (!data.transactions || data.transactions.length === 0) {
           setRawData([])
           setAllFlowTypes([])
           setAllFinanceTypes([])
@@ -222,86 +215,57 @@ export function FinanceTypeFlowChart({
           return
         }
 
-        // Process data - use inferred values (transaction-level or activity defaults)
+        // Process data for year allocation if needed
         const processedData: any[] = []
 
-        transactions.forEach((t: any) => {
-          // Try value_usd first, then fall back to raw value
-          let value = parseFloat(String(t.value_usd)) || 0
-
-          // Fall back to raw value if no USD conversion exists
-          if (!value && t.value) {
-            value = parseFloat(String(t.value)) || 0
-          }
-
-          // Skip transactions without any valid value
-          if (!value) {
-            return
-          }
-
-          // Get activity defaults
-          const activityDefaults = t.activities || {}
-
-          // Use transaction value if set, otherwise fall back to activity default
-          const effectiveFinanceType = t.finance_type || activityDefaults.default_finance_type
-          const effectiveFlowType = t.flow_type || activityDefaults.default_flow_type
-
-          // Skip if we don't have both finance_type and flow_type (even after fallback)
-          if (!effectiveFinanceType || !effectiveFlowType) {
-            return
-          }
-
+        data.transactions.forEach((t: any) => {
           // Apply proportional allocation if enabled
+          // Pass value_usd (set from the value field) since the API already converts values to USD
           const txToProcess = allocationMethod === 'proportional'
-            ? t
-            : { ...t, period_start: null, period_end: null }
+            ? { ...t, transaction_date: t.date, value_usd: t.value }
+            : { ...t, transaction_date: t.date, value_usd: t.value, period_start: null, period_end: null }
 
           const yearAllocations = splitTransactionAcrossYears(txToProcess)
 
           yearAllocations.forEach(({ year, amount }) => {
-            // Use effective (inferred) finance_type and flow_type
-            const financeType = String(effectiveFinanceType)
-            const flowType = String(effectiveFlowType)
-            // Convert to string to match selectedTransactionTypes format
-            const transactionType = String(t.transaction_type || 'Unknown')
-
             processedData.push({
               year,
-              flowType,
-              financeType,
-              transactionType,
+              flowType: t.flowType,
+              financeType: t.financeType,
+              transactionType: t.transactionType,
               value: amount,
-              date: t.transaction_date
+              date: t.date
             })
           })
         })
 
-        // Get unique flow type codes from data
-        const uniqueFlowTypeCodes = Array.from(new Set(processedData.map((d: any) => d.flowType)))
-        const uniqueFinanceTypeCodes = Array.from(new Set(processedData.map((d: any) => d.financeType)))
-
-        // Filter flow types to only include those present in the data
-        const relevantFlowTypes = flowTypesData.filter((ft: any) =>
-          uniqueFlowTypeCodes.includes(ft.code)
-        ).sort((a: any, b: any) => a.code.localeCompare(b.code))
-
-        // Filter finance types to only include those present in the data
-        const relevantFinanceTypes = financeTypesData.filter((ft: any) =>
-          uniqueFinanceTypeCodes.includes(ft.code)
-        ).sort((a: any, b: any) => a.code.localeCompare(b.code))
-
+        // Get unique transaction types from the data
+        const uniqueTransactionTypes = [...new Set(processedData.map((t: any) => t.transactionType))]
+        
         setRawData(processedData)
-        setAllFlowTypes(relevantFlowTypes)
-        setAllFinanceTypes(relevantFinanceTypes)
-
+        setAllFlowTypes(data.flowTypes)
+        setAllFinanceTypes(data.financeTypes)
+        
         // Keep the default ODA selection if it exists in the data, otherwise use first available
-        if (relevantFlowTypes.length > 0) {
-          const hasODA = relevantFlowTypes.some((ft: any) => ft.code === '10')
+        if (data.flowTypes.length > 0) {
+          const hasODA = data.flowTypes.some((ft: any) => ft.code === '10')
           if (hasODA && selectedFlowTypes.includes('10')) {
             // ODA exists and is already selected, keep it
           } else if (!hasODA && selectedFlowTypes.includes('10')) {
             // ODA doesn't exist in data, select first available
-            setSelectedFlowTypes([relevantFlowTypes[0].code])
+            setSelectedFlowTypes([data.flowTypes[0].code])
+          } else if (selectedFlowTypes.length === 0 || !data.flowTypes.some((ft: any) => selectedFlowTypes.includes(ft.code))) {
+            // No valid flow types selected, select first available
+            setSelectedFlowTypes([data.flowTypes[0].code])
+          }
+        }
+        
+        // Update transaction types if current selection has no data
+        if (uniqueTransactionTypes.length > 0) {
+          const hasSelectedType = selectedTransactionTypes.some(st => uniqueTransactionTypes.includes(st))
+          if (!hasSelectedType) {
+            // No currently selected transaction types have data, select all available
+            setSelectedTransactionTypes(uniqueTransactionTypes)
           }
         }
 
@@ -421,22 +385,19 @@ export function FinanceTypeFlowChart({
     return isNegative ? `-${formatted}` : formatted
   }
 
-  const formatTooltipValue = (value: number) => {
-    const isNegative = value < 0
-    const absValue = Math.abs(value)
+  // Use the module-level currency formatter for tooltips
+  const formatTooltipValue = formatCurrencyAbbreviated
 
-    let formatted = ''
-    if (absValue >= 1000000000) {
-      formatted = `$${(absValue / 1000000000).toFixed(2)}b`
-    } else if (absValue >= 1000000) {
-      formatted = `$${(absValue / 1000000).toFixed(2)}m`
-    } else if (absValue >= 1000) {
-      formatted = `$${(absValue / 1000).toFixed(2)}k`
-    } else {
-      formatted = `$${absValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-    }
+  // Helper function to get flow type name from code
+  const getFlowTypeName = (code: string): string => {
+    const flowType = allFlowTypes.find(ft => ft.code === code)
+    return flowType ? flowType.name : code
+  }
 
-    return isNegative ? `-${formatted}` : formatted
+  // Helper function to get finance type name from code
+  const getFinanceTypeName = (code: string): string => {
+    const financeType = allFinanceTypes.find(ft => ft.code === code)
+    return financeType ? financeType.name : code
   }
 
   // Custom tooltip
@@ -623,6 +584,67 @@ export function FinanceTypeFlowChart({
     })
   }
 
+  // Compact mode renders just the chart without Card wrapper and filters
+  if (compact) {
+    if (loading) {
+      return <Skeleton className="h-full w-full" />
+    }
+    if (error || chartData.length === 0) {
+      return (
+        <div className="h-full w-full flex items-center justify-center text-slate-500">
+          <p className="text-sm">{error || 'No data available'}</p>
+        </div>
+      )
+    }
+    return (
+      <div className="h-full w-full">
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart
+            data={chartData}
+            margin={{ top: 10, right: 20, left: 20, bottom: 30 }}
+          >
+            <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e1" opacity={0.5} />
+            <XAxis
+              dataKey="label"
+              stroke="#64748B"
+              fontSize={10}
+              angle={0}
+              textAnchor="middle"
+              height={30}
+              interval={0}
+            />
+            <YAxis tickFormatter={formatCurrency} stroke="#64748B" fontSize={10} />
+            <Tooltip content={<CustomTooltip />} />
+            {selectedFlowTypes.slice(0, 1).map(flowType => {
+              const financeTypesToShow = selectedFinanceTypes.length > 0
+                ? allFinanceTypes.filter(ft => selectedFinanceTypes.includes(ft.code)).slice(0, 5)
+                : allFinanceTypes.slice(0, 5)
+              return selectedTransactionTypes.slice(0, 1).map((transactionType) => {
+                const flowTypeColor = FLOW_TYPE_BASE_COLORS[flowType] || BRAND_COLORS.paleSlate
+                const transactionTypeColor = TRANSACTION_TYPE_COLORS_LOCAL[transactionType] || BRAND_COLORS.paleSlate
+                const blendedBaseColor = blendColors(flowTypeColor, transactionTypeColor, 0.65)
+                return financeTypesToShow.map((financeType, index) => {
+                  const color = generateFinanceTypeShades(blendedBaseColor, financeType.code, index, financeTypesToShow.length)
+                  const uniqueKey = `${flowType}_${transactionType}_${financeType.code}`
+                  return (
+                    <Bar
+                      key={uniqueKey}
+                      dataKey={uniqueKey}
+                      name={financeType.name}
+                      stackId={`${flowType}_${transactionType}`}
+                      fill={color}
+                      isAnimationActive={false}
+                    />
+                  )
+                })
+              }).flat()
+            }).flat()}
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
+    )
+  }
+
   if (loading) {
     return (
       <Card className="bg-white border-slate-200">
@@ -690,18 +712,6 @@ export function FinanceTypeFlowChart({
 
   // Get available flow types for dropdown (exclude already selected)
   const availableFlowTypes = allFlowTypes.filter(ft => !selectedFlowTypes.includes(ft.code))
-
-  // Helper function to get flow type name from code
-  const getFlowTypeName = (code: string): string => {
-    const flowType = allFlowTypes.find(ft => ft.code === code)
-    return flowType ? flowType.name : code
-  }
-
-  // Helper function to get finance type name from code
-  const getFinanceTypeName = (code: string): string => {
-    const financeType = allFinanceTypes.find(ft => ft.code === code)
-    return financeType ? financeType.name : code
-  }
 
   return (
     <Card className="bg-white border-slate-200">
@@ -869,36 +879,36 @@ export function FinanceTypeFlowChart({
                   size="sm"
                   onClick={() => setViewMode('bar')}
                   className="h-8"
+                  title="Bar"
                 >
-                  <BarChart3 className="h-4 w-4 mr-1.5" />
-                  Bar
+                  <BarChart3 className="h-4 w-4" />
                 </Button>
                 <Button
                   variant={viewMode === 'line' ? 'default' : 'ghost'}
                   size="sm"
                   onClick={() => setViewMode('line')}
                   className="h-8"
+                  title="Line"
                 >
-                  <LineChartIcon className="h-4 w-4 mr-1.5" />
-                  Line
+                  <LineChartIcon className="h-4 w-4" />
                 </Button>
                 <Button
                   variant={viewMode === 'area' ? 'default' : 'ghost'}
                   size="sm"
                   onClick={() => setViewMode('area')}
                   className="h-8"
+                  title="Area"
                 >
-                  <TrendingUpIcon className="h-4 w-4 mr-1.5" />
-                  Area
+                  <TrendingUpIcon className="h-4 w-4" />
                 </Button>
                 <Button
                   variant={viewMode === 'table' ? 'default' : 'ghost'}
                   size="sm"
                   onClick={() => setViewMode('table')}
                   className="h-8"
+                  title="Table"
                 >
-                  <TableIcon className="h-4 w-4 mr-1.5" />
-                  Table
+                  <TableIcon className="h-4 w-4" />
                 </Button>
               </div>
 

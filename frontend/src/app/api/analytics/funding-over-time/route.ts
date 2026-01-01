@@ -125,7 +125,7 @@ export async function GET(request: NextRequest) {
     // ============================================
     const { data: transactions, error: txError } = await supabase
       .from('transactions')
-      .select('provider_org_id, transaction_type, transaction_date, value_usd, value')
+      .select('provider_org_id, provider_org_name, transaction_type, transaction_date, value_usd, value')
       .in('transaction_type', ['3', '4']) // Disbursements and Expenditures only
       .not('provider_org_id', 'is', null)
       .in('provider_org_id', targetOrgIds)
@@ -135,9 +135,11 @@ export async function GET(request: NextRequest) {
     }
 
     // Aggregate transactions by org and year
+    // Also track organization names from transactions as fallback
     const txAggregation = new Map<string, {
       amount_usd: number
       count: number
+      org_name: string | null
     }>()
 
     transactions?.forEach((tx: any) => {
@@ -151,12 +153,16 @@ export async function GET(request: NextRequest) {
       const value = parseFloat(tx.value_usd) || parseFloat(tx.value) || 0
 
       if (!txAggregation.has(key)) {
-        txAggregation.set(key, { amount_usd: 0, count: 0 })
+        txAggregation.set(key, { amount_usd: 0, count: 0, org_name: tx.provider_org_name || null })
       }
       
       const agg = txAggregation.get(key)!
       agg.amount_usd += value
       agg.count++
+      // Update org_name if we have it and don't have one yet
+      if (tx.provider_org_name && !agg.org_name) {
+        agg.org_name = tx.provider_org_name
+      }
     })
 
     // Convert transaction aggregations to results
@@ -165,9 +171,13 @@ export async function GET(request: NextRequest) {
       const orgId = parts.slice(0, -1).join('-') // Handle UUIDs with dashes
       const yearStr = parts[parts.length - 1]
       const year = parseInt(yearStr, 10)
-      const org = orgMap.get(orgId)
       
-      if (!org || isNaN(year)) return
+      if (isNaN(year)) return
+
+      // Get organization info from orgMap, or use fallback from transaction
+      const org = orgMap.get(orgId)
+      const orgName = org?.name || agg.org_name || 'Unknown Organization'
+      const orgAcronym = org?.acronym || null
 
       // Determine data_type based on year relative to current year
       // Past years = actual, current year = partial (YTD)
@@ -182,8 +192,8 @@ export async function GET(request: NextRequest) {
 
       results.push({
         organization_id: orgId,
-        organization_name: org.name,
-        organization_acronym: org.acronym,
+        organization_name: orgName,
+        organization_acronym: orgAcronym,
         year,
         amount_usd: agg.amount_usd,
         data_source: 'transactions',
@@ -302,5 +312,6 @@ export async function GET(request: NextRequest) {
     )
   }
 }
+
 
 

@@ -189,6 +189,78 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    // Fetch locations for all activities
+    let locationsMap = new Map<string, { site_locations: any[], broad_coverage_locations: any[] }>();
+    
+    if (activityIds.length > 0) {
+      const { data: locations, error: locationsError } = await supabase
+        .from('activity_locations')
+        .select('id, activity_id, location_type, location_name, description, latitude, longitude, admin_unit, state_region_name, state_region_code, percentage_allocation')
+        .in('activity_id', activityIds);
+
+      if (locationsError) {
+        console.error('[AIMS-SIMPLE] Locations fetch error:', locationsError);
+      } else if (locations) {
+        console.log('[AIMS-SIMPLE] Locations data fetched:', locations.length, 'entries');
+        
+        locations.forEach((loc: any) => {
+          const current = locationsMap.get(loc.activity_id) || { site_locations: [], broad_coverage_locations: [] };
+          
+          if (loc.location_type === 'site') {
+            current.site_locations.push({
+              id: loc.id,
+              location_name: loc.location_name,
+              description: loc.description,
+              lat: loc.latitude,
+              lng: loc.longitude
+            });
+            // Also add to broad_coverage if it has a state_region_name (for location bar aggregation)
+            if (loc.state_region_name) {
+              current.broad_coverage_locations.push({
+                id: loc.id,
+                admin_unit: loc.state_region_name,
+                description: loc.description,
+                percentage: loc.percentage_allocation ?? null,
+                state_region_name: loc.state_region_name,
+                state_region_code: loc.state_region_code
+              });
+            }
+          } else if (loc.location_type === 'coverage') {
+            current.broad_coverage_locations.push({
+              id: loc.id,
+              admin_unit: loc.admin_unit || loc.state_region_name || loc.location_name,
+              description: loc.description,
+              percentage: loc.percentage_allocation ?? null,
+              state_region_name: loc.state_region_name,
+              state_region_code: loc.state_region_code
+            });
+          }
+          
+          locationsMap.set(loc.activity_id, current);
+        });
+      }
+    }
+
+    // Fetch subnational breakdowns for all activities (for Locations % column)
+    let subnationalBreakdownsMap = new Map<string, any[]>();
+    if (activityIds.length > 0) {
+      const { data: breakdowns, error: breakdownsError } = await supabase
+        .from('subnational_breakdowns')
+        .select('id, activity_id, region_name, percentage, is_nationwide')
+        .in('activity_id', activityIds);
+
+      if (breakdownsError) {
+        console.error('[AIMS-SIMPLE] Subnational breakdowns fetch error:', breakdownsError);
+      } else if (breakdowns) {
+        breakdowns.forEach((b: any) => {
+          if (!subnationalBreakdownsMap.has(b.activity_id)) {
+            subnationalBreakdownsMap.set(b.activity_id, []);
+          }
+          subnationalBreakdownsMap.get(b.activity_id)!.push(b);
+        });
+      }
+    }
+
     // Transform the data to match frontend expectations
     const transformedActivities = data?.map((activity: any) => {
       const summary = summariesMap.get(activity.id) || {
@@ -253,7 +325,25 @@ export async function GET(request: NextRequest) {
         notes: mapping.notes
       })),
       contacts: [],
-      locations: { site_locations: [], broad_coverage_locations: [] },
+      locations: (() => {
+        const activityLocations = locationsMap.get(activity.id) || { site_locations: [], broad_coverage_locations: [] };
+        const subnationalBreakdowns = subnationalBreakdownsMap.get(activity.id) || [];
+        
+        // Use subnational breakdowns for the bar chart (includes Nationwide as full-width bar)
+        const broadCoverageLocations = subnationalBreakdowns.map((b: any) => ({
+          id: b.id,
+          admin_unit: b.is_nationwide ? 'Nationwide' : b.region_name,
+          description: null,
+          percentage: b.percentage ?? null,
+          state_region_name: b.is_nationwide ? 'Nationwide' : b.region_name,
+          state_region_code: null
+        }));
+        
+        return {
+          site_locations: activityLocations.site_locations,
+          broad_coverage_locations: broadCoverageLocations
+        };
+      })(),
       // Add transaction summaries
       commitments: summary.commitments,
       disbursements: summary.disbursements,

@@ -658,7 +658,5 @@ async function handleRemove(
     } catch (notifyError) {
       console.error('[AIMS] Error sending removal notification:', notifyError);
     }
-  }
-
-  return NextResponse.json({ success: true, action: 'removed' });
+  }  return NextResponse.json({ success: true, action: 'removed' });
 }

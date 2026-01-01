@@ -70,6 +70,7 @@ import { USER_ROLES } from "@/types/user";
 import { ActivityListSkeleton } from '@/components/ui/skeleton-loader';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { LocationMiniBar, LocationData } from "@/components/activities/LocationMiniBar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import Link from 'next/link';
 import { IATISyncStatusIndicator, IATISyncStatusBadge } from '@/components/activities/IATISyncStatusIndicator';
@@ -295,6 +296,26 @@ type Activity = {
   // Budget status
   budgetStatus?: BudgetStatusType;
   onBudgetPercentage?: number;
+  
+  // Locations data
+  locations?: {
+    site_locations?: Array<{
+      id?: string;
+      location_name: string;
+      description?: string;
+      lat?: number;
+      lng?: number;
+      category?: string;
+    }>;
+    broad_coverage_locations?: Array<{
+      id?: string;
+      admin_unit: string;
+      description?: string;
+      percentage?: number | null;
+      state_region_name?: string;
+      state_region_code?: string;
+    }>;
+  };
 };
 
 type SortField = 'title' | 'partnerId' | 'createdBy' | 'commitments' | 'disbursements' | 'plannedDisbursements' | 'createdAt' | 'updatedAt' | 'activityStatus' | 'actualLength' | 'totalExpectedLength' | 'implementationToDate' | 'remainingDuration' | 'durationBand' | 'plannedStartDate' | 'plannedEndDate' | 'actualStartDate' | 'actualEndDate';
@@ -519,6 +540,8 @@ type ColumnId =
   | 'sectorCategories'
   | 'sectors'
   | 'subSectors'
+  // Location columns
+  | 'locations'
   // SDG column
   | 'sdgs'
   // Budget status column
@@ -527,7 +550,7 @@ type ColumnId =
 interface ColumnConfig {
   id: ColumnId;
   label: string;
-  group: 'default' | 'activityDefaults' | 'transactionTypeTotals' | 'publicationStatuses' | 'participatingOrgs' | 'descriptions' | 'progressMetrics' | 'portfolioShares' | 'durations' | 'dates' | 'sectors' | 'sdgs';
+  group: 'default' | 'activityDefaults' | 'transactionTypeTotals' | 'publicationStatuses' | 'participatingOrgs' | 'descriptions' | 'progressMetrics' | 'portfolioShares' | 'durations' | 'dates' | 'sectors' | 'locations' | 'sdgs';
   width?: string;
   alwaysVisible?: boolean; // For columns that can't be hidden (checkbox, actions)
   defaultVisible?: boolean;
@@ -549,6 +572,7 @@ const COLUMN_CONFIGS: ColumnConfig[] = [
   { id: 'sectorCategories', label: 'Sector Categories', group: 'sectors', width: 'min-w-[160px]', defaultVisible: false, align: 'center' },
   { id: 'sectors', label: 'Sectors', group: 'sectors', width: 'min-w-[160px]', defaultVisible: false, align: 'center' },
   { id: 'subSectors', label: 'Sub-sectors', group: 'sectors', width: 'min-w-[180px]', defaultVisible: false, align: 'center' },
+  { id: 'locations', label: 'Locations', group: 'locations', width: 'min-w-[160px]', defaultVisible: false, align: 'center' },
   { id: 'actions', label: 'Actions', group: 'default', width: 'w-[80px]', alwaysVisible: true, defaultVisible: true, align: 'right' },
   
   // Activity defaults (optional columns)
@@ -624,6 +648,7 @@ const COLUMN_CONFIGS: ColumnConfig[] = [
 const COLUMN_GROUPS = {
   default: 'Default Columns',
   sectors: 'Sectors',
+  locations: 'Locations',
   publicationStatuses: 'Publication Status',
   activityDefaults: 'Activity Defaults',
   transactionTypeTotals: 'Transaction Type Totals',
@@ -873,6 +898,9 @@ function ActivitiesPageContent() {
   
   // Column visibility state with localStorage persistence
   const [visibleColumns, setVisibleColumns] = useState<ColumnId[]>(DEFAULT_VISIBLE_COLUMNS);
+  
+  // Location display mode state (percentage or USD)
+  const [locationDisplayMode, setLocationDisplayMode] = useState<'percentage' | 'usd'>('percentage');
   
   // Load visible columns from localStorage on mount
   useEffect(() => {
@@ -2260,6 +2288,25 @@ const router = useRouter();
                     </th>
                   )}
 
+                  {/* Locations */}
+                  {visibleColumns.includes('locations') && (
+                    <th className="h-12 px-4 py-3 text-center align-middle text-sm font-medium text-muted-foreground min-w-[160px]">
+                      <div className="flex items-center justify-center gap-2">
+                        <span>Locations</span>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setLocationDisplayMode(prev => prev === 'percentage' ? 'usd' : 'percentage');
+                          }}
+                          className="text-xs px-1.5 py-0.5 rounded bg-muted hover:bg-muted/80 transition-colors"
+                          title={`Switch to ${locationDisplayMode === 'percentage' ? 'USD' : 'percentage'} view`}
+                        >
+                          {locationDisplayMode === 'percentage' ? '%' : '$'}
+                        </button>
+                      </div>
+                    </th>
+                  )}
+
                   {/* Optional Activity Defaults Columns */}
                   {visibleColumns.includes('aidType') && (
                     <th className="h-12 px-4 py-3 text-left align-middle text-sm font-medium text-muted-foreground min-w-[150px]">
@@ -3047,6 +3094,18 @@ const router = useRouter();
                       {visibleColumns.includes('subSectors') && (
                         <td className="px-4 py-2 text-sm text-foreground">
                           <SectorMiniBar sectors={activity.sectors} level="subsector" height={14} />
+                        </td>
+                      )}
+
+                      {/* Locations cell */}
+                      {visibleColumns.includes('locations') && (
+                        <td className="px-4 py-2 text-sm text-foreground">
+                          <LocationMiniBar 
+                            locations={activity.locations?.broad_coverage_locations as LocationData[] | undefined}
+                            displayMode={locationDisplayMode}
+                            totalValue={(activity.totalTransactions || 0) + (activity.totalBudget || 0)}
+                            height={14}
+                          />
                         </td>
                       )}
 

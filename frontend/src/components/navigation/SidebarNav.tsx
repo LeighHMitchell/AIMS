@@ -2,7 +2,7 @@
 
 import React, { useState } from "react"
 import Link from "next/link"
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 import {
   Home,
   Activity,
@@ -21,22 +21,48 @@ import {
   HelpCircle,
   CalendarClock,
   Wallet,
-  ChevronRight
+  ChevronRight,
+  Plus,
+  FolderPlus,
+  Zap,
+  Upload,
+  ChevronDown
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
+import { Button } from "@/components/ui/button"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { QuickAddActivityModal } from "@/components/modals/QuickAddActivityModal"
 
 interface SidebarNavProps {
   userRole?: string
   canManageUsers?: boolean
+  canCreateActivities?: boolean
+  isInActivityEditor?: boolean
   isLoading?: boolean
   isCollapsed?: boolean
   isInitialLoad?: boolean
 }
 
-export function SidebarNav({ userRole, canManageUsers, isLoading, isCollapsed = false, isInitialLoad = false }: SidebarNavProps) {
+export function SidebarNav({ 
+  userRole, 
+  canManageUsers, 
+  canCreateActivities,
+  isInActivityEditor = false,
+  isLoading, 
+  isCollapsed = false, 
+  isInitialLoad = false 
+}: SidebarNavProps) {
   const pathname = usePathname()
+  const router = useRouter()
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({
     "Explore": true,
     "Finances": true,
@@ -45,6 +71,8 @@ export function SidebarNav({ userRole, canManageUsers, isLoading, isCollapsed = 
     "Operations": true,
     "Support": true,
   })
+  const [showQuickAddModal, setShowQuickAddModal] = useState(false)
+  const [isImporting, setIsImporting] = useState(false)
 
   if (isLoading) {
     return (
@@ -135,6 +163,87 @@ export function SidebarNav({ userRole, canManageUsers, isLoading, isCollapsed = 
     <TooltipProvider delayDuration={100} skipDelayDuration={0}>
       <nav className="px-4 py-6">
         <div className="space-y-4">
+          {/* Add New Activity CTA Button */}
+          {canCreateActivities && (
+            <div className="pb-4 border-b border-gray-200 dark:border-gray-700">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button 
+                    className={cn(
+                      "w-full justify-center gap-2",
+                      isInActivityEditor && "opacity-50 cursor-not-allowed"
+                    )}
+                    disabled={isInActivityEditor}
+                    title={isInActivityEditor ? "Please finish editing the current activity first" : "Create a new activity"}
+                  >
+                    <Plus className="h-4 w-4" />
+                    {!isCollapsed && "Add New Activity"}
+                    {!isCollapsed && <ChevronDown className="h-3 w-3 ml-auto" />}
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" className="w-56">
+                  <DropdownMenuLabel>Create Activity</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => router.push("/activities/new")}>
+                    <FolderPlus className="mr-2 h-4 w-4" />
+                    <div className="flex flex-col">
+                      <span className="font-medium">Full Activity Editor</span>
+                      <span className="text-xs text-muted-foreground">Complete data entry</span>
+                    </div>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setShowQuickAddModal(true)}>
+                    <Zap className="mr-2 h-4 w-4" />
+                    <div className="flex flex-col">
+                      <span className="font-medium">Quick Add</span>
+                      <span className="text-xs text-muted-foreground">Minimal activity creation</span>
+                    </div>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={async () => {
+                      if (isImporting) return;
+                      setIsImporting(true);
+                      try {
+                        const response = await fetch('/api/activities', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({
+                            title: 'Imported Activity (Draft)',
+                            description: 'Activity created via IATI/XML import',
+                            status: '1',
+                            created_via: 'import',
+                          }),
+                        });
+                        if (!response.ok) {
+                          const err = await response.json();
+                          throw new Error(err.error || 'Failed to create draft activity');
+                        }
+                        const newActivity = await response.json();
+                        router.push(`/activities/new?id=${newActivity.id}&tab=xml-import`);
+                      } catch (e) {
+                        console.error('Failed to start import', e);
+                      } finally {
+                        setIsImporting(false);
+                      }
+                    }}
+                    disabled={isImporting}
+                  >
+                    <Upload className="mr-2 h-4 w-4" />
+                    <div className="flex flex-col">
+                      <span className="font-medium">Import from IATI/XML</span>
+                      <span className="text-xs text-muted-foreground">Import via Search, File, URL, or Paste</span>
+                    </div>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+
+              {/* Quick Add Modal */}
+              <QuickAddActivityModal
+                isOpen={showQuickAddModal}
+                onClose={() => setShowQuickAddModal(false)}
+              />
+            </div>
+          )}
+
           {/* Top Level Items */}
           <div className="space-y-1">
             {topLevelItems.filter(item => item.show).map((item) => {

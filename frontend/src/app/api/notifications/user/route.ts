@@ -96,24 +96,48 @@ export async function PUT(request: NextRequest) {
     }
 
     if (markAllRead) {
+      console.log('[User Notifications] Marking all as read for userId:', userId);
+      
+      // First, check how many unread notifications exist
+      const { count: unreadBefore } = await supabase
+        .from('user_notifications')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', userId)
+        .eq('is_read', false);
+      
+      console.log('[User Notifications] Unread notifications before update:', unreadBefore);
+      
       // Mark all notifications as read for this user
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('user_notifications')
         .update({
           is_read: true,
           read_at: new Date().toISOString(),
         })
         .eq('user_id', userId)
-        .eq('is_read', false);
+        .eq('is_read', false)
+        .select();
 
       if (error) {
         console.error('[User Notifications] Error marking all read:', error);
         return NextResponse.json({ error: error.message }, { status: 500 });
       }
 
+      console.log('[User Notifications] Rows updated:', data?.length || 0);
+
+      // Verify the update worked
+      const { count: unreadAfter } = await supabase
+        .from('user_notifications')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', userId)
+        .eq('is_read', false);
+      
+      console.log('[User Notifications] Unread notifications after update:', unreadAfter);
+
       return NextResponse.json({
         success: true,
         message: 'All notifications marked as read',
+        updated: data?.length || 0,
       });
     }
 

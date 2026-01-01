@@ -285,11 +285,25 @@ export function EnhancedSubnationalBreakdown({
         is_nationwide: false // We don't use nationwide with specific breakdowns
       }))
 
+      console.log('[DEBUG] Subnational autoSave payload:', {
+        activityId,
+        entriesCount: entries.length,
+        payload,
+        hasNonZeroPercentages: payload.some(p => p.percentage > 0)
+      });
+
       const response = await fetch(`/api/activities/${activityId}/subnational-breakdown`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       })
+
+      const responseData = await response.json();
+      console.log('[DEBUG] Subnational save response:', {
+        ok: response.ok,
+        status: response.status,
+        data: responseData
+      });
 
       if (response.ok) {
         // Only show success toast if user has made changes

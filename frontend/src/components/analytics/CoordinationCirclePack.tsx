@@ -25,6 +25,7 @@ interface CoordinationCirclePackProps {
   data: CoordinationHierarchy | null;
   width?: number;
   height?: number;
+  compact?: boolean;
 }
 
 interface TooltipState {
@@ -57,6 +58,7 @@ export function CoordinationCirclePack({
   data,
   width = 900,
   height = 700,
+  compact = false,
 }: CoordinationCirclePackProps) {
   const svgRef = useRef<SVGSVGElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);

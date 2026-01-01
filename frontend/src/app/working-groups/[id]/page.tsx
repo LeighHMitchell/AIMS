@@ -99,81 +99,16 @@ export default function WorkingGroupProfilePage() {
       
       const data = await response.json()
       
-      // Mock additional data for demonstration
-      const mockData: WorkingGroupDetails = {
+      // Use actual data from API with empty defaults for missing fields
+      const workingGroupData: WorkingGroupDetails = {
         ...data,
         status: data.status || (data.is_active ? 'active' : 'inactive'),
-        members: [
-          {
-            id: '1',
-            person_id: 'p1',
-            person_name: 'Dr. Sarah Johnson',
-            person_email: 'sarah.johnson@mop.gov',
-            person_organization: 'Ministry of Planning',
-            role: 'chair',
-            is_active: true,
-            joined_on: '2024-01-15'
-          },
-          {
-            id: '2',
-            person_id: 'p2',
-            person_name: 'John Smith',
-            person_email: 'john.smith@undp.org',
-            person_organization: 'UNDP',
-            role: 'secretary',
-            is_active: true,
-            joined_on: '2024-01-20'
-          },
-          {
-            id: '3',
-            person_id: 'p3',
-            person_name: 'Jane Doe',
-            person_email: 'jane.doe@worldbank.org',
-            person_organization: 'World Bank',
-            role: 'member',
-            is_active: true,
-            joined_on: '2024-02-01'
-          }
-        ],
-        documents: [
-          {
-            id: 'd1',
-            title: 'Terms of Reference',
-            description: 'Official ToR for the working group',
-            file_url: '#',
-            document_type: 'tor',
-            uploaded_at: '2024-01-10',
-            uploaded_by_name: 'Admin'
-          },
-          {
-            id: 'd2',
-            title: 'Q1 2024 Meeting Minutes',
-            description: 'Minutes from the quarterly meeting',
-            file_url: '#',
-            document_type: 'minutes',
-            uploaded_at: '2024-03-30',
-            uploaded_by_name: 'Secretary'
-          }
-        ],
-        activities: [
-          {
-            id: 'a1',
-            title: 'Health System Strengthening Project',
-            iati_id: 'MM-1-HSS-2024',
-            activity_status: 'implementation',
-            partner_name: 'WHO'
-          },
-          {
-            id: 'a2',
-            title: 'Primary Healthcare Infrastructure Development',
-            iati_id: 'MM-1-PHC-2024',
-            activity_status: 'implementation',
-            partner_name: 'JICA'
-          }
-        ]
+        members: data.members || [],
+        documents: data.documents || [],
+        activities: data.activities || []
       }
       
-      setWorkingGroup(mockData)
+      setWorkingGroup(workingGroupData)
       setEditedDescription(mockData.description || '')
     } catch (error) {
       console.error('Error fetching working group:', error)
@@ -366,47 +301,55 @@ export default function WorkingGroupProfilePage() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {workingGroup.members.map((member) => (
-                    <div key={member.id} className="flex items-center justify-between p-4 border rounded-lg">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-3">
-                          <h4 className="font-medium">{member.person_name}</h4>
-                          <Badge className={getRoleBadgeColor(member.role)}>
-                            {member.role}
-                          </Badge>
-                        </div>
-                        <div className="mt-1 space-y-1">
-                          {member.person_organization && (
-                            <div className="flex items-center gap-2 text-sm text-gray-600">
-                              <Building className="h-4 w-4" />
-                              {member.person_organization}
-                            </div>
-                          )}
-                          {member.person_email && (
-                            <div className="flex items-center gap-2 text-sm text-gray-600">
-                              <Mail className="h-4 w-4" />
-                              {member.person_email}
-                            </div>
-                          )}
-                          <p className="text-xs text-gray-500">
-                            Joined {format(new Date(member.joined_on), 'MMM d, yyyy')}
-                          </p>
-                        </div>
-                      </div>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="outline" size="icon" className="h-8 w-8">
-                            <MoreVertical className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem>View Profile</DropdownMenuItem>
-                          <DropdownMenuItem>Change Role</DropdownMenuItem>
-                          <DropdownMenuItem className="text-red-600">Remove</DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                  {workingGroup.members.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center py-8 text-center">
+                      <UserPlus className="h-12 w-12 text-gray-300 mb-3" />
+                      <p className="text-sm text-muted-foreground">No members yet</p>
+                      <p className="text-xs text-muted-foreground mt-1">Add members to this working group to get started</p>
                     </div>
-                  ))}
+                  ) : (
+                    workingGroup.members.map((member) => (
+                      <div key={member.id} className="flex items-center justify-between p-4 border rounded-lg">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-3">
+                            <h4 className="font-medium">{member.person_name}</h4>
+                            <Badge className={getRoleBadgeColor(member.role)}>
+                              {member.role}
+                            </Badge>
+                          </div>
+                          <div className="mt-1 space-y-1">
+                            {member.person_organization && (
+                              <div className="flex items-center gap-2 text-sm text-gray-600">
+                                <Building className="h-4 w-4" />
+                                {member.person_organization}
+                              </div>
+                            )}
+                            {member.person_email && (
+                              <div className="flex items-center gap-2 text-sm text-gray-600">
+                                <Mail className="h-4 w-4" />
+                                {member.person_email}
+                              </div>
+                            )}
+                            <p className="text-xs text-gray-500">
+                              Joined {format(new Date(member.joined_on), 'MMM d, yyyy')}
+                            </p>
+                          </div>
+                        </div>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="outline" size="icon" className="h-8 w-8">
+                              <MoreVertical className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem>View Profile</DropdownMenuItem>
+                            <DropdownMenuItem>Change Role</DropdownMenuItem>
+                            <DropdownMenuItem className="text-red-600">Remove</DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
+                    ))
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -420,25 +363,33 @@ export default function WorkingGroupProfilePage() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {workingGroup.activities.map((activity) => (
-                    <div 
-                      key={activity.id} 
-                      className="p-4 border rounded-lg hover:bg-gray-50 cursor-pointer"
-                      onClick={() => router.push(`/activities/${activity.id}`)}
-                    >
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <h4 className="font-medium">{activity.title}</h4>
-                          <p className="text-sm text-gray-600 mt-1">
-                            {activity.iati_id} • {activity.partner_name}
-                          </p>
-                        </div>
-                        <Badge variant="outline">
-                          {activity.activity_status}
-                        </Badge>
-                      </div>
+                  {workingGroup.activities.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center py-8 text-center">
+                      <FileText className="h-12 w-12 text-gray-300 mb-3" />
+                      <p className="text-sm text-muted-foreground">No activities linked</p>
+                      <p className="text-xs text-muted-foreground mt-1">Activities associated with this working group will appear here</p>
                     </div>
-                  ))}
+                  ) : (
+                    workingGroup.activities.map((activity) => (
+                      <div 
+                        key={activity.id} 
+                        className="p-4 border rounded-lg hover:bg-gray-50 cursor-pointer"
+                        onClick={() => router.push(`/activities/${activity.id}`)}
+                      >
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <h4 className="font-medium">{activity.title}</h4>
+                            <p className="text-sm text-gray-600 mt-1">
+                              {activity.iati_id} • {activity.partner_name}
+                            </p>
+                          </div>
+                          <Badge variant="outline">
+                            {activity.activity_status}
+                          </Badge>
+                        </div>
+                      </div>
+                    ))
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -458,30 +409,38 @@ export default function WorkingGroupProfilePage() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {workingGroup.documents.map((doc) => (
-                    <div key={doc.id} className="p-4 border rounded-lg">
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2">
-                            <span className="text-2xl">{getDocumentTypeIcon(doc.document_type)}</span>
-                            <div>
-                              <h4 className="font-medium">{doc.title}</h4>
-                              {doc.description && (
-                                <p className="text-sm text-gray-600 mt-1">{doc.description}</p>
-                              )}
-                              <p className="text-xs text-gray-500 mt-1">
-                                Uploaded on {format(new Date(doc.uploaded_at), 'MMM d, yyyy')}
-                                {doc.uploaded_by_name && ` by ${doc.uploaded_by_name}`}
-                              </p>
+                  {workingGroup.documents.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center py-8 text-center">
+                      <FileText className="h-12 w-12 text-gray-300 mb-3" />
+                      <p className="text-sm text-muted-foreground">No documents uploaded</p>
+                      <p className="text-xs text-muted-foreground mt-1">Upload documents to share with working group members</p>
+                    </div>
+                  ) : (
+                    workingGroup.documents.map((doc) => (
+                      <div key={doc.id} className="p-4 border rounded-lg">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2">
+                              <span className="text-2xl">{getDocumentTypeIcon(doc.document_type)}</span>
+                              <div>
+                                <h4 className="font-medium">{doc.title}</h4>
+                                {doc.description && (
+                                  <p className="text-sm text-gray-600 mt-1">{doc.description}</p>
+                                )}
+                                <p className="text-xs text-gray-500 mt-1">
+                                  Uploaded on {format(new Date(doc.uploaded_at), 'MMM d, yyyy')}
+                                  {doc.uploaded_by_name && ` by ${doc.uploaded_by_name}`}
+                                </p>
+                              </div>
                             </div>
                           </div>
+                          <Button variant="ghost" size="icon">
+                            <Download className="h-4 w-4" />
+                          </Button>
                         </div>
-                        <Button variant="ghost" size="icon">
-                          <Download className="h-4 w-4" />
-                        </Button>
                       </div>
-                    </div>
-                  ))}
+                    ))
+                  )}
                 </div>
               </CardContent>
             </Card>

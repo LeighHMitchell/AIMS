@@ -31,11 +31,13 @@ interface AllActivitiesFundingSourceBreakdownProps {
     to: Date
   }
   refreshKey?: number
+  compact?: boolean
 }
 
 export function AllActivitiesFundingSourceBreakdown({
   dateRange,
-  refreshKey
+  refreshKey,
+  compact = false
 }: AllActivitiesFundingSourceBreakdownProps) {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -55,6 +57,10 @@ export function AllActivitiesFundingSourceBreakdown({
     setStagedTransactionTypes(fundingTransactionTypes)
   }, [fundingTransactionTypes])
 
+  // Use date strings instead of object reference to avoid infinite re-renders
+  const dateFromStr = dateRange?.from.toISOString()
+  const dateToStr = dateRange?.to.toISOString()
+  
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -68,9 +74,9 @@ export function AllActivitiesFundingSourceBreakdown({
           params.set('transactionTypes', fundingTransactionTypes.join(','))
         }
 
-        if (dateRange) {
-          params.set('dateFrom', dateRange.from.toISOString())
-          params.set('dateTo', dateRange.to.toISOString())
+        if (dateFromStr && dateToStr) {
+          params.set('dateFrom', dateFromStr)
+          params.set('dateTo', dateToStr)
         }
 
         const response = await fetch(`/api/analytics/funding-source-breakdown?${params.toString()}`)
@@ -101,7 +107,8 @@ export function AllActivitiesFundingSourceBreakdown({
     }
 
     fetchData()
-  }, [dateRange, refreshKey, fundingSourceType, fundingTransactionTypes])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dateFromStr, dateToStr, refreshKey, fundingSourceType, fundingTransactionTypes])
 
   const formatCurrency = (value: number) => {
     if (value >= 1000000) {
@@ -195,6 +202,29 @@ export function AllActivitiesFundingSourceBreakdown({
       console.error('Error loading html2canvas:', error)
       toast.error('Failed to load export library')
     })
+  }
+
+  // Compact mode renders just the chart without Card wrapper and filters
+  if (compact) {
+    if (loading) {
+      return <Skeleton className="h-full w-full" />
+    }
+    if (error || !fundingSourceData.providers || fundingSourceData.providers.length === 0) {
+      return (
+        <div className="h-full w-full flex items-center justify-center text-slate-500">
+          <p className="text-sm">{error || 'No data available'}</p>
+        </div>
+      )
+    }
+    return (
+      <div className="h-full w-full funding-source-chart">
+        <FundingSourceSankey
+          data={fundingSourceData}
+          fundingSourceType={fundingSourceType}
+          fundingTransactionTypes={fundingTransactionTypes}
+        />
+      </div>
+    )
   }
 
   if (loading) {

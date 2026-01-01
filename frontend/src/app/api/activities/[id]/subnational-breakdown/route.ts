@@ -34,6 +34,11 @@ export async function GET(
       )
     }
 
+    console.log('[DEBUG] Subnational GET for activity:', activityId, {
+      count: breakdowns?.length || 0,
+      data: breakdowns
+    });
+
     return NextResponse.json(breakdowns || [])
   } catch (error) {
     console.error('Error in GET /api/activities/[id]/subnational-breakdown:', error)
@@ -100,6 +105,11 @@ export async function POST(
     }
 
     // Insert new breakdowns if any
+    console.log('[DEBUG] Subnational POST for activity:', activityId, {
+      payloadCount: body.length,
+      payload: body
+    });
+    
     if (body.length > 0) {
       const breakdownsToInsert = body.map(item => ({
         activity_id: activityId,

@@ -23,6 +23,7 @@ interface SDGCoverageChartProps {
   selectedSdgs: number[]
   metric: 'activities' | 'budget' | 'planned'
   refreshKey: number
+  compact?: boolean
 }
 
 interface CoverageData {
@@ -40,7 +41,8 @@ export function SDGCoverageChart({
   dateRange,
   selectedSdgs,
   metric,
-  refreshKey
+  refreshKey,
+  compact = false
 }: SDGCoverageChartProps) {
   const [data, setData] = useState<CoverageData[]>([])
   const [loading, setLoading] = useState(true)
@@ -148,6 +150,49 @@ export function SDGCoverageChart({
       )
     }
     return null
+  }
+
+  // Compact mode renders just the chart without Card wrapper and filters
+  if (compact) {
+    if (loading) {
+      return <Skeleton className="h-full w-full" />
+    }
+    if (chartData.length === 0) {
+      return (
+        <div className="h-full flex items-center justify-center text-slate-500">
+          <p className="text-sm">No data available</p>
+        </div>
+      )
+    }
+    return (
+      <div className="h-full w-full">
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart
+            data={chartData.slice(0, 10)}
+            layout="vertical"
+            margin={{ top: 5, right: 20, left: 50, bottom: 5 }}
+          >
+            <CartesianGrid strokeDasharray="3 3" horizontal vertical={false} />
+            <XAxis type="number" fontSize={10} />
+            <YAxis
+              type="category"
+              dataKey="goal"
+              tick={{ fontSize: 9 }}
+              width={45}
+            />
+            <Tooltip content={<CustomTooltip />} />
+            <Bar
+              dataKey="value"
+              radius={[0, 4, 4, 0]}
+            >
+              {chartData.slice(0, 10).map((entry, index) => (
+                <Cell key={`cell-${index}`} fill={entry.color} />
+              ))}
+            </Bar>
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
+    )
   }
 
   if (loading) {
@@ -282,6 +327,7 @@ export function SDGCoverageChart({
     </Card>
   )
 }
+
 
 
 

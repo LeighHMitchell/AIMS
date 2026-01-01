@@ -18,6 +18,24 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { AlertCircle, BarChart3, TrendingUpIcon } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { Button } from '@/components/ui/button'
+// Inline currency formatter to avoid initialization issues
+const formatCurrencyAbbreviated = (value: number): string => {
+  const isNegative = value < 0
+  const absValue = Math.abs(value)
+
+  let formatted = ''
+  if (absValue >= 1000000000) {
+    formatted = `$${(absValue / 1000000000).toFixed(1)}b`
+  } else if (absValue >= 1000000) {
+    formatted = `$${(absValue / 1000000).toFixed(1)}m`
+  } else if (absValue >= 1000) {
+    formatted = `$${(absValue / 1000).toFixed(1)}k`
+  } else {
+    formatted = `$${absValue.toFixed(0)}`
+  }
+
+  return isNegative ? `-${formatted}` : formatted
+}
 
 type TimePeriod = '1m' | '3m' | '6m' | '1y' | '5y' | 'all'
 type GroupBy = 'year' | 'month'
@@ -251,9 +269,8 @@ export function PlannedVsActualDisbursements({
     return `$${value.toFixed(0)}`
   }
 
-  const formatTooltipValue = (value: number) => {
-    return `$${value.toLocaleString()}`
-  }
+  // Use the module-level currency formatter for tooltips
+  const formatTooltipValue = formatCurrencyAbbreviated
 
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {

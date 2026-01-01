@@ -492,7 +492,7 @@ export function CommentsDrawer({ activityId, isOpen, onClose }: CommentsDrawerPr
                       <div className="flex items-center gap-2">
                         <span className="font-medium text-sm truncate">{comment.author?.name || 'Unknown User'}</span>
                         <Badge variant={getRoleBadgeVariant(comment.author?.role)} className="text-xs">
-                          {comment.author?.role || 'user'}
+                          {getRoleDisplayLabel(comment.author?.role)}
                         </Badge>
                       </div>
                     </div>
@@ -521,7 +521,7 @@ export function CommentsDrawer({ activityId, isOpen, onClose }: CommentsDrawerPr
                               <div className="flex items-center gap-2">
                                 <span className="font-medium text-xs truncate">{reply.author?.name || 'Unknown User'}</span>
                                 <Badge variant={getRoleBadgeVariant(reply.author?.role)} className="text-xs h-4">
-                                  {reply.author?.role || 'user'}
+                                  {getRoleDisplayLabel(reply.author?.role)}
                                 </Badge>
                               </div>
                             </div>

@@ -20,16 +20,35 @@ import { SectorMetrics, SectorAnalyticsFilters, SectorSortField, SortDirection }
 import { BarChart3, Download, AlignLeft, AlignVerticalSpaceAround, Users, FolderKanban, Table as TableIcon, Search, FileImage } from 'lucide-react'
 import { AlertCircle } from 'lucide-react'
 import { CHART_BAR_COLORS } from './sectorColorMap'
+// Inline currency formatter to avoid initialization issues
+const formatCurrencyAbbreviated = (value: number): string => {
+  const isNegative = value < 0
+  const absValue = Math.abs(value)
+
+  let formatted = ''
+  if (absValue >= 1000000000) {
+    formatted = `$${(absValue / 1000000000).toFixed(1)}b`
+  } else if (absValue >= 1000000) {
+    formatted = `$${(absValue / 1000000).toFixed(1)}m`
+  } else if (absValue >= 1000) {
+    formatted = `$${(absValue / 1000).toFixed(1)}k`
+  } else {
+    formatted = `$${absValue.toFixed(0)}`
+  }
+
+  return isNegative ? `-${formatted}` : formatted
+}
 
 interface SectorBarChartProps {
   data: SectorMetrics[]
   filters: SectorAnalyticsFilters
+  compact?: boolean
 }
 
 type ChartOrientation = 'horizontal' | 'vertical'
 type ViewType = 'bar' | 'table'
 
-export function SectorBarChart({ data, filters }: SectorBarChartProps) {
+export function SectorBarChart({ data, filters, compact = false }: SectorBarChartProps) {
   const [orientation, setOrientation] = useState<ChartOrientation>('horizontal')
   const [viewType, setViewType] = useState<ViewType>('bar')
   const [showProjectCount, setShowProjectCount] = useState(false)
@@ -244,12 +263,12 @@ export function SectorBarChart({ data, filters }: SectorBarChartProps) {
     }).format(value)
   }
 
+  // Use shared currency formatter for tooltips
   const formatTooltipCurrency = (value: number) => {
     if (value === null || value === undefined || isNaN(value) || !isFinite(value)) {
-      return '$0.00m'
+      return '$0'
     }
-    const millions = value / 1_000_000
-    return `$${millions.toFixed(2)}m`
+    return formatCurrencyAbbreviated(value)
   }
 
   // Use brand color palette for chart bars
@@ -446,6 +465,41 @@ export function SectorBarChart({ data, filters }: SectorBarChartProps) {
     return hiddenSeries.has(dataKey) ? 0.3 : 1
   }
 
+  // Compact mode renders just the chart without Card wrapper and filters
+  if (compact) {
+    if (!data || data.length === 0) {
+      return (
+        <div className="h-full flex items-center justify-center text-slate-500">
+          <p className="text-sm">No data available</p>
+        </div>
+      )
+    }
+    return (
+      <div className="h-full w-full">
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart
+            data={chartData.slice(0, 8)}
+            layout="vertical"
+            margin={{ top: 5, right: 30, left: 80, bottom: 5 }}
+          >
+            <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} />
+            <XAxis type="number" tickFormatter={(v) => v >= 1e6 ? `$${(v/1e6).toFixed(0)}m` : `$${(v/1e3).toFixed(0)}k`} fontSize={10} />
+            <YAxis
+              type="category"
+              dataKey="name"
+              width={75}
+              tick={{ fontSize: 9 }}
+              interval={0}
+              tickFormatter={(value) => value.length > 12 ? value.slice(0, 12) + '...' : value}
+            />
+            <Tooltip content={<CustomTooltip />} />
+            <Bar dataKey="actual" name="Actual" fill={CHART_BAR_COLORS.actual} radius={[0, 4, 4, 0]} />
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
+    )
+  }
+
   if (!data || data.length === 0) {
     return (
       <Card className="border-slate-200">
@@ -493,18 +547,18 @@ export function SectorBarChart({ data, filters }: SectorBarChartProps) {
                   size="sm"
                   onClick={() => setViewType('bar')}
                   className="h-8"
+                  title="Bar"
                 >
-                  <BarChart3 className="h-4 w-4 mr-1.5" />
-                  Bar
+                  <BarChart3 className="h-4 w-4" />
                 </Button>
                 <Button
                   variant={viewType === 'table' ? 'default' : 'ghost'}
                   size="sm"
                   onClick={() => setViewType('table')}
                   className="h-8"
+                  title="Table"
                 >
-                  <TableIcon className="h-4 w-4 mr-1.5" />
-                  Table
+                  <TableIcon className="h-4 w-4" />
                 </Button>
               </div>
 
@@ -518,18 +572,18 @@ export function SectorBarChart({ data, filters }: SectorBarChartProps) {
                       size="sm"
                       onClick={() => setOrientation('horizontal')}
                       className="h-8"
+                      title="Horizontal"
                     >
-                      <AlignLeft className="h-4 w-4 mr-1.5" />
-                      Horizontal
+                      <AlignLeft className="h-4 w-4" />
                     </Button>
                     <Button
                       variant={orientation === 'vertical' ? 'default' : 'ghost'}
                       size="sm"
                       onClick={() => setOrientation('vertical')}
                       className="h-8"
+                      title="Vertical"
                     >
-                      <AlignVerticalSpaceAround className="h-4 w-4 mr-1.5" />
-                      Vertical
+                      <AlignVerticalSpaceAround className="h-4 w-4" />
                     </Button>
                   </div>
 
@@ -554,18 +608,18 @@ export function SectorBarChart({ data, filters }: SectorBarChartProps) {
                       size="sm"
                       onClick={() => setShowProjectCount(!showProjectCount)}
                       className="h-8"
+                      title="Projects"
                     >
-                      <FolderKanban className="h-4 w-4 mr-1.5" />
-                      Projects
+                      <FolderKanban className="h-4 w-4" />
                     </Button>
                     <Button
                       variant={showPartnerCount ? 'default' : 'ghost'}
                       size="sm"
                       onClick={() => setShowPartnerCount(!showPartnerCount)}
                       className="h-8"
+                      title="Partners"
                     >
-                      <Users className="h-4 w-4 mr-1.5" />
-                      Partners
+                      <Users className="h-4 w-4" />
                     </Button>
                   </div>
                 </>

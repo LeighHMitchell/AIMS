@@ -442,7 +442,7 @@ export function EnhancedAidOnBudgetChart({ refreshKey }: EnhancedAidOnBudgetChar
           showTooltip(event, {
             title: d.data.type,
             values: [
-              { label: "Amount", value: formatCurrency(d.data.value), color: d.data.color },
+              { label: "Amount", value: formatAbbreviated(d.data.value), color: d.data.color },
               { label: "Share", value: `${percentage}%` },
             ],
           });
@@ -452,7 +452,7 @@ export function EnhancedAidOnBudgetChart({ refreshKey }: EnhancedAidOnBudgetChar
           showTooltip(event, {
             title: d.data.type,
             values: [
-              { label: "Amount", value: formatCurrency(d.data.value), color: d.data.color },
+              { label: "Amount", value: formatAbbreviated(d.data.value), color: d.data.color },
               { label: "Share", value: `${percentage}%` },
             ],
           });
@@ -601,10 +601,10 @@ export function EnhancedAidOnBudgetChart({ refreshKey }: EnhancedAidOnBudgetChar
             showTooltip(event, {
               title: `${sector.code} - ${sector.name}`,
               values: [
-                { label: "Total", value: formatCurrency(sectorTotal) },
-                { label: "Domestic", value: formatCurrency(sector.domesticExpenditure), color: palette.blueSlate },
-                { label: "On-Budget Aid", value: formatCurrency(sector.onBudgetAid), color: palette.coolSteel },
-                { label: "Off-Budget Aid", value: formatCurrency(sector.offBudgetAid), color: palette.primaryScarlet },
+                { label: "Total", value: formatAbbreviated(sectorTotal) },
+                { label: "Domestic", value: formatAbbreviated(sector.domesticExpenditure), color: palette.blueSlate },
+                { label: "On-Budget Aid", value: formatAbbreviated(sector.onBudgetAid), color: palette.coolSteel },
+                { label: "Off-Budget Aid", value: formatAbbreviated(sector.offBudgetAid), color: palette.primaryScarlet },
                 { label: "Share", value: `${pct}%` },
               ],
             });
@@ -614,10 +614,10 @@ export function EnhancedAidOnBudgetChart({ refreshKey }: EnhancedAidOnBudgetChar
             showTooltip(event, {
               title: `${sector.code} - ${sector.name}`,
               values: [
-                { label: "Total", value: formatCurrency(sectorTotal) },
-                { label: "Domestic", value: formatCurrency(sector.domesticExpenditure), color: palette.blueSlate },
-                { label: "On-Budget Aid", value: formatCurrency(sector.onBudgetAid), color: palette.coolSteel },
-                { label: "Off-Budget Aid", value: formatCurrency(sector.offBudgetAid), color: palette.primaryScarlet },
+                { label: "Total", value: formatAbbreviated(sectorTotal) },
+                { label: "Domestic", value: formatAbbreviated(sector.domesticExpenditure), color: palette.blueSlate },
+                { label: "On-Budget Aid", value: formatAbbreviated(sector.onBudgetAid), color: palette.coolSteel },
+                { label: "Off-Budget Aid", value: formatAbbreviated(sector.offBudgetAid), color: palette.primaryScarlet },
                 { label: "Share", value: `${pct}%` },
               ],
             });
@@ -987,19 +987,22 @@ export function EnhancedAidOnBudgetChart({ refreshKey }: EnhancedAidOnBudgetChar
                   </div>
                   <table className="text-sm">
                     <tbody>
-                      {tooltip.content.values.map((item, i) => (
-                        <tr key={i} className="border-b last:border-b-0" style={{ borderColor: '#e5e7eb' }}>
-                          <td className="px-3 py-1.5 text-left" style={{ color: '#6b7280' }}>
-                            {item.label}
-                          </td>
-                          <td
-                            className="px-3 py-1.5 text-right font-medium"
-                            style={{ color: item.color || '#4c5568' }}
-                          >
-                            {item.value}
-                          </td>
-                        </tr>
-                      ))}
+                      {tooltip.content.values.map((item, i) => {
+                        const isIndented = item.label === "Domestic" || item.label === "On-Budget Aid" || item.label === "Off-Budget Aid";
+                        return (
+                          <tr key={i} className="border-b last:border-b-0" style={{ borderColor: '#e5e7eb' }}>
+                            <td className="px-3 py-1.5 text-left" style={{ color: '#6b7280', paddingLeft: isIndented ? '1.5rem' : '0.75rem' }}>
+                              {item.label}
+                            </td>
+                            <td
+                              className="px-3 py-1.5 text-right font-medium"
+                              style={{ color: item.color || '#4c5568' }}
+                            >
+                              {item.value}
+                            </td>
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>

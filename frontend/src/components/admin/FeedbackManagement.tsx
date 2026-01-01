@@ -1047,7 +1047,7 @@ function FeedbackDetailModal({
           <div>
             <h4 className="font-medium mb-2">User Message</h4>
             <div className="bg-gray-50 border p-4 rounded-lg">
-              <p className="whitespace-pre-wrap">{feedback.message}</p>
+              <p className="whitespace-pre-wrap break-words">{feedback.message}</p>
             </div>
           </div>
 
@@ -1061,7 +1061,7 @@ function FeedbackDetailModal({
                   <div className="space-y-3">
                     <div className="flex items-center gap-2 text-sm text-gray-600">
                       <Image className="h-4 w-4" />
-                      <span>{feedback.attachment_filename}</span>
+                      <span className="break-all">{feedback.attachment_filename}</span>
                       {feedback.attachment_size && (
                         <span className="text-gray-400">({formatFileSize(feedback.attachment_size)})</span>
                       )}
@@ -1104,7 +1104,7 @@ function FeedbackDetailModal({
                         return <AttachmentIcon className="h-5 w-5 text-gray-500" />;
                       })()}
                       <div>
-                        <p className="text-sm font-medium">{feedback.attachment_filename}</p>
+                        <p className="text-sm font-medium break-all">{feedback.attachment_filename}</p>
                         {feedback.attachment_size && (
                           <p className="text-xs text-gray-500">{formatFileSize(feedback.attachment_size)}</p>
                         )}

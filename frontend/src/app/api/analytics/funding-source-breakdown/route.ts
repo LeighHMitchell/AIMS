@@ -5,6 +5,31 @@ import { fixedCurrencyConverter } from '@/lib/currency-converter-fixed'
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
 
+// Simple in-memory cache for analytics data
+interface CacheEntry {
+  data: any
+  expiresAt: number
+}
+const fundingSourceCache = new Map<string, CacheEntry>()
+const CACHE_TTL = 5 * 60 * 1000 // 5 minutes
+
+function getCached(key: string): any | null {
+  const entry = fundingSourceCache.get(key)
+  if (!entry) return null
+  if (Date.now() > entry.expiresAt) {
+    fundingSourceCache.delete(key)
+    return null
+  }
+  return entry.data
+}
+
+function setCache(key: string, data: any): void {
+  fundingSourceCache.set(key, {
+    data,
+    expiresAt: Date.now() + CACHE_TTL
+  })
+}
+
 export const dynamic = 'force-dynamic'
 
 export async function GET(request: NextRequest) {
@@ -20,6 +45,14 @@ export async function GET(request: NextRequest) {
     const transactionTypes = transactionTypesParam 
       ? transactionTypesParam.split(',').filter(Boolean) 
       : []
+
+    // Check cache first
+    const cacheKey = `funding-source:${dateFrom}:${dateTo}:${sourceType}:${transactionTypes.join(',')}`
+    const cached = getCached(cacheKey)
+    if (cached) {
+      console.log('[Funding Source Breakdown] Returning cached data')
+      return NextResponse.json(cached)
+    }
 
     console.log('[Funding Source Breakdown] Request params:', { dateFrom, dateTo, sourceType, transactionTypes })
 
@@ -89,7 +122,7 @@ export async function GET(request: NextRequest) {
 
       console.log(`[Funding Source Breakdown] Planned: ${plannedDisbursements?.length || 0} records, ${flows.length} flows`)
 
-      return NextResponse.json({
+      const result = {
         providers: Object.entries(byOrg)
           .map(([name, value]) => ({ name, value }))
           .sort((a, b) => b.value - a.value),
@@ -97,7 +130,12 @@ export async function GET(request: NextRequest) {
           .map(([name, value]) => ({ name, value }))
           .sort((a, b) => b.value - a.value),
         flows
-      })
+      }
+      
+      // Cache the result
+      setCache(cacheKey, result)
+      
+      return NextResponse.json(result)
     } else {
       // Fetch transactions for all activities
       let transactionsQuery = supabase
@@ -179,7 +217,7 @@ export async function GET(request: NextRequest) {
 
       console.log(`[Funding Source Breakdown] Transactions: ${transactions?.length || 0} records, ${aggregatedFlowsArray.length} flows`)
 
-      return NextResponse.json({
+      const result = {
         providers: Object.entries(byOrg)
           .map(([name, value]) => ({ name, value }))
           .sort((a, b) => b.value - a.value),
@@ -187,7 +225,12 @@ export async function GET(request: NextRequest) {
           .map(([name, value]) => ({ name, value }))
           .sort((a, b) => b.value - a.value),
         flows: aggregatedFlowsArray
-      })
+      }
+      
+      // Cache the result
+      setCache(cacheKey, result)
+      
+      return NextResponse.json(result)
     }
   } catch (error) {
     console.error('[Funding Source Breakdown] Unexpected error:', error)

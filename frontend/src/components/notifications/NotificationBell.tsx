@@ -83,15 +83,41 @@ export function NotificationBell({ userId }: NotificationBellProps) {
   };
 
   const markAllAsRead = async () => {
+    // Store previous state for rollback
+    const prevUnreadCount = unreadCount;
+    const prevNotifications = notifications;
+    
     try {
-      await fetch('/api/notifications/user', {
+      // Optimistically update UI immediately
+      setUnreadCount(0);
+      setNotifications(prev => 
+        prev.map(n => ({ ...n, is_read: true, read_at: new Date().toISOString() }))
+      );
+      setOpen(false); // Close the dropdown
+      
+      // Then make the API call
+      const response = await fetch('/api/notifications/user', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId, markAllRead: true }),
       });
-      fetchNotifications();
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        console.error('[NotificationBell] Mark all read failed:', response.status, errorData);
+        // Rollback optimistic update on error
+        setUnreadCount(prevUnreadCount);
+        setNotifications(prevNotifications);
+        return;
+      }
+      
+      console.log('[NotificationBell] Successfully marked all as read');
+      // Don't refetch - optimistic update is now the source of truth
     } catch (error) {
       console.error('[NotificationBell] Error marking all read:', error);
+      // Rollback optimistic update on error
+      setUnreadCount(prevUnreadCount);
+      setNotifications(prevNotifications);
     }
   };
 
@@ -108,11 +134,11 @@ export function NotificationBell({ userId }: NotificationBellProps) {
   const getNotificationIcon = (type: string) => {
     switch (type) {
       case 'faq_question_answered':
-        return <HelpCircle className="h-4 w-4 text-green-500" />;
+        return <HelpCircle className="h-4 w-4 text-gray-500" />;
       case 'faq_new_question':
-        return <MessageSquare className="h-4 w-4 text-blue-500" />;
+        return <MessageSquare className="h-4 w-4 text-gray-500" />;
       case 'calendar_event_pending':
-        return <Calendar className="h-4 w-4 text-orange-500" />;
+        return <Calendar className="h-4 w-4 text-gray-500" />;
       default:
         return <Bell className="h-4 w-4 text-gray-500" />;
     }
@@ -174,12 +200,12 @@ export function NotificationBell({ userId }: NotificationBellProps) {
                   {getNotificationIcon(notification.type)}
                   <div className="flex-1 min-w-0">
                     <p className={cn(
-                      'text-sm truncate',
+                      'text-sm break-words',
                       !notification.is_read && 'font-medium'
                     )}>
                       {notification.title}
                     </p>
-                    <p className="text-xs text-gray-600 line-clamp-2">
+                    <p className="text-xs text-gray-600 break-words">
                       {notification.message}
                     </p>
                     <p className="text-xs text-gray-400 mt-1">

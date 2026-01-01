@@ -43,6 +43,8 @@ import {
   splitPlannedDisbursementAcrossYears, 
   splitTransactionAcrossYears 
 } from '@/utils/year-allocation'
+import { useOrganizations } from '@/hooks/use-organizations'
+import { ActivitySpendTrajectoryChart } from '@/components/charts/ActivitySpendTrajectoryChart'
 
 type TimePeriod = '1m' | '3m' | '6m' | '1y' | '5y' | 'all'
 type GroupBy = 'year' | 'month'
@@ -233,11 +235,16 @@ function generateYearTicks(data: any[], timestampField: string = 'timestamp') {
 /**
  * D3-based Sankey visualization for funding source flow
  */
+interface OrgInfo {
+  name: string // Full organization name
+  displayName: string // Acronym if available, otherwise full name
+}
+
 interface FundingSourceSankeyProps {
   data: {
-    providers: { name: string; value: number }[]
-    receivers: { name: string; value: number }[]
-    flows: { provider: string; receiver: string; value: number }[]
+    providers: { name: string; displayName: string; value: number }[]
+    receivers: { name: string; displayName: string; value: number }[]
+    flows: { provider: string; providerDisplay: string; receiver: string; receiverDisplay: string; value: number }[]
   }
   fundingSourceType: 'transactions' | 'planned'
   fundingTransactionType?: string // Single type (backward compat)
@@ -340,7 +347,7 @@ export const FundingSourceSankey: React.FC<FundingSourceSankeyProps> = ({
 
     // Create tooltip
     const tooltip = d3.select('body').append('div')
-      .attr('class', 'absolute bg-gray-900 text-white p-3 rounded-lg shadow-lg text-sm pointer-events-none z-50')
+      .attr('class', 'absolute bg-white border border-slate-200 rounded-lg shadow-lg text-sm pointer-events-none z-50')
       .style('opacity', 0)
 
     // Prepare data - show top 8 providers and receivers
@@ -368,7 +375,8 @@ export const FundingSourceSankey: React.FC<FundingSourceSankeyProps> = ({
     // Create nodes
     interface SankeyNode {
       id: string
-      name: string
+      name: string // Full name for tooltips
+      displayName: string // Acronym or short name for labels
       value: number
       x0: number
       x1: number
@@ -390,6 +398,7 @@ export const FundingSourceSankey: React.FC<FundingSourceSankeyProps> = ({
       nodes.push({
         id: `provider-${provider.name}`,
         name: provider.name,
+        displayName: provider.displayName || provider.name,
         value: provider.value,
         x0: 0,
         x1: nodeWidth,
@@ -409,6 +418,7 @@ export const FundingSourceSankey: React.FC<FundingSourceSankeyProps> = ({
       nodes.push({
         id: `receiver-${receiver.name}`,
         name: receiver.name,
+        displayName: receiver.displayName || receiver.name,
         value: receiver.value,
         x0: innerWidth - nodeWidth,
         x1: innerWidth,
@@ -494,10 +504,31 @@ export const FundingSourceSankey: React.FC<FundingSourceSankeyProps> = ({
         .on('mouseover', function(event) {
           d3.select(this).attr('fill-opacity', 0.7)
           tooltip.style('opacity', 1)
+          // Show display names in header, full names if different
+          const providerLabel = flow.providerDisplay !== flow.provider 
+            ? `${flow.providerDisplay} (${flow.provider})` 
+            : flow.provider
+          const receiverLabel = flow.receiverDisplay !== flow.receiver 
+            ? `${flow.receiverDisplay} (${flow.receiver})` 
+            : flow.receiver
           tooltip.html(`
-            <div class="font-semibold mb-1">${flow.provider} → ${flow.receiver}</div>
-            <div class="text-lg font-bold text-gray-300">${formatCurrency(flow.value)}</div>
-            <div class="text-xs text-gray-400">${((flow.value / totalValue) * 100).toFixed(1)}% of total</div>
+            <div class="bg-slate-100 px-3 py-2 border-b border-slate-200 rounded-t-lg">
+              <div class="font-semibold text-slate-900 text-sm">${providerLabel} → ${receiverLabel}</div>
+            </div>
+            <div class="p-2">
+              <table class="w-full text-sm">
+                <tbody>
+                  <tr class="border-b border-slate-100 last:border-b-0">
+                    <td class="py-1.5 pr-4 text-slate-700 font-medium">Amount</td>
+                    <td class="py-1.5 text-right font-semibold text-slate-900">${formatCurrency(flow.value)}</td>
+                  </tr>
+                  <tr class="border-b border-slate-100 last:border-b-0">
+                    <td class="py-1.5 pr-4 text-slate-700 font-medium">% of Total</td>
+                    <td class="py-1.5 text-right font-semibold text-slate-900">${((flow.value / totalValue) * 100).toFixed(1)}%</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
           `)
             .style('left', (event.pageX + 10) + 'px')
             .style('top', (event.pageY - 10) + 'px')
@@ -528,10 +559,25 @@ export const FundingSourceSankey: React.FC<FundingSourceSankeyProps> = ({
       .on('mouseover', function(event, d) {
         d3.select(this).style('filter', 'brightness(1.2)')
         tooltip.style('opacity', 1)
+        // Show acronym and full name if they differ
+        const nameDisplay = d.displayName !== d.name 
+          ? `<div class="font-semibold">${d.displayName}</div><div class="text-xs text-gray-400 mb-1">${d.name}</div>`
+          : `<div class="font-semibold">${d.name}</div>`
         tooltip.html(`
-          <div class="font-semibold">${d.name}</div>
-          <div class="text-lg font-bold mt-2 text-gray-300">${formatCurrency(d.value)}</div>
-          <div class="text-xs text-gray-400">${d.type === 'provider' ? 'Provider' : 'Receiver'}</div>
+          <div class="bg-slate-100 px-3 py-2 border-b border-slate-200 rounded-t-lg">
+            ${nameDisplay}
+            <div class="text-xs text-slate-600 mt-0.5">${d.type === 'provider' ? 'Provider' : 'Receiver'}</div>
+          </div>
+          <div class="p-2">
+            <table class="w-full text-sm">
+              <tbody>
+                <tr class="border-b border-slate-100 last:border-b-0">
+                  <td class="py-1.5 pr-4 text-slate-700 font-medium">Amount</td>
+                  <td class="py-1.5 text-right font-semibold text-slate-900">${formatCurrency(d.value)}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         `)
           .style('left', (event.pageX + 10) + 'px')
           .style('top', (event.pageY - 10) + 'px')
@@ -541,7 +587,7 @@ export const FundingSourceSankey: React.FC<FundingSourceSankeyProps> = ({
         tooltip.style('opacity', 0)
       })
 
-    // Add node labels
+    // Add node labels (using displayName - acronym if available)
     nodeGroup.append('text')
       .attr('x', d => d.type === 'provider' ? d.x0 - 8 : d.x1 + 8)
       .attr('y', d => (d.y0 + d.y1) / 2)
@@ -552,7 +598,8 @@ export const FundingSourceSankey: React.FC<FundingSourceSankeyProps> = ({
       .attr('fill', '#374151')
       .text(d => {
         const maxLength = 28
-        return d.name.length > maxLength ? d.name.substring(0, maxLength) + '...' : d.name
+        const label = d.displayName || d.name
+        return label.length > maxLength ? label.substring(0, maxLength) + '...' : label
       })
       .style('pointer-events', 'none')
 
@@ -603,6 +650,7 @@ export default function FinancialAnalyticsTab({
   budgets = [], 
   plannedDisbursements = [] 
 }: FinancialAnalyticsTabProps) {
+  const { organizations } = useOrganizations()
   const [loading, setLoading] = useState(true)
   const [rawBudgetVsActualData, setRawBudgetVsActualData] = useState<any[]>([])
   const [rawDisbursementData, setRawDisbursementData] = useState<any[]>([])
@@ -642,7 +690,7 @@ export default function FinancialAnalyticsTab({
 
   // Funding Source Breakdown controls
   const [fundingSourceType, setFundingSourceType] = useState<'transactions' | 'planned'>('transactions')
-  const [fundingTransactionType, setFundingTransactionType] = useState<'1' | '2' | '3' | '4'>('1')
+  const [fundingTransactionType, setFundingTransactionType] = useState<'1' | '2' | '3' | '4'>('3')
   const [fundingChartType, setFundingChartType] = useState<'chart' | 'table'>('chart')
 
   const fetchFinancialAnalytics = useCallback(async () => {
@@ -2102,17 +2150,65 @@ export default function FinancialAnalyticsTab({
     return Math.floor(dataLength / 12) // Show ~12 ticks for longer periods
   }
 
+  // Helper function to resolve organization name from ID/ref
+  // Returns both full name and display name (acronym if available)
+  const resolveOrgInfo = useCallback((orgId?: string, orgName?: string, orgRef?: string, orgAcronym?: string): { name: string; displayName: string } => {
+    // Try to find organization in the list
+    let resolvedOrg: any = null
+    
+    // Try to find by org ID
+    if (orgId) {
+      resolvedOrg = organizations.find((o: any) => o.id === orgId)
+    }
+    
+    // Try to find by org ref (iati_org_id or alias_refs)
+    if (!resolvedOrg && orgRef) {
+      resolvedOrg = organizations.find((o: any) => o.iati_org_id === orgRef)
+      if (!resolvedOrg) {
+        resolvedOrg = organizations.find((o: any) => 
+          o.alias_refs && Array.isArray(o.alias_refs) && o.alias_refs.includes(orgRef)
+        )
+      }
+    }
+    
+    if (resolvedOrg) {
+      const fullName = resolvedOrg.name || orgName || orgRef || 'Unknown'
+      const acronym = resolvedOrg.acronym || orgAcronym
+      return {
+        name: fullName,
+        displayName: acronym || fullName
+      }
+    }
+    
+    // Fallback to provided values
+    const fullName = orgName || orgRef || 'Unknown'
+    return {
+      name: fullName,
+      displayName: orgAcronym || fullName
+    }
+  }, [organizations])
+
   // Compute filtered funding source data with provider and receiver information
   const filteredFundingSourceData = useMemo(() => {
+    // Maps to store org info by full name (key)
+    const orgInfoMap = new Map<string, { name: string; displayName: string }>()
+    
     if (fundingSourceType === 'planned') {
       // Group planned disbursements by provider organization
       const byOrg: { [key: string]: number } = {}
       const byReceiver: { [key: string]: number } = {}
-      const flows: Array<{ provider: string; receiver: string; value: number }> = []
+      const flows: Array<{ provider: string; providerDisplay: string; receiver: string; receiverDisplay: string; value: number }> = []
 
       plannedDisbursements?.forEach((pd: any) => {
-        const provider = pd.provider_org_name || pd.provider_org_ref || 'Unknown Provider'
-        const receiver = pd.receiver_org_name || pd.receiver_org_ref || 'Unknown Receiver'
+        const providerInfo = resolveOrgInfo(pd.provider_org_id, pd.provider_org_name, pd.provider_org_ref, pd.provider_org_acronym)
+        const receiverInfo = resolveOrgInfo(pd.receiver_org_id, pd.receiver_org_name, pd.receiver_org_ref, pd.receiver_org_acronym)
+        
+        const provider = providerInfo.name || 'Unknown Provider'
+        const receiver = receiverInfo.name || 'Unknown Receiver'
+        
+        // Store org info for later lookup
+        orgInfoMap.set(provider, providerInfo)
+        orgInfoMap.set(receiver, receiverInfo)
 
         // ONLY use USD values
         let amount = parseFloat(pd.usd_amount) || 0
@@ -2123,16 +2219,30 @@ export default function FinancialAnalyticsTab({
         if (amount > 0) {
           byOrg[provider] = (byOrg[provider] || 0) + amount
           byReceiver[receiver] = (byReceiver[receiver] || 0) + amount
-          flows.push({ provider, receiver, value: amount })
+          flows.push({ 
+            provider, 
+            providerDisplay: providerInfo.displayName || provider,
+            receiver, 
+            receiverDisplay: receiverInfo.displayName || receiver,
+            value: amount 
+          })
         }
       })
 
       return {
         providers: Object.entries(byOrg)
-          .map(([name, value]) => ({ name, value }))
+          .map(([name, value]) => ({ 
+            name, 
+            displayName: orgInfoMap.get(name)?.displayName || name,
+            value 
+          }))
           .sort((a, b) => b.value - a.value),
         receivers: Object.entries(byReceiver)
-          .map(([name, value]) => ({ name, value }))
+          .map(([name, value]) => ({ 
+            name, 
+            displayName: orgInfoMap.get(name)?.displayName || name,
+            value 
+          }))
           .sort((a, b) => b.value - a.value),
         flows
       }
@@ -2140,7 +2250,7 @@ export default function FinancialAnalyticsTab({
       // Group transactions by provider and receiver organizations
       const byOrg: { [key: string]: number } = {}
       const byReceiver: { [key: string]: number } = {}
-      const flows: Array<{ provider: string; receiver: string; value: number }> = []
+      const flows: Array<{ provider: string; providerDisplay: string; receiver: string; receiverDisplay: string; value: number }> = []
 
       transactions?.forEach((t: any) => {
         // Filter by transaction type
@@ -2148,8 +2258,15 @@ export default function FinancialAnalyticsTab({
           return
         }
 
-        const provider = t.provider_org_name || t.provider_org_ref || 'Unknown Provider'
-        const receiver = t.receiver_org_name || t.receiver_org_ref || 'Unknown Receiver'
+        const providerInfo = resolveOrgInfo(t.provider_org_id, t.provider_org_name, t.provider_org_ref, t.provider_org_acronym)
+        const receiverInfo = resolveOrgInfo(t.receiver_org_id, t.receiver_org_name, t.receiver_org_ref, t.receiver_org_acronym)
+        
+        const provider = providerInfo.name || 'Unknown Provider'
+        const receiver = receiverInfo.name || 'Unknown Receiver'
+        
+        // Store org info for later lookup
+        orgInfoMap.set(provider, providerInfo)
+        orgInfoMap.set(receiver, receiverInfo)
 
         // ONLY use USD values
         let amount = parseFloat(t.usd_value || t.value_usd) || 0
@@ -2160,21 +2277,35 @@ export default function FinancialAnalyticsTab({
         if (amount > 0) {
           byOrg[provider] = (byOrg[provider] || 0) + amount
           byReceiver[receiver] = (byReceiver[receiver] || 0) + amount
-          flows.push({ provider, receiver, value: amount })
+          flows.push({ 
+            provider, 
+            providerDisplay: providerInfo.displayName || provider,
+            receiver, 
+            receiverDisplay: receiverInfo.displayName || receiver,
+            value: amount 
+          })
         }
       })
 
       return {
         providers: Object.entries(byOrg)
-          .map(([name, value]) => ({ name, value }))
+          .map(([name, value]) => ({ 
+            name, 
+            displayName: orgInfoMap.get(name)?.displayName || name,
+            value 
+          }))
           .sort((a, b) => b.value - a.value),
         receivers: Object.entries(byReceiver)
-          .map(([name, value]) => ({ name, value }))
+          .map(([name, value]) => ({ 
+            name, 
+            displayName: orgInfoMap.get(name)?.displayName || name,
+            value 
+          }))
           .sort((a, b) => b.value - a.value),
         flows
       }
     }
-  }, [transactions, plannedDisbursements, fundingSourceType, fundingTransactionType])
+  }, [transactions, plannedDisbursements, fundingSourceType, fundingTransactionType, resolveOrgInfo])
 
   // Export funding source data to CSV
   const exportFundingSourceToCSV = () => {
@@ -2327,45 +2458,45 @@ export default function FinancialAnalyticsTab({
                   size="sm"
                   onClick={() => setOverviewChartType('line')}
                   className="h-8 flex-shrink-0"
+                  title="Line"
                 >
-                  <LineChartIcon className="h-4 w-4 mr-1.5" />
-                  Line
+                  <LineChartIcon className="h-4 w-4" />
                 </Button>
                 <Button
                   variant={overviewChartType === 'bar' ? 'default' : 'ghost'}
                   size="sm"
                   onClick={() => setOverviewChartType('bar')}
                   className="h-8 flex-shrink-0"
+                  title="Bar"
                 >
-                  <BarChart3 className="h-4 w-4 mr-1.5" />
-                  Bar
+                  <BarChart3 className="h-4 w-4" />
                 </Button>
                 <Button
                   variant={overviewChartType === 'area' ? 'default' : 'ghost'}
                   size="sm"
                   onClick={() => setOverviewChartType('area')}
                   className="h-8 flex-shrink-0"
+                  title="Area"
                 >
-                  <TrendingUpIcon className="h-4 w-4 mr-1.5" />
-                  Area
+                  <TrendingUpIcon className="h-4 w-4" />
                 </Button>
                 <Button
                   variant={overviewChartType === 'table' ? 'default' : 'ghost'}
                   size="sm"
                   onClick={() => setOverviewChartType('table')}
                   className="h-8 flex-shrink-0"
+                  title="Table"
                 >
-                  <TableIcon className="h-4 w-4 mr-1.5" />
-                  Table
+                  <TableIcon className="h-4 w-4" />
                 </Button>
                 <Button
                   variant={overviewChartType === 'total' ? 'default' : 'ghost'}
                   size="sm"
                   onClick={() => setOverviewChartType('total')}
                   className="h-8 flex-shrink-0"
+                  title="Total"
                 >
-                  <BarChart3 className="h-4 w-4 mr-1.5" />
-                  Total
+                  <BarChart3 className="h-4 w-4" />
                 </Button>
               </div>
               <div className="flex gap-1">
@@ -2917,6 +3048,9 @@ export default function FinancialAnalyticsTab({
         </CardContent>
       </Card>
 
+      {/* Budget versus Actual Spend Trajectory Chart */}
+      <ActivitySpendTrajectoryChart activityId={activityId} />
+
       {/* Budget vs Actual Spending - Full Width */}
       <Card className="border-slate-200">
         <CardHeader>
@@ -2957,36 +3091,36 @@ export default function FinancialAnalyticsTab({
                   size="sm"
                   onClick={() => setBudgetChartType('line')}
                   className="h-8"
+                  title="Line"
                 >
-                  <TrendingUpIcon className="h-4 w-4 mr-1.5" />
-                  Line
+                  <TrendingUpIcon className="h-4 w-4" />
                 </Button>
                 <Button
                   variant={budgetChartType === 'bar' ? 'default' : 'ghost'}
                   size="sm"
                   onClick={() => setBudgetChartType('bar')}
                   className="h-8"
+                  title="Bar"
                 >
-                  <BarChart3 className="h-4 w-4 mr-1.5" />
-                  Bar
+                  <BarChart3 className="h-4 w-4" />
                 </Button>
                 <Button
                   variant={budgetChartType === 'table' ? 'default' : 'ghost'}
                   size="sm"
                   onClick={() => setBudgetChartType('table')}
                   className="h-8"
+                  title="Table"
                 >
-                  <TableIcon className="h-4 w-4 mr-1.5" />
-                  Table
+                  <TableIcon className="h-4 w-4" />
                 </Button>
                 <Button
                   variant={budgetChartType === 'total' ? 'default' : 'ghost'}
                   size="sm"
                   onClick={() => setBudgetChartType('total')}
                   className="h-8"
+                  title="Total"
                 >
-                  <BarChart3 className="h-4 w-4 mr-1.5" />
-                  Total
+                  <BarChart3 className="h-4 w-4" />
                 </Button>
               </div>
               <div className="flex gap-1">
@@ -3327,8 +3461,12 @@ export default function FinancialAnalyticsTab({
                       const percentage = ((flow.value / total) * 100).toFixed(1)
                       return (
                         <tr key={index} className="border-b border-slate-100 hover:bg-muted/50">
-                          <td className="py-2.5 px-4 font-medium text-slate-900">{flow.provider}</td>
-                          <td className="py-2.5 px-4 font-medium text-slate-700">{flow.receiver}</td>
+                          <td className="py-2.5 px-4 font-medium text-slate-900" title={flow.provider}>
+                            {flow.providerDisplay || flow.provider}
+                          </td>
+                          <td className="py-2.5 px-4 font-medium text-slate-700" title={flow.receiver}>
+                            {flow.receiverDisplay || flow.receiver}
+                          </td>
                           <td className="text-right py-2.5 px-4 text-slate-700">{formatCurrency(flow.value)}</td>
                           <td className="text-right py-2.5 px-4 text-slate-700">{percentage}%</td>
                         </tr>

@@ -473,7 +473,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
     additionalData: { title: general.title || 'New Activity' },
   });
 
-  // Context-aware autosave hooks for Activity ID and IATI Identifier
+  // Context-aware autosave hooks for Activity Identifier and IATI Identifier
   const activityIdAutosave = useFieldAutosave('otherIdentifier', {
     activityId: effectiveActivityId,
     userId: user?.id,
@@ -914,7 +914,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
       </div>
 
 
-      {/* Activity ID, IATI Identifier, and UUID Fields */}
+      {/* Activity Identifier, IATI Identifier, and UUID Fields */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
         <div className="space-y-2">
           <LabelSaveIndicator
@@ -924,7 +924,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
             className={fieldLockStatus.isLocked ? 'text-gray-400' : 'text-gray-700'}
           >
             <div className="flex items-center gap-2">
-              Activity ID
+              Activity Identifier
               <HelpTextTooltip>
                 An internal identifier that is unique within the reporting organisation. Used for internal referencing and system management. Distinct from the IATI Identifier and typically follows the organisation's established naming conventions.
               </HelpTextTooltip>
@@ -958,7 +958,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
                   if (general.id) {
                     activityIdAutosave.triggerFieldSave(e.target.value);
                   } else {
-                    toast.success('The Activity ID has been stored and will be saved after activity creation.');
+                    toast.success('The Activity Identifier has been stored and will be saved after activity creation.');
                   }
                 }
               }}
@@ -969,9 +969,9 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
             />
             {general.otherIdentifier && (
               <button
-                onClick={() => handleCopy(general.otherIdentifier, 'Activity ID')}
+                onClick={() => handleCopy(general.otherIdentifier, 'Activity Identifier')}
                 className="absolute right-2 top-1/2 transform -translate-y-1/2 p-1 hover:bg-gray-100 rounded"
-                title="Copy Activity ID"
+                title="Copy Activity Identifier"
               >
                 <Copy className="w-4 h-4 text-gray-500 hover:text-gray-700" />
               </button>
@@ -4664,10 +4664,9 @@ function NewActivityPageContent() {
             <div className="bg-white p-4">
               <div className="space-y-2 text-sm">
                 <div className="mb-3">
-                  <div className="flex items-center gap-1">
                     <Link
                       href={`/activities/${general.id}`}
-                      className="text-lg font-semibold text-gray-900 leading-tight cursor-pointer transition-opacity duration-200 hover:opacity-80"
+                      className="text-lg font-semibold text-gray-900 leading-tight cursor-pointer transition-opacity duration-200 hover:opacity-80 inline"
                       title={`View activity profile: ${general.title || 'Untitled Activity'}${general.acronym ? ` (${general.acronym})` : ''}`}
                     >
                       {general.title || 'Untitled Activity'}
@@ -4680,17 +4679,16 @@ function NewActivityPageContent() {
                         navigator.clipboard.writeText(titleText);
                         toast.success('Activity title copied to clipboard');
                       }}
-                      className="flex-shrink-0 p-1 hover:bg-gray-100 rounded transition-colors inline-flex items-center"
+                      className="ml-1 p-1 hover:bg-gray-100 rounded transition-colors inline-flex items-center align-middle"
                       title="Copy activity title"
                     >
                       <Copy className="h-4 w-4 text-gray-600" />
                     </button>
-                  </div>
-                    {/* Activity ID and IATI ID */}
+                    {/* Activity Identifier and IATI ID */}
                     <div className="mt-2 space-y-1">
                       {general.partner_id && (
                         <div className="text-xs">
-                          <span className="text-gray-600">Activity ID: </span>
+                          <span className="text-gray-600">Activity Identifier: </span>
                           <code className="inline px-1.5 py-0.5 bg-gray-100 text-gray-700 rounded font-mono break-all" style={{ boxDecorationBreak: 'clone', WebkitBoxDecorationBreak: 'clone' as const }}>
                             {general.partner_id}
                           </code>

@@ -8685,22 +8685,22 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
       <td className="px-4 py-3 text-left w-40">
         <div className="space-y-1 text-left">
         {field.hasConflict ? (
-          <Badge variant="outline" className="text-xs border-orange-400 text-orange-700">
+          <Badge variant="outline" className="text-xs" style={{ borderColor: '#dc2625', color: '#dc2625' }}>
             <AlertCircle className="h-3 w-3 mr-1" />
             Conflict
           </Badge>
         ) : (field as any).refinedSectors ? (
-          <Badge variant="outline" className="text-xs border-green-400 text-green-700">
+          <Badge variant="outline" className="text-xs" style={{ borderColor: '#7b95a7', color: '#7b95a7' }}>
             <CheckCircle className="h-3 w-3 mr-1" />
             Resolved
           </Badge>
         ) : field.currentValue ? (
-          <Badge variant="outline" className="text-xs border-green-400 text-green-700">
+          <Badge variant="outline" className="text-xs" style={{ borderColor: '#7b95a7', color: '#7b95a7' }}>
             <CheckCircle className="h-3 w-3 mr-1" />
             Match
           </Badge>
         ) : (
-          <Badge variant="outline" className="text-xs border-blue-400 text-blue-700">
+          <Badge variant="outline" className="text-xs" style={{ borderColor: '#4c5568', color: '#4c5568' }}>
             <Info className="h-3 w-3 mr-1" />
             New
           </Badge>

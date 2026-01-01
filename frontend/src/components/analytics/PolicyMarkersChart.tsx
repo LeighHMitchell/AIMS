@@ -58,6 +58,7 @@ interface PolicyMarkerTimeSeriesRow {
 interface PolicyMarkersChartProps {
   refreshKey?: number
   onDataChange?: (data: PolicyMarkerAnalyticsRow[]) => void
+  compact?: boolean
 }
 
 type ViewMode = 'chart' | 'table' | 'time-series'
@@ -68,7 +69,7 @@ const SIGNIFICANCE_LABELS: Record<number, { label: string; color: string; descri
   2: { label: 'Principal objective', color: '#1e40af', description: 'Principal objective (2)' }
 }
 
-export function PolicyMarkersChart({ refreshKey = 0, onDataChange }: PolicyMarkersChartProps) {
+export function PolicyMarkersChart({ refreshKey = 0, onDataChange, compact = false }: PolicyMarkersChartProps) {
   const [loading, setLoading] = useState(true)
   const [data, setData] = useState<PolicyMarkerAnalyticsRow[]>([])
   const [timeSeriesData, setTimeSeriesData] = useState<PolicyMarkerTimeSeriesRow[]>([])

@@ -8,6 +8,24 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { SectorMetrics, SectorSortField, SortDirection } from '@/types/sector-analytics'
 import { Search, Download, Table as TableIcon } from 'lucide-react'
+// Inline currency formatter to avoid initialization issues
+const formatCurrencyAbbreviated = (value: number): string => {
+  const isNegative = value < 0
+  const absValue = Math.abs(value)
+
+  let formatted = ''
+  if (absValue >= 1000000000) {
+    formatted = `$${(absValue / 1000000000).toFixed(1)}b`
+  } else if (absValue >= 1000000) {
+    formatted = `$${(absValue / 1000000).toFixed(1)}m`
+  } else if (absValue >= 1000) {
+    formatted = `$${(absValue / 1000).toFixed(1)}k`
+  } else {
+    formatted = `$${absValue.toFixed(0)}`
+  }
+
+  return isNegative ? `-${formatted}` : formatted
+}
 
 interface SectorSummaryTableProps {
   data: SectorMetrics[]
@@ -99,17 +117,8 @@ export function SectorSummaryTable({ data }: SectorSummaryTableProps) {
     }).format(value)
   }
 
-  const formatCompactCurrency = (value: number) => {
-    if (value === null || value === undefined || isNaN(value) || !isFinite(value)) {
-      return '$0'
-    }
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      notation: 'compact',
-      maximumFractionDigits: 1
-    }).format(value)
-  }
+  // Use the module-level currency formatter
+  const formatCompactCurrency = formatCurrencyAbbreviated
 
   const handleExportCSV = () => {
     const headers = [

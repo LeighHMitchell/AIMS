@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useState } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter, usePathname } from "next/navigation"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { 
@@ -17,14 +17,13 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { FolderPlus, User, LogOut, Briefcase, Settings, Shield, MessageSquare, ChevronDown, Zap, Eye, Upload, HelpCircle } from "lucide-react"
+import { User, LogOut, Briefcase, Settings, Shield, MessageSquare, Eye, HelpCircle, Share2 } from "lucide-react"
+import { toast } from "sonner"
 import { USER_ROLES, ROLE_LABELS } from "@/types/user"
 import { getRoleBadgeVariant, getRoleDisplayLabel } from "@/lib/role-badge-utils"
 import { GlobalSearchBar } from "@/components/search/GlobalSearchBar"
 import { FeedbackModal } from "@/components/ui/feedback-modal"
 import { AskQuestionModal } from "@/components/faq/AskQuestionModal"
-import { QuickAddActivityModal } from "@/components/modals/QuickAddActivityModal"
-import { ImportActivityModal } from "@/components/modals/ImportActivityModal"
 import { NotificationBell } from "@/components/notifications/NotificationBell"
 
 interface TopNavProps {
@@ -46,17 +45,35 @@ interface TopNavProps {
       acronym?: string
     }
   } | null
-  canCreateActivities?: boolean
-  isInActivityEditor?: boolean
   onLogout?: () => void
 }
 
-export function TopNav({ user, canCreateActivities, isInActivityEditor = false, onLogout }: TopNavProps) {
+export function TopNav({ user, onLogout }: TopNavProps) {
   const router = useRouter();
+  const pathname = usePathname();
   const [isFeedbackModalOpen, setIsFeedbackModalOpen] = useState(false);
   const [isAskQuestionModalOpen, setIsAskQuestionModalOpen] = useState(false);
-  const [showQuickAddModal, setShowQuickAddModal] = useState(false);
-  const [isImporting, setIsImporting] = useState(false);
+
+  // Determine if share button should be shown (hide on admin, profile, settings pages)
+  const hideShareOnPages = ['/admin', '/profile', '/settings'];
+  const showShareButton = !hideShareOnPages.some(p => pathname?.startsWith(p));
+
+  // Share handler with Web Share API + clipboard fallback
+  const handleShare = async () => {
+    const url = window.location.href;
+    
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: document.title, url });
+        return;
+      } catch (err) {
+        // User cancelled or error - fall through to clipboard
+      }
+    }
+    
+    await navigator.clipboard.writeText(url);
+    toast.success("Link copied to clipboard!");
+  };
 
   // Function to construct full name - only FirstName LastName
   const getFullName = (user: TopNavProps['user']) => {
@@ -72,84 +89,11 @@ export function TopNav({ user, canCreateActivities, isInActivityEditor = false, 
   };
 
   return (
-    <nav className="border-b bg-white sticky top-0 z-30">
+    <nav className="border-b sticky top-0 z-30 bg-white">
       <div className="flex h-16 items-center px-6">
         <div className="ml-auto flex items-center space-x-4">
           {/* Global Search Bar */}
           <GlobalSearchBar className="w-[500px]" />
-          
-          {/* Add New Activity Dropdown - conditionally rendered but with stable structure */}
-          <div className={canCreateActivities ? undefined : "hidden"}>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  disabled={isInActivityEditor}
-                  className={isInActivityEditor ? "opacity-50 cursor-not-allowed" : ""}
-                  title={isInActivityEditor ? "Please finish editing the current activity first" : "Create a new activity"}
-                >
-                  <FolderPlus className="h-4 w-4 mr-2" />
-                  Add New Activity
-                  <ChevronDown className="h-3 w-3 ml-2" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56">
-                <DropdownMenuLabel>Create Activity</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => router.push("/activities/new")}>
-                  <FolderPlus className="mr-2 h-4 w-4" />
-                  <div className="flex flex-col">
-                    <span className="font-medium">Full Activity Editor</span>
-                    <span className="text-xs text-muted-foreground">Complete data entry</span>
-                  </div>
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setShowQuickAddModal(true)}>
-                  <Zap className="mr-2 h-4 w-4" />
-                  <div className="flex flex-col">
-                    <span className="font-medium">Quick Add</span>
-                    <span className="text-xs text-muted-foreground">Minimal activity creation</span>
-                  </div>
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={async () => {
-                    if (!user?.id || isImporting) return;
-                    setIsImporting(true);
-                    try {
-                      const response = await fetch('/api/activities', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                          title: 'Imported Activity (Draft)',
-                          description: 'Activity created via IATI/XML import',
-                          status: '1',
-                          user_id: user.id,
-                          created_via: 'import',
-                        }),
-                      });
-                      if (!response.ok) {
-                        const err = await response.json();
-                        throw new Error(err.error || 'Failed to create draft activity');
-                      }
-                      const newActivity = await response.json();
-                      router.push(`/activities/new?id=${newActivity.id}&tab=xml-import`);
-                    } catch (e) {
-                      console.error('Failed to start import', e);
-                    } finally {
-                      setIsImporting(false);
-                    }
-                  }}
-                  disabled={isImporting}
-                >
-                  <Upload className="mr-2 h-4 w-4" />
-                  <div className="flex flex-col">
-                    <span className="font-medium">Import from IATI/XML</span>
-                    <span className="text-xs text-muted-foreground">Import via Search, File, URL, or Paste</span>
-                  </div>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
 
           {/* Notification Bell */}
           {user && (
@@ -212,30 +156,30 @@ export function TopNav({ user, canCreateActivities, isInActivityEditor = false, 
                   </div>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => router.push("/profile")}>
+                <DropdownMenuItem onClick={() => router.push("/profile")} className="cursor-pointer">
                   <Settings className="mr-2 h-4 w-4" />
                   <span>My Profile</span>
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => router.push("/my-portfolio")}>
+                <DropdownMenuItem onClick={() => router.push("/my-portfolio")} className="cursor-pointer">
                   <Briefcase className="mr-2 h-4 w-4" />
                   <span>My Portfolio</span>
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setIsAskQuestionModalOpen(true)}>
+                <DropdownMenuItem onClick={() => setIsAskQuestionModalOpen(true)} className="cursor-pointer">
                   <HelpCircle className="mr-2 h-4 w-4" />
                   <span>Ask a Question</span>
                 </DropdownMenuItem>
                 <DropdownMenuSub>
-                  <DropdownMenuSubTrigger>
+                  <DropdownMenuSubTrigger className="cursor-pointer">
                     <MessageSquare className="mr-2 h-4 w-4" />
                     <span>Feedback</span>
                   </DropdownMenuSubTrigger>
                   <DropdownMenuSubContent>
-                    <DropdownMenuItem onClick={() => setIsFeedbackModalOpen(true)}>
+                    <DropdownMenuItem onClick={() => setIsFeedbackModalOpen(true)} className="cursor-pointer">
                       <MessageSquare className="mr-2 h-4 w-4" />
                       <span>Share Feedback</span>
                     </DropdownMenuItem>
                     {user.role === USER_ROLES.SUPER_USER && (
-                      <DropdownMenuItem asChild>
+                      <DropdownMenuItem asChild className="cursor-pointer">
                         <Link href="/admin?tab=feedback">
                           <Eye className="mr-2 h-4 w-4" />
                           <span>View Feedback</span>
@@ -245,20 +189,36 @@ export function TopNav({ user, canCreateActivities, isInActivityEditor = false, 
                   </DropdownMenuSubContent>
                 </DropdownMenuSub>
                 {user.role === USER_ROLES.SUPER_USER && (
-                  <DropdownMenuItem asChild>
-                    <Link href="/admin" target="_blank" rel="noopener noreferrer">
+                  <DropdownMenuItem asChild className="cursor-pointer">
+                    <Link href="/admin">
                       <Shield className="mr-2 h-4 w-4" />
                       <span>Admin</span>
                     </Link>
                   </DropdownMenuItem>
                 )}
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={onLogout}>
+                <DropdownMenuItem 
+                  onClick={onLogout} 
+                  className="cursor-pointer text-red-600 hover:text-red-700 hover:bg-red-50"
+                >
                   <LogOut className="mr-2 h-4 w-4" />
                   <span>Log out</span>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
+          )}
+
+          {/* Share Button - hidden on admin, profile, and settings pages */}
+          {user && showShareButton && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={handleShare}
+              className="h-9 w-9"
+              title="Share this page"
+            >
+              <Share2 className="h-5 w-5" />
+            </Button>
           )}
         </div>
       </div>
@@ -274,15 +234,6 @@ export function TopNav({ user, canCreateActivities, isInActivityEditor = false, 
         isOpen={isAskQuestionModalOpen}
         onClose={() => setIsAskQuestionModalOpen(false)}
       />
-      
-      {/* Quick Add Activity Modal */}
-      <QuickAddActivityModal
-        isOpen={showQuickAddModal}
-        onClose={() => setShowQuickAddModal(false)}
-        user={user}
-      />
-
-      {/* Import Activity Modal (unused: direct navigation implemented) */}
     </nav>
   )
 }

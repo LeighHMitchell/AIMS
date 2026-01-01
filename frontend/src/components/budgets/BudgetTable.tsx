@@ -44,7 +44,7 @@ import { Budget, BUDGET_TYPE_LABELS, BUDGET_STATUS_LABELS, BudgetType, BudgetSta
 // Column configuration for Budget Table
 type BudgetColumnId = 
   | 'activity' | 'periodStart' | 'periodEnd' | 'type' 
-  | 'status' | 'value' | 'valueDate' | 'valueUsd';
+  | 'status' | 'value' | 'valueDate' | 'valueUsd' | 'reportingOrganisation';
 
 interface BudgetColumnConfig {
   id: BudgetColumnId;
@@ -65,6 +65,7 @@ const BUDGET_COLUMN_CONFIGS: BudgetColumnConfig[] = [
   { id: 'value', label: 'Currency Value', group: 'default', defaultVisible: true, sortable: true, sortField: 'value', align: 'right' },
   { id: 'valueDate', label: 'Value Date', group: 'details', defaultVisible: false, sortable: true, sortField: 'value_date', align: 'left' },
   { id: 'valueUsd', label: 'USD Value', group: 'default', defaultVisible: true, sortable: true, sortField: 'value_usd', align: 'right' },
+  { id: 'reportingOrganisation', label: 'Reporting Organisation', group: 'details', defaultVisible: false, sortable: false, align: 'left' },
 ];
 
 const BUDGET_COLUMN_GROUPS = {
@@ -499,6 +500,11 @@ export function BudgetTable({
                   </div>
                 </TableHead>
               )}
+              {isColumnVisible('reportingOrganisation') && (
+                <TableHead className="cursor-pointer hover:bg-muted/80 transition-colors">
+                  <span>Reporting Organisation</span>
+                </TableHead>
+              )}
               <TableHead className="text-right">
                 Actions
               </TableHead>
@@ -626,6 +632,31 @@ export function BudgetTable({
                           <span className="font-medium">
                             {formatCurrency(budget.value_usd, 'USD')}
                           </span>
+                        ) : (
+                          <span className="text-muted-foreground">—</span>
+                        )}
+                      </td>
+                    )}
+
+                    {/* Reporting Organisation */}
+                    {isColumnVisible('reportingOrganisation') && (
+                      <td className="py-3 px-4">
+                        {budget.activity?.reporting_org ? (
+                          <div className="space-y-0.5">
+                            <div className="text-sm font-medium text-foreground">
+                              {budget.activity.reporting_org.acronym || budget.activity.reporting_org.name || '—'}
+                            </div>
+                            {budget.activity.reporting_org.name && budget.activity.reporting_org.acronym && (
+                              <div className="text-xs text-muted-foreground">
+                                {budget.activity.reporting_org.name}
+                              </div>
+                            )}
+                            {budget.activity.reporting_org.iati_org_id && (
+                              <span className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded inline-block mt-1">
+                                {budget.activity.reporting_org.iati_org_id}
+                              </span>
+                            )}
+                          </div>
                         ) : (
                           <span className="text-muted-foreground">—</span>
                         )}

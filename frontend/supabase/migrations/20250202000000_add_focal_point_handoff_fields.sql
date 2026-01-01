@@ -63,3 +63,4 @@ SET focal_point_status = 'assigned'
 WHERE type IN ('government_focal_point', 'development_partner_focal_point')
 AND focal_point_status IS NULL;
 
+

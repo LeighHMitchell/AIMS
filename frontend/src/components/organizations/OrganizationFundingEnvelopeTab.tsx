@@ -265,11 +265,12 @@ export default function OrganizationFundingEnvelopeTab({
 
   // Update field
   const updateField = (field: string, value: any) => {
-    if (!editingEnvelope) return
-
-    setEditingEnvelope({
-      ...editingEnvelope,
-      [field]: value
+    setEditingEnvelope(prev => {
+      if (!prev) return prev
+      return {
+        ...prev,
+        [field]: value
+      }
     })
 
     // Clear error for this field
@@ -687,7 +688,12 @@ export default function OrganizationFundingEnvelopeTab({
                       <SelectContent className="max-h-[200px]">
                         {currencies.map((currency) => (
                           <SelectItem key={currency.code} value={currency.code}>
-                            {currency.code} - {currency.name}
+                            <span className="inline-flex items-center gap-2">
+                              <span className="font-mono text-xs bg-gray-100 px-1.5 py-0.5 rounded">
+                                {currency.code}
+                              </span>
+                              <span>{currency.name}</span>
+                            </span>
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -849,5 +855,7 @@ export default function OrganizationFundingEnvelopeTab({
     </div>
   )
 }
+
+
 
 

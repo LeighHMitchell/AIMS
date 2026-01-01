@@ -1055,8 +1055,15 @@ export async function PUT(request: NextRequest) {
     return NextResponse.json(responseData);
   } catch (error) {
     console.error('[Transactions API] Unexpected error:', error);
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    const errorStack = error instanceof Error ? error.stack : undefined;
+    console.error('[Transactions API] Error details:', { message: errorMessage, stack: errorStack });
     return NextResponse.json(
-      { error: 'An unexpected error occurred' },
+      { 
+        error: 'An unexpected error occurred',
+        details: errorMessage,
+        ...(process.env.NODE_ENV === 'development' && { stack: errorStack })
+      },
       { status: 500 }
     );
   }

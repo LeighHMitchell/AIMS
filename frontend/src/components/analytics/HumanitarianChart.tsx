@@ -27,6 +27,7 @@ interface HumanitarianChartProps {
   }
   refreshKey: number
   onDataChange?: (data: ChartData[]) => void
+  compact?: boolean
 }
 
 interface ChartData {
@@ -39,7 +40,7 @@ interface ChartData {
 type GroupByMode = 'calendar' | 'fiscal' | 'quarter'
 type ViewMode = 'area' | 'bar' | 'table'
 
-export function HumanitarianChart({ dateRange, refreshKey, onDataChange }: HumanitarianChartProps) {
+export function HumanitarianChart({ dateRange, refreshKey, onDataChange, compact = false }: HumanitarianChartProps) {
   const [data, setData] = useState<ChartData[]>([])
   const [loading, setLoading] = useState(true)
   const [groupBy, setGroupBy] = useState<GroupByMode>('calendar')
@@ -216,6 +217,68 @@ export function HumanitarianChart({ dateRange, refreshKey, onDataChange }: Human
     } catch (error) {
       return '$0'
     }
+  }
+
+  // Compact mode renders just the chart without filters
+  if (compact) {
+    if (loading) {
+      return <Skeleton className="h-full w-full" />
+    }
+    if (!data || data.length === 0) {
+      return (
+        <div className="h-full flex items-center justify-center text-slate-500">
+          <p className="text-sm">No data available</p>
+        </div>
+      )
+    }
+    return (
+      <div className="h-full w-full">
+        <ResponsiveContainer width="100%" height="100%">
+          <AreaChart data={data} margin={{ top: 10, right: 20, left: 20, bottom: 20 }}>
+            <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
+            <XAxis
+              dataKey="period"
+              stroke="#94A3B8"
+              fontSize={10}
+              tickLine={false}
+              axisLine={false}
+            />
+            <YAxis
+              stroke="#94A3B8"
+              fontSize={10}
+              tickLine={false}
+              axisLine={false}
+              tickFormatter={formatCurrency}
+            />
+            <Tooltip
+              formatter={(value: number, name: string) => [
+                formatCurrency(value),
+                name.charAt(0).toUpperCase() + name.slice(1)
+              ]}
+              contentStyle={{ borderRadius: '8px', fontSize: '12px' }}
+            />
+            <Area
+              type="monotone"
+              dataKey="development"
+              stackId="1"
+              stroke="#1E4D6B"
+              fill="#1E4D6B"
+              fillOpacity={0.8}
+              name="Development"
+            />
+            <Area
+              type="monotone"
+              dataKey="humanitarian"
+              stackId="1"
+              stroke="#DC2626"
+              fill="#DC2626"
+              fillOpacity={0.8}
+              name="Humanitarian"
+            />
+          </AreaChart>
+        </ResponsiveContainer>
+      </div>
+    )
   }
 
   if (loading) {

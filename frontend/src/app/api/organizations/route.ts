@@ -62,93 +62,10 @@ export async function GET(request: NextRequest) {
     
     if (error) {
       console.error('[AIMS] Error fetching organizations:', error);
-      
-      // Return sample data when database is unavailable for testing
-      const sampleOrganizations = [
-        {
-          id: 'sample-org-1',
-          name: 'Asian Development Bank',
-          acronym: 'ADB',
-          type: 'multilateral',
-          country: 'Philippines',
-          description: 'Multilateral development finance institution committed to achieving a prosperous, inclusive, resilient, and sustainable Asia and the Pacific.',
-          website: 'https://www.adb.org',
-          logo_url: null,
-          contact_email: 'info@adb.org',
-          contact_phone: null,
-          address: 'Mandaluyong City, Metro Manila, Philippines',
-          is_active: true,
-          created_at: '2024-01-01T00:00:00Z',
-          updated_at: '2024-01-15T10:30:00Z'
-        },
-        {
-          id: 'sample-org-2',
-          name: 'Department of Foreign Affairs and Trade',
-          acronym: 'DFAT',
-          type: 'government',
-          country: 'Australia',
-          description: 'Australian government department responsible for foreign policy and trade relations.',
-          website: 'https://www.dfat.gov.au',
-          logo_url: null,
-          contact_email: 'enquiries@dfat.gov.au',
-          contact_phone: null,
-          address: 'Canberra, Australia',
-          is_active: true,
-          created_at: '2024-01-02T00:00:00Z',
-          updated_at: '2024-01-20T14:45:00Z'
-        },
-        {
-          id: 'sample-org-3',
-          name: 'United Nations Development Programme',
-          acronym: 'UNDP',
-          type: 'multilateral',
-          country: 'Global',
-          description: 'UN agency focused on development, democracy, peace and climate change.',
-          website: 'https://www.undp.org',
-          logo_url: null,
-          contact_email: 'info@undp.org',
-          contact_phone: null,
-          address: 'New York, USA',
-          is_active: true,
-          created_at: '2024-01-03T00:00:00Z',
-          updated_at: '2024-02-01T09:20:00Z'
-        },
-        {
-          id: 'sample-org-4',
-          name: 'World Health Organization',
-          acronym: 'WHO',
-          type: 'multilateral',
-          country: 'Global',
-          description: 'UN specialized agency responsible for international public health.',
-          website: 'https://www.who.int',
-          logo_url: null,
-          contact_email: 'info@who.int',
-          contact_phone: null,
-          address: 'Geneva, Switzerland',
-          is_active: true,
-          created_at: '2024-01-04T00:00:00Z',
-          updated_at: '2024-01-25T16:10:00Z'
-        },
-        {
-          id: 'sample-org-5',
-          name: 'Local Community Development Foundation',
-          acronym: 'LCDF',
-          type: 'ngo',
-          country: 'Cambodia',
-          description: 'Local NGO focused on community-driven development initiatives.',
-          website: 'https://www.lcdf-cambodia.org',
-          logo_url: null,
-          contact_email: 'contact@lcdf-cambodia.org',
-          contact_phone: null,
-          address: 'Phnom Penh, Cambodia',
-          is_active: true,
-          created_at: '2024-01-05T00:00:00Z',
-          updated_at: '2024-02-10T11:30:00Z'
-        }
-      ];
-
-      console.log('[AIMS] Returning sample organizations due to database error');
-      return NextResponse.json(sampleOrganizations);
+      return NextResponse.json(
+        { error: 'Failed to fetch organizations' },
+        { status: 500 }
+      );
     }
     
     // Return organizations without expensive activity counting for better performance

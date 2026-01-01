@@ -28,11 +28,13 @@ interface TransactionTypeData {
 interface TransactionTypeChartProps {
   filters: any;
   onDataChange?: (data: any[]) => void;
+  compact?: boolean;
 }
 
 export const TransactionTypeChart: React.FC<TransactionTypeChartProps> = ({
   filters,
   onDataChange,
+  compact = false,
 }) => {
   const [data, setData] = useState<TransactionTypeData[]>([]);
   const [loading, setLoading] = useState(false);
@@ -62,8 +64,10 @@ export const TransactionTypeChart: React.FC<TransactionTypeChartProps> = ({
         throw new Error(result.error);
       }
 
-      setData(result.data || []);
+      const chartData = result.data || [];
+      setData(chartData);
       setCurrency(result.currency || 'USD');
+      onDataChange?.(chartData);
     } catch (error) {
       console.error('Error fetching transaction type data:', error);
       setError(error instanceof Error ? error.message : 'Failed to load chart data');
@@ -124,6 +128,49 @@ export const TransactionTypeChart: React.FC<TransactionTypeChartProps> = ({
     }
     return null;
   };
+
+  // Compact mode renders just the chart without filters
+  if (compact) {
+    if (loading) {
+      return (
+        <div className="h-full flex items-center justify-center">
+          <Loader2 className="h-6 w-6 animate-spin text-slate-400" />
+        </div>
+      );
+    }
+    if (error || !data || data.length === 0) {
+      return (
+        <div className="h-full flex items-center justify-center text-slate-500">
+          <p className="text-sm">{error || 'No data available'}</p>
+        </div>
+      );
+    }
+    return (
+      <div className="h-full w-full">
+        <ResponsiveContainer width="100%" height="100%">
+          <PieChart>
+            <Pie
+              data={data}
+              cx="50%"
+              cy="50%"
+              outerRadius={70}
+              innerRadius={40}
+              dataKey="count"
+              nameKey="typeName"
+              paddingAngle={2}
+              label={({ typeName, percentage }) => `${percentage.toFixed(0)}%`}
+              labelLine={false}
+            >
+              {data.map((_, index) => (
+                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+              ))}
+            </Pie>
+            <Tooltip content={<CustomTooltip />} />
+          </PieChart>
+        </ResponsiveContainer>
+      </div>
+    );
+  }
 
   if (loading) {
     return (

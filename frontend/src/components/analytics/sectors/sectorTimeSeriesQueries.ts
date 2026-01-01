@@ -9,6 +9,24 @@ import {
   SectorTimeSeriesData,
   SectorTimeSeriesFilters 
 } from '@/types/sector-analytics'
+// Inline currency formatter to avoid initialization issues
+const formatCurrencyAbbreviated = (value: number): string => {
+  const isNegative = value < 0
+  const absValue = Math.abs(value)
+
+  let formatted = ''
+  if (absValue >= 1000000000) {
+    formatted = `$${(absValue / 1000000000).toFixed(1)}b`
+  } else if (absValue >= 1000000) {
+    formatted = `$${(absValue / 1000000).toFixed(1)}m`
+  } else if (absValue >= 1000) {
+    formatted = `$${(absValue / 1000).toFixed(1)}k`
+  } else {
+    formatted = `$${absValue.toFixed(0)}`
+  }
+
+  return isNegative ? `-${formatted}` : formatted
+}
 
 /**
  * Transformed data point for Recharts
@@ -165,15 +183,9 @@ export function formatCurrency(value: number): string {
 }
 
 /**
- * Format currency for tooltip (millions with 2 decimal places)
+ * Format currency for tooltip (abbreviated form: $43.3k, $23.4m)
  */
-export function formatTooltipCurrency(value: number): string {
-  if (value === null || value === undefined || isNaN(value) || !isFinite(value)) {
-    return '$0.00m'
-  }
-  const millions = value / 1_000_000
-  return `$${millions.toFixed(2)}m`
-}
+export const formatTooltipCurrency = formatCurrencyAbbreviated
 
 /**
  * Calculate percentage of total

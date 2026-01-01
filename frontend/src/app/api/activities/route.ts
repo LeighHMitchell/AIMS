@@ -953,20 +953,35 @@ export async function POST(request: Request) {
                 lng: parseFloat(loc.longitude),
                 category: loc.category
               });
-            } else if (loc.location_type === 'coverage') {
-              broadCoverageLocations.push({
-                id: loc.id,
-                admin_unit: loc.admin_unit,
-                description: loc.description
-              });
-            }
-          });
+          } else if (loc.location_type === 'coverage') {
+            broadCoverageLocations.push({
+              id: loc.id,
+              admin_unit: loc.admin_unit || loc.state_region_name || loc.location_name,
+              description: loc.description,
+              percentage: loc.percentage_allocation ?? null,
+              state_region_name: loc.state_region_name,
+              state_region_code: loc.state_region_code
+            });
+          }
           
-          return {
-            site_locations: siteLocations,
-            broad_coverage_locations: broadCoverageLocations
-          };
-        })()
+          // Also add site locations with state_region_name to coverage for aggregation
+          if (loc.location_type === 'site' && loc.state_region_name) {
+            broadCoverageLocations.push({
+              id: loc.id,
+              admin_unit: loc.state_region_name,
+              description: loc.description,
+              percentage: loc.percentage_allocation ?? null,
+              state_region_name: loc.state_region_name,
+              state_region_code: loc.state_region_code
+            });
+          }
+        });
+        
+        return {
+          site_locations: siteLocations,
+          broad_coverage_locations: broadCoverageLocations
+        };
+      })()
       };
       
       return NextResponse.json(responseData);
@@ -1777,8 +1792,23 @@ export async function POST(request: Request) {
           } else if (loc.location_type === 'coverage') {
             broadCoverageLocations.push({
               id: loc.id,
-              admin_unit: loc.admin_unit,
-              description: loc.description
+              admin_unit: loc.admin_unit || loc.state_region_name || loc.location_name,
+              description: loc.description,
+              percentage: loc.percentage_allocation ?? null,
+              state_region_name: loc.state_region_name,
+              state_region_code: loc.state_region_code
+            });
+          }
+          
+          // Also add site locations with state_region_name to coverage for aggregation
+          if (loc.location_type === 'site' && loc.state_region_name) {
+            broadCoverageLocations.push({
+              id: loc.id,
+              admin_unit: loc.state_region_name,
+              description: loc.description,
+              percentage: loc.percentage_allocation ?? null,
+              state_region_name: loc.state_region_name,
+              state_region_code: loc.state_region_code
             });
           }
         });
@@ -2208,6 +2238,12 @@ export async function GET(request: NextRequest) {
       .select('*')
       .in('activity_id', activityIds);
     
+    // Fetch subnational breakdowns for all activities (for locations column)
+    const { data: allSubnationalBreakdowns } = await getSupabaseAdmin()
+      .from('subnational_breakdowns')
+      .select('*')
+      .in('activity_id', activityIds);
+    
     // Fetch tags for all activities
     const { data: allTags } = await getSupabaseAdmin()
       .from('activity_tags')
@@ -2223,6 +2259,7 @@ export async function GET(request: NextRequest) {
     const sdgMap = new Map();
     const contactsMap = new Map();
     const locationsMap = new Map();
+    const subnationalBreakdownsMap = new Map();
     const tagsMap = new Map();
     
     allSectors?.forEach((sector: any) => {
@@ -2251,6 +2288,13 @@ export async function GET(request: NextRequest) {
         locationsMap.set(location.activity_id, []);
       }
       locationsMap.get(location.activity_id).push(location);
+    });
+    
+    allSubnationalBreakdowns?.forEach((breakdown: any) => {
+      if (!subnationalBreakdownsMap.has(breakdown.activity_id)) {
+        subnationalBreakdownsMap.set(breakdown.activity_id, []);
+      }
+      subnationalBreakdownsMap.get(breakdown.activity_id).push(breakdown);
     });
     
     allTags?.forEach((tagRelation: any) => {
@@ -2319,9 +2363,10 @@ export async function GET(request: NextRequest) {
       // Transform locations to match frontend format
       locations: (() => {
         const activityLocations = locationsMap.get(activity.id) || [];
+        const subnationalBreakdowns = subnationalBreakdownsMap.get(activity.id) || [];
         const siteLocations: any[] = [];
-        const broadCoverageLocations: any[] = [];
         
+        // Site locations for map display
         activityLocations.forEach((loc: any) => {
           if (loc.location_type === 'site') {
             siteLocations.push({
@@ -2332,14 +2377,20 @@ export async function GET(request: NextRequest) {
               lng: parseFloat(loc.longitude),
               category: loc.category
             });
-          } else if (loc.location_type === 'coverage') {
-            broadCoverageLocations.push({
-              id: loc.id,
-              admin_unit: loc.admin_unit,
-              description: loc.description
-            });
           }
         });
+        
+        // broad_coverage_locations uses ONLY subnational breakdowns (state/region percentages)
+        const broadCoverageLocations = subnationalBreakdowns
+          .filter((breakdown: any) => !breakdown.is_nationwide && breakdown.region_name)
+          .map((breakdown: any) => ({
+            id: breakdown.id,
+            admin_unit: breakdown.region_name,
+            description: null,
+            percentage: breakdown.percentage ?? null,
+            state_region_name: breakdown.region_name,
+            state_region_code: null
+          }));
         
         return {
           site_locations: siteLocations,

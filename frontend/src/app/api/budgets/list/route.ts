@@ -80,7 +80,7 @@ export async function GET(request: NextRequest) {
     if (allActivityIds.size > 0) {
       const { data: activitiesData, error: activitiesError } = await supabase
         .from('activities')
-        .select('id, title_narrative, iati_identifier')
+        .select('id, title_narrative, iati_identifier, reporting_org_id, created_by_org_name, created_by_org_acronym')
         .in('id', Array.from(allActivityIds));
 
       if (activitiesError) {
@@ -95,18 +95,83 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    // Fetch reporting organizations for activities
+    const reportingOrgIds = new Set<string>();
+    Object.values(activitiesMap).forEach((activity: any) => {
+      if (activity?.reporting_org_id) {
+        reportingOrgIds.add(activity.reporting_org_id);
+      }
+    });
+
+    let organizationsMap: Record<string, any> = {};
+    if (reportingOrgIds.size > 0) {
+      const { data: organizationsData, error: orgsError } = await supabase
+        .from('organizations')
+        .select('id, name, acronym, iati_org_id')
+        .in('id', Array.from(reportingOrgIds));
+
+      if (orgsError) {
+        console.error('[Budgets List API] Error fetching organizations:', orgsError);
+      }
+
+      if (organizationsData) {
+        organizationsMap = Object.fromEntries(
+          organizationsData.map(o => [o.id, o])
+        );
+      }
+    }
+
     // Combine budgets with their activities and map usd_value to value_usd
-    const data = budgets.map((budget: any) => ({
-      ...budget,
-      value_usd: budget.usd_value || null, // Map usd_value to value_usd for frontend consistency
-      activity: budget?.activity_id ? activitiesMap[budget.activity_id] || null : null,
-    }));
+    const data = budgets.map((budget: any) => {
+      const activity = budget?.activity_id ? activitiesMap[budget.activity_id] || null : null;
+      let reportingOrg = null;
+      
+      // First try to get from organizations map using reporting_org_id
+      if (activity?.reporting_org_id) {
+        reportingOrg = organizationsMap[activity.reporting_org_id] || null;
+      }
+      
+      // Fallback: if no organization found but we have created_by_org_name, create a synthetic org object
+      if (!reportingOrg && activity && (activity.created_by_org_name || activity.created_by_org_acronym)) {
+        reportingOrg = {
+          id: null,
+          name: activity.created_by_org_name || null,
+          acronym: activity.created_by_org_acronym || null,
+          iati_org_id: null,
+        };
+      }
+      
+      // Debug logging for first budget
+      if (budgets.indexOf(budget) === 0) {
+        console.log('[Budgets List API] Sample budget mapping:', {
+          budgetId: budget.id,
+          activityId: budget.activity_id,
+          activity: activity,
+          reportingOrgId: activity?.reporting_org_id,
+          reportingOrg: reportingOrg,
+          createdByOrgName: activity?.created_by_org_name,
+          createdByOrgAcronym: activity?.created_by_org_acronym,
+          organizationsMapSize: Object.keys(organizationsMap).length,
+          reportingOrgIds: Array.from(reportingOrgIds)
+        });
+      }
+      
+      return {
+        ...budget,
+        value_usd: budget.usd_value || null, // Map usd_value to value_usd for frontend consistency
+        activity: activity ? {
+          ...activity,
+          reporting_org: reportingOrg
+        } : null,
+      };
+    });
 
     console.log('[Budgets List API] Fetched data:', {
       count: data?.length,
       total: count,
       sampleBudget: data?.[0],
-      sampleActivity: data?.[0]?.activity
+      sampleActivity: data?.[0]?.activity,
+      sampleReportingOrg: data?.[0]?.activity?.reporting_org
     });
 
     console.log(`[Budgets List API] Successfully fetched ${data?.length || 0} budgets, total: ${count}`);

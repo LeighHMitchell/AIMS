@@ -131,18 +131,6 @@ interface Organization {
   acronym?: string;
 }
 
-// Mock organizations for demo
-const mockOrganizations: Organization[] = [
-  { id: "1", name: "Asian Development Bank", acronym: "ADB" },
-  { id: "2", name: "World Bank", acronym: "WB" },
-  { id: "3", name: "United Nations Development Programme", acronym: "UNDP" },
-  { id: "4", name: "Department of Foreign Affairs and Trade Australia", acronym: "DFAT" },
-  { id: "5", name: "United States Agency for International Development", acronym: "USAID" },
-  { id: "6", name: "European Union Delegation", acronym: "EU" },
-  { id: "7", name: "Japan International Cooperation Agency", acronym: "JICA" },
-  { id: "8", name: "Deutsche Gesellschaft für Internationale Zusammenarbeit", acronym: "GIZ" },
-];
-
 // Helper component for tooltips
 const FieldTooltip: React.FC<{ content: string; children: React.ReactNode }> = ({ content, children }) => (
   <TooltipProvider>
@@ -185,8 +173,28 @@ export const AidEffectivenessForm: React.FC<Props> = ({ general, onUpdate }) => 
     ...general.aidEffectiveness
   });
   const [activeTab, setActiveTab] = useState("output1");
-  const [organizations] = useState(mockOrganizations);
+  const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [isSaving, setIsSaving] = useState(false);
+  
+  // Fetch organizations from API
+  useEffect(() => {
+    const fetchOrganizations = async () => {
+      try {
+        const response = await fetch('/api/organizations');
+        if (!response.ok) {
+          console.error('Failed to fetch organizations');
+          return;
+        }
+        const data = await response.json();
+        if (Array.isArray(data)) {
+          setOrganizations(data);
+        }
+      } catch (error) {
+        console.error('Error fetching organizations:', error);
+      }
+    };
+    fetchOrganizations();
+  }, []);
   const [lastSaved, setLastSaved] = useState<string>("");
   const [errors, setErrors] = useState<Record<string, string>>({});
   const autosaveRef = useRef<NodeJS.Timeout>();

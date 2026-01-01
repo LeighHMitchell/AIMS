@@ -262,6 +262,32 @@ export async function POST(
       console.log(`[IATI Import] ⚠️  To update reporting org, use import-as-reporting-org mode instead`);
     }
 
+    // If activity has no reporting org but IATI data does, set it
+    // This ensures inference can work for imported transactions
+    if (!currentActivity.reporting_org_id && iati_data.reporting_org) {
+      const reportingOrgFromIati = iati_data.reporting_org;
+      
+      // Try to find the organization in our database by IATI ref
+      const { data: matchedOrg } = await supabase
+        .from('organizations')
+        .select('id, name, acronym, iati_org_id')
+        .eq('iati_org_id', reportingOrgFromIati.ref)
+        .single();
+      
+      if (matchedOrg) {
+        updateData.reporting_org_id = matchedOrg.id;
+        updateData.reporting_org_ref = reportingOrgFromIati.ref;
+        updateData.reporting_org_name = matchedOrg.name;
+        console.log(`[IATI Import] ✅ Set reporting org from IATI data: ${matchedOrg.name}`);
+      } else {
+        // No match found, set ref and name from IATI data without org_id
+        updateData.reporting_org_ref = reportingOrgFromIati.ref;
+        updateData.reporting_org_name = reportingOrgFromIati.narrative || reportingOrgFromIati.name;
+        console.log(`[IATI Import] ⚠️ Set reporting org ref from IATI data (no org match): ${reportingOrgFromIati.ref}`);
+      }
+      updatedFields.push('reporting_org');
+    }
+
     // Handle JSONB geography fields (stored directly on activities table)
     if (fields.recipient_countries && iati_data.recipient_countries && Array.isArray(iati_data.recipient_countries)) {
       console.log('[IATI Import] Processing recipient_countries:', iati_data.recipient_countries.length, 'items');

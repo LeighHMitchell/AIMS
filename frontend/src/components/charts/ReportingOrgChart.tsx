@@ -73,8 +73,10 @@ export const ReportingOrgChart: React.FC<ReportingOrgChartProps> = ({
         throw new Error(result.error);
       }
 
-      setData(result.data || []);
+      const chartData = result.data || [];
+      setData(chartData);
       setCurrency(result.currency || 'USD');
+      onDataChange?.(chartData);
     } catch (error) {
       console.error('Error fetching reporting org chart data:', error);
       setError(error instanceof Error ? error.message : 'Failed to load chart data');

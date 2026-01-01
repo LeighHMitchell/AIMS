@@ -308,7 +308,7 @@ export function OrganizationComments({
                         <div className="flex items-center gap-2">
                           <span className="font-medium text-sm">{comment.author.name}</span>
                           <Badge variant={getRoleBadgeVariant(comment.author.role)} className="text-xs">
-                            {comment.author.role}
+                            {getRoleDisplayLabel(comment.author.role)}
                           </Badge>
                           <Badge variant={comment.type === 'Question' ? 'default' : 'outline'} className="text-xs">
                             {comment.type}
@@ -410,5 +410,7 @@ export function OrganizationComments({
     </div>
   )
 }
+
+
 
 

@@ -240,7 +240,7 @@ export function AidOnBudgetChart({ dateRange, refreshKey }: AidOnBudgetChartProp
           const percentage = ((d.data.value / totalCenterValue) * 100).toFixed(1);
           showTooltip(event, {
             title: d.data.type,
-            value: formatCurrency(d.data.value),
+            value: formatAbbreviated(d.data.value),
             percentage: `${percentage}% of total aid`
           });
         })
@@ -248,7 +248,7 @@ export function AidOnBudgetChart({ dateRange, refreshKey }: AidOnBudgetChartProp
           const percentage = ((d.data.value / totalCenterValue) * 100).toFixed(1);
           showTooltip(event, {
             title: d.data.type,
-            value: formatCurrency(d.data.value),
+            value: formatAbbreviated(d.data.value),
             percentage: `${percentage}% of total aid`
           });
         })
@@ -336,7 +336,7 @@ export function AidOnBudgetChart({ dateRange, refreshKey }: AidOnBudgetChartProp
               : '0.0';
             showTooltip(event, {
               title: `${sector.code} - ${sector.name}`,
-              value: formatCurrency(sector.value),
+              value: formatAbbreviated(sector.value),
               percentage: `${pct}% of total aid`
             });
           })
@@ -346,7 +346,7 @@ export function AidOnBudgetChart({ dateRange, refreshKey }: AidOnBudgetChartProp
               : '0.0';
             showTooltip(event, {
               title: `${sector.code} - ${sector.name}`,
-              value: formatCurrency(sector.value),
+              value: formatAbbreviated(sector.value),
               percentage: `${pct}% of total aid`
             });
           })

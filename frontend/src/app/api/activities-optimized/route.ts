@@ -604,6 +604,26 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    // Fetch subnational breakdowns for all activities (for Locations % column)
+    let subnationalBreakdownsMap = new Map<string, any[]>();
+    if (activityIds.length > 0) {
+      const { data: breakdowns, error: breakdownsError } = await supabase
+        .from('subnational_breakdowns')
+        .select('id, activity_id, region_name, percentage, is_nationwide')
+        .in('activity_id', activityIds);
+
+      if (breakdownsError) {
+        console.error('[AIMS Optimized] Subnational breakdowns fetch error:', breakdownsError);
+      } else if (breakdowns) {
+        breakdowns.forEach((b: any) => {
+          if (!subnationalBreakdownsMap.has(b.activity_id)) {
+            subnationalBreakdownsMap.set(b.activity_id, []);
+          }
+          subnationalBreakdownsMap.get(b.activity_id)!.push(b);
+        });
+      }
+    }
+
     // Transform activities with summaries
     let transformedActivities = activities.map((activity: any) => {
       const summary = summariesMap.get(activity.id) || {
@@ -693,7 +713,26 @@ export async function GET(request: NextRequest) {
           categoryCode: sector.category_code,
           categoryName: sector.category_name,
           level: sector.level
-        }))
+        })),
+        // Include locations for Locations % column (subnational breakdowns)
+        locations: (() => {
+          const subnationalBreakdowns = subnationalBreakdownsMap.get(activity.id) || [];
+          
+          // Use subnational breakdowns for the bar chart (includes Nationwide as full-width bar)
+          const broadCoverageLocations = subnationalBreakdowns.map((b: any) => ({
+            id: b.id,
+            admin_unit: b.is_nationwide ? 'Nationwide' : b.region_name,
+            description: null,
+            percentage: b.percentage ?? null,
+            state_region_name: b.is_nationwide ? 'Nationwide' : b.region_name,
+            state_region_code: null
+          }));
+          
+          return {
+            site_locations: [],
+            broad_coverage_locations: broadCoverageLocations
+          };
+        })()
       };
     });
 

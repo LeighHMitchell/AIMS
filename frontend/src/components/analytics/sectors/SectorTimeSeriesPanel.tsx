@@ -4,7 +4,7 @@ import React, { useState, useRef } from 'react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
-import { AlertCircle, Download, FileImage, TrendingUp } from 'lucide-react'
+import { AlertCircle, Download, FileImage, TrendingUp, LineChart as LineChartIcon, BarChart3, Layers, Table as TableIcon } from 'lucide-react'
 import { SectorTimeSeriesFilters as FilterState, TimeSeriesChartType, TimeSeriesDataType } from '@/types/sector-analytics'
 import { useSectorTimeSeries } from './sectorTimeSeriesQueries'
 import { SectorTimeSeriesFilters } from './SectorTimeSeriesFilters'
@@ -194,40 +194,45 @@ export function SectorTimeSeriesPanel() {
                   size="sm"
                   onClick={() => setChartType('area')}
                   className="h-8"
+                  title="Area"
                 >
-                  Area
+                  <TrendingUp className="h-4 w-4" />
                 </Button>
                 <Button
                   variant={chartType === 'line' ? 'default' : 'ghost'}
                   size="sm"
                   onClick={() => setChartType('line')}
                   className="h-8"
+                  title="Line"
                 >
-                  Line
+                  <LineChartIcon className="h-4 w-4" />
                 </Button>
                 <Button
                   variant={chartType === 'bar' ? 'default' : 'ghost'}
                   size="sm"
                   onClick={() => setChartType('bar')}
                   className="h-8"
+                  title="Bar"
                 >
-                  Bar
+                  <BarChart3 className="h-4 w-4" />
                 </Button>
                 <Button
                   variant={chartType === 'stacked-bar' ? 'default' : 'ghost'}
                   size="sm"
                   onClick={() => setChartType('stacked-bar')}
                   className="h-8"
+                  title="Stacked Bar"
                 >
-                  Stacked Bar
+                  <Layers className="h-4 w-4" />
                 </Button>
                 <Button
                   variant={chartType === 'table' ? 'default' : 'ghost'}
                   size="sm"
                   onClick={() => setChartType('table')}
                   className="h-8"
+                  title="Table"
                 >
-                  Table
+                  <TableIcon className="h-4 w-4" />
                 </Button>
               </div>
 

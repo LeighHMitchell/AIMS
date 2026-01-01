@@ -57,6 +57,13 @@ import IATIImportPreferences from './IATIImportPreferences'
 import { HelpTextTooltip } from '@/components/ui/help-text-tooltip'
 import { StringArrayInput } from '@/components/ui/string-array-input'
 import { IATI_COUNTRIES } from '@/data/iati-countries'
+import { 
+  INSTITUTIONAL_GROUPS, 
+  getAllInstitutionalGroupNames,
+  isInstitutionalGroup,
+  findInstitutionalGroup,
+  type InstitutionalGroup 
+} from '@/data/location-groups'
 import { OrganizationCombobox, Organization as ComboboxOrganization } from '@/components/ui/organization-combobox'
 import {
   AlertDialog,
@@ -69,17 +76,13 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 
-const REGIONAL_OPTIONS = [
-  { code: '998', name: 'Global or Regional', isRegion: true }
-]
-
-// Combine all options for validation
+// Combine all options for validation (countries + institutional groups)
 const ALL_COUNTRY_AND_REGION_CODES = [
   ...IATI_COUNTRIES.map(c => c.code),
   ...IATI_COUNTRIES.map(c => c.name),
-  ...REGIONAL_OPTIONS.map(r => r.code),
-  ...REGIONAL_OPTIONS.map(r => r.name),
+  ...getAllInstitutionalGroupNames(),
   'Myanmar', 'Burma', 'Rwanda',
+  // Legacy support for old "Global or Regional" value
   'Global or Regional'
 ]
 
@@ -108,12 +111,15 @@ const deriveCooperationModality = (orgTypeCode: string, country: string): string
   const typeCode = orgTypeCode?.trim();
   const countryValue = country?.trim().toLowerCase();
   
-  const isRegional = REGIONAL_OPTIONS.some(r => 
-    r.name.toLowerCase() === countryValue || 
-    r.code === country
-  )
+  // Check if it's an institutional group (multilateral organization)
+  const isInstitutional = isInstitutionalGroup(country);
+  
+  // Also check for legacy "Global or Regional" value
+  const isLegacyGlobal = countryValue === 'global or regional' || 
+    countryValue?.includes('global') || 
+    countryValue?.includes('regional');
 
-  if (isRegional || countryValue === 'global or regional' || countryValue?.includes('global') || countryValue?.includes('regional')) {
+  if (isInstitutional || isLegacyGlobal) {
     return 'Global or Regional';
   } else if (typeCode === '10' && countryValue !== 'myanmar') {
     return 'External';
@@ -753,7 +759,9 @@ export function EditOrganizationModal({
   return (
     <>
     <Dialog open={modalOpen} onOpenChange={handleOpenChange}>
-      <DialogContent className="max-w-4xl h-[85vh] overflow-hidden flex flex-col p-0">
+      <DialogContent 
+        className="max-w-4xl h-[85vh] overflow-hidden flex flex-col p-0"
+      >
         <DialogHeader className="flex-shrink-0 p-6 pb-4 rounded-t-lg" style={{ backgroundColor: '#F0EEE9' }}>
           <div className="flex items-center justify-between">
             <div>
@@ -793,6 +801,19 @@ export function EditOrganizationModal({
           </div>
         )}
         
+        {/* Organization Name Header - shown when editing existing org */}
+        {!isCreating && (
+          <div className="px-6 pb-4">
+            <h2 className="text-2xl font-bold text-gray-900 leading-tight">
+              {formData.name || 'Untitled Organization'}
+              {formData.acronym && (
+                <span className="text-xl font-medium text-gray-500 ml-2">({formData.acronym})</span>
+              )}
+            </h2>
+            <Separator className="mt-4" />
+          </div>
+        )}
+
         {/* Tabbed Content */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col overflow-hidden px-6">
           <TabsList className="grid w-full grid-cols-7 flex-shrink-0">
@@ -852,10 +873,11 @@ export function EditOrganizationModal({
                   onOpenChange={setCountrySelectOpen}
                 >
                   <SelectTrigger className={validationErrors.some(e => e.includes('Location Represented')) ? 'border-red-500' : ''}>
-                    <SelectValue placeholder="Select country or region">
+                    <SelectValue placeholder="Select country or institution">
                       {formData.country_represented && (
                         <div className="flex items-center gap-2">
                           {(() => {
+                            // Check if it's a country
                             const country = IATI_COUNTRIES.find(c => c.name === formData.country_represented)
                             if (country) {
                               return (
@@ -865,17 +887,27 @@ export function EditOrganizationModal({
                                 </>
                               )
                             }
+                            // Check if it's an institutional group
+                            if (isInstitutionalGroup(formData.country_represented)) {
+                              return (
+                                <>
+                                  <Building2 className="h-4 w-4 text-muted-foreground" />
+                                  <span>{formData.country_represented}</span>
+                                </>
+                              )
+                            }
+                            // Fallback for legacy or unknown values
                             return <span>{formData.country_represented}</span>
                           })()}
                         </div>
                       )}
                     </SelectValue>
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="max-h-[400px]">
                     {/* Search Box */}
                     <div className="px-2 pb-2 border-b sticky top-0 bg-white z-10">
                       <Input
-                        placeholder="Search countries..."
+                        placeholder="Search countries or institutions..."
                         value={countrySearchTerm}
                         onChange={(e) => setCountrySearchTerm(e.target.value)}
                         onClick={(e) => e.stopPropagation()}
@@ -886,10 +918,14 @@ export function EditOrganizationModal({
 
                     {(() => {
                       const searchLower = countrySearchTerm.toLowerCase()
-                      const filteredRegions = REGIONAL_OPTIONS.filter(region =>
-                        region.name.toLowerCase().includes(searchLower) ||
-                        region.code.toLowerCase().includes(searchLower)
+                      
+                      // Filter institutional groups (parent groups only)
+                      const filteredInstitutionalGroups = INSTITUTIONAL_GROUPS.filter(group =>
+                        group.name.toLowerCase().includes(searchLower) ||
+                        (group.description?.toLowerCase().includes(searchLower) ?? false)
                       )
+                      
+                      // Filter countries
                       const filteredCountries = IATI_COUNTRIES.filter(country =>
                         !country.withdrawn && (
                           country.name.toLowerCase().includes(searchLower) ||
@@ -897,27 +933,33 @@ export function EditOrganizationModal({
                         )
                       )
 
+                      const hasInstitutionalResults = filteredInstitutionalGroups.length > 0
+                      const hasCountryResults = filteredCountries.length > 0
+
                       return (
                         <>
-                          {/* Regional/Global Options */}
-                          {filteredRegions.length > 0 && (
+                          {/* Institutional Groups */}
+                          {hasInstitutionalResults && (
                             <>
-                              <div className="px-2 py-1.5 text-sm font-semibold text-gray-600">
-                                Region / Global
+                              <div className="px-2 py-1.5 text-sm font-semibold text-gray-600 bg-gray-50">
+                                Institutional Groups
                               </div>
-                              {filteredRegions.map((region) => (
-                                <SelectItem key={region.code} value={region.name}>
-                                  {region.name}
+                              {filteredInstitutionalGroups.map((group) => (
+                                <SelectItem key={group.code} value={group.name} className="font-medium">
+                                  <div className="flex items-center gap-2">
+                                    <Building2 className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                                    <span>{group.name}</span>
+                                  </div>
                                 </SelectItem>
                               ))}
-                              {filteredCountries.length > 0 && <div className="my-1 border-t" />}
+                              {hasCountryResults && <div className="my-1 border-t" />}
                             </>
                           )}
 
                           {/* Country Options */}
-                          {filteredCountries.length > 0 && (
+                          {hasCountryResults && (
                             <>
-                              <div className="px-2 py-1.5 text-sm font-semibold text-gray-600">
+                              <div className="px-2 py-1.5 text-sm font-semibold text-gray-600 bg-gray-50">
                                 Countries
                               </div>
                               {filteredCountries.map((country) => (
@@ -932,9 +974,9 @@ export function EditOrganizationModal({
                           )}
 
                           {/* No Results */}
-                          {filteredRegions.length === 0 && filteredCountries.length === 0 && (
+                          {!hasInstitutionalResults && !hasCountryResults && (
                             <div className="px-2 py-6 text-center text-sm text-gray-500">
-                              No countries found for "{countrySearchTerm}"
+                              No results found for "{countrySearchTerm}"
                             </div>
                           )}
                         </>
@@ -943,7 +985,7 @@ export function EditOrganizationModal({
                   </SelectContent>
                 </Select>
                 <p className="text-xs text-muted-foreground">
-                  Select a specific country or choose a regional/global option for global or regional organizations
+                  Select a country for bilateral agencies, or an institutional group for multilateral organizations
                 </p>
               </div>
 

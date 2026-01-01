@@ -24,6 +24,7 @@ interface HumanitarianShareChartProps {
   }
   refreshKey: number
   onDataChange?: (data: ShareData) => void
+  compact?: boolean
 }
 
 interface ShareData {
@@ -36,7 +37,7 @@ interface ShareData {
 
 type ViewMode = 'chart' | 'bar' | 'table'
 
-export function HumanitarianShareChart({ dateRange, refreshKey, onDataChange }: HumanitarianShareChartProps) {
+export function HumanitarianShareChart({ dateRange, refreshKey, onDataChange, compact = false }: HumanitarianShareChartProps) {
   const [data, setData] = useState<ShareData | null>(null)
   const [loading, setLoading] = useState(true)
   const [viewMode, setViewMode] = useState<ViewMode>('chart')
@@ -132,6 +133,41 @@ export function HumanitarianShareChart({ dateRange, refreshKey, onDataChange }: 
       console.error('[HumanitarianShareChart] Error formatting currency:', error)
       return '$0'
     }
+  }
+
+  // Compact mode renders just the chart without Card wrapper and filters
+  if (compact) {
+    if (loading) {
+      return <Skeleton className="h-full w-full" />
+    }
+    if (!data || data.total === 0) {
+      return (
+        <div className="h-full flex items-center justify-center text-slate-500">
+          <p className="text-sm">No data available</p>
+        </div>
+      )
+    }
+    return (
+      <div className="h-full flex flex-col items-center justify-center p-4">
+        <div className="relative mb-2">
+          <svg width="120" height="120" viewBox="0 0 160 160">
+            <circle cx="80" cy="80" r="70" fill="#FEE2E2" stroke="none" />
+            <circle cx="80" cy="80" r="60" fill="#FECACA" stroke="none" />
+            <text x="80" y="75" textAnchor="middle" fontSize="24" fontWeight="700" fill="#DC2626">
+              {data.humanitarianPercent}%
+            </text>
+            <text x="80" y="100" textAnchor="middle" fontSize="10" fill="#64748B">
+              Humanitarian
+            </text>
+          </svg>
+        </div>
+        <div className="text-xs text-slate-500 text-center">
+          <span className="text-red-600 font-medium">{formatCurrency(data.humanitarian)}</span>
+          {' / '}
+          <span>{formatCurrency(data.total)}</span>
+        </div>
+      </div>
+    )
   }
 
   if (loading) {
@@ -395,6 +431,7 @@ export function HumanitarianShareChart({ dateRange, refreshKey, onDataChange }: 
     </Card>
   )
 }
+
 
 
 

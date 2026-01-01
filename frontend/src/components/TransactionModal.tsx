@@ -1669,7 +1669,7 @@ export default function TransactionModal({
                         ...formData,
                         provider_org_id: orgId,
                         provider_org_name: org?.acronym || org?.name || '',
-                        provider_org_ref: org?.iati_identifier || ''
+                        provider_org_ref: org?.iati_identifier || org?.iati_org_id || ''
                       });
                       providerOrgAutosave.triggerFieldSave(orgId);
                     } else {
@@ -1872,7 +1872,7 @@ export default function TransactionModal({
                         ...formData,
                         receiver_org_id: orgId,
                         receiver_org_name: org?.acronym || org?.name || '',
-                        receiver_org_ref: org?.iati_identifier || ''
+                        receiver_org_ref: org?.iati_identifier || org?.iati_org_id || ''
                       });
                       receiverOrgAutosave.triggerFieldSave(orgId);
                     } else {

@@ -4,6 +4,31 @@ import { NextResponse } from 'next/server'
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
 
+// Simple in-memory cache for analytics data
+interface CacheEntry {
+  data: any
+  expiresAt: number
+}
+const analyticsCache = new Map<string, CacheEntry>()
+const CACHE_TTL = 5 * 60 * 1000 // 5 minutes
+
+function getCached(key: string): any | null {
+  const entry = analyticsCache.get(key)
+  if (!entry) return null
+  if (Date.now() > entry.expiresAt) {
+    analyticsCache.delete(key)
+    return null
+  }
+  return entry.data
+}
+
+function setCache(key: string, data: any): void {
+  analyticsCache.set(key, {
+    data,
+    expiresAt: Date.now() + CACHE_TTL
+  })
+}
+
 export async function GET(request: Request) {
   try {
     const supabase = createClient(supabaseUrl, supabaseServiceKey)
@@ -12,6 +37,14 @@ export async function GET(request: Request) {
     const dateFrom = searchParams.get('dateFrom') || '1900-01-01'
     const dateTo = searchParams.get('dateTo') || '2099-12-31'
     const orgType = searchParams.get('orgType') || 'all' // Filter by org type if needed
+
+    // Check cache first
+    const cacheKey = `all-donors:${dateFrom}:${dateTo}:${orgType}`
+    const cached = getCached(cacheKey)
+    if (cached) {
+      console.log('[AllDonors API] Returning cached data')
+      return NextResponse.json(cached)
+    }
 
     console.log('[AllDonors API] Fetching data with params:', { dateFrom, dateTo, orgType })
 
@@ -206,11 +239,17 @@ export async function GET(request: Request) {
     // Sort by total actual disbursement (descending)
     donorsArray.sort((a, b) => b.totalActualDisbursement - a.totalActualDisbursement)
 
-    return NextResponse.json({
+    const result = {
       success: true,
       data: donorsArray,
       count: donorsArray.length
-    })
+    }
+    
+    // Cache the result
+    setCache(cacheKey, result)
+    console.log('[AllDonors API] Cached result for key:', cacheKey)
+
+    return NextResponse.json(result)
 
   } catch (error) {
     console.error('[AllDonors API] Unexpected error:', error)

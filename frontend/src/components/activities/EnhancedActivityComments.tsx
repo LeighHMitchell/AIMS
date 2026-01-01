@@ -1008,7 +1008,7 @@ function CommentCard({
                     <div className="flex items-center gap-2">
                       <span className="font-medium text-sm truncate">{comment.author.name}</span>
                       <Badge variant={getRoleBadgeVariant(comment.author.role)} className="text-xs">
-                        {comment.author.role}
+                        {getRoleDisplayLabel(comment.author.role)}
                       </Badge>
                     </div>
                   </div>
@@ -1252,7 +1252,7 @@ function ReplyCard({ reply, onReaction, reactionDisplay }: ReplyCardProps) {
           </Avatar>
           <span className="text-sm font-medium">{reply.author.name}</span>
           <Badge variant={getRoleBadgeVariant(reply.author.role)} className="text-xs ml-2">
-            {reply.author.role}
+            {getRoleDisplayLabel(reply.author.role)}
           </Badge>
           <span className="text-xs text-gray-500">
             {formatDistanceToNow(new Date(reply.createdAt), { addSuffix: true })}

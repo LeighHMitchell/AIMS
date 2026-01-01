@@ -2496,22 +2496,22 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                         </TableCell>
                         <TableCell className="text-center">
                           {field.hasConflict && (
-                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium" style={{ backgroundColor: '#f1f4f8', color: '#dc2625', border: '1px solid #dc2625' }}>
                               Conflict
                             </span>
                           )}
                           {!field.hasConflict && field.fieldName === 'Sectors' && field.description?.includes('Refined successfully') && (
-                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium" style={{ backgroundColor: '#f1f4f8', color: '#7b95a7', border: '1px solid #7b95a7' }}>
                               Ready
                             </span>
                           )}
                           {!field.hasConflict && !(field.fieldName === 'Sectors' && field.description?.includes('Refined successfully')) && isMissing && (
-                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium" style={{ backgroundColor: '#f1f4f8', color: '#4c5568', border: '1px solid #4c5568' }}>
                               New
                             </span>
                           )}
                           {!field.hasConflict && !(field.fieldName === 'Sectors' && field.description?.includes('Refined successfully')) && !isMissing && valuesMatch(field) && (
-                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium" style={{ backgroundColor: '#f1f4f8', color: '#7b95a7', border: '1px solid #7b95a7' }}>
                               Match
                             </span>
                           )}

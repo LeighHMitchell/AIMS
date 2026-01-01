@@ -18,6 +18,24 @@ import { Button } from '@/components/ui/button'
 import { BarChart3, DollarSign, Wallet, Calendar, Search, Download, FileImage, Table as TableIcon, AlertCircle } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+// Inline currency formatter to avoid initialization issues
+const formatCurrencyAbbreviated = (value: number): string => {
+  const isNegative = value < 0
+  const absValue = Math.abs(value)
+
+  let formatted = ''
+  if (absValue >= 1000000000) {
+    formatted = `$${(absValue / 1000000000).toFixed(1)}b`
+  } else if (absValue >= 1000000) {
+    formatted = `$${(absValue / 1000000).toFixed(1)}m`
+  } else if (absValue >= 1000) {
+    formatted = `$${(absValue / 1000).toFixed(1)}k`
+  } else {
+    formatted = `$${absValue.toFixed(0)}`
+  }
+
+  return isNegative ? `-${formatted}` : formatted
+}
 
 type ViewMode = 'budgets' | 'planned' | 'disbursements'
 type ChartViewMode = 'bar' | 'table'
@@ -29,6 +47,7 @@ interface AllDonorsChartProps {
   }
   refreshKey: number
   onDataChange?: (data: DonorData[]) => void
+  compact?: boolean
 }
 
 interface DonorData {
@@ -41,7 +60,7 @@ interface DonorData {
   totalActualDisbursement: number
 }
 
-export function AllDonorsHorizontalBarChart({ dateRange, refreshKey, onDataChange }: AllDonorsChartProps) {
+export function AllDonorsHorizontalBarChart({ dateRange, refreshKey, onDataChange, compact = false }: AllDonorsChartProps) {
   const [allData, setAllData] = useState<DonorData[]>([])
   const [loading, setLoading] = useState(true)
   const [viewMode, setViewMode] = useState<ViewMode>('disbursements')
@@ -50,9 +69,14 @@ export function AllDonorsHorizontalBarChart({ dateRange, refreshKey, onDataChang
   const [orgTypeFilter, setOrgTypeFilter] = useState<string>('all')
   const [searchQuery, setSearchQuery] = useState('')
 
+  // Use date strings instead of object reference to avoid infinite re-renders
+  const dateFromStr = dateRange.from.toISOString()
+  const dateToStr = dateRange.to.toISOString()
+  
   useEffect(() => {
     fetchData()
-  }, [dateRange, refreshKey, orgTypeFilter])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dateFromStr, dateToStr, refreshKey, orgTypeFilter])
 
   const fetchData = async () => {
     try {
@@ -144,25 +168,12 @@ export function AllDonorsHorizontalBarChart({ dateRange, refreshKey, onDataChang
     }
   }
 
+  // Use shared currency formatter for tooltips
   const formatTooltipValue = (value: number) => {
-    try {
-      if (value === null || value === undefined || isNaN(value) || !isFinite(value)) {
-        return '$0.00'
-      }
-      const safeValue = Number(value)
-      if (isNaN(safeValue) || !isFinite(safeValue)) {
-        return '$0.00'
-      }
-      return new Intl.NumberFormat('en-US', {
-        style: 'currency',
-        currency: 'USD',
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2
-      }).format(safeValue)
-    } catch (error) {
-      console.error('[AllDonorsChart] Error formatting currency:', error, value)
-      return '$0.00'
+    if (value === null || value === undefined || isNaN(value) || !isFinite(value)) {
+      return '$0'
     }
+    return formatCurrencyAbbreviated(value)
   }
 
   const formatPercentage = (value: number) => {
@@ -349,6 +360,56 @@ export function AllDonorsHorizontalBarChart({ dateRange, refreshKey, onDataChang
     })
   }
 
+  // Compact mode renders just the chart without Card wrapper and filters
+  if (compact) {
+    if (loading) {
+      return <Skeleton className="h-full w-full" />
+    }
+    if (!chartData || chartData.length === 0) {
+      return (
+        <div className="h-full w-full flex items-center justify-center text-slate-500">
+          <p className="text-sm">No data available</p>
+        </div>
+      )
+    }
+    // Show top 10 donors in compact mode
+    const compactData = chartData.slice(0, 10)
+    return (
+      <div className="h-full w-full">
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart
+            data={compactData}
+            layout="vertical"
+            margin={{ top: 5, right: 30, left: 60, bottom: 5 }}
+          >
+            <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} />
+            <XAxis type="number" tickFormatter={formatCurrency} fontSize={10} />
+            <YAxis
+              type="category"
+              dataKey="name"
+              width={55}
+              tick={{ fontSize: 9 }}
+              interval={0}
+            />
+            <Tooltip content={<CustomTooltip />} />
+            <Bar
+              dataKey="value"
+              fill="#dc2625"
+              radius={[0, 4, 4, 0]}
+            >
+              {compactData.map((_, index) => (
+                <Cell
+                  key={`cell-${index}`}
+                  fill={index === 0 ? '#dc2625' : index < 3 ? '#4c5568' : '#7b95a7'}
+                />
+              ))}
+            </Bar>
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
+    )
+  }
+
   if (loading) {
     return (
       <Card className="bg-white border-slate-200">
@@ -440,18 +501,18 @@ export function AllDonorsHorizontalBarChart({ dateRange, refreshKey, onDataChang
                     size="sm"
                     onClick={() => setChartViewMode('bar')}
                     className="h-8"
+                    title="Bar"
                   >
-                    <BarChart3 className="h-4 w-4 mr-1.5" />
-                    Bar
+                    <BarChart3 className="h-4 w-4" />
                   </Button>
                   <Button
                     variant={chartViewMode === 'table' ? 'default' : 'ghost'}
                     size="sm"
                     onClick={() => setChartViewMode('table')}
                     className="h-8"
+                    title="Table"
                   >
-                    <TableIcon className="h-4 w-4 mr-1.5" />
-                    Table
+                    <TableIcon className="h-4 w-4" />
                   </Button>
                 </div>
                 <div className="flex gap-1">
@@ -568,18 +629,18 @@ export function AllDonorsHorizontalBarChart({ dateRange, refreshKey, onDataChang
                   size="sm"
                   onClick={() => setChartViewMode('bar')}
                   className="h-8"
+                  title="Bar"
                 >
-                  <BarChart3 className="h-4 w-4 mr-1.5" />
-                  Bar
+                  <BarChart3 className="h-4 w-4" />
                 </Button>
                 <Button
                   variant={chartViewMode === 'table' ? 'default' : 'ghost'}
                   size="sm"
                   onClick={() => setChartViewMode('table')}
                   className="h-8"
+                  title="Table"
                 >
-                  <TableIcon className="h-4 w-4 mr-1.5" />
-                  Table
+                  <TableIcon className="h-4 w-4" />
                 </Button>
               </div>
               <div className="flex gap-1">

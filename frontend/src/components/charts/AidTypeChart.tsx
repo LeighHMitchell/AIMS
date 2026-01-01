@@ -81,6 +81,7 @@ export const AidTypeChart: React.FC<AidTypeChartProps> = ({
       }));
       setData(dataWithDisplay);
       setCurrency(result.currency || 'USD');
+      onDataChange?.(dataWithDisplay);
     } catch (error) {
       console.error('Error fetching aid type chart data:', error);
       setError(error instanceof Error ? error.message : 'Failed to load chart data');

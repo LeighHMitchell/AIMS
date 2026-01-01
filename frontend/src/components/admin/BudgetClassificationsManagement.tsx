@@ -93,7 +93,7 @@ function TreeNode({
   return (
     <div className="border-b last:border-b-0">
       <div
-        className={`flex items-center gap-4 py-2 px-3 hover:bg-muted/50 group ${
+        className={`flex items-start gap-4 py-2 px-3 hover:bg-muted/50 group ${
           !node.isActive ? "opacity-60" : ""
         }`}
         style={{ paddingLeft: `${level * 20 + 12}px` }}
@@ -124,7 +124,7 @@ function TreeNode({
         </span>
 
         {/* Name */}
-        <span className="text-sm truncate flex-1 min-w-0">{node.name}</span>
+        <span className="text-sm flex-1 min-w-0 break-words">{node.name}</span>
 
         {/* Local Name */}
         <span className="hidden md:block text-xs text-muted-foreground italic flex-1 min-w-0 truncate">
@@ -132,51 +132,22 @@ function TreeNode({
         </span>
 
         {/* Description */}
-        <span className="hidden lg:block text-xs text-muted-foreground flex-[2] min-w-0 truncate">
+        <span className="hidden lg:block text-xs text-muted-foreground flex-[2] min-w-0 break-words">
           {node.description || "—"}
         </span>
 
         {/* Status */}
-        <span className="w-[100px] flex flex-shrink-0 pl-2">
-          {!node.isActive ? (
-            <Badge variant="secondary" className="text-xs">
-              Inactive
-            </Badge>
-          ) : (
-            <Badge variant="outline" className="text-xs border-green-300 text-green-700">
-              Active
-            </Badge>
-          )}
+        <span className="w-[100px] flex items-center flex-shrink-0 pl-2 text-sm">
+          {node.isActive ? "Active" : "Inactive"}
         </span>
 
-        {/* Type Badge */}
-        <span className="w-[160px] flex flex-shrink-0 pl-2">
-          <Badge
-            variant="outline"
-            className={`text-xs ${
-              node.classificationType === "functional"
-                ? "border-blue-300 text-blue-700"
-                : node.classificationType === "functional_cofog"
-                ? "border-cyan-300 text-cyan-700"
-                : node.classificationType === "administrative"
-                ? "border-green-300 text-green-700"
-                : node.classificationType === "economic"
-                ? "border-orange-300 text-orange-700"
-                : node.classificationType === "revenue"
-                ? "border-emerald-300 text-emerald-700"
-                : node.classificationType === "liabilities"
-                ? "border-rose-300 text-rose-700"
-                : node.classificationType === "funding_sources"
-                ? "border-indigo-300 text-indigo-700"
-                : "border-purple-300 text-purple-700"
-            }`}
-          >
-            {CLASSIFICATION_TYPE_LABELS[node.classificationType]}
-          </Badge>
+        {/* Type */}
+        <span className="w-[160px] flex-shrink-0 pl-2 text-sm">
+          {CLASSIFICATION_TYPE_LABELS[node.classificationType]}
         </span>
 
-        {/* Actions - only show when unlocked */}
-        {!isLocked && (
+        {/* Actions - only show when unlocked, but always keep spacer for alignment */}
+        {!isLocked ? (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button
@@ -205,6 +176,8 @@ function TreeNode({
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
+        ) : (
+          <div className="w-8 flex-shrink-0" />
         )}
       </div>
 

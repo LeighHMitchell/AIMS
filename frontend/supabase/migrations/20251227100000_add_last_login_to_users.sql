@@ -10,3 +10,4 @@ COMMENT ON COLUMN public.users.last_login IS 'Timestamp of the user''s most rece
 -- Create an index for efficient queries on last_login (e.g., for admin reporting)
 CREATE INDEX IF NOT EXISTS idx_users_last_login ON public.users(last_login);
 
+

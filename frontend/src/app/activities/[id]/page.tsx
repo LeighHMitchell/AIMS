@@ -38,7 +38,6 @@ import {
   Lock,
   Wallet,
   ExternalLink,
-  TrendingUp,
   Building2,
   MessageSquare,
   Plus,
@@ -1603,7 +1602,7 @@ export default function ActivityDetailPage() {
           </Dialog>
 
           {/* Activity Header Card */}
-          <Card className="mb-6 border-0 overflow-hidden">
+          <Card className="mb-6 border-0 shadow-none overflow-hidden">
             {/* Banner Image */}
             {banner ? (
               <div className="w-full h-48 overflow-hidden">
@@ -2190,7 +2189,7 @@ export default function ActivityDetailPage() {
                             
                             {/* Organization Name, IATI ID */}
                             <div className="flex-1 min-w-0">
-                              <div className="text-sm text-slate-900 break-words flex flex-wrap items-center gap-2">
+                              <div className="text-sm text-slate-900">
                                 {reportingOrg.id ? (
                                   <Link 
                                     href={`/organizations/${reportingOrg.id}`}
@@ -2209,9 +2208,9 @@ export default function ActivityDetailPage() {
                                     )}
                                   </span>
                                 )}
-                                {/* IATI ID with gray background */}
+                                {/* IATI ID with gray background - inline */}
                                 {reportingOrg.iati_org_id && (
-                                  <span className="text-xs text-slate-600 font-mono bg-slate-100 px-1.5 py-0.5 rounded">
+                                  <span className="text-xs text-slate-600 font-mono bg-slate-100 px-1.5 py-0.5 rounded ml-2 inline-block align-middle">
                                     {reportingOrg.iati_org_id}
                                   </span>
                                 )}
@@ -2239,9 +2238,9 @@ export default function ActivityDetailPage() {
                                     </div>
                                   )}
                                   
-                                  {/* Organization Name, IATI ID, and Role Badge - Same Line Wrapped */}
+                                  {/* Organization Name, IATI ID, and Role Badge - Same Line */}
                                   <div className="flex-1 min-w-0">
-                                    <div className="text-sm text-slate-900 break-words flex flex-wrap items-center gap-2">
+                                    <div className="text-sm text-slate-900">
                                       {org.organization?.id ? (
                                         <Link 
                                           href={`/organizations/${org.organization.id}`}
@@ -2260,15 +2259,15 @@ export default function ActivityDetailPage() {
                                           )}
                                         </span>
                                       )}
-                                      {/* IATI ID with gray background */}
+                                      {/* IATI ID with gray background - inline */}
                                       {org.organization?.iati_org_id && (
-                                        <span className="text-xs text-slate-600 font-mono bg-slate-100 px-1.5 py-0.5 rounded">
+                                        <span className="text-xs text-slate-600 font-mono bg-slate-100 px-1.5 py-0.5 rounded ml-2 inline-block align-middle">
                                           {org.organization.iati_org_id}
                                         </span>
                                       )}
-                                      {/* Role Badge with colors from new palette */}
+                                      {/* Role Badge with colors from new palette - inline */}
                                       <Badge 
-                                        className={`text-xs px-2 py-0.5 rounded ${
+                                        className={`text-xs px-2 py-0.5 rounded ml-2 inline-block align-middle ${
                                           org.role_type === 'funding' ? 'bg-[#dc2625]/10 text-[#dc2625]' :
                                           org.role_type === 'extending' ? 'bg-[#7b95a7]/10 text-[#7b95a7]' :
                                           org.role_type === 'government' ? 'bg-[#4c5568]/10 text-[#4c5568]' :
@@ -2514,13 +2513,12 @@ export default function ActivityDetailPage() {
                       </div>
                     </div>
                   </div>
-                  <TrendingUp className="h-6 w-6 text-slate-400 flex-shrink-0" />
                 </div>
               </CardContent>
             </Card>
 
             {/* Budget by Year Chart */}
-            <Card className="border-slate-200 bg-white">
+            <Card className="border-slate-200 bg-white flex flex-col">
               <CardHeader className="pb-2 pt-3 px-3 flex flex-row items-center justify-between">
                 <div className="flex items-center gap-1.5">
                   <CardTitle className="text-xs font-semibold text-slate-900">Budget by Year</CardTitle>
@@ -2574,7 +2572,7 @@ export default function ActivityDetailPage() {
                   </div>
                 </div>
               </CardHeader>
-              <CardContent className="p-3 pt-0 flex flex-col">
+              <CardContent className="p-3 pt-0 flex flex-col flex-1">
                 {(() => {
                   // Calculate budgets by year
                   const budgetsByYear = new Map<number, number>()
@@ -2598,7 +2596,7 @@ export default function ActivityDetailPage() {
 
                   if (budgetData.length === 0) {
                     return (
-                      <div className="h-24 flex items-center justify-center text-slate-400 text-xs">
+                      <div className="flex-1 min-h-24 flex items-center justify-center text-slate-400 text-xs">
                         <p>No budget data</p>
                 </div>
                     )
@@ -2606,7 +2604,7 @@ export default function ActivityDetailPage() {
 
                   if (budgetYearView === 'table') {
                     return (
-                      <div className="h-24 overflow-auto">
+                      <div className="flex-1 min-h-24 overflow-auto">
                         <table className="w-full text-xs">
                           <thead>
                             <tr className="border-b border-slate-200">
@@ -2636,7 +2634,7 @@ export default function ActivityDetailPage() {
                   }
 
                   return (
-                    <div className="h-24 -mx-2">
+                    <div className="flex-1 min-h-24 -mx-2">
                       <ResponsiveContainer width="100%" height="100%">
                         <RechartsBarChart data={budgetData} margin={{ top: 0, right: 5, left: 0, bottom: 5 }}>
                           <XAxis 
@@ -2701,12 +2699,14 @@ export default function ActivityDetailPage() {
             </Card>
 
             {/* Planned vs Actual */}
-            <Card className="border-slate-200 bg-white">
+            <Card className="border-slate-200 bg-white flex flex-col">
               <CardHeader className="pb-2 pt-3 px-3 flex flex-row items-center justify-between">
                 <div className="flex items-center gap-1.5">
                   <CardTitle className="text-xs font-semibold text-slate-900">Planned vs Actual</CardTitle>
                   <HelpTextTooltip 
                     content="Allocates budget and planned disbursement amounts proportionally across calendar years based on the number of days. For example, a budget spanning July 2024 to June 2025 will be split between 2024 and 2025."
+                    side="top"
+                    sideOffset={8}
                   />
                 </div>
                 <div className="flex items-center gap-2">
@@ -2782,7 +2782,7 @@ export default function ActivityDetailPage() {
                   </div>
                 </div>
               </CardHeader>
-              <CardContent className="p-3 pt-0 flex flex-col">
+              <CardContent className="p-3 pt-0 flex flex-col flex-1">
                 {(() => {
                   // Calculate planned disbursements and actuals by year
                   const plannedDisbursementsByYearMap = new Map<number, number>()
@@ -2836,7 +2836,7 @@ export default function ActivityDetailPage() {
 
                   if (chartData.length === 0) {
                     return (
-                      <div className="h-24 flex items-center justify-center text-slate-400 text-xs">
+                      <div className="flex-1 min-h-24 flex items-center justify-center text-slate-400 text-xs">
                         <p>No financial data</p>
                 </div>
                     )
@@ -2844,7 +2844,7 @@ export default function ActivityDetailPage() {
 
                   if (disbursementProgressView === 'table') {
                     return (
-                      <div className="h-24 overflow-auto">
+                      <div className="flex-1 min-h-24 overflow-auto">
                         <table className="w-full text-xs">
                           <thead>
                             <tr className="border-b border-slate-200">
@@ -2882,7 +2882,7 @@ export default function ActivityDetailPage() {
                   }
 
                   return (
-                    <div className="h-24 -mx-2">
+                    <div className="flex-1 min-h-24 -mx-2">
                       <ResponsiveContainer width="100%" height="100%">
                         <RechartsBarChart 
                           data={chartData} 
@@ -2996,7 +2996,7 @@ export default function ActivityDetailPage() {
           {/* Main Content Tabs */}
           <Card className="border-0">
             <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
-              <TabsList className="p-1 h-auto bg-background gap-1 border mb-6 flex flex-wrap">
+              <TabsList className="p-1 h-auto bg-background gap-1 border mb-6 flex flex-wrap justify-center">
                 <TabsTrigger value="finances" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
                   Finances
                 </TabsTrigger>
@@ -3030,11 +3030,6 @@ export default function ActivityDetailPage() {
                 <TabsTrigger value="contacts" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
                   Contacts
                 </TabsTrigger>
-                {(user?.role?.includes('gov_partner') || user?.role === 'super_user') && (
-                  <TabsTrigger value="government-inputs" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-                    Gov Inputs
-                  </TabsTrigger>
-                )}
               </TabsList>
 
               {/* Finances Tab - Consolidated */}
@@ -4742,796 +4737,6 @@ export default function ActivityDetailPage() {
                   <ActivityContactsTab activityId={activity.id} />
                 )}
               </TabsContent>
-
-              {/* Government Inputs Tab */}
-              {(user?.role?.includes('gov_partner') || user?.role === 'super_user') && (
-                <TabsContent value="government-inputs" className="p-6 border-0">
-                  {activeTab === "government-inputs" && (
-                    <div className="space-y-6">
-                      {activity.governmentInputs ? (
-                        <>
-                          {/* On-Budget Classification */}
-                          {activity.governmentInputs.onBudgetClassification && (
-                            <Card className="border-slate-200">
-                              <CardHeader>
-                                <CardTitle className="text-slate-900">On-Budget Classification (per CABRI/SPA model)</CardTitle>
-                                <CardDescription>
-                                  Based on the CABRI/SPA 2008 "Putting Aid on Budget" Good Practice Note
-                                </CardDescription>
-                              </CardHeader>
-                              <CardContent>
-                                <div className="space-y-4">
-                                  {/* Status Summary */}
-                                  <div className="mb-6">
-                                    {(() => {
-                                      const classification = activity.governmentInputs.onBudgetClassification;
-                                      const dimensions = ['onPlan', 'onBudget', 'onTreasury', 'onParliament', 'onProcurement', 'onAudit'];
-                                      const met = dimensions.filter(dim => classification[dim] === 'Yes').length;
-                                      const partial = dimensions.filter(dim => classification[dim] === 'Partial').length;
-                                      return (
-                                        <div className="flex items-center gap-2">
-                                          <Badge className={met >= 4 ? "bg-green-100 text-green-800" : met >= 2 ? "bg-blue-100 text-blue-800" : "bg-slate-100 text-slate-800"}>
-                                            {met} of 6 dimensions met
-                                          </Badge>
-                                          {partial > 0 && (
-                                            <Badge variant="outline" className="border-slate-300">{partial} partial</Badge>
-                                          )}
-                                        </div>
-                                      );
-                                    })()}
-                                  </div>
-                                  
-                                  {/* Six Dimensions Display */}
-                                  <div className="grid gap-3">
-                                    {[
-                                      { key: 'onPlan', label: 'On Plan', desc: 'Reflected in gov\'t planning documents' },
-                                      { key: 'onBudget', label: 'On Budget', desc: 'Included in national budget book' },
-                                      { key: 'onTreasury', label: 'On Treasury', desc: 'Disbursed via national treasury' },
-                                      { key: 'onParliament', label: 'On Parliament', desc: 'Subject to parliamentary scrutiny' },
-                                      { key: 'onProcurement', label: 'On Procurement', desc: 'Uses national procurement systems' },
-                                      { key: 'onAudit', label: 'On Accounting/Audit', desc: 'Uses national audit systems' },
-                                    ].map(({ key, label, desc }) => (
-                                      <div key={key} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
-                                        <div className="flex items-center gap-3">
-                                          <div className="w-2 h-2 bg-green-500 rounded-full" />
-                                          <span className="text-sm font-medium text-slate-900">{label}</span>
-                                          <span className="text-xs text-slate-500">({desc})</span>
-                                        </div>
-                                        <Badge className={
-                                          activity.governmentInputs.onBudgetClassification?.[key] === 'Yes' ? "bg-green-100 text-green-800" :
-                                          activity.governmentInputs.onBudgetClassification?.[key] === 'Partial' ? "bg-blue-100 text-blue-800" : 
-                                          "bg-slate-100 text-slate-800"
-                                        }>
-                                          {activity.governmentInputs.onBudgetClassification?.[key] || 'Not specified'}
-                                        </Badge>
-                                      </div>
-                                    ))}
-                                  </div>
-                                </div>
-                              </CardContent>
-                            </Card>
-                          )}
-
-                          {/* RGC Contribution */}
-                          {activity.governmentInputs.rgcContribution && (
-                            <Card className="border-slate-200">
-                              <CardHeader>
-                                <CardTitle className="flex items-center gap-2 text-slate-900">
-                                  <Wallet className="h-5 w-5" />
-                                  Government Financial Contribution (RGC)
-                                </CardTitle>
-                              </CardHeader>
-                              <CardContent className="space-y-4">
-                                <div className="grid gap-4">
-                                  <div className="flex items-center gap-2">
-                                    <span className="text-sm font-medium text-slate-700">Government Contribution:</span>
-                                    <Badge variant={activity.governmentInputs.rgcContribution?.isProvided ? "default" : "secondary"}>
-                                      {activity.governmentInputs.rgcContribution?.isProvided ? "Yes" : "No"}
-                                    </Badge>
-                                  </div>
-                                  
-                                  {activity.governmentInputs.rgcContribution?.isProvided && (
-                                    <>
-                                      {(activity.governmentInputs.rgcContribution?.totalAmountLocal || activity.governmentInputs.rgcContribution?.totalAmountUSD) && (
-                                        <div className="p-4 bg-slate-50 rounded-lg space-y-2">
-                                          {activity.governmentInputs.rgcContribution?.totalAmountLocal && (
-                                            <div className="flex justify-between">
-                                              <span className="text-sm text-slate-600">Total (Local Currency):</span>
-                                              <span className="text-sm font-medium text-slate-900">{formatNumberWithAbbreviation(activity.governmentInputs.rgcContribution.totalAmountLocal)}</span>
-                                            </div>
-                                          )}
-                                          {activity.governmentInputs.rgcContribution?.totalAmountUSD && (
-                                            <div className="flex justify-between">
-                                              <span className="text-sm text-slate-600">Total (USD):</span>
-                                              <span className="text-sm font-medium text-slate-900">${formatNumberWithAbbreviation(activity.governmentInputs.rgcContribution.totalAmountUSD)}</span>
-                                            </div>
-                                          )}
-                                          {activity.governmentInputs.rgcContribution?.valueDate && (
-                                            <div className="flex justify-between">
-                                              <span className="text-sm text-slate-600">Value Date:</span>
-                                              <span className="text-sm font-medium text-slate-900">{format(new Date(activity.governmentInputs.rgcContribution.valueDate), 'MMM dd, yyyy')}</span>
-                                            </div>
-                                          )}
-                                        </div>
-                                      )}
-                                      
-                                      {activity.governmentInputs.rgcContribution?.annual && activity.governmentInputs.rgcContribution.annual.length > 0 && (
-                                        <div>
-                                          <h4 className="text-sm font-medium text-slate-900 mb-3">Annual Breakdown</h4>
-                                          <div className="space-y-2">
-                                            {activity.governmentInputs.rgcContribution.annual.map((item: any, idx: number) => (
-                                              <div key={idx} className="p-3 bg-slate-50 rounded-lg flex justify-between items-center">
-                                                <span className="text-sm font-medium text-slate-900">{item.year}</span>
-                                                <div className="flex gap-4 text-sm">
-                                                  {item.amountLocal && <span className="text-slate-600">{formatNumberWithAbbreviation(item.amountLocal)} local</span>}
-                                                  {item.amountUSD && <span className="text-slate-900 font-medium">${formatNumberWithAbbreviation(item.amountUSD)}</span>}
-                                                </div>
-                                              </div>
-                                            ))}
-                                          </div>
-                                        </div>
-                                      )}
-                                      
-                                      {activity.governmentInputs.rgcContribution?.inKindContributions && (
-                                        <div>
-                                          <span className="text-sm font-medium text-slate-700">In-Kind Contributions:</span>
-                                          <p className="text-sm text-slate-600 mt-1">{activity.governmentInputs.rgcContribution.inKindContributions}</p>
-                                        </div>
-                                      )}
-                                      
-                                      {activity.governmentInputs.rgcContribution?.sourceOfFunding && (
-                                        <div>
-                                          <span className="text-sm font-medium text-slate-700">Source of Funding:</span>
-                                          <p className="text-sm text-slate-600 mt-1">{activity.governmentInputs.rgcContribution.sourceOfFunding}</p>
-                                        </div>
-                                      )}
-                                    </>
-                                  )}
-                                </div>
-                              </CardContent>
-                            </Card>
-                          )}
-
-                          {/* National Plan Alignment */}
-                          {activity.governmentInputs.nationalPlanAlignment && (
-                            <Card className="border-slate-200">
-                              <CardHeader>
-                                <CardTitle className="flex items-center gap-2 text-slate-900">
-                                  <Target className="h-5 w-5" />
-                                  National Plan Alignment
-                                </CardTitle>
-                              </CardHeader>
-                              <CardContent className="space-y-4">
-                                <div className="flex items-center gap-2">
-                                  <span className="text-sm font-medium text-slate-700">Aligned with National Plan:</span>
-                                  <Badge variant={activity.governmentInputs.nationalPlanAlignment?.isAligned ? "default" : "secondary"}>
-                                    {activity.governmentInputs.nationalPlanAlignment?.isAligned ? "Yes" : "No"}
-                                  </Badge>
-                                </div>
-                                
-                                {activity.governmentInputs.nationalPlanAlignment?.isAligned && (
-                                  <div className="space-y-3">
-                                    {activity.governmentInputs.nationalPlanAlignment?.planName && (
-                                      <div>
-                                        <span className="text-sm font-medium text-slate-700">Plan Name:</span>
-                                        <p className="text-sm text-slate-900 mt-1">{activity.governmentInputs.nationalPlanAlignment.planName}</p>
-                                      </div>
-                                    )}
-                                    {activity.governmentInputs.nationalPlanAlignment?.subGoal && (
-                                      <div>
-                                        <span className="text-sm font-medium text-slate-700">Sub-Goal:</span>
-                                        <p className="text-sm text-slate-900 mt-1">{activity.governmentInputs.nationalPlanAlignment.subGoal}</p>
-                                      </div>
-                                    )}
-                                    {activity.governmentInputs.nationalPlanAlignment?.nationalIndicatorCode && (
-                                      <div>
-                                        <span className="text-sm font-medium text-slate-700">National Indicator Code:</span>
-                                        <p className="text-sm text-slate-900 mt-1 font-mono">{activity.governmentInputs.nationalPlanAlignment.nationalIndicatorCode}</p>
-                                      </div>
-                                    )}
-                                  </div>
-                                )}
-                              </CardContent>
-                            </Card>
-                          )}
-
-                          {/* Technical Coordination */}
-                          {activity.governmentInputs.technicalCoordination && (
-                            <Card className="border-slate-200">
-                              <CardHeader>
-                                <CardTitle className="flex items-center gap-2 text-slate-900">
-                                  <Users className="h-5 w-5" />
-                                  Technical Coordination
-                                </CardTitle>
-                              </CardHeader>
-                              <CardContent className="space-y-4">
-                                {activity.governmentInputs.technicalCoordination?.accountableMinistry && (
-                                  <div>
-                                    <span className="text-sm font-medium text-slate-700">Accountable Ministry:</span>
-                                    <p className="text-sm text-slate-900 mt-1">{activity.governmentInputs.technicalCoordination.accountableMinistry}</p>
-                                  </div>
-                                )}
-                                
-                                {activity.governmentInputs.technicalCoordination?.workingGroups && activity.governmentInputs.technicalCoordination.workingGroups.length > 0 && (
-                                  <div>
-                                    <span className="text-sm font-medium text-slate-700">Working Groups:</span>
-                                    <div className="flex flex-wrap gap-2 mt-2">
-                                      {activity.governmentInputs.technicalCoordination.workingGroups.map((wg: string, idx: number) => (
-                                        <Badge key={idx} variant="outline">{wg}</Badge>
-                                      ))}
-                                    </div>
-                                  </div>
-                                )}
-                                
-                                {activity.governmentInputs.technicalCoordination?.regions && activity.governmentInputs.technicalCoordination.regions.length > 0 && (
-                                  <div>
-                                    <span className="text-sm font-medium text-slate-700">Regions:</span>
-                                    <div className="flex flex-wrap gap-2 mt-2">
-                                      {activity.governmentInputs.technicalCoordination.regions.map((region: string, idx: number) => (
-                                        <Badge key={idx} variant="outline">{region}</Badge>
-                                      ))}
-                                    </div>
-                                  </div>
-                                )}
-                                
-                                {activity.governmentInputs.technicalCoordination?.focalPoint && (
-                                  <div className="p-4 bg-slate-50 rounded-lg space-y-2">
-                                    <h4 className="text-sm font-medium text-slate-900">Focal Point</h4>
-                                    {activity.governmentInputs.technicalCoordination.focalPoint?.name && (
-                                      <div className="flex justify-between">
-                                        <span className="text-sm text-slate-600">Name:</span>
-                                        <span className="text-sm font-medium text-slate-900">{activity.governmentInputs.technicalCoordination.focalPoint.name}</span>
-                                      </div>
-                                    )}
-                                    {activity.governmentInputs.technicalCoordination.focalPoint?.title && (
-                                      <div className="flex justify-between">
-                                        <span className="text-sm text-slate-600">Title:</span>
-                                        <span className="text-sm font-medium text-slate-900">{activity.governmentInputs.technicalCoordination.focalPoint.title}</span>
-                                      </div>
-                                    )}
-                                    {activity.governmentInputs.technicalCoordination.focalPoint?.email && (
-                                      <div className="flex justify-between">
-                                        <span className="text-sm text-slate-600">Email:</span>
-                                        <span className="text-sm font-medium text-slate-900">{activity.governmentInputs.technicalCoordination.focalPoint.email}</span>
-                                      </div>
-                                    )}
-                                    {activity.governmentInputs.technicalCoordination.focalPoint?.phone && (
-                                      <div className="flex justify-between">
-                                        <span className="text-sm text-slate-600">Phone:</span>
-                                        <span className="text-sm font-medium text-slate-900">{activity.governmentInputs.technicalCoordination.focalPoint.phone}</span>
-                                      </div>
-                                    )}
-                                  </div>
-                                )}
-                              </CardContent>
-                            </Card>
-                          )}
-
-                          {/* Oversight Agreement */}
-                          {activity.governmentInputs.oversightAgreement && (
-                            <Card className="border-slate-200">
-                              <CardHeader>
-                                <CardTitle className="flex items-center gap-2 text-slate-900">
-                                  <Shield className="h-5 w-5" />
-                                  Oversight Agreement
-                                </CardTitle>
-                              </CardHeader>
-                              <CardContent className="space-y-4">
-                                {activity.governmentInputs.oversightAgreement?.mouStatus && (
-                                  <div className="flex items-center gap-2">
-                                    <span className="text-sm font-medium text-slate-700">MOU Status:</span>
-                                    <Badge>{activity.governmentInputs.oversightAgreement.mouStatus}</Badge>
-                                  </div>
-                                )}
-                                
-                                {activity.governmentInputs.oversightAgreement?.signingAgency && (
-                                  <div>
-                                    <span className="text-sm font-medium text-slate-700">Signing Agency:</span>
-                                    <p className="text-sm text-slate-900 mt-1">{activity.governmentInputs.oversightAgreement.signingAgency}</p>
-                                  </div>
-                                )}
-                                
-                                {activity.governmentInputs.oversightAgreement?.oversightMinistry && (
-                                  <div>
-                                    <span className="text-sm font-medium text-slate-700">Oversight Ministry:</span>
-                                    <p className="text-sm text-slate-900 mt-1">{activity.governmentInputs.oversightAgreement.oversightMinistry}</p>
-                                  </div>
-                                )}
-                                
-                                {activity.governmentInputs.oversightAgreement?.agreementFile && (
-                                  <div>
-                                    <span className="text-sm font-medium text-slate-700">Agreement File:</span>
-                                    <div className="mt-1">
-                                      <a href={activity.governmentInputs.oversightAgreement.agreementFile} target="_blank" rel="noopener noreferrer" className="text-sm text-blue-600 hover:underline flex items-center gap-1">
-                                        <FileText className="h-4 w-4" />
-                                        View Agreement
-                                      </a>
-                                    </div>
-                                  </div>
-                                )}
-                              </CardContent>
-                            </Card>
-                          )}
-
-                          {/* Geographic Context */}
-                          {activity.governmentInputs.geographicContext && (
-                            <Card className="border-slate-200">
-                              <CardHeader>
-                                <CardTitle className="flex items-center gap-2 text-slate-900">
-                                  <MapPin className="h-5 w-5" />
-                                  Geographic Context
-                                </CardTitle>
-                              </CardHeader>
-                              <CardContent className="space-y-4">
-                                {activity.governmentInputs.geographicContext?.locations && activity.governmentInputs.geographicContext.locations.length > 0 && (
-                                  <div>
-                                    <span className="text-sm font-medium text-slate-700">Locations:</span>
-                                    <div className="flex flex-wrap gap-2 mt-2">
-                                      {activity.governmentInputs.geographicContext.locations.map((loc: string, idx: number) => (
-                                        <Badge key={idx} variant="outline">{loc}</Badge>
-                                      ))}
-                                    </div>
-                                  </div>
-                                )}
-                                
-                                {activity.governmentInputs.geographicContext?.riskClassifications && activity.governmentInputs.geographicContext.riskClassifications.length > 0 && (
-                                  <div>
-                                    <span className="text-sm font-medium text-slate-700">Risk Classifications:</span>
-                                    <div className="flex flex-wrap gap-2 mt-2">
-                                      {activity.governmentInputs.geographicContext.riskClassifications.map((risk: string, idx: number) => (
-                                        <Badge key={idx} variant="outline" className="border-orange-300">{risk}</Badge>
-                                      ))}
-                                    </div>
-                                  </div>
-                                )}
-                                
-                                {activity.governmentInputs.geographicContext?.otherRiskSpecification && (
-                                  <div>
-                                    <span className="text-sm font-medium text-slate-700">Other Risk Specification:</span>
-                                    <p className="text-sm text-slate-600 mt-1">{activity.governmentInputs.geographicContext.otherRiskSpecification}</p>
-                                  </div>
-                                )}
-                              </CardContent>
-                            </Card>
-                          )}
-
-                          {/* Strategic Considerations */}
-                          {activity.governmentInputs.strategicConsiderations && (
-                            <Card className="border-slate-200">
-                              <CardHeader>
-                                <CardTitle className="flex items-center gap-2 text-slate-900">
-                                  <Sparkles className="h-5 w-5" />
-                                  Strategic Considerations
-                                </CardTitle>
-                              </CardHeader>
-                              <CardContent className="space-y-4">
-                                <div className="grid grid-cols-2 gap-4">
-                                  <div className="flex items-center gap-2">
-                                    <span className="text-sm font-medium text-slate-700">Politically Sensitive:</span>
-                                    <Badge variant={activity.governmentInputs.strategicConsiderations?.isPoliticallySensitive ? "default" : "secondary"}>
-                                      {activity.governmentInputs.strategicConsiderations?.isPoliticallySensitive ? "Yes" : "No"}
-                                    </Badge>
-                                  </div>
-                                  
-                                  <div className="flex items-center gap-2">
-                                    <span className="text-sm font-medium text-slate-700">Pooled Funding Eligible:</span>
-                                    <Badge variant={activity.governmentInputs.strategicConsiderations?.pooledFundingEligible ? "default" : "secondary"}>
-                                      {activity.governmentInputs.strategicConsiderations?.pooledFundingEligible ? "Yes" : "No"}
-                                    </Badge>
-                                  </div>
-                                </div>
-                                
-                                {activity.governmentInputs.strategicConsiderations?.pooledFundingEligible && (
-                                  <div className="space-y-3">
-                                    {activity.governmentInputs.strategicConsiderations?.pooledFundName && (
-                                      <div>
-                                        <span className="text-sm font-medium text-slate-700">Pooled Fund Name:</span>
-                                        <p className="text-sm text-slate-900 mt-1">{activity.governmentInputs.strategicConsiderations.pooledFundName}</p>
-                                      </div>
-                                    )}
-                                    {activity.governmentInputs.strategicConsiderations?.fundManager && (
-                                      <div>
-                                        <span className="text-sm font-medium text-slate-700">Fund Manager:</span>
-                                        <p className="text-sm text-slate-900 mt-1">{activity.governmentInputs.strategicConsiderations.fundManager}</p>
-                                      </div>
-                                    )}
-                                  </div>
-                                )}
-                              </CardContent>
-                            </Card>
-                          )}
-
-                          {/* Evaluation Results */}
-                          {activity.governmentInputs.evaluationResults && (
-                            <Card className="border-slate-200">
-                              <CardHeader>
-                                <CardTitle className="flex items-center gap-2 text-slate-900">
-                                  <BarChart3 className="h-5 w-5" />
-                                  Evaluation Results
-                                </CardTitle>
-                              </CardHeader>
-                              <CardContent className="space-y-4">
-                                <div className="flex items-center gap-2">
-                                  <span className="text-sm font-medium text-slate-700">Has Evaluation:</span>
-                                  <Badge variant={activity.governmentInputs.evaluationResults?.hasEvaluation ? "default" : "secondary"}>
-                                    {activity.governmentInputs.evaluationResults?.hasEvaluation ? "Yes" : "No"}
-                                  </Badge>
-                                </div>
-                                
-                                {activity.governmentInputs.evaluationResults?.hasEvaluation && (
-                                  <div className="space-y-3">
-                                    {activity.governmentInputs.evaluationResults?.evaluationDocument && (
-                                      <div>
-                                        <span className="text-sm font-medium text-slate-700">Evaluation Document:</span>
-                                        <div className="mt-1">
-                                          <a href={activity.governmentInputs.evaluationResults.evaluationDocument} target="_blank" rel="noopener noreferrer" className="text-sm text-blue-600 hover:underline flex items-center gap-1">
-                                            <FileText className="h-4 w-4" />
-                                            View Document
-                                          </a>
-                                        </div>
-                                      </div>
-                                    )}
-                                    
-                                    <div className="flex items-center gap-2">
-                                      <span className="text-sm font-medium text-slate-700">In National Framework:</span>
-                                      <Badge variant={activity.governmentInputs.evaluationResults?.inNationalFramework ? "default" : "secondary"}>
-                                        {activity.governmentInputs.evaluationResults?.inNationalFramework ? "Yes" : "No"}
-                                      </Badge>
-                                    </div>
-                                    
-                                    {activity.governmentInputs.evaluationResults?.nationalIndicatorRef && (
-                                      <div>
-                                        <span className="text-sm font-medium text-slate-700">National Indicator Reference:</span>
-                                        <p className="text-sm text-slate-900 mt-1 font-mono">{activity.governmentInputs.evaluationResults.nationalIndicatorRef}</p>
-                                      </div>
-                                    )}
-                                  </div>
-                                )}
-                              </CardContent>
-                            </Card>
-                          )}
-
-                          {/* Government Endorsement */}
-                          {governmentEndorsement && (
-                            <Card className="border-slate-200">
-                              <CardHeader>
-                                <CardTitle className="flex items-center gap-2 text-slate-900">
-                                  <FileCheck className="h-5 w-5" />
-                                  Government Endorsement
-                                </CardTitle>
-                              </CardHeader>
-                              <CardContent className="space-y-4">
-                                {governmentEndorsement.validation_status && (
-                                  <div className="p-4 bg-slate-50 rounded-lg border-l-4 border-l-blue-500">
-                                    <div className="flex items-center gap-3 mb-3">
-                                      {governmentEndorsement.validation_status === 'validated' && (
-                                        <CheckCircle className="h-5 w-5 text-green-600" />
-                                      )}
-                                      {governmentEndorsement.validation_status === 'rejected' && (
-                                        <AlertCircle className="h-5 w-5 text-red-600" />
-                                      )}
-                                      {governmentEndorsement.validation_status === 'more_info_requested' && (
-                                        <Clock className="h-5 w-5 text-amber-600" />
-                                      )}
-                                      <Badge 
-                                        variant={
-                                          governmentEndorsement.validation_status === 'validated' ? 'default' :
-                                          governmentEndorsement.validation_status === 'rejected' ? 'destructive' : 'secondary'
-                                        }
-                                      >
-                                        {VALIDATION_STATUS_OPTIONS.find(opt => opt.value === governmentEndorsement.validation_status)?.label}
-                                      </Badge>
-                                    </div>
-                                    
-                                    {governmentEndorsement.validating_authority && (
-                                      <div className="flex items-center gap-2 text-sm text-slate-600 mb-2">
-                                        <Building className="h-4 w-4" />
-                                        <span>{governmentEndorsement.validating_authority}</span>
-                                      </div>
-                                    )}
-                                    
-                                    {governmentEndorsement.validation_date && (
-                                      <div className="flex items-center gap-2 text-sm text-slate-600">
-                                        <Calendar className="h-4 w-4" />
-                                        <span>Validated on {format(new Date(governmentEndorsement.validation_date), 'MMM dd, yyyy')}</span>
-                                      </div>
-                                    )}
-                                  </div>
-                                )}
-                                
-                                <div className="grid grid-cols-2 gap-4">
-                                  {governmentEndorsement.effective_date && (
-                                    <div>
-                                      <span className="text-sm font-medium text-slate-700">Effective Date:</span>
-                                      <p className="text-sm text-slate-900 mt-1">{format(new Date(governmentEndorsement.effective_date), 'MMM dd, yyyy')}</p>
-                                    </div>
-                                  )}
-                                  
-                                  {governmentEndorsement.validation_date && (
-                                    <div>
-                                      <span className="text-sm font-medium text-slate-700">Validation Date:</span>
-                                      <p className="text-sm text-slate-900 mt-1">{format(new Date(governmentEndorsement.validation_date), 'MMM dd, yyyy')}</p>
-                                    </div>
-                                  )}
-                                </div>
-                                
-                                {governmentEndorsement.validation_notes && (
-                                  <div>
-                                    <span className="text-sm font-medium text-slate-700">Validation Notes:</span>
-                                    <p className="text-sm text-slate-600 mt-1 whitespace-pre-wrap">{governmentEndorsement.validation_notes}</p>
-                                  </div>
-                                )}
-                                
-                                {governmentEndorsement.document_title && (
-                                  <div className="p-4 bg-slate-50 rounded-lg space-y-2">
-                                    <h4 className="text-sm font-medium text-slate-900">Endorsement Document</h4>
-                                    <div>
-                                      <span className="text-sm font-medium text-slate-700">Title:</span>
-                                      <p className="text-sm text-slate-900 mt-1">{governmentEndorsement.document_title}</p>
-                                    </div>
-                                    {governmentEndorsement.document_description && (
-                                      <div>
-                                        <span className="text-sm font-medium text-slate-700">Description:</span>
-                                        <p className="text-sm text-slate-600 mt-1">{governmentEndorsement.document_description}</p>
-                                      </div>
-                                    )}
-                                    {governmentEndorsement.document_url && (
-                                      <div>
-                                        <a href={governmentEndorsement.document_url} target="_blank" rel="noopener noreferrer" className="text-sm text-blue-600 hover:underline flex items-center gap-1">
-                                          <ExternalLink className="h-4 w-4" />
-                                          View Document
-                                        </a>
-                                      </div>
-                                    )}
-                                    {governmentEndorsement.document_date && (
-                                      <div>
-                                        <span className="text-sm text-slate-600">Date: {format(new Date(governmentEndorsement.document_date), 'MMM dd, yyyy')}</span>
-                                      </div>
-                                    )}
-                                  </div>
-                                )}
-                              </CardContent>
-                            </Card>
-                          )}
-
-                          {/* Government Endorsement (shown separately if no other inputs) */}
-                          {governmentEndorsement && (
-                            <Card className="border-slate-200">
-                              <CardHeader>
-                                <CardTitle className="flex items-center gap-2 text-slate-900">
-                                  <FileCheck className="h-5 w-5" />
-                                  Government Endorsement
-                                </CardTitle>
-                              </CardHeader>
-                              <CardContent className="space-y-4">
-                                {governmentEndorsement.validation_status && (
-                                  <div className="p-4 bg-slate-50 rounded-lg border-l-4 border-l-blue-500">
-                                    <div className="flex items-center gap-3 mb-3">
-                                      {governmentEndorsement.validation_status === 'validated' && (
-                                        <CheckCircle className="h-5 w-5 text-green-600" />
-                                      )}
-                                      {governmentEndorsement.validation_status === 'rejected' && (
-                                        <AlertCircle className="h-5 w-5 text-red-600" />
-                                      )}
-                                      {governmentEndorsement.validation_status === 'more_info_requested' && (
-                                        <Clock className="h-5 w-5 text-amber-600" />
-                                      )}
-                                      <Badge 
-                                        variant={
-                                          governmentEndorsement.validation_status === 'validated' ? 'default' :
-                                          governmentEndorsement.validation_status === 'rejected' ? 'destructive' : 'secondary'
-                                        }
-                                      >
-                                        {VALIDATION_STATUS_OPTIONS.find(opt => opt.value === governmentEndorsement.validation_status)?.label}
-                                      </Badge>
-                                    </div>
-                                    
-                                    {governmentEndorsement.validating_authority && (
-                                      <div className="flex items-center gap-2 text-sm text-slate-600 mb-2">
-                                        <Building className="h-4 w-4" />
-                                        <span>{governmentEndorsement.validating_authority}</span>
-                                      </div>
-                                    )}
-                                    
-                                    {governmentEndorsement.validation_date && (
-                                      <div className="flex items-center gap-2 text-sm text-slate-600">
-                                        <Calendar className="h-4 w-4" />
-                                        <span>Validated on {format(new Date(governmentEndorsement.validation_date), 'MMM dd, yyyy')}</span>
-                                      </div>
-                                    )}
-                                  </div>
-                                )}
-                                
-                                <div className="grid grid-cols-2 gap-4">
-                                  {governmentEndorsement.effective_date && (
-                                    <div>
-                                      <span className="text-sm font-medium text-slate-700">Effective Date:</span>
-                                      <p className="text-sm text-slate-900 mt-1">{format(new Date(governmentEndorsement.effective_date), 'MMM dd, yyyy')}</p>
-                                    </div>
-                                  )}
-                                  
-                                  {governmentEndorsement.validation_date && (
-                                    <div>
-                                      <span className="text-sm font-medium text-slate-700">Validation Date:</span>
-                                      <p className="text-sm text-slate-900 mt-1">{format(new Date(governmentEndorsement.validation_date), 'MMM dd, yyyy')}</p>
-                                    </div>
-                                  )}
-                                </div>
-                                
-                                {governmentEndorsement.validation_notes && (
-                                  <div>
-                                    <span className="text-sm font-medium text-slate-700">Validation Notes:</span>
-                                    <p className="text-sm text-slate-600 mt-1 whitespace-pre-wrap">{governmentEndorsement.validation_notes}</p>
-                                  </div>
-                                )}
-                                
-                                {governmentEndorsement.document_title && (
-                                  <div className="p-4 bg-slate-50 rounded-lg space-y-2">
-                                    <h4 className="text-sm font-medium text-slate-900">Endorsement Document</h4>
-                                    <div>
-                                      <span className="text-sm font-medium text-slate-700">Title:</span>
-                                      <p className="text-sm text-slate-900 mt-1">{governmentEndorsement.document_title}</p>
-                                    </div>
-                                    {governmentEndorsement.document_description && (
-                                      <div>
-                                        <span className="text-sm font-medium text-slate-700">Description:</span>
-                                        <p className="text-sm text-slate-600 mt-1">{governmentEndorsement.document_description}</p>
-                                      </div>
-                                    )}
-                                    {governmentEndorsement.document_url && (
-                                      <div>
-                                        <a href={governmentEndorsement.document_url} target="_blank" rel="noopener noreferrer" className="text-sm text-blue-600 hover:underline flex items-center gap-1">
-                                          <ExternalLink className="h-4 w-4" />
-                                          View Document
-                                        </a>
-                                      </div>
-                                    )}
-                                    {governmentEndorsement.document_date && (
-                                      <div>
-                                        <span className="text-sm text-slate-600">Date: {format(new Date(governmentEndorsement.document_date), 'MMM dd, yyyy')}</span>
-                                      </div>
-                                    )}
-                                  </div>
-                                )}
-                              </CardContent>
-                            </Card>
-                          )}
-
-                          <div className="text-center py-4">
-                            <Button variant="outline" onClick={handleEdit} className="border-slate-300 text-slate-700 hover:bg-slate-100">
-                              <Edit className="h-4 w-4 mr-2" />
-                              Edit Government Inputs
-                            </Button>
-                          </div>
-                        </>
-                      ) : (
-                        <>
-                          {governmentEndorsement ? (
-                            <>
-                              {/* Show Government Endorsement even when no other inputs */}
-                              <Card className="border-slate-200">
-                                <CardHeader>
-                                  <CardTitle className="flex items-center gap-2 text-slate-900">
-                                    <FileCheck className="h-5 w-5" />
-                                    Government Endorsement
-                                  </CardTitle>
-                                </CardHeader>
-                                <CardContent className="space-y-4">
-                                  {governmentEndorsement.validation_status && (
-                                    <div className="p-4 bg-slate-50 rounded-lg border-l-4 border-l-blue-500">
-                                      <div className="flex items-center gap-3 mb-3">
-                                        {governmentEndorsement.validation_status === 'validated' && (
-                                          <CheckCircle className="h-5 w-5 text-green-600" />
-                                        )}
-                                        {governmentEndorsement.validation_status === 'rejected' && (
-                                          <AlertCircle className="h-5 w-5 text-red-600" />
-                                        )}
-                                        {governmentEndorsement.validation_status === 'more_info_requested' && (
-                                          <Clock className="h-5 w-5 text-amber-600" />
-                                        )}
-                                        <Badge 
-                                          variant={
-                                            governmentEndorsement.validation_status === 'validated' ? 'default' :
-                                            governmentEndorsement.validation_status === 'rejected' ? 'destructive' : 'secondary'
-                                          }
-                                        >
-                                          {VALIDATION_STATUS_OPTIONS.find(opt => opt.value === governmentEndorsement.validation_status)?.label}
-                                        </Badge>
-                                      </div>
-                                      
-                                      {governmentEndorsement.validating_authority && (
-                                        <div className="flex items-center gap-2 text-sm text-slate-600 mb-2">
-                                          <Building className="h-4 w-4" />
-                                          <span>{governmentEndorsement.validating_authority}</span>
-                                        </div>
-                                      )}
-                                      
-                                      {governmentEndorsement.validation_date && (
-                                        <div className="flex items-center gap-2 text-sm text-slate-600">
-                                          <Calendar className="h-4 w-4" />
-                                          <span>Validated on {format(new Date(governmentEndorsement.validation_date), 'MMM dd, yyyy')}</span>
-                                        </div>
-                                      )}
-                                    </div>
-                                  )}
-                                  
-                                  <div className="grid grid-cols-2 gap-4">
-                                    {governmentEndorsement.effective_date && (
-                                      <div>
-                                        <span className="text-sm font-medium text-slate-700">Effective Date:</span>
-                                        <p className="text-sm text-slate-900 mt-1">{format(new Date(governmentEndorsement.effective_date), 'MMM dd, yyyy')}</p>
-                                      </div>
-                                    )}
-                                    
-                                    {governmentEndorsement.validation_date && (
-                                      <div>
-                                        <span className="text-sm font-medium text-slate-700">Validation Date:</span>
-                                        <p className="text-sm text-slate-900 mt-1">{format(new Date(governmentEndorsement.validation_date), 'MMM dd, yyyy')}</p>
-                                      </div>
-                                    )}
-                                  </div>
-                                  
-                                  {governmentEndorsement.validation_notes && (
-                                    <div>
-                                      <span className="text-sm font-medium text-slate-700">Validation Notes:</span>
-                                      <p className="text-sm text-slate-600 mt-1 whitespace-pre-wrap">{governmentEndorsement.validation_notes}</p>
-                                    </div>
-                                  )}
-                                  
-                                  {governmentEndorsement.document_title && (
-                                    <div className="p-4 bg-slate-50 rounded-lg space-y-2">
-                                      <h4 className="text-sm font-medium text-slate-900">Endorsement Document</h4>
-                                      <div>
-                                        <span className="text-sm font-medium text-slate-700">Title:</span>
-                                        <p className="text-sm text-slate-900 mt-1">{governmentEndorsement.document_title}</p>
-                                      </div>
-                                      {governmentEndorsement.document_description && (
-                                        <div>
-                                          <span className="text-sm font-medium text-slate-700">Description:</span>
-                                          <p className="text-sm text-slate-600 mt-1">{governmentEndorsement.document_description}</p>
-                                        </div>
-                                      )}
-                                      {governmentEndorsement.document_url && (
-                                        <div>
-                                          <a href={governmentEndorsement.document_url} target="_blank" rel="noopener noreferrer" className="text-sm text-blue-600 hover:underline flex items-center gap-1">
-                                            <ExternalLink className="h-4 w-4" />
-                                            View Document
-                                          </a>
-                                        </div>
-                                      )}
-                                      {governmentEndorsement.document_date && (
-                                        <div>
-                                          <span className="text-sm text-slate-600">Date: {format(new Date(governmentEndorsement.document_date), 'MMM dd, yyyy')}</span>
-                                        </div>
-                                      )}
-                                    </div>
-                                  )}
-                                </CardContent>
-                              </Card>
-                              
-                              <div className="text-center py-4">
-                                <Button variant="outline" onClick={handleEdit} className="border-slate-300 text-slate-700 hover:bg-slate-100">
-                                  <Edit className="h-4 w-4 mr-2" />
-                                  Edit Government Inputs
-                                </Button>
-                              </div>
-                            </>
-                          ) : (
-                            <Card className="border-slate-200">
-                              <CardContent className="text-center py-12">
-                                <p className="text-slate-500">No government inputs have been added to this activity yet.</p>
-                                <Button variant="outline" className="mt-4 border-slate-300 text-slate-700 hover:bg-slate-100" onClick={handleEdit}>
-                                  Add Government Inputs
-                                </Button>
-                              </CardContent>
-                            </Card>
-                          )}
-                        </>
-                      )}
-                    </div>
-                  )}
-                </TabsContent>
-              )}
             </Tabs>
           </Card>
         </div>

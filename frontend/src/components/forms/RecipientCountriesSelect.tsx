@@ -1,8 +1,9 @@
+"use client";
+
 import React from 'react';
-import { ChevronsUpDown } from 'lucide-react';
+import { ChevronsUpDown, Check, Search } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Input } from '@/components/ui/input';
+import { Command, CommandGroup, CommandItem, CommandList } from '@/components/ui/command';
 import { cn } from '@/lib/utils';
 
 interface RecipientCountriesSelectProps {
@@ -244,7 +245,10 @@ export function RecipientCountriesSelect({
         >
           <span className="truncate">
             {selectedOption ? (
-              <span className="font-medium">{selectedOption.name}</span>
+              <span className="flex items-center gap-2">
+                <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{selectedOption.code}</span>
+                <span className="font-medium">{selectedOption.name}</span>
+              </span>
             ) : (
               placeholder
             )}
@@ -267,53 +271,77 @@ export function RecipientCountriesSelect({
           </div>
         </PopoverTrigger>
         <PopoverContent 
-          className="w-[350px] p-0 shadow-lg border-border max-h-[300px] overflow-hidden" 
+          className="w-[var(--radix-popover-trigger-width)] min-w-[350px] p-0 shadow-lg border" 
           align="start"
           sideOffset={4}
         >
-          <div className="border-b border-border p-3">
-            <Input
-              placeholder="Search countries..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="h-8 border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0"
-            />
-          </div>
-          <ScrollArea className="h-[240px]">
-            <div className="p-2">
-              {filteredOptions.length === 0 ? (
-                <div className="text-center py-6 text-muted-foreground">
-                  <p className="text-sm">No countries found.</p>
-                  <p className="text-xs">Try adjusting your search terms</p>
-                </div>
-              ) : (
-                filteredOptions.map((country) => (
-                  <button
-                    key={country.code}
-                    className={cn(
-                      "w-full text-left px-2 py-2 rounded-md text-sm hover:bg-accent hover:text-accent-foreground transition-colors",
-                      value === country.code && "bg-blue-100 text-blue-900"
-                    )}
-                    onClick={() => {
-                      onValueChange?.(country.code);
-                      setIsOpen(false);
-                      setSearchQuery("");
-                    }}
-                  >
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded min-w-[2.5rem]">
-                        {country.code}
-                      </span>
-                      <div className="flex-1 min-w-0">
-                        <div className="font-medium truncate">{country.name}</div>
-                        <div className="text-xs text-muted-foreground truncate">ISO 3166-1: {country.code}</div>
-                      </div>
-                    </div>
-                  </button>
-                ))
+          <Command>
+            <div className="flex items-center border-b px-3 py-2">
+              <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
+              <input
+                placeholder="Search countries..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Escape') {
+                    setIsOpen(false);
+                    setSearchQuery("");
+                  }
+                }}
+                className="flex h-9 w-full rounded-md bg-transparent py-2 px-3 text-sm outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50 border-none focus:ring-0 focus:border-none"
+                autoFocus
+              />
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={() => setSearchQuery("")}
+                  className="ml-2 h-4 w-4 rounded-full hover:bg-muted-foreground/20 flex items-center justify-center transition-colors"
+                  aria-label="Clear search"
+                >
+                  <span className="text-xs">×</span>
+                </button>
               )}
             </div>
-          </ScrollArea>
+            <CommandList className="max-h-[240px]">
+              <CommandGroup>
+                {filteredOptions.length === 0 ? (
+                  <div className="py-8 text-center">
+                    <div className="text-sm text-muted-foreground">
+                      No countries found.
+                    </div>
+                    <div className="text-xs text-muted-foreground mt-1">
+                      Try adjusting your search terms
+                    </div>
+                  </div>
+                ) : (
+                  filteredOptions.map((country) => (
+                    <CommandItem
+                      key={country.code}
+                      onSelect={() => {
+                        onValueChange?.(country.code);
+                        setIsOpen(false);
+                        setSearchQuery("");
+                      }}
+                      className="pl-6 cursor-pointer py-2 hover:bg-accent/50 focus:bg-accent data-[selected]:bg-accent transition-colors"
+                    >
+                      <Check
+                        className={cn(
+                          "mr-2 h-4 w-4",
+                          value === country.code ? "opacity-100" : "opacity-0"
+                        )}
+                      />
+                      <div className="flex items-center gap-2 flex-1">
+                        <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
+                          {country.code}
+                        </span>
+                        <span className="font-medium text-foreground">{country.name}</span>
+                      </div>
+                    </CommandItem>
+                  ))
+                )}
+              </CommandGroup>
+            </CommandList>
+          </Command>
         </PopoverContent>
       </Popover>
     </div>

@@ -24,7 +24,7 @@ import {
   ResponsiveContainer,
   TooltipProps,
 } from 'recharts'
-import { Download } from 'lucide-react'
+import { Download, TrendingUp, LineChart as LineChartIcon, Table as TableIcon } from 'lucide-react'
 import html2canvas from 'html2canvas'
 
 // Time range filter options
@@ -72,6 +72,7 @@ interface DateRange {
 interface SectorDisbursementOverTimeProps {
   dateRange: DateRange
   refreshKey?: number
+  compact?: boolean
 }
 
 type DataMode = 'planned' | 'actual'
@@ -80,7 +81,8 @@ type AggregationLevel = 'group' | 'category' | 'sector'
 
 export function SectorDisbursementOverTime({
   dateRange,
-  refreshKey = 0
+  refreshKey = 0,
+  compact = false
 }: SectorDisbursementOverTimeProps) {
   const [dataMode, setDataMode] = useState<DataMode>('actual')
   const [viewMode, setViewMode] = useState<ViewMode>('area')
@@ -139,11 +141,8 @@ export function SectorDisbursementOverTime({
         const result = await response.json()
         const sectors = result.sectors || []
         setData(sectors)
-        
-        // Initialize all sectors as visible
-        if (sectors.length > 0 && visibleSectors.size === 0) {
-          setVisibleSectors(new Set(sectors.map((s: SectorData) => s.sectorCode)))
-        }
+        // Note: visibleSectors initialization is handled by the aggregationLevel useEffect
+        // to ensure codes match the current aggregation level (group/category/sector)
       } catch (err) {
         console.error('[SectorDisbursementOverTime] Error:', err)
         setError(err instanceof Error ? err.message : 'An error occurred')
@@ -600,6 +599,59 @@ export function SectorDisbursementOverTime({
   // Get visible items for rendering (based on aggregation level)
   const visibleItemData = aggregatedData.filter(item => visibleSectors.has(item.code))
 
+  // Compact mode check FIRST - before any Card returns
+  if (compact) {
+    if (loading && data.length === 0) {
+      return <div className="h-full w-full flex items-center justify-center"><div className="text-muted-foreground">Loading...</div></div>
+    }
+    if (error) {
+      return <div className="h-full w-full flex items-center justify-center text-red-500"><p className="text-sm">{error}</p></div>
+    }
+    if (timeSeriesData.length === 0) {
+      return (
+        <div className="h-full w-full flex items-center justify-center text-slate-500">
+          No data available
+        </div>
+      )
+    }
+    return (
+      <div ref={chartRef} className="h-full w-full">
+        <ResponsiveContainer width="100%" height="100%">
+          <AreaChart data={timeSeriesData} margin={{ top: 10, right: 20, left: 20, bottom: 20 }}>
+            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
+            <XAxis
+              dataKey="calendarYear"
+              fontSize={10}
+              tick={{ fill: '#6B7280' }}
+              axisLine={{ stroke: '#E5E7EB' }}
+              tickLine={{ stroke: '#E5E7EB' }}
+            />
+            <YAxis
+              tickFormatter={formatYAxisCurrency}
+              fontSize={10}
+              tick={{ fill: '#6B7280' }}
+              axisLine={false}
+              tickLine={false}
+            />
+            <Tooltip content={<CustomTooltip />} />
+            {visibleItemData.map(item => (
+              <Area
+                key={item.code}
+                type="monotone"
+                dataKey={item.code}
+                name={item.name}
+                stackId="1"
+                stroke={colorMap.get(item.code)}
+                fill={colorMap.get(item.code)}
+                fillOpacity={0.7}
+              />
+            ))}
+          </AreaChart>
+        </ResponsiveContainer>
+      </div>
+    )
+  }
+
   if (loading && data.length === 0) {
     return (
       <Card className="bg-white border-slate-200">
@@ -707,22 +759,25 @@ export function SectorDisbursementOverTime({
                 variant={viewMode === 'area' ? 'default' : 'ghost'}
                 size="sm"
                 onClick={() => setViewMode('area')}
+                title="Area"
               >
-                Area
+                <TrendingUp className="h-4 w-4" />
               </Button>
               <Button
                 variant={viewMode === 'line' ? 'default' : 'ghost'}
                 size="sm"
                 onClick={() => setViewMode('line')}
+                title="Line"
               >
-                Line
+                <LineChartIcon className="h-4 w-4" />
               </Button>
               <Button
                 variant={viewMode === 'table' ? 'default' : 'ghost'}
                 size="sm"
                 onClick={() => setViewMode('table')}
+                title="Table"
               >
-                Table
+                <TableIcon className="h-4 w-4" />
               </Button>
             </div>
 
@@ -909,5 +964,6 @@ export function SectorDisbursementOverTime({
     </Card>
   )
 }
+
 
 

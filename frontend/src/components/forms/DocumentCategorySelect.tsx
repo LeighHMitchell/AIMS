@@ -1,8 +1,9 @@
+"use client";
+
 import React from 'react';
-import { ChevronsUpDown } from 'lucide-react';
+import { ChevronsUpDown, Check, Search } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Input } from '@/components/ui/input';
+import { Command, CommandGroup, CommandItem, CommandList } from '@/components/ui/command';
 import { DOCUMENT_CATEGORIES } from '@/lib/iatiDocumentLink';
 import { cn } from '@/lib/utils';
 
@@ -88,55 +89,84 @@ export function DocumentCategorySelect({
           </div>
         </PopoverTrigger>
         <PopoverContent 
-          className="w-[400px] p-0 shadow-lg border-border" 
+          className="w-[var(--radix-popover-trigger-width)] min-w-[400px] p-0 shadow-lg border" 
           align="start"
           sideOffset={4}
         >
-          <div className="border-b border-border p-3">
-            <Input
-              placeholder="Search categories..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="h-8 border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0"
-            />
-          </div>
-          <ScrollArea className="h-[280px]">
-            <div className="p-2">
-              {filteredOptions.length === 0 ? (
-                <div className="text-center py-6 text-muted-foreground">
-                  <p className="text-sm">No categories found.</p>
-                  <p className="text-xs">Try adjusting your search terms</p>
-                </div>
-              ) : (
-                filteredOptions.map((category) => (
-                  <button
-                    key={category.code || 'none'}
-                    className={cn(
-                      "w-full text-left px-2 py-2 rounded-md text-sm hover:bg-accent hover:text-accent-foreground transition-colors",
-                      value === category.code && "bg-blue-100 text-blue-900"
-                    )}
-                    onClick={() => {
-                      onValueChange?.(category.code);
-                      setIsOpen(false);
-                      setSearchQuery("");
-                    }}
-                  >
-                    <div className="flex items-center gap-2">
-                      {category.code && (
-                        <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded min-w-[2.5rem]">
-                          {category.code}
-                        </span>
-                      )}
-                      <div className="flex-1 min-w-0">
-                        <div className="font-medium truncate">{category.name}</div>
-                        <div className="text-xs text-muted-foreground truncate">{category.description}</div>
-                      </div>
-                    </div>
-                  </button>
-                ))
+          <Command>
+            <div className="flex items-center border-b px-3 py-2">
+              <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
+              <input
+                placeholder="Search categories..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Escape') {
+                    setIsOpen(false);
+                    setSearchQuery("");
+                  }
+                }}
+                className="flex h-9 w-full rounded-md bg-transparent py-2 px-3 text-sm outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50 border-none focus:ring-0 focus:border-none"
+                autoFocus
+              />
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={() => setSearchQuery("")}
+                  className="ml-2 h-4 w-4 rounded-full hover:bg-muted-foreground/20 flex items-center justify-center transition-colors"
+                  aria-label="Clear search"
+                >
+                  <span className="text-xs">×</span>
+                </button>
               )}
             </div>
-          </ScrollArea>
+            <CommandList className="max-h-[280px]">
+              <CommandGroup>
+                {filteredOptions.length === 0 ? (
+                  <div className="py-8 text-center">
+                    <div className="text-sm text-muted-foreground">
+                      No categories found.
+                    </div>
+                    <div className="text-xs text-muted-foreground mt-1">
+                      Try adjusting your search terms
+                    </div>
+                  </div>
+                ) : (
+                  filteredOptions.map((category) => (
+                    <CommandItem
+                      key={category.code || 'none'}
+                      onSelect={() => {
+                        onValueChange?.(category.code);
+                        setIsOpen(false);
+                        setSearchQuery("");
+                      }}
+                      className="pl-6 cursor-pointer py-3 hover:bg-accent/50 focus:bg-accent data-[selected]:bg-accent transition-colors"
+                    >
+                      <Check
+                        className={cn(
+                          "mr-2 h-4 w-4",
+                          value === category.code ? "opacity-100" : "opacity-0"
+                        )}
+                      />
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2">
+                          {category.code && (
+                            <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
+                              {category.code}
+                            </span>
+                          )}
+                          <span className="font-medium text-foreground">{category.name}</span>
+                        </div>
+                        <div className="text-sm text-muted-foreground mt-1.5 leading-relaxed">
+                          {category.description}
+                        </div>
+                      </div>
+                    </CommandItem>
+                  ))
+                )}
+              </CommandGroup>
+            </CommandList>
+          </Command>
         </PopoverContent>
       </Popover>
     </div>

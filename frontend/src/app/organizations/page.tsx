@@ -22,6 +22,12 @@ import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { useDropzone } from 'react-dropzone'
 import Flag from 'react-world-flags'
+import { 
+  INSTITUTIONAL_GROUPS, 
+  getAllInstitutionalGroupNames,
+  isInstitutionalGroup,
+  type InstitutionalGroup 
+} from '@/data/location-groups'
 import { CreateCustomGroupModal } from '@/components/organizations/CreateCustomGroupModal'
 import { EditCustomGroupModal } from '@/components/organizations/EditCustomGroupModal'
 import { OrganizationTable } from '@/components/organizations/OrganizationTable'
@@ -257,20 +263,14 @@ const ISO_COUNTRIES = [
   { code: 'ZW', name: 'Zimbabwe' }
 ]
 
-// IATI Region codes for global/regional options
-const REGIONAL_OPTIONS = [
-  { code: '998', name: 'Global or Regional', isRegion: true }
-]
-
-// Combine all options for validation
+// Combine all options for validation (countries + institutional groups)
 const ALL_COUNTRY_AND_REGION_CODES = [
   ...ISO_COUNTRIES.map(c => c.code),
   ...ISO_COUNTRIES.map(c => c.name), // Support both code and name for backward compatibility
-  ...REGIONAL_OPTIONS.map(r => r.code),
-  ...REGIONAL_OPTIONS.map(r => r.name),
+  ...getAllInstitutionalGroupNames(),
   // Legacy support for full country names
   'Myanmar', 'Burma', 'Rwanda',
-  // Also support the new format
+  // Legacy support for old "Global or Regional" value
   'Global or Regional'
 ]
 
@@ -398,18 +398,20 @@ const deriveCooperationModality = (orgTypeCode: string, country: string): string
     normalizedCountry: countryValue
   })
 
-  // Check if it's a regional option
-  const isRegional = REGIONAL_OPTIONS.some(r => 
-    r.name.toLowerCase() === countryValue || 
-    r.code === country
-  )
+  // Check if it's an institutional group (multilateral organization)
+  const isInstitutional = isInstitutionalGroup(country);
+  
+  // Also check for legacy "Global or Regional" value
+  const isLegacyGlobal = countryValue === 'global or regional' || 
+    countryValue?.includes('global') || 
+    countryValue?.includes('regional');
 
   let result: string;
 
-  // Updated logic to work with type codes and regional options
-  if (isRegional || countryValue === 'global or regional' || countryValue?.includes('global') || countryValue?.includes('regional')) {
+  // Updated logic to work with type codes and institutional groups
+  if (isInstitutional || isLegacyGlobal) {
     result = 'Global or Regional';
-    console.log('[Cooperation Modality] Rule: Regional/Global → Global or Regional');
+    console.log('[Cooperation Modality] Rule: Institutional Group → Global or Regional');
   } else if (typeCode === '10' && countryValue !== 'myanmar') {
     // Government (code 10) from foreign country
     result = 'External';
@@ -449,12 +451,11 @@ const deriveCategory = (orgTypeCode: string, country: string): string => {
   const c = country?.toLowerCase()?.trim();
   const isMyanmar = c === "myanmar";
   
-  // Check if it's a regional/global option
-  const isRegional = REGIONAL_OPTIONS.some(r => 
-    r.name.toLowerCase() === c || 
-    r.code === country
-  )
-  const isGlobal = c?.includes("global") || c?.includes("regional") || isRegional || c === "global or regional";
+  // Check if it's an institutional group (multilateral organization)
+  const isInstitutional = isInstitutionalGroup(country);
+  
+  // Also check for legacy "Global or Regional" value
+  const isGlobal = c?.includes("global") || c?.includes("regional") || isInstitutional || c === "global or regional";
 
   switch (orgTypeCode) {
     case "10": // Government
@@ -533,7 +534,7 @@ const COOPERATION_MODALITY_OPTIONS = [
   { value: 'Other', label: 'Other' }
 ]
 
-// Country options now use ISO_COUNTRIES and REGIONAL_OPTIONS defined above
+// Country options now use ISO_COUNTRIES and INSTITUTIONAL_GROUPS from location-groups.ts
 
 // Default organization types (will be fetched from API)
 const DEFAULT_ORGANIZATION_TYPES: OrganizationType[] = [

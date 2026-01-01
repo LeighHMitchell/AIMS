@@ -22,3 +22,4 @@ CHECK (role IN (
 COMMENT ON CONSTRAINT users_role_check ON public.users IS 
 'Valid user roles: super_user (full access), dev_partner_tier_1 (data submission), dev_partner_tier_2 (review & approval), gov_partner_tier_1/2 (government partners), public_user (read-only OAuth users), admin (legacy)';
 
+

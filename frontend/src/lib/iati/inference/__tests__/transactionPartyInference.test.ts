@@ -358,7 +358,7 @@ describe('inferTransactionParties', () => {
       expect(result.receiver.status).toBe('ambiguous');
     });
 
-    it('should handle reporting org without organization_id', () => {
+    it('should handle reporting org without organization_id (no funding org fallback)', () => {
       const reportingOrgNoUuid: ReportingOrg = {
         ref: 'AU-5',
         name: 'Australia',
@@ -367,14 +367,70 @@ describe('inferTransactionParties', () => {
 
       const result = inferTransactionParties({
         reportingOrg: reportingOrgNoUuid,
-        participatingOrgs: [unicefImplementing],
+        participatingOrgs: [unicefImplementing], // Only implementing, no funding
         transaction: { transactionType: '3' },
       });
 
-      // Provider inferred but value is null (no UUID available)
+      // Provider is ambiguous (no reporting org UUID and no funding org to fall back to)
       expect(result.provider.value).toBeNull();
+      expect(result.provider.status).toBe('ambiguous');
+    });
+
+    it('should fallback to single funding org when reporting org has no organization_id', () => {
+      const reportingOrgNoUuid: ReportingOrg = {
+        ref: 'AU-5',
+        name: 'Australia',
+        // No organization_id
+      };
+
+      const dfatFunding: ParticipatingOrg = {
+        organization_id: 'uuid-dfat',
+        iati_role_code: IATI_ROLE.FUNDING,
+        iati_org_ref: 'AU-5',
+        name: 'DFAT',
+      };
+
+      const result = inferTransactionParties({
+        reportingOrg: reportingOrgNoUuid,
+        participatingOrgs: [dfatFunding, unicefImplementing],
+        transaction: { transactionType: '3' },
+      });
+
+      // Provider should fallback to the single funding org
+      expect(result.provider.value).toBe('uuid-dfat');
       expect(result.provider.status).toBe('inferred');
-      expect(result.provider.iatiRef).toBe('AU-5');
+      expect(result.provider.name).toBe('DFAT');
+    });
+
+    it('should return ambiguous when reporting org null and multiple funding orgs exist', () => {
+      const reportingOrgNoUuid: ReportingOrg = {
+        ref: 'AU-5',
+        name: 'Australia',
+        // No organization_id
+      };
+
+      const funder1: ParticipatingOrg = {
+        organization_id: 'uuid-funder-1',
+        iati_role_code: IATI_ROLE.FUNDING,
+        iati_org_ref: 'FUND-1',
+        name: 'Funder 1',
+      };
+      const funder2: ParticipatingOrg = {
+        organization_id: 'uuid-funder-2',
+        iati_role_code: IATI_ROLE.FUNDING,
+        iati_org_ref: 'FUND-2',
+        name: 'Funder 2',
+      };
+
+      const result = inferTransactionParties({
+        reportingOrg: reportingOrgNoUuid,
+        participatingOrgs: [funder1, funder2, unicefImplementing],
+        transaction: { transactionType: '3' },
+      });
+
+      // Provider is ambiguous (no reporting org UUID and multiple funding orgs)
+      expect(result.provider.value).toBeNull();
+      expect(result.provider.status).toBe('ambiguous');
     });
 
     it('should handle participating org without iati_org_ref', () => {
@@ -509,6 +565,7 @@ describe('inferTransactionParties', () => {
     });
   });
 });
+
 
 
 

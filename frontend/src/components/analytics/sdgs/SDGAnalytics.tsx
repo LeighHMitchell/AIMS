@@ -7,6 +7,8 @@ import { SDGConcentrationChart } from './SDGConcentrationChart'
 import { SDGTable } from './SDGTable'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { BarChart3, Table as TableIcon } from 'lucide-react'
+import { ChartGrid } from '@/components/ui/chart-grid'
+import { CompactChartCard } from '@/components/ui/compact-chart-card'
 
 interface SDGAnalyticsProps {
   dateRange: { from: Date; to: Date }
@@ -22,7 +24,7 @@ export function SDGAnalytics({ dateRange, onDateRangeChange, refreshKey }: SDGAn
 
   return (
     <div className="space-y-6">
-      {/* Filters */}
+      {/* Filters - kept at tab level */}
       <SDGAnalyticsFilters
         organizationId={organizationId}
         dateRange={dateRange}
@@ -34,52 +36,64 @@ export function SDGAnalytics({ dateRange, onDateRangeChange, refreshKey }: SDGAn
         onMetricChange={setMetric}
       />
 
-      {/* Charts and Table */}
-      <div className="space-y-6">
-        {/* Chart 1: SDG Coverage */}
-        <SDGCoverageChart
-          organizationId={organizationId}
-          dateRange={dateRange}
-          selectedSdgs={selectedSdgs}
-          metric={metric}
-          refreshKey={refreshKey}
-        />
+      {/* Charts in 2-column layout */}
+      <ChartGrid>
+        <CompactChartCard
+          title="SDG Coverage"
+          shortDescription="Activities by SDG goal"
+          fullDescription="Number of activities and financial weight mapped to each SDG"
+        >
+          <SDGCoverageChart
+            organizationId={organizationId}
+            dateRange={dateRange}
+            selectedSdgs={selectedSdgs}
+            metric={metric}
+            refreshKey={refreshKey}
+          />
+        </CompactChartCard>
 
-        {/* Chart 2: SDG Concentration Over Time */}
-        <SDGConcentrationChart
-          organizationId={organizationId}
-          dateRange={dateRange}
-          selectedSdgs={selectedSdgs}
-          metric={metric}
-          refreshKey={refreshKey}
-        />
+        <CompactChartCard
+          title="SDG Concentration"
+          shortDescription="SDG trends over time"
+          fullDescription="Assess whether activities are becoming more concentrated or dispersed across SDGs over time"
+        >
+          <SDGConcentrationChart
+            organizationId={organizationId}
+            dateRange={dateRange}
+            selectedSdgs={selectedSdgs}
+            metric={metric}
+            refreshKey={refreshKey}
+          />
+        </CompactChartCard>
+      </ChartGrid>
 
-        {/* Table View */}
-        <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as 'chart' | 'table')}>
-          <TabsList className="grid w-full max-w-md grid-cols-2">
-            <TabsTrigger value="chart">
-              <BarChart3 className="h-4 w-4 mr-2" />
-              Chart View
-            </TabsTrigger>
-            <TabsTrigger value="table">
-              <TableIcon className="h-4 w-4 mr-2" />
-              Table View
-            </TabsTrigger>
-          </TabsList>
-          <TabsContent value="table" className="mt-4">
-            <SDGTable
-              organizationId={organizationId}
-              dateRange={dateRange}
-              selectedSdgs={selectedSdgs}
-              metric={metric}
-              refreshKey={refreshKey}
-            />
-          </TabsContent>
-        </Tabs>
-      </div>
+      {/* Table View */}
+      <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as 'chart' | 'table')}>
+        <TabsList className="grid w-full max-w-md grid-cols-2">
+          <TabsTrigger value="chart">
+            <BarChart3 className="h-4 w-4 mr-2" />
+            Chart View
+          </TabsTrigger>
+          <TabsTrigger value="table">
+            <TableIcon className="h-4 w-4 mr-2" />
+            Table View
+          </TabsTrigger>
+        </TabsList>
+        <TabsContent value="table" className="mt-4">
+          <SDGTable
+            organizationId={organizationId}
+            dateRange={dateRange}
+            selectedSdgs={selectedSdgs}
+            metric={metric}
+            refreshKey={refreshKey}
+          />
+        </TabsContent>
+      </Tabs>
     </div>
   )
 }
+
+
 
 
 

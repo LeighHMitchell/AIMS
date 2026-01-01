@@ -103,17 +103,9 @@ export async function GET(request: NextRequest) {
     return response;
   } catch (error) {
     console.error('[AIMS] Unexpected error in organizations summary:', error);
-    
-    // Return sample data when database is unavailable for testing
-    const sampleSummary = {
-      totalOrganizations: 5,
-      totalActiveProjects: 12,
-      totalCommittedFunding: 2500000,
-      totalCustomGroups: 2,
-      lastUpdated: new Date().toISOString()
-    };
-    
-    console.log('[AIMS] Returning sample organization summary due to database error');
-    return NextResponse.json(sampleSummary, { status: 200 });
+    return NextResponse.json(
+      { error: 'Failed to fetch organization summary' },
+      { status: 500 }
+    );
   }
 } 

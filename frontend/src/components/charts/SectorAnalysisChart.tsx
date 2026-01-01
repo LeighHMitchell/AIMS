@@ -65,7 +65,9 @@ export const SectorAnalysisChart: React.FC<SectorAnalysisChartProps> = ({
         throw new Error(result.error);
       }
 
-      setData(result.data || []);
+      const chartData = result.data || [];
+      setData(chartData);
+      onDataChange?.(chartData);
     } catch (error) {
       console.error('Error fetching sector data:', error);
       setError(error instanceof Error ? error.message : 'Failed to load chart data');

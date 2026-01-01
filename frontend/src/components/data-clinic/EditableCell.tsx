@@ -18,8 +18,13 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { AlertCircle, Check, Loader2 } from "lucide-react";
+import { AlertCircle, Check, Loader2, Building2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { 
+  INSTITUTIONAL_GROUPS, 
+  isInstitutionalGroup,
+  type InstitutionalGroup 
+} from '@/data/location-groups';
 
 // Organization Type mappings (IATI standard codes)
 const ORGANIZATION_TYPE_LABELS: Record<string, string> = {
@@ -241,9 +246,7 @@ const ISO_COUNTRIES = [
   { code: 'ZW', name: 'Zimbabwe' }
 ];
 
-const REGIONAL_OPTIONS = [
-  { code: '998', name: 'Global or Regional', isRegion: true }
-];
+// REGIONAL_OPTIONS removed - now using INSTITUTIONAL_GROUPS from location-groups.ts
 
 const FIELD_LABELS: Record<string, string> = {
   acronym: 'Acronym',
@@ -438,14 +441,35 @@ export function EditableCell({
 
       case 'country':
         const searchLower = countrySearchTerm.toLowerCase();
-        const filteredRegions = REGIONAL_OPTIONS.filter(region =>
-          region.name.toLowerCase().includes(searchLower) ||
-          region.code.toLowerCase().includes(searchLower)
-        );
+        
+        // Filter institutional groups (including sub-groups)
+        const filteredInstitutionalGroups = INSTITUTIONAL_GROUPS.map(group => {
+          const groupMatches = group.name.toLowerCase().includes(searchLower) ||
+            (group.description?.toLowerCase().includes(searchLower) ?? false);
+          
+          const filteredSubGroups = group.subGroups?.filter(sub =>
+            sub.name.toLowerCase().includes(searchLower) ||
+            (sub.description?.toLowerCase().includes(searchLower) ?? false)
+          ) || [];
+          
+          // Include group if it matches or any of its sub-groups match
+          if (groupMatches || filteredSubGroups.length > 0) {
+            return {
+              ...group,
+              // If group matches, show all sub-groups; otherwise show only matching sub-groups
+              subGroups: groupMatches ? group.subGroups : filteredSubGroups
+            };
+          }
+          return null;
+        }).filter((g): g is InstitutionalGroup => g !== null);
+        
         const filteredCountries = ISO_COUNTRIES.filter(country =>
           country.name.toLowerCase().includes(searchLower) ||
           country.code.toLowerCase().includes(searchLower)
         );
+
+        const hasInstitutionalResults = filteredInstitutionalGroups.length > 0;
+        const hasCountryResults = filteredCountries.length > 0;
 
         return (
           <div className="space-y-3">
@@ -455,24 +479,26 @@ export function EditableCell({
               setCountrySearchTerm('');
             }}>
               <SelectTrigger className="w-full">
-                <SelectValue placeholder="Select country or region">
+                <SelectValue placeholder="Select country or institution">
                   {localValue && (
                     <div className="flex items-center gap-2">
-                      {ISO_COUNTRIES.find(c => c.name === localValue) && (
+                      {ISO_COUNTRIES.find(c => c.name === localValue) ? (
                         <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
                           {ISO_COUNTRIES.find(c => c.name === localValue)?.code}
                         </span>
-                      )}
+                      ) : isInstitutionalGroup(localValue) ? (
+                        <Building2 className="h-4 w-4 text-muted-foreground" />
+                      ) : null}
                       <span>{localValue}</span>
                     </div>
                   )}
                 </SelectValue>
               </SelectTrigger>
-              <SelectContent className="max-h-[300px]">
+              <SelectContent className="max-h-[400px]">
                 {/* Search Box */}
                 <div className="px-2 pb-2 border-b sticky top-0 bg-white z-10">
                   <Input
-                    placeholder="Search countries..."
+                    placeholder="Search countries or institutions..."
                     value={countrySearchTerm}
                     onChange={(e) => setCountrySearchTerm(e.target.value)}
                     onClick={(e) => e.stopPropagation()}
@@ -481,25 +507,47 @@ export function EditableCell({
                   />
                 </div>
 
-                {/* Regional/Global Options */}
-                {filteredRegions.length > 0 && (
+                {/* Institutional Groups */}
+                {hasInstitutionalResults && (
                   <>
-                    <div className="px-2 py-1.5 text-sm font-semibold text-gray-600">
-                      Region / Global
+                    <div className="px-2 py-1.5 text-sm font-semibold text-gray-600 bg-gray-50">
+                      Institutional Groups
                     </div>
-                    {filteredRegions.map((region) => (
-                      <SelectItem key={region.code} value={region.name}>
-                        {region.name}
-                      </SelectItem>
+                    {filteredInstitutionalGroups.map((group) => (
+                      <div key={group.code}>
+                        {/* Parent Group */}
+                        <SelectItem value={group.name} className="font-medium">
+                          <div className="flex items-center gap-2">
+                            <Building2 className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                            <span>{group.name}</span>
+                          </div>
+                        </SelectItem>
+                        {/* Sub-Groups (indented) */}
+                        {group.subGroups?.map((subGroup) => (
+                          <SelectItem key={subGroup.code} value={subGroup.name} className="pl-8">
+                            <div className="flex items-center gap-2">
+                              <span className="text-muted-foreground">└</span>
+                              <span className="truncate max-w-[280px]">
+                                {subGroup.description || subGroup.name}
+                              </span>
+                              {subGroup.description && (
+                                <span className="text-xs text-muted-foreground">
+                                  ({subGroup.name})
+                                </span>
+                              )}
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </div>
                     ))}
-                    {filteredCountries.length > 0 && <div className="my-1 border-t" />}
+                    {hasCountryResults && <div className="my-1 border-t" />}
                   </>
                 )}
 
                 {/* Country Options */}
-                {filteredCountries.length > 0 && (
+                {hasCountryResults && (
                   <>
-                    <div className="px-2 py-1.5 text-sm font-semibold text-gray-600">
+                    <div className="px-2 py-1.5 text-sm font-semibold text-gray-600 bg-gray-50">
                       Countries
                     </div>
                     {filteredCountries.map((country) => (
@@ -516,9 +564,9 @@ export function EditableCell({
                 )}
 
                 {/* No Results */}
-                {filteredRegions.length === 0 && filteredCountries.length === 0 && (
+                {!hasInstitutionalResults && !hasCountryResults && (
                   <div className="px-2 py-6 text-center text-sm text-gray-500">
-                    No countries found for "{countrySearchTerm}"
+                    No results found for "{countrySearchTerm}"
                   </div>
                 )}
               </SelectContent>
@@ -648,5 +696,7 @@ export function EditableCell({
     </MorphingPopover>
   );
 }
+
+
 
 

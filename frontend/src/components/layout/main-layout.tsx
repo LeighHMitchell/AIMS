@@ -61,6 +61,8 @@ export function MainLayout({ children, requireAuth = true }: MainLayoutProps) {
           <SidebarNav
             userRole={user?.role}
             canManageUsers={permissions.canManageUsers}
+            canCreateActivities={permissions.canCreateActivities}
+            isInActivityEditor={isInActivityEditor}
             isLoading={isLoading}
             isCollapsed={false}
             isInitialLoad={false}
@@ -76,8 +78,6 @@ export function MainLayout({ children, requireAuth = true }: MainLayoutProps) {
         <TopNav 
           key={user?.profilePicture || 'no-profile-pic'} 
           user={user}
-          canCreateActivities={permissions.canCreateActivities}
-          isInActivityEditor={isInActivityEditor}
           onLogout={logout}
         />
 

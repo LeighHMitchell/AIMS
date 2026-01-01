@@ -61,7 +61,7 @@ export default function OrganizationEditorNavigation({
 
   const navigationGroups: NavigationGroup[] = [
     {
-      title: "Basic Info",
+      title: "Basic Information",
       sections: [
         { id: "general", label: "General" },
         { id: "branding", label: "Branding" }

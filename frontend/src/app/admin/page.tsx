@@ -7,7 +7,7 @@ import { MainLayout } from "@/components/layout/main-layout"
 import { AdminUserTable } from "@/components/AdminUserTable"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Shield, Users, FileText, AlertCircle, Settings, MessageSquare, Landmark, DollarSign, Map, HelpCircle, Book, FileCode2, Calendar, Activity } from "lucide-react"
+import { Shield, Users, FileText, AlertCircle, Settings, MessageSquare, Landmark, DollarSign, Map, HelpCircle, Book, FileCode2, Calendar, Activity, Target } from "lucide-react"
 import { USER_ROLES } from "@/types/user"
 import { SystemsSettings } from "@/components/admin/SystemsSettings"
 import { FeedbackManagement } from "@/components/admin/FeedbackManagement"
@@ -21,6 +21,7 @@ import { IATIImportLogsManagement } from "@/components/admin/IATIImportLogsManag
 import { ProjectReferencesManagement } from "@/components/admin/ProjectReferencesManagement"
 import { EventManagement } from "@/components/calendar/EventManagement"
 import { UserActivityDashboard } from "@/components/admin/UserActivityDashboard"
+import { NationalPrioritiesManagement } from "@/components/admin/NationalPrioritiesManagement"
 import { LoadingText } from "@/components/ui/loading-text"
 
 function AdminPageContent() {
@@ -32,7 +33,7 @@ function AdminPageContent() {
 
   // Valid tab values
   const validTabs = ["users", "user-activity", "import-logs", "validations", "feedback", "faq", "systems", "chart-of-accounts", "project-references", "calendar-events"]
-  const validSubTabs = ["classifications", "sector-mappings", "country-sectors", "domestic-budget"]
+  const validSubTabs = ["classifications", "sector-mappings", "country-sectors", "domestic-budget", "national-priorities"]
 
   useEffect(() => {
     // Redirect if user is not super_user
@@ -214,6 +215,10 @@ function AdminPageContent() {
                   <DollarSign className="h-4 w-4" />
                   Domestic Budget
                 </TabsTrigger>
+                <TabsTrigger value="national-priorities" className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                  <Target className="h-4 w-4" />
+                  National Priorities
+                </TabsTrigger>
               </TabsList>
 
               <TabsContent value="classifications">
@@ -230,6 +235,10 @@ function AdminPageContent() {
 
               <TabsContent value="domestic-budget">
                 <DomesticBudgetManagement />
+              </TabsContent>
+
+              <TabsContent value="national-priorities">
+                <NationalPrioritiesManagement />
               </TabsContent>
             </Tabs>
           </TabsContent>

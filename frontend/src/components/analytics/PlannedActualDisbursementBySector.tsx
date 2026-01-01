@@ -25,14 +25,32 @@ import {
 } from 'recharts'
 import { Download, X, ChevronDown } from 'lucide-react'
 import html2canvas from 'html2canvas'
+// Inline currency formatter to avoid initialization issues
+const formatCurrencyAbbreviated = (value: number): string => {
+  const isNegative = value < 0
+  const absValue = Math.abs(value)
+
+  let formatted = ''
+  if (absValue >= 1000000000) {
+    formatted = `$${(absValue / 1000000000).toFixed(1)}b`
+  } else if (absValue >= 1000000) {
+    formatted = `$${(absValue / 1000000).toFixed(1)}m`
+  } else if (absValue >= 1000) {
+    formatted = `$${(absValue / 1000).toFixed(1)}k`
+  } else {
+    formatted = `$${absValue.toFixed(0)}`
+  }
+
+  return isNegative ? `-${formatted}` : formatted
+}
 
 // Color palette - custom scheme
 const COLORS = {
   newCommitments: '#dc2625',       // Primary Scarlet
   plannedDisbursements: '#4c5568', // Blue Slate
   actualDisbursements: '#7b95a7',  // Cool Steel
-  numberOfProjects: '#f59e0b',     // Amber for visibility
-  numberOfOrganisations: '#8b5cf6' // Purple for visibility
+  numberOfProjects: '#4c5568',     // Blue Slate
+  numberOfOrganisations: '#7b95a7' // Cool Steel
 }
 
 // Data keys configuration for toggling
@@ -67,11 +85,13 @@ interface DateRange {
 interface PlannedActualDisbursementBySectorProps {
   dateRange: DateRange
   refreshKey?: number
+  compact?: boolean
 }
 
 export function PlannedActualDisbursementBySector({
   dateRange,
-  refreshKey = 0
+  refreshKey = 0,
+  compact = false
 }: PlannedActualDisbursementBySectorProps) {
   const [viewMode, setViewMode] = useState<'chart' | 'table'>('chart')
   const [data, setData] = useState<YearData[]>([])
@@ -261,14 +281,8 @@ export function PlannedActualDisbursementBySector({
     return value.toLocaleString()
   }
 
-  const formatCurrencyFull = (value: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    }).format(value)
-  }
+  // Use the module-level currency formatter for tooltips
+  const formatCurrencyFull = formatCurrencyAbbreviated
 
   // Custom tooltip with table format
   const CustomTooltip = ({ active, payload, label }: TooltipProps<number, string>) => {
@@ -393,9 +407,72 @@ export function PlannedActualDisbursementBySector({
   // Get years available for adding (not already selected)
   const yearsToAdd = availableYears.filter(y => !selectedYears.includes(y))
 
-  // Calculate dynamic chart height based on data
-  const chartHeight = Math.max(400, chartData.length * 80)
+  // Calculate dynamic chart height based on data and compact mode
+  const chartHeight = compact ? 200 : Math.max(400, chartData.length * 80)
 
+  // Compact mode check FIRST - before any Card returns
+  if (compact) {
+    if (loading && data.length === 0) {
+      return <div className="h-full flex items-center justify-center"><div className="text-muted-foreground">Loading...</div></div>
+    }
+    if (error) {
+      return <div className="h-full flex items-center justify-center text-red-500"><p className="text-sm">{error}</p></div>
+    }
+    return (
+      <div ref={chartRef} className="bg-white h-full">
+        {chartData.length === 0 ? (
+          <div className="h-full flex items-center justify-center text-gray-500">
+            No data available
+          </div>
+        ) : (
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart
+              data={chartData}
+              margin={{ top: 10, right: 20, left: 20, bottom: 60 }}
+              barCategoryGap="15%"
+              barGap={2}
+            >
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
+              <XAxis
+                dataKey="displayName"
+                height={50}
+                tick={{ fontSize: 9, fill: '#6B7280' }}
+                interval={0}
+                angle={-45}
+                textAnchor="end"
+                axisLine={{ stroke: '#E5E7EB' }}
+                tickLine={{ stroke: '#E5E7EB' }}
+              />
+              <YAxis
+                yAxisId="left"
+                orientation="left"
+                domain={currencyYAxisDomain as [number | string, number | string]}
+                tickFormatter={formatYAxisCurrency}
+                fontSize={10}
+                tick={{ fill: '#6B7280' }}
+                axisLine={false}
+                tickLine={false}
+              />
+              <ReferenceLine yAxisId="left" y={0} stroke="#9CA3AF" strokeDasharray="3 3" />
+              <Tooltip content={<CustomTooltip />} />
+              {DATA_KEYS.filter(k => !k.isCount).slice(0, 3).map(({ key, label, color }) => (
+                <Bar
+                  key={key}
+                  dataKey={key}
+                  name={label}
+                  fill={color}
+                  yAxisId="left"
+                  radius={[0, 0, 0, 0]}
+                />
+              ))}
+            </BarChart>
+          </ResponsiveContainer>
+        )}
+      </div>
+    )
+  }
+
+  // Non-compact mode: loading state
   if (loading && data.length === 0) {
     return (
       <Card className="bg-white border-slate-200">
@@ -411,6 +488,7 @@ export function PlannedActualDisbursementBySector({
     )
   }
 
+  // Non-compact mode: error state
   if (error) {
     return (
       <Card className="bg-white border-slate-200">
@@ -663,5 +741,6 @@ export function PlannedActualDisbursementBySector({
     </Card>
   )
 }
+
 
 

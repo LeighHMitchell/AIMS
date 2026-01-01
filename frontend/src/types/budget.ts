@@ -41,6 +41,12 @@ export interface Budget {
     title_narrative?: string;
     title?: string;
     iati_identifier?: string;
+    reporting_org?: {
+      id: string;
+      name?: string;
+      acronym?: string;
+      iati_org_id?: string;
+    } | null;
   };
 }
 

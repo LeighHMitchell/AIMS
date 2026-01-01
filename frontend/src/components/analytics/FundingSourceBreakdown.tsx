@@ -12,6 +12,24 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Skeleton } from '@/components/ui/skeleton'
 import { AlertCircle } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
+// Inline currency formatter to avoid initialization issues
+const formatCurrencyAbbreviated = (value: number): string => {
+  const isNegative = value < 0
+  const absValue = Math.abs(value)
+
+  let formatted = ''
+  if (absValue >= 1000000000) {
+    formatted = `$${(absValue / 1000000000).toFixed(1)}b`
+  } else if (absValue >= 1000000) {
+    formatted = `$${(absValue / 1000000).toFixed(1)}m`
+  } else if (absValue >= 1000) {
+    formatted = `$${(absValue / 1000).toFixed(1)}k`
+  } else {
+    formatted = `$${absValue.toFixed(0)}`
+  }
+
+  return isNegative ? `-${formatted}` : formatted
+}
 
 interface FundingSourceBreakdownProps {
   dateRange?: {
@@ -132,18 +150,46 @@ export function FundingSourceBreakdown({
     return `$${value.toFixed(0)}`
   }
 
-  const formatTooltipValue = (value: number) => {
-    return `$${value.toLocaleString()}`
-  }
+  // Use the module-level currency formatter for tooltips
+  const formatTooltipValue = formatCurrencyAbbreviated
 
   const CustomTooltip = ({ active, payload }: any) => {
     if (active && payload && payload.length) {
+      const entry = payload[0]
+      // Get color from payload fill (set by Cell component) or find from data
+      let color = entry.payload?.fill || entry.color
+      if (!color || typeof color !== 'string') {
+        const dataIndex = fundingSourceData.findIndex(item => item.name === entry.name)
+        color = dataIndex >= 0 ? COLORS[dataIndex % COLORS.length] : '#64748B'
+        // Handle case where COLORS entry might be a string variable name
+        if (typeof color === 'string' && !color.startsWith('#')) {
+          color = '#64748B'
+        }
+      }
+      
       return (
-        <div className="bg-white p-3 border border-slate-200 rounded-lg shadow-lg">
-          <p className="font-semibold text-slate-900 mb-1">{payload[0].name}</p>
-          <p className="text-sm text-slate-600">
-            {formatTooltipValue(payload[0].value)}
-          </p>
+        <div className="bg-white border border-slate-200 rounded-lg shadow-lg overflow-hidden">
+          <div className="bg-slate-100 px-3 py-2 border-b border-slate-200">
+            <p className="font-semibold text-slate-900 text-sm">{entry.name}</p>
+          </div>
+          <div className="p-2">
+            <table className="w-full text-sm">
+              <tbody>
+                <tr className="border-b border-slate-100 last:border-b-0">
+                  <td className="py-1.5 pr-4 flex items-center gap-2">
+                    <div
+                      className="w-3 h-3 rounded-sm flex-shrink-0"
+                      style={{ backgroundColor: color }}
+                    />
+                    <span className="text-slate-700 font-medium">Amount</span>
+                  </td>
+                  <td className="py-1.5 text-right font-semibold text-slate-900">
+                    {formatTooltipValue(entry.value)}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
       )
     }

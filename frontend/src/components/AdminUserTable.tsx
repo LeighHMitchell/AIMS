@@ -15,10 +15,9 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
-import { mockUsers } from "@/hooks/useUser"
 import { User, ROLE_LABELS, USER_ROLES, Organization } from "@/types/user"
 import { getRoleBadgeVariant } from "@/lib/role-badge-utils"
-import { Search, UserPlus, Edit, Mail, Phone, Building2, Loader2, AlertCircle, Shield, Key, Lock, Check, X, Activity, ChevronsUpDown, ChevronLeft, ChevronRight } from "lucide-react"
+import { Search, UserPlus, Edit, Mail, Phone, Building2, Loader2, AlertCircle, Shield, Key, Lock, Check, X, Activity, ChevronsUpDown, ChevronLeft, ChevronRight, Users, RefreshCw } from "lucide-react"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command"
 import { Label } from "@/components/ui/label"
@@ -90,17 +89,11 @@ export function AdminUserTable() {
 
     try {
       if (!supabase) {
-        // Use mock data if Supabase is not configured
-        setUsers(mockUsers)
-        setFilteredUsers(mockUsers)
-        const mockOrgs = Array.from(
-          new Map(
-            mockUsers
-              .filter(u => u.organization)
-              .map(u => [u.organizationId, u.organization!])
-          ).values()
-        )
-        setOrganizations(mockOrgs)
+        // No Supabase configured - show error state
+        setError('Database connection not configured')
+        setUsers([])
+        setFilteredUsers([])
+        setOrganizations([])
         return
       }
 
@@ -180,9 +173,9 @@ export function AdminUserTable() {
     } catch (error: any) {
       console.error('Error fetching data:', error)
       setError(error.message || 'Failed to load users')
-      // Fallback to mock data on error
-      setUsers(mockUsers)
-      setFilteredUsers(mockUsers)
+      // Show empty state on error - no mock data fallback
+      setUsers([])
+      setFilteredUsers([])
     } finally {
       setIsLoading(false)
     }
@@ -485,7 +478,6 @@ export function AdminUserTable() {
             <CardTitle>User Management</CardTitle>
             <CardDescription>
               Manage user accounts and permissions
-              {!supabase && " (Demo Mode)"}
             </CardDescription>
           </div>
           <Button onClick={handleAddUser}>
@@ -496,14 +488,28 @@ export function AdminUserTable() {
       </CardHeader>
       <CardContent>
         {error && (
-          <Alert className="mb-6">
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription>
-              {error}. Showing demo data instead.
-            </AlertDescription>
-          </Alert>
+          <div className="flex flex-col items-center justify-center py-12 px-4">
+            <div className="rounded-full bg-red-100 p-3 mb-4">
+              <AlertCircle className="h-8 w-8 text-red-600" />
+            </div>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">Failed to load users</h3>
+            <p className="text-sm text-muted-foreground mb-4 text-center max-w-md">
+              {error}
+            </p>
+            <Button 
+              onClick={fetchUsersAndOrganizations} 
+              variant="outline"
+              className="gap-2"
+            >
+              <RefreshCw className="h-4 w-4" />
+              Try Again
+            </Button>
+          </div>
         )}
 
+        {/* Only show filters and table when there's no error */}
+        {!error && (
+          <>
         {/* Filters */}
         <div className="flex flex-col sm:flex-row gap-4 mb-6 items-end">
           <div className="relative flex-1">
@@ -1025,6 +1031,8 @@ export function AdminUserTable() {
               </div>
             </div>
           </div>
+        )}
+          </>
         )}
       </CardContent>
 

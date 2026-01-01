@@ -40,6 +40,24 @@ import {
   splitTransactionAcrossYears 
 } from '@/utils/year-allocation'
 import { FINANCIAL_OVERVIEW_COLORS, BRAND_COLORS } from '@/components/analytics/sectors/sectorColorMap'
+// Inline currency formatter to avoid initialization issues
+const formatCurrencyAbbreviated = (value: number): string => {
+  const isNegative = value < 0
+  const absValue = Math.abs(value)
+
+  let formatted = ''
+  if (absValue >= 1000000000) {
+    formatted = `$${(absValue / 1000000000).toFixed(1)}b`
+  } else if (absValue >= 1000000) {
+    formatted = `$${(absValue / 1000000).toFixed(1)}m`
+  } else if (absValue >= 1000) {
+    formatted = `$${(absValue / 1000).toFixed(1)}k`
+  } else {
+    formatted = `$${absValue.toFixed(0)}`
+  }
+
+  return isNegative ? `-${formatted}` : formatted
+}
 
 type DataMode = 'cumulative' | 'periodic'
 type ChartType = 'line' | 'bar' | 'area' | 'table' | 'total'
@@ -64,12 +82,14 @@ interface CumulativeFinancialOverviewProps {
     sector?: string
   }
   refreshKey?: number
+  compact?: boolean
 }
 
 export function CumulativeFinancialOverview({
   dateRange,
   filters,
-  refreshKey
+  refreshKey,
+  compact = false
 }: CumulativeFinancialOverviewProps) {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -638,23 +658,8 @@ export function CumulativeFinancialOverview({
     return isNegative ? `-${formatted}` : formatted
   }
 
-  const formatTooltipValue = (value: number) => {
-    const isNegative = value < 0
-    const absValue = Math.abs(value)
-
-    let formatted = ''
-    if (absValue >= 1000000000) {
-      formatted = `$${(absValue / 1000000000).toFixed(2)}b`
-    } else if (absValue >= 1000000) {
-      formatted = `$${(absValue / 1000000).toFixed(2)}m`
-    } else if (absValue >= 1000) {
-      formatted = `$${(absValue / 1000).toFixed(2)}k`
-    } else {
-      formatted = `$${absValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-    }
-
-    return isNegative ? `-${formatted}` : formatted
-  }
+  // Use the module-level currency formatter for tooltips
+  const formatTooltipValue = formatCurrencyAbbreviated
 
   // Map series names to transaction type codes
   const getTransactionTypeCode = (seriesName: string): string | null => {
@@ -662,6 +667,7 @@ export function CumulativeFinancialOverview({
       'Incoming Commitment': '1',
       'Incoming Funds': '12',
       'Outgoing Commitment': '2',
+      'Commitments': '2', // Also handle the display name
       'Credit Guarantee': '11',
       'Disbursements': '3',
       'Expenditures': '4',
@@ -674,15 +680,29 @@ export function CumulativeFinancialOverview({
 
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
-      // Filter out entries with zero or null values
-      const nonZeroPayload = payload.filter((entry: any) => entry.value != null && entry.value !== 0)
-
-      if (nonZeroPayload.length === 0) {
-        return null
-      }
-
       // Try to get full date from the data point, fallback to label
       const fullDate = payload[0]?.payload?.fullDate || label
+      const dataPoint = payload[0]?.payload
+
+      // Build list of entries with their values
+      const entries = payload.map((entry: any) => {
+        // Get value - entry.value should contain the numeric value for the dataKey
+        // If it's not available or is 0/null, try to get from payload using dataKey or name
+        let value = entry.value
+        if (value == null || value === undefined || (typeof value === 'number' && (isNaN(value) || value === 0))) {
+          // Try to get from payload using dataKey (the key used in the Line/Bar component)
+          value = dataPoint?.[entry.dataKey] ?? dataPoint?.[entry.name] ?? 0
+        }
+        const displayValue = Number(value) || 0
+        return {
+          ...entry,
+          displayValue: displayValue
+        }
+      }).filter((entry: any) => entry.displayValue != null && entry.displayValue !== 0)
+
+      if (entries.length === 0) {
+        return null
+      }
 
       return (
         <div className="bg-white border border-slate-200 rounded-lg shadow-lg overflow-hidden">
@@ -692,8 +712,9 @@ export function CumulativeFinancialOverview({
           <div className="p-2">
             <table className="w-full text-sm">
               <tbody>
-                {nonZeroPayload.map((entry: any, index: number) => {
+                {entries.map((entry: any, index: number) => {
                   const transactionTypeCode = getTransactionTypeCode(entry.name)
+                  
                   return (
                     <tr key={index} className="border-b border-slate-100 last:border-b-0">
                       <td className="py-1.5 pr-4 flex items-center gap-2">
@@ -711,7 +732,7 @@ export function CumulativeFinancialOverview({
                         </span>
                       </td>
                       <td className="py-1.5 text-right font-semibold text-slate-900">
-                        {formatTooltipValue(entry.value)}
+                        {formatTooltipValue(entry.displayValue)}
                       </td>
                     </tr>
                   )
@@ -813,6 +834,55 @@ export function CumulativeFinancialOverview({
         }, 'image/jpeg', 0.95)
       })
     })
+  }
+
+  // Compact mode renders just the chart without Card wrapper and filters
+  if (compact) {
+    if (loading) {
+      return <Skeleton className="h-full w-full" />
+    }
+    if (error || displayData.length === 0) {
+      return (
+        <div className="h-full flex items-center justify-center text-slate-500">
+          <p className="text-sm">{error || 'No data available'}</p>
+        </div>
+      )
+    }
+    return (
+      <div className="h-full w-full">
+        <ResponsiveContainer width="100%" height="100%">
+          <LineChart data={displayData} margin={{ top: 10, right: 20, left: 20, bottom: 20 }}>
+            <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
+            <XAxis 
+              dataKey="period" 
+              stroke="#64748B"
+              fontSize={10}
+              tickLine={{ stroke: '#64748B' }}
+            />
+            <YAxis 
+              tickFormatter={(value) => {
+                if (value >= 1000000000) return `$${(value / 1000000000).toFixed(0)}b`
+                if (value >= 1000000) return `$${(value / 1000000).toFixed(0)}m`
+                if (value >= 1000) return `$${(value / 1000).toFixed(0)}k`
+                return `$${value}`
+              }} 
+              stroke="#64748B"
+              fontSize={10}
+            />
+            <Tooltip content={<CustomTooltip />} />
+            {!hiddenSeries.has('Disbursements') && (
+              <Line type="monotone" dataKey="Disbursements" name="Disbursements" stroke={FINANCIAL_OVERVIEW_COLORS['Disbursements']} strokeWidth={2} dot={false} />
+            )}
+            {!hiddenSeries.has('Outgoing Commitment') && (
+              <Line type="monotone" dataKey="Outgoing Commitment" name="Commitments" stroke={FINANCIAL_OVERVIEW_COLORS['Outgoing Commitment']} strokeWidth={2} dot={false} />
+            )}
+            {!hiddenSeries.has('Planned Disbursements') && (
+              <Line type="monotone" dataKey="Planned Disbursements" name="Planned" stroke={FINANCIAL_OVERVIEW_COLORS['Planned Disbursements']} strokeWidth={2} strokeDasharray="5 5" dot={false} />
+            )}
+          </LineChart>
+        </ResponsiveContainer>
+      </div>
+    )
   }
 
   if (loading) {
@@ -963,45 +1033,45 @@ export function CumulativeFinancialOverview({
                   size="sm"
                   onClick={() => setChartType('line')}
                   className="h-8"
+                  title="Line"
                 >
-                  <LineChartIcon className="h-4 w-4 mr-1.5" />
-                  Line
+                  <LineChartIcon className="h-4 w-4" />
                 </Button>
                 <Button
                   variant={chartType === 'bar' ? 'default' : 'ghost'}
                   size="sm"
                   onClick={() => setChartType('bar')}
                   className="h-8"
+                  title="Bar"
                 >
-                  <BarChart3 className="h-4 w-4 mr-1.5" />
-                  Bar
+                  <BarChart3 className="h-4 w-4" />
                 </Button>
                 <Button
                   variant={chartType === 'area' ? 'default' : 'ghost'}
                   size="sm"
                   onClick={() => setChartType('area')}
                   className="h-8"
+                  title="Area"
                 >
-                  <TrendingUpIcon className="h-4 w-4 mr-1.5" />
-                  Area
+                  <TrendingUpIcon className="h-4 w-4" />
                 </Button>
                 <Button
                   variant={chartType === 'table' ? 'default' : 'ghost'}
                   size="sm"
                   onClick={() => setChartType('table')}
                   className="h-8"
+                  title="Table"
                 >
-                  <TableIcon className="h-4 w-4 mr-1.5" />
-                  Table
+                  <TableIcon className="h-4 w-4" />
                 </Button>
                 <Button
                   variant={chartType === 'total' ? 'default' : 'ghost'}
                   size="sm"
                   onClick={() => setChartType('total')}
                   className="h-8"
+                  title="Total"
                 >
-                  <BarChart3 className="h-4 w-4 mr-1.5" />
-                  Total
+                  <BarChart3 className="h-4 w-4" />
                 </Button>
               </div>
 

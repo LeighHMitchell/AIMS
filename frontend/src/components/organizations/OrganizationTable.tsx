@@ -14,7 +14,6 @@ import {
   FileSpreadsheet,
 } from "lucide-react";
 import { getCountryCode } from "@/lib/country-utils";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Tooltip,
@@ -127,34 +126,35 @@ const getOrganizationTypeLabel = (
   return type?.label || typeCode;
 };
 
-// Get type badge variant - category-specific colors
-const getTypeBadgeVariant = (typeCode: string | undefined): string => {
-  if (!typeCode) return 'gray';
+// Get type badge colors for inline span styling
+// Using cohesive palette: Primary Scarlet #dc2625, Pale Slate #cfd0d5, Blue Slate #4c5568, Cool Steel #7b95a7, Platinum #f1f4f8
+const getTypeInlineColors = (typeCode: string | undefined): string => {
+  if (!typeCode) return 'bg-[#f1f4f8] text-[#7b95a7]'; // Platinum / Cool Steel
   const code = parseInt(typeCode);
   
-  // Government (10, 11, 15) - Blue
-  if (code === 10 || code === 11 || code === 15) return 'blue';
+  // Government (10, 11, 15) - Pale Slate bg, Blue Slate text (solid, official)
+  if (code === 10 || code === 11 || code === 15) return 'bg-[#cfd0d5] text-[#4c5568]';
   
-  // NGO (21, 22, 23, 24) - Green
-  if (code >= 21 && code <= 24) return 'green';
+  // NGO (21, 22, 23, 24) - Platinum bg, Blue Slate text (clean)
+  if (code >= 21 && code <= 24) return 'bg-[#f1f4f8] text-[#4c5568]';
   
-  // Partnership (30) - Purple
-  if (code === 30) return 'purple';
+  // Partnership (30) - Platinum bg, Cool Steel text (collaborative)
+  if (code === 30) return 'bg-[#f1f4f8] text-[#7b95a7]';
   
-  // Multilateral (40) - Indigo
-  if (code === 40) return 'indigo';
+  // Multilateral (40) - Pale Slate bg, Blue Slate text (prominent)
+  if (code === 40) return 'bg-[#cfd0d5] text-[#4c5568]';
   
-  // Foundation (60) - Pink
-  if (code === 60) return 'pink';
+  // Foundation (60) - Platinum bg, Cool Steel text (gentle)
+  if (code === 60) return 'bg-[#f1f4f8] text-[#7b95a7]';
   
-  // Private Sector (70, 71, 72, 73) - Orange
-  if (code >= 70 && code <= 73) return 'orange';
+  // Private Sector (70, 71, 72, 73) - Pale Slate bg, Blue Slate text (business-like)
+  if (code >= 70 && code <= 73) return 'bg-[#cfd0d5] text-[#4c5568]';
   
-  // Academic (80) - Cyan
-  if (code === 80) return 'cyan';
+  // Academic (80) - Pale Slate bg, Cool Steel text (scholarly)
+  if (code === 80) return 'bg-[#cfd0d5] text-[#7b95a7]';
   
-  // Other (90) and unknown - Gray
-  return 'gray';
+  // Other (90) and unknown - Platinum bg, Cool Steel text (neutral)
+  return 'bg-[#f1f4f8] text-[#7b95a7]';
 };
 
 export const OrganizationTable: React.FC<OrganizationTableProps> = ({
@@ -256,7 +256,6 @@ export const OrganizationTable: React.FC<OrganizationTableProps> = ({
           <TableBody className="divide-y divide-slate-200 bg-white">
             {organizations.map((org) => {
               const typeLabel = getOrganizationTypeLabel(org.Organisation_Type_Code, availableTypes);
-              const typeBadgeVariant = getTypeBadgeVariant(org.Organisation_Type_Code);
 
               return (
                 <TableRow
@@ -337,9 +336,9 @@ export const OrganizationTable: React.FC<OrganizationTableProps> = ({
                     </div>
                   </TableCell>
                   <TableCell className="px-4 py-3 text-sm text-foreground">
-                    <Badge variant={typeBadgeVariant} className="font-normal">
+                    <span className={`text-xs ${getTypeInlineColors(org.Organisation_Type_Code)} px-1.5 py-0.5 rounded inline box-decoration-clone font-normal leading-relaxed`}>
                       {typeLabel}
-                    </Badge>
+                    </span>
                   </TableCell>
                   <TableCell className="px-4 py-3 text-sm text-foreground">
                     {org.country_represented ? (

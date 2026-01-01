@@ -1,9 +1,13 @@
 "use client"
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useMemo } from 'react'
+import { useSearchParams, useRouter, usePathname } from 'next/navigation'
 import { MainLayout } from '@/components/layout/main-layout'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { ExpandableCard } from '@/components/ui/expandable-card'
+import { CompactChartCard } from '@/components/ui/compact-chart-card'
+import { ChartGrid } from '@/components/ui/chart-grid'
+import { getFiveYearDateRange } from '@/lib/date-utils'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -102,11 +106,17 @@ import { SectorAnalyticsFilters, SectorMetrics, SectorAnalyticsResponse } from '
 // Funding Over Time Analytics
 import { FundingOverTimeAnalytics } from '@/components/analytics/FundingOverTimeAnalytics'
 
+// National Priorities Dashboard
+import { Dashboard as NationalPrioritiesDashboard } from '@/components/analytics/national-priorities-dashboard'
+
 // Planned and Actual Disbursement by Sector (new chart)
 import { PlannedActualDisbursementBySector } from '@/components/analytics/PlannedActualDisbursementBySector'
 
 // Sector Disbursement Over Time (time series chart)
 import { SectorDisbursementOverTime } from '@/components/analytics/SectorDisbursementOverTime'
+
+// Portfolio Spend Trajectory Chart
+import { PortfolioSpendTrajectoryChart } from '@/components/charts/PortfolioSpendTrajectoryChart'
 
 interface KPIData {
   totalDisbursed: number
@@ -136,9 +146,16 @@ interface AnalyticsFilters {
 }
 
 export default function AnalyticsDashboardPage() {
+  const searchParams = useSearchParams()
+  const router = useRouter()
+  const pathname = usePathname()
+  
+  // Get initial tab from URL or default to 'main'
+  const tabFromUrl = searchParams.get('tab') || 'main'
+  
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [activeTab, setActiveTab] = useState('overview')
+  const [activeTab, setActiveTab] = useState(tabFromUrl)
   const [kpiData, setKpiData] = useState<KPIData>({
     totalDisbursed: 0,
     commitmentsDisbursedPercent: 0,
@@ -150,13 +167,28 @@ export default function AnalyticsDashboardPage() {
     completedProjects: 0
   })
   
-  // Filter states - Initialize with very wide date range to show all data
-  const [dateRange, setDateRange] = useState<DateRange>({
-    from: new Date('1900-01-01'), // Start from earliest possible date
-    to: new Date('2099-12-31')    // Go to latest possible date
-  })
+  // Filter states - Initialize with 5-year date range for compact charts
+  // Memoize to prevent infinite re-renders when passing to child components
+  const fiveYearRange = useMemo(() => getFiveYearDateRange(), [])
+  const [dateRange, setDateRange] = useState<DateRange>(fiveYearRange)
 
   const [refreshKey, setRefreshKey] = useState(0)
+
+  // Handle tab change - update URL to persist tab selection
+  const handleTabChange = (value: string) => {
+    setActiveTab(value)
+    const params = new URLSearchParams(searchParams.toString())
+    params.set('tab', value)
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false })
+  }
+
+  // Sync activeTab with URL on mount and when URL changes
+  useEffect(() => {
+    const tabParam = searchParams.get('tab')
+    if (tabParam && tabParam !== activeTab) {
+      setActiveTab(tabParam)
+    }
+  }, [searchParams])
 
   // Additional filters for analytics charts
   const [filters, setFilters] = useState<AnalyticsFilters>({
@@ -691,7 +723,7 @@ export default function AnalyticsDashboardPage() {
             </Card>
           )}
 
-          <Tabs defaultValue="main" className="space-y-6">
+          <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
                 <TabsList className="p-1 h-auto bg-background gap-1 border mb-6 flex flex-wrap">
                   <TabsTrigger value="main" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Main</TabsTrigger>
                   <TabsTrigger value="sectors" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Sectors</TabsTrigger>
@@ -705,213 +737,195 @@ export default function AnalyticsDashboardPage() {
                   <TabsTrigger value="top10" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Top 10</TabsTrigger>
                   <TabsTrigger value="aid-on-budget" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Aid on Budget</TabsTrigger>
                   <TabsTrigger value="funding-over-time" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Funding Over Time</TabsTrigger>
+                  <TabsTrigger value="dashboard" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Dashboard</TabsTrigger>
                   <TabsTrigger value="under-development" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Under Development</TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="main">
-                  {/* Planned and Actual Disbursement by Sector - Full Width at Top */}
-                  <div className="mb-6">
-                    <PlannedActualDisbursementBySector
-                      dateRange={dateRange}
-                      refreshKey={refreshKey}
-                    />
-                  </div>
+                  <ChartGrid>
+                    <CompactChartCard
+                      title="Planned & Actual Disbursement by Sector"
+                      shortDescription="Compare planned vs actual disbursements across all sectors"
+                      fullDescription="Compare planned disbursements with actual disbursements across all sectors"
+                    >
+                      <PlannedActualDisbursementBySector
+                        dateRange={fiveYearRange}
+                        refreshKey={refreshKey}
+                      />
+                    </CompactChartCard>
 
-                  {/* Sector Disbursement Over Time - Full Width */}
-                  <div className="mb-6">
-                    <SectorDisbursementOverTime
-                      dateRange={dateRange}
-                      refreshKey={refreshKey}
-                    />
-                  </div>
+                    <CompactChartCard
+                      title="Sector Financial Trends"
+                      shortDescription="Track sector disbursement patterns and trends over time"
+                      fullDescription="Time series analysis of sector disbursements over time"
+                    >
+                      <SectorDisbursementOverTime
+                        dateRange={fiveYearRange}
+                        refreshKey={refreshKey}
+                      />
+                    </CompactChartCard>
 
-                  {/* Cumulative Financial Overview - Full Width */}
-                  <div className="mb-6">
-                    <CumulativeFinancialOverview
-                      dateRange={dateRange}
-                      refreshKey={refreshKey}
-                    />
-                  </div>
+                    <CompactChartCard
+                      title="Cumulative Financial Overview"
+                      shortDescription="Total commitments, disbursements & budgets accumulated over time"
+                      fullDescription="Cumulative view of all transaction types, planned disbursements, and budgets over time"
+                    >
+                      <CumulativeFinancialOverview
+                        dateRange={fiveYearRange}
+                        refreshKey={refreshKey}
+                      />
+                    </CompactChartCard>
 
-                  {/* Finance Type Flow Chart - Full Width Below Cumulative Overview */}
-                  <div className="mb-6">
-                    <FinanceTypeFlowChart
-                      dateRange={dateRange}
-                      refreshKey={refreshKey}
-                      onDataChange={setFinanceTypeFlowData}
-                    />
-                  </div>
+                    <CompactChartCard
+                      title="Portfolio Spend Trajectory"
+                      shortDescription="Actual spending progress vs ideal linear disbursement curve"
+                      fullDescription="Actual cumulative disbursements compared against a perfect spend trajectory"
+                    >
+                      <PortfolioSpendTrajectoryChart
+                        refreshKey={refreshKey}
+                      />
+                    </CompactChartCard>
 
-                  {/* All Donors Financial Overview - Full Width Below Finance Type Flow */}
-                  <div className="mb-6">
-                    <AllDonorsHorizontalBarChart
-                      dateRange={dateRange}
-                      refreshKey={refreshKey}
-                      onDataChange={setDonorsData}
-                    />
-                  </div>
+                    <CompactChartCard
+                      title="Financial Flows by Finance Type"
+                      shortDescription="Distribution of grants, loans & other finance types by flow category"
+                      fullDescription="Visualize financial flows by finance types across different flow types over time"
+                    >
+                      <FinanceTypeFlowChart
+                        dateRange={fiveYearRange}
+                        refreshKey={refreshKey}
+                        onDataChange={setFinanceTypeFlowData}
+                      />
+                    </CompactChartCard>
 
-                  {/* Funding Source Breakdown - Full Width Below All Donors */}
-                  <div className="mb-6">
-                    <AllActivitiesFundingSourceBreakdown
-                      dateRange={dateRange}
-                      refreshKey={refreshKey}
-                    />
-                  </div>
+                    <CompactChartCard
+                      title="All Donors Financial Overview"
+                      shortDescription="All donors ranked by budgets, planned & actual disbursements"
+                      fullDescription="Complete ranking of all donors by total budgets, planned disbursements, or actual disbursements"
+                    >
+                      <AllDonorsHorizontalBarChart
+                        dateRange={fiveYearRange}
+                        refreshKey={refreshKey}
+                        onDataChange={setDonorsData}
+                      />
+                    </CompactChartCard>
+
+                    <CompactChartCard
+                      title="Funding Source Breakdown"
+                      shortDescription="Sankey diagram showing provider-to-receiver financial flows"
+                      fullDescription="Distribution of funding by donor/provider across all activities"
+                    >
+                      <AllActivitiesFundingSourceBreakdown
+                        dateRange={fiveYearRange}
+                        refreshKey={refreshKey}
+                      />
+                    </CompactChartCard>
+                  </ChartGrid>
                 </TabsContent>
 
                 <TabsContent value="sectors">
                   <div className="space-y-6">
-                    {/* Sector Filters */}
+                    {/* Sector Filters - kept at tab level for all charts */}
                     <SectorFilters
                       filters={sectorAnalyticsFilters}
                       onFiltersChange={setSectorAnalyticsFilters}
                     />
 
-                    {/* Sector Bar Chart */}
-                    {sectorAnalyticsLoading ? (
-                      <Skeleton className="h-[500px] w-full" />
-                    ) : (
-                      <SectorBarChart
-                        data={sectorAnalyticsData}
-                        filters={sectorAnalyticsFilters}
-                      />
-                    )}
+                    <ChartGrid>
+                      <CompactChartCard
+                        title="Sector Analysis"
+                        shortDescription="Disbursement values and activity counts per sector"
+                        fullDescription="Financial flows and project distribution across sectors"
+                      >
+                        {sectorAnalyticsLoading ? (
+                          <Skeleton className="h-full w-full" />
+                        ) : (
+                          <SectorBarChart
+                            data={sectorAnalyticsData}
+                            filters={sectorAnalyticsFilters}
+                          />
+                        )}
+                      </CompactChartCard>
 
-                    {/* Sector Time Series Panel */}
-                    <SectorTimeSeriesPanel />
-
-                    {/* Coordination Circle Pack */}
-                    <Card>
-                      <CardHeader>
-                        <div className="flex flex-wrap items-center justify-between gap-4">
-                          <div className="flex items-center gap-3">
-                            <Network className="h-5 w-5 text-slate-700" />
-                            <div>
-                              <CardTitle>Coordination</CardTitle>
-                              <CardDescription>
-                                {coordinationView === 'sectors'
-                                  ? "Who's working in each sector?"
-                                  : "What is each partner working on?"}
-                              </CardDescription>
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <span className="text-sm font-medium text-slate-700">View:</span>
-                            <div className="flex gap-1">
-                              <Button
-                                variant={coordinationView === 'sectors' ? 'default' : 'outline'}
-                                size="sm"
-                                onClick={() => setCoordinationView('sectors')}
-                              >
-                                By Sector
-                              </Button>
-                              <Button
-                                variant={coordinationView === 'organizations' ? 'default' : 'outline'}
-                                size="sm"
-                                onClick={() => setCoordinationView('organizations')}
-                              >
-                                By Partner
-                              </Button>
-                            </div>
-                          </div>
-                        </div>
-                      </CardHeader>
-                      <CardContent>
+                      <CompactChartCard
+                        title="Coordination"
+                        shortDescription="Network visualization of organizations and their sector focus"
+                        fullDescription={coordinationView === 'sectors'
+                          ? "Who's working in each sector? Each circle represents a sector with partners shown as smaller circles."
+                          : "What is each partner working on? Each circle represents a partner with sectors shown as smaller circles."}
+                      >
                         {coordinationLoading ? (
-                          <div className="flex items-center justify-center h-[500px]">
-                            <div className="text-center">
-                              <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-slate-900 mx-auto mb-3" />
-                              <p className="text-slate-600 text-sm">Loading coordination data...</p>
-                            </div>
-                          </div>
+                          <Skeleton className="h-full w-full" />
                         ) : (
                           <CoordinationCirclePack
                             view={coordinationView}
                             data={coordinationData?.data || null}
+                            width={400}
+                            height={250}
                           />
                         )}
-                        <p className="text-sm text-slate-500 text-center mt-4">
-                          {coordinationView === 'sectors'
-                            ? 'Each large circle represents a sector. Smaller circles show development partners working in that sector, sized by budget.'
-                            : 'Each large circle represents a partner. Smaller circles show sectors they work in, sized by budget.'}
-                        </p>
-                      </CardContent>
-                    </Card>
+                      </CompactChartCard>
+                    </ChartGrid>
+
+                    {/* Sector Time Series Panel - full width due to complexity */}
+                    <SectorTimeSeriesPanel />
                   </div>
                 </TabsContent>
 
                 <TabsContent value="humanitarian">
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    {/* Share of Humanitarian Aid - Hero Card */}
-                    <HumanitarianShareChart
-                      dateRange={dateRange}
-                      refreshKey={refreshKey}
-                    />
+                  <ChartGrid>
+                    <CompactChartCard
+                      title="Share of Humanitarian Aid"
+                      shortDescription="Humanitarian portion as percentage of total international aid"
+                      fullDescription="Share of humanitarian aid compared to total international aid"
+                    >
+                      <HumanitarianShareChart
+                        dateRange={fiveYearRange}
+                        refreshKey={refreshKey}
+                      />
+                    </CompactChartCard>
                     
-                    {/* Time Series Chart */}
-                    <ExpandableCard
-                      className="bg-white border-slate-200"
-                      title="Humanitarian vs Development Aid Over Time"
-                      description="Historical comparison of humanitarian and development aid flows"
+                    <CompactChartCard
+                      title="Humanitarian vs Development Aid"
+                      shortDescription="Year-over-year comparison of humanitarian and development flows"
+                      fullDescription="Historical comparison of humanitarian and development aid flows over time"
                       exportData={humanitarianData}
-                      hideViewToggle={true}
                     >
                       <HumanitarianChart
-                        dateRange={dateRange}
+                        dateRange={fiveYearRange}
                         refreshKey={refreshKey}
                         onDataChange={setHumanitarianData}
                       />
-                    </ExpandableCard>
-                  </div>
+                    </CompactChartCard>
+                  </ChartGrid>
                 </TabsContent>
 
                 <TabsContent value="activity-status">
-                  <div className="space-y-6">
-                    <div>
-                      <h2 className="text-2xl font-bold text-gray-900">Activity Status & Transaction Analysis</h2>
-                      <p className="text-gray-600">
-                        Analyze the distribution of activities by status and transaction types
-                      </p>
-                    </div>
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                      {/* Activity Status Chart */}
-                      <ExpandableCard
-                        className="bg-white border-slate-200"
-                        title={
-                          <div className="flex items-center gap-2">
-                            <CheckCircle2 className="h-5 w-5" />
-                            <span>Activity Status Distribution</span>
-                          </div>
-                        }
-                        description="Analyze the distribution of activities by their status (activity, publication, and submission status)"
-                        exportData={activityStatusData}
-                      >
-                        <ActivityStatusChart
-                          filters={filters}
-                          onDataChange={setActivityStatusData}
-                        />
-                      </ExpandableCard>
+                  <ChartGrid>
+                    <CompactChartCard
+                      title="Activity Status Distribution"
+                      shortDescription="Distribution of activities by publication & submission status"
+                      fullDescription="Analyze the distribution of activities by their status (activity, publication, and submission status)"
+                      exportData={activityStatusData}
+                    >
+                      <ActivityStatusChart
+                        filters={filters}
+                        onDataChange={setActivityStatusData}
+                      />
+                    </CompactChartCard>
 
-                      {/* Transaction Type Chart */}
-                      <ExpandableCard
-                        className="bg-white border-slate-200"
-                        title={
-                          <div className="flex items-center gap-2">
-                            <DollarSign className="h-5 w-5" />
-                            <span>Transaction Type Analysis</span>
-                          </div>
-                        }
-                        description="Compare transaction types by count and total value (Commitments, Disbursements, Expenditures, etc.)"
-                        exportData={transactionTypeData}
-                      >
-                        <TransactionTypeChart
-                          filters={filters}
-                          onDataChange={setTransactionTypeData}
-                        />
-                      </ExpandableCard>
-                    </div>
-                  </div>
+                    <CompactChartCard
+                      title="Transaction Type Analysis"
+                      shortDescription="Count and total value of commitments, disbursements & expenditures"
+                      fullDescription="Compare transaction types by count and total value (Commitments, Disbursements, Expenditures, etc.)"
+                      exportData={transactionTypeData}
+                    >
+                      <TransactionTypeChart
+                        filters={filters}
+                        onDataChange={setTransactionTypeData}
+                      />
+                    </CompactChartCard>
+                  </ChartGrid>
                 </TabsContent>
 
                 <TabsContent value="policy-markers">
@@ -977,56 +991,45 @@ export default function AnalyticsDashboardPage() {
                 </TabsContent>
 
                 <TabsContent value="top10">
-                  <div className="space-y-6">
-                    <div>
-                      <h2 className="text-2xl font-bold text-gray-900">Top 10 Partners</h2>
-                      <p className="text-gray-600">
-                        Rankings of development partners by key performance metrics
-                      </p>
-                    </div>
-                    <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-                      {/* Chart 1: Number of Active Projects */}
-                      <ExpandableCard
-                        className="bg-white border-slate-200"
-                        title="Top 10 Partners by Number of Active Projects"
-                        description="Count of activities where the organisation is listed as a funding or implementing partner"
-                        exportData={top10ActiveProjectsData}
-                      >
-                        <Top10ActiveProjectsChart
-                          refreshKey={refreshKey}
-                          onDataChange={setTop10ActiveProjectsData}
-                        />
-                      </ExpandableCard>
+                  <ChartGrid>
+                    <CompactChartCard
+                      title="Top 10 by Active Projects"
+                      shortDescription="Organizations ranked by number of active activities as partner"
+                      fullDescription="Count of activities where the organisation is listed as a funding or implementing partner"
+                      exportData={top10ActiveProjectsData}
+                    >
+                      <Top10ActiveProjectsChart
+                        refreshKey={refreshKey}
+                        onDataChange={setTop10ActiveProjectsData}
+                      />
+                    </CompactChartCard>
 
-                      {/* Chart 2: Government-Validated Projects */}
-                      <ExpandableCard
-                        className="bg-white border-slate-200"
-                        title="Top 10 Partners by Value of Government-Validated Projects"
-                        description="Highlights alignment and mutual accountability. Shows projects that have been validated by the recipient government."
-                        exportData={top10GovernmentValidatedData}
-                      >
-                        <Top10GovernmentValidatedChart
-                          dateRange={dateRange}
-                          refreshKey={refreshKey}
-                          onDataChange={setTop10GovernmentValidatedData}
-                        />
-                      </ExpandableCard>
+                    <CompactChartCard
+                      title="Top 10 by Government-Validated"
+                      shortDescription="Partners with highest value of government-validated activities"
+                      fullDescription="Highlights alignment and mutual accountability. Shows projects that have been validated by the recipient government."
+                      exportData={top10GovernmentValidatedData}
+                    >
+                      <Top10GovernmentValidatedChart
+                        dateRange={fiveYearRange}
+                        refreshKey={refreshKey}
+                        onDataChange={setTop10GovernmentValidatedData}
+                      />
+                    </CompactChartCard>
 
-                      {/* Chart 3: Total Disbursements (All Sectors) */}
-                      <ExpandableCard
-                        className="bg-white border-slate-200"
-                        title="Top 10 Partners by Total Disbursements (All Sectors)"
-                        description="Top 10 partners across all sectors. Used for sectoral coordination groups or working group dashboards."
-                        exportData={top10SectorFocusedData}
-                      >
-                        <Top10SectorFocusedChart
-                          dateRange={dateRange}
-                          refreshKey={refreshKey}
-                          onDataChange={setTop10SectorFocusedData}
-                        />
-                      </ExpandableCard>
-                    </div>
-                  </div>
+                    <CompactChartCard
+                      title="Top 10 by Total Disbursements"
+                      shortDescription="Highest-disbursing partners across all sectors combined"
+                      fullDescription="Top 10 partners across all sectors. Used for sectoral coordination groups or working group dashboards."
+                      exportData={top10SectorFocusedData}
+                    >
+                      <Top10SectorFocusedChart
+                        dateRange={fiveYearRange}
+                        refreshKey={refreshKey}
+                        onDataChange={setTop10SectorFocusedData}
+                      />
+                    </CompactChartCard>
+                  </ChartGrid>
                 </TabsContent>
 
                 <TabsContent value="aid-on-budget">
@@ -1047,6 +1050,10 @@ export default function AnalyticsDashboardPage() {
                   <div className="space-y-6">
                     <FundingOverTimeAnalytics />
                   </div>
+                </TabsContent>
+
+                <TabsContent value="dashboard">
+                  <NationalPrioritiesDashboard />
                 </TabsContent>
 
                 <TabsContent value="under-development">

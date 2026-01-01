@@ -127,9 +127,7 @@ export interface SectorTimeSeriesData {
   sectors: Record<string, number> // { "Agriculture": 12000000, ... }
   activityCount: number
   partnerCount: number
-}
-
-/**
+}/**
  * Filter state for sector time series
  */
 export interface SectorTimeSeriesFilters {
@@ -162,4 +160,3 @@ export type TimeSeriesChartType = 'area' | 'line' | 'bar' | 'stacked-bar' | 'tab
  * Data type toggle for time series
  */
 export type TimeSeriesDataType = 'planned' | 'actual'
-

@@ -21,6 +21,7 @@ interface Top10ActiveProjectsChartProps {
   }
   refreshKey: number
   onDataChange?: (data: PartnerData[]) => void
+  compact?: boolean
 }
 
 interface PartnerData {
@@ -34,7 +35,8 @@ interface PartnerData {
 export function Top10ActiveProjectsChart({
   filters,
   refreshKey,
-  onDataChange
+  onDataChange,
+  compact = false
 }: Top10ActiveProjectsChartProps) {
   const [data, setData] = useState<PartnerData[]>([])
   const [loading, setLoading] = useState(true)
@@ -98,6 +100,37 @@ export function Top10ActiveProjectsChart({
     '#4ade80',
     '#94a3b8' // slate-400 for "Others"
   ]
+
+  // Compact mode renders just the chart
+  if (compact) {
+    if (loading) {
+      return <Skeleton className="h-full w-full" />
+    }
+    if (!data || data.length === 0) {
+      return (
+        <div className="h-full flex items-center justify-center text-slate-500">
+          <p className="text-sm">No data available</p>
+        </div>
+      )
+    }
+    return (
+      <div className="h-full w-full">
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart data={data} layout="horizontal" margin={{ top: 5, right: 20, left: 60, bottom: 5 }}>
+            <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" horizontal={false} />
+            <XAxis type="number" tick={{ fontSize: 10 }} />
+            <YAxis type="category" dataKey="shortName" tick={{ fontSize: 9 }} width={55} />
+            <Tooltip content={<CustomTooltip />} />
+            <Bar dataKey="projectCount" radius={[0, 4, 4, 0]}>
+              {data.map((_, index) => (
+                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+              ))}
+            </Bar>
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
+    )
+  }
 
   if (loading) {
     return (

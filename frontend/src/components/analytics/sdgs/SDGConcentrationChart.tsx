@@ -21,6 +21,7 @@ interface SDGConcentrationChartProps {
   selectedSdgs: number[]
   metric: 'activities' | 'budget' | 'planned'
   refreshKey: number
+  compact?: boolean
 }
 
 interface ConcentrationData {
@@ -36,7 +37,8 @@ export function SDGConcentrationChart({
   dateRange,
   selectedSdgs,
   metric,
-  refreshKey
+  refreshKey,
+  compact = false
 }: SDGConcentrationChartProps) {
   const [data, setData] = useState<ConcentrationData[]>([])
   const [loading, setLoading] = useState(true)
@@ -175,6 +177,48 @@ export function SDGConcentrationChart({
     return null
   }
 
+  // Compact mode renders just the chart without Card wrapper
+  if (compact) {
+    if (loading) {
+      return <Skeleton className="h-full w-full" />
+    }
+    if (chartData.length === 0) {
+      return (
+        <div className="h-full flex items-center justify-center text-slate-500">
+          <p className="text-sm">No data available</p>
+        </div>
+      )
+    }
+    return (
+      <div className="h-full w-full">
+        <ResponsiveContainer width="100%" height="100%">
+          <LineChart data={chartData} margin={{ top: 10, right: 20, left: 20, bottom: 20 }}>
+            <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
+            <XAxis dataKey="year" fontSize={10} />
+            <YAxis fontSize={10} />
+            <Tooltip content={<CustomTooltip />} />
+            <Line
+              type="monotone"
+              dataKey="sdgCount"
+              name="SDGs Covered"
+              stroke="#dc2625"
+              strokeWidth={2}
+              dot={{ fill: '#dc2625', r: 3 }}
+            />
+            <Line
+              type="monotone"
+              dataKey="value"
+              name={metric === 'activities' ? 'Activities' : 'Value'}
+              stroke="#4c5568"
+              strokeWidth={2}
+              dot={{ fill: '#4c5568', r: 3 }}
+            />
+          </LineChart>
+        </ResponsiveContainer>
+      </div>
+    )
+  }
+
   if (loading) {
     return (
       <Card>
@@ -301,6 +345,7 @@ export function SDGConcentrationChart({
     </Card>
   )
 }
+
 
 
 

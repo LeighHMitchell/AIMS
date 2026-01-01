@@ -160,12 +160,15 @@ function ambiguousResult(): PartyInferenceResult {
 /**
  * Infer provider for outgoing transactions
  * 
- * Rule: For outgoing transactions, the provider is always the reporting organisation
- * (the org sending/disbursing the funds)
+ * Priority order (only if provider is missing):
+ * 1. If reporting org has a valid organization_id -> use it
+ * 2. Else if exactly one funding org exists (role=1) -> use it (fallback)
+ * 3. Otherwise -> ambiguous
  */
 function inferProviderForOutgoing(
   transaction: TransactionForInference,
-  reportingOrg: ReportingOrg
+  reportingOrg: ReportingOrg,
+  participatingOrgs: ParticipatingOrg[]
 ): PartyInferenceResult {
   // If provider already present, return exact
   if (transaction.providerOrgId) {
@@ -175,8 +178,19 @@ function inferProviderForOutgoing(
     );
   }
 
-  // Provider is the reporting organisation
-  return inferredFromReportingOrg(reportingOrg);
+  // Primary rule: Provider is the reporting organisation
+  if (reportingOrg.organization_id) {
+    return inferredFromReportingOrg(reportingOrg);
+  }
+
+  // Fallback: If reporting org is null but exactly one funding org exists, use it
+  const fundingOrgs = getFundingOrgs(participatingOrgs);
+  if (fundingOrgs.length === 1) {
+    return inferredResult(fundingOrgs[0]);
+  }
+
+  // Cannot determine unambiguously
+  return ambiguousResult();
 }
 
 /**
@@ -364,7 +378,7 @@ export function inferTransactionParties(
   } else {
     // Outgoing transaction: provider is reporting org, receiver is external
     return {
-      provider: inferProviderForOutgoing(transaction, reportingOrg),
+      provider: inferProviderForOutgoing(transaction, reportingOrg, participatingOrgs),
       receiver: inferReceiverForOutgoing(
         transaction,
         reportingOrg,
@@ -373,6 +387,7 @@ export function inferTransactionParties(
     };
   }
 }
+
 
 
 

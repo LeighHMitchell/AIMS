@@ -31,7 +31,8 @@ import {
   Building2,
   Loader2,
   AlertCircle,
-  Info
+  Info,
+  Maximize2
 } from 'lucide-react'
 import { exportChartToJPG, downloadCSV, convertToCSV } from '@/lib/chart-export'
 import { toast } from 'sonner'
@@ -119,6 +120,7 @@ export function FundingOverTimeAnalytics() {
   const [selectedDonors, setSelectedDonors] = useState<string[]>([])
   const [chartView, setChartView] = useState<ChartViewType>('line')
   const [loading, setLoading] = useState(false)
+  const [isExpanded, setIsExpanded] = useState(false)
   const [organizations, setOrganizations] = useState<Array<{ id: string; name: string; acronym: string | null }>>([])
   const [loadingOrgs, setLoadingOrgs] = useState(true)
   const [timeSeriesData, setTimeSeriesData] = useState<FundingTimeSeriesPoint[]>([])
@@ -405,6 +407,14 @@ export function FundingOverTimeAnalytics() {
                 </UITooltip>
               </TooltipProvider>
             </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setIsExpanded(!isExpanded)}
+              className="h-8 w-8 p-0"
+            >
+              <Maximize2 className="h-4 w-4" />
+            </Button>
           </div>
         </CardHeader>
         <CardContent>
@@ -494,8 +504,8 @@ export function FundingOverTimeAnalytics() {
         </CardContent>
       </Card>
 
-      {/* Data Type Legend */}
-      {selectedDonors.length > 0 && chartData.length > 0 && (
+      {/* Data Type Legend - only show when expanded */}
+      {isExpanded && selectedDonors.length > 0 && chartData.length > 0 && (
         <Card>
           <CardContent className="py-3">
             <div className="flex flex-wrap items-center gap-6 justify-center">
@@ -555,7 +565,7 @@ export function FundingOverTimeAnalytics() {
                     tickFormatter={formatCurrency}
                   />
                   <Tooltip content={<CustomTooltip />} />
-                  <Legend />
+                  {isExpanded && <Legend />}
                   {/* Vertical reference line at current year boundary */}
                   <ReferenceLine 
                     x={currentYear} 
@@ -611,7 +621,7 @@ export function FundingOverTimeAnalytics() {
                     tickFormatter={formatCurrency}
                   />
                   <Tooltip content={<CustomTooltip />} />
-                  <Legend />
+                  {isExpanded && <Legend />}
                   <ReferenceLine 
                     x={currentYear} 
                     stroke={COLORS.partial} 
@@ -659,7 +669,7 @@ export function FundingOverTimeAnalytics() {
                     tickFormatter={formatCurrency}
                   />
                   <Tooltip content={<CustomTooltip />} />
-                  <Legend />
+                  {isExpanded && <Legend />}
                   <ReferenceLine 
                     x={currentYear} 
                     stroke={COLORS.partial} 

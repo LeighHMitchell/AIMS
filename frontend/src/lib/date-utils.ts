@@ -1,6 +1,28 @@
 import { format, formatDistanceToNow, isValid, parseISO, differenceInMonths, differenceInDays } from 'date-fns';
 
 // =====================================================
+// ANALYTICS DATE RANGE UTILITIES
+// =====================================================
+
+export interface DateRange {
+  from: Date;
+  to: Date;
+}
+
+/**
+ * Get the 5-year date range for analytics charts
+ * Returns Jan 1 of 4 years ago to Dec 31 of current year
+ * Example: If current year is 2025, returns Jan 1, 2021 to Dec 31, 2025
+ */
+export function getFiveYearDateRange(): DateRange {
+  const currentYear = new Date().getFullYear();
+  return {
+    from: new Date(currentYear - 4, 0, 1),  // Jan 1, 5 years ago
+    to: new Date(currentYear, 11, 31)        // Dec 31, current year
+  };
+}
+
+// =====================================================
 // DURATION CALCULATION TYPES AND UTILITIES
 // =====================================================
 
