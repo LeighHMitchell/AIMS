@@ -10,7 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { UserAvatar } from '@/components/ui/user-avatar';
 import { ActivityComment, CommentReply, CommentSearchFilters } from '@/types/comment';
 import { useUser } from '@/hooks/useUser';
 import { toast } from 'sonner';
@@ -617,12 +617,12 @@ export function ActivityComments({ activityId, contextSection, allowContextSwitc
                     
                     {/* User Info Section */}
                     <div className="flex items-start gap-3">
-                      <Avatar className="h-8 w-8">
-                        <AvatarImage src={comment.author?.profilePicture} />
-                        <AvatarFallback className="text-xs">
-                          {getUserInitials(comment.author?.name || 'Unknown User')}
-                        </AvatarFallback>
-                      </Avatar>
+                      <UserAvatar
+                        src={comment.author?.profilePicture}
+                        seed={comment.author?.userId || comment.author?.name || 'unknown'}
+                        name={comment.author?.name || 'Unknown User'}
+                        size="md"
+                      />
                       <div className="flex-1 min-w-0">
                         <div className="font-medium text-sm truncate">{comment.author?.name || 'Unknown User'}</div>
                         <Badge variant="outline" className="text-xs mt-1">

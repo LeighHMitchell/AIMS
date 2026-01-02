@@ -9,6 +9,16 @@ import { MeasureType, FragmentationData, FragmentationCell, FragmentationDonor, 
 export async function GET(request: NextRequest) {
   try {
     const supabase = getSupabaseAdmin();
+    
+    // Check if Supabase is properly initialized
+    if (!supabase) {
+      console.error('[Program Fragmentation API] Supabase client not initialized');
+      return NextResponse.json(
+        { success: false, error: 'Database connection not available' },
+        { status: 503 }
+      );
+    }
+    
     const searchParams = request.nextUrl.searchParams;
     
     const measure = (searchParams.get('measure') || 'disbursements') as MeasureType;
@@ -31,7 +41,7 @@ export async function GET(request: NextRequest) {
           percentage,
           national_priorities (id, code, name, level, parent_id)
         ),
-        transactions (usd_value, transaction_type, transaction_date, status)
+        transactions!transactions_activity_id_fkey1 (usd_value, transaction_type, transaction_date, status)
       `);
 
     if (error) {
@@ -214,19 +224,22 @@ export async function GET(request: NextRequest) {
     const sortedPriorityIds = Array.from(priorityInfo.keys())
       .sort((a, b) => (priorityTotals.get(b) || 0) - (priorityTotals.get(a) || 0));
 
+    // Build categories with totals
     const categories: FragmentationCategory[] = sortedPriorityIds.map((id) => ({
       id,
       name: priorityInfo.get(id)?.name || 'Unknown',
       code: priorityInfo.get(id)?.code,
+      total: priorityTotals.get(id) || 0,
     }));
 
-    // Build cells
+    // Build cells with both row-based and column-based percentages
     const cells: FragmentationCell[] = [];
 
     topDonors.forEach(([donorId, donorData]) => {
       sortedPriorityIds.forEach((priorityId) => {
         const prioData = donorData.priorities.get(priorityId);
         if (prioData && prioData.value > 0) {
+          const categoryTotal = priorityTotals.get(priorityId) || 0;
           cells.push({
             donorId,
             donorName: donorData.name,
@@ -236,6 +249,7 @@ export async function GET(request: NextRequest) {
             categoryCode: prioData.code,
             value: prioData.value,
             percentage: donorData.total > 0 ? (prioData.value / donorData.total) * 100 : 0,
+            percentageOfCategory: categoryTotal > 0 ? (prioData.value / categoryTotal) * 100 : 0,
             activityCount: prioData.count,
           });
         }
@@ -247,6 +261,7 @@ export async function GET(request: NextRequest) {
       sortedPriorityIds.forEach((priorityId) => {
         const prioData = othersPriorities.get(priorityId);
         if (prioData && prioData.value > 0) {
+          const categoryTotal = priorityTotals.get(priorityId) || 0;
           cells.push({
             donorId: 'others',
             donorName: 'OTHERS',
@@ -255,6 +270,7 @@ export async function GET(request: NextRequest) {
             categoryCode: prioData.code,
             value: prioData.value,
             percentage: othersTotal > 0 ? (prioData.value / othersTotal) * 100 : 0,
+            percentageOfCategory: categoryTotal > 0 ? (prioData.value / categoryTotal) * 100 : 0,
             activityCount: prioData.count,
           });
         }

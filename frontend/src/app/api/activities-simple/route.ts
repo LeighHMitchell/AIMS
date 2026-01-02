@@ -73,6 +73,7 @@ export async function GET(request: NextRequest) {
         default_modality,
         default_modality_override,
         created_by,
+        capital_spend_percentage,
         ${includeImages ? 'banner, icon,' : ''}
         activity_sdg_mappings (
           id,
@@ -352,6 +353,7 @@ export async function GET(request: NextRequest) {
       totalTransactions: summary.totalTransactions,
       totalBudget: totalBudget,
       totalDisbursed: summary.totalDisbursed,
+      capitalSpendPercentage: activity.capital_spend_percentage,
       // Add empty arrays for organizations
       funders: [],
       implementers: [],

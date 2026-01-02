@@ -3,20 +3,32 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AlertCircle } from "lucide-react";
+import { AlertCircle, ArrowLeftRight, BarChart3, Table } from "lucide-react";
 import { MeasureType, FragmentationData } from "@/types/national-priorities";
 import { FragmentationHeatmap } from "./FragmentationHeatmap";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 interface LocationFragmentationChartProps {
-  measure: MeasureType;
+  measure?: MeasureType;
 }
 
 export function LocationFragmentationChart({
-  measure,
+  measure: initialMeasure = "commitments",
 }: LocationFragmentationChartProps) {
   const [data, setData] = useState<FragmentationData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [measure, setMeasure] = useState<MeasureType>(initialMeasure);
+  const [swapAxes, setSwapAxes] = useState(false);
+  const [viewMode, setViewMode] = useState<'chart' | 'table'>('chart');
 
   const fetchData = useCallback(async () => {
     try {
@@ -48,32 +60,89 @@ export function LocationFragmentationChart({
     fetchData();
   }, [fetchData]);
 
-  if (loading) {
-    return (
-      <div className="space-y-4">
-        <Skeleton className="h-8 w-64" />
-        <Skeleton className="h-64 w-full" />
+  return (
+    <div className="space-y-4">
+      {/* Controls Row */}
+      <div className="flex items-center justify-between flex-wrap gap-2">
+        <div className="flex items-center gap-2">
+          {/* Measure Dropdown */}
+          <Select value={measure} onValueChange={(v) => setMeasure(v as MeasureType)}>
+            <SelectTrigger className="w-[180px] h-9 text-sm bg-white">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="commitments">Actual Commitments</SelectItem>
+              <SelectItem value="disbursements">Actual Disbursements</SelectItem>
+            </SelectContent>
+          </Select>
+
+          {/* Dimension Dropdown - Location levels */}
+          <Select defaultValue="municipality">
+            <SelectTrigger className="w-[180px] h-9 text-sm bg-white">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="municipality">Municipality</SelectItem>
+            </SelectContent>
+          </Select>
+
+          {/* Swap Axes Button */}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setSwapAxes(!swapAxes)}
+            className="h-9"
+          >
+            <ArrowLeftRight className="h-4 w-4 mr-1" />
+            Swap Axes
+          </Button>
+        </div>
+
+        {/* View Toggle */}
+        <div className="flex items-center border rounded-md overflow-hidden">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setViewMode('chart')}
+            className={cn(
+              "h-8 px-3 rounded-none",
+              viewMode === 'chart' && "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground"
+            )}
+          >
+            <BarChart3 className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setViewMode('table')}
+            className={cn(
+              "h-8 px-3 rounded-none",
+              viewMode === 'table' && "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground"
+            )}
+          >
+            <Table className="h-4 w-4" />
+          </Button>
+        </div>
       </div>
-    );
-  }
 
-  if (error) {
-    return (
-      <Alert variant="destructive">
-        <AlertCircle className="h-4 w-4" />
-        <AlertDescription>{error}</AlertDescription>
-      </Alert>
-    );
-  }
-
-  if (!data || data.donors.length === 0) {
-    return (
-      <div className="h-64 flex items-center justify-center text-muted-foreground">
-        No location fragmentation data available
-      </div>
-    );
-  }
-
-  return <FragmentationHeatmap data={data} />;
+      {/* Chart Content */}
+      {loading ? (
+        <div className="space-y-4">
+          <Skeleton className="h-8 w-64" />
+          <Skeleton className="h-64 w-full" />
+        </div>
+      ) : error ? (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      ) : !data || data.donors.length === 0 ? (
+        <div className="h-64 flex items-center justify-center text-muted-foreground">
+          No location fragmentation data available
+        </div>
+      ) : (
+        <FragmentationHeatmap data={data} swapAxes={swapAxes} />
+      )}
+    </div>
+  );
 }
-

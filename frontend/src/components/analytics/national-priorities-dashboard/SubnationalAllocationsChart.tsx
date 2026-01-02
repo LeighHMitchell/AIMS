@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import {
   BarChart,
   Bar,
@@ -32,11 +32,19 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   BarChart3,
   PieChart as PieChartIcon,
   Table as TableIcon,
   Maximize2,
   Download,
+  Loader2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -45,11 +53,18 @@ import { RankedItem } from "@/types/national-priorities";
 import { CHART_COLOR_PALETTE, CHART_STRUCTURE_COLORS } from "@/lib/chart-colors";
 
 type ViewMode = "bar" | "pie" | "table";
+type MetricType = "budgets" | "plannedDisbursements" | "commitments" | "disbursements";
 
 interface SubnationalAllocationsChartProps {
-  data: RankedItem[];
-  grandTotal: number;
+  refreshKey?: number;
 }
+
+const METRIC_OPTIONS = [
+  { value: "budgets", label: "Total Budgets" },
+  { value: "plannedDisbursements", label: "Planned Disbursements" },
+  { value: "commitments", label: "Commitments" },
+  { value: "disbursements", label: "Disbursements" },
+];
 
 function formatCurrency(value: number): string {
   if (value >= 1_000_000_000) {
@@ -66,9 +81,39 @@ function formatCurrencyFull(value: number): string {
   return `$${value.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
 }
 
-export function SubnationalAllocationsChart({ data, grandTotal }: SubnationalAllocationsChartProps) {
+export function SubnationalAllocationsChart({ refreshKey = 0 }: SubnationalAllocationsChartProps) {
+  const [data, setData] = useState<RankedItem[]>([]);
+  const [grandTotal, setGrandTotal] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [metric, setMetric] = useState<MetricType>("disbursements");
   const [viewMode, setViewMode] = useState<ViewMode>("bar");
   const [isExpanded, setIsExpanded] = useState(false);
+
+  const fetchData = useCallback(async () => {
+    try {
+      setLoading(true);
+
+      const params = new URLSearchParams({ measure: metric });
+      const response = await fetch(`/api/analytics/dashboard?${params}`);
+      const result = await response.json();
+
+      if (!result.success) {
+        throw new Error(result.error || "Failed to fetch data");
+      }
+
+      setData(result.data?.topDistricts || []);
+      setGrandTotal(result.data?.grandTotal || 0);
+    } catch (error: any) {
+      console.error("[SubnationalAllocationsChart] Error:", error);
+      toast.error("Failed to load subnational allocation data");
+    } finally {
+      setLoading(false);
+    }
+  }, [metric]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData, refreshKey]);
 
   const chartData = data.map((item, index) => ({
     ...item,
@@ -87,7 +132,7 @@ export function SubnationalAllocationsChart({ data, grandTotal }: SubnationalAll
       "Percentage": grandTotal > 0 ? ((d.value / grandTotal) * 100).toFixed(1) + "%" : "0%",
       Activities: d.activityCount,
     }));
-    exportChartToCSV(exportData, `subnational-allocations`);
+    exportChartToCSV(exportData, `subnational-allocations-${metric}`);
     toast.success("Data exported successfully");
   };
 
@@ -181,7 +226,7 @@ export function SubnationalAllocationsChart({ data, grandTotal }: SubnationalAll
     );
   };
 
-  const renderBarChart = (height: number = 280) => (
+  const renderBarChart = (height: number | string = "100%") => (
     <ResponsiveContainer width="100%" height={height}>
       <BarChart
         data={chartData}
@@ -219,7 +264,7 @@ export function SubnationalAllocationsChart({ data, grandTotal }: SubnationalAll
     </ResponsiveContainer>
   );
 
-  const renderPieChart = (height: number = 280) => (
+  const renderPieChart = (height: number | string = "100%") => (
     <ResponsiveContainer width="100%" height={height}>
       <PieChart>
         <Pie
@@ -276,7 +321,15 @@ export function SubnationalAllocationsChart({ data, grandTotal }: SubnationalAll
   );
 
   const renderContent = (expanded: boolean = false) => {
-    const chartHeight = expanded ? 400 : 280;
+    const chartHeight = expanded ? 400 : "100%";
+
+    if (loading) {
+      return (
+        <div className="h-[280px] flex items-center justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        </div>
+      );
+    }
 
     if (!data || data.length === 0) {
       return (
@@ -299,63 +352,78 @@ export function SubnationalAllocationsChart({ data, grandTotal }: SubnationalAll
   };
 
   const renderControls = (expanded: boolean = false) => (
-    <div className="flex items-center justify-end gap-1 mt-2 pt-2 border-t flex-shrink-0">
-      {/* View mode toggles */}
-      <div className="flex items-center border rounded-md">
-        <Button
-          variant={viewMode === "bar" ? "default" : "ghost"}
-          size="sm"
-          className={cn("h-8 w-8 p-0", viewMode === "bar" && "bg-primary text-primary-foreground")}
-          onClick={() => setViewMode("bar")}
-          title="Bar Chart"
-        >
-          <BarChart3 className="h-4 w-4" />
-        </Button>
-        <Button
-          variant={viewMode === "pie" ? "default" : "ghost"}
-          size="sm"
-          className={cn("h-8 w-8 p-0", viewMode === "pie" && "bg-primary text-primary-foreground")}
-          onClick={() => setViewMode("pie")}
-          title="Pie Chart"
-        >
-          <PieChartIcon className="h-4 w-4" />
-        </Button>
-        <Button
-          variant={viewMode === "table" ? "default" : "ghost"}
-          size="sm"
-          className={cn("h-8 w-8 p-0", viewMode === "table" && "bg-primary text-primary-foreground")}
-          onClick={() => setViewMode("table")}
-          title="Table"
-        >
-          <TableIcon className="h-4 w-4" />
-        </Button>
+    <div className="flex items-center justify-between gap-2 mt-2 pt-2 border-t flex-shrink-0">
+      <Select value={metric} onValueChange={(v) => setMetric(v as MetricType)}>
+        <SelectTrigger className="w-[160px] h-8 text-xs">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          {METRIC_OPTIONS.map((opt) => (
+            <SelectItem key={opt.value} value={opt.value}>
+              {opt.label}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+
+      <div className="flex items-center gap-1">
+        {/* View mode toggles */}
+        <div className="flex items-center border rounded-md">
+          <Button
+            variant={viewMode === "bar" ? "default" : "ghost"}
+            size="sm"
+            className={cn("h-8 w-8 p-0", viewMode === "bar" && "bg-primary text-primary-foreground")}
+            onClick={() => setViewMode("bar")}
+            title="Bar Chart"
+          >
+            <BarChart3 className="h-4 w-4" />
+          </Button>
+          <Button
+            variant={viewMode === "pie" ? "default" : "ghost"}
+            size="sm"
+            className={cn("h-8 w-8 p-0", viewMode === "pie" && "bg-primary text-primary-foreground")}
+            onClick={() => setViewMode("pie")}
+            title="Pie Chart"
+          >
+            <PieChartIcon className="h-4 w-4" />
+          </Button>
+          <Button
+            variant={viewMode === "table" ? "default" : "ghost"}
+            size="sm"
+            className={cn("h-8 w-8 p-0", viewMode === "table" && "bg-primary text-primary-foreground")}
+            onClick={() => setViewMode("table")}
+            title="Table"
+          >
+            <TableIcon className="h-4 w-4" />
+          </Button>
+        </div>
+
+        {/* Expand button - only in compact view */}
+        {!expanded && (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-8 w-8 p-0"
+            onClick={() => setIsExpanded(true)}
+            title="Expand"
+          >
+            <Maximize2 className="h-4 w-4" />
+          </Button>
+        )}
+
+        {/* Export button - only in expanded view */}
+        {expanded && (
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-8 w-8 p-0"
+            onClick={handleExport}
+            title="Export CSV"
+          >
+            <Download className="h-4 w-4" />
+          </Button>
+        )}
       </div>
-
-      {/* Expand button - only in compact view */}
-      {!expanded && (
-        <Button
-          variant="ghost"
-          size="sm"
-          className="h-8 w-8 p-0"
-          onClick={() => setIsExpanded(true)}
-          title="Expand"
-        >
-          <Maximize2 className="h-4 w-4" />
-        </Button>
-      )}
-
-      {/* Export button - only in expanded view */}
-      {expanded && (
-        <Button
-          variant="outline"
-          size="sm"
-          className="h-8 w-8 p-0"
-          onClick={handleExport}
-          title="Export CSV"
-        >
-          <Download className="h-4 w-4" />
-        </Button>
-      )}
     </div>
   );
 
@@ -378,12 +446,19 @@ export function SubnationalAllocationsChart({ data, grandTotal }: SubnationalAll
       <Dialog open={isExpanded} onOpenChange={setIsExpanded}>
         <DialogContent className="max-w-4xl w-[90vw] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="text-2xl font-bold uppercase tracking-wide">
-              Subnational Allocations
-            </DialogTitle>
-            <DialogDescription className="text-base mt-1">
-              Myanmar States & Regions breakdown
-            </DialogDescription>
+            <div className="flex items-center justify-between">
+              <div>
+                <DialogTitle className="text-2xl font-bold uppercase tracking-wide">
+                  Subnational Allocations
+                </DialogTitle>
+                <DialogDescription className="text-base mt-1">
+                  Myanmar States & Regions by {METRIC_OPTIONS.find((o) => o.value === metric)?.label.toLowerCase()}.
+                </DialogDescription>
+              </div>
+              <span className="text-2xl font-bold text-slate-500">
+                {formatCurrencyFull(data.reduce((sum, d) => sum + d.value, 0))}
+              </span>
+            </div>
           </DialogHeader>
 
           <div className="mt-4">{renderContent(true)}</div>

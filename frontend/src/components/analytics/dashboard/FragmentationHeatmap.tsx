@@ -17,6 +17,7 @@ import {
 
 interface FragmentationHeatmapProps {
   data: FragmentationData;
+  swapAxes?: boolean;
 }
 
 function formatCurrency(value: number): string {
@@ -31,11 +32,11 @@ function formatCurrency(value: number): string {
 }
 
 function formatPercent(value: number): string {
-  if (value < 0.1) return "<0.1%";
-  return `${value.toFixed(1)}%`;
+  if (value < 1) return "<1%";
+  return `${Math.round(value)}%`;
 }
 
-export function FragmentationHeatmap({ data }: FragmentationHeatmapProps) {
+export function FragmentationHeatmap({ data, swapAxes = false }: FragmentationHeatmapProps) {
   if (!data || data.donors.length === 0 || data.categories.length === 0) {
     return (
       <div className="h-64 flex items-center justify-center text-muted-foreground">
@@ -50,147 +51,263 @@ export function FragmentationHeatmap({ data }: FragmentationHeatmapProps) {
     cellMap.set(`${cell.donorId}-${cell.categoryId}`, cell);
   });
 
+  // Calculate the height needed for rotated headers
+  const headerHeight = 120;
+
   return (
     <TooltipProvider>
       <div className="space-y-4">
-        {/* Legend */}
-        <div className="flex items-center gap-4 justify-end text-xs">
-          <span className="text-muted-foreground">% of donor&apos;s total:</span>
-          <div className="flex items-center gap-1">
-            {FRAGMENTATION_COLOR_SCALE.map((scale, i) => (
-              <div key={i} className="flex items-center gap-1">
-                <div
-                  className="w-5 h-4 rounded-sm"
-                  style={{ backgroundColor: scale.color }}
-                />
-                <span className="text-muted-foreground">{scale.label}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-
         {/* Heatmap table */}
         <div className="overflow-x-auto">
-          <table className="min-w-full border-collapse">
+          <table className="border-collapse" style={{ borderSpacing: 0 }}>
             <thead>
               <tr>
-                <th className="sticky left-0 bg-background z-10 px-2 py-1 text-left text-xs font-medium border-b">
-                  Donor
-                </th>
-                <th className="px-2 py-1 text-right text-xs font-medium border-b">
-                  Total
-                </th>
+                {/* Empty corner cell */}
+                <th 
+                  className="sticky left-0 bg-white z-20 border-b border-slate-200"
+                  style={{ height: headerHeight, minWidth: 140 }}
+                />
+                {/* Category headers - rotated */}
                 {data.categories.map((cat) => (
                   <th
                     key={cat.id}
-                    className="px-2 py-1 text-center text-xs font-medium border-b whitespace-nowrap"
+                    className="border-b border-slate-200 p-0 align-bottom"
+                    style={{ height: headerHeight, minWidth: 40, maxWidth: 40 }}
                   >
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <span className="cursor-help">
-                          {cat.code || cat.name.slice(0, 10)}
-                          {cat.name.length > 10 && !cat.code ? "..." : ""}
-                        </span>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p className="font-medium">{cat.name}</p>
-                        {cat.code && (
-                          <p className="text-xs text-muted-foreground">
-                            Code: {cat.code}
-                          </p>
-                        )}
-                      </TooltipContent>
-                    </Tooltip>
+                    <div 
+                      className="relative"
+                      style={{ height: headerHeight, width: 40 }}
+                    >
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <span
+                            className="absolute text-xs font-medium text-slate-600 whitespace-nowrap cursor-help origin-bottom-left"
+                            style={{
+                              transform: 'rotate(-45deg)',
+                              transformOrigin: 'bottom left',
+                              bottom: 8,
+                              left: 20,
+                              maxWidth: 140,
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                            }}
+                          >
+                            {cat.code ? `${cat.code} - ${cat.name}` : cat.name}
+                          </span>
+                        </TooltipTrigger>
+                        <TooltipContent side="top">
+                          <p className="font-medium">{cat.name}</p>
+                          {cat.code && (
+                            <p className="text-xs text-muted-foreground">
+                              Code: {cat.code}
+                            </p>
+                          )}
+                          {cat.total !== undefined && (
+                            <p className="text-xs text-muted-foreground">
+                              Total: {formatCurrency(cat.total)}
+                            </p>
+                          )}
+                        </TooltipContent>
+                      </Tooltip>
+                    </div>
                   </th>
                 ))}
+                {/* Totals header */}
+                <th 
+                  className="border-b border-slate-200 p-0 align-bottom"
+                  style={{ height: headerHeight, minWidth: 50 }}
+                >
+                  <div 
+                    className="relative"
+                    style={{ height: headerHeight, width: 50 }}
+                  >
+                    <span
+                      className="absolute text-xs font-bold text-slate-700 whitespace-nowrap origin-bottom-left"
+                      style={{
+                        transform: 'rotate(-45deg)',
+                        transformOrigin: 'bottom left',
+                        bottom: 8,
+                        left: 25,
+                      }}
+                    >
+                      Totals
+                    </span>
+                  </div>
+                </th>
               </tr>
             </thead>
             <tbody>
-              {data.donors.map((donor) => (
-                <tr key={donor.id} className="hover:bg-muted/30">
-                  <td className="sticky left-0 bg-background z-10 px-2 py-1 text-xs font-medium border-b whitespace-nowrap">
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <span className="cursor-help">
-                          {donor.acronym || donor.name.slice(0, 15)}
-                          {donor.name.length > 15 && !donor.acronym ? "..." : ""}
-                        </span>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p className="font-medium">{donor.name}</p>
-                        {donor.country && (
-                          <p className="text-xs text-muted-foreground">
-                            {donor.country}
+              {data.donors.map((donor) => {
+                const isOthers = donor.id === 'others';
+                // Calculate donor's share of grand total for the Totals column
+                const donorShareOfTotal = data.grandTotal > 0 
+                  ? (donor.total / data.grandTotal) * 100 
+                  : 0;
+                
+                return (
+                  <tr key={donor.id} className="hover:bg-slate-50/50">
+                    {/* Donor name cell */}
+                    <td 
+                      className={`sticky left-0 bg-white z-10 px-2 py-1 text-xs font-medium border-b border-slate-100 whitespace-nowrap ${
+                        isOthers ? 'text-red-600' : 'text-slate-700'
+                      }`}
+                      style={{ minWidth: 140 }}
+                    >
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <span className="cursor-help">
+                            {isOthers ? 'OTHERS' : (donor.acronym || donor.name.slice(0, 20))}
+                            {!isOthers && donor.name.length > 20 && !donor.acronym ? "..." : ""}
+                          </span>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p className="font-medium">{donor.name}</p>
+                          {donor.country && (
+                            <p className="text-xs text-muted-foreground">
+                              {donor.country}
+                            </p>
+                          )}
+                          <p className="text-xs mt-1">
+                            Total: {formatCurrency(donor.total)}
                           </p>
-                        )}
-                        <p className="text-xs mt-1">
-                          Total: {formatCurrency(donor.total)}
-                        </p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </td>
-                  <td className="px-2 py-1 text-xs text-right border-b text-muted-foreground">
-                    {formatCurrency(donor.total)}
-                  </td>
-                  {data.categories.map((cat) => {
-                    const cell = cellMap.get(`${donor.id}-${cat.id}`);
-                    const percentage = cell ? cell.percentage / 100 : 0;
-                    const bgColor = percentage > 0 ? getColorForPercentage(percentage) : "transparent";
-                    const textColor = percentage > 0 ? getTextColorForBackground(bgColor) : "inherit";
+                          <p className="text-xs">
+                            Share: {formatPercent(donorShareOfTotal)} of total
+                          </p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </td>
+                    {/* Data cells */}
+                    {data.categories.map((cat) => {
+                      const cell = cellMap.get(`${donor.id}-${cat.id}`);
+                      // Use column-based percentage for coloring
+                      const percentage = cell?.percentageOfCategory ?? 0;
+                      const percentageDecimal = percentage / 100;
+                      const bgColor = percentage > 0 ? getColorForPercentage(percentageDecimal) : "transparent";
+                      const textColor = percentage > 0 ? getTextColorForBackground(bgColor) : "inherit";
 
-                    return (
-                      <td
-                        key={cat.id}
-                        className="px-1 py-1 text-center text-[10px] border-b"
-                      >
-                        {cell && cell.percentage > 0 ? (
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <div
-                                className="px-1 py-0.5 rounded cursor-help min-w-[32px]"
-                                style={{
-                                  backgroundColor: bgColor,
-                                  color: textColor,
-                                }}
-                              >
-                                {formatPercent(cell.percentage)}
-                              </div>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <p className="font-medium">{donor.name}</p>
-                              <p className="text-xs">{cat.name}</p>
-                              <div className="mt-1 text-xs space-y-0.5">
-                                <p>Value: {formatCurrency(cell.value)}</p>
-                                <p>
-                                  Share: {formatPercent(cell.percentage)} of donor
-                                </p>
-                                <p>Activities: {cell.activityCount}</p>
-                              </div>
-                            </TooltipContent>
-                          </Tooltip>
-                        ) : (
-                          <div className="px-1 py-0.5 text-muted-foreground/30">
-                            -
+                      return (
+                        <td
+                          key={cat.id}
+                          className="p-0.5 text-center border-b border-slate-100"
+                          style={{ minWidth: 40, maxWidth: 40 }}
+                        >
+                          {cell && percentage > 0 ? (
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <div
+                                  className="px-1 py-1 rounded-sm cursor-help text-[11px] font-medium"
+                                  style={{
+                                    backgroundColor: bgColor,
+                                    color: textColor,
+                                  }}
+                                >
+                                  {formatPercent(percentage)}
+                                </div>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p className="font-medium">{donor.name}</p>
+                                <p className="text-xs">{cat.name}</p>
+                                <div className="mt-1 text-xs space-y-0.5">
+                                  <p>Value: {formatCurrency(cell.value)}</p>
+                                  <p>
+                                    Column share: {formatPercent(percentage)}
+                                  </p>
+                                  <p>
+                                    Row share: {formatPercent(cell.percentage)}
+                                  </p>
+                                  <p>Activities: {cell.activityCount}</p>
+                                </div>
+                              </TooltipContent>
+                            </Tooltip>
+                          ) : (
+                            <div className="px-1 py-1" />
+                          )}
+                        </td>
+                      );
+                    })}
+                    {/* Totals column - donor's share of grand total */}
+                    <td
+                      className="p-0.5 text-center border-b border-slate-100"
+                      style={{ minWidth: 50 }}
+                    >
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <div
+                            className="px-1 py-1 rounded-sm cursor-help text-[11px] font-medium"
+                            style={{
+                              backgroundColor: getColorForPercentage(donorShareOfTotal / 100),
+                              color: getTextColorForBackground(getColorForPercentage(donorShareOfTotal / 100)),
+                            }}
+                          >
+                            {formatPercent(donorShareOfTotal)}
                           </div>
-                        )}
-                      </td>
-                    );
-                  })}
-                </tr>
-              ))}
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p className="font-medium">{donor.name}</p>
+                          <p className="text-xs mt-1">
+                            Total: {formatCurrency(donor.total)}
+                          </p>
+                          <p className="text-xs">
+                            {formatPercent(donorShareOfTotal)} of all funding
+                          </p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </td>
+                  </tr>
+                );
+              })}
+              {/* Totals row */}
+              <tr className="bg-slate-50 font-medium">
+                <td 
+                  className="sticky left-0 bg-slate-50 z-10 px-2 py-1 text-xs font-bold text-slate-700 border-t border-slate-200"
+                  style={{ minWidth: 140 }}
+                >
+                  Totals
+                </td>
+                {data.categories.map((cat) => (
+                  <td
+                    key={cat.id}
+                    className="p-0.5 text-center border-t border-slate-200"
+                    style={{ minWidth: 40, maxWidth: 40 }}
+                  >
+                    <div className="px-1 py-1 text-[11px] font-bold text-slate-700">
+                      100%
+                    </div>
+                  </td>
+                ))}
+                <td
+                  className="p-0.5 text-center border-t border-slate-200"
+                  style={{ minWidth: 50 }}
+                >
+                  <div className="px-1 py-1 text-[11px] font-bold text-slate-700">
+                    100%
+                  </div>
+                </td>
+              </tr>
             </tbody>
           </table>
         </div>
 
-        {/* Footer */}
-        <div className="flex items-center justify-between text-xs text-muted-foreground">
-          <span>
-            {data.donors.length} donors × {data.categories.length} categories
-          </span>
-          <span>Grand Total: {formatCurrency(data.grandTotal)}</span>
+        {/* Legend - horizontal bar at bottom */}
+        <div className="flex items-center gap-2 pt-2">
+          <span className="text-xs font-medium text-slate-600 mr-2">LEGENDS</span>
+          <div className="flex items-center">
+            {FRAGMENTATION_COLOR_SCALE.map((scale, i) => (
+              <div 
+                key={i} 
+                className="flex items-center justify-center px-3 py-1.5 text-xs font-medium first:rounded-l last:rounded-r"
+                style={{ 
+                  backgroundColor: scale.color,
+                  color: getTextColorForBackground(scale.color),
+                  minWidth: 100,
+                }}
+              >
+                {scale.label}
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     </TooltipProvider>
   );
 }
-

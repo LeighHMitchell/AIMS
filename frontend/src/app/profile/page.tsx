@@ -711,6 +711,7 @@ export default function ProfilePage() {
                   <ProfilePhotoUpload
                     currentPhoto={profilePhoto}
                     userInitials={`${formData.firstName?.[0] || ''}${formData.lastName?.[0] || user.name?.[0] || 'U'}`}
+                    userId={user.id || user.email}
                     onPhotoChange={handlePhotoChange}
                     className="shrink-0"
                     disabled={!isEditing}

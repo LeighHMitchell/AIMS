@@ -16,7 +16,14 @@ import {
   MapPin,
   Layers,
   Target,
+  HelpCircle,
 } from "lucide-react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 import { MeasureType, DashboardData } from "@/types/national-priorities";
 import { TopDonorAgenciesChart } from "./TopDonorAgenciesChart";
@@ -28,25 +35,9 @@ import { AidPredictabilityChart } from "./AidPredictabilityChart";
 import { SubnationalAllocationsChart } from "./SubnationalAllocationsChart";
 import { FundingByModalityChart } from "../dashboard/FundingByModalityChart";
 import { RecipientGovBodiesChart } from "../dashboard/RecipientGovBodiesChart";
-
-// Placeholder components until the actual components are created
-const PlaceholderChart = ({ title }: { title: string }) => (
-  <Card>
-    <CardHeader>
-      <CardTitle className="text-sm font-medium">{title}</CardTitle>
-    </CardHeader>
-    <CardContent>
-      <div className="h-[300px] flex items-center justify-center text-muted-foreground">
-        Coming soon
-      </div>
-    </CardContent>
-  </Card>
-);
-
-// Remaining placeholder components
-const ProgramFragmentationChart = ({ data, measure }: any) => <PlaceholderChart title="Program Fragmentation" />;
-const SectorFragmentationChart = ({ data, measure }: any) => <PlaceholderChart title="Sector Fragmentation" />;
-const LocationFragmentationChart = ({ data, measure }: any) => <PlaceholderChart title="Location Fragmentation" />;
+import { ProgramFragmentationChart } from "../dashboard/ProgramFragmentationChart";
+import { SectorFragmentationChart } from "../dashboard/SectorFragmentationChart";
+import { LocationFragmentationChart } from "../dashboard/LocationFragmentationChart";
 
 function formatCurrency(value: number): string {
   if (value >= 1_000_000_000) {
@@ -166,10 +157,8 @@ export function Dashboard() {
             {/* Top Sectors - Self-contained component with its own data fetching */}
             <TopSectorsChart />
 
-            <SubnationalAllocationsChart
-              data={data?.topDistricts || []}
-              grandTotal={data?.grandTotal || 0}
-            />
+            {/* Subnational Allocations - Self-contained component with its own data fetching */}
+            <SubnationalAllocationsChart />
 
             {/* Executing Agencies - Self-contained component with its own data fetching */}
             <ExecutingAgenciesChart />
@@ -177,18 +166,16 @@ export function Dashboard() {
             {/* Implementing Agencies - Self-contained component with its own data fetching */}
             <ImplementingAgenciesChart />
 
+            {/* Recipient Government Bodies - Self-contained component with its own data fetching */}
             <Card className="bg-white border-slate-200 h-full flex flex-col">
               <CardHeader className="pb-1 pt-4 px-4">
                 <CardTitle className="text-sm font-bold text-slate-700 uppercase tracking-wide">
                   Recipient Government Bodies
                 </CardTitle>
-                <p className="text-xs text-muted-foreground mt-0.5">Government bodies receiving disbursements</p>
+                <p className="text-xs text-muted-foreground mt-0.5">Government bodies receiving funds</p>
               </CardHeader>
               <CardContent className="pt-0 px-4 pb-3 flex-1 flex flex-col">
-                <RecipientGovBodiesChart
-                  data={data?.recipientGovBodies || []}
-                  grandTotal={data?.grandTotal || 0}
-                />
+                <RecipientGovBodiesChart />
               </CardContent>
             </Card>
 
@@ -202,52 +189,66 @@ export function Dashboard() {
 
         {/* Fragmentation Tab */}
         <TabsContent value="fragmentation" className="mt-6">
-          <div className="space-y-8">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Target className="h-5 w-5" />
-                  Program Fragmentation
-                </CardTitle>
-                <CardDescription>
-                  How donors distribute their aid across National Priorities
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <ProgramFragmentationChart measure={measure} />
-              </CardContent>
-            </Card>
+          <TooltipProvider>
+            <div className="space-y-8">
+              <Card className="border-slate-200">
+                <CardHeader className="pb-2">
+                  <CardTitle className="flex items-center gap-2 text-lg font-bold text-slate-800 uppercase tracking-wide">
+                    Program Fragmentation
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <HelpCircle className="h-4 w-4 text-slate-400 cursor-help" />
+                      </TooltipTrigger>
+                      <TooltipContent side="right" className="max-w-xs">
+                        <p>Shows how donors distribute their aid across National Priorities. Each cell shows the percentage of that category&apos;s total funding contributed by each donor.</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ProgramFragmentationChart />
+                </CardContent>
+              </Card>
 
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Layers className="h-5 w-5" />
-                  Sector Fragmentation
-                </CardTitle>
-                <CardDescription>
-                  How donors distribute their aid across DAC Sectors
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <SectorFragmentationChart measure={measure} />
-              </CardContent>
-            </Card>
+              <Card className="border-slate-200">
+                <CardHeader className="pb-2">
+                  <CardTitle className="flex items-center gap-2 text-lg font-bold text-slate-800 uppercase tracking-wide">
+                    Sector Fragmentation
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <HelpCircle className="h-4 w-4 text-slate-400 cursor-help" />
+                      </TooltipTrigger>
+                      <TooltipContent side="right" className="max-w-xs">
+                        <p>Shows how donors distribute their aid across DAC Sectors. Each cell shows the percentage of that sector&apos;s total funding contributed by each donor.</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <SectorFragmentationChart />
+                </CardContent>
+              </Card>
 
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <MapPin className="h-5 w-5" />
-                  Location Fragmentation
-                </CardTitle>
-                <CardDescription>
-                  How donors distribute their aid across geographic regions
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <LocationFragmentationChart measure={measure} />
-              </CardContent>
-            </Card>
-          </div>
+              <Card className="border-slate-200">
+                <CardHeader className="pb-2">
+                  <CardTitle className="flex items-center gap-2 text-lg font-bold text-slate-800 uppercase tracking-wide">
+                    Location Fragmentation
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <HelpCircle className="h-4 w-4 text-slate-400 cursor-help" />
+                      </TooltipTrigger>
+                      <TooltipContent side="right" className="max-w-xs">
+                        <p>Shows how donors distribute their aid across geographic regions. Each cell shows the percentage of that location&apos;s total funding contributed by each donor.</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <LocationFragmentationChart />
+                </CardContent>
+              </Card>
+            </div>
+          </TooltipProvider>
         </TabsContent>
       </Tabs>
     </div>

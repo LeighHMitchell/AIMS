@@ -1921,7 +1921,8 @@ export async function GET(request: NextRequest) {
         planned_start_date,
         planned_end_date,
         actual_start_date,
-        actual_end_date
+        actual_end_date,
+        capital_spend_percentage
       `);
     
     // Apply organization filter if provided
@@ -2429,6 +2430,7 @@ export async function GET(request: NextRequest) {
       plannedEndDate: activity.planned_end_date,
       actualStartDate: activity.actual_start_date,
       actualEndDate: activity.actual_end_date,
+      capitalSpendPercentage: activity.capital_spend_percentage,
       documents: activity.documents ? JSON.parse(activity.documents) : [],
       createdAt: activity.created_at,
       updatedAt: activity.updated_at,

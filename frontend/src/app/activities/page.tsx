@@ -296,6 +296,9 @@ type Activity = {
   // Budget status
   budgetStatus?: BudgetStatusType;
   onBudgetPercentage?: number;
+
+  // Capital Spend
+  capitalSpendPercentage?: number | null;
   
   // Locations data
   locations?: {
@@ -545,12 +548,18 @@ type ColumnId =
   // SDG column
   | 'sdgs'
   // Budget status column
-  | 'budgetStatus';
+  | 'budgetStatus'
+  // Capital Spend columns
+  | 'capitalSpendPercent'
+  | 'capitalSpendTotalBudget'
+  | 'capitalSpendPlannedDisbursements'
+  | 'capitalSpendCommitments'
+  | 'capitalSpendDisbursements';
 
 interface ColumnConfig {
   id: ColumnId;
   label: string;
-  group: 'default' | 'activityDefaults' | 'transactionTypeTotals' | 'publicationStatuses' | 'participatingOrgs' | 'descriptions' | 'progressMetrics' | 'portfolioShares' | 'durations' | 'dates' | 'sectors' | 'locations' | 'sdgs';
+  group: 'default' | 'activityDefaults' | 'transactionTypeTotals' | 'publicationStatuses' | 'participatingOrgs' | 'descriptions' | 'progressMetrics' | 'portfolioShares' | 'durations' | 'dates' | 'sectors' | 'locations' | 'sdgs' | 'capitalSpend';
   width?: string;
   alwaysVisible?: boolean; // For columns that can't be hidden (checkbox, actions)
   defaultVisible?: boolean;
@@ -643,6 +652,13 @@ const COLUMN_CONFIGS: ColumnConfig[] = [
   { id: 'plannedEndDate', label: 'Planned End Date', group: 'dates', width: 'min-w-[130px]', defaultVisible: false, sortable: true, align: 'left' },
   { id: 'actualStartDate', label: 'Actual Start Date', group: 'dates', width: 'min-w-[130px]', defaultVisible: false, sortable: true, align: 'left' },
   { id: 'actualEndDate', label: 'Actual End Date', group: 'dates', width: 'min-w-[130px]', defaultVisible: false, sortable: true, align: 'left' },
+
+  // Capital Spend columns
+  { id: 'capitalSpendPercent', label: 'Capital Spend %', group: 'capitalSpend', width: 'min-w-[100px]', defaultVisible: false, align: 'right' },
+  { id: 'capitalSpendTotalBudget', label: 'Capital Spend - Total Budget', group: 'capitalSpend', width: 'min-w-[180px]', defaultVisible: false, align: 'right' },
+  { id: 'capitalSpendPlannedDisbursements', label: 'Capital Spend - Planned Disb.', group: 'capitalSpend', width: 'min-w-[200px]', defaultVisible: false, align: 'right' },
+  { id: 'capitalSpendCommitments', label: 'Capital Spend - Commitments', group: 'capitalSpend', width: 'min-w-[180px]', defaultVisible: false, align: 'right' },
+  { id: 'capitalSpendDisbursements', label: 'Capital Spend - Disbursements', group: 'capitalSpend', width: 'min-w-[180px]', defaultVisible: false, align: 'right' },
 ];
 
 const COLUMN_GROUPS = {
@@ -661,6 +677,7 @@ const COLUMN_GROUPS = {
   dates: 'Activity Dates',
   sdgs: 'SDGs',
   governmentSystemsAlignment: 'Government Systems Alignment',
+  capitalSpend: 'Capital Spend',
 };
 
 const DEFAULT_VISIBLE_COLUMNS: ColumnId[] = COLUMN_CONFIGS
@@ -2506,6 +2523,33 @@ const router = useRouter();
                     </th>
                   )}
 
+                  {/* Capital Spend Header Cells */}
+                  {visibleColumns.includes('capitalSpendPercent') && (
+                    <th className="h-12 px-4 py-3 text-right align-middle text-sm font-medium text-muted-foreground min-w-[100px]">
+                      Capital Spend %
+                    </th>
+                  )}
+                  {visibleColumns.includes('capitalSpendTotalBudget') && (
+                    <th className="h-12 px-4 py-3 text-right align-middle text-sm font-medium text-muted-foreground min-w-[180px]">
+                      Capital Spend - Total Budget
+                    </th>
+                  )}
+                  {visibleColumns.includes('capitalSpendPlannedDisbursements') && (
+                    <th className="h-12 px-4 py-3 text-right align-middle text-sm font-medium text-muted-foreground min-w-[200px]">
+                      Capital Spend - Planned Disb.
+                    </th>
+                  )}
+                  {visibleColumns.includes('capitalSpendCommitments') && (
+                    <th className="h-12 px-4 py-3 text-right align-middle text-sm font-medium text-muted-foreground min-w-[180px]">
+                      Capital Spend - Commitments
+                    </th>
+                  )}
+                  {visibleColumns.includes('capitalSpendDisbursements') && (
+                    <th className="h-12 px-4 py-3 text-right align-middle text-sm font-medium text-muted-foreground min-w-[180px]">
+                      Capital Spend - Disbursements
+                    </th>
+                  )}
+
                   {/* Description Columns */}
                   {visibleColumns.includes('descriptionGeneral') && (
                     <th className="h-12 px-4 py-3 text-left align-middle text-sm font-medium text-muted-foreground min-w-[200px]">
@@ -3395,6 +3439,113 @@ const router = useRouter();
                               </TooltipProvider>
                             );
                           })()}
+                        </td>
+                      )}
+
+                      {/* Capital Spend Cells */}
+                      {visibleColumns.includes('capitalSpendPercent') && (
+                        <td className="px-4 py-2 text-sm text-foreground text-right whitespace-nowrap">
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <span className="cursor-pointer">
+                                  {activity.capitalSpendPercentage != null 
+                                    ? `${activity.capitalSpendPercentage}%` 
+                                    : <span className="text-muted-foreground">—</span>
+                                  }
+                                </span>
+                              </TooltipTrigger>
+                              <TooltipContent className="max-w-xs border border-gray-200 bg-white shadow-lg text-left">
+                                <p className="text-sm text-gray-600">
+                                  Percentage of activity budget allocated to capital investment (infrastructure, equipment, fixed assets).
+                                </p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        </td>
+                      )}
+                      {visibleColumns.includes('capitalSpendTotalBudget') && (
+                        <td className="px-4 py-2 text-sm text-foreground text-right whitespace-nowrap">
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <span className="cursor-pointer">
+                                  {activity.capitalSpendPercentage != null 
+                                    ? <><span className="text-muted-foreground">USD</span> {formatCurrency(((activity as any).totalBudget || 0) * (activity.capitalSpendPercentage / 100))}</>
+                                    : <span className="text-muted-foreground">—</span>
+                                  }
+                                </span>
+                              </TooltipTrigger>
+                              <TooltipContent className="max-w-xs border border-gray-200 bg-white shadow-lg text-left">
+                                <p className="text-sm text-gray-600">
+                                  Capital spend portion of Total Budget (Total Budget × Capital Spend %).
+                                </p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        </td>
+                      )}
+                      {visibleColumns.includes('capitalSpendPlannedDisbursements') && (
+                        <td className="px-4 py-2 text-sm text-foreground text-right whitespace-nowrap">
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <span className="cursor-pointer">
+                                  {activity.capitalSpendPercentage != null 
+                                    ? <><span className="text-muted-foreground">USD</span> {formatCurrency(((activity as any).totalPlannedDisbursementsUSD || 0) * (activity.capitalSpendPercentage / 100))}</>
+                                    : <span className="text-muted-foreground">—</span>
+                                  }
+                                </span>
+                              </TooltipTrigger>
+                              <TooltipContent className="max-w-xs border border-gray-200 bg-white shadow-lg text-left">
+                                <p className="text-sm text-gray-600">
+                                  Capital spend portion of Planned Disbursements (Planned Disbursements × Capital Spend %).
+                                </p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        </td>
+                      )}
+                      {visibleColumns.includes('capitalSpendCommitments') && (
+                        <td className="px-4 py-2 text-sm text-foreground text-right whitespace-nowrap">
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <span className="cursor-pointer">
+                                  {activity.capitalSpendPercentage != null 
+                                    ? <><span className="text-muted-foreground">USD</span> {formatCurrency((activity.commitments || 0) * (activity.capitalSpendPercentage / 100))}</>
+                                    : <span className="text-muted-foreground">—</span>
+                                  }
+                                </span>
+                              </TooltipTrigger>
+                              <TooltipContent className="max-w-xs border border-gray-200 bg-white shadow-lg text-left">
+                                <p className="text-sm text-gray-600">
+                                  Capital spend portion of Commitments (Commitments × Capital Spend %).
+                                </p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        </td>
+                      )}
+                      {visibleColumns.includes('capitalSpendDisbursements') && (
+                        <td className="px-4 py-2 text-sm text-foreground text-right whitespace-nowrap">
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <span className="cursor-pointer">
+                                  {activity.capitalSpendPercentage != null 
+                                    ? <><span className="text-muted-foreground">USD</span> {formatCurrency((activity.disbursements || 0) * (activity.capitalSpendPercentage / 100))}</>
+                                    : <span className="text-muted-foreground">—</span>
+                                  }
+                                </span>
+                              </TooltipTrigger>
+                              <TooltipContent className="max-w-xs border border-gray-200 bg-white shadow-lg text-left">
+                                <p className="text-sm text-gray-600">
+                                  Capital spend portion of Disbursements (Disbursements × Capital Spend %).
+                                </p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
                         </td>
                       )}
 

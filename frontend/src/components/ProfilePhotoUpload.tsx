@@ -1,7 +1,8 @@
 "use client"
 
 import { useState, useRef, useCallback } from "react";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { UserOrbAvatar } from "@/components/ui/user-orb-avatar";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
@@ -11,6 +12,8 @@ import { cn } from "@/lib/utils";
 interface ProfilePhotoUploadProps {
   currentPhoto?: string;
   userInitials?: string;
+  /** User ID or email for generating orb colors */
+  userId?: string;
   onPhotoChange: (photoUrl: string) => void;
   disabled?: boolean;
   className?: string;
@@ -19,6 +22,7 @@ interface ProfilePhotoUploadProps {
 export function ProfilePhotoUpload({
   currentPhoto,
   userInitials = "U",
+  userId,
   onPhotoChange,
   disabled = false,
   className
@@ -169,8 +173,12 @@ export function ProfilePhotoUpload({
               isUploading && "opacity-50"
             )}
           />
-          <AvatarFallback className="text-2xl bg-gray-600 text-white">
-            {userInitials}
+          <AvatarFallback className="p-0 bg-transparent">
+            <UserOrbAvatar
+              seed={userId || userInitials}
+              size={128}
+              initials={userInitials}
+            />
           </AvatarFallback>
         </Avatar>
 

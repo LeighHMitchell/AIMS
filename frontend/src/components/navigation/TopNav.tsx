@@ -16,8 +16,8 @@ import {
   DropdownMenuSubContent,
 } from "@/components/ui/dropdown-menu"
 import { Badge } from "@/components/ui/badge"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { User, LogOut, Briefcase, Settings, Shield, MessageSquare, Eye, HelpCircle, Share2 } from "lucide-react"
+import { UserAvatar } from "@/components/ui/user-avatar"
+import { User, LogOut, Briefcase, Settings, Shield, MessageSquare, Eye, HelpCircle, Share } from "lucide-react"
 import { toast } from "sonner"
 import { USER_ROLES, ROLE_LABELS } from "@/types/user"
 import { getRoleBadgeVariant, getRoleDisplayLabel } from "@/lib/role-badge-utils"
@@ -105,13 +105,12 @@ export function TopNav({ user, onLogout }: TopNavProps) {
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="sm" className="flex items-center gap-2">
-                  <Avatar className="h-8 w-8">
-                    <AvatarImage src={user.profilePicture} key={user.profilePicture} />
-                    <AvatarFallback>
-                      {user.firstName?.[0] || user.name?.split(' ').map(n => n[0]).join('').toUpperCase() || 'U'}
-                      {user.lastName?.[0] || (user.name?.split(' ')[1]?.[0] || '')}
-                    </AvatarFallback>
-                  </Avatar>
+                  <UserAvatar
+                    src={user.profilePicture}
+                    seed={user.id || user.email}
+                    name={getFullName(user)}
+                    size="md"
+                  />
                   <span>{getFullName(user)}</span>
                 </Button>
               </DropdownMenuTrigger>
@@ -120,13 +119,12 @@ export function TopNav({ user, onLogout }: TopNavProps) {
                   <div className="flex flex-col space-y-3 py-2">
                     {/* User Details Section with increased padding */}
                     <div className="flex items-center gap-3 px-1">
-                      <Avatar className="h-10 w-10">
-                        <AvatarImage src={user.profilePicture} key={user.profilePicture} />
-                        <AvatarFallback>
-                          {user.firstName?.[0] || user.name?.split(' ').map(n => n[0]).join('').toUpperCase() || 'U'}
-                          {user.lastName?.[0] || (user.name?.split(' ')[1]?.[0] || '')}
-                        </AvatarFallback>
-                      </Avatar>
+                      <UserAvatar
+                        src={user.profilePicture}
+                        seed={user.id || user.email}
+                        name={getFullName(user)}
+                        size="lg"
+                      />
                       <div className="flex flex-col space-y-1 flex-1">
                         <p className="text-sm font-medium leading-tight">{getFullName(user)}</p>
                         <p className="text-xs leading-tight text-muted-foreground">{user.email}</p>
@@ -217,7 +215,7 @@ export function TopNav({ user, onLogout }: TopNavProps) {
               className="h-9 w-9"
               title="Share this page"
             >
-              <Share2 className="h-5 w-5" />
+              <Share className="h-5 w-5" />
             </Button>
           )}
         </div>

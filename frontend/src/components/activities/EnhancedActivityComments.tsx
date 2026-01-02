@@ -11,7 +11,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { UserAvatar } from '@/components/ui/user-avatar';
 import { ActivityComment, CommentReply } from '@/types/comment';
 import { useUser } from '@/hooks/useUser';
 import { toast } from 'sonner';
@@ -998,12 +998,12 @@ function CommentCard({
                 
                 {/* User Info Section */}
                 <div className="flex items-start gap-3">
-                  <Avatar className="h-8 w-8">
-                    <AvatarImage src={comment.author.profilePicture} />
-                    <AvatarFallback className="text-xs">
-                      {getUserInitials(comment.author.name)}
-                    </AvatarFallback>
-                  </Avatar>
+                  <UserAvatar
+                    src={comment.author.profilePicture}
+                    seed={comment.author.userId || comment.author.name}
+                    name={comment.author.name}
+                    size="md"
+                  />
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
                       <span className="font-medium text-sm truncate">{comment.author.name}</span>
@@ -1244,12 +1244,12 @@ function ReplyCard({ reply, onReaction, reactionDisplay }: ReplyCardProps) {
     <div className="bg-gray-50 rounded-lg p-4 space-y-3">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Avatar className="h-6 w-6">
-            <AvatarImage src={reply.author.profilePicture} />
-            <AvatarFallback className="text-xs">
-              {getUserInitials(reply.author.name)}
-            </AvatarFallback>
-          </Avatar>
+          <UserAvatar
+            src={reply.author.profilePicture}
+            seed={reply.author.userId || reply.author.name}
+            name={reply.author.name}
+            size="sm"
+          />
           <span className="text-sm font-medium">{reply.author.name}</span>
           <Badge variant={getRoleBadgeVariant(reply.author.role)} className="text-xs ml-2">
             {getRoleDisplayLabel(reply.author.role)}

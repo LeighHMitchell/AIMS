@@ -1,8 +1,9 @@
 "use client"
 
 import { useState, useRef } from "react"
-import { Upload, User, X, Loader2 } from "lucide-react"
+import { Upload, X, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { UserOrbAvatar } from "@/components/ui/user-orb-avatar"
 import { toast } from "sonner"
 import { supabase } from "@/lib/supabase"
 import { Alert, AlertDescription } from "@/components/ui/alert"
@@ -157,9 +158,11 @@ export function AvatarUploader({ currentAvatar, userName, userId, onUpload }: Av
               )}
             </div>
           ) : (
-            <div className="w-24 h-24 rounded-full bg-indigo-600 text-white flex items-center justify-center text-2xl font-semibold">
-              {getInitials(userName)}
-            </div>
+            <UserOrbAvatar
+              seed={userId || userName}
+              size={96}
+              initials={getInitials(userName)}
+            />
           )}
         </div>
 

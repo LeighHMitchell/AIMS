@@ -26,22 +26,44 @@ const Popover = ({ open = false, onOpenChange = () => {}, children }: PopoverPro
   )
 }
 
+interface PopoverTriggerProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+  asChild?: boolean
+}
+
 const PopoverTrigger = React.forwardRef<
   HTMLButtonElement,
-  React.ButtonHTMLAttributes<HTMLButtonElement>
->(({ children, onClick, className, ...props }, ref) => {
+  PopoverTriggerProps
+>(({ children, onClick, className, asChild, ...props }, ref) => {
   const context = React.useContext(PopoverContext)
   if (!context) throw new Error("PopoverTrigger must be used within Popover")
+
+  const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+    onClick?.(e)
+    context.onOpenChange(!context.open)
+  }
+
+  // If asChild is true, clone the child element and pass props to it
+  if (asChild && React.isValidElement(children)) {
+    return React.cloneElement(children as React.ReactElement<any>, {
+      ref,
+      onClick: (e: React.MouseEvent<HTMLButtonElement>) => {
+        // Call the child's onClick if it exists
+        const childOnClick = (children as React.ReactElement<any>).props?.onClick
+        childOnClick?.(e)
+        handleClick(e)
+      },
+      'data-popover-trigger': true,
+      ...props,
+    })
+  }
 
   return (
     <button
       ref={ref}
-      onClick={(e) => {
-        onClick?.(e)
-        context.onOpenChange(!context.open)
-      }}
+      onClick={handleClick}
       className={cn("w-full", className)}
       type="button"
+      data-popover-trigger
       {...props}
     >
       {children}

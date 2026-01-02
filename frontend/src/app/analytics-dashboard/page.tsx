@@ -20,8 +20,6 @@ import {
   Building2,
   Calendar as CalendarIcon,
   Filter,
-  Download,
-  RefreshCw,
   TrendingUp,
   Target,
   AlertCircle,
@@ -626,52 +624,6 @@ export default function AnalyticsDashboardPage() {
     }
   ]
 
-  // Export function
-  const handleExport = () => {
-    const exportData = {
-      exportDate: new Date().toISOString(),
-      dateRange,
-      summary: {
-        totalDisbursed: formatCurrency(kpiData.totalDisbursed),
-        commitmentsDisbursedPercent: `${kpiData.commitmentsDisbursedPercent}%`,
-        activeProjects: kpiData.activeProjects,
-        donorsReporting: kpiData.donorsReporting,
-        totalBudget: formatCurrency(kpiData.totalBudget),
-        totalExpenditure: formatCurrency(kpiData.totalExpenditure)
-      }
-    };
-
-    // Convert to CSV format for easy analysis
-    const csvContent = [
-      // Header
-      ['Dashboard Export', new Date().toLocaleDateString()],
-      [''],
-      ['Summary'],
-      ['Total Budgeted', exportData.summary.totalBudget],
-      ['Total Disbursed', exportData.summary.totalDisbursed],
-      ['Total Expenditure', exportData.summary.totalExpenditure],
-      ['Commitments Disbursed %', exportData.summary.commitmentsDisbursedPercent],
-      ['Active Projects', exportData.summary.activeProjects.toString()],
-      ['Donors Reporting', exportData.summary.donorsReporting.toString()],
-      [''],
-      ['Date Range'],
-      ['From', dateRange.from.toDateString()],
-      ['To', dateRange.to.toDateString()]
-    ].map(row => row.join(',')).join('\n');
-
-    // Download as CSV
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    const url = URL.createObjectURL(blob);
-    link.setAttribute('href', url);
-    link.setAttribute('download', `aims-analytics-${new Date().toISOString().split('T')[0]}.csv`);
-    link.style.visibility = 'hidden';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    
-  }
-
   // Show skeleton loader during initial load
   if (loading && !kpiData.totalDisbursed && !kpiData.activeProjects) {
     return (
@@ -684,34 +636,6 @@ export default function AnalyticsDashboardPage() {
   return (
     <MainLayout>
       <div className="min-h-screen bg-white">
-        {/* Sticky Action Bar */}
-        <div className="sticky top-0 z-50 bg-white border-b border-slate-200 px-4 py-3">
-          <div className="mx-auto px-4">
-            <div className="flex items-center justify-end gap-3 flex-wrap">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  setRefreshKey(prev => prev + 1)
-                }}
-                className="h-9 border-slate-200 text-slate-600 hover:bg-slate-100"
-              >
-                <RefreshCw className="h-3 w-3 mr-1" />
-                Refresh
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleExport}
-                className="h-9 border-slate-200 text-slate-600 hover:bg-slate-100"
-              >
-                <Download className="h-3 w-3 mr-1" />
-                Export
-              </Button>
-            </div>
-          </div>
-        </div>
-
         {/* Main Dashboard Content */}
         <div className="mx-auto p-6">
           {/* Error Display */}

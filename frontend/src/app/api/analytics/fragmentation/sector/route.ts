@@ -9,6 +9,16 @@ import { MeasureType, FragmentationData, FragmentationCell, FragmentationDonor, 
 export async function GET(request: NextRequest) {
   try {
     const supabase = getSupabaseAdmin();
+    
+    // Check if Supabase is properly initialized
+    if (!supabase) {
+      console.error('[Sector Fragmentation API] Supabase client not initialized');
+      return NextResponse.json(
+        { success: false, error: 'Database connection not available' },
+        { status: 503 }
+      );
+    }
+    
     const searchParams = request.nextUrl.searchParams;
     
     const measure = (searchParams.get('measure') || 'disbursements') as MeasureType;
@@ -26,7 +36,7 @@ export async function GET(request: NextRequest) {
         reporting_org_id,
         organizations!reporting_org_id (id, name, acronym, country),
         activity_sectors (sector_code, category_code, category_name, percentage),
-        transactions (usd_value, transaction_type, transaction_date, status)
+        transactions!transactions_activity_id_fkey1 (usd_value, transaction_type, transaction_date, status)
       `);
 
     if (error) {
@@ -156,19 +166,22 @@ export async function GET(request: NextRequest) {
     const sortedCategories = Array.from(allCategories.entries())
       .sort((a, b) => (categoryTotals.get(b[0]) || 0) - (categoryTotals.get(a[0]) || 0));
 
+    // Build categories with totals
     const categories: FragmentationCategory[] = sortedCategories.map(([code, name]) => ({
       id: code,
       name,
       code,
+      total: categoryTotals.get(code) || 0,
     }));
 
-    // Build cells
+    // Build cells with both row-based and column-based percentages
     const cells: FragmentationCell[] = [];
 
     topDonors.forEach(([donorId, donorData]) => {
       sortedCategories.forEach(([categoryCode, categoryName]) => {
         const sectorData = donorData.sectors.get(categoryCode);
         if (sectorData && sectorData.value > 0) {
+          const catTotal = categoryTotals.get(categoryCode) || 0;
           cells.push({
             donorId,
             donorName: donorData.name,
@@ -178,6 +191,7 @@ export async function GET(request: NextRequest) {
             categoryCode,
             value: sectorData.value,
             percentage: donorData.total > 0 ? (sectorData.value / donorData.total) * 100 : 0,
+            percentageOfCategory: catTotal > 0 ? (sectorData.value / catTotal) * 100 : 0,
             activityCount: sectorData.count,
           });
         }
@@ -189,6 +203,7 @@ export async function GET(request: NextRequest) {
       sortedCategories.forEach(([categoryCode, categoryName]) => {
         const sectorData = othersSectors.get(categoryCode);
         if (sectorData && sectorData.value > 0) {
+          const catTotal = categoryTotals.get(categoryCode) || 0;
           cells.push({
             donorId: 'others',
             donorName: 'OTHERS',
@@ -197,6 +212,7 @@ export async function GET(request: NextRequest) {
             categoryCode,
             value: sectorData.value,
             percentage: othersTotal > 0 ? (sectorData.value / othersTotal) * 100 : 0,
+            percentageOfCategory: catTotal > 0 ? (sectorData.value / catTotal) * 100 : 0,
             activityCount: sectorData.count,
           });
         }

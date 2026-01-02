@@ -16,7 +16,7 @@ import { Separator } from '@/components/ui/separator';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Label } from '@/components/ui/label';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { UserAvatar } from '@/components/ui/user-avatar';
 import { ROLE_LABELS } from '@/components/rolodex/utils/roleLabels';
 import { 
   MessageSquare, 
@@ -611,12 +611,12 @@ export function CommentsDrawer({
                         
                         {/* User Info Section */}
                         <div className="flex items-start gap-3">
-                          <Avatar className="h-8 w-8">
-                            <AvatarImage src={comment.author?.profilePicture} />
-                            <AvatarFallback className="text-xs">
-                              {getUserInitials(comment.author?.name || 'Unknown User')}
-                            </AvatarFallback>
-                          </Avatar>
+                          <UserAvatar
+                            src={comment.author?.profilePicture}
+                            seed={comment.author?.userId || comment.author?.name || 'unknown'}
+                            name={comment.author?.name || 'Unknown User'}
+                            size="md"
+                          />
                           <div className="flex-1 min-w-0">
                             <div className="font-medium text-sm truncate">{comment.author?.name || 'Unknown User'}</div>
                             <Badge variant="outline" className="text-xs mt-1">
@@ -707,12 +707,12 @@ export function CommentsDrawer({
                                   
                                   {/* User Info Section */}
                                   <div className="flex items-start gap-2">
-                                    <Avatar className="h-6 w-6">
-                                      <AvatarImage src={safeReply.author?.profilePicture} />
-                                      <AvatarFallback className="text-xs">
-                                        {getUserInitials(safeReply.author?.name || 'Unknown User')}
-                                      </AvatarFallback>
-                                    </Avatar>
+                                    <UserAvatar
+                                      src={safeReply.author?.profilePicture}
+                                      seed={safeReply.author?.userId || safeReply.author?.name || 'unknown'}
+                                      name={safeReply.author?.name || 'Unknown User'}
+                                      size="sm"
+                                    />
                                     <div className="flex-1 min-w-0">
                                       <div className="font-medium text-xs truncate">{safeReply.author?.name || 'Unknown User'}</div>
                                       <Badge variant="outline" className="text-xs h-4 mt-1">

@@ -17,8 +17,14 @@ export async function GET(request: NextRequest) {
     const dateTo = searchParams.get('dateTo');
     const topN = parseInt(searchParams.get('topN') || '5');
     
-    // Determine transaction type based on measure
-    const transactionType = measure === 'commitments' ? '2' : '3'; // 2=Commitment, 3=Disbursement
+    // Determine transaction type based on measure (for transaction-based measures)
+    // 2=Commitment, 3=Disbursement
+    const transactionType = measure === 'commitments' ? '2' : '3';
+    
+    // Helper to determine if we're using transaction-based or budget-based data
+    const useTransactions = measure === 'commitments' || measure === 'disbursements';
+    const useBudgets = measure === 'budgets';
+    const usePlannedDisbursements = measure === 'plannedDisbursements';
     
     // Build date filter
     let dateFilter = '';
@@ -222,63 +228,167 @@ export async function GET(request: NextRequest) {
       return null;
     }
 
-    // Get subnational breakdowns with activity transactions
-    const { data: subnationalData, error: subnationalError } = await supabase
-      .from('subnational_breakdowns')
-      .select(`
-        region_name,
-        is_nationwide,
-        percentage,
-        activity_id,
-        activities (
-          transactions!transactions_activity_id_fkey1 (value, value_usd, transaction_type, transaction_date, status)
-        )
-      `);
-
-    if (subnationalError) {
-      console.error('[Dashboard API] Error fetching subnational data:', subnationalError);
-    }
-
     const districtMap = new Map<string, { value: number; activityIds: Set<string> }>();
-    
-    subnationalData?.forEach((sub: any) => {
-      const activityId = sub.activity_id;
-      if (!activityId) return;
-      
-      // Validate region name - only include valid Myanmar regions
-      let regionName: string | null;
-      if (sub.is_nationwide) {
-        regionName = 'Nationwide';
-      } else {
-        regionName = normalizeRegion(sub.region_name || '');
-        if (!regionName) return; // Skip invalid entries like "Test Location"
+
+    if (useTransactions) {
+      // Get subnational breakdowns with activity transactions
+      const { data: subnationalData, error: subnationalError } = await supabase
+        .from('subnational_breakdowns')
+        .select(`
+          region_name,
+          is_nationwide,
+          percentage,
+          activity_id,
+          activities (
+            transactions!transactions_activity_id_fkey1 (value, value_usd, transaction_type, transaction_date, status)
+          )
+        `);
+
+      if (subnationalError) {
+        console.error('[Dashboard API] Error fetching subnational data:', subnationalError);
       }
       
-      const pct = (sub.percentage || 100) / 100;
-      
-      let hasMatchingTransaction = false;
-      let activityValue = 0;
-      
-      sub.activities?.transactions?.forEach((t: any) => {
-        // Filter to correct transaction type and status (handle both string and number)
-        if (String(t.transaction_type) !== transactionType) return;
-        if (t.status !== 'actual') return;
+      subnationalData?.forEach((sub: any) => {
+        const activityId = sub.activity_id;
+        if (!activityId) return;
         
-        if (!dateFrom || new Date(t.transaction_date) >= new Date(dateFrom)) {
-          if (!dateTo || new Date(t.transaction_date) <= new Date(dateTo)) {
-            hasMatchingTransaction = true;
-            activityValue += (parseFloat(t.value_usd) || parseFloat(t.value) || 0) * pct;
+        // Validate region name - only include valid Myanmar regions
+        let regionName: string | null;
+        if (sub.is_nationwide) {
+          regionName = 'Nationwide';
+        } else {
+          regionName = normalizeRegion(sub.region_name || '');
+          if (!regionName) return; // Skip invalid entries like "Test Location"
+        }
+        
+        const pct = (sub.percentage || 100) / 100;
+        
+        let hasMatchingTransaction = false;
+        let activityValue = 0;
+        
+        sub.activities?.transactions?.forEach((t: any) => {
+          // Filter to correct transaction type and status (handle both string and number)
+          if (String(t.transaction_type) !== transactionType) return;
+          if (t.status !== 'actual') return;
+          
+          if (!dateFrom || new Date(t.transaction_date) >= new Date(dateFrom)) {
+            if (!dateTo || new Date(t.transaction_date) <= new Date(dateTo)) {
+              hasMatchingTransaction = true;
+              activityValue += (parseFloat(t.value_usd) || parseFloat(t.value) || 0) * pct;
+            }
           }
+        });
+        
+        if (hasMatchingTransaction) {
+          const existing = districtMap.get(regionName) || { value: 0, activityIds: new Set<string>() };
+          existing.value += activityValue;
+          existing.activityIds.add(activityId);
+          districtMap.set(regionName, existing);
         }
       });
-      
-      if (hasMatchingTransaction) {
-        const existing = districtMap.get(regionName) || { value: 0, activityIds: new Set<string>() };
-        existing.value += activityValue;
-        existing.activityIds.add(activityId);
-        districtMap.set(regionName, existing);
+    } else if (useBudgets) {
+      // Get subnational breakdowns with activity budgets
+      const { data: subnationalData, error: subnationalError } = await supabase
+        .from('subnational_breakdowns')
+        .select(`
+          region_name,
+          is_nationwide,
+          percentage,
+          activity_id,
+          activities (
+            activity_budgets (value, usd_value, period_start, period_end)
+          )
+        `);
+
+      if (subnationalError) {
+        console.error('[Dashboard API] Error fetching subnational budget data:', subnationalError);
       }
-    });
+      
+      subnationalData?.forEach((sub: any) => {
+        const activityId = sub.activity_id;
+        if (!activityId) return;
+        
+        let regionName: string | null;
+        if (sub.is_nationwide) {
+          regionName = 'Nationwide';
+        } else {
+          regionName = normalizeRegion(sub.region_name || '');
+          if (!regionName) return;
+        }
+        
+        const pct = (sub.percentage || 100) / 100;
+        
+        let hasMatchingBudget = false;
+        let activityValue = 0;
+        
+        sub.activities?.activity_budgets?.forEach((b: any) => {
+          // Apply date filter if provided
+          if (dateFrom && b.period_start && new Date(b.period_start) < new Date(dateFrom)) return;
+          if (dateTo && b.period_end && new Date(b.period_end) > new Date(dateTo)) return;
+          
+          hasMatchingBudget = true;
+          activityValue += (parseFloat(b.usd_value) || parseFloat(b.value) || 0) * pct;
+        });
+        
+        if (hasMatchingBudget) {
+          const existing = districtMap.get(regionName) || { value: 0, activityIds: new Set<string>() };
+          existing.value += activityValue;
+          existing.activityIds.add(activityId);
+          districtMap.set(regionName, existing);
+        }
+      });
+    } else if (usePlannedDisbursements) {
+      // Get subnational breakdowns with planned disbursements
+      const { data: subnationalData, error: subnationalError } = await supabase
+        .from('subnational_breakdowns')
+        .select(`
+          region_name,
+          is_nationwide,
+          percentage,
+          activity_id,
+          activities (
+            planned_disbursements (amount, usd_amount, period_start, period_end)
+          )
+        `);
+
+      if (subnationalError) {
+        console.error('[Dashboard API] Error fetching subnational planned disbursement data:', subnationalError);
+      }
+      
+      subnationalData?.forEach((sub: any) => {
+        const activityId = sub.activity_id;
+        if (!activityId) return;
+        
+        let regionName: string | null;
+        if (sub.is_nationwide) {
+          regionName = 'Nationwide';
+        } else {
+          regionName = normalizeRegion(sub.region_name || '');
+          if (!regionName) return;
+        }
+        
+        const pct = (sub.percentage || 100) / 100;
+        
+        let hasMatchingPD = false;
+        let activityValue = 0;
+        
+        sub.activities?.planned_disbursements?.forEach((pd: any) => {
+          // Apply date filter if provided
+          if (dateFrom && pd.period_start && new Date(pd.period_start) < new Date(dateFrom)) return;
+          if (dateTo && pd.period_end && new Date(pd.period_end) > new Date(dateTo)) return;
+          
+          hasMatchingPD = true;
+          activityValue += (parseFloat(pd.usd_amount) || parseFloat(pd.amount) || 0) * pct;
+        });
+        
+        if (hasMatchingPD) {
+          const existing = districtMap.get(regionName) || { value: 0, activityIds: new Set<string>() };
+          existing.value += activityValue;
+          existing.activityIds.add(activityId);
+          districtMap.set(regionName, existing);
+        }
+      });
+    }
 
     const sortedDistricts = Array.from(districtMap.entries())
       .sort((a, b) => b[1].value - a[1].value);
@@ -443,62 +553,171 @@ export async function GET(request: NextRequest) {
     // ============================================
     // RECIPIENT GOVERNMENT BODIES (Transaction receivers that are government type)
     // ============================================
-    // Query transactions directly by receiver organization, filtering for government types (10, 15)
-    // This correctly shows organizations that actually RECEIVE disbursements/commitments
-    let recipientGovQuery = supabase
-      .from('transactions')
-      .select(`
-        uuid,
-        activity_id,
-        value,
-        value_usd,
-        transaction_type,
-        transaction_date,
-        status,
-        receiver_org_id,
-        receiver_org_name,
-        receiver_organization:organizations!transactions_receiver_org_id_fkey (
-          id, 
-          name, 
-          acronym, 
-          Organisation_Type_Code
-        )
-      `)
-      .eq('transaction_type', transactionType)
-      .eq('status', 'actual')
-      .not('receiver_org_id', 'is', null);
-    
-    // Apply date filters at query level for efficiency
-    if (dateFrom) {
-      recipientGovQuery = recipientGovQuery.gte('transaction_date', dateFrom);
-    }
-    if (dateTo) {
-      recipientGovQuery = recipientGovQuery.lte('transaction_date', dateTo);
-    }
-    
-    const { data: receiverOrgTransactions } = await recipientGovQuery;
-
     const recipientGovMap = new Map<string, { name: string; value: number; activityIds: Set<string> }>();
-    
-    receiverOrgTransactions?.forEach((tx: any) => {
-      // Filter to government types only (10 = Government, 15 = Other Public Sector)
-      const orgTypeCode = tx.receiver_organization?.Organisation_Type_Code;
-      if (!orgTypeCode || !['10', '15'].includes(String(orgTypeCode))) return;
+
+    if (useTransactions) {
+      // Query transactions directly by receiver organization, filtering for government types (10, 15)
+      // This correctly shows organizations that actually RECEIVE disbursements/commitments
+      let recipientGovQuery = supabase
+        .from('transactions')
+        .select(`
+          uuid,
+          activity_id,
+          value,
+          value_usd,
+          transaction_type,
+          transaction_date,
+          status,
+          receiver_org_id,
+          receiver_org_name,
+          receiver_organization:organizations!transactions_receiver_org_id_fkey (
+            id, 
+            name, 
+            acronym, 
+            Organisation_Type_Code
+          )
+        `)
+        .eq('transaction_type', transactionType)
+        .eq('status', 'actual')
+        .not('receiver_org_id', 'is', null);
       
-      const orgId = tx.receiver_org_id;
-      const activityId = tx.activity_id;
-      if (!orgId) return;
-      
-      const orgName = tx.receiver_organization?.acronym || tx.receiver_organization?.name || tx.receiver_org_name || 'Unknown';
-      const txValue = parseFloat(tx.value_usd) || parseFloat(tx.value) || 0;
-      
-      const existing = recipientGovMap.get(orgId) || { name: orgName, value: 0, activityIds: new Set<string>() };
-      existing.value += txValue;
-      if (activityId) {
-        existing.activityIds.add(activityId);
+      // Apply date filters at query level for efficiency
+      if (dateFrom) {
+        recipientGovQuery = recipientGovQuery.gte('transaction_date', dateFrom);
       }
-      recipientGovMap.set(orgId, existing);
-    });
+      if (dateTo) {
+        recipientGovQuery = recipientGovQuery.lte('transaction_date', dateTo);
+      }
+      
+      const { data: receiverOrgTransactions } = await recipientGovQuery;
+      
+      receiverOrgTransactions?.forEach((tx: any) => {
+        // Filter to government types only (10 = Government, 15 = Other Public Sector)
+        const orgTypeCode = tx.receiver_organization?.Organisation_Type_Code;
+        if (!orgTypeCode || !['10', '15'].includes(String(orgTypeCode))) return;
+        
+        const orgId = tx.receiver_org_id;
+        const activityId = tx.activity_id;
+        if (!orgId) return;
+        
+        const orgName = tx.receiver_organization?.acronym || tx.receiver_organization?.name || tx.receiver_org_name || 'Unknown';
+        const txValue = parseFloat(tx.value_usd) || parseFloat(tx.value) || 0;
+        
+        const existing = recipientGovMap.get(orgId) || { name: orgName, value: 0, activityIds: new Set<string>() };
+        existing.value += txValue;
+        if (activityId) {
+          existing.activityIds.add(activityId);
+        }
+        recipientGovMap.set(orgId, existing);
+      });
+    } else if (useBudgets) {
+      // For budgets, we look at activity budgets and group by the activity's recipient country/organization
+      // Budgets don't have a direct receiver org, so we use activity-level partner organizations
+      const { data: budgetData, error: budgetError } = await supabase
+        .from('activity_budgets')
+        .select(`
+          value,
+          usd_value,
+          period_start,
+          period_end,
+          activity_id,
+          activities (
+            id,
+            activity_participating_organizations (
+              organization_id,
+              narrative,
+              iati_role_code,
+              organizations (id, name, acronym, Organisation_Type_Code)
+            )
+          )
+        `);
+
+      if (budgetError) {
+        console.error('[Dashboard API] Error fetching budget data for recipient gov:', budgetError);
+      }
+
+      budgetData?.forEach((b: any) => {
+        // Apply date filter
+        if (dateFrom && b.period_start && new Date(b.period_start) < new Date(dateFrom)) return;
+        if (dateTo && b.period_end && new Date(b.period_end) > new Date(dateTo)) return;
+        
+        const activityId = b.activity_id;
+        const budgetValue = parseFloat(b.usd_value) || parseFloat(b.value) || 0;
+        
+        // Find receiver/accountable orgs that are government type
+        const receiverOrgs = b.activities?.activity_participating_organizations?.filter((po: any) => {
+          // Role code 4 = Implementing, 3 = Extending - look for government receivers
+          const orgTypeCode = po.organizations?.Organisation_Type_Code;
+          return orgTypeCode && ['10', '15'].includes(String(orgTypeCode));
+        }) || [];
+        
+        // Distribute budget across government orgs
+        const orgCount = receiverOrgs.length || 1;
+        receiverOrgs.forEach((po: any) => {
+          const orgId = po.organization_id || po.narrative;
+          if (!orgId) return;
+          
+          const orgName = po.organizations?.acronym || po.organizations?.name || po.narrative || 'Unknown';
+          const orgValue = budgetValue / orgCount;
+          
+          const existing = recipientGovMap.get(orgId) || { name: orgName, value: 0, activityIds: new Set<string>() };
+          existing.value += orgValue;
+          if (activityId) {
+            existing.activityIds.add(activityId);
+          }
+          recipientGovMap.set(orgId, existing);
+        });
+      });
+    } else if (usePlannedDisbursements) {
+      // For planned disbursements, look at receiver_org_id
+      let pdQuery = supabase
+        .from('planned_disbursements')
+        .select(`
+          amount,
+          usd_amount,
+          period_start,
+          period_end,
+          activity_id,
+          receiver_org_id,
+          receiver_organization:organizations!planned_disbursements_receiver_org_id_fkey (
+            id,
+            name,
+            acronym,
+            Organisation_Type_Code
+          )
+        `)
+        .not('receiver_org_id', 'is', null);
+      
+      const { data: pdData, error: pdError } = await pdQuery;
+
+      if (pdError) {
+        console.error('[Dashboard API] Error fetching planned disbursement data for recipient gov:', pdError);
+      }
+
+      pdData?.forEach((pd: any) => {
+        // Apply date filter
+        if (dateFrom && pd.period_start && new Date(pd.period_start) < new Date(dateFrom)) return;
+        if (dateTo && pd.period_end && new Date(pd.period_end) > new Date(dateTo)) return;
+        
+        // Filter to government types only
+        const orgTypeCode = pd.receiver_organization?.Organisation_Type_Code;
+        if (!orgTypeCode || !['10', '15'].includes(String(orgTypeCode))) return;
+        
+        const orgId = pd.receiver_org_id;
+        const activityId = pd.activity_id;
+        if (!orgId) return;
+        
+        const orgName = pd.receiver_organization?.acronym || pd.receiver_organization?.name || 'Unknown';
+        const pdValue = parseFloat(pd.usd_amount) || parseFloat(pd.amount) || 0;
+        
+        const existing = recipientGovMap.get(orgId) || { name: orgName, value: 0, activityIds: new Set<string>() };
+        existing.value += pdValue;
+        if (activityId) {
+          existing.activityIds.add(activityId);
+        }
+        recipientGovMap.set(orgId, existing);
+      });
+    }
 
     const sortedRecipientGov = Array.from(recipientGovMap.entries())
       .sort((a, b) => b[1].value - a[1].value);

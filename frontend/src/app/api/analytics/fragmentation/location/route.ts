@@ -26,7 +26,7 @@ export async function GET(request: NextRequest) {
         reporting_org_id,
         organizations!reporting_org_id (id, name, acronym, country),
         activity_locations (location_name, admin_level, percentage),
-        transactions (usd_value, transaction_type, transaction_date, status)
+        transactions!transactions_activity_id_fkey1 (usd_value, transaction_type, transaction_date, status)
       `);
 
     if (error) {
@@ -154,18 +154,21 @@ export async function GET(request: NextRequest) {
     const sortedLocations = Array.from(allLocations)
       .sort((a, b) => (locationTotals.get(b) || 0) - (locationTotals.get(a) || 0));
 
+    // Build categories with totals
     const categories: FragmentationCategory[] = sortedLocations.map((name) => ({
       id: name,
       name,
+      total: locationTotals.get(name) || 0,
     }));
 
-    // Build cells
+    // Build cells with both row-based and column-based percentages
     const cells: FragmentationCell[] = [];
 
     topDonors.forEach(([donorId, donorData]) => {
       sortedLocations.forEach((locationName) => {
         const locData = donorData.locations.get(locationName);
         if (locData && locData.value > 0) {
+          const locTotal = locationTotals.get(locationName) || 0;
           cells.push({
             donorId,
             donorName: donorData.name,
@@ -174,6 +177,7 @@ export async function GET(request: NextRequest) {
             categoryName: locationName,
             value: locData.value,
             percentage: donorData.total > 0 ? (locData.value / donorData.total) * 100 : 0,
+            percentageOfCategory: locTotal > 0 ? (locData.value / locTotal) * 100 : 0,
             activityCount: locData.count,
           });
         }
@@ -185,6 +189,7 @@ export async function GET(request: NextRequest) {
       sortedLocations.forEach((locationName) => {
         const locData = othersLocations.get(locationName);
         if (locData && locData.value > 0) {
+          const locTotal = locationTotals.get(locationName) || 0;
           cells.push({
             donorId: 'others',
             donorName: 'OTHERS',
@@ -192,6 +197,7 @@ export async function GET(request: NextRequest) {
             categoryName: locationName,
             value: locData.value,
             percentage: othersTotal > 0 ? (locData.value / othersTotal) * 100 : 0,
+            percentageOfCategory: locTotal > 0 ? (locData.value / locTotal) * 100 : 0,
             activityCount: locData.count,
           });
         }

@@ -64,8 +64,8 @@ interface AgencyData {
 const OTHERS_COLOR = "#6b7280";
 
 const METRIC_OPTIONS = [
-  { value: "commitments", label: "Actual Commitments" },
-  { value: "disbursements", label: "Actual Disbursements" },
+  { value: "commitments", label: "Commitments" },
+  { value: "disbursements", label: "Disbursements" },
 ];
 
 function formatCurrency(value: number): string {
@@ -190,7 +190,7 @@ export function ImplementingAgenciesChart({ refreshKey = 0 }: ImplementingAgenci
     <ResponsiveContainer width="100%" height={height}>
       <BarChart
         data={chartData}
-        margin={{ top: 5, right: 5, left: 5, bottom: 80 }}
+        margin={{ top: 25, right: 5, left: 5, bottom: 30 }}
       >
         <XAxis
           dataKey="name"
@@ -201,12 +201,12 @@ export function ImplementingAgenciesChart({ refreshKey = 0 }: ImplementingAgenci
           interval={0}
           angle={0}
           textAnchor="middle"
-          height={80}
+          height={30}
           tick={(props) => {
             const { x, y, payload } = props;
             const text = payload.value || '';
             const words = text.split(' ');
-            const maxCharsPerLine = 15;
+            const maxCharsPerLine = 10;
             const lines: string[] = [];
             let currentLine = '';
 
@@ -335,7 +335,7 @@ export function ImplementingAgenciesChart({ refreshKey = 0 }: ImplementingAgenci
   );
 
   const renderContent = (expanded: boolean = false) => {
-    const chartHeight = expanded ? 400 : 280;
+    const chartHeight = expanded ? 400 : "100%";
 
     if (loading) {
       return <Skeleton className="w-full h-[280px]" />;

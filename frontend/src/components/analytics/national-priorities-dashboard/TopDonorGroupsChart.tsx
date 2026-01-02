@@ -330,7 +330,7 @@ export function TopDonorGroupsChart({ refreshKey = 0 }: TopDonorGroupsChartProps
   );
 
   const renderContent = (expanded: boolean = false) => {
-    const chartHeight = expanded ? 300 : 180;
+    const chartHeight = expanded ? 300 : "100%";
 
     if (loading) {
       return <Skeleton className="w-full h-[280px]" />;

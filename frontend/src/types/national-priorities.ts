@@ -147,7 +147,7 @@ export interface ActivityNationalPrioritiesResponse {
 /**
  * Measure type for financial calculations
  */
-export type MeasureType = 'commitments' | 'disbursements' | 'budgets';
+export type MeasureType = 'commitments' | 'disbursements' | 'budgets' | 'plannedDisbursements';
 
 /**
  * Dashboard filters
@@ -236,7 +236,8 @@ export interface FragmentationCell {
   categoryName: string;
   categoryCode?: string;
   value: number; // USD amount
-  percentage: number; // % of donor's total
+  percentage: number; // % of donor's total (row-based)
+  percentageOfCategory: number; // % this donor contributes to category total (column-based)
   activityCount: number;
 }
 
@@ -258,6 +259,7 @@ export interface FragmentationCategory {
   id: string;
   name: string;
   code?: string;
+  total: number; // Sum of all donor values for this category
 }
 
 /**
@@ -309,15 +311,16 @@ export interface ColorThreshold {
 }
 
 /**
- * Color scale for fragmentation heatmaps (matching Timor-Leste dashboard style)
+ * Color scale for fragmentation heatmaps (matching Timor-Leste AIMS dashboard style)
+ * Colors progress from green (small share) through yellow/orange/red to dark green (dominant)
  */
 export const FRAGMENTATION_COLOR_SCALE: ColorThreshold[] = [
-  { threshold: 0.01, color: '#c62828', label: '< 1%' },       // Red
-  { threshold: 0.05, color: '#ef6c00', label: '1% - 5%' },   // Orange
-  { threshold: 0.10, color: '#fbc02d', label: '5% - 10%' },  // Yellow
-  { threshold: 0.15, color: '#7cb342', label: '10% - 15%' }, // Light Green
-  { threshold: 0.20, color: '#388e3c', label: '15% - 20%' }, // Dark Green
-  { threshold: 1.01, color: '#1b5e20', label: '> 20%' },     // Darkest Green
+  { threshold: 0.01, color: '#8bc34a', label: 'Less than 1%' },       // Light green
+  { threshold: 0.05, color: '#cddc39', label: 'Between 1% and <5%' }, // Yellow-green
+  { threshold: 0.10, color: '#ff9800', label: 'Between 5% and <10%' }, // Orange
+  { threshold: 0.15, color: '#ff5722', label: 'Between 10% and <15%' }, // Red-orange
+  { threshold: 0.20, color: '#8d6e63', label: 'Between 15% and <20%' }, // Brown
+  { threshold: 1.01, color: '#388e3c', label: 'More than 20%' },      // Dark green
 ];
 
 /**
@@ -327,7 +330,7 @@ export function getColorForPercentage(percentage: number): string {
   for (const { threshold, color } of FRAGMENTATION_COLOR_SCALE) {
     if (percentage < threshold) return color;
   }
-  return '#1b5e20'; // Default to darkest green
+  return '#388e3c'; // Default to dark green for >20%
 }
 
 /**
@@ -335,7 +338,7 @@ export function getColorForPercentage(percentage: number): string {
  */
 export function getTextColorForBackground(backgroundColor: string): string {
   // Light backgrounds need dark text
-  if (['#fbc02d', '#7cb342'].includes(backgroundColor)) {
+  if (['#8bc34a', '#cddc39'].includes(backgroundColor)) {
     return '#000000';
   }
   return '#ffffff';

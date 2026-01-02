@@ -7,7 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandGroup, CommandItem, CommandList } from '@/components/ui/command';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { UserAvatar } from '@/components/ui/user-avatar';
 import { Badge } from '@/components/ui/badge';
 import { getRoleBadgeVariant, getRoleDisplayLabel } from '@/lib/role-badge-utils';
 import { useUser } from '@/hooks/useUser';
@@ -482,12 +482,12 @@ export function CommentsDrawer({ activityId, isOpen, onClose }: CommentsDrawerPr
                   
                   {/* User Info Section */}
                   <div className="flex items-start gap-3">
-                    <Avatar className="h-8 w-8">
-                      <AvatarImage src={comment.author?.profilePicture} />
-                      <AvatarFallback className="text-xs">
-                        {getUserInitials(comment.author?.name || 'Unknown User')}
-                      </AvatarFallback>
-                    </Avatar>
+                    <UserAvatar
+                      src={comment.author?.profilePicture}
+                      seed={comment.author?.userId || comment.author?.name || 'unknown'}
+                      name={comment.author?.name || 'Unknown User'}
+                      size="md"
+                    />
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
                         <span className="font-medium text-sm truncate">{comment.author?.name || 'Unknown User'}</span>
@@ -511,12 +511,12 @@ export function CommentsDrawer({ activityId, isOpen, onClose }: CommentsDrawerPr
                           
                           {/* User Info Section */}
                           <div className="flex items-start gap-2">
-                            <Avatar className="h-6 w-6">
-                              <AvatarImage src={reply.author?.profilePicture} />
-                              <AvatarFallback className="text-xs">
-                                {getUserInitials(reply.author?.name || 'Unknown User')}
-                              </AvatarFallback>
-                            </Avatar>
+                            <UserAvatar
+                              src={reply.author?.profilePicture}
+                              seed={reply.author?.userId || reply.author?.name || 'unknown'}
+                              name={reply.author?.name || 'Unknown User'}
+                              size="sm"
+                            />
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-2">
                                 <span className="font-medium text-xs truncate">{reply.author?.name || 'Unknown User'}</span>

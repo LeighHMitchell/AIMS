@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { UserAvatar } from '@/components/ui/user-avatar'
 import { ActivityComment } from '@/types/comment'
 import { useUser } from '@/hooks/useUser'
 import { toast } from 'sonner'
@@ -298,12 +298,12 @@ export function OrganizationComments({
                 <Card key={comment.id}>
                   <CardContent className="p-4">
                     <div className="flex items-start gap-3">
-                      <Avatar className="h-8 w-8">
-                        <AvatarImage src={comment.author.profilePicture} />
-                        <AvatarFallback>
-                          {getUserInitials(comment.author.name)}
-                        </AvatarFallback>
-                      </Avatar>
+                      <UserAvatar
+                        src={comment.author.profilePicture}
+                        seed={comment.author.userId || comment.author.name}
+                        name={comment.author.name}
+                        size="md"
+                      />
                       <div className="flex-1 space-y-2">
                         <div className="flex items-center gap-2">
                           <span className="font-medium text-sm">{comment.author.name}</span>

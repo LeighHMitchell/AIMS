@@ -6,8 +6,7 @@ import {
   Settings, 
   Bell, 
   Shield,
-  User,
-  Contact
+  User
 } from "lucide-react"
 import { useUser } from "@/hooks/useUser"
 import { 
@@ -16,7 +15,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover"
 import { Button } from "@/components/ui/button"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { UserAvatar } from "@/components/ui/user-avatar"
 import { Separator } from "@/components/ui/separator"
 
 export function SidebarUserMenu() {
@@ -32,7 +31,12 @@ export function SidebarUserMenu() {
 
   return (
     <div className="p-3 border-t bg-white flex items-center gap-2">
-      <Contact className="h-10 w-10 text-blue-600" aria-label="Account" />
+      <UserAvatar
+        src={user.profilePicture}
+        seed={user.id || user.email}
+        name={userName}
+        size="lg"
+      />
       <div className="flex flex-col items-start text-left flex-1 min-w-0">
         <span className="text-sm font-medium text-gray-900 truncate w-full">
           {userName}
