@@ -67,38 +67,38 @@ export function GlowyWavesHero() {
         wavePalette: [
           {
             offset: 0,
-            amplitude: 90,
+            amplitude: 70,
             frequency: 0.003,
-            color: "rgba(220, 38, 37, 1)",  // Primary Scarlet #dc2625
-            opacity: 1,
+            color: "rgba(220, 38, 37, 0.6)",  // Primary Scarlet #dc2625
+            opacity: 0.4,
           },
           {
             offset: Math.PI / 2,
-            amplitude: 110,
+            amplitude: 90,
             frequency: 0.0026,
-            color: "rgba(76, 85, 104, 1)",  // Blue Slate #4c5568
-            opacity: 1,
+            color: "rgba(76, 85, 104, 0.5)",  // Blue Slate #4c5568
+            opacity: 0.35,
           },
           {
             offset: Math.PI,
-            amplitude: 80,
+            amplitude: 60,
             frequency: 0.0034,
-            color: "rgba(123, 149, 167, 1)", // Cool Steel #7b95a7
-            opacity: 1,
+            color: "rgba(123, 149, 167, 0.5)", // Cool Steel #7b95a7
+            opacity: 0.3,
           },
           {
             offset: Math.PI * 1.5,
-            amplitude: 100,
+            amplitude: 80,
             frequency: 0.0022,
-            color: "rgba(207, 208, 213, 1)", // Pale Slate #cfd0d5
-            opacity: 0.95,
+            color: "rgba(207, 208, 213, 0.4)", // Pale Slate #cfd0d5
+            opacity: 0.25,
           },
           {
             offset: Math.PI * 2,
-            amplitude: 75,
+            amplitude: 55,
             frequency: 0.004,
-            color: "rgba(76, 85, 104, 1)",   // Blue Slate #4c5568
-            opacity: 0.9,
+            color: "rgba(76, 85, 104, 0.4)",   // Blue Slate #4c5568
+            opacity: 0.2,
           },
         ] satisfies WaveConfig[],
       };
@@ -174,10 +174,10 @@ export function GlowyWavesHero() {
         }
       }
 
-      ctx.lineWidth = 6;
+      ctx.lineWidth = 2.5;
       ctx.strokeStyle = wave.color;
       ctx.globalAlpha = wave.opacity;
-      ctx.shadowBlur = 80;
+      ctx.shadowBlur = 25;
       ctx.shadowColor = wave.color;
       ctx.stroke();
 
