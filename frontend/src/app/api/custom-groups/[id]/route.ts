@@ -14,15 +14,19 @@ export async function OPTIONS() {
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: { id: string } | Promise<{ id: string }> }
 ) {
   console.log('[API] GET /api/custom-groups/[id] - Starting request');
-  
+
   try {
+    // Handle both sync and async params (Next.js 14/15 compatibility)
+    const resolvedParams = await Promise.resolve(params);
+    const { id } = resolvedParams;
+
     const { data, error } = await getSupabaseAdmin()
       .from('custom_groups_with_stats')
       .select('*')
-      .eq('id', params.id)
+      .eq('id', id)
       .single();
     
     if (error) {
@@ -54,13 +58,17 @@ export async function GET(
 
 export async function PUT(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: { id: string } | Promise<{ id: string }> }
 ) {
   console.log('[API] PUT /api/custom-groups/[id] - Starting request');
-  
+
   try {
+    // Handle both sync and async params (Next.js 14/15 compatibility)
+    const resolvedParams = await Promise.resolve(params);
+    const { id } = resolvedParams;
+
     const body = await request.json();
-    
+
     // Update the custom group
     const { data, error } = await getSupabaseAdmin()
       .from('custom_groups')
@@ -75,7 +83,7 @@ export async function PUT(
         banner: body.banner,
         updated_at: new Date().toISOString()
       })
-      .eq('id', params.id)
+      .eq('id', id)
       .select()
       .single();
     
@@ -116,12 +124,12 @@ export async function PUT(
       await getSupabaseAdmin()
         .from('custom_group_memberships')
         .delete()
-        .eq('group_id', params.id);
-      
+        .eq('group_id', id);
+
       // Then add new memberships
       if (body.organization_ids.length > 0) {
         const memberships = body.organization_ids.map((orgId: string) => ({
-          group_id: params.id,
+          group_id: id,
           organization_id: orgId
         }));
         
@@ -149,15 +157,19 @@ export async function PUT(
 
 export async function DELETE(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: { id: string } | Promise<{ id: string }> }
 ) {
   console.log('[API] DELETE /api/custom-groups/[id] - Starting request');
-  
+
   try {
+    // Handle both sync and async params (Next.js 14/15 compatibility)
+    const resolvedParams = await Promise.resolve(params);
+    const { id } = resolvedParams;
+
     const { error } = await getSupabaseAdmin()
       .from('custom_groups')
       .delete()
-      .eq('id', params.id);
+      .eq('id', id);
     
     if (error) {
       console.error('[API] Error deleting custom group:', error);

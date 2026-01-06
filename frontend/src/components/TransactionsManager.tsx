@@ -284,6 +284,13 @@ function HeroCard({ title, value, subtitle, icon }: HeroCardProps) {
   );
 }
 
+interface ActivitySector {
+  id?: string;
+  sector_code?: string;
+  sector_name?: string;
+  percentage?: number;
+}
+
 interface TransactionsManagerProps {
   activityId: string;
   activityPartnerId?: string; // User-assigned Activity ID from General tab
@@ -297,6 +304,8 @@ interface TransactionsManagerProps {
   defaultFlowType?: string;
   defaultDisbursementChannel?: string;
   initialTransactionId?: string;
+  geographyLevel?: 'activity' | 'transaction';
+  activitySectors?: ActivitySector[];
 }
 
 export default function TransactionsManager({ 
@@ -311,7 +320,9 @@ export default function TransactionsManager({
   defaultTiedStatus,
   defaultFlowType,
   defaultDisbursementChannel,
-  initialTransactionId
+  initialTransactionId,
+  geographyLevel = 'activity',
+  activitySectors = []
 }: TransactionsManagerProps) {
   const router = useRouter();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -1235,6 +1246,8 @@ export default function TransactionsManager({
         defaultFlowType={defaultFlowType}
         defaultDisbursementChannel={defaultDisbursementChannel}
         isSubmitting={submitting}
+        geographyLevel={geographyLevel}
+        activitySectors={activitySectors}
       />
 
       {/* Bulk Action Toolbar - appears from bottom when items selected */}

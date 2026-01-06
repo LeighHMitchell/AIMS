@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Badge } from "@/components/ui/badge"
 import { UserAvatar } from "@/components/ui/user-avatar"
-import { User, LogOut, Briefcase, Settings, Shield, MessageSquare, Eye, HelpCircle, Share } from "lucide-react"
+import { User, LogOut, Briefcase, Settings, Shield, MessageSquare, Eye, HelpCircle, Share, Info } from "lucide-react"
 import { toast } from "sonner"
 import { USER_ROLES, ROLE_LABELS } from "@/types/user"
 import { getRoleBadgeVariant, getRoleDisplayLabel } from "@/lib/role-badge-utils"
@@ -25,6 +25,7 @@ import { GlobalSearchBar } from "@/components/search/GlobalSearchBar"
 import { FeedbackModal } from "@/components/ui/feedback-modal"
 import { AskQuestionModal } from "@/components/faq/AskQuestionModal"
 import { NotificationBell } from "@/components/notifications/NotificationBell"
+import { AboutModal } from "@/components/ui/about-modal"
 
 interface TopNavProps {
   user?: {
@@ -53,6 +54,7 @@ export function TopNav({ user, onLogout }: TopNavProps) {
   const pathname = usePathname();
   const [isFeedbackModalOpen, setIsFeedbackModalOpen] = useState(false);
   const [isAskQuestionModalOpen, setIsAskQuestionModalOpen] = useState(false);
+  const [isAboutModalOpen, setIsAboutModalOpen] = useState(false);
 
   // Determine if share button should be shown (hide on admin, profile, settings pages)
   const hideShareOnPages = ['/admin', '/profile', '/settings'];
@@ -93,7 +95,7 @@ export function TopNav({ user, onLogout }: TopNavProps) {
       <div className="flex h-16 items-center px-6">
         <div className="ml-auto flex items-center space-x-4">
           {/* Global Search Bar */}
-          <GlobalSearchBar className="w-[500px]" />
+          <GlobalSearchBar />
 
           {/* Notification Bell */}
           {user && (
@@ -195,6 +197,11 @@ export function TopNav({ user, onLogout }: TopNavProps) {
                   </DropdownMenuItem>
                 )}
                 <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => setIsAboutModalOpen(true)} className="cursor-pointer">
+                  <Info className="mr-2 h-4 w-4" />
+                  <span>About</span>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
                 <DropdownMenuItem 
                   onClick={onLogout} 
                   className="cursor-pointer text-red-600 hover:text-red-700 hover:bg-red-50"
@@ -231,6 +238,12 @@ export function TopNav({ user, onLogout }: TopNavProps) {
       <AskQuestionModal
         isOpen={isAskQuestionModalOpen}
         onClose={() => setIsAskQuestionModalOpen(false)}
+      />
+
+      {/* About Modal */}
+      <AboutModal
+        isOpen={isAboutModalOpen}
+        onClose={() => setIsAboutModalOpen(false)}
       />
     </nav>
   )

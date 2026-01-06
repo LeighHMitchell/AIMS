@@ -1,7 +1,8 @@
 "use client";
 
 import React from "react";
-import { ChevronsUpDown, Check, Search } from "lucide-react";
+import { ChevronsUpDown, Check, Search, X } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandGroup, CommandItem, CommandList } from "@/components/ui/command";
 import { cn } from "@/lib/utils";
@@ -34,6 +35,10 @@ export interface TiedStatusSelectProps {
   disabled?: boolean;
   className?: string;
   id?: string;
+  /** Controlled open state */
+  open?: boolean;
+  /** Callback when open state changes */
+  onOpenChange?: (open: boolean) => void;
 }
 
 export function TiedStatusSelect({
@@ -43,8 +48,14 @@ export function TiedStatusSelect({
   disabled = false,
   className,
   id,
+  open: externalOpen,
+  onOpenChange: externalOnOpenChange,
 }: TiedStatusSelectProps) {
-  const [open, setOpen] = React.useState(false);
+  const [internalOpen, setInternalOpen] = React.useState(false);
+  
+  // Use external state if provided, otherwise use internal state
+  const open = externalOpen !== undefined ? externalOpen : internalOpen;
+  const setOpen = externalOnOpenChange || setInternalOpen;
   const [searchQuery, setSearchQuery] = React.useState("");
 
   const selectedOption = TIED_STATUS_OPTIONS.find((option) => option.code === value);
@@ -61,52 +72,64 @@ export function TiedStatusSelect({
   }, [searchQuery]);
 
   return (
-    <div className={cn("pb-6", className)}>
+    <div className={cn("w-full", className)}>
       <Popover open={open} onOpenChange={setOpen}>
-        <PopoverTrigger
-          id={id}
-          className={cn(
-            "flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 hover:bg-accent/50 transition-colors",
-            !selectedOption && "text-muted-foreground"
-          )}
-          disabled={disabled}
-        >
-          <span className="truncate">
-            {selectedOption ? (
-              <span className="flex items-center gap-2">
-                <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
-                  {selectedOption.code}
+        <PopoverTrigger asChild>
+          <Button
+            variant="outline"
+            role="combobox"
+            aria-expanded={open}
+            disabled={disabled}
+            id={id}
+            className={cn(
+              "w-full justify-between font-normal px-4 py-2 text-base h-10 border-gray-300 hover:bg-gray-50 focus:outline-none focus:ring-1 focus:ring-gray-400 focus:border-gray-400 hover:text-gray-900",
+              !selectedOption && "text-muted-foreground"
+            )}
+          >
+            <span className="truncate">
+              {selectedOption ? (
+                <span className="flex items-center gap-2">
+                  <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
+                    {selectedOption.code}
+                  </span>
+                  <span className="font-medium text-sm text-gray-900">{selectedOption.name}</span>
                 </span>
-                <span className="font-medium">{selectedOption.name}</span>
-              </span>
-            ) : (
-              placeholder
-            )}
-          </span>
-          <div className="flex items-center gap-2">
-            {selectedOption && (
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onValueChange?.(null);
-                }}
-                className="h-4 w-4 rounded-full hover:bg-muted-foreground/20 flex items-center justify-center transition-colors"
-                aria-label="Clear selection"
-              >
-                <span className="text-xs">×</span>
-              </button>
-            )}
-            <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50" />
-          </div>
+              ) : (
+                <span className="text-gray-400 text-sm">{placeholder}</span>
+              )}
+            </span>
+            <div className="flex items-center gap-1 ml-2">
+              {selectedOption && (
+                <span
+                  role="button"
+                  tabIndex={0}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onValueChange?.(null);
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.stopPropagation();
+                      onValueChange?.(null);
+                    }
+                  }}
+                  className="h-4 w-4 rounded-full hover:bg-gray-200 flex items-center justify-center transition-colors cursor-pointer"
+                  aria-label="Clear selection"
+                >
+                  <X className="h-3 w-3 text-gray-500" />
+                </span>
+              )}
+              <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50" />
+            </div>
+          </Button>
         </PopoverTrigger>
         <PopoverContent
           className="w-[var(--radix-popover-trigger-width)] min-w-[320px] p-0 shadow-lg border bottom-full"
           align="start"
           sideOffset={4}
         >
-          <Command>
-            <div className="flex items-center border-b px-3 py-2">
+          <Command shouldFilter={false}>
+            <div className="flex items-center border-b px-3">
               <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
               <input
                 placeholder="Search tied status..."
@@ -118,19 +141,9 @@ export function TiedStatusSelect({
                     setSearchQuery("");
                   }
                 }}
-                className="flex h-9 w-full rounded-md bg-transparent py-2 px-3 text-sm outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50 border-none focus:ring-0 focus:border-none"
+                className="flex h-10 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50"
                 autoFocus
               />
-              {searchQuery && (
-                <button
-                  type="button"
-                  onClick={() => setSearchQuery("")}
-                  className="ml-2 h-4 w-4 rounded-full hover:bg-muted-foreground/20 flex items-center justify-center transition-colors"
-                  aria-label="Clear search"
-                >
-                  <span className="text-xs">×</span>
-                </button>
-              )}
             </div>
             <CommandList>
               <CommandGroup>

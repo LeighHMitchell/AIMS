@@ -40,79 +40,38 @@ export async function GET(
       );
     }
     
-    // First, let's do a simple query to check just the acronym field
-    console.log('[AIMS API] Checking acronym field specifically...');
-    const { data: acronymCheck, error: acronymError } = await supabase
+    // First, verify the activity exists with a simple query
+    console.log('[AIMS API] Step 1: Checking if activity exists...');
+    const { data: existsCheck, error: existsError } = await supabase
       .from('activities')
-      .select('id, acronym, title_narrative')
+      .select('id, title_narrative')
       .eq('id', id)
       .single();
-    
-    if (acronymError) {
-      console.error('[AIMS API] Error checking acronym:', acronymError);
-    } else {
-      console.log('[AIMS API] Acronym check result:', acronymCheck);
+
+    if (existsError || !existsCheck) {
+      console.error('[AIMS API] Activity not found in basic check:', existsError);
+      return NextResponse.json(
+        { error: 'Activity not found', details: existsError?.message },
+        { status: 404 }
+      );
     }
+
+    console.log('[AIMS API] Activity found:', existsCheck.title_narrative);
     
-    // Fetch only essential activity fields for editor performance
+    // Fetch activity with related data using * to avoid column mismatch issues
     let activity;
     const { data: activityData, error } = await supabase
       .from('activities')
       .select(`
-        id,
-        title_narrative,
-        description_narrative,
-        description_objectives,
-        description_target_groups,
-        description_other,
-        acronym,
-        collaboration_type,
-        activity_scope,
-        hierarchy,
-        activity_status,
-        planned_start_date,
-        planned_start_description,
-        planned_end_date,
-        planned_end_description,
-        actual_start_date,
-        actual_start_description,
-        actual_end_date,
-        actual_end_description,
-        iati_identifier,
-        other_identifier,
-        other_identifiers,
-        default_aid_type,
-        default_finance_type,
-        default_currency,
-        default_flow_type,
-        default_tied_status,
-        default_disbursement_channel,
-        default_aid_modality,
-        capital_spend_percentage,
-        humanitarian,
-        budget_status,
-        on_budget_percentage,
-        budget_status_notes,
-        budget_status_updated_at,
-        budget_status_updated_by,
-        publication_status,
-        submission_status,
-        created_by_org_name,
-        created_by_org_acronym,
-        reporting_org_id,
-        language,
-        banner,
-        icon,
-        created_at,
-        updated_at,
+        *,
         activity_sectors (
-          id, activity_id, sector_code, sector_name, percentage, level, 
+          id, activity_id, sector_code, sector_name, percentage, level,
           category_code, category_name, type, created_at, updated_at
         ),
         activity_policy_markers (
           id, activity_id, policy_marker_id, significance, rationale, created_at, updated_at,
           policy_markers (
-            id, code, iati_code, name, vocabulary, is_iati_standard, created_at, updated_at
+            id, uuid, code, name, description, marker_type, vocabulary, vocabulary_uri, iati_code, is_iati_standard
           )
         ),
         activity_tags (
@@ -124,11 +83,7 @@ export async function GET(
           vocabulary,
           working_groups (id, code, label, description)
         ),
-        activity_sdg_mappings (*),
-        recipient_countries,
-        recipient_regions,
-        custom_geographies,
-        custom_dates
+        activity_sdg_mappings (*)
       `)
       .eq('id', id)
       .single();
@@ -136,61 +91,22 @@ export async function GET(
     activity = activityData;
     
     if (error || !activity) {
-      console.error('[AIMS API] Activity not found:', error);
-      
+      console.error('[AIMS API] Activity query failed:', error);
+      console.error('[AIMS API] Error code:', error?.code);
+      console.error('[AIMS API] Error message:', error?.message);
+      console.error('[AIMS API] Error details:', error?.details);
+      console.error('[AIMS API] Error hint:', error?.hint);
+
       // Check if error is due to missing column (migration not applied yet)
-      if (error && error.message && error.message.includes('other_identifiers')) {
-        console.warn('[AIMS API] other_identifiers column not found - migration may not be applied yet. Retrying without it...');
-        
-        // Retry query without other_identifiers column
+      // Handle both other_identifiers and other potential column issues
+      if (error && error.message) {
+        console.warn('[AIMS API] Query error - retrying with simplified query...');
+
+        // Retry with a simplified query matching the main route pattern
         const { data: activityRetry, error: retryError } = await supabase
           .from('activities')
           .select(`
-            id,
-            title_narrative,
-            description_narrative,
-            description_objectives,
-            description_target_groups,
-            description_other,
-            acronym,
-            collaboration_type,
-            activity_scope,
-            hierarchy,
-            activity_status,
-            planned_start_date,
-            planned_start_description,
-            planned_end_date,
-            planned_end_description,
-            actual_start_date,
-            actual_start_description,
-            actual_end_date,
-            actual_end_description,
-            iati_identifier,
-            other_identifier,
-            default_aid_type,
-            default_finance_type,
-            default_currency,
-            default_flow_type,
-            default_tied_status,
-            default_disbursement_channel,
-            default_aid_modality,
-            capital_spend_percentage,
-            humanitarian,
-            budget_status,
-            on_budget_percentage,
-            budget_status_notes,
-            budget_status_updated_at,
-            budget_status_updated_by,
-            publication_status,
-            submission_status,
-            created_by_org_name,
-            created_by_org_acronym,
-            reporting_org_id,
-            language,
-            banner,
-            icon,
-            created_at,
-            updated_at,
+            *,
             activity_sectors (
               id, activity_id, sector_code, sector_name, percentage, level,
               category_code, category_name, type, created_at, updated_at
@@ -198,7 +114,7 @@ export async function GET(
             activity_policy_markers (
               id, activity_id, policy_marker_id, significance, rationale, created_at, updated_at,
               policy_markers (
-                id, code, iati_code, name, vocabulary, is_iati_standard, created_at, updated_at
+                id, uuid, code, name, description, marker_type, vocabulary, vocabulary_uri, iati_code, is_iati_standard
               )
             ),
             activity_tags (
@@ -210,28 +126,24 @@ export async function GET(
               vocabulary,
               working_groups (id, code, label, description)
             ),
-            activity_sdg_mappings (*),
-            recipient_countries,
-            recipient_regions,
-            custom_geographies,
-            custom_dates
+            activity_sdg_mappings (*)
           `)
           .eq('id', id)
           .single();
-        
+
         if (retryError || !activityRetry) {
           console.error('[AIMS API] Activity not found (retry):', retryError);
           return NextResponse.json(
-            { error: 'Activity not found' },
+            { error: 'Activity not found', details: retryError?.message || error?.message },
             { status: 404 }
           );
         }
-        
+
         // Use the retry result
         activity = activityRetry;
       } else {
         return NextResponse.json(
-          { error: 'Activity not found' },
+          { error: 'Activity not found', details: error?.message },
           { status: 404 }
         );
       }
@@ -313,6 +225,12 @@ export async function GET(
       default_aid_modality: activity.default_aid_modality,
       capital_spend_percentage: activity.capital_spend_percentage,
       humanitarian: activity.humanitarian,
+      // Geography level (activity vs transaction level)
+      geography_level: activity.geography_level || 'activity',
+      geographyLevel: activity.geography_level || 'activity',
+      // Sector export level (for IATI export - activity vs transaction level)
+      sector_export_level: activity.sector_export_level || 'activity',
+      sectorExportLevel: activity.sector_export_level || 'activity',
       // Budget status fields
       budgetStatus: activity.budget_status || 'unknown',
       budget_status: activity.budget_status || 'unknown',
@@ -324,7 +242,11 @@ export async function GET(
       budgetStatusUpdatedBy: activity.budget_status_updated_by,
       language: activity.language,
       banner: activity.banner,
+      bannerPosition: activity.banner_position ?? 50,
+      banner_position: activity.banner_position ?? 50,
       icon: activity.icon,
+      iconScale: activity.icon_scale ?? 100,
+      icon_scale: activity.icon_scale ?? 100,
       createdAt: activity.created_at,
       updatedAt: activity.updated_at,
       sectors: sectors?.map((sector: any) => ({
@@ -361,11 +283,13 @@ export async function GET(
         created_at: at.tags.created_at,
         updated_at: at.tags.updated_at
       })) || [],
-      workingGroups: activity.activity_working_groups?.map((wgRelation: any) => ({
-        code: wgRelation.working_groups.code,
-        label: wgRelation.working_groups.label,
-        vocabulary: wgRelation.vocabulary
-      })) || [],
+      workingGroups: activity.activity_working_groups
+        ?.filter((wgRelation: any) => wgRelation.working_groups) // Filter out orphaned references
+        ?.map((wgRelation: any) => ({
+          code: wgRelation.working_groups.code,
+          label: wgRelation.working_groups.label,
+          vocabulary: wgRelation.vocabulary
+        })) || [],
       sdgMappings: activity.activity_sdg_mappings?.map((mapping: any) => ({
         id: mapping.id,
         sdgGoal: mapping.sdg_goal,

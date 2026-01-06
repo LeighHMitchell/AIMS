@@ -3,28 +3,57 @@ import { getSupabaseAdmin } from '@/lib/supabase';
 
 export const dynamic = 'force-dynamic';
 
+// Helper function to determine which fiscal year a date belongs to
+function getCustomYearForDate(
+  date: Date,
+  startMonth: number,
+  startDay: number
+): number {
+  const month = date.getMonth() + 1; // JS months are 0-indexed
+  const day = date.getDate();
+  const year = date.getFullYear();
+  
+  // If date is before the fiscal year start, it belongs to the previous fiscal year
+  if (month < startMonth || (month === startMonth && day < startDay)) {
+    return year - 1;
+  }
+  return year;
+}
+
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
     
     // Filters (same as planned-disbursements list API)
-    const type = searchParams.get('type');
-    const organization = searchParams.get('organization');
+    const typesParam = searchParams.get('types');
+    const organizationsParam = searchParams.get('organizations');
     const search = searchParams.get('search') || '';
+    
+    // Custom year params
+    const startMonth = searchParams.get('startMonth') ? parseInt(searchParams.get('startMonth')!) : null;
+    const startDay = searchParams.get('startDay') ? parseInt(searchParams.get('startDay')!) : null;
+    const useCustomYear = startMonth !== null && startDay !== null;
+    
+    // Parse array parameters
+    const types = typesParam ? typesParam.split(',').filter(Boolean) : [];
+    const organizations = organizationsParam ? organizationsParam.split(',').filter(Boolean) : [];
     
     // Build the query
     let query = getSupabaseAdmin()
       .from('planned_disbursements')
       .select('period_start, period_end, amount, usd_amount, currency, activity_id, provider_org_id, receiver_org_id');
     
-    // Apply type filter
-    if (type && type !== 'all') {
-      query = query.eq('type', type);
+    // Apply type filter (multiple types)
+    if (types.length > 0) {
+      query = query.in('type', types);
     }
     
-    // Apply organization filter (check both provider and receiver)
-    if (organization && organization !== 'all') {
-      query = query.or(`provider_org_id.eq.${organization},receiver_org_id.eq.${organization}`);
+    // Apply organization filter (check both provider and receiver for any of the selected organizations)
+    if (organizations.length > 0) {
+      const orConditions = organizations
+        .map(org => `provider_org_id.eq.${org},receiver_org_id.eq.${org}`)
+        .join(',');
+      query = query.or(orConditions);
     }
     
     // Execute query
@@ -62,7 +91,12 @@ export async function GET(request: NextRequest) {
       if (!d.period_start) return;
       
       const date = new Date(d.period_start);
-      const year = date.getFullYear();
+      if (isNaN(date.getTime())) return; // Skip invalid dates
+      
+      // Use custom year calculation if params provided, otherwise use calendar year
+      const year = useCustomYear 
+        ? getCustomYearForDate(date, startMonth!, startDay!)
+        : date.getFullYear();
       
       // Prefer usd_amount, fallback to amount if currency is USD
       let value = parseFloat(d.usd_amount) || 0;

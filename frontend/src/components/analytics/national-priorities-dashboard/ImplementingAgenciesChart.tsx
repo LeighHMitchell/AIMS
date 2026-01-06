@@ -352,7 +352,7 @@ export function ImplementingAgenciesChart({ refreshKey = 0 }: ImplementingAgenci
     return (
       <div className="flex flex-col flex-1 min-h-0">
         {expanded && renderLegend()}
-        <div className="h-[280px]">
+        <div className={expanded ? "h-[400px] mb-4" : "h-[280px]"}>
           {viewMode === "bar" && renderBarChart(chartHeight)}
           {viewMode === "pie" && renderPieChart(chartHeight)}
           {viewMode === "table" && renderTable()}

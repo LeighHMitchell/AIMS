@@ -143,7 +143,7 @@ export async function GET(
     if (userIds.length > 0) {
       const { data: users, error: usersError } = await supabase
         .from('users')
-        .select('id, name, email, role, first_name, last_name')
+        .select('id, email, role, first_name, last_name')
         .in('id', userIds);
       
       if (!usersError) {

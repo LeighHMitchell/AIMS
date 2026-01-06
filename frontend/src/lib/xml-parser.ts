@@ -1569,18 +1569,21 @@ export class IATIXMLParser {
           };
         }
 
-        // NEW: Parse multiple recipient regions
+        // Parse recipient region (IATI allows only ONE region per transaction)
+        // If multiple are present in XML, take the first one
         const recipientRegionElements = Array.from(transaction.querySelectorAll('recipient-region'));
         if (recipientRegionElements.length > 0) {
-          transactionData.recipient_regions = recipientRegionElements.map(r => ({
-            code: r.getAttribute('code') || '',
-            vocabulary: r.getAttribute('vocabulary') || '1',
-            percentage: r.getAttribute('percentage') ? parseFloat(r.getAttribute('percentage')!) : undefined,
-            narrative: this.extractNarrative(r),
-          }));
+          const firstRegion = recipientRegionElements[0];
+          transactionData.recipient_region_code = firstRegion.getAttribute('code') || '';
+          transactionData.recipient_region_vocab = firstRegion.getAttribute('vocabulary') || '1';
+          
+          // Log warning if multiple regions found (non-compliant with IATI)
+          if (recipientRegionElements.length > 1) {
+            console.warn(`[XML Parser] Transaction has ${recipientRegionElements.length} recipient-regions but IATI only allows one. Using first: ${transactionData.recipient_region_code}`);
+          }
         }
-        // Keep backward compatibility with single region
-        if (recipientRegion) {
+        // Fallback to existing recipientRegion parsing for backward compatibility
+        if (!transactionData.recipient_region_code && recipientRegion) {
           transactionData.recipientRegion = {
             code: recipientRegion.getAttribute('code') || undefined,
             vocabulary: recipientRegion.getAttribute('vocabulary') || undefined,
@@ -1603,13 +1606,17 @@ export class IATIXMLParser {
           };
         }
 
-        // NEW: Parse multiple recipient countries
+        // Parse recipient country (IATI allows only ONE country per transaction)
+        // If multiple are present in XML, take the first one
         const recipientCountryElements = Array.from(transaction.querySelectorAll('recipient-country'));
         if (recipientCountryElements.length > 0) {
-          transactionData.recipient_countries = recipientCountryElements.map(c => ({
-            code: c.getAttribute('code') || '',
-            percentage: c.getAttribute('percentage') ? parseFloat(c.getAttribute('percentage')!) : undefined,
-          }));
+          const firstCountry = recipientCountryElements[0];
+          transactionData.recipient_country_code = firstCountry.getAttribute('code') || '';
+          
+          // Log warning if multiple countries found (non-compliant with IATI)
+          if (recipientCountryElements.length > 1) {
+            console.warn(`[XML Parser] Transaction has ${recipientCountryElements.length} recipient-countries but IATI only allows one. Using first: ${transactionData.recipient_country_code}`);
+          }
         }
 
         // NEW: Capture vocabulary attributes for classifications

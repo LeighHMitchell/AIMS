@@ -19,6 +19,8 @@ import { BulkActionToolbar } from "@/components/ui/bulk-action-toolbar";
 import { BulkDeleteDialog } from "@/components/dialogs/bulk-delete-dialog";
 import { YearlyTotalsBarChart, SingleSeriesDataPoint } from "@/components/charts/YearlyTotalsBarChart";
 import { useLoadingBar } from "@/hooks/useLoadingBar";
+import { CustomYearSelector } from "@/components/ui/custom-year-selector";
+import { useCustomYears } from "@/hooks/useCustomYears";
 
 export default function BudgetsPage() {
   const router = useRouter();
@@ -67,6 +69,9 @@ export default function BudgetsPage() {
   // Yearly summary state for chart
   const [yearlySummary, setYearlySummary] = useState<SingleSeriesDataPoint[]>([]);
   const [yearlySummaryLoading, setYearlySummaryLoading] = useState(true);
+
+  // Custom year selection for chart
+  const { customYears, selectedId: selectedCustomYearId, setSelectedId: setSelectedCustomYearId, selectedYear, loading: customYearsLoading } = useCustomYears();
 
   // Use the custom hook to fetch budgets
   const { budgets, loading, error, refetch, deleteBudget, addBudget } = useBudgets({
@@ -123,6 +128,14 @@ export default function BudgetsPage() {
         if (filters.statuses.length > 0) params.append('statuses', filters.statuses.join(','));
         if (filters.organizations.length > 0) params.append('organizations', filters.organizations.join(','));
         if (searchQuery) params.append('search', searchQuery);
+        
+        // Add custom year params if selected
+        if (selectedYear) {
+          params.append('startMonth', selectedYear.startMonth.toString());
+          params.append('startDay', selectedYear.startDay.toString());
+          params.append('endMonth', selectedYear.endMonth.toString());
+          params.append('endDay', selectedYear.endDay.toString());
+        }
 
         const response = await fetch(`/api/budgets/yearly-summary?${params.toString()}`);
         if (response.ok) {
@@ -137,7 +150,7 @@ export default function BudgetsPage() {
     };
 
     fetchYearlySummary();
-  }, [filters, searchQuery]);
+  }, [filters, searchQuery, selectedYear]);
 
   // Reset to page 1 when filters change
   useEffect(() => {
@@ -479,6 +492,15 @@ export default function BudgetsPage() {
           singleSeriesColor="#4c5568"
           singleSeriesLabel="Budget"
           height={280}
+          headerControls={
+            <CustomYearSelector
+              customYears={customYears}
+              selectedId={selectedCustomYearId}
+              onSelect={setSelectedCustomYearId}
+              loading={customYearsLoading}
+              placeholder="Year Type"
+            />
+          }
         />
 
         {/* Budgets Table */}

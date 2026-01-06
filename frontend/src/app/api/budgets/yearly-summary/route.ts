@@ -3,6 +3,23 @@ import { getSupabaseAdmin } from '@/lib/supabase';
 
 export const dynamic = 'force-dynamic';
 
+// Helper function to determine which fiscal year a date belongs to
+function getCustomYearForDate(
+  date: Date,
+  startMonth: number,
+  startDay: number
+): number {
+  const month = date.getMonth() + 1; // JS months are 0-indexed
+  const day = date.getDate();
+  const year = date.getFullYear();
+  
+  // If date is before the fiscal year start, it belongs to the previous fiscal year
+  if (month < startMonth || (month === startMonth && day < startDay)) {
+    return year - 1;
+  }
+  return year;
+}
+
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
@@ -12,6 +29,11 @@ export async function GET(request: NextRequest) {
     const status = searchParams.get('status');
     const organization = searchParams.get('organization');
     const search = searchParams.get('search') || '';
+    
+    // Custom year params
+    const startMonth = searchParams.get('startMonth') ? parseInt(searchParams.get('startMonth')!) : null;
+    const startDay = searchParams.get('startDay') ? parseInt(searchParams.get('startDay')!) : null;
+    const useCustomYear = startMonth !== null && startDay !== null;
     
     // Build the query
     let query = getSupabaseAdmin()
@@ -74,7 +96,12 @@ export async function GET(request: NextRequest) {
       if (!b.period_start) return;
       
       const date = new Date(b.period_start);
-      const year = date.getFullYear();
+      if (isNaN(date.getTime())) return; // Skip invalid dates
+      
+      // Use custom year calculation if params provided, otherwise use calendar year
+      const year = useCustomYear 
+        ? getCustomYearForDate(date, startMonth!, startDay!)
+        : date.getFullYear();
       
       // Prefer usd_value, fallback to value if currency is USD
       let amount = parseFloat(b.usd_value) || 0;

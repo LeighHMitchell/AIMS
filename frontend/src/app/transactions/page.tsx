@@ -26,6 +26,8 @@ import { BulkActionToolbar } from "@/components/ui/bulk-action-toolbar";
 import { BulkDeleteDialog } from "@/components/dialogs/bulk-delete-dialog";
 import { YearlyTotalsBarChart, MultiSeriesDataPoint } from "@/components/charts/YearlyTotalsBarChart";
 import { useLoadingBar } from "@/hooks/useLoadingBar";
+import { CustomYearSelector } from "@/components/ui/custom-year-selector";
+import { useCustomYears } from "@/hooks/useCustomYears";
 
 type FilterState = {
   transactionTypes: string[];
@@ -359,6 +361,9 @@ export default function TransactionsPage() {
   const [yearlySummary, setYearlySummary] = useState<MultiSeriesDataPoint[]>([]);
   const [yearlySummaryLoading, setYearlySummaryLoading] = useState(true);
 
+  // Custom year selection for chart
+  const { customYears, selectedId: selectedCustomYearId, setSelectedId: setSelectedCustomYearId, selectedYear, loading: customYearsLoading } = useCustomYears();
+
   // Use the custom hook to fetch transactions (without sorting - we'll sort client-side)
   const { transactions, loading, error, refetch, deleteTransaction, addTransaction, acceptTransaction, rejectTransaction } = useTransactions({
     searchQuery,
@@ -467,6 +472,14 @@ export default function TransactionsPage() {
         if (filters.dateFrom) params.append('dateFrom', filters.dateFrom);
         if (filters.dateTo) params.append('dateTo', filters.dateTo);
         if (searchQuery) params.append('search', searchQuery);
+        
+        // Add custom year params if selected
+        if (selectedYear) {
+          params.append('startMonth', selectedYear.startMonth.toString());
+          params.append('startDay', selectedYear.startDay.toString());
+          params.append('endMonth', selectedYear.endMonth.toString());
+          params.append('endDay', selectedYear.endDay.toString());
+        }
 
         const response = await fetch(`/api/transactions/yearly-summary?${params.toString()}`);
         if (response.ok) {
@@ -481,7 +494,7 @@ export default function TransactionsPage() {
     };
 
     fetchYearlySummary();
-  }, [filters, searchQuery]);
+  }, [filters, searchQuery, selectedYear]);
 
   // Reset to page 1 when filters change (but not when sorting changes)
   useEffect(() => {
@@ -1078,6 +1091,15 @@ export default function TransactionsPage() {
           loading={yearlySummaryLoading}
           multiSeriesData={yearlySummary}
           height={280}
+          headerControls={
+            <CustomYearSelector
+              customYears={customYears}
+              selectedId={selectedCustomYearId}
+              onSelect={setSelectedCustomYearId}
+              loading={customYearsLoading}
+              placeholder="Year Type"
+            />
+          }
         />
 
         {/* Transactions Table */}

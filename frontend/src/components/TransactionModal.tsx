@@ -1,7 +1,7 @@
 "use client"
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Calendar, Info, CheckCircle2, DollarSign, Copy, Clipboard, SearchIcon, ChevronsUpDown, Siren, Globe, ChevronDown, AlertTriangle, RefreshCw } from "lucide-react";
+import { Calendar, Info, CheckCircle2, DollarSign, Copy, Clipboard, SearchIcon, ChevronsUpDown, Siren, Globe, ChevronDown, AlertTriangle, RefreshCw, Upload } from "lucide-react";
 import { toast } from "sonner";
 import { 
   showTransactionSuccess, 
@@ -44,9 +44,7 @@ import { useUser } from "@/hooks/useUser";
 import { getUserPermissions } from "@/types/user";
 import { 
   TransactionSectorManager,
-  TransactionAidTypeManager,
-  TransactionRecipientCountryManager,
-  TransactionRecipientRegionManager 
+  TransactionAidTypeManager
 } from '@/components/transaction/TransactionMultiElementManager';
 
 import { cn } from "@/lib/utils";
@@ -78,6 +76,8 @@ import { Switch } from '@/components/ui/switch';
 import { LabelSaveIndicator } from '@/components/ui/save-indicator';
 import { useTransactionFieldAutosave } from '@/hooks/use-transaction-field-autosave';
 import { IATI_FIELD_HELP } from '@/components/ActivityFieldHelpers';
+import { IATI_COUNTRIES } from '@/data/iati-countries';
+import { IATI_REGIONS } from '@/data/iati-regions';
 import { InfoTooltipWithSaveIndicator, LabelWithInfoAndSave } from '@/components/ui/info-tooltip-with-save-indicator';
 import { OrgTypeMappingModal, useOrgTypeMappingModal } from '@/components/organizations/OrgTypeMappingModal';
 // Remove lodash import (not used)
@@ -271,6 +271,13 @@ const isFinanceType = (v: any): v is FinanceType => typeof v === 'string' && [
 ].includes(v);
 const isTiedStatus = (v: any): v is TiedStatus => typeof v === 'string' && ['3','4','5'].includes(v);
 
+interface ActivitySector {
+  id?: string;
+  sector_code?: string;
+  sector_name?: string;
+  percentage?: number;
+}
+
 interface TransactionModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -287,6 +294,8 @@ interface TransactionModalProps {
   defaultModality?: string;
   defaultModalityOverride?: boolean;
   isSubmitting?: boolean;
+  geographyLevel?: 'activity' | 'transaction'; // Whether geography is set at activity or transaction level
+  activitySectors?: ActivitySector[]; // Sectors defined at activity level
 }
 
 export default function TransactionModal({
@@ -304,7 +313,9 @@ export default function TransactionModal({
   defaultDisbursementChannel,
   defaultModality = '',
   defaultModalityOverride = false,
-  isSubmitting
+  isSubmitting,
+  geographyLevel = 'activity',
+  activitySectors = []
 }: TransactionModalProps) {
   const { partners } = usePartners();
   const { data: iatiValues, loading: iatiLoading, getFieldValues, error: iatiError } = useIATIReferenceValues();
@@ -394,10 +405,23 @@ export default function TransactionModal({
   const [showValueDate, setShowValueDate] = useState(false);
   
   // Individual collapsible states for Advanced IATI Fields sections
-  const [showSingleValueFields, setShowSingleValueFields] = useState(false);
   const [showMultipleSectors, setShowMultipleSectors] = useState(false);
   const [showMultipleAidTypes, setShowMultipleAidTypes] = useState(false);
   const [showGeographicTargeting, setShowGeographicTargeting] = useState(false);
+  
+  // Sector inheritance choice: true = use activity sectors, false = specify custom
+  const [useActivitySectorChoice, setUseActivitySectorChoice] = useState<boolean>(() => {
+    // Default based on transaction's use_activity_sectors flag
+    // If editing and transaction has custom sectors, default to custom
+    if (transaction?.use_activity_sectors === false) return false;
+    if (transaction?.sectors && transaction.sectors.length > 0) return false;
+    // Default to inheriting from activity
+    return true;
+  });
+  
+  // Popover states for country and region selects
+  const [countryPopoverOpen, setCountryPopoverOpen] = useState(false);
+  const [regionPopoverOpen, setRegionPopoverOpen] = useState(false);
   
   // Document upload state
   const [documents, setDocuments] = useState<TransactionDocument[]>([]);
@@ -512,18 +536,17 @@ export default function TransactionModal({
       aid_type: transaction?.effective_aid_type || transaction?.aid_type || safeDefaultAidType || undefined,
       tied_status: transaction?.effective_tied_status || transaction?.tied_status || (safeDefaultTiedStatus as TiedStatus) || undefined,
       
-      // Sector & Geography (single values)
+      // Sector & Geography (single values - IATI allows ONE country OR region per transaction)
       sector_code: transaction?.sector_code || '',
       sector_vocabulary: transaction?.sector_vocabulary || undefined,
       recipient_country_code: transaction?.recipient_country_code || '',
       recipient_region_code: transaction?.recipient_region_code || '',
       recipient_region_vocab: transaction?.recipient_region_vocab || undefined,
       
-      // Multiple element arrays (IATI compliant)
+      // Multiple element arrays (sectors and aid types only - countries/regions are single value per IATI)
       sectors: transaction?.sectors || [],
       aid_types: transaction?.aid_types || [],
-      recipient_countries: transaction?.recipient_countries || [],
-      recipient_regions: transaction?.recipient_regions || [],
+      use_activity_sectors: transaction?.use_activity_sectors ?? true, // Default to inheriting from activity
       
       // Other
       is_humanitarian: transaction?.is_humanitarian || false,
@@ -542,12 +565,20 @@ export default function TransactionModal({
   useEffect(() => {
     // Reset all collapsible sections to collapsed when modal opens
     if (open) {
-      setShowSingleValueFields(false);
       setShowMultipleSectors(false);
       setShowMultipleAidTypes(false);
       setShowGeographicTargeting(false);
+      
+      // Reset sector choice based on transaction data
+      if (transaction?.use_activity_sectors === false) {
+        setUseActivitySectorChoice(false);
+      } else if (transaction?.sectors && transaction.sectors.length > 0) {
+        setUseActivitySectorChoice(false);
+      } else {
+        setUseActivitySectorChoice(true);
+      }
     }
-  }, [open]);
+  }, [open, transaction]);
 
   // Reset submission flag when modal opens/closes
   useEffect(() => {
@@ -557,11 +588,23 @@ export default function TransactionModal({
   }, [open]);
 
   // Count items for each Advanced IATI Fields section
-  const singleValueFieldsCount = useMemo(() => {
-    let count = 0;
-    if (formData.recipient_country_code) count++;
-    if (formData.recipient_region_code) count++;
-    return count;
+  // Transaction level: only ONE country OR ONE region allowed per IATI standard
+  const hasGeographicTargeting = !!(formData.recipient_country_code || formData.recipient_region_code);
+  
+  // State for selected geography type (separate from computed value)
+  const [selectedGeoType, setSelectedGeoType] = useState<'none' | 'country' | 'region'>(() => {
+    if (formData.recipient_country_code) return 'country';
+    if (formData.recipient_region_code) return 'region';
+    return 'none';
+  });
+  
+  // Update selectedGeoType when formData changes (e.g., when editing existing transaction)
+  useEffect(() => {
+    if (formData.recipient_country_code) {
+      setSelectedGeoType('country');
+    } else if (formData.recipient_region_code) {
+      setSelectedGeoType('region');
+    }
   }, [formData.recipient_country_code, formData.recipient_region_code]);
   
   const multipleSectorsCount = useMemo(() => {
@@ -572,9 +615,6 @@ export default function TransactionModal({
     return formData.aid_types?.length || 0;
   }, [formData.aid_types]);
   
-  const geographicTargetingCount = useMemo(() => {
-    return (formData.recipient_countries?.length || 0) + (formData.recipient_regions?.length || 0);
-  }, [formData.recipient_countries, formData.recipient_regions]);
 
   // Autosave hooks for field-level saving
   const transactionId = transaction?.uuid || transaction?.id || '';
@@ -601,6 +641,31 @@ export default function TransactionModal({
   const receiverActivityAutosave = useTransactionFieldAutosave({ transactionId, fieldName: 'receiver_org_activity_id', userId: user?.id });
   const recipientCountryAutosave = useTransactionFieldAutosave({ transactionId, fieldName: 'recipient_country_code', userId: user?.id });
   const recipientRegionAutosave = useTransactionFieldAutosave({ transactionId, fieldName: 'recipient_region_code', userId: user?.id });
+  const useActivitySectorsAutosave = useTransactionFieldAutosave({ transactionId, fieldName: 'use_activity_sectors', userId: user?.id });
+  
+  // Handler for switching sector source choice
+  const handleSectorChoiceChange = (useActivitySectors: boolean) => {
+    setUseActivitySectorChoice(useActivitySectors);
+    
+    if (useActivitySectors) {
+      // Switching to activity sectors - clear custom sectors
+      setFormData({ ...formData, sectors: [], use_activity_sectors: true });
+    } else {
+      // Switching to custom sectors - pre-populate from activity sectors
+      const prePopulatedSectors = activitySectors.map(s => ({
+        code: s.sector_code || '',
+        vocabulary: '1', // Default to DAC 5-digit
+        percentage: s.percentage || undefined,
+        narrative: s.sector_name || undefined
+      }));
+      setFormData({ ...formData, sectors: prePopulatedSectors, use_activity_sectors: false });
+    }
+    
+    // Autosave the choice if editing an existing transaction
+    if (transactionId) {
+      useActivitySectorsAutosave.saveField(useActivitySectors);
+    }
+  };
 
   // Helper function to check if field should show as "saved" due to default value
   const hasDefaultValue = (fieldName: string, currentValue: any) => {
@@ -738,11 +803,10 @@ export default function TransactionModal({
         recipient_region_code: transaction.recipient_region_code || '',
         recipient_region_vocab: transaction.recipient_region_vocab || undefined,
         
-        // Multiple element arrays (IATI compliant)
+        // Multiple element arrays (sectors and aid types only)
         sectors: transaction.sectors || [],
         aid_types: transaction.aid_types || [],
-        recipient_countries: transaction.recipient_countries || [],
-        recipient_regions: transaction.recipient_regions || [],
+        use_activity_sectors: transaction.use_activity_sectors ?? true,
         
         // Other
         is_humanitarian: transaction.is_humanitarian || false,
@@ -796,11 +860,11 @@ export default function TransactionModal({
         recipient_region_vocab: undefined,
         sectors: [],
         aid_types: [],
-        recipient_countries: [],
-        recipient_regions: [],
+        use_activity_sectors: true, // Default to inheriting from activity
         is_humanitarian: false,
       });
       setShowValueDate(false);
+      setUseActivitySectorChoice(true); // Reset to inherit from activity
     }
   }, [transaction, defaultFinanceType, defaultAidType, defaultCurrency, defaultTiedStatus, defaultFlowType, organizations, user, open, activityId, activityPartnerId]);
 
@@ -828,7 +892,7 @@ export default function TransactionModal({
       'receiver_org_id', 'receiver_org_type', 'receiver_org_ref', 'receiver_org_name', 'receiver_org_activity_id', 'receiver_activity_uuid',
       'disbursement_channel', 'flow_type', 'finance_type', 'aid_type', 'tied_status',
       'sector_code', 'sector_vocabulary', 'recipient_country_code', 'recipient_region_code', 'recipient_region_vocab',
-      'sectors', 'aid_types', 'recipient_countries', 'recipient_regions',
+      'sectors', 'aid_types', 'use_activity_sectors',
       'is_humanitarian'
     ];
     const payload: any = {};
@@ -1054,7 +1118,7 @@ export default function TransactionModal({
       'B04': { label: 'Basket funds/pooled funding', desc: 'Pooled contributions for joint programmes' },
     },
     'PROJECT-TYPE': {
-      'C01': { label: 'Project-type interventions', desc: 'Specific inputs, activities and outputs for development objectives' },
+      'C01': { label: 'Project-type interventions', desc: '' },
     },
     'TECHNICAL ASSISTANCE': {
       'D01': { label: 'Donor country personnel', desc: 'Experts from donor countries working in recipient countries' },
@@ -1468,7 +1532,7 @@ export default function TransactionModal({
                           </Label>
                         </div>
                       </div>
-                      <div className={`text-sm font-medium px-2 py-1 rounded-full ${
+                      <div className={`text-sm font-medium px-2 py-1 rounded-md ${
                         formData.status === 'actual' 
                           ? 'bg-green-100 text-green-700' 
                           : 'bg-gray-100 text-gray-600'
@@ -1487,7 +1551,7 @@ export default function TransactionModal({
                           Transaction is pending validation by relevant government focal points
                         </span>
                       </div>
-                      <div className={`text-sm font-medium px-2 py-1 rounded-full ${
+                      <div className={`text-sm font-medium px-2 py-1 rounded-md ${
                         formData.status === 'actual' 
                           ? 'bg-green-100 text-green-700' 
                           : 'bg-gray-100 text-gray-600'
@@ -1570,14 +1634,16 @@ export default function TransactionModal({
               {/* Dates Row - Transaction Date and Value Date aligned */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <LabelWithInfoAndSave 
-                    helpText="The date the transaction took place (legal or accounting event)"
-                    isSaving={transactionDateAutosave.isSaving}
-                    isSaved={transactionDateAutosave.isSaved}
-                    hasValue={!!formData.transaction_date}
-                  >
-                    Transaction Date
-                  </LabelWithInfoAndSave>
+                  <div className="flex items-center min-h-[24px]">
+                    <LabelWithInfoAndSave 
+                      helpText="The date the transaction took place (legal or accounting event)"
+                      isSaving={transactionDateAutosave.isSaving}
+                      isSaved={transactionDateAutosave.isSaved}
+                      hasValue={!!formData.transaction_date}
+                    >
+                      Transaction Date
+                    </LabelWithInfoAndSave>
+                  </div>
                   <Input
                     type="date"
                     value={formData.transaction_date || ''}
@@ -1595,7 +1661,7 @@ export default function TransactionModal({
                 </div>
 
                 <div className="space-y-2">
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between min-h-[24px]">
                     <LabelWithInfoAndSave 
                       helpText="Use only if the value was exchanged on a different date (e.g., FX settlement). Otherwise, leave blank."
                       isSaving={valueDateAutosave.isSaving}
@@ -1686,6 +1752,8 @@ export default function TransactionModal({
                   organizations={organizations}
                   fallbackRef={formData.provider_org_ref}
                   onLegacyTypeDetected={orgTypeMappingModal.openModal}
+                  open={openDropdown === 'provider-org'}
+                  onOpenChange={(isOpen) => setOpenDropdown(isOpen ? 'provider-org' : null)}
                 />
               </div>
 
@@ -1889,6 +1957,8 @@ export default function TransactionModal({
                   organizations={organizations}
                   fallbackRef={formData.receiver_org_ref}
                   onLegacyTypeDetected={orgTypeMappingModal.openModal}
+                  open={openDropdown === 'receiver-org'}
+                  onOpenChange={(isOpen) => setOpenDropdown(isOpen ? 'receiver-org' : null)}
                 />
               </div>
 
@@ -2103,6 +2173,8 @@ export default function TransactionModal({
                     }}
                     placeholder="Select aid type"
                     id="aid_type"
+                    open={openDropdown === 'aid-type'}
+                    onOpenChange={(isOpen) => setOpenDropdown(isOpen ? 'aid-type' : null)}
                   />
                   {formData.aid_type && (
                     <FieldDescription>
@@ -2128,6 +2200,8 @@ export default function TransactionModal({
                       flowTypeAutosave.triggerFieldSave(newValue);
                     }}
                     placeholder="Select flow type"
+                    open={openDropdown === 'flow-type'}
+                    onOpenChange={(isOpen) => setOpenDropdown(isOpen ? 'flow-type' : null)}
                   />
                 </div>
               </div>
@@ -2151,6 +2225,8 @@ export default function TransactionModal({
                       financeTypeAutosave.triggerFieldSave(newValue);
                     }}
                     placeholder="Select finance type"
+                    open={openDropdown === 'finance-type'}
+                    onOpenChange={(isOpen) => setOpenDropdown(isOpen ? 'finance-type' : null)}
                   />
                 </div>
 
@@ -2171,6 +2247,8 @@ export default function TransactionModal({
                       tiedStatusAutosave.triggerFieldSave(newValue);
                     }}
                     placeholder="Select tied status"
+                    open={openDropdown === 'tied-status'}
+                    onOpenChange={(isOpen) => setOpenDropdown(isOpen ? 'tied-status' : null)}
                   />
                 </div>
               </div>
@@ -2279,11 +2357,6 @@ export default function TransactionModal({
                     </Command>
                   </PopoverContent>
                 </Popover>
-                {formData.disbursement_channel && (
-                  <FieldDescription>
-                    {getSelectedDescription('disbursement', formData.disbursement_channel)}
-                  </FieldDescription>
-                )}
               </div>
 
               {/* Humanitarian Transaction - Separate Red Card */}
@@ -2325,14 +2398,33 @@ export default function TransactionModal({
             <div className="space-y-4">
               <SectionHeader title="Supporting Documents" />
               <div className="text-sm text-muted-foreground mb-4">
-                Upload receipts, invoices, contracts, or other evidence to support this transaction. 
+                Upload receipts, invoices, contracts, or other evidence to support this transaction.
                 You can also add links to documents hosted elsewhere.
+                You must complete the required fields before uploading documents.
               </div>
               {!(createdTransactionId || (isEditing && (transaction?.uuid || transaction?.id))) ? (
-                <div className="text-sm text-gray-500 bg-amber-50 border border-amber-200 rounded p-3 my-2">
-                  You must complete the required fields before uploading documents.<br />
-                  <strong>Required:</strong> Transaction Type, Date, Value, Currency, Activity ID.<br />
-                  {creationError && <span className="text-red-500">{creationError}</span>}
+                <div className="opacity-40 pointer-events-none select-none">
+                  <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-6">
+                    <div className="text-center space-y-4">
+                      <div className="rounded-full bg-muted p-4 w-fit mx-auto">
+                        <Upload className="h-8 w-8 text-muted-foreground" />
+                      </div>
+                      <div>
+                        <h3 className="font-semibold">Upload Transaction Evidence</h3>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          Drag and drop documents here, or click to browse
+                        </p>
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        <p>Supported: PDF, Images, Excel, Word, CSV (Max 50MB each)</p>
+                        <p>Maximum 10 documents per transaction</p>
+                      </div>
+                      <Button variant="outline" disabled>
+                        Browse Files
+                      </Button>
+                    </div>
+                  </div>
+                  {creationError && <p className="text-red-500 text-sm text-center mt-2">{creationError}</p>}
                 </div>
               ) : (
                 <TransactionDocumentUpload
@@ -2351,89 +2443,238 @@ export default function TransactionModal({
             <div className="space-y-3">
               <h3 className="text-sm font-semibold text-gray-700">Advanced IATI Fields</h3>
               
-              {/* Single-Value Geographic & Sector Fields */}
-              <Collapsible open={showSingleValueFields} onOpenChange={setShowSingleValueFields}>
+              {/* Geographic Targeting - Simplified for IATI Transaction Level */}
+              <Collapsible open={showGeographicTargeting} onOpenChange={setShowGeographicTargeting}>
                 <CollapsibleTrigger asChild>
                   <button
                     className="flex items-center justify-between w-full p-3 bg-gray-50 hover:bg-gray-100 rounded-lg border transition-colors text-left"
                     type="button"
                   >
                     <div className="flex items-center gap-2">
-                      <ChevronDown className={cn("h-4 w-4 transition-transform", showSingleValueFields && "rotate-180")} />
-                      <span className="text-sm font-medium text-gray-700">Geographic Targeting (Single Values)</span>
-                      {singleValueFieldsCount > 0 && (
-                        <Badge variant="secondary" className="text-xs">{singleValueFieldsCount}</Badge>
+                      <ChevronDown className={cn("h-4 w-4 transition-transform", showGeographicTargeting && "rotate-180")} />
+                      <span className="text-sm font-medium text-gray-700">Geographic Targeting</span>
+                      {hasGeographicTargeting && (
+                        <Badge variant="secondary" className="text-xs">
+                          {formData.recipient_country_code 
+                            ? IATI_COUNTRIES.find(c => c.code === formData.recipient_country_code)?.name || formData.recipient_country_code
+                            : IATI_REGIONS.find(r => r.code === formData.recipient_region_code)?.name || formData.recipient_region_code
+                          }
+                        </Badge>
                       )}
                     </div>
                   </button>
                 </CollapsibleTrigger>
                 <CollapsibleContent className="pt-3">
                   <div className="space-y-4 p-4 bg-gray-50/50 rounded-lg border">
-                    <p className="text-xs text-gray-600">
-                      Use these fields for single-value geographic targeting, or use the multi-element sections below for IATI-compliant percentage allocations.
-                    </p>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {/* Recipient Country Code */}
-                      <div className="space-y-2">
-                        <LabelWithInfoAndSave 
-                          helpText="ISO 3166-1 alpha-2 country code (e.g., TZ for Tanzania)"
-                          isSaving={recipientCountryAutosave.isSaving}
-                          isSaved={recipientCountryAutosave.isSaved}
-                          hasValue={!!formData.recipient_country_code}
-                        >
-                          Recipient Country
-                        </LabelWithInfoAndSave>
-                        <Input
-                          value={formData.recipient_country_code || ''}
-                          onChange={e => {
-                            const val = e.target.value.toUpperCase();
-                            setFormData({...formData, recipient_country_code: val});
-                            recipientCountryAutosave.triggerFieldSave(val);
-                          }}
-                          placeholder="e.g., TZ"
-                          maxLength={2}
-                          className="uppercase"
-                        />
-                      </div>
-                      
-                      {/* Recipient Region Code & Vocabulary */}
-                      <div className="space-y-2">
-                        <LabelWithInfoAndSave 
-                          helpText="IATI region code (e.g., 298 for Africa, regional)"
-                          isSaving={recipientRegionAutosave.isSaving}
-                          isSaved={recipientRegionAutosave.isSaved}
-                          hasValue={!!formData.recipient_region_code}
-                        >
-                          Recipient Region
-                        </LabelWithInfoAndSave>
-                        <div className="flex gap-2">
-                          <Input
-                            value={formData.recipient_region_code || ''}
-                            onChange={e => {
-                              setFormData({...formData, recipient_region_code: e.target.value});
-                              recipientRegionAutosave.triggerFieldSave(e.target.value);
-                            }}
-                            placeholder="e.g., 298"
-                            className="flex-1"
-                          />
-                          <Select 
-                            value={formData.recipient_region_vocab || '1'}
-                            onValueChange={(v) => {
-                              setFormData({...formData, recipient_region_vocab: v});
-                            }}
-                          >
-                            <SelectTrigger className="w-32">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="1">UN M49</SelectItem>
-                              <SelectItem value="2">OECD DAC</SelectItem>
-                            </SelectContent>
-                          </Select>
+                    {/* Activity-level geography message */}
+                    {geographyLevel === 'activity' && (
+                      <Alert>
+                        <Info className="h-4 w-4" />
+                        <AlertDescription className="text-xs">
+                          Geography is set at the activity level. Transaction-level geographic targeting is disabled.
+                          To enable, change the geography level setting in the Countries &amp; Regions Allocation section.
+                        </AlertDescription>
+                      </Alert>
+                    )}
+
+                    {/* Transaction-level geography form */}
+                    {geographyLevel === 'transaction' && (
+                      <>
+                      <p className="text-xs text-gray-600">
+                          Per IATI standard, each transaction can have one country OR one region (not both).
+                        </p>
+
+                        {/* Type selection */}
+                        <div className="flex items-center gap-6">
+                          <label className="flex items-center gap-2 cursor-pointer">
+                            <input
+                              type="radio"
+                              name="geoType"
+                              checked={selectedGeoType === 'none'}
+                              onChange={() => {
+                                setSelectedGeoType('none');
+                                setFormData({
+                                  ...formData, 
+                                  recipient_country_code: '', 
+                                  recipient_region_code: '',
+                                  recipient_region_vocab: undefined
+                                });
+                              }}
+                              className="h-4 w-4 text-blue-600"
+                              disabled={isSubmitting}
+                            />
+                            <span className="text-sm text-gray-600">None (use activity geography)</span>
+                          </label>
+                          <label className="flex items-center gap-2 cursor-pointer">
+                            <input
+                              type="radio"
+                              name="geoType"
+                              checked={selectedGeoType === 'country'}
+                              onChange={() => {
+                                setSelectedGeoType('country');
+                                setFormData({
+                                  ...formData, 
+                                  recipient_region_code: '',
+                                  recipient_region_vocab: undefined
+                                });
+                              }}
+                              className="h-4 w-4 text-blue-600"
+                              disabled={isSubmitting}
+                            />
+                            <span className="text-sm">Country</span>
+                          </label>
+                          <label className="flex items-center gap-2 cursor-pointer">
+                            <input
+                              type="radio"
+                              name="geoType"
+                              checked={selectedGeoType === 'region'}
+                              onChange={() => {
+                                setSelectedGeoType('region');
+                                setFormData({
+                                  ...formData, 
+                                  recipient_country_code: ''
+                                });
+                              }}
+                              className="h-4 w-4 text-blue-600"
+                              disabled={isSubmitting}
+                            />
+                            <span className="text-sm">Region</span>
+                          </label>
                         </div>
-                      </div>
-                    </div>
+
+                        {/* Country dropdown */}
+                        {selectedGeoType === 'country' && (
+                        <div className="space-y-2">
+                          <LabelWithInfoAndSave 
+                              helpText="ISO 3166-1 alpha-2 country code"
+                            isSaving={recipientCountryAutosave.isSaving}
+                            isSaved={recipientCountryAutosave.isSaved}
+                            hasValue={!!formData.recipient_country_code}
+                          >
+                            Recipient Country
+                          </LabelWithInfoAndSave>
+                            <Popover open={countryPopoverOpen} onOpenChange={setCountryPopoverOpen}>
+                            <PopoverTrigger asChild>
+                              <Button
+                                variant="outline"
+                                role="combobox"
+                                className="w-full justify-between font-normal"
+                                  disabled={isSubmitting}
+                              >
+                                {formData.recipient_country_code ? (
+                                  <span className="flex items-center gap-2">
+                                    <span className="font-mono text-xs bg-gray-100 px-1.5 py-0.5 rounded">
+                                      {formData.recipient_country_code}
+                                    </span>
+                                    <span className="truncate">
+                                      {IATI_COUNTRIES.find(c => c.code === formData.recipient_country_code)?.name || formData.recipient_country_code}
+                                    </span>
+                                  </span>
+                                ) : (
+                                  <span className="text-muted-foreground">Select country...</span>
+                                )}
+                                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                              </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-[350px] p-0" align="start">
+                              <Command>
+                                <CommandInput placeholder="Search countries..." />
+                                <CommandList className="max-h-[300px]">
+                                  <CommandEmpty>No country found.</CommandEmpty>
+                                  <CommandGroup>
+                                    {IATI_COUNTRIES.filter(c => !c.withdrawn).map((country) => (
+                                      <CommandItem
+                                        key={country.code}
+                                        value={`${country.code} ${country.name}`}
+                                        onSelect={() => {
+                                          setFormData({...formData, recipient_country_code: country.code});
+                                          recipientCountryAutosave.triggerFieldSave(country.code);
+                                          setCountryPopoverOpen(false);
+                                        }}
+                                      >
+                                        <span className="font-mono text-xs bg-gray-100 px-1.5 py-0.5 rounded mr-2">
+                                          {country.code}
+                                        </span>
+                                        <span className="truncate">{country.name}</span>
+                                      </CommandItem>
+                                    ))}
+                                  </CommandGroup>
+                                </CommandList>
+                              </Command>
+                            </PopoverContent>
+                          </Popover>
+                        </div>
+                        )}
+                        
+                        {/* Region dropdown */}
+                        {selectedGeoType === 'region' && (
+                        <div className="space-y-2">
+                          <LabelWithInfoAndSave 
+                              helpText="IATI region code (e.g., 298 for Africa)"
+                            isSaving={recipientRegionAutosave.isSaving}
+                            isSaved={recipientRegionAutosave.isSaved}
+                            hasValue={!!formData.recipient_region_code}
+                          >
+                            Recipient Region
+                          </LabelWithInfoAndSave>
+                            <Popover open={regionPopoverOpen} onOpenChange={setRegionPopoverOpen}>
+                            <PopoverTrigger asChild>
+                              <Button
+                                variant="outline"
+                                role="combobox"
+                                className="w-full justify-between font-normal"
+                                  disabled={isSubmitting}
+                              >
+                                {formData.recipient_region_code ? (
+                                  <span className="flex items-center gap-2">
+                                    <span className="font-mono text-xs bg-gray-100 px-1.5 py-0.5 rounded">
+                                      {formData.recipient_region_code}
+                                    </span>
+                                    <span className="truncate">
+                                      {IATI_REGIONS.find(r => r.code === formData.recipient_region_code)?.name || formData.recipient_region_code}
+                                    </span>
+                                  </span>
+                                ) : (
+                                  <span className="text-muted-foreground">Select region...</span>
+                                )}
+                                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                              </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-[350px] p-0" align="start">
+                              <Command>
+                                <CommandInput placeholder="Search regions..." />
+                                <CommandList className="max-h-[300px]">
+                                  <CommandEmpty>No region found.</CommandEmpty>
+                                  <CommandGroup>
+                                    {IATI_REGIONS.filter(r => !r.withdrawn).map((region) => (
+                                      <CommandItem
+                                        key={region.code}
+                                        value={`${region.code} ${region.name}`}
+                                        onSelect={() => {
+                                            setFormData({
+                                              ...formData, 
+                                              recipient_region_code: region.code,
+                                              recipient_region_vocab: '1'
+                                            });
+                                          recipientRegionAutosave.triggerFieldSave(region.code);
+                                          setRegionPopoverOpen(false);
+                                        }}
+                                      >
+                                        <span className="font-mono text-xs bg-gray-100 px-1.5 py-0.5 rounded mr-2">
+                                          {region.code}
+                                        </span>
+                                        <span className="truncate">{region.name}</span>
+                                      </CommandItem>
+                                    ))}
+                                  </CommandGroup>
+                                </CommandList>
+                              </Command>
+                            </PopoverContent>
+                          </Popover>
+                        </div>
+                        )}
+                      </>
+                    )}
                   </div>
                 </CollapsibleContent>
               </Collapsible>
@@ -2448,15 +2689,89 @@ export default function TransactionModal({
                     <div className="flex items-center gap-2">
                       <ChevronDown className={cn("h-4 w-4 transition-transform", showMultipleSectors && "rotate-180")} />
                       <span className="text-sm font-medium text-gray-700">Transaction Level Sector Classifications</span>
-                      {multipleSectorsCount > 0 && (
+                      {!useActivitySectorChoice && multipleSectorsCount > 0 && (
                         <Badge variant="secondary" className="text-xs">{multipleSectorsCount}</Badge>
+                      )}
+                      {useActivitySectorChoice && activitySectors.length > 0 && (
+                        <Badge variant="outline" className="text-xs text-gray-500">Using activity sectors</Badge>
                       )}
                     </div>
                   </button>
                 </CollapsibleTrigger>
                 <CollapsibleContent className="pt-3">
                   <div className="space-y-4 p-4 bg-gray-50/50 rounded-lg border">
-                    <p className="text-xs text-gray-600">
+                    {/* Radio group for sector source selection */}
+                    <div className="space-y-3">
+                      <div className="flex items-start gap-3">
+                        <input
+                          type="radio"
+                          id="sector-activity"
+                          name="sector-source"
+                          checked={useActivitySectorChoice}
+                          onChange={() => handleSectorChoiceChange(true)}
+                          className="mt-1 h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500"
+                        />
+                        <label htmlFor="sector-activity" className="flex-1 cursor-pointer">
+                          <span className="text-sm font-medium text-gray-700">Use activity sectors</span>
+                          <p className="text-xs text-gray-500 mt-0.5">
+                            Inherit sector allocations from the activity level
+                          </p>
+                        </label>
+                      </div>
+                      
+                      {/* Show activity sectors preview when "Use activity sectors" is selected */}
+                      {useActivitySectorChoice && activitySectors.length > 0 && (
+                        <div className="ml-7 p-3 bg-white rounded-md border border-gray-200">
+                          <p className="text-xs font-medium text-gray-600 mb-2">Activity sectors:</p>
+                          <div className="space-y-1">
+                            {activitySectors.map((sector, idx) => (
+                              <div key={idx} className="flex justify-between text-xs text-gray-600">
+                                <span>{sector.sector_name || sector.sector_code}</span>
+                                {sector.percentage && (
+                                  <span className="text-gray-400">{sector.percentage}%</span>
+                                )}
+                              </div>
+                            ))}
+                            {activitySectors.reduce((sum, s) => sum + (s.percentage || 0), 0) > 0 && (
+                              <div className="flex justify-between text-xs font-medium text-gray-700 pt-1 border-t">
+                                <span>Total</span>
+                                <span>{activitySectors.reduce((sum, s) => sum + (s.percentage || 0), 0)}%</span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                      
+                      {useActivitySectorChoice && activitySectors.length === 0 && (
+                        <div className="ml-7 p-3 bg-amber-50 rounded-md border border-amber-200">
+                          <p className="text-xs text-amber-700">
+                            No sectors defined at the activity level. Add sectors in the Sectors tab, or specify custom sectors for this transaction.
+                          </p>
+                        </div>
+                      )}
+                      
+                      <div className="flex items-start gap-3">
+                        <input
+                          type="radio"
+                          id="sector-custom"
+                          name="sector-source"
+                          checked={!useActivitySectorChoice}
+                          onChange={() => handleSectorChoiceChange(false)}
+                          className="mt-1 h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500"
+                        />
+                        <label htmlFor="sector-custom" className="flex-1 cursor-pointer">
+                          <span className="text-sm font-medium text-gray-700">Specify for this transaction</span>
+                          <p className="text-xs text-gray-500 mt-0.5">
+                            Define custom sector allocations for this transaction
+                          </p>
+                        </label>
+                      </div>
+                    </div>
+                    
+                    {/* Show TransactionSectorManager only when custom sectors is selected */}
+                    {!useActivitySectorChoice && (
+                      <div className="mt-4 pt-4 border-t border-gray-200">
+                        <p className="text-xs text-gray-600 mb-3">
                       Add multiple sectors with percentage allocations. Percentages must sum to 100%.
                     </p>
                     <TransactionSectorManager
@@ -2466,6 +2781,8 @@ export default function TransactionModal({
                       }}
                       allowPercentages={true}
                     />
+                      </div>
+                    )}
                   </div>
                 </CollapsibleContent>
               </Collapsible>
@@ -2501,74 +2818,6 @@ export default function TransactionModal({
                 </CollapsibleContent>
               </Collapsible>
 
-              {/* Geographic Targeting (Multiple) */}
-              <Collapsible open={showGeographicTargeting} onOpenChange={setShowGeographicTargeting}>
-                <CollapsibleTrigger asChild>
-                  <button
-                    className="flex items-center justify-between w-full p-3 bg-gray-50 hover:bg-gray-100 rounded-lg border transition-colors text-left"
-                    type="button"
-                  >
-                    <div className="flex items-center gap-2">
-                      <ChevronDown className={cn("h-4 w-4 transition-transform", showGeographicTargeting && "rotate-180")} />
-                      <span className="text-sm font-medium text-gray-700">Geographic Targeting (Multiple)</span>
-                      {geographicTargetingCount > 0 && (
-                        <Badge variant="secondary" className="text-xs">{geographicTargetingCount}</Badge>
-                      )}
-                    </div>
-                  </button>
-                </CollapsibleTrigger>
-                <CollapsibleContent className="pt-3">
-                  <div className="space-y-4 p-4 bg-gray-50/50 rounded-lg border">
-                    <Alert>
-                      <Info className="h-4 w-4" />
-                      <AlertDescription className="text-xs">
-                        IATI Standard: Use either multiple countries OR multiple regions, not both.
-                      </AlertDescription>
-                    </Alert>
-                    
-                    <Tabs defaultValue="countries" className="w-full">
-                      <TabsList className="grid w-full grid-cols-2">
-                        <TabsTrigger value="countries">Countries</TabsTrigger>
-                        <TabsTrigger value="regions">Regions</TabsTrigger>
-                      </TabsList>
-                      
-                      <TabsContent value="countries" className="space-y-2">
-                        <p className="text-xs text-gray-600">
-                          Add multiple countries with optional percentage allocations.
-                        </p>
-                        <TransactionRecipientCountryManager
-                          countries={formData.recipient_countries || []}
-                          onCountriesChange={(countries) => {
-                            setFormData({ 
-                              ...formData, 
-                              recipient_countries: countries,
-                              recipient_regions: [] // Clear regions per IATI
-                            });
-                          }}
-                          allowPercentages={true}
-                        />
-                      </TabsContent>
-                      
-                      <TabsContent value="regions" className="space-y-2">
-                        <p className="text-xs text-gray-600">
-                          Add multiple regions with optional percentage allocations.
-                        </p>
-                        <TransactionRecipientRegionManager
-                          regions={formData.recipient_regions || []}
-                          onRegionsChange={(regions) => {
-                            setFormData({ 
-                              ...formData, 
-                              recipient_regions: regions,
-                              recipient_countries: [] // Clear countries per IATI
-                            });
-                          }}
-                          allowPercentages={true}
-                        />
-                      </TabsContent>
-                    </Tabs>
-                  </div>
-                </CollapsibleContent>
-              </Collapsible>
             </div>
 
             {/* System Identifiers - Always shown at bottom */}
@@ -2643,7 +2892,7 @@ export default function TransactionModal({
                       value={formData.transaction_reference || ''}
                       onChange={e => handleFieldChange('transaction_reference', e.target.value)}
                       placeholder="Will be auto-generated on save"
-                      className="border-0 bg-transparent p-0 text-sm text-gray-900 placeholder-gray-400 focus:ring-0 focus:outline-none flex-1 min-w-0 font-mono"
+                      className="border-0 bg-transparent p-0 text-sm text-gray-600 placeholder-gray-400 focus:ring-0 focus:outline-none flex-1 min-w-0 font-mono"
                     />
                     {formData.transaction_reference && (
                       <button

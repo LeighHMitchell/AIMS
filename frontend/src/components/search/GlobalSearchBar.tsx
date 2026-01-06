@@ -6,7 +6,7 @@ import { debounce } from 'lodash'
 import { Search, X, Loader2, Building2, Target, UserCircle } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
-import { 
+import {
   Command,
   CommandEmpty,
   CommandGroup,
@@ -22,6 +22,7 @@ import {
 } from '@/components/ui/popover'
 import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
+import { AnimatePresence, motion } from 'framer-motion'
 
 interface SearchResult {
   id: string
@@ -78,6 +79,7 @@ export function GlobalSearchBar({
   className,
   placeholder = "Search projects, donors, tags…"
 }: GlobalSearchBarProps) {
+  const [isExpanded, setIsExpanded] = useState(false)
   const [open, setOpen] = useState(false)
   const [query, setQuery] = useState('')
   const [results, setResults] = useState<SearchResult[]>([])
@@ -91,8 +93,56 @@ export function GlobalSearchBar({
   const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false)
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const abortControllerRef = useRef<AbortController | null>(null)
+  const inputRef = useRef<HTMLInputElement>(null)
+  const containerRef = useRef<HTMLDivElement>(null)
   const router = useRouter()
   const pathname = usePathname()
+
+  // Handle expand
+  const handleExpand = useCallback(() => {
+    setIsExpanded(true)
+    // Focus input after animation
+    setTimeout(() => {
+      inputRef.current?.focus()
+    }, 100)
+  }, [])
+
+  // Handle collapse
+  const handleCollapse = useCallback(() => {
+    setIsExpanded(false)
+    setOpen(false)
+    setQuery('')
+    setResults([])
+    setError(null)
+    setLoading(false)
+    setIsSearching(false)
+    setHasSearched(false)
+    setSuggestions([])
+    setShowSuggestions(false)
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current)
+    }
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort()
+    }
+  }, [])
+
+  // Click outside handler
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(event.target as Node) &&
+        isExpanded &&
+        !query
+      ) {
+        handleCollapse()
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [isExpanded, query, handleCollapse])
 
   // Fetch search suggestions
   const fetchSuggestions = useCallback(async (searchQuery: string) => {
@@ -243,6 +293,7 @@ export function GlobalSearchBar({
     setOpen(false)
     setQuery('')
     setResults([])
+    setIsExpanded(false)
 
     switch (result.type) {
       case 'activity':
@@ -276,6 +327,7 @@ export function GlobalSearchBar({
     setQuery('')
     setSuggestions([])
     setShowSuggestions(false)
+    setIsExpanded(false)
 
     // Navigate based on suggestion type
     switch (suggestion.type) {
@@ -295,6 +347,7 @@ export function GlobalSearchBar({
         // For other types, set the query and let normal search handle it
         setQuery(suggestion.title)
         setOpen(true)
+        setIsExpanded(true)
     }
   }, [router])
 
@@ -310,6 +363,7 @@ export function GlobalSearchBar({
   const handleSearchSubmit = useCallback(() => {
     if (query.trim()) {
       setOpen(false)
+      setIsExpanded(false)
       router.push(`/search?q=${encodeURIComponent(query.trim())}`)
     }
   }, [query, router])
@@ -320,7 +374,10 @@ export function GlobalSearchBar({
       e.preventDefault()
       handleSearchSubmit()
     }
-  }, [handleSearchSubmit])
+    if (e.key === 'Escape') {
+      handleCollapse()
+    }
+  }, [handleSearchSubmit, handleCollapse])
 
   // Clear search
   const handleClear = useCallback(() => {
@@ -372,14 +429,14 @@ export function GlobalSearchBar({
   // Get icon component for result type
   const getResultIcon = (result: SearchResult) => {
     const { type, metadata } = result
-    
+
     // Handle activity icons
     if (type === 'activity' && metadata?.activity_icon_url) {
       return (
         <div className="w-8 h-8 rounded-full overflow-hidden border border-gray-200">
-          <img 
-            src={metadata.activity_icon_url} 
-            alt="Activity icon" 
+          <img
+            src={metadata.activity_icon_url}
+            alt="Activity icon"
             className="w-full h-full object-cover"
             onError={(e) => {
               // Fallback to default icon if image fails to load
@@ -395,14 +452,14 @@ export function GlobalSearchBar({
         </div>
       )
     }
-    
+
     // Handle profile pictures for users
     if (type === 'user' && metadata?.profile_picture_url) {
       return (
         <div className="w-8 h-8 rounded-full overflow-hidden border border-gray-200">
-          <img 
-            src={metadata.profile_picture_url} 
-            alt="Profile" 
+          <img
+            src={metadata.profile_picture_url}
+            alt="Profile"
             className="w-full h-full object-cover"
             onError={(e) => {
               // Fallback to default icon if image fails to load
@@ -418,14 +475,14 @@ export function GlobalSearchBar({
         </div>
       )
     }
-    
+
     // Handle logos for organizations
     if (type === 'organization' && metadata?.logo_url) {
       return (
         <div className="w-8 h-8 rounded-lg overflow-hidden border border-gray-200 bg-white">
-          <img 
-            src={metadata.logo_url} 
-            alt="Organization logo" 
+          <img
+            src={metadata.logo_url}
+            alt="Organization logo"
             className="w-full h-full object-contain p-0.5"
             onError={(e) => {
               // Fallback to default icon if image fails to load
@@ -441,7 +498,7 @@ export function GlobalSearchBar({
         </div>
       )
     }
-    
+
     // Default icons for each type
     switch (type) {
       case 'activity':
@@ -476,266 +533,323 @@ export function GlobalSearchBar({
   }
 
   return (
-    <div className={cn("relative", className)}>
-      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-500 pointer-events-none z-10" />
-      <Popover open={open} onOpenChange={setOpen}>
-        <PopoverTrigger className="w-full">
-          <Input
-            placeholder={placeholder}
-            value={query}
-            onChange={(e) => handleInputChange(e.target.value)}
-            onKeyDown={handleKeyDown}
-            onFocus={() => setOpen(true)}
-            className="pl-10 pr-9 rounded-xl w-full"
-          />
-        </PopoverTrigger>
-        {(loading || isSearching) && (
-          <Loader2 className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground animate-spin" />
-        )}
-        {!loading && !isSearching && query && (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={handleClear}
-            className="absolute right-1 top-1/2 transform -translate-y-1/2 h-6 w-6 p-0"
+    <div className={cn("relative", className)} ref={containerRef}>
+      <AnimatePresence mode="wait">
+        {!isExpanded ? (
+          <motion.button
+            key="search-icon"
+            initial={{ scale: 0, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0, opacity: 0 }}
+            transition={{ duration: 0.15 }}
+            onClick={handleExpand}
+            className="flex h-10 w-10 items-center justify-center rounded-full border border-border bg-card transition-colors hover:bg-muted"
+            aria-label="Open search"
           >
-            <X className="h-3 w-3" />
-          </Button>
-        )}
-          <PopoverContent 
-            className="w-[500px] p-0 max-h-96" 
-            align="start"
-        >
-        <Command>
-          <CommandList className="max-h-80 overflow-y-auto">
-            {(loading || isSearching) && (
-              <div className="p-4 text-center text-sm text-muted-foreground">
-                Searching...
-              </div>
-            )}
-            
-            {!loading && !isSearching && error && (
-              <div className="p-4 text-center text-sm text-destructive">
-                {error}
-              </div>
-            )}
-            
-            {!loading && !isSearching && !error && query && results.length === 0 && hasSearched && query.trim().length > 0 && (
-              <CommandEmpty>No results found for "{query}"</CommandEmpty>
-            )}
-
-            {/* Show suggestions when typing */}
-            {!loading && !isSearching && !error && query && query.trim().length >= 2 && showSuggestions && (
-              <>
-                {/* Show suggestions if available */}
-                {suggestions.length > 0 && (
-                  <CommandGroup>
-                    <div className="px-2 py-1.5 text-xs font-semibold text-gray-600 border-b border-gray-100">
-                      Suggestions
+            <Search className="h-4 w-4 text-muted-foreground" />
+          </motion.button>
+        ) : (
+          <motion.div
+            key="search-input"
+            initial={{ width: 40, opacity: 0 }}
+            animate={{ width: 500, opacity: 1 }}
+            exit={{ width: 40, opacity: 0 }}
+            transition={{
+              type: "spring",
+              stiffness: 300,
+              damping: 30,
+            }}
+            className="relative"
+          >
+            <motion.div
+              initial={{ backdropFilter: "blur(0px)" }}
+              animate={{ backdropFilter: "blur(12px)" }}
+              className="relative"
+            >
+              <Popover open={open} onOpenChange={setOpen}>
+                <PopoverTrigger asChild>
+                  <div className="relative flex items-center overflow-hidden rounded-full border border-border bg-card/80 backdrop-blur-md focus-within:ring-0 focus-within:border-border">
+                    <div className="ml-4">
+                      <Search className="h-4 w-4 text-muted-foreground" />
                     </div>
-                    {suggestions.map((suggestion) => (
-                      <CommandItem
-                        key={`suggestion-${suggestion.type}-${suggestion.id}`}
-                        onSelect={() => handleSuggestionClick(suggestion)}
-                        className="cursor-pointer py-3 px-2 hover:bg-gray-50"
+                    <input
+                      ref={inputRef}
+                      type="text"
+                      value={query}
+                      onChange={(e) => handleInputChange(e.target.value)}
+                      onKeyDown={handleKeyDown}
+                      onFocus={() => setOpen(true)}
+                      placeholder={placeholder}
+                      className="h-10 flex-1 bg-transparent px-3 text-sm outline-none placeholder:text-muted-foreground focus:ring-0 focus:outline-none border-none"
+                    />
+                    {(loading || isSearching) && (
+                      <Loader2 className="mr-2 h-4 w-4 text-muted-foreground animate-spin" />
+                    )}
+                    {!loading && !isSearching && query && (
+                      <motion.button
+                        type="button"
+                        onClick={handleClear}
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        whileHover={{ scale: 1.1 }}
+                        whileTap={{ scale: 0.9 }}
+                        className="mr-1 flex h-6 w-6 items-center justify-center rounded-full hover:bg-muted"
                       >
-                        <div className="flex items-start gap-3 w-full">
-                          <div className="flex-shrink-0 mt-0.5">
-                            {getResultIcon(suggestion as any)}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div 
-                              className="font-medium text-sm truncate text-gray-900"
-                              dangerouslySetInnerHTML={{ __html: suggestion.title }}
-                            />
-                            {suggestion.subtitle && (
-                              <div 
-                                className="text-xs text-gray-500 mt-1 truncate"
-                                dangerouslySetInnerHTML={{ __html: suggestion.subtitle }}
-                              />
-                            )}
-                            {suggestion.metadata?.category && (
-                              <div className="text-xs text-gray-400 mt-1">
-                                {suggestion.metadata.category}
+                        <X className="h-3 w-3" />
+                      </motion.button>
+                    )}
+                    <motion.button
+                      type="button"
+                      onClick={handleCollapse}
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      whileHover={{ scale: 1.1 }}
+                      whileTap={{ scale: 0.9 }}
+                      className="mr-2 flex h-7 w-7 items-center justify-center rounded-full hover:bg-muted"
+                      aria-label="Close search"
+                    >
+                      <X className="h-4 w-4" />
+                    </motion.button>
+                  </div>
+                </PopoverTrigger>
+                <PopoverContent
+                  className="w-[500px] p-0 max-h-96 shadow-none"
+                  align="start"
+                >
+                  <Command>
+                    <CommandList className="max-h-80 overflow-y-auto">
+                      {(loading || isSearching) && (
+                        <div className="p-4 text-center text-sm text-muted-foreground">
+                          Searching...
+                        </div>
+                      )}
+
+                      {!loading && !isSearching && error && (
+                        <div className="p-4 text-center text-sm text-destructive">
+                          {error}
+                        </div>
+                      )}
+
+                      {!loading && !isSearching && !error && query && results.length === 0 && hasSearched && query.trim().length > 0 && (
+                        <CommandEmpty>No results found for "{query}"</CommandEmpty>
+                      )}
+
+                      {/* Show suggestions when typing */}
+                      {!loading && !isSearching && !error && query && query.trim().length >= 2 && showSuggestions && (
+                        <>
+                          {/* Show suggestions if available */}
+                          {suggestions.length > 0 && (
+                            <CommandGroup>
+                              <div className="px-2 py-1.5 text-xs font-semibold text-gray-600 border-b border-gray-100">
+                                Suggestions
                               </div>
-                            )}
-                          </div>
-                        </div>
-                      </CommandItem>
-                    ))}
-                  </CommandGroup>
-                )}
+                              {suggestions.map((suggestion) => (
+                                <CommandItem
+                                  key={`suggestion-${suggestion.type}-${suggestion.id}`}
+                                  onSelect={() => handleSuggestionClick(suggestion)}
+                                  className="cursor-pointer py-3 px-2 hover:bg-gray-50"
+                                >
+                                  <div className="flex items-start gap-3 w-full">
+                                    <div className="flex-shrink-0 mt-0.5">
+                                      {getResultIcon(suggestion as any)}
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                      <div
+                                        className="font-medium text-sm truncate text-gray-900"
+                                        dangerouslySetInnerHTML={{ __html: suggestion.title }}
+                                      />
+                                      {suggestion.subtitle && (
+                                        <div
+                                          className="text-xs text-gray-500 mt-1 truncate"
+                                          dangerouslySetInnerHTML={{ __html: suggestion.subtitle }}
+                                        />
+                                      )}
+                                      {suggestion.metadata?.category && (
+                                        <div className="text-xs text-gray-400 mt-1">
+                                          {suggestion.metadata.category}
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+                                </CommandItem>
+                              ))}
+                            </CommandGroup>
+                          )}
 
-                {/* Show popular searches if available */}
-                {popularSearches.length > 0 && suggestions.length === 0 && (
-                  <CommandGroup>
-                    <div className="px-2 py-1.5 text-xs font-semibold text-gray-600 border-b border-gray-100">
-                      Popular Searches
-                    </div>
-                    {popularSearches.map((search, idx) => (
-                      <CommandItem
-                        key={`popular-${idx}`}
-                        onSelect={() => handlePopularSearchClick(search)}
-                        className="cursor-pointer py-3 px-2 hover:bg-gray-50"
-                      >
-                        <div className="flex items-start gap-3 w-full">
-                          <div className="flex-shrink-0 mt-0.5">
-                            <Search className="h-4 w-4 text-gray-400" />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="font-medium text-sm truncate text-gray-900">
-                              {search}
-                            </div>
-                          </div>
-                        </div>
-                      </CommandItem>
-                    ))}
-                  </CommandGroup>
-                )}
-              </>
-            )}
+                          {/* Show popular searches if available */}
+                          {popularSearches.length > 0 && suggestions.length === 0 && (
+                            <CommandGroup>
+                              <div className="px-2 py-1.5 text-xs font-semibold text-gray-600 border-b border-gray-100">
+                                Popular Searches
+                              </div>
+                              {popularSearches.map((search, idx) => (
+                                <CommandItem
+                                  key={`popular-${idx}`}
+                                  onSelect={() => handlePopularSearchClick(search)}
+                                  className="cursor-pointer py-3 px-2 hover:bg-gray-50"
+                                >
+                                  <div className="flex items-start gap-3 w-full">
+                                    <div className="flex-shrink-0 mt-0.5">
+                                      <Search className="h-4 w-4 text-gray-400" />
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                      <div className="font-medium text-sm truncate text-gray-900">
+                                        {search}
+                                      </div>
+                                    </div>
+                                  </div>
+                                </CommandItem>
+                              ))}
+                            </CommandGroup>
+                          )}
+                        </>
+                      )}
 
-            {!loading && !error && results.length > 0 && (
-              <>
-                {/* Group results by type */}
-                {[
-                  { type: 'activity', label: 'Activities', color: 'blue' },
-                  { type: 'organization', label: 'Organizations', color: 'green' },
-                  { type: 'user', label: 'Users', color: 'orange' },
-                  { type: 'sector', label: 'Sectors', color: 'teal' },
-                  { type: 'tag', label: 'Tags', color: 'purple' }
-                ].map(({ type, label, color }) => {
-                  const typeResults = results.filter(r => r.type === type)
-                  if (typeResults.length === 0) return null
-                  
-                  return (
-                    <CommandGroup key={type}>
-                      <div className="px-2 py-1.5 text-xs font-semibold text-gray-600 border-b border-gray-100">
-                        {label}
-                      </div>
-                      {typeResults.map((result) => (
-                        <CommandItem
-                          key={`${result.type}-${result.id}`}
-                          onSelect={() => handleResultClick(result)}
-                          className="cursor-pointer py-3 px-2 hover:bg-gray-50"
+                      {!loading && !error && results.length > 0 && (
+                        <>
+                          {/* Group results by type */}
+                          {[
+                            { type: 'activity', label: 'Activities', color: 'blue' },
+                            { type: 'organization', label: 'Organizations', color: 'green' },
+                            { type: 'user', label: 'Users', color: 'orange' },
+                            { type: 'sector', label: 'Sectors', color: 'teal' },
+                            { type: 'tag', label: 'Tags', color: 'purple' }
+                          ].map(({ type, label, color }) => {
+                            const typeResults = results.filter(r => r.type === type)
+                            if (typeResults.length === 0) return null
+
+                            return (
+                              <CommandGroup key={type}>
+                                <div className="px-2 py-1.5 text-xs font-semibold text-gray-600 border-b border-gray-100">
+                                  {label}
+                                </div>
+                                {typeResults.map((result) => (
+                                  <CommandItem
+                                    key={`${result.type}-${result.id}`}
+                                    onSelect={() => handleResultClick(result)}
+                                    className="cursor-pointer py-3 px-2 hover:bg-gray-50"
+                                  >
+                                    <div className="flex items-start gap-3 w-full">
+                                      <div className="flex-shrink-0 mt-0.5">
+                                        {getResultIcon(result)}
+                                      </div>
+                                      <div className="flex-1 min-w-0">
+                                        <div className="font-medium text-sm truncate text-gray-900">
+                                          <span dangerouslySetInnerHTML={{ __html: result.title }} />
+                                          {result.type === 'organization' && result.metadata?.acronym && (
+                                            <span className="ml-2">({result.metadata.acronym})</span>
+                                          )}
+                                          {result.type === 'activity' && result.metadata?.acronym && (
+                                            <span className="ml-2">({result.metadata.acronym})</span>
+                                          )}
+                                        </div>
+                                        {result.type === 'organization' && (
+                                          <div className="text-xs text-gray-500 mt-1">
+                                            {result.subtitle && (
+                                              <div
+                                                className="truncate"
+                                                dangerouslySetInnerHTML={{ __html: result.subtitle }}
+                                              />
+                                            )}
+                                          </div>
+                                        )}
+                                        {result.type === 'activity' && (
+                                          <div className="text-xs text-gray-500 mt-1">
+                                            {result.metadata?.reporting_org && (
+                                              <div className="truncate mb-1">
+                                                {result.metadata.reporting_org}
+                                                {result.metadata.reporting_org_acronym &&
+                                                  ` (${result.metadata.reporting_org_acronym})`
+                                                }
+                                              </div>
+                                            )}
+                                            {(result.metadata?.partner_id || result.metadata?.iati_id) && (
+                                              <div className="flex items-center gap-1 flex-wrap mt-1">
+                                                {result.metadata?.partner_id && (
+                                                  <span className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded truncate">
+                                                    {result.metadata.partner_id}
+                                                  </span>
+                                                )}
+                                                {result.metadata?.iati_id && (
+                                                  <span className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded truncate">
+                                                    {result.metadata.iati_id}
+                                                  </span>
+                                                )}
+                                              </div>
+                                            )}
+                                          </div>
+                                        )}
+                                        {result.type === 'user' && result.subtitle && (
+                                          <div
+                                            className="text-xs text-gray-500 mt-1 truncate"
+                                            dangerouslySetInnerHTML={{ __html: result.subtitle }}
+                                          />
+                                        )}
+                                        {result.type === 'sector' && (
+                                          <div className="text-xs text-gray-500 mt-1">
+                                            Sector
+                                          </div>
+                                        )}
+                                        {result.type === 'tag' && (
+                                          <div className="text-xs text-gray-500 mt-1">
+                                            {result.metadata?.activity_count || 0} activities
+                                          </div>
+                                        )}
+                                        {result.metadata?.tags && result.metadata.tags.length > 0 && (
+                                          <div className="flex gap-1 mt-2 flex-wrap">
+                                            {result.metadata.tags.slice(0, 2).map((tag, idx) => (
+                                              <Badge
+                                                key={idx}
+                                                variant="secondary"
+                                                className="text-xs py-0 h-4"
+                                              >
+                                                {tag}
+                                              </Badge>
+                                            ))}
+                                            {result.metadata.tags.length > 2 && (
+                                              <span className="text-xs text-gray-400">
+                                                +{result.metadata.tags.length - 2}
+                                              </span>
+                                            )}
+                                          </div>
+                                        )}
+                                      </div>
+                                    </div>
+                                  </CommandItem>
+                                ))}
+                              </CommandGroup>
+                            )
+                          })}
+                        </>
+                      )}
+
+                      {!loading && query.length > 0 && query.length < 1 && (
+                        <div className="p-4 text-center text-sm text-muted-foreground">
+                          Start typing to search
+                        </div>
+                      )}
+                    </CommandList>
+                    {/* Add "View All Results" option at bottom if there are results */}
+                    {!loading && !error && query.trim() && results.length > 0 && (
+                      <div className="border-t border-gray-100 p-2">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={handleSearchSubmit}
+                          className="w-full justify-center text-blue-600 hover:text-blue-700 hover:bg-blue-50"
                         >
-                          <div className="flex items-start gap-3 w-full">
-                            <div className="flex-shrink-0 mt-0.5">
-                              {getResultIcon(result)}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <div className="font-medium text-sm truncate text-gray-900">
-                                <span dangerouslySetInnerHTML={{ __html: result.title }} />
-                                {result.type === 'organization' && result.metadata?.acronym && (
-                                  <span className="ml-2">({result.metadata.acronym})</span>
-                                )}
-                                {result.type === 'activity' && result.metadata?.acronym && (
-                                  <span className="ml-2">({result.metadata.acronym})</span>
-                                )}
-                              </div>
-                              {result.type === 'organization' && (
-                                <div className="text-xs text-gray-500 mt-1">
-                                  {result.subtitle && (
-                                    <div 
-                                      className="truncate"
-                                      dangerouslySetInnerHTML={{ __html: result.subtitle }}
-                                    />
-                                  )}
-                                </div>
-                              )}
-                              {result.type === 'activity' && (
-                                <div className="text-xs text-gray-500 mt-1">
-                                  {result.metadata?.reporting_org && (
-                                    <div className="truncate mb-1">
-                                      {result.metadata.reporting_org}
-                                      {result.metadata.reporting_org_acronym && 
-                                        ` (${result.metadata.reporting_org_acronym})`
-                                      }
-                                    </div>
-                                  )}
-                                  {(result.metadata?.partner_id || result.metadata?.iati_id) && (
-                                    <div className="flex items-center gap-1 flex-wrap mt-1">
-                                      {result.metadata?.partner_id && (
-                                        <span className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded truncate">
-                                          {result.metadata.partner_id}
-                                        </span>
-                                      )}
-                                      {result.metadata?.iati_id && (
-                                        <span className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded truncate">
-                                          {result.metadata.iati_id}
-                                        </span>
-                                      )}
-                                    </div>
-                                  )}
-                                </div>
-                              )}
-                              {result.type === 'user' && result.subtitle && (
-                                <div 
-                                  className="text-xs text-gray-500 mt-1 truncate"
-                                  dangerouslySetInnerHTML={{ __html: result.subtitle }}
-                                />
-                              )}
-                              {result.type === 'sector' && (
-                                <div className="text-xs text-gray-500 mt-1">
-                                  Sector
-                                </div>
-                              )}
-                              {result.type === 'tag' && (
-                                <div className="text-xs text-gray-500 mt-1">
-                                  {result.metadata?.activity_count || 0} activities
-                                </div>
-                              )}
-                              {result.metadata?.tags && result.metadata.tags.length > 0 && (
-                                <div className="flex gap-1 mt-2 flex-wrap">
-                                  {result.metadata.tags.slice(0, 2).map((tag, idx) => (
-                                    <Badge 
-                                      key={idx} 
-                                      variant="secondary" 
-                                      className="text-xs py-0 h-4"
-                                    >
-                                      {tag}
-                                    </Badge>
-                                  ))}
-                                  {result.metadata.tags.length > 2 && (
-                                    <span className="text-xs text-gray-400">
-                                      +{result.metadata.tags.length - 2}
-                                    </span>
-                                  )}
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        </CommandItem>
-                      ))}
-                    </CommandGroup>
-                  )
-                })}
-              </>
-            )}
-            
-            {!loading && query.length > 0 && query.length < 1 && (
-              <div className="p-4 text-center text-sm text-muted-foreground">
-                Start typing to search
-              </div>
-            )}
-          </CommandList>
-          {/* Add "View All Results" option at bottom if there are results */}
-          {!loading && !error && query.trim() && results.length > 0 && (
-            <div className="border-t border-gray-100 p-2">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleSearchSubmit}
-                className="w-full justify-center text-blue-600 hover:text-blue-700 hover:bg-blue-50"
-              >
-                <Search className="h-4 w-4 mr-2" />
-                View all results for "{query}"
-              </Button>
-            </div>
-          )}
-        </Command>
-        </PopoverContent>
-      </Popover>
+                          <Search className="h-4 w-4 mr-2" />
+                          View all results for "{query}"
+                        </Button>
+                      </div>
+                    )}
+                  </Command>
+                </PopoverContent>
+              </Popover>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }

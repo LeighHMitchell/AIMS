@@ -45,6 +45,8 @@ import { cn } from "@/lib/utils";
 import { CHART_STRUCTURE_COLORS } from "@/lib/chart-colors";
 import { toast } from "sonner";
 import { exportChartToCSV } from "@/lib/chart-export";
+import { useCustomYears } from "@/hooks/useCustomYears";
+import { CustomYearSelector } from "@/components/ui/custom-year-selector";
 
 // Color palette for modalities (matching project palette)
 const MODALITY_COLORS: Record<string, string> = {
@@ -114,6 +116,14 @@ export function FundingByModalityChart() {
   const [transactionType, setTransactionType] = useState<TransactionType>('disbursements');
   const [isExpanded, setIsExpanded] = useState(false);
   const [viewMode, setViewMode] = useState<ViewMode>('chart');
+
+  // Custom year selection
+  const {
+    customYears,
+    selectedId: selectedCustomYearId,
+    setSelectedId: setSelectedCustomYearId,
+    loading: customYearsLoading,
+  } = useCustomYears();
 
   const fetchData = useCallback(async () => {
     try {
@@ -421,7 +431,7 @@ export function FundingByModalityChart() {
     return (
       <div className="flex flex-col flex-1 min-h-0">
         {expanded && renderLegend(expanded)}
-        <div className={expanded ? "flex-1 min-h-[400px]" : "h-[280px]"}>
+        <div className={expanded ? "h-[500px]" : "h-[280px]"}>
           {renderChart()}
         </div>
       </div>
@@ -430,19 +440,33 @@ export function FundingByModalityChart() {
 
   const renderControls = (expanded: boolean = false) => (
     <div className="flex items-center justify-between gap-2 mt-2 pt-2 border-t">
-      {/* Transaction type dropdown */}
-      <Select value={transactionType} onValueChange={(v) => setTransactionType(v as TransactionType)}>
-        <SelectTrigger className="w-[160px] h-8 text-xs">
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent>
-          {METRIC_OPTIONS.map((opt) => (
-            <SelectItem key={opt.value} value={opt.value}>
-              {opt.label}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+      {/* Left side controls */}
+      <div className="flex items-center gap-2">
+        {/* Transaction type dropdown */}
+        <Select value={transactionType} onValueChange={(v) => setTransactionType(v as TransactionType)}>
+          <SelectTrigger className="w-[160px] h-8 text-xs">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {METRIC_OPTIONS.map((opt) => (
+              <SelectItem key={opt.value} value={opt.value}>
+                {opt.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
+        {/* Custom Year Selector (only in expanded view) */}
+        {expanded && (
+          <CustomYearSelector
+            customYears={customYears}
+            selectedId={selectedCustomYearId}
+            onSelect={setSelectedCustomYearId}
+            loading={customYearsLoading}
+            placeholder="Year type"
+          />
+        )}
+      </div>
 
       <div className="flex items-center gap-1">
         {/* Chart type toggle - only show when in chart view */}

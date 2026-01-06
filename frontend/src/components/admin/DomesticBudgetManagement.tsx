@@ -8,6 +8,7 @@ import {
   CardTitle,
   CardDescription,
 } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -55,7 +56,11 @@ import {
   ArrowUpDown,
   ArrowUp,
   ArrowDown,
+  LayoutGrid,
+  Table as TableIcon,
 } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { DomesticBudgetTreemap } from "./DomesticBudgetTreemap";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandGroup, CommandItem, CommandList } from "@/components/ui/command";
 import { cn } from "@/lib/utils";
@@ -93,7 +98,7 @@ export function DomesticBudgetManagement() {
 
   // Filters
   const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
-  const [filterType, setFilterType] = useState<ClassificationType | "all">("all");
+  const [filterType, setFilterType] = useState<ClassificationType>("functional");
 
   // Modal state
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -107,6 +112,9 @@ export function DomesticBudgetManagement() {
   // Sorting state
   const [sortColumn, setSortColumn] = useState<string | null>(null);
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
+
+  // Treemap state
+  const [treemapValueKey, setTreemapValueKey] = useState<"budget" | "expenditure">("budget");
 
   // Form state
   const [formData, setFormData] = useState<DomesticBudgetFormData & { valueDate?: string }>({
@@ -143,9 +151,7 @@ export function DomesticBudgetManagement() {
       setLoading(true);
       const params = new URLSearchParams();
       params.set("fiscalYear", selectedYear.toString());
-      if (filterType !== "all") {
-        params.set("classificationType", filterType);
-      }
+      params.set("classificationType", filterType);
 
       const response = await fetch(`/api/admin/domestic-budget?${params.toString()}`);
       const data = await response.json();
@@ -531,8 +537,8 @@ export function DomesticBudgetManagement() {
 
           {/* Filters */}
           <div className="flex flex-col md:flex-row gap-4 mb-4">
-            <div className="flex items-center gap-2">
-              <Label htmlFor="year-select">Fiscal Year:</Label>
+            <div className="space-y-1.5">
+              <Label htmlFor="year-select">Fiscal Year</Label>
               <Select
                 value={selectedYear.toString()}
                 onValueChange={(value) => setSelectedYear(parseInt(value))}
@@ -550,19 +556,18 @@ export function DomesticBudgetManagement() {
               </Select>
             </div>
 
-            <div className="flex items-center gap-2">
-              <Label htmlFor="type-filter">Classification Type:</Label>
+            <div className="space-y-1.5">
+              <Label htmlFor="type-filter">Classification Type</Label>
               <Select
                 value={filterType}
                 onValueChange={(value) =>
-                  setFilterType(value as ClassificationType | "all")
+                  setFilterType(value as ClassificationType)
                 }
               >
                 <SelectTrigger id="type-filter" className="w-[180px]">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Types</SelectItem>
                   <SelectItem value="functional">Functional</SelectItem>
                   <SelectItem value="administrative">Administrative</SelectItem>
                   <SelectItem value="economic">Economic</SelectItem>
@@ -572,181 +577,229 @@ export function DomesticBudgetManagement() {
             </div>
           </div>
 
-          {/* Data Table */}
-          {budgetData.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-12 text-muted-foreground border-2 border-dashed rounded-lg">
-              <DollarSign className="h-12 w-12 mb-4" />
-              <p className="text-lg font-medium">No budget data for {selectedYear}</p>
-              <p className="text-sm mb-4">
-                Add budget entries for your budget classifications
-              </p>
-              <Button onClick={handleAdd}>
-                <Plus className="h-4 w-4 mr-2" />
-                Add Entry
-              </Button>
-            </div>
-          ) : (
-            <div className="border rounded-lg overflow-hidden">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead
-                      className="w-[100px] cursor-pointer hover:bg-muted/50 select-none"
-                      onClick={() => handleSort("code")}
-                    >
-                      <div className="flex items-center">
-                        Code
-                        {getSortIcon("code")}
-                      </div>
-                    </TableHead>
-                    <TableHead
-                      className="cursor-pointer hover:bg-muted/50 select-none"
-                      onClick={() => handleSort("classification")}
-                    >
-                      <div className="flex items-center">
-                        Classification
-                        {getSortIcon("classification")}
-                      </div>
-                    </TableHead>
-                    <TableHead
-                      className="cursor-pointer hover:bg-muted/50 select-none"
-                      onClick={() => handleSort("type")}
-                    >
-                      <div className="flex items-center">
-                        Type
-                        {getSortIcon("type")}
-                      </div>
-                    </TableHead>
-                    <TableHead
-                      className="text-right cursor-pointer hover:bg-muted/50 select-none"
-                      onClick={() => handleSort("budget")}
-                    >
-                      <div className="flex items-center justify-end">
-                        Budget
-                        {getSortIcon("budget")}
-                      </div>
-                    </TableHead>
-                    <TableHead
-                      className="text-right cursor-pointer hover:bg-muted/50 select-none"
-                      onClick={() => handleSort("expenditure")}
-                    >
-                      <div className="flex items-center justify-end">
-                        Expenditure
-                        {getSortIcon("expenditure")}
-                      </div>
-                    </TableHead>
-                    <TableHead
-                      className="w-[120px] cursor-pointer hover:bg-muted/50 select-none"
-                      onClick={() => handleSort("execution")}
-                    >
-                      <div className="flex items-center justify-center">
-                        Progress
-                        {getSortIcon("execution")}
-                      </div>
-                    </TableHead>
-                    <TableHead
-                      className="text-right cursor-pointer hover:bg-muted/50 select-none"
-                      onClick={() => handleSort("execution")}
-                    >
-                      <div className="flex items-center justify-end">
-                        Execution %
-                        {getSortIcon("execution")}
-                      </div>
-                    </TableHead>
-                    <TableHead className="w-[80px]">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {sortedBudgetData.map((item) => {
-                    const executionRate = calculateExecutionRate(
-                      item.budgetAmount,
-                      item.expenditureAmount
-                    );
-                    return (
-                      <TableRow key={item.id}>
-                        <TableCell>
-                          <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded">
-                            {item.budgetClassification?.code || "-"}
-                          </span>
-                        </TableCell>
-                        <TableCell>
-                          <div>
-                            <div className="font-medium">
-                              {item.budgetClassification?.name || "Unknown"}
-                            </div>
-                            {item.notes && (
-                              <div className="text-xs text-muted-foreground">
-                                {item.notes}
-                              </div>
-                            )}
+          {/* Tabs for Table and Treemap */}
+          <Tabs defaultValue="table" className="w-full">
+            <TabsList className="mb-4">
+              <TabsTrigger value="table" className="flex items-center gap-2">
+                <TableIcon className="h-4 w-4" />
+                Table
+              </TabsTrigger>
+              <TabsTrigger value="treemap" className="flex items-center gap-2">
+                <LayoutGrid className="h-4 w-4" />
+                Treemap
+              </TabsTrigger>
+            </TabsList>
+
+            {/* Table Tab Content */}
+            <TabsContent value="table">
+              {budgetData.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-12 text-muted-foreground border-2 border-dashed rounded-lg">
+                  <DollarSign className="h-12 w-12 mb-4" />
+                  <p className="text-lg font-medium">No budget data for {selectedYear}</p>
+                  <p className="text-sm mb-4">
+                    Add budget entries for your budget classifications
+                  </p>
+                  <Button onClick={handleAdd}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Entry
+                  </Button>
+                </div>
+              ) : (
+                <div className="border rounded-lg overflow-hidden">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead
+                          className="w-[100px] cursor-pointer hover:bg-muted/50 select-none"
+                          onClick={() => handleSort("code")}
+                        >
+                          <div className="flex items-center">
+                            Code
+                            {getSortIcon("code")}
                           </div>
-                        </TableCell>
-                        <TableCell className="text-sm text-muted-foreground">
-                          {item.budgetClassification?.classificationType
-                            ? CLASSIFICATION_TYPE_LABELS[
-                                item.budgetClassification.classificationType
-                              ]
-                            : "-"}
-                        </TableCell>
-                        <TableCell className="text-right font-mono">
-                          {formatCurrency(item.budgetAmount, item.currency)}
-                        </TableCell>
-                        <TableCell className="text-right font-mono">
-                          {formatCurrency(item.expenditureAmount, item.currency)}
-                        </TableCell>
-                        <TableCell>
-                          <div
-                            className="w-full rounded-full h-2.5 overflow-hidden"
-                            style={{ backgroundColor: '#f1f4f8' }}
-                          >
-                            <div
-                              className="h-full rounded-full transition-all"
-                              style={{
-                                width: `${Math.min(executionRate, 100)}%`,
-                                backgroundColor: executionRate > 100 ? '#dc2625' : '#7b95a7'
-                              }}
-                            />
+                        </TableHead>
+                        <TableHead
+                          className="cursor-pointer hover:bg-muted/50 select-none"
+                          onClick={() => handleSort("classification")}
+                        >
+                          <div className="flex items-center">
+                            Classification
+                            {getSortIcon("classification")}
                           </div>
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex items-center justify-end gap-2">
-                            <span
-                              className="font-medium"
-                              style={{
-                                color: executionRate > 100 ? '#dc2625' : '#4c5568'
-                              }}
-                            >
-                              {executionRate.toFixed(1)}%
-                            </span>
+                        </TableHead>
+                        <TableHead
+                          className="cursor-pointer hover:bg-muted/50 select-none"
+                          onClick={() => handleSort("type")}
+                        >
+                          <div className="flex items-center">
+                            Type
+                            {getSortIcon("type")}
                           </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-1">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleEdit(item)}
-                              className="h-8 w-8 p-0"
-                            >
-                              <Pencil className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleDelete(item)}
-                              className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
+                        </TableHead>
+                        <TableHead
+                          className="text-right cursor-pointer hover:bg-muted/50 select-none"
+                          onClick={() => handleSort("budget")}
+                        >
+                          <div className="flex items-center justify-end">
+                            Budget
+                            {getSortIcon("budget")}
                           </div>
-                        </TableCell>
+                        </TableHead>
+                        <TableHead
+                          className="text-right cursor-pointer hover:bg-muted/50 select-none"
+                          onClick={() => handleSort("expenditure")}
+                        >
+                          <div className="flex items-center justify-end">
+                            Expenditure
+                            {getSortIcon("expenditure")}
+                          </div>
+                        </TableHead>
+                        <TableHead
+                          className="w-[120px] cursor-pointer hover:bg-muted/50 select-none"
+                          onClick={() => handleSort("execution")}
+                        >
+                          <div className="flex items-center justify-center">
+                            Progress
+                            {getSortIcon("execution")}
+                          </div>
+                        </TableHead>
+                        <TableHead
+                          className="text-right cursor-pointer hover:bg-muted/50 select-none"
+                          onClick={() => handleSort("execution")}
+                        >
+                          <div className="flex items-center justify-end">
+                            Execution %
+                            {getSortIcon("execution")}
+                          </div>
+                        </TableHead>
+                        <TableHead className="w-[80px]">Actions</TableHead>
                       </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
-            </div>
-          )}
+                    </TableHeader>
+                    <TableBody>
+                      {sortedBudgetData.map((item) => {
+                        const executionRate = calculateExecutionRate(
+                          item.budgetAmount,
+                          item.expenditureAmount
+                        );
+                        return (
+                          <TableRow key={item.id}>
+                            <TableCell>
+                              <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded">
+                                {item.budgetClassification?.code || "-"}
+                              </span>
+                            </TableCell>
+                            <TableCell>
+                              <div>
+                                <div className="font-medium">
+                                  {item.budgetClassification?.name || "Unknown"}
+                                </div>
+                                {item.notes && (
+                                  <div className="text-xs text-muted-foreground">
+                                    {item.notes}
+                                  </div>
+                                )}
+                              </div>
+                            </TableCell>
+                            <TableCell className="text-sm text-muted-foreground">
+                              {item.budgetClassification?.classificationType
+                                ? CLASSIFICATION_TYPE_LABELS[
+                                    item.budgetClassification.classificationType
+                                  ]
+                                : "-"}
+                            </TableCell>
+                            <TableCell className="text-right font-mono">
+                              {formatCurrency(item.budgetAmount, item.currency)}
+                            </TableCell>
+                            <TableCell className="text-right font-mono">
+                              {formatCurrency(item.expenditureAmount, item.currency)}
+                            </TableCell>
+                            <TableCell>
+                              <div
+                                className="w-full rounded-full h-2.5 overflow-hidden"
+                                style={{ backgroundColor: '#f1f4f8' }}
+                              >
+                                <div
+                                  className="h-full rounded-full transition-all"
+                                  style={{
+                                    width: `${Math.min(executionRate, 100)}%`,
+                                    backgroundColor: executionRate > 100 ? '#dc2625' : '#7b95a7'
+                                  }}
+                                />
+                              </div>
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <div className="flex items-center justify-end gap-2">
+                                <span
+                                  className="font-medium"
+                                  style={{
+                                    color: executionRate > 100 ? '#dc2625' : '#4c5568'
+                                  }}
+                                >
+                                  {executionRate.toFixed(1)}%
+                                </span>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex items-center gap-1">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => handleEdit(item)}
+                                  className="h-8 w-8 p-0"
+                                >
+                                  <Pencil className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => handleDelete(item)}
+                                  className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
+            </TabsContent>
+
+            {/* Treemap Tab Content */}
+            <TabsContent value="treemap">
+              {/* Budget/Expenditure Toggle */}
+              <div className="flex items-center justify-end gap-3 mb-4 p-3 rounded-lg" style={{ backgroundColor: '#f1f4f8' }}>
+                <span
+                  className={cn(
+                    "text-sm font-medium transition-colors",
+                    treemapValueKey === "budget" ? "text-foreground" : "text-muted-foreground"
+                  )}
+                >
+                  Budget
+                </span>
+                <Switch
+                  checked={treemapValueKey === "expenditure"}
+                  onCheckedChange={(checked) =>
+                    setTreemapValueKey(checked ? "expenditure" : "budget")
+                  }
+                />
+                <span
+                  className={cn(
+                    "text-sm font-medium transition-colors",
+                    treemapValueKey === "expenditure" ? "text-foreground" : "text-muted-foreground"
+                  )}
+                >
+                  Expenditure
+                </span>
+              </div>
+
+              {/* Treemap Visualization */}
+              <DomesticBudgetTreemap data={budgetData} valueKey={treemapValueKey} />
+            </TabsContent>
+          </Tabs>
         </CardContent>
       </Card>
 

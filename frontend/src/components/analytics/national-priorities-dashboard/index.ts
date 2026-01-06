@@ -3,6 +3,8 @@ export { Dashboard } from './Dashboard';
 export { DashboardFilters } from './DashboardFilters';
 export { FragmentationHeatmap } from './FragmentationHeatmap';
 export { RankedBarChart } from './RankedBarChart';
+export { TopCapitalSpendChart } from './TopCapitalSpendChart';
+export { CapitalSpendOverTimeChart } from './CapitalSpendOverTimeChart';
 // TODO: The following chart components need to be created
 // export { TopDonorAgenciesChart } from './TopDonorAgenciesChart';
 // export { TopDonorGroupsChart } from './TopDonorGroupsChart';

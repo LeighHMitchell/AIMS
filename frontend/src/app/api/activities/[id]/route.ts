@@ -34,6 +34,8 @@ export async function PATCH(
     console.log('[AIMS API] Activity ID:', id);
     console.log('[AIMS API] Request body keys:', Object.keys(body));
     console.log('[AIMS API] publicationStatus:', body.publicationStatus);
+    console.log('[AIMS API] geography_level from body:', body.geography_level);
+    console.log('[AIMS API] geographyLevel from body:', body.geographyLevel);
     console.log('[AIMS API] Update data:', JSON.stringify(body, null, 2));
 
     // Handle reporting organization fields from IATI import
@@ -94,7 +96,7 @@ export async function PATCH(
       'iati_identifier', 'default_currency', 'default_aid_type', 'default_finance_type',
       'default_flow_type', 'default_tied_status', 'activity_scope', 'language',
       'recipient_countries', 'recipient_regions', 'custom_geographies', 'capital_spend_percentage',
-      'banner', 'icon'
+      'banner', 'banner_position', 'icon', 'geography_level', 'sector_export_level'
     ];
     
     // Normalize activity_scope value (string '1'-'8') if provided using a helper
@@ -139,6 +141,9 @@ export async function PATCH(
     if (body.acronym !== undefined) activityFields.acronym = body.acronym;
     if (body.activityScope !== undefined) activityFields.activity_scope = normalizeScope(body.activityScope);
     if (body.publicationStatus !== undefined) activityFields.publication_status = body.publicationStatus;
+    if (body.geographyLevel !== undefined) activityFields.geography_level = body.geographyLevel;
+    if (body.sectorExportLevel !== undefined) activityFields.sector_export_level = body.sectorExportLevel;
+    if (body.bannerPosition !== undefined) activityFields.banner_position = Math.round(body.bannerPosition);
 
     // Add reporting organization fields if they were processed
     if (reportingOrgId) {
@@ -172,6 +177,7 @@ export async function PATCH(
       activityFields.updated_at = new Date().toISOString();
       
       console.log('[AIMS API] Updating basic activity fields:', JSON.stringify(activityFields, null, 2));
+      console.log('[AIMS API] geography_level in activityFields:', activityFields.geography_level);
       
       const { error: activityUpdateError } = await getSupabaseAdmin()
         .from('activities')
@@ -1186,7 +1192,9 @@ export async function GET(
       defaultAidModalityOverride: activity.default_aid_modality_override,
       defaultDisbursementChannel: activity.default_disbursement_channel,
       banner: activity.banner,
+      bannerPosition: activity.banner_position ?? 50,
       icon: activity.icon,
+      iconScale: activity.icon_scale ?? 100,
       hierarchy: activity.hierarchy,
       linkedDataUri: activity.linked_data_uri,
       createdBy: activity.created_by ? { id: activity.created_by } : undefined,
@@ -1223,6 +1231,15 @@ export async function GET(
       budget_status_notes: activity.budget_status_notes,
       budgetStatusUpdatedAt: activity.budget_status_updated_at,
       budgetStatusUpdatedBy: activity.budget_status_updated_by,
+      // Geography level (activity vs transaction level)
+      geography_level: (() => {
+        console.log('[AIMS API] GET - activity.geography_level from DB:', activity.geography_level);
+        return activity.geography_level || 'activity';
+      })(),
+      geographyLevel: activity.geography_level || 'activity',
+      // Sector export level (for IATI export - activity vs transaction level)
+      sector_export_level: activity.sector_export_level || 'activity',
+      sectorExportLevel: activity.sector_export_level || 'activity',
       // Include related data
       sectors: sectors?.map((sector: any) => ({
         id: sector.id,
@@ -1259,11 +1276,13 @@ export async function GET(
         notes: mapping.notes
       })) || [],
       tags: activityTags?.map((tagRelation: any) => tagRelation.tags) || [],
-      workingGroups: activityWorkingGroups?.map((wgRelation: any) => ({
-        code: wgRelation.working_groups.code,
-        label: wgRelation.working_groups.label,
-        vocabulary: wgRelation.vocabulary
-      })) || [],
+      workingGroups: activityWorkingGroups
+        ?.filter((wgRelation: any) => wgRelation.working_groups) // Filter out orphaned references
+        ?.map((wgRelation: any) => ({
+          code: wgRelation.working_groups.code,
+          label: wgRelation.working_groups.label,
+          vocabulary: wgRelation.vocabulary
+        })) || [],
       policyMarkers: activityPolicyMarkers?.map((marker: any) => ({
         policy_marker_id: marker.policy_marker_id,
         significance: marker.significance, // Use the correct significance column

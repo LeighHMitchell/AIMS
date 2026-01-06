@@ -4,6 +4,23 @@ import { fixedCurrencyConverter } from '@/lib/currency-converter-fixed';
 
 export const dynamic = 'force-dynamic';
 
+// Helper function to determine which fiscal year a date belongs to
+function getCustomYearForDate(
+  date: Date,
+  startMonth: number,
+  startDay: number
+): number {
+  const month = date.getMonth() + 1; // JS months are 0-indexed
+  const day = date.getDate();
+  const year = date.getFullYear();
+  
+  // If date is before the fiscal year start, it belongs to the previous fiscal year
+  if (month < startMonth || (month === startMonth && day < startDay)) {
+    return year - 1;
+  }
+  return year;
+}
+
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
@@ -17,6 +34,11 @@ export async function GET(request: NextRequest) {
     const dateFrom = searchParams.get('dateFrom');
     const dateTo = searchParams.get('dateTo');
     const search = searchParams.get('search') || '';
+    
+    // Custom year params
+    const startMonth = searchParams.get('startMonth') ? parseInt(searchParams.get('startMonth')!) : null;
+    const startDay = searchParams.get('startDay') ? parseInt(searchParams.get('startDay')!) : null;
+    const useCustomYear = startMonth !== null && startDay !== null;
     
     // Find activity IDs matching the search term (for activity title search)
     let matchingActivityIds: string[] = [];
@@ -135,7 +157,10 @@ export async function GET(request: NextRequest) {
         const date = new Date(t.transaction_date);
         if (isNaN(date.getTime())) return; // Skip invalid dates
         
-        const year = date.getFullYear();
+        // Use custom year calculation if params provided, otherwise use calendar year
+        const year = useCustomYear 
+          ? getCustomYearForDate(date, startMonth!, startDay!)
+          : date.getFullYear();
         const type = String(t.transaction_type || 'unknown');
         
         const amount = await getUSDValue(t);

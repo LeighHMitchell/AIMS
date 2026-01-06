@@ -195,7 +195,9 @@ export function useFieldAutosave(
           'otherIdentifier': 'partnerId',
           'iatiIdentifier': 'iatiId',
           'banner': 'banner',
+          'bannerPosition': 'banner_position',
           'icon': 'icon',
+          'iconScale': 'icon_scale',
           'uuid': 'uuid'
         };
         

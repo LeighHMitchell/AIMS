@@ -78,6 +78,8 @@ import { DisbursementGauge, CumulativeFinanceChart } from "@/components/Activity
 import financeTypes from "@/data/finance-types.json"
 import { BannerUpload } from "@/components/BannerUpload"
 import { IconUpload } from "@/components/IconUpload"
+import { NativeLikesCounter } from "@/components/ui/native-likes-counter"
+import { useEntityLikes } from "@/hooks/use-entity-likes"
 import {
   Table,
   TableBody,
@@ -93,7 +95,7 @@ import { CommentsDrawer } from "@/components/activities/CommentsDrawer"
 import { TRANSACTION_TYPE_LABELS } from "@/types/transaction"
 import TransactionTab from "@/components/activities/TransactionTab"
 import { getActivityPermissions, ActivityContributor } from "@/lib/activity-permissions"
-import { SDG_GOALS } from "@/data/sdg-targets"
+import { SDG_GOALS, SDG_TARGETS } from "@/data/sdg-targets"
 import { SDGImageGrid } from "@/components/ui/SDGImageGrid"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { ActivityProfileSkeleton } from "@/components/skeletons/ActivityProfileSkeleton"
@@ -106,6 +108,7 @@ import PlannedDisbursementsTab from "@/components/activities/PlannedDisbursement
 import FinancialAnalyticsTab from "@/components/activities/FinancialAnalyticsTab"
 import RelatedActivitiesTab from "@/components/activities/RelatedActivitiesTab"
 import ActivityContactsTab from "@/components/activities/ActivityContactsTab"
+import { PublicCommentsThread } from "@/components/activities/PublicCommentsThread"
 import {
   Tooltip,
   TooltipContent,
@@ -189,6 +192,18 @@ const HIERARCHY_LEVELS: HierarchyOption[] = [
     description: "Task or output-level work (most detailed level)"
   }
 ];
+
+// High contrast color variants for tags - consistent with TagsSection
+const TAG_COLOR_VARIANTS = [
+  'blue', 'purple', 'green', 'cyan', 'indigo', 'pink', 'rose', 'orange',
+  'amber', 'lime', 'emerald', 'teal', 'sky', 'violet', 'fuchsia'
+] as const;
+
+// Function to get tag color variant based on hash - consistent with TagsSection
+const getTagColorVariant = (tagName: string) => {
+  const hash = tagName.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+  return TAG_COLOR_VARIANTS[hash % TAG_COLOR_VARIANTS.length];
+};
 
 // Map layer configurations - same as Atlas
 type MapLayerType = 'cartodb_voyager' | 'osm_standard' | 'osm_humanitarian' | 'cyclosm' | 'opentopo' | 'satellite_esri';
@@ -294,6 +309,7 @@ interface Activity {
   targetGroups: string
   collaborationType: string
   banner?: string
+  bannerPosition?: number
   icon?: string
   activityStatus: string
   publicationStatus: string
@@ -435,6 +451,18 @@ export default function ActivityDetailPage() {
   const router = useRouter()
   const { user } = useUser()
   const { isBookmarked, toggleBookmark, isToggling } = useBookmarks()
+  const {
+    count: likesCount,
+    users: likeUsers,
+    isLiked,
+    hasMore: hasMoreLikes,
+    toggleLike,
+    loadMore: loadMoreLikes,
+  } = useEntityLikes({
+    entityType: 'activity',
+    entityId: id as string,
+    userId: user?.id,
+  })
   const searchParams = useSearchParams()
   const [copiedId, setCopiedId] = useState<string | null>(null)
   const [partnershipsSortField, setPartnershipsSortField] = useState<string>('organization')
@@ -478,6 +506,7 @@ export default function ActivityDetailPage() {
   
   const [showEditBanner, setShowEditBanner] = useState(false)
   const [banner, setBanner] = useState<string | null>(null)
+  const [bannerPosition, setBannerPosition] = useState<number>(50)
   const [showEditIcon, setShowEditIcon] = useState(false)
   const [localIcon, setLocalIcon] = useState<string | null>(null) // Local icon state to avoid updating activity object
   const activityRef = useRef<Activity | null>(null)
@@ -787,18 +816,22 @@ export default function ActivityDetailPage() {
 
   const fetchActivity = async (showLoading = true) => {
     if (!params?.id) return;
-    
+
     try {
       if (showLoading) setLoading(true)
-      // OPTIMIZATION: Use cached activity data
-      const found = await fetchActivityWithCache(Array.isArray(params.id) ? params.id[0] : params.id)
+      // Force fresh fetch to ensure we get latest banner position
+      const activityId = Array.isArray(params.id) ? params.id[0] : params.id;
+      invalidateActivityCache(activityId);
+      const found = await fetchActivityWithCache(activityId)
       if (found) {
           console.log('[ACTIVITY DETAIL DEBUG] Found activity:', found);
           console.log('[ACTIVITY DETAIL DEBUG] Activity contacts:', found.contacts);
           console.log('[ACTIVITY DETAIL DEBUG] Contacts count:', found.contacts?.length || 0);
-          
+          console.log('[ACTIVITY DETAIL DEBUG] Banner position from API:', found.bannerPosition);
+
           setActivity(found)
           setBanner(found.banner || null)
+          setBannerPosition(found.bannerPosition ?? 50)
           setSdgMappings(found.sdgMappings || [])
           
           // Convert partner data to display format
@@ -880,15 +913,21 @@ export default function ActivityDetailPage() {
     }
   }
 
-  const handleBannerChange = async (newBanner: string | null) => {
+  const handleBannerChange = async (newBanner: string | null, position?: number) => {
     setBanner(newBanner)
+    if (position !== undefined) {
+      setBannerPosition(position)
+    }
     // Save banner to backend
     if (!activity?.id) return
     try {
       const res = await fetch(`/api/activities/${activity.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ banner: newBanner }),
+        body: JSON.stringify({
+          banner: newBanner,
+          bannerPosition: position ?? bannerPosition
+        }),
       })
       if (!res.ok) throw new Error("Failed to save banner")
       toast.success("Banner updated successfully")
@@ -1557,7 +1596,17 @@ export default function ActivityDetailPage() {
                   </>
                 )}
               </Button>
-              <Link 
+              <NativeLikesCounter
+                count={likesCount}
+                users={likeUsers}
+                variant="outline"
+                size="default"
+                liked={isLiked}
+                onLike={toggleLike}
+                onLoadMore={loadMoreLikes}
+                hasMore={hasMoreLikes}
+              />
+              <Link
                 href={`/activities/new?id=${activity?.id}`}
                 className="inline-flex items-center justify-center rounded-md bg-slate-600 px-4 py-2 text-sm font-medium text-white hover:bg-slate-700 transition-colors"
               >
@@ -1578,6 +1627,7 @@ export default function ActivityDetailPage() {
               </DialogHeader>
               <BannerUpload
                 currentBanner={banner || undefined}
+                currentPosition={bannerPosition}
                 onBannerChange={handleBannerChange}
                 activityId={activity.id}
               />
@@ -1605,11 +1655,12 @@ export default function ActivityDetailPage() {
           <Card className="mb-6 border-0 shadow-none overflow-hidden">
             {/* Banner Image */}
             {banner ? (
-              <div className="w-full h-48 overflow-hidden">
+              <div className="w-full h-80 overflow-hidden">
                 <img
                   src={banner}
                   alt={`${activity.title} banner`}
                   className="w-full h-full object-cover"
+                  style={{ objectPosition: `center ${bannerPosition}%` }}
                 />
               </div>
             ) : null}
@@ -1627,11 +1678,19 @@ export default function ActivityDetailPage() {
                       <div className="flex-shrink-0">
                         {/* Icon/Logo */}
                         {(activity.icon || localIcon) && (
-                          <img 
-                            src={activity.icon || localIcon || ""} 
-                            alt={`${activity.title} icon`}
-                            className="w-20 h-20 rounded-lg object-cover border border-slate-200"
-                          />
+                          <div className="w-20 h-20 rounded-lg overflow-hidden border border-slate-200 bg-slate-100 flex items-center justify-center">
+                            <img
+                              src={activity.icon || localIcon || ""}
+                              alt={`${activity.title} icon`}
+                              className="object-contain"
+                              style={{
+                                width: `${activity.iconScale ?? 100}%`,
+                                height: `${activity.iconScale ?? 100}%`,
+                                maxWidth: 'none',
+                                maxHeight: 'none',
+                              }}
+                            />
+                          </div>
                         )}
                         {/* Country/Region Pills */}
                         {(countryAllocations.length > 0 || regionAllocations.length > 0) && (
@@ -1766,7 +1825,7 @@ export default function ActivityDetailPage() {
                         {activity.tags && activity.tags.length > 0 && (
                           <div className={`${(activity.icon || localIcon) || (countryAllocations.length > 0 || regionAllocations.length > 0) || (activity.activityScope || activity.collaborationType || activity.defaultAidType || activity.defaultFinanceType || activity.defaultFlowType || activity.defaultTiedStatus || activity.hierarchy) ? 'mt-3' : ''} flex flex-wrap gap-1 max-w-[12rem]`}>
                           {activity.tags.slice(0, 12).map((t: any) => (
-                            <Badge key={t.id || t.name} variant="secondary" className="text-[10px] px-1 py-0.5">
+                            <Badge key={t.id || t.name} variant={getTagColorVariant(t.name)} className="text-[10px] px-1.5 py-0.5">
                               {t.name}
                             </Badge>
                           ))}
@@ -1914,34 +1973,55 @@ export default function ActivityDetailPage() {
                           )}
                         </div>
 
-                        {/* Third Row: Timeline Dates */}
-                        <div className="flex flex-wrap items-center gap-3 pb-3 border-b border-slate-200">
-                          {activity.plannedStartDate && (
+                        {/* Third Row: Timeline Dates - 3 Column Grid */}
+                        <div className="grid grid-cols-3 gap-4 pb-3 border-b border-slate-200">
+                          {/* Column 1: Start Dates */}
+                          <div className="space-y-1.5">
                             <div className="flex items-center gap-1.5 text-xs text-slate-600 whitespace-nowrap">
                               <Calendar className="h-3 w-3 text-slate-400 flex-shrink-0" />
                               <span className="text-slate-500">Planned Start:</span>
-                              <span className="font-medium text-slate-900">{formatDate(activity.plannedStartDate)}</span>
+                              <span className="font-medium text-slate-900">
+                                {activity.plannedStartDate ? formatDate(activity.plannedStartDate) : '—'}
+                              </span>
                             </div>
-                          )}
-                          {activity.actualStartDate && (
                             <div className="flex items-center gap-1.5 text-xs text-slate-600 whitespace-nowrap">
                               <Calendar className="h-3 w-3 text-slate-400 flex-shrink-0" />
                               <span className="text-slate-500">Actual Start:</span>
-                              <span className="font-medium text-slate-900">{formatDate(activity.actualStartDate)}</span>
+                              <span className="font-medium text-slate-900">
+                                {activity.actualStartDate ? formatDate(activity.actualStartDate) : '—'}
+                              </span>
                             </div>
-                          )}
-                          {(activity.plannedEndDate || activity.actualEndDate) && (
+                          </div>
+
+                          {/* Column 2: End Dates */}
+                          <div className="space-y-1.5">
                             <div className="flex items-center gap-1.5 text-xs text-slate-600 whitespace-nowrap">
                               <Calendar className="h-3 w-3 text-slate-400 flex-shrink-0" />
-                              <span className="text-slate-500">
-                                {activity.actualEndDate ? 'Actual End:' : 'Planned End:'}
-                              </span>
+                              <span className="text-slate-500">Planned End:</span>
                               <span className="font-medium text-slate-900">
-                                {formatDate(activity.actualEndDate || activity.plannedEndDate || '')}
+                                {activity.plannedEndDate ? formatDate(activity.plannedEndDate) : '—'}
                               </span>
-                              {/* Date History Button - inline with last date */}
-                              <AllDatesHistory 
-                                activityId={activity.id} 
+                            </div>
+                            <div className="flex items-center gap-1.5 text-xs text-slate-600 whitespace-nowrap">
+                              <Calendar className="h-3 w-3 text-slate-400 flex-shrink-0" />
+                              <span className="text-slate-500">Actual End:</span>
+                              <span className="font-medium text-slate-900">
+                                {activity.actualEndDate ? formatDate(activity.actualEndDate) : '—'}
+                              </span>
+                            </div>
+                          </div>
+
+                          {/* Column 3: Created/Updated + History Button */}
+                          <div className="space-y-1.5">
+                            <div className="flex items-center gap-1.5 text-xs text-slate-600 whitespace-nowrap">
+                              <span className="text-slate-500">Created:</span>
+                              <span className="font-medium text-slate-900">{formatDate(activity.createdAt)}</span>
+                            </div>
+                            <div className="flex items-center gap-1.5 text-xs text-slate-600 whitespace-nowrap">
+                              <span className="text-slate-500">Updated:</span>
+                              <span className="font-medium text-slate-900">{formatDate(activity.updatedAt)}</span>
+                              <AllDatesHistory
+                                activityId={activity.id}
                                 dates={{
                                   plannedStartDate: activity.plannedStartDate,
                                   plannedEndDate: activity.plannedEndDate,
@@ -1951,27 +2031,6 @@ export default function ActivityDetailPage() {
                                 customDates={activity.customDates}
                               />
                             </div>
-                          )}
-                          {/* Fallback: Show history button even if no end dates */}
-                          {!(activity.plannedEndDate || activity.actualEndDate) && (
-                            <AllDatesHistory 
-                              activityId={activity.id} 
-                              dates={{
-                                plannedStartDate: activity.plannedStartDate,
-                                plannedEndDate: activity.plannedEndDate,
-                                actualStartDate: activity.actualStartDate,
-                                actualEndDate: activity.actualEndDate
-                              }}
-                              customDates={activity.customDates}
-                            />
-                          )}
-                          <div className="flex items-center gap-1 text-xs text-slate-500 whitespace-nowrap">
-                            <span>Created:</span>
-                            <span className="text-slate-900">{formatDate(activity.createdAt)}</span>
-                          </div>
-                          <div className="flex items-center gap-1 text-xs text-slate-500 whitespace-nowrap">
-                            <span>Updated:</span>
-                            <span className="text-slate-900">{formatDate(activity.updatedAt)}</span>
                           </div>
                         </div>
                         
@@ -3029,6 +3088,9 @@ export default function ActivityDetailPage() {
                 </TabsTrigger>
                 <TabsTrigger value="contacts" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
                   Contacts
+                </TabsTrigger>
+                <TabsTrigger value="discussion" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                  Discussion
                 </TabsTrigger>
               </TabsList>
 
@@ -4682,11 +4744,94 @@ export default function ActivityDetailPage() {
                   </CardHeader>
                   <CardContent>
                     {sdgMappings && sdgMappings.length > 0 ? (
-                      <SDGImageGrid 
-                        sdgCodes={sdgMappings.map(m => m.sdgGoal)} 
-                        size="lg"
-                        showTooltips={true}
-                      />
+                      <div className="space-y-6">
+                        {/* SDG Icons Grid */}
+                        <SDGImageGrid
+                          sdgCodes={sdgMappings.map(m => m.sdgGoal || m.sdg_goal)}
+                          size="lg"
+                          showTooltips={true}
+                        />
+
+                        {/* Detailed SDG Explanations and Targets */}
+                        {sdgMappings.some(m => m.notes || (m.sdgTarget || m.sdg_target)) && (
+                          <div className="mt-8 pt-6 border-t border-slate-200">
+                            <h4 className="text-sm font-semibold text-slate-700 mb-4">SDG Alignment Details</h4>
+                            <div className="grid gap-4">
+                              {(() => {
+                                // Group mappings by goal
+                                const goalGroups = sdgMappings.reduce((acc: any, mapping: any) => {
+                                  const goalId = mapping.sdgGoal || mapping.sdg_goal;
+                                  if (!acc[goalId]) {
+                                    acc[goalId] = { notes: null, targets: [] };
+                                  }
+                                  const targetId = mapping.sdgTarget || mapping.sdg_target;
+                                  if (targetId) {
+                                    acc[goalId].targets.push(targetId);
+                                  }
+                                  if (mapping.notes && !targetId) {
+                                    acc[goalId].notes = mapping.notes;
+                                  }
+                                  return acc;
+                                }, {});
+
+                                return Object.entries(goalGroups)
+                                  .filter(([_, data]: [string, any]) => data.notes || data.targets.length > 0)
+                                  .map(([goalId, data]: [string, any]) => {
+                                    const goal = SDG_GOALS.find(g => g.id === parseInt(goalId));
+                                    if (!goal) return null;
+
+                                    return (
+                                      <div key={goalId} className="flex gap-4 p-4 bg-slate-50 rounded-lg">
+                                        <div className="flex-shrink-0 w-16 h-16">
+                                          <SDGImageGrid
+                                            sdgCodes={[parseInt(goalId)]}
+                                            size="lg"
+                                            showTooltips={false}
+                                            clickable={false}
+                                          />
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                          <h5 className="font-medium text-slate-900">
+                                            Goal {goal.id}: {goal.name}
+                                          </h5>
+                                          {data.notes && (
+                                            <p className="mt-1 text-sm text-slate-600 whitespace-pre-wrap">
+                                              {data.notes}
+                                            </p>
+                                          )}
+                                          {data.targets.length > 0 && (
+                                            <div className="mt-2">
+                                              <p className="text-xs font-medium text-slate-500 mb-1">Specific Targets:</p>
+                                              <div className="flex flex-wrap gap-1.5">
+                                                {data.targets.map((targetId: string) => {
+                                                  const target = SDG_TARGETS.find(t => t.id === targetId);
+                                                  return (
+                                                    <TooltipProvider key={targetId}>
+                                                      <Tooltip>
+                                                        <TooltipTrigger asChild>
+                                                          <Badge variant="secondary" className="text-xs cursor-help">
+                                                            {targetId}
+                                                          </Badge>
+                                                        </TooltipTrigger>
+                                                        <TooltipContent className="max-w-sm">
+                                                          <p className="text-sm">{target?.description || targetId}</p>
+                                                        </TooltipContent>
+                                                      </Tooltip>
+                                                    </TooltipProvider>
+                                                  );
+                                                })}
+                                              </div>
+                                            </div>
+                                          )}
+                                        </div>
+                                      </div>
+                                    );
+                                  });
+                              })()}
+                            </div>
+                          </div>
+                        )}
+                      </div>
                     ) : (
                       <div className="text-center py-12">
                         <Globe className="h-12 w-12 text-slate-300 mx-auto mb-4" />
@@ -4735,6 +4880,13 @@ export default function ActivityDetailPage() {
               <TabsContent value="contacts" className="p-6 border-0">
                 {activeTab === "contacts" && (
                   <ActivityContactsTab activityId={activity.id} />
+                )}
+              </TabsContent>
+
+              {/* Discussion Tab - Public Comments */}
+              <TabsContent value="discussion" className="p-6 border-0">
+                {activeTab === "discussion" && (
+                  <PublicCommentsThread activityId={activity.id} />
                 )}
               </TabsContent>
             </Tabs>

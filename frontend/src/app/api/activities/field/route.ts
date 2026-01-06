@@ -818,12 +818,12 @@ export async function POST(request: Request) {
               console.log('[Field API] Creating missing working groups:', missingCodes);
               
               // Create missing working groups from the provided data
+              // Note: vocabulary is stored in activity_working_groups, not in working_groups table
               const workingGroupsToCreate = workingGroupsToSave
                 .filter((wg: any) => missingCodes.includes(wg.code))
                 .map((wg: any) => ({
                   code: wg.code,
                   label: wg.label,
-                  vocabulary: wg.vocabulary || '99',
                   is_active: true
                 }));
 
@@ -896,6 +896,26 @@ export async function POST(request: Request) {
         oldValue = existingActivity.banner;
         newValue = body.value;
         updateData.banner = body.value;
+        break;
+
+      case 'bannerPosition':
+        console.log('[Field API] === BANNER POSITION UPDATE ===');
+        console.log('[Field API] Existing banner_position:', existingActivity.banner_position);
+        console.log('[Field API] New value from body:', body.value, 'type:', typeof body.value);
+        oldValue = existingActivity.banner_position;
+        newValue = body.value;
+        updateData.banner_position = typeof body.value === 'number' ? Math.round(body.value) : 50;
+        console.log('[Field API] Will update to:', updateData.banner_position);
+        break;
+
+      case 'iconScale':
+        console.log('[Field API] === ICON SCALE UPDATE ===');
+        console.log('[Field API] Existing icon_scale:', existingActivity.icon_scale);
+        console.log('[Field API] New value from body:', body.value, 'type:', typeof body.value);
+        oldValue = existingActivity.icon_scale;
+        newValue = body.value;
+        updateData.icon_scale = typeof body.value === 'number' ? Math.round(body.value) : 100;
+        console.log('[Field API] Will update to:', updateData.icon_scale);
         break;
 
       case 'budgetStatus':
@@ -1247,11 +1267,14 @@ export async function POST(request: Request) {
           workingGroupsData = [];
         } else {
           // Transform working groups to match expected format
-          workingGroupsData = workingGroups?.map((wgRelation: any) => ({
-            code: wgRelation.working_groups.code,
-            label: wgRelation.working_groups.label,
-            vocabulary: wgRelation.vocabulary
-          })) || [];
+          // Filter out any orphaned references where the join failed
+          workingGroupsData = workingGroups
+            ?.filter((wgRelation: any) => wgRelation.working_groups)
+            ?.map((wgRelation: any) => ({
+              code: wgRelation.working_groups.code,
+              label: wgRelation.working_groups.label,
+              vocabulary: wgRelation.vocabulary
+            })) || [];
         }
       } catch (workingGroupsFetchError) {
         console.error('[Field API] Error fetching working groups for response:', workingGroupsFetchError);

@@ -34,7 +34,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
-import { MessageSquare, AlertCircle, CheckCircle, XCircle, Send, Users, X, UserPlus, ChevronLeft, ChevronRight, ChevronDown, HelpCircle, Save, ArrowRight, ArrowLeft, Globe, RefreshCw, ShieldCheck, PartyPopper, Lock, Copy, ExternalLink, Info, Share, CircleDashed, Loader2, Plus } from "lucide-react";
+import { MessageSquare, AlertCircle, CheckCircle, XCircle, Send, Users, X, UserPlus, ChevronLeft, ChevronRight, ChevronDown, HelpCircle, Save, ArrowRight, ArrowLeft, Globe, RefreshCw, ShieldCheck, PartyPopper, Lock, Copy, ExternalLink, Info, Share, CircleDashed, Loader2, Plus, Megaphone, FileText } from "lucide-react";
 import { HelpTextTooltip } from "@/components/ui/help-text-tooltip";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { FieldHelp, RequiredFieldIndicator } from "@/components/ActivityFieldHelpers";
@@ -116,7 +116,7 @@ const formatDateToString = (date: Date | null): string => {
 };
 
 // Separate component for General section to properly use hooks
-function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasUnsavedChanges, updateActivityNestedField, setShowActivityCreatedAlert, onTitleAutosaveState, clearSavedFormData }: any) {
+function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasUnsavedChanges, updateActivityNestedField, setShowActivityCreatedAlert, onTitleAutosaveState, clearSavedFormData, isNewActivity }: any) {
   const [isCreatingActivity, setIsCreatingActivity] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const hasShownInitialToast = useRef(false);
@@ -160,6 +160,8 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
   const [isActualEndDescriptionFocused, setIsActualEndDescriptionFocused] = useState(false);
   const [otherIdentifiersFocusStates, setOtherIdentifiersFocusStates] = useState<Record<string, boolean>>({});
   const [customDateFocusStates, setCustomDateFocusStates] = useState<Record<string, boolean>>({});
+  const [savingCustomDateIndex, setSavingCustomDateIndex] = useState<number | null>(null);
+  const [newCustomDateIndex, setNewCustomDateIndex] = useState<number | null>(null);
 
   // Initialize savedCustomDates ONLY when activity is first loaded from database
   // This runs when the activity ID changes (new activity loaded)
@@ -288,6 +290,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
     debounceMs: 1000,
     additionalData: { title: general.title || 'New Activity' },
     onSuccess: (data, isUserInitiated = false) => {
+      setSavingCustomDateIndex(null);
       if (data.id && !general.id) {
         setGeneral((g: any) => ({ ...g, id: data.id, uuid: data.uuid || data.id }));
         setShowActivityCreatedAlert(true);
@@ -519,6 +522,19 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
       // Disabled autosave flow
     },
   });
+  const bannerPositionAutosave = useFieldAutosave('bannerPosition', {
+    activityId: effectiveActivityId,
+    userId: user?.id,
+    immediate: false,
+    debounceMs: 0,
+    additionalData: { title: general.title || 'New Activity' },
+    onSuccess: (data) => {
+      if (data.id && !general.id) {
+        setGeneral((g: any) => ({ ...g, id: data.id, uuid: data.uuid || data.id }));
+        setShowActivityCreatedAlert(true);
+      }
+    },
+  });
   const iconAutosave = useFieldAutosave('icon', {
     activityId: effectiveActivityId,
     userId: user?.id,
@@ -531,6 +547,21 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
         setShowActivityCreatedAlert(true);
       }
       // Disabled autosave flow
+    },
+  });
+
+  // Icon scale autosave hook (for zoom level)
+  const iconScaleAutosave = useFieldAutosave('iconScale', {
+    activityId: effectiveActivityId,
+    userId: user?.id,
+    immediate: false,
+    debounceMs: 0,
+    additionalData: { title: general.title || 'New Activity' },
+    onSuccess: (data) => {
+      if (data.id && !general.id) {
+        setGeneral((g: any) => ({ ...g, id: data.id, uuid: data.uuid || data.id }));
+        setShowActivityCreatedAlert(true);
+      }
     },
   });
 
@@ -710,16 +741,16 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
 
   // Removed title autosave toasts and exposure; creation handled by manual save
 
-  // Show initial toast when component mounts if activity not created
+  // Show initial toast when component mounts if creating a new activity (not editing an existing one)
   useEffect(() => {
-    if (!general.id && !hasShownInitialToast.current) {
+    if (!general.id && !hasShownInitialToast.current && isNewActivity) {
       toast.info("Start by entering an Activity Title to create the activity and unlock all form fields!", {
         position: 'top-center',
         duration: 5000,
       });
       hasShownInitialToast.current = true;
     }
-  }, [general.id]);
+  }, [general.id, isNewActivity]);
 
   
 
@@ -737,9 +768,14 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
           <AutosaveBannerUpload
             id="banner"
             currentImage={general.banner}
-            onImageChange={banner => {
+            currentPosition={general.bannerPosition}
+            onImageChange={(banner, position) => {
               if (!fieldLockStatus.isLocked) {
-                setGeneral((g: any) => ({ ...g, banner }));
+                setGeneral((g: any) => ({
+                  ...g,
+                  banner,
+                  bannerPosition: position ?? g.bannerPosition
+                }));
                 setHasUnsavedChanges(true);
               }
             }}
@@ -764,11 +800,41 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
               </div>
             }
             autosaveState={{
-              isSaving: bannerAutosave.state.isSaving,
+              isSaving: bannerAutosave.state.isSaving || bannerPositionAutosave.state.isSaving,
               isPersistentlySaved: bannerAutosave.state.isPersistentlySaved,
-              error: bannerAutosave.state.error
+              error: bannerAutosave.state.error || bannerPositionAutosave.state.error
             }}
-            triggerSave={bannerAutosave.triggerFieldSave}
+            triggerSave={async (banner, position) => {
+              console.log('[BANNER SAVE] triggerSave called:', { banner: banner ? 'has banner' : 'no banner', position });
+              // Only save banner if it's actually provided (not null/undefined)
+              if (banner) {
+                console.log('[BANNER SAVE] Saving banner image...');
+                bannerAutosave.triggerFieldSave(banner);
+              }
+              // Save position if provided - use direct API call for reliability
+              if (position !== undefined && general.id) {
+                console.log('[BANNER SAVE] Saving position:', position, 'activityId:', general.id);
+                try {
+                  const response = await fetch('/api/activities/field', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                      field: 'bannerPosition',
+                      value: Math.round(position),
+                      activityId: general.id,
+                      userId: user?.id
+                    })
+                  });
+                  const result = await response.json();
+                  console.log('[BANNER SAVE] Position save result:', result);
+                  if (!response.ok) {
+                    console.error('[BANNER SAVE] Position save failed:', result);
+                  }
+                } catch (error) {
+                  console.error('[BANNER SAVE] Position save error:', error);
+                }
+              }
+            }}
             disabled={fieldLockStatus.isLocked}
           />
         </div>
@@ -779,9 +845,14 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
             <AutosaveIconUpload
               id="icon"
               currentImage={general.icon}
-              onImageChange={icon => {
+              currentScale={general.iconScale}
+              onImageChange={(icon, scale) => {
                 if (!fieldLockStatus.isLocked) {
-                  setGeneral((g: any) => ({ ...g, icon }));
+                  setGeneral((g: any) => ({
+                    ...g,
+                    icon,
+                    iconScale: scale ?? g.iconScale
+                  }));
                   setHasUnsavedChanges(true);
                 }
               }}
@@ -789,7 +860,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
                 <div className="flex items-center gap-2">
                   Activity Icon/Logo
                   <HelpTextTooltip>
-                    Upload a square image (256×256 pixels) to represent the activity's icon or logo. This image will be displayed on the activity profile page, activity cards, and summaries across the application.
+                    Upload a square image (256×256 pixels) to represent the activity's icon or logo. This image will be displayed on the activity profile page, activity cards, and summaries across the application. After uploading, use the zoom control to adjust the visible area.
                   </HelpTextTooltip>
                   {fieldLockStatus.isLocked && (
                     <TooltipProvider>
@@ -806,11 +877,41 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
                 </div>
               }
               autosaveState={{
-                isSaving: iconAutosave.state.isSaving,
+                isSaving: iconAutosave.state.isSaving || iconScaleAutosave.state.isSaving,
                 isPersistentlySaved: iconAutosave.state.isPersistentlySaved,
-                error: iconAutosave.state.error
+                error: iconAutosave.state.error || iconScaleAutosave.state.error
               }}
-              triggerSave={iconAutosave.triggerFieldSave}
+              triggerSave={async (icon, scale) => {
+                console.log('[ICON SAVE] triggerSave called:', { icon: icon ? 'has icon' : 'no icon', scale });
+                // Only save icon if it's actually provided (not null/undefined)
+                if (icon) {
+                  console.log('[ICON SAVE] Saving icon image...');
+                  iconAutosave.triggerFieldSave(icon);
+                }
+                // Save scale if provided - use direct API call for reliability
+                if (scale !== undefined && general.id) {
+                  console.log('[ICON SAVE] Saving scale:', scale, 'activityId:', general.id);
+                  try {
+                    const response = await fetch('/api/activities/field', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({
+                        field: 'iconScale',
+                        value: Math.round(scale),
+                        activityId: general.id,
+                        userId: user?.id
+                      })
+                    });
+                    const result = await response.json();
+                    console.log('[ICON SAVE] Scale save result:', result);
+                    if (!response.ok) {
+                      console.error('[ICON SAVE] Scale save failed:', result);
+                    }
+                  } catch (error) {
+                    console.error('[ICON SAVE] Scale save error:', error);
+                  }
+                }
+              }}
               disabled={fieldLockStatus.isLocked}
             />
           </div>
@@ -1939,77 +2040,116 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
           </div>
 
           {/* Custom Activity Dates */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
           {(general.customDates || []).map((customDate: any, index: number) => {
           // Check if user has clicked "Save Date Type" button (or loaded from database with label)
           const isSaved = savedCustomDates[index] === true;
 
           return (
-            <div key={index} className="mt-6">
+            <div key={index}>
               {!isSaved ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <LabelSaveIndicator
-                        isSaving={customDatesAutosave.state.isSaving}
-                        isSaved={false}
-                        hasValue={!!customDate.label?.trim()}
-                        isFocused={customDateFocusStates[`${index}-label`] || false}
-                        className="text-sm font-medium text-gray-700"
-                      >
-                        Date Type/Label
-                      </LabelSaveIndicator>
-                      <button
-                        type="button"
-                        onClick={() => {
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <LabelSaveIndicator
+                      isSaving={savingCustomDateIndex === index}
+                      isSaved={false}
+                      hasValue={!!customDate.label?.trim()}
+                      isFocused={customDateFocusStates[`${index}-label`] || false}
+                      className="text-sm font-medium text-gray-700"
+                    >
+                      Date Type/Label
+                    </LabelSaveIndicator>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const updatedDates = (general.customDates || []).filter((_: any, i: number) => i !== index);
+                        setGeneral((g: any) => ({ ...g, customDates: updatedDates }));
+                        customDatesAutosave.triggerFieldSave(updatedDates);
+                        // Remove from saved state
+                        setSavedCustomDates(prev => {
+                          const newState = { ...prev };
+                          delete newState[index];
+                          return newState;
+                        });
+                      }}
+                      className="text-red-600 hover:text-red-700 transition-colors"
+                      disabled={fieldLockStatus.isLocked}
+                      title="Remove this date"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                  <Input
+                    type="text"
+                    value={customDate.label || ''}
+                    onChange={(e) => {
+                      if (!fieldLockStatus.isLocked) {
+                        const updatedDates = [...(general.customDates || [])];
+                        updatedDates[index] = { ...updatedDates[index], label: e.target.value };
+                        setGeneral((g: any) => ({ ...g, customDates: updatedDates }));
+                      }
+                    }}
+                    autoFocus={newCustomDateIndex === index}
+                    onFocus={() => {
+                      setCustomDateFocusStates(prev => ({ ...prev, [`${index}-label`]: true }));
+                      if (newCustomDateIndex === index) {
+                        setNewCustomDateIndex(null); // Clear after focusing
+                      }
+                    }}
+                    onBlur={() => {
+                      setCustomDateFocusStates(prev => ({ ...prev, [`${index}-label`]: false }));
+                      if (!fieldLockStatus.isLocked) {
+                        if (customDate.label?.trim()) {
+                          // Mark as saved to show the date picker
+                          setSavedCustomDates(prev => ({ ...prev, [index]: true }));
+                        } else {
+                          // No label entered, silently remove the empty entry
                           const updatedDates = (general.customDates || []).filter((_: any, i: number) => i !== index);
                           setGeneral((g: any) => ({ ...g, customDates: updatedDates }));
-                          customDatesAutosave.triggerFieldSave(updatedDates);
-                          // Remove from saved state
                           setSavedCustomDates(prev => {
                             const newState = { ...prev };
                             delete newState[index];
                             return newState;
                           });
-                        }}
-                        className="text-red-600 hover:text-red-700 transition-colors"
-                        disabled={fieldLockStatus.isLocked}
-                        title="Remove this date"
-                      >
-                        <X className="w-4 h-4" />
-                      </button>
-                    </div>
-                    <Input
-                      type="text"
-                      value={customDate.label || ''}
-                      onChange={(e) => {
-                        if (!fieldLockStatus.isLocked) {
-                          const updatedDates = [...(general.customDates || [])];
-                          updatedDates[index] = { ...updatedDates[index], label: e.target.value };
-                          setGeneral((g: any) => ({ ...g, customDates: updatedDates }));
                         }
-                      }}
-                      onFocus={() => setCustomDateFocusStates(prev => ({ ...prev, [`${index}-label`]: true }))}
-                      onBlur={() => {
-                        setCustomDateFocusStates(prev => ({ ...prev, [`${index}-label`]: false }));
-                        if (!fieldLockStatus.isLocked && customDate.label?.trim()) {
-                          setSavedCustomDates(prev => ({ ...prev, [index]: true }));
-                          customDatesAutosave.triggerFieldSave(general.customDates);
-                        }
-                      }}
-                      placeholder="e.g., Government Approval Date"
-                      disabled={fieldLockStatus.isLocked}
-                      className={fieldLockStatus.isLocked ? "opacity-50" : ""}
-                    />
-                  </div>
+                      }
+                    }}
+                    placeholder="e.g., Government Approval Date"
+                    disabled={fieldLockStatus.isLocked}
+                    className={fieldLockStatus.isLocked ? "opacity-50" : ""}
+                  />
                 </div>
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {/* After Save - Half Width Layout */}
-                  <div className="space-y-3">
+                <div
+                  className="space-y-3"
+                  tabIndex={-1}
+                  onBlur={(e) => {
+                    // Check if focus is moving outside this container
+                    if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+                      // Use timeout to allow date selection to complete
+                      setTimeout(() => {
+                        setGeneral((g: any) => {
+                          const currentDate = g.customDates?.[index];
+                          if (!fieldLockStatus.isLocked && currentDate?.label?.trim() && !currentDate?.date) {
+                            // Label exists but no date selected, silently remove the entry
+                            const updatedDates = (g.customDates || []).filter((_: any, i: number) => i !== index);
+                            setSavedCustomDates(prev => {
+                              const newState = { ...prev };
+                              delete newState[index];
+                              return newState;
+                            });
+                            return { ...g, customDates: updatedDates };
+                          }
+                          return g; // No change
+                        });
+                      }, 300);
+                    }
+                  }}
+                >
                     {/* Label with delete button */}
                     <div className="flex items-center justify-between">
                       <LabelSaveIndicator
-                        isSaving={customDatesAutosave.state.isSaving}
+                        isSaving={savingCustomDateIndex === index}
                         isSaved={customDatesAutosave.state.isPersistentlySaved}
                         hasValue={!!customDate.label?.trim()}
                         isFocused={customDateFocusStates[`${index}-label`] || false}
@@ -2039,16 +2179,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
                     </div>
 
                     {/* Date Input */}
-                    <div className="space-y-2">
-                      <LabelSaveIndicator
-                        isSaving={customDatesAutosave.state.isSaving}
-                        isSaved={customDatesAutosave.state.isPersistentlySaved}
-                        hasValue={!!customDate.date}
-                        isFocused={customDateFocusStates[`${index}-date`] || false}
-                        className="text-xs text-gray-600"
-                      >
-                        Date
-                      </LabelSaveIndicator>
+                    <div>
                       <DatePicker
                         value={customDate.date || ''}
                         onChange={(value) => {
@@ -2056,10 +2187,10 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
                             const updatedDates = [...(general.customDates || [])];
                             updatedDates[index] = { ...updatedDates[index], date: value };
                             setGeneral((g: any) => ({ ...g, customDates: updatedDates }));
+                            setSavingCustomDateIndex(index);
                             customDatesAutosave.triggerFieldSave(updatedDates);
                           }
                         }}
-                        onBlur={() => setCustomDateFocusStates(prev => ({ ...prev, [`${index}-date`]: false }))}
                         placeholder="Select date"
                         disabled={fieldLockStatus.isLocked}
                         className={fieldLockStatus.isLocked ? "opacity-50" : ""}
@@ -2083,7 +2214,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
                           <ChevronDown className={`h-3 w-3 transition-transform ${showCustomDateDescriptions[index] ? 'rotate-180' : ''}`} />
                         </button>
                         <LabelSaveIndicator
-                          isSaving={customDatesAutosave.state.isSaving}
+                          isSaving={savingCustomDateIndex === index}
                           isSaved={customDatesAutosave.state.isPersistentlySaved}
                           hasValue={!!customDate.description?.trim()}
                           isFocused={customDateFocusStates[`${index}-description`] || false}
@@ -2114,6 +2245,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
                                 const updatedDates = [...(general.customDates || [])];
                                 updatedDates[index] = { ...updatedDates[index], description: e.target.value };
                                 setGeneral((g: any) => ({ ...g, customDates: updatedDates }));
+                                setSavingCustomDateIndex(index);
                                 customDatesAutosave.triggerFieldSave(updatedDates);
                               }
                             }}
@@ -2127,11 +2259,11 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
                       )}
                     </div>
                   </div>
-                </div>
               )}
             </div>
           );
         })}
+          </div>
 
           {/* Add Another Activity Date Button */}
           <div className="mt-4">
@@ -2140,13 +2272,16 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
               variant="outline"
               size="sm"
               onClick={() => {
-                const newDates = [...(general.customDates || []), {
+                const currentDates = general.customDates || [];
+                const newIndex = currentDates.length;
+                const newDates = [...currentDates, {
                   label: '',
                   date: '',
                   description: ''
                 }];
                 setGeneral((g: any) => ({ ...g, customDates: newDates }));
-                customDatesAutosave.triggerFieldSave(newDates);
+                setNewCustomDateIndex(newIndex); // Track for auto-focus
+                // Don't save yet - wait until label and date are filled
               }}
               className="gap-2"
               disabled={fieldLockStatus.isLocked}
@@ -2169,7 +2304,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
         
         {/* Existing Identifiers */}
         {(general.otherIdentifiers || []).map((identifier: any, index: number) => (
-          <div key={index} className="space-y-4 p-4 rounded-lg bg-white">
+          <div key={index} className="mt-6 space-y-4">
             <div className="flex items-center justify-between">
               <h4 className="text-sm font-medium text-gray-700">Other Identifier {index + 1}</h4>
               <Button
@@ -2187,7 +2322,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
               </Button>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
               {/* Identifier Code */}
               <div className="space-y-2">
                 <LabelSaveIndicator
@@ -2275,7 +2410,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
                   isFocused={otherIdentifiersFocusStates[`${index}-ownerOrg-ref`] || false}
                   className="text-gray-700"
                 >
-                  Owner Organisation Ref{' '}<span className="text-gray-400">(Optional)</span>
+                  Owner Organisation Ref <span className="text-gray-400">(Optional)</span>
                 </LabelSaveIndicator>
                 <Input
                   type="text"
@@ -2328,7 +2463,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
   );
 }
 
-function SectionContent({ section, general, setGeneral, sectors, setSectors, transactions, setTransactions, refreshTransactions, transactionId, extendingPartners, setExtendingPartners, implementingPartners, setImplementingPartners, governmentPartners, setGovernmentPartners, fundingPartners, setFundingPartners, contacts, setContacts, updateContacts, governmentInputs, setGovernmentInputs, sdgMappings, setSdgMappings, tags, setTags, workingGroups, setWorkingGroups, policyMarkers, setPolicyMarkers, specificLocations, setSpecificLocations, coverageAreas, setCoverageAreas, countries, setCountries, regions, setRegions, advancedLocations, setAdvancedLocations, permissions, setSectorValidation, setSectorsCompletionStatusWithLogging, activityScope, setActivityScope, user, getDateFieldStatus, setHasUnsavedChanges, updateActivityNestedField, setShowActivityCreatedAlert, onTitleAutosaveState, tabCompletionStatus, budgets, setBudgets, budgetNotProvided, setBudgetNotProvided, plannedDisbursements, setPlannedDisbursements, handlePlannedDisbursementsChange, handleResultsChange, documents, setDocuments, documentsAutosave, setIatiSyncState, subnationalBreakdowns, setSubnationalBreakdowns, onSectionChange, getNextSection, getPreviousSection, setParticipatingOrgsCount, setLinkedActivitiesCount, setResultsCount, setCapitalSpendPercentage, setConditionsCount, setFinancingTermsCount, setCountryBudgetItemsCount, setForwardSpendCount, clearSavedFormData, loadedTabs, setHumanitarian, setHumanitarianScopes, setFocalPointsCount }: any) {
+function SectionContent({ section, general, setGeneral, sectors, setSectors, transactions, setTransactions, refreshTransactions, transactionId, extendingPartners, setExtendingPartners, implementingPartners, setImplementingPartners, governmentPartners, setGovernmentPartners, fundingPartners, setFundingPartners, contacts, setContacts, updateContacts, governmentInputs, setGovernmentInputs, sdgMappings, setSdgMappings, tags, setTags, workingGroups, setWorkingGroups, policyMarkers, setPolicyMarkers, specificLocations, setSpecificLocations, coverageAreas, setCoverageAreas, countries, setCountries, regions, setRegions, advancedLocations, setAdvancedLocations, permissions, setSectorValidation, setSectorsCompletionStatusWithLogging, activityScope, setActivityScope, user, getDateFieldStatus, setHasUnsavedChanges, updateActivityNestedField, setShowActivityCreatedAlert, onTitleAutosaveState, tabCompletionStatus, budgets, setBudgets, budgetNotProvided, setBudgetNotProvided, plannedDisbursements, setPlannedDisbursements, handlePlannedDisbursementsChange, handleResultsChange, documents, setDocuments, documentsAutosave, setIatiSyncState, subnationalBreakdowns, setSubnationalBreakdowns, onSectionChange, getNextSection, getPreviousSection, setParticipatingOrgsCount, setLinkedActivitiesCount, setResultsCount, setCapitalSpendPercentage, setConditionsCount, setFinancingTermsCount, setCountryBudgetItemsCount, setForwardSpendCount, clearSavedFormData, loadedTabs, setHumanitarian, setHumanitarianScopes, setFocalPointsCount, onGeographyLevelChange, onSectorExportLevelChange, isNewActivity }: any) {
 
   // Calculate total budget in USD for country budget mappings
   const totalBudgetUSD = useMemo(() => {
@@ -2355,7 +2490,7 @@ function SectionContent({ section, general, setGeneral, sectors, setSectors, tra
     case "metadata":
       return <MetadataTab activityId={general.id} />;
     case "general":
-      return <GeneralSection 
+      return <GeneralSection
         general={general}
         setGeneral={setGeneral}
         user={user}
@@ -2365,6 +2500,7 @@ function SectionContent({ section, general, setGeneral, sectors, setSectors, tra
         setShowActivityCreatedAlert={setShowActivityCreatedAlert}
         onTitleAutosaveState={onTitleAutosaveState}
         clearSavedFormData={clearSavedFormData}
+        isNewActivity={isNewActivity}
       />;
     case "iati":
       return (
@@ -2402,6 +2538,8 @@ function SectionContent({ section, general, setGeneral, sectors, setSectors, tra
               onValidationChange={setSectorValidation}
               onCompletionStatusChange={setSectorsCompletionStatusWithLogging}
               activityId={general.id}
+              sectorExportLevel={general.sectorExportLevel || 'activity'}
+              onSectorExportLevelChange={onSectorExportLevelChange}
             />
         </div>
       );
@@ -2459,6 +2597,8 @@ function SectionContent({ section, general, setGeneral, sectors, setSectors, tra
         subnationalBreakdowns={subnationalBreakdowns}
         activityTitle={general.title}
         activitySector={general.primarySector}
+        geographyLevel={general.geographyLevel || 'activity'}
+        onGeographyLevelChange={onGeographyLevelChange}
       />;
     case "finances":
       return <EnhancedFinancesSection 
@@ -2487,6 +2627,8 @@ function SectionContent({ section, general, setGeneral, sectors, setSectors, tra
           }, 100);
         }}
         disabled={false}
+        geographyLevel={general.geographyLevel || 'activity'}
+        activitySectors={sectors}
       />;
     case "budgets":
       return <ActivityBudgetsTab 
@@ -2760,7 +2902,9 @@ function NewActivityPageContent() {
       actualEndDate: "",
       actualEndDescription: "",
       banner: "",
+      bannerPosition: 50, // Default to center
       icon: "",
+      iconScale: 100, // Default scale (100%)
       createdBy: undefined as { id: string; name: string; role: string } | undefined,
       createdByOrg: "",
       reportingOrgId: "",
@@ -2778,7 +2922,11 @@ function NewActivityPageContent() {
       // Budget status fields
       budgetStatus: "unknown" as "on_budget" | "off_budget" | "partial" | "unknown",
       onBudgetPercentage: null as number | null,
-      budgetStatusNotes: null as string | null
+      budgetStatusNotes: null as string | null,
+      // Geography level - whether geography is published at activity or transaction level
+      geographyLevel: "activity" as "activity" | "transaction",
+      // Sector export level - whether sectors are exported at activity or transaction level in IATI XML
+      sectorExportLevel: "activity" as "activity" | "transaction"
     };
   });
 
@@ -2902,111 +3050,86 @@ function NewActivityPageContent() {
     setResultsCount(Array.isArray(results) ? results.length : 0);
   }, []);
 
-  // Fetch participating organizations count on page load for tab completion
-  React.useEffect(() => {
-    const fetchParticipatingOrgsCount = async () => {
-      if (!general.id) return;
-      
-      try {
-        const response = await fetch(`/api/activities/${general.id}/participating-organizations`);
-        
-        if (response.ok) {
-          const data = await response.json();
-          const count = data.length || 0;
-          setParticipatingOrgsCount(count);
-        }
-      } catch (error) {
-        console.error('[NewActivityPage] Error fetching participating orgs for tab completion:', error);
+  // Handler for geography level change (autosave)
+  const handleGeographyLevelChange = useCallback(async (level: 'activity' | 'transaction') => {
+    // Get the current activity ID from state
+    let currentActivityId: string | null = null;
+    setGeneral((prev: any) => {
+      currentActivityId = prev.id;
+      return { ...prev, geographyLevel: level };
+    });
+
+    // Only save to database if we have an activity ID
+    if (!currentActivityId || currentActivityId === 'NEW') {
+      console.log('[ActivityEditor] Skipping geography level save - no activity ID yet');
+      return;
+    }
+
+    try {
+      console.log('[ActivityEditor] Saving geography level:', level, 'for activity:', currentActivityId);
+      const response = await fetch(`/api/activities/${currentActivityId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ geography_level: level })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        console.error('[ActivityEditor] API error response:', errorData);
+        throw new Error('Failed to update geography level');
       }
-    };
 
-    fetchParticipatingOrgsCount();
-  }, [general.id]);
+      console.log('[ActivityEditor] Geography level saved:', level);
+      toast.success('Geography level saved');
+    } catch (error) {
+      console.error('[ActivityEditor] Error saving geography level:', error);
+      toast.error('Failed to save geography level');
+      // Revert on error
+      setGeneral((prev: any) => ({ ...prev, geographyLevel: level === 'activity' ? 'transaction' : 'activity' }));
+    }
+  }, []);
 
-  // Fetch linked activities count on page load for tab completion
-  React.useEffect(() => {
-    const fetchLinkedActivitiesCount = async () => {
-      if (!general.id) return;
-      try {
-        const response = await fetch(`/api/activities/${general.id}/linked`);
-        if (response.ok) {
-          const data = await response.json();
-          const count = Array.isArray(data) ? data.length : 0;
-          setLinkedActivitiesCount(count);
-        } else {
-          setLinkedActivitiesCount(0);
-        }
-      } catch (error) {
-        // If table missing or any error, treat as zero
-        setLinkedActivitiesCount(0);
+  // Handler for sector export level change (autosave)
+  const handleSectorExportLevelChange = useCallback(async (level: 'activity' | 'transaction') => {
+    // Get the current activity ID from state
+    let currentActivityId: string | null = null;
+    setGeneral((prev: any) => {
+      currentActivityId = prev.id;
+      return { ...prev, sectorExportLevel: level };
+    });
+
+    // Only save to database if we have an activity ID
+    if (!currentActivityId || currentActivityId === 'NEW') {
+      console.log('[ActivityEditor] Skipping sector export level save - no activity ID yet');
+      return;
+    }
+
+    try {
+      console.log('[ActivityEditor] Saving sector export level:', level, 'for activity:', currentActivityId);
+      const response = await fetch(`/api/activities/${currentActivityId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sectorExportLevel: level })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        console.error('[ActivityEditor] API error response:', errorData);
+        throw new Error('Failed to update sector export level');
       }
-    };
 
-    fetchLinkedActivitiesCount();
-  }, [general.id]);
+      console.log('[ActivityEditor] Sector export level saved:', level);
+      toast.success('Sector export level saved');
+    } catch (error) {
+      console.error('[ActivityEditor] Error saving sector export level:', error);
+      toast.error('Failed to save sector export level');
+      // Revert on error
+      setGeneral((prev: any) => ({ ...prev, sectorExportLevel: level === 'activity' ? 'transaction' : 'activity' }));
+    }
+  }, []);
 
-  // Fetch results count on page load for tab completion
-  React.useEffect(() => {
-    const fetchResultsCount = async () => {
-      if (!general.id) return;
-      try {
-        const response = await fetch(`/api/activities/${general.id}/results`);
-        if (response.ok) {
-          const data = await response.json();
-          const count = Array.isArray(data?.results) ? data.results.length : 0;
-          setResultsCount(count);
-        } else {
-          setResultsCount(0);
-        }
-      } catch (error) {
-        setResultsCount(0);
-      }
-    };
-
-    fetchResultsCount();
-  }, [general.id]);
-
-  // Fetch country budget items count on page load for tab completion
-  React.useEffect(() => {
-    const fetchCountryBudgetItemsCount = async () => {
-      if (!general.id) return;
-      try {
-        const response = await fetch(`/api/activities/${general.id}/country-budget-items`);
-        if (response.ok) {
-          const data = await response.json();
-          const items = data.country_budget_items || [];
-          setCountryBudgetItemsCount(items.length);
-        } else {
-          setCountryBudgetItemsCount(0);
-        }
-      } catch (error) {
-        setCountryBudgetItemsCount(0);
-      }
-    };
-
-    fetchCountryBudgetItemsCount();
-  }, [general.id]);
-
-  // Fetch metadata on page load for tab completion
-  React.useEffect(() => {
-    const fetchMetadata = async () => {
-      if (!general.id || general.id === 'new') return;
-      try {
-        const response = await fetch(`/api/activities/${general.id}/metadata`);
-        if (response.ok) {
-          const data = await response.json();
-          setMetadataData(data.metadata || null);
-        } else {
-          setMetadataData(null);
-        }
-      } catch (error) {
-        console.error('Error fetching metadata:', error);
-        setMetadataData(null);
-      }
-    };
-
-    fetchMetadata();
-  }, [general.id]);
+  // NOTE: Participating orgs, linked activities, results, country budget items, and metadata
+  // are now loaded in the batch fetch in loadActivity() to prevent gradual green tick appearance
 
   // Use government endorsement hook for tab completion
   const { endorsement: governmentEndorsementData } = useGovernmentEndorsement(general.id || 'new');
@@ -3238,7 +3361,9 @@ function NewActivityPageContent() {
         actualStartDate: "",
         actualEndDate: "",
         banner: "",
+        bannerPosition: 50,
         icon: "",
+        iconScale: 100,
         createdBy: undefined,
         createdByOrg: user?.organizationId || "",
         reportingOrgId: user?.organizationId || "",
@@ -3640,7 +3765,9 @@ function NewActivityPageContent() {
             actualEndDate: data.actualEndDate || "",
             actualEndDescription: data.actualEndDescription || "",
             banner: data.banner || "",
+            bannerPosition: data.banner_position ?? data.bannerPosition ?? 50,
             icon: data.icon || "",
+            iconScale: data.icon_scale ?? data.iconScale ?? 100,
             createdBy: data.createdBy || undefined,
             createdByOrg: data.createdByOrg || "",
             reportingOrgId: data.reporting_org_id || data.reportingOrgId || "",
@@ -3661,7 +3788,11 @@ function NewActivityPageContent() {
             // Budget status fields
             budgetStatus: data.budgetStatus || data.budget_status || "unknown",
             onBudgetPercentage: data.onBudgetPercentage ?? data.on_budget_percentage ?? null,
-            budgetStatusNotes: data.budgetStatusNotes ?? data.budget_status_notes ?? null
+            budgetStatusNotes: data.budgetStatusNotes ?? data.budget_status_notes ?? null,
+            // Geography level
+            geographyLevel: data.geography_level || data.geographyLevel || "activity",
+            // Sector export level (for IATI export)
+            sectorExportLevel: data.sector_export_level || data.sectorExportLevel || "activity"
           });
 
           // Set capital spend percentage for tab completion
@@ -3741,7 +3872,13 @@ function NewActivityPageContent() {
             subnationalResult,
             contactsResult,
             conditionsResult,
-            financingTermsResult
+            financingTermsResult,
+            participatingOrgsResult,
+            linkedActivitiesResult,
+            resultsResult,
+            countryBudgetItemsResult,
+            metadataResult,
+            focalPointsResult
           ] = await Promise.allSettled([
             // 1. Budgets API
             fetch(`/api/activities/${activityId}/budgets`).then(r => r.ok ? r.json() : null),
@@ -3765,7 +3902,19 @@ function NewActivityPageContent() {
             Promise.all([
               supabase.from('activity_financing_terms').select('id, rate_1, commitment_date').eq('activity_id', activityId).maybeSingle(),
               supabase.from('activity_loan_status').select('id').eq('activity_id', activityId)
-            ])
+            ]),
+            // 11. Participating organizations API (for tab completion)
+            fetch(`/api/activities/${activityId}/participating-organizations`).then(r => r.ok ? r.json() : []),
+            // 12. Linked activities API (for tab completion)
+            fetch(`/api/activities/${activityId}/linked`).then(r => r.ok ? r.json() : []),
+            // 13. Results API (for tab completion)
+            fetch(`/api/activities/${activityId}/results`).then(r => r.ok ? r.json() : { results: [] }),
+            // 14. Country budget items API (for tab completion)
+            fetch(`/api/activities/${activityId}/country-budget-items`).then(r => r.ok ? r.json() : { country_budget_items: [] }),
+            // 15. Metadata API (for tab completion)
+            fetch(`/api/activities/${activityId}/metadata`).then(r => r.ok ? r.json() : { metadata: null }),
+            // 16. Focal Points API (for tab completion)
+            fetch(`/api/activities/${activityId}/focal-points`).then(r => r.ok ? r.json() : { government_focal_points: [], development_partner_focal_points: [] })
           ]);
 
           // Process all results and prepare values
@@ -3781,6 +3930,12 @@ function NewActivityPageContent() {
           let contactsValue: any[] | undefined = undefined;
           let conditionsCountValue = 0;
           let financingTermsCountValue = 0;
+          let participatingOrgsCountValue = 0;
+          let linkedActivitiesCountValue = 0;
+          let resultsCountValue = 0;
+          let countryBudgetItemsCountValue = 0;
+          let metadataValue: any = null;
+          let focalPointsCountValue = 0;
 
           // 1. Process budgets
           if (budgetsResult.status === 'fulfilled' && budgetsResult.value) {
@@ -3883,18 +4038,69 @@ function NewActivityPageContent() {
             const [financingTermsResponse, loanStatusResponse] = financingTermsResult.value;
             const { data: financingTermsData, error: financingTermsError } = financingTermsResponse;
             const { data: loanStatusData, error: loanStatusError } = loanStatusResponse;
-            
+
             // Has completed data if loan terms exist with key fields OR if any loan status exists
-            const hasFinancingData = 
+            const hasFinancingData =
               (financingTermsData && financingTermsData.rate_1 !== null && financingTermsData.commitment_date !== null) ||
               (loanStatusData && loanStatusData.length > 0);
-            
+
             if (!financingTermsError && !loanStatusError) {
               financingTermsCountValue = hasFinancingData ? 1 : 0;
               console.log('[AIMS] Loaded financing terms for tab completion:', hasFinancingData);
             }
           } else {
             console.warn('[AIMS] Failed to load financing terms for tab completion:', financingTermsResult.reason);
+          }
+
+          // 11. Process participating organizations
+          if (participatingOrgsResult.status === 'fulfilled' && participatingOrgsResult.value) {
+            participatingOrgsCountValue = participatingOrgsResult.value.length || 0;
+            console.log('[AIMS] Loaded participating orgs for tab completion:', participatingOrgsCountValue);
+          } else if (participatingOrgsResult.status === 'rejected') {
+            console.warn('[AIMS] Failed to load participating orgs for tab completion:', participatingOrgsResult.reason);
+          }
+
+          // 12. Process linked activities
+          if (linkedActivitiesResult.status === 'fulfilled' && linkedActivitiesResult.value) {
+            linkedActivitiesCountValue = Array.isArray(linkedActivitiesResult.value) ? linkedActivitiesResult.value.length : 0;
+            console.log('[AIMS] Loaded linked activities for tab completion:', linkedActivitiesCountValue);
+          } else if (linkedActivitiesResult.status === 'rejected') {
+            console.warn('[AIMS] Failed to load linked activities for tab completion:', linkedActivitiesResult.reason);
+          }
+
+          // 13. Process results
+          if (resultsResult.status === 'fulfilled' && resultsResult.value) {
+            resultsCountValue = Array.isArray(resultsResult.value?.results) ? resultsResult.value.results.length : 0;
+            console.log('[AIMS] Loaded results for tab completion:', resultsCountValue);
+          } else if (resultsResult.status === 'rejected') {
+            console.warn('[AIMS] Failed to load results for tab completion:', resultsResult.reason);
+          }
+
+          // 14. Process country budget items
+          if (countryBudgetItemsResult.status === 'fulfilled' && countryBudgetItemsResult.value) {
+            const items = countryBudgetItemsResult.value.country_budget_items || [];
+            countryBudgetItemsCountValue = items.length;
+            console.log('[AIMS] Loaded country budget items for tab completion:', countryBudgetItemsCountValue);
+          } else if (countryBudgetItemsResult.status === 'rejected') {
+            console.warn('[AIMS] Failed to load country budget items for tab completion:', countryBudgetItemsResult.reason);
+          }
+
+          // 15. Process metadata
+          if (metadataResult.status === 'fulfilled' && metadataResult.value) {
+            metadataValue = metadataResult.value.metadata || null;
+            console.log('[AIMS] Loaded metadata for tab completion:', metadataValue ? 'has data' : 'no data');
+          } else if (metadataResult.status === 'rejected') {
+            console.warn('[AIMS] Failed to load metadata for tab completion:', metadataResult.reason);
+          }
+
+          // 16. Process focal points
+          if (focalPointsResult.status === 'fulfilled' && focalPointsResult.value) {
+            const govFocalPoints = focalPointsResult.value.government_focal_points || [];
+            const dpFocalPoints = focalPointsResult.value.development_partner_focal_points || [];
+            focalPointsCountValue = govFocalPoints.length + dpFocalPoints.length;
+            console.log('[AIMS] Loaded focal points for tab completion:', focalPointsCountValue);
+          } else if (focalPointsResult.status === 'rejected') {
+            console.warn('[AIMS] Failed to load focal points for tab completion:', focalPointsResult.reason);
           }
 
           // BATCH STATE UPDATES: Update all state at once to trigger single re-render
@@ -3913,6 +4119,12 @@ function NewActivityPageContent() {
           }
           setConditionsCount(conditionsCountValue);
           setFinancingTermsCount(financingTermsCountValue);
+          setParticipatingOrgsCount(participatingOrgsCountValue);
+          setLinkedActivitiesCount(linkedActivitiesCountValue);
+          setResultsCount(resultsCountValue);
+          setCountryBudgetItemsCount(countryBudgetItemsCountValue);
+          setFocalPointsCount(focalPointsCountValue);
+          setMetadataData(metadataValue);
           console.log('[AIMS] Tab completion data loaded successfully')
         } else {
           // New activity - just set some defaults
@@ -4723,7 +4935,7 @@ function NewActivityPageContent() {
                   {/* Validation Status Badge */}
                   {general.submissionStatus && general.submissionStatus !== 'draft' && (
                     <div className="mt-2 flex items-center gap-2">
-                      <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${
+                      <span className={`text-xs font-medium px-2 py-0.5 rounded inline-flex items-center gap-1 ${
                         general.submissionStatus === 'submitted' ? 'text-blue-600 bg-blue-100' :
                         general.submissionStatus === 'validated' ? 'text-green-600 bg-green-100' :
                         general.submissionStatus === 'rejected' ? 'text-red-600 bg-red-100' :
@@ -4731,10 +4943,10 @@ function NewActivityPageContent() {
                       }`}>
                         {(() => {
                           switch (general.submissionStatus) {
-                            case 'validated': return '✅ Validated'
-                            case 'published': return '📢 Published'
-                            case 'submitted': return '📝 Submitted'
-                            case 'rejected': return '❌ Rejected'
+                            case 'validated': return <><CheckCircle className="w-3 h-3" /> Validated</>
+                            case 'published': return <><Megaphone className="w-3 h-3" /> Published</>
+                            case 'submitted': return <><FileText className="w-3 h-3" /> Submitted</>
+                            case 'rejected': return <><XCircle className="w-3 h-3" /> Rejected</>
                             default: return 'Unpublished'
                           }
                         })()}
@@ -4798,73 +5010,61 @@ function NewActivityPageContent() {
             <div className="flex items-center justify-end mb-6">
               <div className="flex items-center gap-6">
                 {/* Publish Toggle */}
-                                 {(canPublish || !isEditing) && (
+                                 {canPublish && (
                    <div className="flex items-center gap-4">
                      <span className="text-base font-semibold text-gray-700">Unpublished</span>
-                     <TooltipProvider>
-                       <Tooltip>
-                         <TooltipTrigger asChild>
-                           <div>
-                             <Switch
-                              checked={general.publicationStatus === 'published'}
-                              onCheckedChange={async (checked) => {
-                                if (checked) {
-                                  // Check if we have the required fields for publishing
-                                  if (!general.title?.trim() || !general.description?.trim() || !general.activityStatus || !general.plannedStartDate || !general.plannedEndDate) {
-                                    toast.error('Please fill in all required fields: Title, Description, Status, Planned Start Date, and Planned End Date');
-                                    return;
-                                  }
-                                  
-                                  console.log('[AIMS] Attempting to publish activity');
-                                  const originalStatus = general.publicationStatus;
-                                  
-                                  // Optimistically update the UI
-                                  setGeneral((prev: any) => ({ ...prev, publicationStatus: 'published' }));
-                                  
-                                  try {
-                                    await saveActivity({ publish: true, suppressErrorToast: true });
-                                    console.log('[AIMS] Publish successful');
-                                  } catch (error) {
-                                    console.error('[AIMS] Publish failed, reverting state:', error);
-                                    // Revert the optimistic update on failure
-                                    setGeneral((prev: any) => ({ ...prev, publicationStatus: originalStatus }));
-                                    toast.error('Failed to publish activity. Please try again.');
-                                  }
-                                } else {
-                                  // Unpublish the activity
-                                  console.log('[AIMS] Attempting to unpublish activity');
-                                  const originalStatus = general.publicationStatus;
-                                  
-                                  // Optimistically update the UI
-                                  setGeneral((prev: any) => ({ ...prev, publicationStatus: 'draft' }));
-                                  
-                                  try {
-                                    await saveActivity({ publish: false, suppressErrorToast: true });
-                                    console.log('[AIMS] Unpublish successful');
-                                  } catch (error) {
-                                    console.error('[AIMS] Unpublish failed, reverting state:', error);
-                                    // Revert the optimistic update on failure
-                                    setGeneral((prev: any) => ({ ...prev, publicationStatus: originalStatus }));
-                                    toast.error('Failed to unpublish activity. Please try again.');
-                                  }
-                                }
-                              }}
-                               disabled={
-                                 // Disable only when minimum required fields are missing
-                                 (!general.title?.trim() || !general.description?.trim() || 
-                                  !general.activityStatus || !general.plannedStartDate || !general.plannedEndDate)
-                               }
-                               className="data-[state=checked]:bg-[#4C5568] scale-125"
-                             />
-                           </div>
-                         </TooltipTrigger>
-                         <TooltipContent className="max-w-sm">
-                           <p className="text-sm">
-                             Minimum required for publishing: Activity Title, Description, Activity Status, Planned Start Date, and Planned End Date. Complete these basic fields to enable the publish option.
-                           </p>
-                         </TooltipContent>
-                       </Tooltip>
-                     </TooltipProvider>
+                     <Switch
+                       checked={general.publicationStatus === 'published'}
+                       onCheckedChange={async (checked) => {
+                         if (checked) {
+                           // Check if we have the required fields for publishing
+                           if (!general.title?.trim() || !general.description?.trim() || !general.activityStatus || !general.plannedStartDate || !general.plannedEndDate) {
+                             toast.error('Please fill in all required fields: Title, Description, Status, Planned Start Date, and Planned End Date');
+                             return;
+                           }
+
+                           console.log('[AIMS] Attempting to publish activity');
+                           const originalStatus = general.publicationStatus;
+
+                           // Optimistically update the UI
+                           setGeneral((prev: any) => ({ ...prev, publicationStatus: 'published' }));
+
+                           try {
+                             await saveActivity({ publish: true, suppressErrorToast: true });
+                             console.log('[AIMS] Publish successful');
+                           } catch (error) {
+                             console.error('[AIMS] Publish failed, reverting state:', error);
+                             // Revert the optimistic update on failure
+                             setGeneral((prev: any) => ({ ...prev, publicationStatus: originalStatus }));
+                             toast.error('Failed to publish activity. Please try again.');
+                           }
+                         } else {
+                           // Unpublish the activity
+                           console.log('[AIMS] Attempting to unpublish activity');
+                           const originalStatus = general.publicationStatus;
+
+                           // Optimistically update the UI
+                           setGeneral((prev: any) => ({ ...prev, publicationStatus: 'draft' }));
+
+                           try {
+                             await saveActivity({ publish: false, suppressErrorToast: true });
+                             console.log('[AIMS] Unpublish successful');
+                           } catch (error) {
+                             console.error('[AIMS] Unpublish failed, reverting state:', error);
+                             // Revert the optimistic update on failure
+                             setGeneral((prev: any) => ({ ...prev, publicationStatus: originalStatus }));
+                             toast.error('Failed to unpublish activity. Please try again.');
+                           }
+                         }
+                       }}
+                       disabled={
+                         // Disable only when minimum required fields are missing
+                         (!general.title?.trim() || !general.description?.trim() ||
+                          !general.activityStatus || !general.plannedStartDate || !general.plannedEndDate)
+                       }
+                       className="data-[state=checked]:bg-[#4C5568] scale-125"
+                       title="Minimum required for publishing: Activity Title, Description, Activity Status, Planned Start Date, and Planned End Date"
+                     />
                      <span className="text-base font-semibold text-gray-700">Published</span>
                    </div>
                  )}
@@ -5011,6 +5211,8 @@ function NewActivityPageContent() {
                     setHumanitarian={setHumanitarian}
                     setHumanitarianScopes={setHumanitarianScopes}
                     setFocalPointsCount={setFocalPointsCount}
+                    onGeographyLevelChange={handleGeographyLevelChange}
+                    isNewActivity={!isEditing}
                   />
                 </div>
               )}

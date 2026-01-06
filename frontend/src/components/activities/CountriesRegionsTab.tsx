@@ -24,8 +24,10 @@ import {
   Search,
   X,
   Loader2,
-  ChevronsUpDown
+  ChevronsUpDown,
+  Info
 } from 'lucide-react';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { IATI_COUNTRIES, IATICountry, searchCountries } from '@/data/iati-countries';
 import { IATI_REGIONS, IATIRegion, searchRegions } from '@/data/iati-regions';
 import { EnhancedSearchableSelect } from '@/components/ui/enhanced-searchable-select';
@@ -68,6 +70,8 @@ interface CountriesRegionsTabProps {
   onRegionsChange?: (regions: RegionAllocation[]) => void;
   onCustomGeographiesChange?: (customGeographies: CustomGeographyAllocation[]) => void;
   canEdit?: boolean;
+  geographyLevel?: 'activity' | 'transaction';
+  onGeographyLevelChange?: (level: 'activity' | 'transaction') => void;
 }
 
 export default function CountriesRegionsTab({
@@ -78,7 +82,9 @@ export default function CountriesRegionsTab({
   onCountriesChange,
   onRegionsChange,
   onCustomGeographiesChange,
-  canEdit = true
+  canEdit = true,
+  geographyLevel = 'activity',
+  onGeographyLevelChange
 }: CountriesRegionsTabProps) {
   const [countries, setCountries] = useState<CountryAllocation[]>(initialCountries);
   const [regions, setRegions] = useState<RegionAllocation[]>(initialRegions);
@@ -821,13 +827,64 @@ export default function CountriesRegionsTab({
 
   return (
     <div ref={formRef as any} className="space-y-6">
+      {/* Geography Level Setting */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base flex items-center gap-2">
+            <Globe className="h-4 w-4" />
+            Geography Publishing Level
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-3">
+            <p className="text-sm text-muted-foreground">
+              Per IATI standard, geographic data must be published consistently - either at the activity level (here) or at the transaction level, not both.
+            </p>
+            <RadioGroup
+              value={geographyLevel}
+              onValueChange={(value) => onGeographyLevelChange?.(value as 'activity' | 'transaction')}
+              className="flex flex-col space-y-2"
+              disabled={!canEdit}
+            >
+              <div className="flex items-start space-x-3">
+                <RadioGroupItem value="activity" id="geo-activity" className="mt-1" />
+                <div className="space-y-1">
+                  <Label htmlFor="geo-activity" className="font-medium cursor-pointer">
+                    Activity Level
+                  </Label>
+                  <p className="text-sm text-muted-foreground">
+                    Countries/regions are set once for the whole activity (below). Transactions will not have individual geographic targeting.
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-start space-x-3">
+                <RadioGroupItem value="transaction" id="geo-transaction" className="mt-1" />
+                <div className="space-y-1">
+                  <Label htmlFor="geo-transaction" className="font-medium cursor-pointer">
+                    Transaction Level
+                  </Label>
+                  <p className="text-sm text-muted-foreground">
+                    Each transaction specifies its own country or region. The activity-level geography below will be disabled.
+                  </p>
+                </div>
+              </div>
+            </RadioGroup>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <h3 className="text-lg font-semibold">Countries & Regions Allocation</h3>
+          {geographyLevel === 'transaction' && (
+            <Badge variant="secondary" className="text-xs">
+              Disabled - Using Transaction Level
+            </Badge>
+          )}
         </div>
         
-        {!isValidAllocation && !hasOverlappingAllocations && (countries.length > 0 || regions.length > 0) && (
+        {geographyLevel === 'activity' && !isValidAllocation && !hasOverlappingAllocations && (countries.length > 0 || regions.length > 0) && (
           <Button
             variant="outline"
             size="sm"
@@ -838,6 +895,17 @@ export default function CountriesRegionsTab({
           </Button>
         )}
       </div>
+
+      {/* Transaction Level Info */}
+      {geographyLevel === 'transaction' && (
+        <Alert>
+          <Info className="h-4 w-4" />
+          <AlertDescription>
+            Geography is set at the transaction level. Each transaction will specify its own recipient country or region. 
+            The allocation form below is disabled.
+          </AlertDescription>
+        </Alert>
+      )}
 
       {/* Error Alert */}
       {error && (
@@ -872,7 +940,7 @@ export default function CountriesRegionsTab({
       )}
 
       {!isLoading && (
-        <div className="space-y-6">
+        <div className={`space-y-6 ${geographyLevel === 'transaction' ? 'opacity-50 pointer-events-none' : ''}`}>
           {/* Add Allocation Form */}
           <Card>
             <CardHeader>

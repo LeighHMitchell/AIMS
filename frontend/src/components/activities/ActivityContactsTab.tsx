@@ -31,6 +31,7 @@ import {
   UserCheck
 } from 'lucide-react';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { UserAvatar, getInitials } from '@/components/ui/user-avatar';
 import { validateIatiContactType } from '@/lib/contact-utils';
 
 type ViewMode = 'grid' | 'table';
@@ -145,16 +146,7 @@ export default function ActivityContactsTab({ activityId }: ActivityContactsTabP
     fetchFocalPoints();
   }, [activityId]);
 
-  // Generate initials for avatar fallback
-  const getInitials = (name: string) => {
-    if (!name) return 'U';
-    return name
-      .split(' ')
-      .map(word => word[0])
-      .join('')
-      .toUpperCase()
-      .slice(0, 2);
-  };
+  // Using getInitials from UserAvatar component
 
   // Get full name from contact
   const getFullName = (contact: Contact) => {
@@ -245,21 +237,13 @@ export default function ActivityContactsTab({ activityId }: ActivityContactsTabP
         {/* Left-aligned layout with avatar on left */}
         <div className="flex items-start gap-4">
           {/* Profile Photo - left side */}
-          <div className="w-16 h-16 rounded-full overflow-hidden bg-slate-100 flex-shrink-0">
-            {contact.profilePhoto ? (
-              <img
-                src={contact.profilePhoto}
-                alt={fullName}
-                className="w-full h-full object-cover"
-              />
-            ) : (
-              <div className="w-full h-full flex items-center justify-center bg-slate-100">
-                <span className="text-lg font-medium text-slate-500">
-                  {getInitials(fullName)}
-                </span>
-              </div>
-            )}
-          </div>
+          <UserAvatar
+            src={contact.profilePhoto}
+            seed={contact.id || contact.email || fullName}
+            name={fullName}
+            size="lg"
+            initials={getInitials(fullName)}
+          />
 
           {/* Content - right side */}
           <div className="flex-1 min-w-0 space-y-1">
@@ -374,21 +358,13 @@ export default function ActivityContactsTab({ activityId }: ActivityContactsTabP
                 <TableRow key={contact.id} className="hover:bg-muted/50">
                   <TableCell>
                     <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full overflow-hidden bg-slate-100 flex-shrink-0">
-                        {contact.profilePhoto ? (
-                          <img
-                            src={contact.profilePhoto}
-                            alt={fullName}
-                            className="w-full h-full object-cover"
-                          />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center bg-slate-100">
-                            <span className="text-xs font-medium text-slate-500">
-                              {getInitials(fullName)}
-                            </span>
-                          </div>
-                        )}
-                      </div>
+                      <UserAvatar
+                        src={contact.profilePhoto}
+                        seed={contact.id || contact.email || fullName}
+                        name={fullName}
+                        size="sm"
+                        initials={getInitials(fullName)}
+                      />
                       <div>
                         <span className="font-medium text-slate-900">{fullName}</span>
                         {contact.isFocalPoint && (
@@ -472,14 +448,13 @@ export default function ActivityContactsTab({ activityId }: ActivityContactsTabP
         key={focalPoint.id}
         className="flex items-start gap-3 p-4 bg-white border border-slate-200 rounded-lg"
       >
-        <Avatar className="h-10 w-10 flex-shrink-0">
-          {focalPoint.avatar_url && (
-            <AvatarImage src={focalPoint.avatar_url} alt={focalPoint.name} />
-          )}
-          <AvatarFallback className="text-sm font-medium bg-slate-100">
-            {getFocalPointInitials(focalPoint.name)}
-          </AvatarFallback>
-        </Avatar>
+        <UserAvatar
+          src={focalPoint.avatar_url}
+          seed={focalPoint.id || focalPoint.email || focalPoint.name}
+          name={focalPoint.name}
+          size="md"
+          initials={getInitials(focalPoint.name)}
+        />
         
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">

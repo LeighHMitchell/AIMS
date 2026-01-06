@@ -24,6 +24,7 @@ import {
   Clock
 } from 'lucide-react';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { UserAvatar, getInitials } from '@/components/ui/user-avatar';
 import { FocalPointHandoffModal } from './FocalPointHandoffModal';
 import { 
   FocalPoint, 
@@ -322,15 +323,7 @@ export default function FocalPointsTab({
     }
   };
 
-  // Helper to get initials from name
-  const getInitials = (name: string) => {
-    return name
-      .split(' ')
-      .map(n => n[0])
-      .join('')
-      .toUpperCase()
-      .slice(0, 2);
-  };
+  // Using getInitials from UserAvatar component
 
   const renderFocalPointCard = (focalPoint: FocalPoint) => {
     const showHandoffButton = canHandoff(focalPoint);
@@ -343,14 +336,13 @@ export default function FocalPointsTab({
           <div className="flex items-start justify-between gap-4">
             <div className="flex items-start gap-3 flex-1 min-w-0">
               {/* Profile Picture */}
-              <Avatar className="h-10 w-10 flex-shrink-0">
-                {focalPoint.avatar_url && (
-                  <AvatarImage src={focalPoint.avatar_url} alt={focalPoint.name} />
-                )}
-                <AvatarFallback className="text-sm font-medium bg-slate-100">
-                  {getInitials(focalPoint.name)}
-                </AvatarFallback>
-              </Avatar>
+              <UserAvatar
+                src={focalPoint.avatar_url}
+                seed={focalPoint.id || focalPoint.email || focalPoint.name}
+                name={focalPoint.name}
+                size="md"
+                initials={getInitials(focalPoint.name)}
+              />
               
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-2 flex-wrap">

@@ -77,6 +77,8 @@ interface YearlyTotalsBarChartProps {
   // View mode settings
   defaultViewMode?: ViewMode
   showViewModeToggle?: boolean
+  // Optional additional controls to render in the header (e.g., CustomYearSelector)
+  headerControls?: React.ReactNode
 }
 
 // Currency formatters matching CumulativeFinancialOverview
@@ -128,6 +130,7 @@ export function YearlyTotalsBarChart({
   defaultCollapsed = true,
   defaultViewMode = 'bar',
   showViewModeToggle = true,
+  headerControls,
 }: YearlyTotalsBarChartProps) {
   // Collapsible state
   const [isCollapsed, setIsCollapsed] = useState(defaultCollapsed)
@@ -527,6 +530,7 @@ export function YearlyTotalsBarChart({
             </div>
           </div>
           <div className="flex items-center gap-2">
+            {headerControls}
             {showViewModeToggle && <ViewModeToggle />}
           </div>
         </CardHeader>
@@ -559,6 +563,7 @@ export function YearlyTotalsBarChart({
           </div>
         </div>
         <div className="flex items-center gap-2">
+          {headerControls}
           {showViewModeToggle && hasData && <ViewModeToggle />}
         </div>
       </CardHeader>

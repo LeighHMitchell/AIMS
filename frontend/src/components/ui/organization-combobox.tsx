@@ -2,14 +2,13 @@
 
 import * as React from "react"
 import Image from "next/image"
-import { Check, ChevronsUpDown, Building2, X } from "lucide-react"
+import { Check, ChevronsUpDown, Building2, X, Search } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import {
   Command,
   CommandEmpty,
   CommandGroup,
-  CommandInput,
   CommandItem,
   CommandList,
 } from "@/components/ui/command"
@@ -18,8 +17,6 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover"
-import { Input } from "@/components/ui/input"
-import { Badge } from "@/components/ui/badge"
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { isLegacyOrgType } from "@/lib/org-type-mappings";
 
@@ -47,6 +44,10 @@ interface OrganizationComboboxProps {
   fallbackRef?: string
   /** Callback when an organization with a legacy type code is selected */
   onLegacyTypeDetected?: (org: Organization) => void
+  /** Controlled open state */
+  open?: boolean
+  /** Callback when open state changes */
+  onOpenChange?: (open: boolean) => void
 }
 
 export function OrganizationCombobox({
@@ -56,9 +57,15 @@ export function OrganizationCombobox({
   placeholder = "Select organization...",
   className,
   fallbackRef,
-  onLegacyTypeDetected
+  onLegacyTypeDetected,
+  open: externalOpen,
+  onOpenChange: externalOnOpenChange
 }: OrganizationComboboxProps) {
-  const [open, setOpen] = React.useState(false)
+  const [internalOpen, setInternalOpen] = React.useState(false)
+  
+  // Use external state if provided, otherwise use internal state
+  const open = externalOpen !== undefined ? externalOpen : internalOpen
+  const setOpen = externalOnOpenChange || setInternalOpen
   const [search, setSearch] = React.useState("")
   const triggerRef = React.useRef<HTMLButtonElement>(null);
 
@@ -256,25 +263,24 @@ export function OrganizationCombobox({
       <PopoverContent
         align="start"
         sideOffset={4}
-        className="p-0 max-w-[600px]"
-        style={{
-          width: triggerRef.current ? `${triggerRef.current.offsetWidth}px` : '320px',
-        }}
+        className="p-0 w-[600px]"
       >
-        <Command>
-          <CommandInput
-            placeholder="Search organizations..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="border-0 focus:ring-0"
-            autoFocus
-          />
+        <Command shouldFilter={false}>
+          <div className="flex items-center border-b px-3">
+            <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
+            <input
+              placeholder="Search organizations by name, acronym, or IATI ID..."
+              className="flex h-10 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+          </div>
           <CommandList>
             {search && filteredOrgs.length === 0 && (
               <CommandEmpty>No organization found.</CommandEmpty>
             )}
             {filteredOrgs.length > 0 && (
-              <ScrollArea className="max-h-60 overflow-x-hidden overflow-y-auto">
+              <ScrollArea className="max-h-60 overflow-y-auto">
                 <CommandGroup>
                   {filteredOrgs.map(org => (
                     <CommandItem
@@ -303,10 +309,22 @@ export function OrganizationCombobox({
                           </div>
                         )}
                         
-                        {/* Organization name with acronym */}
-                        <span className="font-normal text-gray-900 text-sm truncate flex-1">
-                          {org.name}{org.acronym && org.acronym !== org.name ? ` (${org.acronym})` : ''}
-                        </span>
+                        {/* Organization name with acronym, IATI ref, and location */}
+                        <div className="flex items-center gap-2 min-w-0 flex-wrap">
+                          <span className="font-normal text-gray-900 text-sm whitespace-nowrap">
+                            {org.name}{org.acronym && org.acronym !== org.name ? ` (${org.acronym})` : ''}
+                          </span>
+                          {(org.iati_org_id || org.iati_identifier) && (
+                            <span className="text-xs font-mono text-gray-600 bg-gray-100 px-1.5 py-0.5 rounded whitespace-nowrap">
+                              {org.iati_org_id || org.iati_identifier}
+                            </span>
+                          )}
+                          {org.country && (
+                            <span className="text-xs text-gray-400 whitespace-nowrap">
+                              {org.country}
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </CommandItem>
                   ))}

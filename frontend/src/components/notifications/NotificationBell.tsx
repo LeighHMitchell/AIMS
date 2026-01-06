@@ -14,6 +14,18 @@ import { Bell, Check, HelpCircle, MessageSquare, ExternalLink, Calendar } from '
 import { cn } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
 import { formatDistanceToNow } from 'date-fns';
+import { motion, useReducedMotion, type Variants } from 'framer-motion';
+
+const ringVariants: Variants = {
+  idle: { rotate: 0 },
+  ringing: {
+    rotate: [0, -15, 15, -10, 10, -5, 5, 0],
+    transition: {
+      duration: 0.6,
+      ease: "easeInOut",
+    },
+  },
+};
 
 interface Notification {
   id: string;
@@ -34,10 +46,23 @@ interface NotificationBellProps {
 
 export function NotificationBell({ userId }: NotificationBellProps) {
   const router = useRouter();
+  const shouldReduceMotion = useReducedMotion();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
+  const [isRinging, setIsRinging] = useState(false);
+  const [prevUnreadCount, setPrevUnreadCount] = useState(0);
+
+  // Trigger ring animation when new notifications arrive
+  useEffect(() => {
+    if (unreadCount > prevUnreadCount && !shouldReduceMotion) {
+      setIsRinging(true);
+      const timer = setTimeout(() => setIsRinging(false), 600);
+      return () => clearTimeout(timer);
+    }
+    setPrevUnreadCount(unreadCount);
+  }, [unreadCount, prevUnreadCount, shouldReduceMotion]);
 
   const fetchNotifications = useCallback(async () => {
     try {
@@ -144,18 +169,30 @@ export function NotificationBell({ userId }: NotificationBellProps) {
     }
   };
 
+  const displayCount = unreadCount > 99 ? "99+" : unreadCount > 9 ? "9+" : unreadCount;
+
   return (
     <DropdownMenu open={open} onOpenChange={setOpen}>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon" className="relative">
+        <motion.button
+          variants={ringVariants}
+          animate={isRinging ? "ringing" : "idle"}
+          whileHover={shouldReduceMotion ? undefined : { scale: 1.1 }}
+          whileTap={shouldReduceMotion ? undefined : { scale: 0.9 }}
+          className="relative flex h-10 w-10 items-center justify-center rounded-full border border-border bg-card transition-colors hover:bg-muted focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+          aria-label={`Notifications${unreadCount > 0 ? `, ${unreadCount} unread` : ""}`}
+        >
           <Bell className="h-5 w-5" />
           {unreadCount > 0 && (
-            <span className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-red-500 text-xs text-white flex items-center justify-center font-medium">
-              {unreadCount > 9 ? '9+' : unreadCount}
-            </span>
+            <motion.span
+              initial={shouldReduceMotion ? { scale: 1 } : { scale: 0 }}
+              animate={{ scale: 1 }}
+              className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-destructive text-xs font-bold text-destructive-foreground"
+            >
+              {displayCount}
+            </motion.span>
           )}
-          <span className="sr-only">Notifications</span>
-        </Button>
+        </motion.button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-80">
         <DropdownMenuLabel className="flex items-center justify-between">

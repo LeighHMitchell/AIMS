@@ -25,8 +25,8 @@ export async function GET(request: NextRequest) {
         id,
         reporting_org_id,
         organizations!reporting_org_id (id, name, acronym, country),
-        activity_locations (location_name, admin_level, percentage),
-        transactions!transactions_activity_id_fkey1 (usd_value, transaction_type, transaction_date, status)
+        subnational_breakdowns (region_name, percentage, is_nationwide),
+        transactions!transactions_activity_id_fkey1 (value_usd, transaction_type, transaction_date, status)
       `);
 
     if (error) {
@@ -62,7 +62,7 @@ export async function GET(request: NextRequest) {
       if (validTransactions.length === 0) return;
 
       const totalTransactionValue = validTransactions.reduce(
-        (sum: number, t: any) => sum + (parseFloat(t.usd_value) || 0), 0
+        (sum: number, t: any) => sum + (parseFloat(t.value_usd) || 0), 0
       );
 
       if (!donorData.has(orgId)) {
@@ -78,11 +78,11 @@ export async function GET(request: NextRequest) {
       const donor = donorData.get(orgId)!;
       donor.total += totalTransactionValue;
 
-      // Distribute value across locations
-      const locations = activity.activity_locations || [];
-      if (locations.length === 0) {
-        // No locations - put under "National"
-        const locationName = 'National';
+      // Distribute value across locations using subnational breakdowns
+      const breakdowns = activity.subnational_breakdowns || [];
+      if (breakdowns.length === 0) {
+        // No location breakdowns - put under "Nationwide"
+        const locationName = 'Nationwide';
         allLocations.add(locationName);
         
         const locData = donor.locations.get(locationName) || { value: 0, count: 0 };
@@ -90,9 +90,10 @@ export async function GET(request: NextRequest) {
         locData.count += 1;
         donor.locations.set(locationName, locData);
       } else {
-        locations.forEach((loc: any) => {
-          const locationName = loc.location_name || 'Unspecified';
-          const pct = (loc.percentage || 100) / 100;
+        breakdowns.forEach((breakdown: any) => {
+          // Use "Nationwide" for is_nationwide entries, otherwise use region_name
+          const locationName = breakdown.is_nationwide ? 'Nationwide' : (breakdown.region_name || 'Unspecified');
+          const pct = (breakdown.percentage || 100) / 100;
 
           allLocations.add(locationName);
 

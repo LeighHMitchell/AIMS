@@ -32,6 +32,7 @@ import { CreateCustomGroupModal } from '@/components/organizations/CreateCustomG
 import { EditCustomGroupModal } from '@/components/organizations/EditCustomGroupModal'
 import { OrganizationTable } from '@/components/organizations/OrganizationTable'
 import { CustomGroupCard } from '@/components/organizations/CustomGroupCard'
+import OrganizationCardModern from '@/components/organizations/OrganizationCardModern'
 import {
   Tooltip,
   TooltipContent,
@@ -1975,17 +1976,15 @@ function OrganizationsPageContent() {
               ) : paginatedOrganizations.length > 0 ? (
                 <>
                   {viewMode === 'card' ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                       {paginatedOrganizations.map((organization) => (
-                        <OrganizationCard 
-                          key={organization.id} 
+                        <OrganizationCardModern
+                          key={organization.id}
                           organization={organization}
                           onEdit={handleEditOrganization}
                           onDelete={handleDeleteOrganization}
                           onExportPDF={handleExportOrgPDF}
                           onExportExcel={handleExportOrgExcel}
-                          availableTypes={availableTypes}
-                          onTagClick={handleTagClick}
                         />
                       ))}
                     </div>

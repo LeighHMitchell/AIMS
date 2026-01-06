@@ -80,6 +80,8 @@ interface ImprovedSectorAllocationFormProps {
   activityId?: string;
   onModeChange?: (mode: SectorAllocationMode) => void;
   onNavigateToTransactions?: () => void;
+  sectorExportLevel?: 'activity' | 'transaction';
+  onSectorExportLevelChange?: (level: 'activity' | 'transaction') => void;
 }
 
 // Color mapping for sector categories - using gray/slate palette to match sunburst chart
@@ -255,7 +257,9 @@ export default function ImprovedSectorAllocationForm({
   allowPublish = true,
   activityId,
   onModeChange,
-  onNavigateToTransactions
+  onNavigateToTransactions,
+  sectorExportLevel = 'activity',
+  onSectorExportLevelChange
 }: ImprovedSectorAllocationFormProps) {
   console.log('[ImprovedSectorAllocationForm] Component mounted with:', {
     allocationsCount: allocations.length,
@@ -920,6 +924,58 @@ export default function ImprovedSectorAllocationForm({
             />
           </div>
         </div>
+      )}
+
+      {/* IATI Sector Export Level Setting */}
+      {activityId && onSectorExportLevelChange && (
+        <Card className="bg-slate-50 border-slate-200">
+          <CardHeader className="py-3 px-4">
+            <div className="flex items-center gap-2">
+              <CardTitle className="text-sm font-medium text-slate-700">IATI Sector Export Level</CardTitle>
+              <HelpTextTooltip
+                content="When exporting to IATI XML, sectors can be published at the activity level (all transactions inherit) or at the transaction level (each transaction has its own sector breakdown). IATI requires consistency - sectors must be at one level or the other, not both."
+              />
+            </div>
+            <CardDescription className="text-xs text-slate-500">
+              Choose how sectors are included in IATI exports
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="py-2 px-4">
+            <div className="flex flex-col space-y-2">
+              <label className="flex items-start gap-3 cursor-pointer p-2 rounded hover:bg-slate-100 transition-colors">
+                <input
+                  type="radio"
+                  name="sector-export-level"
+                  checked={sectorExportLevel === 'activity'}
+                  onChange={() => onSectorExportLevelChange('activity')}
+                  className="mt-0.5 h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500"
+                />
+                <div className="flex-1">
+                  <span className="text-sm font-medium text-gray-700">Activity Level</span>
+                  <p className="text-xs text-gray-500">
+                    Sectors are exported as activity-level elements. All transactions share these sectors.
+                  </p>
+                </div>
+              </label>
+              
+              <label className="flex items-start gap-3 cursor-pointer p-2 rounded hover:bg-slate-100 transition-colors">
+                <input
+                  type="radio"
+                  name="sector-export-level"
+                  checked={sectorExportLevel === 'transaction'}
+                  onChange={() => onSectorExportLevelChange('transaction')}
+                  className="mt-0.5 h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500"
+                />
+                <div className="flex-1">
+                  <span className="text-sm font-medium text-gray-700">Transaction Level</span>
+                  <p className="text-xs text-gray-500">
+                    Sectors are exported within each transaction. Transactions using activity sectors will export the activity sectors.
+                  </p>
+                </div>
+              </label>
+            </div>
+          </CardContent>
+        </Card>
       )}
 
       {/* Locked State Alert for Transaction Mode */}

@@ -195,6 +195,9 @@ export function cleanTransactionFields(data: any): any {
   if (data.fx_differs !== undefined) {
     cleaned.fx_differs = cleanBooleanValue(data.fx_differs);
   }
+  if (data.use_activity_sectors !== undefined) {
+    cleaned.use_activity_sectors = cleanBooleanValue(data.use_activity_sectors);
+  }
 
   // Other fields
   if (data.financing_classification !== undefined) {
@@ -241,7 +244,7 @@ export function cleanTransactionFields(data: any): any {
  */
 export function cleanFieldValue(fieldName: string, value: any): any {
   // Boolean fields
-  if (['is_humanitarian', 'finance_type_inherited', 'fx_differs', 'usd_convertible', 'exchange_rate_manual'].includes(fieldName)) {
+  if (['is_humanitarian', 'finance_type_inherited', 'fx_differs', 'usd_convertible', 'exchange_rate_manual', 'use_activity_sectors'].includes(fieldName)) {
     return value !== undefined ? cleanBooleanValue(value) : null;
   }
 

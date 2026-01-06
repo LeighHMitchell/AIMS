@@ -153,13 +153,13 @@ export function ActivityCombobox({
             role="combobox"
             aria-expanded={open}
             className={cn(
-              'w-full justify-between font-normal h-auto px-4 py-2 text-base border-gray-300 hover:bg-gray-50 focus:outline-none focus:ring-1 focus:ring-gray-400 focus:border-gray-400',
+              'w-full justify-between font-normal h-10 px-4 py-2 text-base border-gray-300 hover:bg-gray-50 focus:outline-none focus:ring-1 focus:ring-gray-400 focus:border-gray-400 hover:text-gray-900',
               !value && 'text-muted-foreground',
               className
             )}
             disabled={disabled}
           >
-          <div className="flex items-start gap-2 overflow-hidden py-1 flex-1">
+          <div className="flex items-center gap-2 overflow-hidden flex-1">
             {selectedActivity ? (
               <>
                 {selectedActivity.icon && (
@@ -190,7 +190,7 @@ export function ActivityCombobox({
                 {fallbackIatiId}
               </span>
             ) : (
-              placeholder
+              <span className="text-gray-400 text-base leading-relaxed">{placeholder}</span>
             )}
           </div>
           <div className="flex items-center gap-1 ml-2">
@@ -210,11 +210,8 @@ export function ActivityCombobox({
         </Button>
       </PopoverTrigger>
       <PopoverContent
-        className="p-0 max-w-[600px]"
+        className="p-0 w-[600px]"
         align="start"
-        style={{
-          width: triggerRef.current ? `${triggerRef.current.offsetWidth}px` : '500px',
-        }}
       >
         <Command shouldFilter={false}>
           <div className="flex items-center border-b px-3">
@@ -273,6 +270,11 @@ export function ActivityCombobox({
                           {activity.iati_identifier && (
                             <span className="text-xs font-mono text-gray-600 bg-gray-100 px-2 py-1 rounded hover:text-gray-600 ml-2">
                               {activity.iati_identifier}
+                            </span>
+                          )}
+                          {(activity.created_by_org_name || activity.created_by_org_acronym) && (
+                            <span className="text-xs text-gray-400 ml-2">
+                              {activity.created_by_org_acronym || activity.created_by_org_name}
                             </span>
                           )}
                         </span>

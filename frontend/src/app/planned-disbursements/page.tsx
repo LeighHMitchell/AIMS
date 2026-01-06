@@ -23,6 +23,8 @@ import { BulkActionToolbar } from "@/components/ui/bulk-action-toolbar";
 import { BulkDeleteDialog } from "@/components/dialogs/bulk-delete-dialog";
 import { YearlyTotalsBarChart, SingleSeriesDataPoint } from "@/components/charts/YearlyTotalsBarChart";
 import { useLoadingBar } from "@/hooks/useLoadingBar";
+import { CustomYearSelector } from "@/components/ui/custom-year-selector";
+import { useCustomYears } from "@/hooks/useCustomYears";
 
 export default function PlannedDisbursementsPage() {
   const router = useRouter();
@@ -73,6 +75,9 @@ export default function PlannedDisbursementsPage() {
   // Yearly summary state for chart
   const [yearlySummary, setYearlySummary] = useState<SingleSeriesDataPoint[]>([]);
   const [yearlySummaryLoading, setYearlySummaryLoading] = useState(true);
+
+  // Custom year selection for chart
+  const { customYears, selectedId: selectedCustomYearId, setSelectedId: setSelectedCustomYearId, selectedYear, loading: customYearsLoading } = useCustomYears();
   
   // Global loading bar for top-of-screen progress indicator
   const { startLoading, stopLoading } = useLoadingBar();
@@ -155,9 +160,19 @@ export default function PlannedDisbursementsPage() {
       setYearlySummaryLoading(true);
       try {
         const params = new URLSearchParams();
-        if (filters.type !== 'all') params.append('type', filters.type);
-        if (filters.organization !== 'all') params.append('organization', filters.organization);
+        // Pass types as comma-separated values if any are selected
+        if (filters.types.length > 0) params.append('types', filters.types.join(','));
+        // Pass organizations as comma-separated values if any are selected
+        if (filters.organizations.length > 0) params.append('organizations', filters.organizations.join(','));
         if (searchQuery) params.append('search', searchQuery);
+        
+        // Add custom year params if selected
+        if (selectedYear) {
+          params.append('startMonth', selectedYear.startMonth.toString());
+          params.append('startDay', selectedYear.startDay.toString());
+          params.append('endMonth', selectedYear.endMonth.toString());
+          params.append('endDay', selectedYear.endDay.toString());
+        }
 
         const response = await fetch(`/api/planned-disbursements/yearly-summary?${params.toString()}`);
         if (response.ok) {
@@ -172,7 +187,7 @@ export default function PlannedDisbursementsPage() {
     };
 
     fetchYearlySummary();
-  }, [filters, searchQuery]);
+  }, [filters, searchQuery, selectedYear]);
 
   // Reset to page 1 when filters change
   useEffect(() => {
@@ -433,6 +448,15 @@ export default function PlannedDisbursementsPage() {
           singleSeriesColor="#7b95a7"
           singleSeriesLabel="Planned Disbursement"
           height={280}
+          headerControls={
+            <CustomYearSelector
+              customYears={customYears}
+              selectedId={selectedCustomYearId}
+              onSelect={setSelectedCustomYearId}
+              loading={customYearsLoading}
+              placeholder="Year Type"
+            />
+          }
         />
 
         {/* Planned Disbursements Table */}

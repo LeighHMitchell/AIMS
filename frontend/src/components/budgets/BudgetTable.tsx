@@ -642,17 +642,15 @@ export function BudgetTable({
                     {isColumnVisible('reportingOrganisation') && (
                       <td className="py-3 px-4">
                         {budget.activity?.reporting_org ? (
-                          <div className="space-y-0.5">
-                            <div className="text-sm font-medium text-foreground">
-                              {budget.activity.reporting_org.acronym || budget.activity.reporting_org.name || '—'}
-                            </div>
-                            {budget.activity.reporting_org.name && budget.activity.reporting_org.acronym && (
-                              <div className="text-xs text-muted-foreground">
-                                {budget.activity.reporting_org.name}
-                              </div>
-                            )}
+                          <div className="text-sm text-foreground flex flex-wrap items-center gap-1">
+                            <span>
+                              {budget.activity.reporting_org.name || '—'}
+                              {budget.activity.reporting_org.acronym && budget.activity.reporting_org.name && budget.activity.reporting_org.acronym !== budget.activity.reporting_org.name && (
+                                <span> ({budget.activity.reporting_org.acronym})</span>
+                              )}
+                            </span>
                             {budget.activity.reporting_org.iati_org_id && (
-                              <span className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded inline-block mt-1">
+                              <span className="text-xs font-mono bg-gray-200 text-gray-700 px-1.5 py-0.5 rounded">
                                 {budget.activity.reporting_org.iati_org_id}
                               </span>
                             )}

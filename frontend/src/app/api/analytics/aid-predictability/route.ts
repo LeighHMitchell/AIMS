@@ -1,11 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase';
 import { AidPredictabilityPoint } from '@/types/national-priorities';
-import { splitPlannedDisbursementAcrossYears } from '@/utils/year-allocation';
+import { 
+  splitPlannedDisbursementAcrossYears,
+  splitPlannedDisbursementAcrossFiscalYears,
+  getFiscalYearForDate,
+} from '@/utils/year-allocation';
+import { CustomYear, CustomYearRow, toCustomYear, getCustomYearLabel } from '@/types/custom-years';
 
 /**
  * GET /api/analytics/aid-predictability
  * Returns Planned vs Actual Disbursements by year
+ * Supports optional customYearId for fiscal year aggregation
  */
 export async function GET(request: NextRequest) {
   try {
@@ -14,6 +20,23 @@ export async function GET(request: NextRequest) {
     
     const dateFrom = searchParams.get('dateFrom');
     const dateTo = searchParams.get('dateTo');
+    const customYearId = searchParams.get('customYearId');
+
+    // Fetch custom year definition if provided
+    let customYear: CustomYear | null = null;
+    if (customYearId) {
+      const { data: cyData, error: cyError } = await supabase
+        .from('custom_years')
+        .select('*')
+        .eq('id', customYearId)
+        .single();
+      
+      if (cyError) {
+        console.error('[Aid Predictability API] Custom year fetch error:', cyError);
+      } else if (cyData) {
+        customYear = toCustomYear(cyData as CustomYearRow);
+      }
+    }
 
     // Get planned disbursements by year
     const { data: plannedData, error: plannedError } = await supabase
@@ -37,46 +60,70 @@ export async function GET(request: NextRequest) {
       console.error('[Aid Predictability API] Actual disbursements error:', actualError);
     }
 
-    // Aggregate planned disbursements by year using proportional allocation
+    // Maps to store aggregated data - key is fiscal/calendar year
     const plannedByYear = new Map<number, number>();
+    const actualByYear = new Map<number, number>();
+    // Store labels for fiscal years
+    const yearLabels = new Map<number, string>();
     
+    // Aggregate planned disbursements
     plannedData?.forEach((pd: any) => {
       if (!pd.period_start) return;
       
-      // Use proportional allocation across years
-      const allocations = splitPlannedDisbursementAcrossYears({
-        period_start: pd.period_start,
-        period_end: pd.period_end || null,
-        usd_amount: pd.usd_amount,
-        amount: pd.amount,
-        currency: pd.currency
-      });
-      
-      allocations.forEach(({ year, amount }) => {
-        // Apply date filters - check if the year falls within the date range
-        if (dateFrom) {
-          const yearStart = new Date(year, 0, 1);
-          if (yearStart < new Date(dateFrom)) return;
-        }
-        if (dateTo) {
-          const yearEnd = new Date(year, 11, 31);
-          if (yearEnd > new Date(dateTo)) return;
-        }
+      if (customYear) {
+        // Use fiscal year allocation
+        const allocations = splitPlannedDisbursementAcrossFiscalYears({
+          period_start: pd.period_start,
+          period_end: pd.period_end || null,
+          usd_amount: pd.usd_amount,
+          amount: pd.amount,
+          currency: pd.currency
+        }, customYear);
         
-        plannedByYear.set(year, (plannedByYear.get(year) || 0) + amount);
-      });
+        allocations.forEach(({ fiscalYear, label, amount }) => {
+          // Apply date filters using fiscal year boundaries
+          if (dateFrom || dateTo) {
+            // For fiscal year filtering, we use the fiscal year's start date
+            const fyStartYear = fiscalYear;
+            if (dateFrom && fyStartYear < new Date(dateFrom).getFullYear()) return;
+            if (dateTo && fyStartYear > new Date(dateTo).getFullYear()) return;
+          }
+          
+          plannedByYear.set(fiscalYear, (plannedByYear.get(fiscalYear) || 0) + amount);
+          yearLabels.set(fiscalYear, label);
+        });
+      } else {
+        // Use calendar year allocation (existing behavior)
+        const allocations = splitPlannedDisbursementAcrossYears({
+          period_start: pd.period_start,
+          period_end: pd.period_end || null,
+          usd_amount: pd.usd_amount,
+          amount: pd.amount,
+          currency: pd.currency
+        });
+        
+        allocations.forEach(({ year, amount }) => {
+          if (dateFrom) {
+            const yearStart = new Date(year, 0, 1);
+            if (yearStart < new Date(dateFrom)) return;
+          }
+          if (dateTo) {
+            const yearEnd = new Date(year, 11, 31);
+            if (yearEnd > new Date(dateTo)) return;
+          }
+          
+          plannedByYear.set(year, (plannedByYear.get(year) || 0) + amount);
+          yearLabels.set(year, String(year));
+        });
+      }
     });
 
-    // Aggregate actual disbursements by year
-    const actualByYear = new Map<number, number>();
-    
+    // Aggregate actual disbursements
     actualData?.forEach((t: any) => {
       if (!t.transaction_date) return;
       
       const date = new Date(t.transaction_date);
       if (isNaN(date.getTime())) return;
-      
-      const year = date.getFullYear();
       
       // Apply date filters
       if (dateFrom && date < new Date(dateFrom)) return;
@@ -87,8 +134,19 @@ export async function GET(request: NextRequest) {
       if (!value && t.currency === 'USD' && t.value) {
         value = parseFloat(t.value) || 0;
       }
+      
       if (value > 0) {
-        actualByYear.set(year, (actualByYear.get(year) || 0) + value);
+        if (customYear) {
+          // Use fiscal year
+          const fiscalYear = getFiscalYearForDate(date, customYear);
+          actualByYear.set(fiscalYear, (actualByYear.get(fiscalYear) || 0) + value);
+          yearLabels.set(fiscalYear, getCustomYearLabel(customYear, fiscalYear));
+        } else {
+          // Use calendar year
+          const year = date.getFullYear();
+          actualByYear.set(year, (actualByYear.get(year) || 0) + value);
+          yearLabels.set(year, String(year));
+        }
       }
     });
 
@@ -109,6 +167,7 @@ export async function GET(request: NextRequest) {
           from: dateFrom || 'all',
           to: dateTo || 'all',
         },
+        customYearId: customYearId || null,
       });
     }
     
@@ -118,8 +177,14 @@ export async function GET(request: NextRequest) {
     // Generate all years from min to max (inclusive)
     const data: AidPredictabilityPoint[] = [];
     for (let year = minYear; year <= maxYear; year++) {
+      // Generate label for this year
+      const label = customYear 
+        ? getCustomYearLabel(customYear, year)
+        : String(year);
+      
       data.push({
         year,
+        yearLabel: yearLabels.get(year) || label,
         plannedDisbursements: plannedByYear.get(year) || 0,
         actualDisbursements: actualByYear.get(year) || 0,
       });
@@ -143,6 +208,7 @@ export async function GET(request: NextRequest) {
         from: dateFrom || 'all',
         to: dateTo || 'all',
       },
+      customYearId: customYearId || null,
     });
 
   } catch (error: any) {

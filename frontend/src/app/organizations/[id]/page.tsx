@@ -67,6 +67,9 @@ import { OrganizationAnalytics } from '@/components/organizations/analytics/Orga
 import { OrganizationFundingAnalytics } from '@/components/organizations/analytics/OrganizationFundingAnalytics'
 import SectorSunburstVisualization from '@/components/charts/SectorSunburstVisualization'
 import SectorSankeyVisualization from '@/components/charts/SectorSankeyVisualization'
+import { NativeLikesCounter } from '@/components/ui/native-likes-counter'
+import { useEntityLikes } from '@/hooks/use-entity-likes'
+import { useUser } from '@/hooks/useUser'
 import {
   Table,
   TableBody,
@@ -185,6 +188,20 @@ const financeTypeLabels: { [key: string]: string } = {
 export default function OrganizationProfilePage() {
   const params = useParams()
   const router = useRouter()
+  const { user } = useUser()
+  const id = params?.id as string
+  const {
+    count: likesCount,
+    users: likeUsers,
+    isLiked,
+    hasMore: hasMoreLikes,
+    toggleLike,
+    loadMore: loadMoreLikes,
+  } = useEntityLikes({
+    entityType: 'organization',
+    entityId: id,
+    userId: user?.id,
+  })
   const [organization, setOrganization] = useState<Organization | null>(null)
   const [activities, setActivities] = useState<Activity[]>([])
   const [transactions, setTransactions] = useState<Transaction[]>([])
@@ -1081,11 +1098,21 @@ export default function OrganizationProfilePage() {
               Back to Organizations
             </Button>
             
-            <div className="flex gap-2">
+            <div className="flex gap-2 items-center">
               <Button variant="outline" className="border-slate-300 text-slate-700 hover:bg-slate-100">
                 <Download className="h-4 w-4 mr-2" />
                 Export Profile
               </Button>
+              <NativeLikesCounter
+                count={likesCount}
+                users={likeUsers}
+                variant="outline"
+                size="default"
+                liked={isLiked}
+                onLike={toggleLike}
+                onLoadMore={loadMoreLikes}
+                hasMore={hasMoreLikes}
+              />
               <Button
                 className="bg-slate-600 hover:bg-slate-700"
                 onClick={() => router.push(`/organizations/${id}/edit`)}

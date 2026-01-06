@@ -94,14 +94,20 @@ export default function PartnersPage() {
   const router = useRouter();
   const { user } = useUser();
   
-  // Main state
-  const [summaryData, setSummaryData] = useState<SummaryData | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  
   // UI state
   const [searchTerm, setSearchTerm] = useState("");
   const [transactionType, setTransactionType] = useState<'C' | 'D'>('D'); // C = Commitments, D = Disbursements
+
+  // Main state - cache both transaction types for instant toggling
+  const [summaryDataByType, setSummaryDataByType] = useState<{
+    C: SummaryData | null;
+    D: SummaryData | null;
+  }>({ C: null, D: null });
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // Derived summary data based on current transaction type selection
+  const summaryData = summaryDataByType[transactionType];
   const [groupBy, setGroupBy] = useState<'type' | 'custom'>('type');
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
   const [expandedCountries, setExpandedCountries] = useState<Set<string>>(new Set());
@@ -115,47 +121,59 @@ export default function PartnersPage() {
   const [loadingCountries, setLoadingCountries] = useState<Set<string>>(new Set());
   const [expandLevel, setExpandLevel] = useState<0 | 1 | 2>(0); // 0 = collapsed, 1 = orgs expanded, 2 = activities expanded
 
-  // Fetch summary data
+  // Helper to fetch data for a specific transaction type
+  const fetchDataForType = async (type: 'C' | 'D'): Promise<SummaryData> => {
+    const timestamp = Date.now();
+    const [predefinedResponse, customResponse, countryResponse] = await Promise.all([
+      fetch(`/api/partners/summary?groupBy=country&transactionType=${type}&_t=${timestamp}`, { cache: 'no-store' }),
+      fetch(`/api/partners/summary?groupBy=custom&transactionType=${type}&_t=${timestamp}`, { cache: 'no-store' }),
+      fetch(`/api/partners/summary?groupBy=type&transactionType=${type}&_t=${timestamp}`, { cache: 'no-store' })
+    ]);
+
+    if (!predefinedResponse.ok || !customResponse.ok || !countryResponse.ok) {
+      throw new Error(`API Error: ${predefinedResponse.status} or ${customResponse.status} or ${countryResponse.status}`);
+    }
+
+    const [predefinedData, customData] = await Promise.all([
+      predefinedResponse.json(),
+      customResponse.json(),
+      countryResponse.json()
+    ]);
+
+    return {
+      predefinedGroups: predefinedData.groups || [],
+      customGroups: customData.groups || [],
+      countryGroups: predefinedData.groups || [],
+      totalOrganizations: predefinedData.totalOrganizations || 0,
+      totalActiveProjects: predefinedData.totalActiveProjects || 0,
+      totalAmount: predefinedData.totalAmount || 0,
+      customGroupsCount: customData.customGroupsCount || customData.groups?.length || 0,
+      lastUpdated: predefinedData.lastUpdated || new Date().toISOString(),
+      transactionType: type
+    };
+  };
+
+  // Fetch both transaction types on initial load for instant toggling
   const fetchSummaryData = async () => {
     try {
       setLoading(true);
       setError(null);
-      
-      // Fetch predefined, custom, and country groups in parallel
-      const [predefinedResponse, customResponse, countryResponse] = await Promise.all([
-        fetch(`/api/partners/summary?groupBy=country&transactionType=${transactionType}&_t=${Date.now()}`, { cache: 'no-store' }),
-        fetch(`/api/partners/summary?groupBy=custom&transactionType=${transactionType}&_t=${Date.now()}`, { cache: 'no-store' }),
-        fetch(`/api/partners/summary?groupBy=type&transactionType=${transactionType}&_t=${Date.now()}`, { cache: 'no-store' })
+
+      // Fetch both Commitments and Disbursements in parallel
+      const [disbursementsData, commitmentsData] = await Promise.all([
+        fetchDataForType('D'),
+        fetchDataForType('C')
       ]);
-      
-      if (!predefinedResponse.ok || !customResponse.ok || !countryResponse.ok) {
-        throw new Error(`API Error: ${predefinedResponse.status} or ${customResponse.status} or ${countryResponse.status}`);
-      }
-      
-      const [predefinedData, customData, countryData] = await Promise.all([
-        predefinedResponse.json(),
-        customResponse.json(),
-        countryResponse.json()
-      ]);
-      
-      // Combine the data - use country groups as the main predefined groups
-      const combinedData: SummaryData = {
-        predefinedGroups: predefinedData.groups || [], // This is now country groups
-        customGroups: customData.groups || [],
-        countryGroups: predefinedData.groups || [], // Keep for compatibility
-        totalOrganizations: predefinedData.totalOrganizations || 0,
-        totalActiveProjects: predefinedData.totalActiveProjects || 0,
-        totalAmount: predefinedData.totalAmount || 0,
-        customGroupsCount: customData.customGroupsCount || customData.groups?.length || 0,
-        lastUpdated: predefinedData.lastUpdated || new Date().toISOString(),
-        transactionType: predefinedData.transactionType || transactionType
-      };
-      
-      setSummaryData(combinedData);
-      
-      // Auto-expand countries in Development Partners tab
-      if (combinedData.predefinedGroups) {
-        const countryIds = combinedData.predefinedGroups.map((g: GroupData) => g.id);
+
+      setSummaryDataByType({
+        D: disbursementsData,
+        C: commitmentsData
+      });
+
+      // Auto-expand countries based on current transaction type
+      const currentData = transactionType === 'D' ? disbursementsData : commitmentsData;
+      if (currentData.predefinedGroups) {
+        const countryIds = currentData.predefinedGroups.map((g: GroupData) => g.id);
         setExpandedCountries(new Set(countryIds));
       }
     } catch (err) {
@@ -166,13 +184,16 @@ export default function PartnersPage() {
     }
   };
 
+  // Fetch data only once on mount
   useEffect(() => {
     fetchSummaryData();
-    // Clear organization activities cache when transaction type changes
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Clear activity cache and reset expanded state when switching transaction types
+  useEffect(() => {
     setOrgActivities({});
     setExpandedOrgs(new Set());
-    setExpandedCountries(new Set());
-  }, [transactionType]); // Remove groupBy dependency since we load both types
+  }, [transactionType]);
 
   // Toggle group expansion
   const toggleGroup = (groupId: string) => {
@@ -424,7 +445,7 @@ export default function PartnersPage() {
         'Acronym': org.acronym,
         'Type': org.organisationType,
         'Country': org.countryRepresented,
-        'Active Projects': org.activeProjects,
+        'Activities': org.activeProjects,
         'Total Amount': org.totalAmount,
         '2022': org.financialData['2022'] || 0,
         '2023': org.financialData['2023'] || 0,
@@ -516,7 +537,7 @@ export default function PartnersPage() {
               </span>
             </div>
           </td>
-          <td className="py-3 px-2 text-center font-semibold text-blue-600">
+          <td className="py-3 px-2 text-center font-semibold">
             {country.totalActiveProjects || 0}
           </td>
           <td className="py-3 px-2 text-center font-semibold">
@@ -981,7 +1002,7 @@ export default function PartnersPage() {
                                 onClick={() => handleSort('activeProjects')}
                                 className="flex items-center hover:text-gray-900"
                               >
-                                Active Projects
+                                Activities
                                 {getSortIcon('activeProjects')}
                               </button>
                             </th>
@@ -1079,7 +1100,7 @@ export default function PartnersPage() {
                                   onClick={() => handleSort('activeProjects')}
                                   className="flex items-center hover:text-gray-900"
                                 >
-                                  Active Projects
+                                  Activities
                                   {getSortIcon('activeProjects')}
                                 </button>
                               </th>
@@ -1233,7 +1254,7 @@ export default function PartnersPage() {
                                           onClick={() => handleSort('activeProjects')}
                                           className="flex items-center hover:text-gray-900"
                                         >
-                                          Active Projects
+                                          Activities
                                           {getSortIcon('activeProjects')}
                                         </button>
                                       </th>
@@ -1349,7 +1370,7 @@ export default function PartnersPage() {
                   <p className="text-slate-900">{selectedOrg.countryRepresented || 'N/A'}</p>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-slate-700">Active Projects</label>
+                  <label className="text-sm font-medium text-slate-700">Activities</label>
                   <p className="text-slate-900">{selectedOrg.activeProjects}</p>
                 </div>
               </div>

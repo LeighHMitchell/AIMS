@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { MainLayout } from '@/components/layout/main-layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { UserAvatar, getInitials } from '@/components/ui/user-avatar';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
@@ -505,14 +506,13 @@ export default function RolodexPage() {
                       {people.map((person) => (
                         <tr key={person.id} className="group hover:bg-muted transition-colors">
                           <td className="px-4 py-2 align-middle">
-                            <Avatar className="h-8 w-8 flex-shrink-0">
-                              {person.profile_photo && (
-                                <AvatarImage src={person.profile_photo} alt={person.name || 'User'} />
-                              )}
-                              <AvatarFallback className="text-xs font-medium bg-slate-100 text-slate-600">
-                                {person.name?.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() || 'U'}
-                              </AvatarFallback>
-                            </Avatar>
+                            <UserAvatar
+                              src={person.profile_photo}
+                              seed={person.id || person.email || person.name || ''}
+                              name={person.name || 'User'}
+                              size="sm"
+                              initials={getInitials(person.name || '')}
+                            />
                           </td>
                           <td className="px-4 py-2 text-sm text-foreground align-middle">
                             <div className="font-medium text-foreground leading-tight">{person.name}</div>

@@ -59,6 +59,10 @@ interface CombinedLocationsTabProps {
   onCountriesChange?: (countries: CountryAllocation[]) => void;
   onRegionsChange?: (regions: RegionAllocation[]) => void;
 
+  // Geography level props (activity vs transaction level)
+  geographyLevel?: 'activity' | 'transaction';
+  onGeographyLevelChange?: (level: 'activity' | 'transaction') => void;
+
   // Common props
   activityTitle?: string;
   activitySector?: string;
@@ -82,6 +86,8 @@ export default function CombinedLocationsTab({
   regions: initialRegions = [],
   onCountriesChange,
   onRegionsChange,
+  geographyLevel = 'activity',
+  onGeographyLevelChange,
   activityTitle,
   activitySector
 }: CombinedLocationsTabProps) {
@@ -219,6 +225,8 @@ export default function CombinedLocationsTab({
             onCountriesChange={handleCountriesChange}
             onRegionsChange={handleRegionsChange}
             canEdit={canEdit}
+            geographyLevel={geographyLevel}
+            onGeographyLevelChange={onGeographyLevelChange}
           />
         </TabsContent>
       </Tabs>

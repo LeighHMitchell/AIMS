@@ -122,17 +122,9 @@ export interface TransactionAidType {
   vocabulary?: string; // Default: '1' (OECD DAC)
 }
 
-export interface TransactionRecipientCountry {
-  code: string; // ISO 3166-1 alpha-2 (e.g., 'TZ', 'KE')
-  percentage?: number; // 0-100, must sum to 100 if any percentage provided
-}
-
-export interface TransactionRecipientRegion {
-  code: string; // Region code (e.g., '298' for Africa)
-  vocabulary?: string; // Default: '1' (OECD DAC)
-  percentage?: number; // 0-100, must sum to 100 if any percentage provided
-  narrative?: string; // Optional region description
-}
+// NOTE: Transaction-level geography is single-value only per IATI standard
+// Use recipient_country_code OR recipient_region_code on Transaction interface
+// Multiple countries/regions with percentages are only valid at activity level
 
 // Main Transaction interface
 export interface Transaction {
@@ -179,7 +171,7 @@ export interface Transaction {
   sector_code?: string;
   sector_vocabulary?: string;
   
-  // Geographic information (DEPRECATED - use arrays for IATI compliance)
+  // Geographic information - IATI allows ONE country OR ONE region per transaction
   recipient_country_code?: string; // ISO 3166-1 alpha-2
   recipient_region_code?: string;
   recipient_region_vocab?: string;
@@ -208,11 +200,12 @@ export interface Transaction {
   tied_status_vocabulary?: string; // Default: '1' (OECD DAC)
   disbursement_channel_vocabulary?: string; // Default: '1' (OECD DAC)
   
-  // NEW: Multiple element support (IATI compliant)
+  // Multiple element support (sectors and aid types only - countries/regions are single-value per IATI)
   sectors?: TransactionSector[];
   aid_types?: TransactionAidType[];
-  recipient_countries?: TransactionRecipientCountry[];
-  recipient_regions?: TransactionRecipientRegion[];
+  
+  // Sector inheritance flag - if true, transaction inherits sectors from activity level
+  use_activity_sectors?: boolean;
   
   // Other
   is_humanitarian?: boolean;

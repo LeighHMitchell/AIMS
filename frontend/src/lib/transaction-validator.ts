@@ -83,10 +83,8 @@ export function validateIATITransaction(transaction: Partial<Transaction>): Vali
   // === HUMANITARIAN VALIDATION ===
   
   if (transaction.is_humanitarian) {
-    const hasCountry = transaction.recipient_country_code || 
-                       (transaction.recipient_countries && transaction.recipient_countries.length > 0);
-    const hasRegion = transaction.recipient_region_code || 
-                      (transaction.recipient_regions && transaction.recipient_regions.length > 0);
+    const hasCountry = !!transaction.recipient_country_code;
+    const hasRegion = !!transaction.recipient_region_code;
     
     if (!hasCountry && !hasRegion) {
       warnings.push('Humanitarian transactions should specify a recipient country or region for tracking purposes');
@@ -168,79 +166,30 @@ export function validateTransactionSectors(transaction: Partial<Transaction>): V
 
 /**
  * Validates transaction geography (countries and regions)
+ * IATI Standard: At transaction level, only ONE country OR ONE region is allowed (not both, and no multiple values)
  */
 export function validateTransactionGeography(transaction: Partial<Transaction>): ValidationResult {
   const errors: string[] = [];
   const warnings: string[] = [];
 
-  // Check if both countries and regions are specified
-  const hasCountries = (transaction.recipient_countries && transaction.recipient_countries.length > 0) || 
-                       !!transaction.recipient_country_code;
-  const hasRegions = (transaction.recipient_regions && transaction.recipient_regions.length > 0) || 
-                     !!transaction.recipient_region_code;
+  const hasCountry = !!transaction.recipient_country_code;
+  const hasRegion = !!transaction.recipient_region_code;
 
-  // IATI Standard: Either recipient-country OR recipient-region, not both
-  if (hasCountries && hasRegions) {
+  // IATI Standard: Either ONE recipient-country OR ONE recipient-region, not both
+  if (hasCountry && hasRegion) {
     errors.push(
-      'Transaction should specify either recipient-country OR recipient-region, not both ' +
+      'Transaction can have ONE recipient-country OR ONE recipient-region, not both ' +
       '(IATI Standard requirement)'
     );
   }
 
-  // Validate recipient countries percentages
-  if (transaction.recipient_countries && transaction.recipient_countries.length > 0) {
-    const countriesWithPercentage = transaction.recipient_countries.filter(c => c.percentage !== undefined);
-    
-    if (countriesWithPercentage.length > 0) {
-      const totalPercentage = countriesWithPercentage.reduce((sum, c) => sum + (c.percentage || 0), 0);
-      
-      if (Math.abs(totalPercentage - 100) > 0.01) {
-        errors.push(
-          `Recipient country percentages must sum to 100%. Current total: ${totalPercentage.toFixed(2)}%`
-        );
-      }
-      
-      // Ensure all or none have percentages
-      if (countriesWithPercentage.length !== transaction.recipient_countries.length) {
-        warnings.push(
-          'Some recipient countries have percentages while others do not. ' +
-          'All should have percentages or none should.'
-        );
-      }
+  // Validate country code format (ISO 3166-1 alpha-2)
+  if (transaction.recipient_country_code) {
+    if (transaction.recipient_country_code.length !== 2) {
+      warnings.push(
+        `Recipient country code "${transaction.recipient_country_code}" should be ISO 3166-1 alpha-2 (2 characters)`
+      );
     }
-    
-    // Validate country codes
-    transaction.recipient_countries.forEach((country, index) => {
-      if (!country.code || country.code.trim() === '') {
-        errors.push(`Recipient country ${index + 1} is missing a country code`);
-      } else if (country.code.length !== 2) {
-        warnings.push(
-          `Recipient country ${index + 1} code "${country.code}" should be ISO 3166-1 alpha-2 (2 characters)`
-        );
-      }
-    });
-  }
-
-  // Validate recipient regions percentages
-  if (transaction.recipient_regions && transaction.recipient_regions.length > 0) {
-    const regionsWithPercentage = transaction.recipient_regions.filter(r => r.percentage !== undefined);
-    
-    if (regionsWithPercentage.length > 0) {
-      const totalPercentage = regionsWithPercentage.reduce((sum, r) => sum + (r.percentage || 0), 0);
-      
-      if (Math.abs(totalPercentage - 100) > 0.01) {
-        errors.push(
-          `Recipient region percentages must sum to 100%. Current total: ${totalPercentage.toFixed(2)}%`
-        );
-      }
-    }
-    
-    // Validate region codes
-    transaction.recipient_regions.forEach((region, index) => {
-      if (!region.code || region.code.trim() === '') {
-        errors.push(`Recipient region ${index + 1} is missing a region code`);
-      }
-    });
   }
 
   return { isValid: errors.length === 0, errors, warnings };

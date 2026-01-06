@@ -1,60 +1,65 @@
 "use client";
 
 import React, { useState, useEffect, useCallback, useRef, useMemo } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { OrganizationCombobox } from "@/components/ui/organization-combobox";
-import { ContactDropdown } from "@/components/activities/ContactDropdown";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Progress } from "@/components/ui/progress";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { 
-  HelpCircle, 
-  Save, 
-  CheckCircle, 
-  AlertCircle, 
-  Download, 
-  Upload, 
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import {
+  HelpCircle,
+  CheckCircle,
+  Download,
+  Upload,
   Clock,
   Shield,
   Users,
   FileText,
   Calendar,
   Globe,
+  X,
+  Mail,
+  Phone,
+  Building2,
+  Link2,
+  Trash2,
   Plus,
-  X
+  ChevronDown
 } from "lucide-react";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
+import { useUser } from "@/hooks/useUser";
+import { supabase } from "@/lib/supabase";
 
 // Types for form data
 export interface AidEffectivenessFormData {
   // Section 1: Development Effectiveness Indicators
   implementingPartner?: string;
-  linkedToGovFramework?: string;
-  supportsPublicSector?: string;
+  linkedToGovFramework?: boolean;
+  supportsPublicSector?: boolean;
   numOutcomeIndicators?: number;
-  indicatorsFromGov?: string;
-  indicatorsViaGovData?: string;
-  finalEvalPlanned?: string;
+  indicatorsFromGov?: boolean;
+  indicatorsViaGovData?: boolean;
+  finalEvalPlanned?: boolean;
   finalEvalDate?: string;
 
   // Section 2: Government Systems
-  govBudgetSystem?: string;
-  govFinReporting?: string;
-  govAudit?: string;
-  govProcurement?: string;
+  govBudgetSystem?: boolean;
+  govFinReporting?: boolean;
+  govAudit?: boolean;
+  govProcurement?: boolean;
   govSystemWhyNot?: string;
 
   // Section 3: Budget Planning
-  annualBudgetShared?: string;
-  forwardPlanShared?: string;
+  annualBudgetShared?: boolean;
+  forwardPlanShared?: boolean;
   tiedStatus?: string;
 
   // Section 4: Contact Details
@@ -62,29 +67,12 @@ export interface AidEffectivenessFormData {
   contactOrg?: string;
   contactEmail?: string;
   contactPhone?: string;
-  contacts?: Array<{
-    title: string;
-    firstName: string;
-    middleName?: string;
-    lastName: string;
-    position: string;
-    contactType: string;
-    organisationId?: string;
-    organisationName?: string;
-    email?: string;
-    secondaryEmail?: string;
-    countryCode: string;
-    phoneNumber: string;
-    faxCountryCode: string;
-    faxNumber: string;
-    notes?: string;
-    avatar_url?: string;
-    profilePhoto?: string;
-  }>;
-  editingContact?: any;
+  contacts?: Contact[];
+  editingContact?: Partial<Contact> | null;
 
   // Section 5: Documents
   uploadedDocument?: string;
+  uploadedDocumentUrl?: string;
   externalDocumentLink?: string;
 
   // Section 6: Remarks
@@ -95,41 +83,63 @@ export interface AidEffectivenessFormData {
   isDraft?: boolean;
 }
 
+interface Contact {
+  id?: string;
+  title?: string;
+  firstName: string;
+  lastName: string;
+  position?: string;
+  contactType?: string;
+  organisationId?: string;
+  organisationName?: string;
+  email?: string;
+  phone?: string;
+  phoneNumber?: string;
+  countryCode?: string;
+  notes?: string;
+  avatar_url?: string;
+  profilePhoto?: string;
+}
+
 interface Props {
   general: any;
   onUpdate: (data: any) => void;
 }
-
-// Tooltip content configuration
-const TOOLTIPS = {
-  implementingPartner: "Organisation that disburses funds or support to the national implementing partner.",
-  linkedToGovFramework: "Indicates whether project results are tied to a national or sectoral government strategy.",
-  supportsPublicSector: "Yes if the project funds or embeds support into public institutions.",
-  numOutcomeIndicators: "Total number of indicators measuring results at the outcome level.",
-  indicatorsFromGov: "Yes if indicators are taken directly from national policies or planning documents.",
-  indicatorsViaGovData: "Yes if results are tracked using national statistics or M&E systems.",
-  finalEvalPlanned: "Yes if a post-project (ex post) evaluation is scheduled.",
-  govBudgetSystem: "Uses the government's own systems to plan and disburse project funds.",
-  govFinReporting: "Produces reports in accordance with national financial standards.",
-  govAudit: "Subject to audit by national audit institutions.",
-  govProcurement: "Procurement follows national rules, not donor/partner-specific procedures.",
-  annualBudgetShared: "Indicates whether the annual budget has been communicated for integration into national planning.",
-  forwardPlanShared: "Yes if a multi-year indicative budget or work plan has been shared with the national counterpart.",
-  tiedStatus: "Tied aid restricts procurement to certain countries or suppliers.",
-  contactName: "Person responsible for this project record.",
-  contactOrg: "Affiliated organisation of the contact person.",
-  contactEmail: "Valid institutional email.",
-  contactPhone: "Include international dialling code, e.g., +855 23 456 789.",
-  uploadedDocument: "Final or draft project documents including concept notes, logframes, or evaluations.",
-  externalDocumentLink: "Optional URL linking to a publicly available version of the project document.",
-  remarks: "Use for notes, explanations, or pending updates."
-};
 
 interface Organization {
   id: string;
   name: string;
   acronym?: string;
 }
+
+// GPEDC-aligned tooltips
+const TOOLTIPS = {
+  implementingPartner: "The organisation responsible for implementing the project at the point of delivery (GPEDC Indicator 1a).",
+  linkedToGovFramework: "Is this project aligned with national development results frameworks? (GPEDC Indicator 1a)",
+  supportsPublicSector: "Does this project support public sector capacity and institutions?",
+  numOutcomeIndicators: "How many outcome-level results indicators does this project track?",
+  indicatorsFromGov: "Are the project's results indicators drawn from government sources such as national statistics or sector plans? (GPEDC Indicator 1b)",
+  indicatorsViaGovData: "Is data for monitoring project results obtained through government M&E systems? (GPEDC Indicator 1b)",
+  finalEvalPlanned: "Is a final project evaluation planned and funded?",
+  govBudgetSystem: "Are disbursements made through the government's own budget execution procedures? (GPEDC Indicator 5a)",
+  govFinReporting: "Does the project use the government's financial reporting system? (GPEDC Indicator 5a)",
+  govAudit: "Is the project subject to government audit procedures? (GPEDC Indicator 5a)",
+  govProcurement: "Does the project use national procurement systems? (GPEDC Indicator 5a)",
+  annualBudgetShared: "Was annual disbursement information shared with government before the start of the fiscal year? (GPEDC Indicator 5b)",
+  forwardPlanShared: "Has forward expenditure information been provided covering at least 3 years ahead? (GPEDC Indicator 6)",
+  tiedStatus: "Is procurement restricted to suppliers from specific countries? (GPEDC Indicator 10)",
+  contactName: "Primary contact responsible for this effectiveness data.",
+  uploadedDocument: "Upload supporting documentation such as project documents, M&E frameworks, or evaluation reports.",
+  externalDocumentLink: "Link to publicly available project documentation.",
+  remarks: "Additional notes or clarifications on the effectiveness data."
+};
+
+// GPEDC tied aid status options
+const TIED_STATUS_OPTIONS = [
+  { value: "untied", label: "Untied", description: "No restrictions on procurement country" },
+  { value: "partially_tied", label: "Partially Tied", description: "Some procurement restrictions apply" },
+  { value: "tied", label: "Tied", description: "Procurement restricted to donor country" },
+];
 
 // Helper component for tooltips
 const FieldTooltip: React.FC<{ content: string; children: React.ReactNode }> = ({ content, children }) => (
@@ -138,7 +148,7 @@ const FieldTooltip: React.FC<{ content: string; children: React.ReactNode }> = (
       <TooltipTrigger asChild>
         <div className="flex items-center gap-1 cursor-help">
           {children}
-          <HelpCircle className="w-4 h-4 text-slate-500" />
+          <HelpCircle className="w-3.5 h-3.5 text-gray-400" />
         </div>
       </TooltipTrigger>
       <TooltipContent className="max-w-xs">
@@ -148,46 +158,141 @@ const FieldTooltip: React.FC<{ content: string; children: React.ReactNode }> = (
   </TooltipProvider>
 );
 
-// Helper component for radio groups with labels
-const RadioGroupWithLabel: React.FC<{
-  value?: string;
-  onValueChange: (value: string) => void;
-  name: string;
-  options: { value: string; label: string }[];
-}> = ({ value, onValueChange, name, options }) => (
-  <RadioGroup value={value} onValueChange={onValueChange} className="flex gap-4">
-    {options.map(option => (
-      <div key={option.value} className="flex items-center space-x-2">
-        <RadioGroupItem value={option.value} id={`${name}-${option.value}`} />
-        <Label htmlFor={`${name}-${option.value}`} className="text-sm font-normal cursor-pointer">
-          {option.label}
+// Checkbox field with label
+const CheckboxField: React.FC<{
+  id: string;
+  checked?: boolean;
+  onCheckedChange: (checked: boolean) => void;
+  label: string;
+  tooltip?: string;
+  description?: string;
+}> = ({ id, checked, onCheckedChange, label, tooltip, description }) => (
+  <div className="flex items-start space-x-3 p-3 rounded-lg border bg-white hover:bg-gray-50 transition-colors">
+    <Checkbox
+      id={id}
+      checked={checked ?? false}
+      onCheckedChange={onCheckedChange}
+      className="mt-0.5"
+    />
+    <div className="flex-1 space-y-1">
+      <div className="flex items-center gap-1">
+        <Label htmlFor={id} className="text-sm font-medium cursor-pointer leading-tight">
+          {label}
         </Label>
+        {tooltip && (
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger>
+                <HelpCircle className="w-3.5 h-3.5 text-gray-400" />
+              </TooltipTrigger>
+              <TooltipContent className="max-w-xs">
+                <p className="text-xs">{tooltip}</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        )}
       </div>
-    ))}
-  </RadioGroup>
+      {description && (
+        <p className="text-xs text-gray-500">{description}</p>
+      )}
+    </div>
+  </div>
 );
 
+// Contact card component (styled like ActivityContactsTab)
+const ContactCard: React.FC<{
+  contact: Contact;
+  onRemove: () => void;
+}> = ({ contact, onRemove }) => {
+  const fullName = `${contact.title ? contact.title + ' ' : ''}${contact.firstName} ${contact.lastName}`.trim();
+  const initials = `${contact.firstName?.[0] || ''}${contact.lastName?.[0] || ''}`.toUpperCase();
+
+  return (
+    <div className="border border-slate-200 rounded-xl p-4 hover:shadow-md transition-all duration-200 bg-white">
+      <div className="flex items-start gap-3">
+        <Avatar className="h-12 w-12 flex-shrink-0">
+          {contact.avatar_url || contact.profilePhoto ? (
+            <AvatarImage src={contact.avatar_url || contact.profilePhoto} alt={fullName} />
+          ) : null}
+          <AvatarFallback className="bg-blue-100 text-blue-700 font-medium">
+            {initials}
+          </AvatarFallback>
+        </Avatar>
+
+        <div className="flex-1 min-w-0">
+          <h4 className="font-semibold text-slate-900 text-sm truncate">{fullName}</h4>
+          {contact.position && (
+            <p className="text-xs text-slate-600 truncate">{contact.position}</p>
+          )}
+          {contact.organisationName && (
+            <p className="text-xs text-slate-500 truncate flex items-center gap-1 mt-0.5">
+              <Building2 className="h-3 w-3" />
+              {contact.organisationName}
+            </p>
+          )}
+        </div>
+
+        <Button
+          variant="ghost"
+          size="sm"
+          className="text-gray-400 hover:text-red-500 h-8 w-8 p-0"
+          onClick={onRemove}
+        >
+          <X className="h-4 w-4" />
+        </Button>
+      </div>
+
+      <div className="mt-3 space-y-1.5">
+        {contact.email && (
+          <div className="flex items-center gap-2 text-xs">
+            <Mail className="h-3.5 w-3.5 text-slate-400" />
+            <a href={`mailto:${contact.email}`} className="text-slate-700 hover:text-blue-600 truncate">
+              {contact.email}
+            </a>
+          </div>
+        )}
+        {(contact.phone || contact.phoneNumber) && (
+          <div className="flex items-center gap-2 text-xs">
+            <Phone className="h-3.5 w-3.5 text-slate-400" />
+            <span className="text-slate-700">
+              {contact.countryCode ? `${contact.countryCode} ` : ''}{contact.phoneNumber || contact.phone}
+            </span>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
 export const AidEffectivenessForm: React.FC<Props> = ({ general, onUpdate }) => {
+  const { user } = useUser();
+
   const [formData, setFormData] = useState<AidEffectivenessFormData>({
     isDraft: true,
     ...general.aidEffectiveness
   });
-  const [activeTab, setActiveTab] = useState("output1");
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [isSaving, setIsSaving] = useState(false);
-  
-  // Fetch organizations from API
+  const [lastSaved, setLastSaved] = useState<string>("");
+  const [isUploading, setIsUploading] = useState(false);
+  const formDataRef = useRef(formData);
+  const autosaveRef = useRef<NodeJS.Timeout>();
+
+  // Keep ref updated
+  useEffect(() => {
+    formDataRef.current = formData;
+  }, [formData]);
+
+  // Fetch organizations
   useEffect(() => {
     const fetchOrganizations = async () => {
       try {
         const response = await fetch('/api/organizations');
-        if (!response.ok) {
-          console.error('Failed to fetch organizations');
-          return;
-        }
-        const data = await response.json();
-        if (Array.isArray(data)) {
-          setOrganizations(data);
+        if (response.ok) {
+          const data = await response.json();
+          if (Array.isArray(data)) {
+            setOrganizations(data);
+          }
         }
       } catch (error) {
         console.error('Error fetching organizations:', error);
@@ -195,986 +300,664 @@ export const AidEffectivenessForm: React.FC<Props> = ({ general, onUpdate }) => 
     };
     fetchOrganizations();
   }, []);
-  const [lastSaved, setLastSaved] = useState<string>("");
-  const [errors, setErrors] = useState<Record<string, string>>({});
-  const autosaveRef = useRef<NodeJS.Timeout>();
 
-  // Calculate completion for each tab
-  const tabCompletions = useMemo(() => {
-    const output1Complete = !!(
-      formData.implementingPartner &&
-      formData.linkedToGovFramework &&
-      formData.supportsPublicSector &&
-      formData.numOutcomeIndicators !== undefined &&
-      formData.indicatorsFromGov &&
-      formData.indicatorsViaGovData &&
-      formData.finalEvalPlanned &&
-      (formData.finalEvalPlanned === 'no' || formData.finalEvalDate)
-    );
+  // Pre-fill implementing partner with user's reporting org
+  useEffect(() => {
+    if (user?.organizationId && !formData.implementingPartner) {
+      setFormData(prev => ({
+        ...prev,
+        implementingPartner: user.organizationId
+      }));
+    }
+  }, [user?.organizationId]);
 
-    const output2Complete = !!(
-      formData.govBudgetSystem &&
-      formData.govFinReporting &&
-      formData.govAudit &&
-      formData.govProcurement
-    );
-
-    const output3Complete = !!(
-      formData.annualBudgetShared &&
-      formData.forwardPlanShared &&
-      formData.tiedStatus
-    );
-
-    const contactComplete = !!(
-      (formData.contacts && formData.contacts.length > 0) ||
-      (formData.contactName &&
-       formData.contactOrg &&
-       formData.contactEmail)
-    );
-
-    const documentsComplete = !!(
-      formData.externalDocumentLink || 
-      formData.uploadedDocument
-    );
-    
-    const remarksComplete = !!(
-      formData.remarks && formData.remarks.trim()
-    );
-
-    return {
-      output1: output1Complete,
-      output2: output2Complete,
-      output3: output3Complete,
-      contact: contactComplete,
-      documents: documentsComplete,
-      remarks: remarksComplete
-    };
-  }, [formData]);
-
-  // Calculate completion percentage as derived state to avoid infinite loops
+  // Calculate completion percentage
   const completionPercentage = useMemo(() => {
-    const totalFields = 16;
-    const completedFields = Object.values(formData).filter(value => 
-      value !== undefined && value !== "" && value !== null
-    ).length;
-    return Math.round((completedFields / totalFields) * 100);
+    const fields = [
+      formData.implementingPartner,
+      formData.linkedToGovFramework !== undefined,
+      formData.supportsPublicSector !== undefined,
+      formData.govBudgetSystem !== undefined,
+      formData.govFinReporting !== undefined,
+      formData.govAudit !== undefined,
+      formData.govProcurement !== undefined,
+      formData.annualBudgetShared !== undefined,
+      formData.forwardPlanShared !== undefined,
+      formData.tiedStatus,
+      formData.contacts && formData.contacts.length > 0
+    ];
+    const filled = fields.filter(Boolean).length;
+    return Math.round((filled / fields.length) * 100);
   }, [formData]);
 
-  // Store current formData in ref for auto-save
-  const formDataRef = useRef(formData);
-  formDataRef.current = formData;
-
-  // Auto-save functionality - stable reference
+  // Autosave logic
   const autoSave = useCallback(async () => {
+    if (!general.id) return;
+
     setIsSaving(true);
     try {
-      // Update parent component with current formData from ref
       const updatedGeneral = {
         ...general,
         aidEffectiveness: formDataRef.current
       };
-      
       onUpdate(updatedGeneral);
-      
-      // If we have an activity ID, also save to database directly
-      if (general.id) {
-        const response = await fetch(`/api/activities/${general.id}/general-info`, {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            aidEffectiveness: formDataRef.current,
-            general_info: {
-              aidEffectiveness: formDataRef.current
-            }
-          })
-        });
-        
-        if (!response.ok) {
-          throw new Error('Failed to save to database');
-        }
+
+      const response = await fetch(`/api/activities/${general.id}/general-info`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          aidEffectiveness: formDataRef.current,
+          general_info: {
+            aidEffectiveness: formDataRef.current
+          }
+        })
+      });
+
+      if (response.ok) {
+        setLastSaved(new Date().toLocaleTimeString());
+      } else {
+        toast.error("Failed to save changes");
       }
-      
-      const now = new Date().toLocaleTimeString();
-      setLastSaved(now);
     } catch (error) {
-      console.error("Auto-save failed:", error);
-      toast.error("Auto-save failed");
+      console.error('Autosave error:', error);
+      toast.error("Error saving changes");
     } finally {
       setIsSaving(false);
     }
   }, [general, onUpdate]);
 
-  // Debounced auto-save - only trigger when formData actually changes
-  useEffect(() => {
-    // Skip auto-save for initial empty state
-    if (Object.keys(formData).length <= 1) return;
-    
-    if (autosaveRef.current) {
-      clearTimeout(autosaveRef.current);
-    }
-    
-    autosaveRef.current = setTimeout(() => {
-      autoSave();
-    }, 3000); // Auto-save after 3 seconds of no changes
-
-    return () => {
-      if (autosaveRef.current) {
-        clearTimeout(autosaveRef.current);
-      }
-    };
-  }, [formData, autoSave]); // Now autoSave is stable
-
-  // Form update handler
-  const updateField = (field: keyof AidEffectivenessFormData, value: any) => {
+  // Debounced update
+  const updateField = <K extends keyof AidEffectivenessFormData>(
+    field: K,
+    value: AidEffectivenessFormData[K]
+  ) => {
     setFormData(prev => ({
       ...prev,
       [field]: value
     }));
-    
-    // Clear error for this field
-    if (errors[field]) {
-      setErrors(prev => ({ ...prev, [field]: "" }));
+
+    if (autosaveRef.current) {
+      clearTimeout(autosaveRef.current);
+    }
+    autosaveRef.current = setTimeout(autoSave, 2000);
+  };
+
+  // Handle document upload to Supabase
+  const handleDocumentUpload = async (file: File) => {
+    if (!general.id) {
+      toast.error("Please save the activity first");
+      return;
+    }
+
+    setIsUploading(true);
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${general.id}_effectiveness_${Date.now()}.${fileExt}`;
+      const filePath = `activities/${general.id}/effectiveness/${fileName}`;
+
+      const { data, error } = await supabase.storage
+        .from('activity-documents')
+        .upload(filePath, file, { upsert: true });
+
+      if (error) throw error;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('activity-documents')
+        .getPublicUrl(filePath);
+
+      updateField('uploadedDocument', file.name);
+      updateField('uploadedDocumentUrl', publicUrl);
+      toast.success(`Document "${file.name}" uploaded successfully`);
+    } catch (error) {
+      console.error('Upload error:', error);
+      toast.error("Failed to upload document");
+    } finally {
+      setIsUploading(false);
     }
   };
 
-  // Validation
-  const validateForm = () => {
-    const newErrors: Record<string, string> = {};
-    
-    if (!formData.contactName) newErrors.contactName = "Contact name is required";
-    if (!formData.contactOrg) newErrors.contactOrg = "Contact organization is required";
-    if (!formData.contactEmail) newErrors.contactEmail = "Contact email is required";
-    
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+  // Add contact
+  const addContact = (contact: Contact) => {
+    const newContacts = [...(formData.contacts || []), contact];
+    updateField('contacts', newContacts);
+    updateField('editingContact', null);
+
+    // Update legacy fields
+    updateField('contactName', `${contact.firstName} ${contact.lastName}`.trim());
+    updateField('contactOrg', contact.organisationId);
+    updateField('contactEmail', contact.email);
   };
 
-
-
-  // Export to XLSX
-  const handleExportXLSX = () => {
-    toast.info("Excel export functionality coming soon");
-    // Implement XLSX export logic here
+  // Remove contact
+  const removeContact = (index: number) => {
+    const newContacts = formData.contacts?.filter((_, i) => i !== index) || [];
+    updateField('contacts', newContacts);
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-sm border max-w-6xl">
-      {/* Header with GPEDC Badge and Stats */}
-      <div className="border-b p-6 relative overflow-hidden" style={{
-        background: 'linear-gradient(135deg, #FF5F6D 0%, #FF8E53 20%, #FFA502 40%, #FFD93D 60%, #FF8E53 80%, #FF5F6D 100%)',
-        backgroundSize: '200% 200%',
-        animation: 'gradientShift 15s ease infinite'
-      }}>
-        {/* Overlay for better text readability */}
-        <div className="absolute inset-0 bg-white/20 backdrop-blur-[1px]" />
-        
-        <div className="relative z-10 flex items-center justify-between mb-4">
+    <div className="bg-white rounded-lg shadow-sm border">
+      {/* Header */}
+      <div className="border-b px-6 py-4 bg-gradient-to-r from-orange-50 to-amber-50">
+        <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Shield className="h-6 w-6 text-white drop-shadow-md" />
-            <h2 className="text-2xl font-bold text-white drop-shadow-md">Aid Effectiveness</h2>
-            <Badge variant="secondary" className="bg-white/90 text-orange-800 border-orange-200 shadow-md">
+            <div className="p-2 bg-orange-100 rounded-lg">
+              <Shield className="h-5 w-5 text-orange-600" />
+            </div>
+            <div>
+              <h2 className="text-lg font-semibold text-gray-900">Aid Effectiveness</h2>
+              <p className="text-xs text-gray-500">GPEDC Monitoring Framework</p>
+            </div>
+            <Badge variant="outline" className="bg-white text-orange-700 border-orange-200 text-xs">
               GPEDC Compliant
             </Badge>
           </div>
-          
+
           <div className="flex items-center gap-4">
-            <div className="text-right">
-              <div className="text-xs text-white/90 drop-shadow">Completion</div>
-              <div className="font-semibold text-sm text-white drop-shadow">{completionPercentage}%</div>
+            <div className="flex items-center gap-2">
+              <Progress value={completionPercentage} className="w-24 h-2" />
+              <span className="text-sm font-medium text-gray-600">{completionPercentage}%</span>
             </div>
-            <Progress value={completionPercentage} className="w-20 bg-white/30 [&>div]:bg-orange-500" />
-          </div>
-        </div>
-        
-        <div className="relative z-10 flex items-center justify-end">
-          <div className="flex items-center gap-2 text-xs text-white/80 drop-shadow">
             {isSaving ? (
-              <div className="flex items-center gap-1">
-                <Clock className="h-3 w-3 animate-spin" />
+              <div className="flex items-center gap-1.5 text-xs text-gray-500">
+                <Clock className="h-3.5 w-3.5 animate-spin" />
                 <span>Saving...</span>
               </div>
             ) : lastSaved ? (
-              <div className="flex items-center gap-1">
-                <CheckCircle className="h-3 w-3 text-white" />
-                <span className="font-bold">Saved</span>
+              <div className="flex items-center gap-1.5 text-xs text-green-600">
+                <CheckCircle className="h-3.5 w-3.5" />
+                <span>Saved</span>
               </div>
             ) : null}
           </div>
         </div>
       </div>
 
-      {/* Navigation Tabs */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="flex w-full overflow-x-auto sticky top-0 z-10 bg-white border-b gap-2 p-1">
-          <TabsTrigger value="output1" className="flex items-center gap-1">
-            <Users className="h-3 w-3 text-gray-900" />
-            <span className="hidden sm:inline">Implementation and Results</span>
-            {tabCompletions.output1 && <CheckCircle className="h-3 w-3 text-green-600 ml-1" />}
-          </TabsTrigger>
-          <TabsTrigger value="output2" className="flex items-center gap-1">
-            <Globe className="h-3 w-3 text-gray-900" />
-            <span className="hidden sm:inline">Financial and Procurement Systems</span>
-            {tabCompletions.output2 && <CheckCircle className="h-3 w-3 text-green-600 ml-1" />}
-          </TabsTrigger>
-          <TabsTrigger value="output3" className="flex items-center gap-1">
-            <Calendar className="h-3 w-3 text-gray-900" />
-            <span className="hidden sm:inline">Planning & Predictability</span>
-            {tabCompletions.output3 && <CheckCircle className="h-3 w-3 text-green-600 ml-1" />}
-          </TabsTrigger>
-          <TabsTrigger value="contact" className="flex items-center gap-1">
-            <Users className="h-3 w-3 text-gray-900" />
-            <span className="hidden sm:inline">Contact</span>
-            {tabCompletions.contact && <CheckCircle className="h-3 w-3 text-green-600 ml-1" />}
-          </TabsTrigger>
-          <TabsTrigger value="documents" className="flex items-center gap-1">
-            <FileText className="h-3 w-3 text-gray-900" />
-            <span className="hidden sm:inline">Docs</span>
-            {tabCompletions.documents && <CheckCircle className="h-3 w-3 text-green-600 ml-1" />}
-          </TabsTrigger>
-          <TabsTrigger value="remarks" className="flex items-center gap-1">
-            <FileText className="h-3 w-3 text-gray-900" />
-            <span className="hidden sm:inline">Remarks</span>
-            {tabCompletions.remarks && <CheckCircle className="h-3 w-3 text-green-600 ml-1" />}
-          </TabsTrigger>
-        </TabsList>
+      <div className="p-6 space-y-8">
+        {/* Section 1: Results Framework */}
+        <div className="space-y-4">
+          <div className="flex items-center gap-2 pb-2 border-b">
+            <Users className="h-5 w-5 text-blue-600" />
+            <h3 className="font-semibold text-gray-900">Results Framework Alignment</h3>
+            <Badge variant="outline" className="text-xs">GPEDC Indicator 1</Badge>
+          </div>
 
-        {/* Tab Content */}
-        <div className="p-6">
-          {/* Output 1: Implementation and Results Framework */}
-          <TabsContent value="output1" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Users className="h-5 w-5 text-gray-900" />
-                  Output 1: Implementation and Results Framework
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                {/* Implementing Partner */}
-                <div className="space-y-2">
-                  <FieldTooltip content={TOOLTIPS.implementingPartner}>
-                    <Label className="text-sm font-medium">Implementing / Point of Delivery Partner</Label>
-                  </FieldTooltip>
-                  <div className="flex items-center justify-between p-3 border rounded-lg bg-gray-50" style={{ minHeight: '68px' }}>
-                    <div className="flex items-center gap-3 flex-1">
-                      <div className="h-8 w-8 rounded bg-blue-100 flex items-center justify-center flex-shrink-0">
-                        <Users className="h-4 w-4 text-blue-600" />
-                      </div>
-                      <OrganizationCombobox
-                        organizations={organizations}
-                        value={formData.implementingPartner}
-                        onValueChange={(value) => updateField('implementingPartner', value)}
-                        placeholder="Select implementing partner..."
-                        className="flex-1 border-0 bg-transparent shadow-none hover:bg-transparent"
-                      />
+          {/* Implementing Partner */}
+          <div className="space-y-2">
+            <FieldTooltip content={TOOLTIPS.implementingPartner}>
+              <Label className="text-sm font-medium text-gray-700">Implementing Partner</Label>
+            </FieldTooltip>
+            <OrganizationCombobox
+              organizations={organizations}
+              value={formData.implementingPartner}
+              onValueChange={(value) => updateField('implementingPartner', value)}
+              placeholder="Select implementing partner..."
+              className="max-w-md"
+            />
+            {user?.organizationId && formData.implementingPartner === user.organizationId && (
+              <p className="text-xs text-gray-500">Pre-filled with your organization</p>
+            )}
+          </div>
+
+          {/* Checkbox questions */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <CheckboxField
+              id="linkedToGovFramework"
+              checked={formData.linkedToGovFramework}
+              onCheckedChange={(checked) => updateField('linkedToGovFramework', checked)}
+              label="Linked to Government Results Framework"
+              tooltip={TOOLTIPS.linkedToGovFramework}
+              description="Project results align with national/sector plans"
+            />
+
+            <CheckboxField
+              id="supportsPublicSector"
+              checked={formData.supportsPublicSector}
+              onCheckedChange={(checked) => updateField('supportsPublicSector', checked)}
+              label="Supports Public Sector Capacity"
+              tooltip={TOOLTIPS.supportsPublicSector}
+              description="Strengthens government institutions"
+            />
+
+            <CheckboxField
+              id="indicatorsFromGov"
+              checked={formData.indicatorsFromGov}
+              onCheckedChange={(checked) => updateField('indicatorsFromGov', checked)}
+              label="Indicators from Government Sources"
+              tooltip={TOOLTIPS.indicatorsFromGov}
+              description="Uses national statistics or sector plans"
+            />
+
+            <CheckboxField
+              id="indicatorsViaGovData"
+              checked={formData.indicatorsViaGovData}
+              onCheckedChange={(checked) => updateField('indicatorsViaGovData', checked)}
+              label="Monitored via Government M&E Systems"
+              tooltip={TOOLTIPS.indicatorsViaGovData}
+              description="Data collected through national systems"
+            />
+          </div>
+
+          {/* Number of indicators */}
+          <div className="space-y-2 max-w-xs">
+            <FieldTooltip content={TOOLTIPS.numOutcomeIndicators}>
+              <Label className="text-sm font-medium text-gray-700">Number of Outcome Indicators</Label>
+            </FieldTooltip>
+            <Input
+              type="number"
+              min="0"
+              value={formData.numOutcomeIndicators || ""}
+              onChange={(e) => updateField('numOutcomeIndicators', parseInt(e.target.value) || 0)}
+              placeholder="0"
+              className="w-28"
+            />
+          </div>
+
+          {/* Final evaluation */}
+          <div className="space-y-3">
+            <CheckboxField
+              id="finalEvalPlanned"
+              checked={formData.finalEvalPlanned}
+              onCheckedChange={(checked) => updateField('finalEvalPlanned', checked)}
+              label="Final Evaluation Planned"
+              tooltip={TOOLTIPS.finalEvalPlanned}
+              description="Post-project evaluation is scheduled and funded"
+            />
+            {formData.finalEvalPlanned && (
+              <div className="ml-6 space-y-2">
+                <Label className="text-sm text-gray-600">Planned Evaluation Date</Label>
+                <Input
+                  type="date"
+                  value={formData.finalEvalDate || ""}
+                  onChange={(e) => updateField('finalEvalDate', e.target.value)}
+                  className="w-44"
+                />
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Section 2: Use of Country Systems */}
+        <div className="space-y-4">
+          <div className="flex items-center gap-2 pb-2 border-b">
+            <Globe className="h-5 w-5 text-green-600" />
+            <h3 className="font-semibold text-gray-900">Use of Country Systems</h3>
+            <Badge variant="outline" className="text-xs">GPEDC Indicator 5a</Badge>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <CheckboxField
+              id="govBudgetSystem"
+              checked={formData.govBudgetSystem}
+              onCheckedChange={(checked) => updateField('govBudgetSystem', checked)}
+              label="Government Budget Execution"
+              tooltip={TOOLTIPS.govBudgetSystem}
+              description="Uses national budget execution procedures"
+            />
+
+            <CheckboxField
+              id="govFinReporting"
+              checked={formData.govFinReporting}
+              onCheckedChange={(checked) => updateField('govFinReporting', checked)}
+              label="Government Financial Reporting"
+              tooltip={TOOLTIPS.govFinReporting}
+              description="Reports through national financial systems"
+            />
+
+            <CheckboxField
+              id="govAudit"
+              checked={formData.govAudit}
+              onCheckedChange={(checked) => updateField('govAudit', checked)}
+              label="Government Audit Procedures"
+              tooltip={TOOLTIPS.govAudit}
+              description="Subject to national audit requirements"
+            />
+
+            <CheckboxField
+              id="govProcurement"
+              checked={formData.govProcurement}
+              onCheckedChange={(checked) => updateField('govProcurement', checked)}
+              label="National Procurement Systems"
+              tooltip={TOOLTIPS.govProcurement}
+              description="Uses country procurement procedures"
+            />
+          </div>
+
+          {/* Conditional explanation */}
+          {(formData.govBudgetSystem === false ||
+            formData.govFinReporting === false ||
+            formData.govAudit === false ||
+            formData.govProcurement === false) && (
+            <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg space-y-2">
+              <Label className="text-sm font-medium text-amber-800">
+                Please explain why government systems are not being used
+              </Label>
+              <Textarea
+                value={formData.govSystemWhyNot || ""}
+                onChange={(e) => updateField('govSystemWhyNot', e.target.value)}
+                placeholder="E.g., capacity constraints, donor requirements, legal restrictions..."
+                rows={3}
+                className="bg-white"
+              />
+            </div>
+          )}
+        </div>
+
+        {/* Section 3: Aid Predictability */}
+        <div className="space-y-4">
+          <div className="flex items-center gap-2 pb-2 border-b">
+            <Calendar className="h-5 w-5 text-purple-600" />
+            <h3 className="font-semibold text-gray-900">Aid Predictability</h3>
+            <Badge variant="outline" className="text-xs">GPEDC Indicators 5b, 6, 10</Badge>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <CheckboxField
+              id="annualBudgetShared"
+              checked={formData.annualBudgetShared}
+              onCheckedChange={(checked) => updateField('annualBudgetShared', checked)}
+              label="Annual Budget Shared with Government"
+              tooltip={TOOLTIPS.annualBudgetShared}
+              description="Disbursement info provided before fiscal year"
+            />
+
+            <CheckboxField
+              id="forwardPlanShared"
+              checked={formData.forwardPlanShared}
+              onCheckedChange={(checked) => updateField('forwardPlanShared', checked)}
+              label="3-Year Forward Expenditure Shared"
+              tooltip={TOOLTIPS.forwardPlanShared}
+              description="Multi-year spending plans provided"
+            />
+          </div>
+
+          {/* Tied Status Dropdown */}
+          <div className="space-y-2 max-w-md">
+            <FieldTooltip content={TOOLTIPS.tiedStatus}>
+              <Label className="text-sm font-medium text-gray-700">Tied Aid Status</Label>
+            </FieldTooltip>
+            <Select
+              value={formData.tiedStatus || ""}
+              onValueChange={(value) => updateField('tiedStatus', value)}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select tied status..." />
+              </SelectTrigger>
+              <SelectContent>
+                {TIED_STATUS_OPTIONS.map(option => (
+                  <SelectItem key={option.value} value={option.value}>
+                    <div className="flex flex-col">
+                      <span>{option.label}</span>
+                      <span className="text-xs text-gray-500">{option.description}</span>
                     </div>
-                  </div>
-                </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
 
-                {/* Linked to Government Framework */}
-                <div className="space-y-2">
-                  <FieldTooltip content={TOOLTIPS.linkedToGovFramework}>
-                    <Label className="text-sm font-medium">Linked to Government Framework?</Label>
-                  </FieldTooltip>
-                  <RadioGroupWithLabel
-                    value={formData.linkedToGovFramework}
-                    onValueChange={(value) => updateField('linkedToGovFramework', value)}
-                    name="linkedToGovFramework"
-                    options={[
-                      { value: "yes", label: "Yes" },
-                      { value: "no", label: "No" }
-                    ]}
-                  />
-                </div>
+        {/* Section 4: Contact Details */}
+        <div className="space-y-4">
+          <div className="flex items-center gap-2 pb-2 border-b">
+            <Users className="h-5 w-5 text-slate-600" />
+            <h3 className="font-semibold text-gray-900">Contact Details</h3>
+          </div>
 
-                {/* Supports Public Sector */}
-                <div className="space-y-2">
-                  <FieldTooltip content={TOOLTIPS.supportsPublicSector}>
-                    <Label className="text-sm font-medium">Supports Public Sector?</Label>
-                  </FieldTooltip>
-                  <RadioGroupWithLabel
-                    value={formData.supportsPublicSector}
-                    onValueChange={(value) => updateField('supportsPublicSector', value)}
-                    name="supportsPublicSector"
-                    options={[
-                      { value: "yes", label: "Yes" },
-                      { value: "no", label: "No" }
-                    ]}
-                  />
-                </div>
+          {/* Contact cards grid */}
+          {formData.contacts && formData.contacts.length > 0 && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {formData.contacts.map((contact, index) => (
+                <ContactCard
+                  key={index}
+                  contact={contact}
+                  onRemove={() => removeContact(index)}
+                />
+              ))}
+            </div>
+          )}
 
-                {/* Number of Outcome Indicators */}
-                <div className="space-y-2">
-                  <FieldTooltip content={TOOLTIPS.numOutcomeIndicators}>
-                    <Label className="text-sm font-medium">Number of Outcome Indicators</Label>
-                  </FieldTooltip>
-                  <Input
-                    type="number"
-                    min="0"
-                    value={formData.numOutcomeIndicators || ""}
-                    onChange={(e) => updateField('numOutcomeIndicators', parseInt(e.target.value) || 0)}
-                    placeholder="Enter number of indicators"
-                    className="w-32"
-                  />
-                </div>
-
-                {/* Indicators from Government Plans */}
-                <div className="space-y-2">
-                  <FieldTooltip content={TOOLTIPS.indicatorsFromGov}>
-                    <Label className="text-sm font-medium">Indicators Sourced from Government Plans?</Label>
-                  </FieldTooltip>
-                  <RadioGroupWithLabel
-                    value={formData.indicatorsFromGov}
-                    onValueChange={(value) => updateField('indicatorsFromGov', value)}
-                    name="indicatorsFromGov"
-                    options={[
-                      { value: "yes", label: "Yes" },
-                      { value: "no", label: "No" }
-                    ]}
-                  />
-                </div>
-
-                {/* Indicators via Government Data */}
-                <div className="space-y-2">
-                  <FieldTooltip content={TOOLTIPS.indicatorsViaGovData}>
-                    <Label className="text-sm font-medium">Indicators Monitored via Government Data?</Label>
-                  </FieldTooltip>
-                  <RadioGroupWithLabel
-                    value={formData.indicatorsViaGovData}
-                    onValueChange={(value) => updateField('indicatorsViaGovData', value)}
-                    name="indicatorsViaGovData"
-                    options={[
-                      { value: "yes", label: "Yes" },
-                      { value: "no", label: "No" }
-                    ]}
-                  />
-                </div>
-
-                {/* Final Evaluation Planned */}
-                <div className="space-y-2">
-                  <FieldTooltip content={TOOLTIPS.finalEvalPlanned}>
-                    <Label className="text-sm font-medium">Final Evaluation Planned?</Label>
-                  </FieldTooltip>
-                  <RadioGroupWithLabel
-                    value={formData.finalEvalPlanned}
-                    onValueChange={(value) => updateField('finalEvalPlanned', value)}
-                    name="finalEvalPlanned"
-                    options={[
-                      { value: "yes", label: "Yes" },
-                      { value: "no", label: "No" }
-                    ]}
-                  />
-                  
-                  {/* Conditional Date Field */}
-                  {formData.finalEvalPlanned === "yes" && (
-                    <div className="ml-6 space-y-2">
-                      <Label className="text-sm font-medium">Planned Evaluation Date</Label>
-                      <Input
-                        type="date"
-                        value={formData.finalEvalDate || ""}
-                        onChange={(e) => updateField('finalEvalDate', e.target.value)}
-                        className="w-48"
-                      />
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* Output 2: Financial and Procurement Systems */}
-          <TabsContent value="output2" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Globe className="h-5 w-5 text-gray-900" />
-                  Output 2: Financial and Procurement Systems
-                </CardTitle>
+          {/* Add contact form */}
+          {formData.editingContact ? (
+            <Card className="border-blue-200 bg-blue-50/30">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base">Add Contact</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-6">
-                {/* Government Budget System */}
-                <div className="space-y-2">
-                  <FieldTooltip content={TOOLTIPS.govBudgetSystem}>
-                    <Label className="text-sm font-medium">Government Budget Execution System</Label>
-                  </FieldTooltip>
-                  <RadioGroupWithLabel
-                    value={formData.govBudgetSystem}
-                    onValueChange={(value) => updateField('govBudgetSystem', value)}
-                    name="govBudgetSystem"
-                    options={[
-                      { value: "yes", label: "Yes" },
-                      { value: "no", label: "No" }
-                    ]}
-                  />
-                </div>
-
-                {/* Government Financial Reporting */}
-                <div className="space-y-2">
-                  <FieldTooltip content={TOOLTIPS.govFinReporting}>
-                    <Label className="text-sm font-medium">Government Financial Reporting System</Label>
-                  </FieldTooltip>
-                  <RadioGroupWithLabel
-                    value={formData.govFinReporting}
-                    onValueChange={(value) => updateField('govFinReporting', value)}
-                    name="govFinReporting"
-                    options={[
-                      { value: "yes", label: "Yes" },
-                      { value: "no", label: "No" }
-                    ]}
-                  />
-                </div>
-
-                {/* Government Auditing */}
-                <div className="space-y-2">
-                  <FieldTooltip content={TOOLTIPS.govAudit}>
-                    <Label className="text-sm font-medium">Government Auditing System</Label>
-                  </FieldTooltip>
-                  <RadioGroupWithLabel
-                    value={formData.govAudit}
-                    onValueChange={(value) => updateField('govAudit', value)}
-                    name="govAudit"
-                    options={[
-                      { value: "yes", label: "Yes" },
-                      { value: "no", label: "No" }
-                    ]}
-                  />
-                </div>
-
-                {/* Government Procurement */}
-                <div className="space-y-2">
-                  <FieldTooltip content={TOOLTIPS.govProcurement}>
-                    <Label className="text-sm font-medium">Uses Government Procurement System</Label>
-                  </FieldTooltip>
-                  <RadioGroupWithLabel
-                    value={formData.govProcurement}
-                    onValueChange={(value) => updateField('govProcurement', value)}
-                    name="govProcurement"
-                    options={[
-                      { value: "yes", label: "Yes" },
-                      { value: "no", label: "No" }
-                    ]}
-                  />
-                </div>
-
-                {/* Conditional Why Not Field */}
-                {(formData.govBudgetSystem === "no" || 
-                  formData.govFinReporting === "no" || 
-                  formData.govAudit === "no" || 
-                  formData.govProcurement === "no") && (
-                  <div className="space-y-2 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-                    <Label className="text-sm font-medium">Why not using government systems?</Label>
-                    <Textarea
-                      value={formData.govSystemWhyNot || ""}
-                      onChange={(e) => updateField('govSystemWhyNot', e.target.value)}
-                      placeholder="Please explain why government systems are not being used..."
-                      rows={3}
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
+                    <Label className="text-xs text-gray-600">First Name *</Label>
+                    <Input
+                      value={formData.editingContact.firstName || ""}
+                      onChange={(e) => updateField('editingContact', {
+                        ...formData.editingContact,
+                        firstName: e.target.value
+                      })}
+                      placeholder="First name"
+                      className="h-9"
                     />
                   </div>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* Output 3: Planning & Predictability */}
-          <TabsContent value="output3" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Calendar className="h-5 w-5 text-gray-900" />
-                  Output 3: Planning & Predictability
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                {/* Annual Budget Shared */}
-                <div className="space-y-2">
-                  <FieldTooltip content={TOOLTIPS.annualBudgetShared}>
-                    <Label className="text-sm font-medium">Annual Budget Shared with Government?</Label>
-                  </FieldTooltip>
-                  <RadioGroupWithLabel
-                    value={formData.annualBudgetShared}
-                    onValueChange={(value) => updateField('annualBudgetShared', value)}
-                    name="annualBudgetShared"
-                    options={[
-                      { value: "yes", label: "Yes" },
-                      { value: "no", label: "No" }
-                    ]}
-                  />
-                </div>
-
-                {/* Forward Plan Shared */}
-                <div className="space-y-2">
-                  <FieldTooltip content={TOOLTIPS.forwardPlanShared}>
-                    <Label className="text-sm font-medium">3-Year Forward Plan Shared?</Label>
-                  </FieldTooltip>
-                  <RadioGroupWithLabel
-                    value={formData.forwardPlanShared}
-                    onValueChange={(value) => updateField('forwardPlanShared', value)}
-                    name="forwardPlanShared"
-                    options={[
-                      { value: "yes", label: "Yes" },
-                      { value: "no", label: "No" }
-                    ]}
-                  />
-                </div>
-
-                {/* Tied Status */}
-                <div className="space-y-2">
-                  <FieldTooltip content={TOOLTIPS.tiedStatus}>
-                    <Label className="text-sm font-medium">Tied Status of Resources</Label>
-                  </FieldTooltip>
-                  <RadioGroupWithLabel
-                    value={formData.tiedStatus}
-                    onValueChange={(value) => updateField('tiedStatus', value)}
-                    name="tiedStatus"
-                    options={[
-                      { value: "fully_tied", label: "Fully Tied" },
-                      { value: "partially_tied", label: "Partially Tied" },
-                      { value: "untied", label: "Untied" }
-                    ]}
-                  />
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* Contact Details */}
-          <TabsContent value="contact" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Users className="h-5 w-5 text-gray-900" />
-                  Contact Details
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                {/* Existing Contacts List */}
-                {formData.contacts && formData.contacts.length > 0 && (
-                  <div className="space-y-3">
-                    <Label className="text-sm font-medium">Assigned Contacts</Label>
-                    <div className="space-y-2">
-                      {formData.contacts.map((contact, index) => (
-                        <div key={index} className="flex items-center justify-between p-3 border rounded-lg bg-gray-50">
-                          <div className="flex items-start gap-3">
-                            <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
-                              {(contact.avatar_url || contact.profilePhoto) ? (
-                                <img
-                                  src={contact.avatar_url || contact.profilePhoto}
-                                  alt={`${contact.firstName} ${contact.lastName}`}
-                                  className="h-8 w-8 rounded-full object-cover"
-                                />
-                              ) : (
-                                <Users className="h-4 w-4 text-blue-600" />
-                              )}
-                            </div>
-                            <div className="space-y-1">
-                              <div className="font-medium text-sm">
-                                {contact.firstName} {contact.lastName}
-                              </div>
-                              <div className="text-xs text-gray-600">
-                                {contact.organisationName || 'No organization'}
-                              </div>
-                              {contact.email && (
-                                <div className="text-xs text-gray-600">
-                                  {contact.email}
-                                </div>
-                              )}
-                              {contact.phoneNumber && (
-                                <div className="text-xs text-gray-600">
-                                  {contact.countryCode} {contact.phoneNumber}
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => {
-                              const newContacts = formData.contacts?.filter((_, i) => i !== index) || [];
-                              updateField('contacts', newContacts);
-                            }}
-                          >
-                            <X className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      ))}
-                    </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs text-gray-600">Last Name *</Label>
+                    <Input
+                      value={formData.editingContact.lastName || ""}
+                      onChange={(e) => updateField('editingContact', {
+                        ...formData.editingContact,
+                        lastName: e.target.value
+                      })}
+                      placeholder="Last name"
+                      className="h-9"
+                    />
                   </div>
-                )}
-
-                {/* Add/Edit Contact Form */}
-                {(!formData.editingContact && (!formData.contacts || formData.contacts.length === 0)) && (
-                  <ContactDropdown
-                    existingContacts={formData.contacts || []}
-                    onSelectContact={(contact) => {
-                      const newContacts = [...(formData.contacts || []), contact];
-                      updateField('contacts', newContacts);
-                      
-                      // Update the legacy fields for backward compatibility
-                      updateField('contactName', `${contact.firstName} ${contact.lastName}`.trim());
-                      updateField('contactOrg', contact.organisationId);
-                      updateField('contactEmail', contact.email);
-                      updateField('contactPhone', contact.phone || `${contact.countryCode || ''} ${contact.phoneNumber || ''}`.trim());
-                    }}
-                    onCreateNew={() => updateField('editingContact', {
-                      title: "",
-                      firstName: "",
-                      middleName: "",
-                      lastName: "",
-                      position: "",
-                      contactType: "1",
-                      email: "",
-                      secondaryEmail: "",
-                      countryCode: "+95",
-                      phoneNumber: "",
-                      faxCountryCode: "+95",
-                      faxNumber: "",
-                      notes: "",
-                      avatar_url: "",
-                      profilePhoto: ""
-                    })}
-                    placeholder="Select existing contact or create new..."
-                    className="w-full"
-                  />
-                )}
-
-                {formData.editingContact && (
-                  <div className="space-y-4 p-4 border rounded-lg bg-gray-50">
-                    <div className="font-medium text-sm mb-4">Add New Contact</div>
-                    
-                    <div className="grid grid-cols-2 gap-4">
-                      {/* First Name */}
-                      <div className="space-y-2">
-                        <Label className="text-sm">First Name</Label>
-                        <Input
-                          value={formData.editingContact.firstName || ""}
-                          onChange={(e) => updateField('editingContact', {...formData.editingContact, firstName: e.target.value})}
-                          placeholder="First name"
-                        />
-                      </div>
-
-                      {/* Last Name */}
-                      <div className="space-y-2">
-                        <Label className="text-sm">Last Name</Label>
-                        <Input
-                          value={formData.editingContact.lastName || ""}
-                          onChange={(e) => updateField('editingContact', {...formData.editingContact, lastName: e.target.value})}
-                          placeholder="Last name"
-                        />
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 gap-4">
-                      {/* Contact Type */}
-                      <div className="space-y-2">
-                        <Label className="text-sm">Contact Type</Label>
-                        <Select
-                          value={formData.editingContact.contactType}
-                          onValueChange={(value) => updateField('editingContact', {...formData.editingContact, contactType: value})}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select contact type" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="1">General Enquiries</SelectItem>
-                            <SelectItem value="2">Project Manager</SelectItem>
-                            <SelectItem value="3">Financial Officer</SelectItem>
-                            <SelectItem value="4">M&E Officer</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
-
-                    {/* Organisation */}
-                    <div className="space-y-2">
-                      <Label className="text-sm">Organisation</Label>
-                      <OrganizationCombobox
-                        organizations={organizations}
-                        value={formData.editingContact.organisationId}
-                        onValueChange={(value) => {
-                          const org = organizations.find(o => o.id === value);
-                          updateField('editingContact', {
-                            ...formData.editingContact, 
-                            organisationId: value,
-                            organisationName: org?.name || ''
-                          });
-                        }}
-                        placeholder="Select organization..."
-                      />
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4">
-                      {/* Primary Email */}
-                      <div className="space-y-2">
-                        <Label className="text-sm">Primary Email</Label>
-                        <Input
-                          type="email"
-                          value={formData.editingContact.email || ""}
-                          onChange={(e) => updateField('editingContact', {...formData.editingContact, email: e.target.value})}
-                          placeholder="primary@example.com"
-                        />
-                      </div>
-
-                      {/* Secondary Email */}
-                      <div className="space-y-2">
-                        <Label className="text-sm">Secondary Email</Label>
-                        <Input
-                          type="email"
-                          value={formData.editingContact.secondaryEmail || ""}
-                          onChange={(e) => updateField('editingContact', {...formData.editingContact, secondaryEmail: e.target.value})}
-                          placeholder="secondary@example.com"
-                        />
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4">
-                      {/* Phone Number */}
-                      <div className="space-y-2">
-                        <Label className="text-sm">Phone Number</Label>
-                        <div className="flex gap-2">
-                          <Select
-                            value={formData.editingContact.countryCode}
-                            onValueChange={(value) => updateField('editingContact', {...formData.editingContact, countryCode: value})}
-                          >
-                            <SelectTrigger className="w-24">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="+95">+95</SelectItem>
-                              <SelectItem value="+1">+1</SelectItem>
-                              <SelectItem value="+44">+44</SelectItem>
-                              <SelectItem value="+81">+81</SelectItem>
-                            </SelectContent>
-                          </Select>
-                          <Input
-                            type="tel"
-                            value={formData.editingContact.phoneNumber || ""}
-                            onChange={(e) => updateField('editingContact', {...formData.editingContact, phoneNumber: e.target.value})}
-                            placeholder="Phone number"
-                            className="flex-1"
-                          />
-                        </div>
-                      </div>
-
-                      {/* Fax Number */}
-                      <div className="space-y-2">
-                        <Label className="text-sm">Fax Number</Label>
-                        <div className="flex gap-2">
-                          <Select
-                            value={formData.editingContact.faxCountryCode}
-                            onValueChange={(value) => updateField('editingContact', {...formData.editingContact, faxCountryCode: value})}
-                          >
-                            <SelectTrigger className="w-24">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="+95">+95</SelectItem>
-                              <SelectItem value="+1">+1</SelectItem>
-                              <SelectItem value="+44">+44</SelectItem>
-                              <SelectItem value="+81">+81</SelectItem>
-                            </SelectContent>
-                          </Select>
-                          <Input
-                            type="tel"
-                            value={formData.editingContact.faxNumber || ""}
-                            onChange={(e) => updateField('editingContact', {...formData.editingContact, faxNumber: e.target.value})}
-                            placeholder="Fax number"
-                            className="flex-1"
-                          />
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Notes */}
-                    <div className="space-y-2">
-                      <Label className="text-sm">Notes</Label>
-                      <Textarea
-                        value={formData.editingContact.notes || ""}
-                        onChange={(e) => updateField('editingContact', {...formData.editingContact, notes: e.target.value})}
-                        placeholder="Additional notes about this contact..."
-                        rows={3}
-                      />
-                    </div>
-
-                    {/* Action Buttons */}
-                    <div className="flex justify-end gap-2">
-                      <Button
-                        variant="outline"
-                        onClick={() => updateField('editingContact', null)}
-                      >
-                        Cancel
-                      </Button>
-                      <Button
-                        onClick={() => {
-                          const contact = formData.editingContact;
-                          if (contact.firstName && contact.lastName) {
-                            const newContacts = [...(formData.contacts || []), contact];
-                            updateField('contacts', newContacts);
-                            updateField('editingContact', null);
-                            
-                            // Update the legacy fields for backward compatibility
-                            updateField('contactName', `${contact.firstName} ${contact.lastName}`.trim());
-                            updateField('contactOrg', contact.organisationId);
-                            updateField('contactEmail', contact.email);
-                            updateField('contactPhone', `${contact.countryCode} ${contact.phoneNumber}`.trim());
-                          }
-                        }}
-                        disabled={!formData.editingContact.firstName || !formData.editingContact.lastName}
-                      >
-                        Add Contact
-                      </Button>
-                    </div>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
+                    <Label className="text-xs text-gray-600">Email</Label>
+                    <Input
+                      type="email"
+                      value={formData.editingContact.email || ""}
+                      onChange={(e) => updateField('editingContact', {
+                        ...formData.editingContact,
+                        email: e.target.value
+                      })}
+                      placeholder="email@example.com"
+                      className="h-9"
+                    />
                   </div>
-                )}
-
-                {/* Add Another Contact Button */}
-                {formData.contacts && formData.contacts.length > 0 && !formData.editingContact && (
-                  <ContactDropdown
-                    existingContacts={formData.contacts || []}
-                    onSelectContact={(contact) => {
-                      const newContacts = [...(formData.contacts || []), contact];
-                      updateField('contacts', newContacts);
-                      
-                      // Update the legacy fields for backward compatibility
-                      updateField('contactName', `${contact.firstName} ${contact.lastName}`.trim());
-                      updateField('contactOrg', contact.organisationId);
-                      updateField('contactEmail', contact.email);
-                      updateField('contactPhone', contact.phone || `${contact.countryCode || ''} ${contact.phoneNumber || ''}`.trim());
+                  <div className="space-y-1.5">
+                    <Label className="text-xs text-gray-600">Phone</Label>
+                    <Input
+                      type="tel"
+                      value={formData.editingContact.phone || ""}
+                      onChange={(e) => updateField('editingContact', {
+                        ...formData.editingContact,
+                        phone: e.target.value
+                      })}
+                      placeholder="+1 234 567 890"
+                      className="h-9"
+                    />
+                  </div>
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs text-gray-600">Organisation</Label>
+                  <OrganizationCombobox
+                    organizations={organizations}
+                    value={formData.editingContact.organisationId}
+                    onValueChange={(value) => {
+                      const org = organizations.find(o => o.id === value);
+                      updateField('editingContact', {
+                        ...formData.editingContact,
+                        organisationId: value,
+                        organisationName: org?.name || ''
+                      });
                     }}
-                    onCreateNew={() => updateField('editingContact', {
-                      title: "",
-                      firstName: "",
-                      middleName: "",
-                      lastName: "",
-                      position: "",
-                      contactType: "1",
-                      email: "",
-                      secondaryEmail: "",
-                      countryCode: "+95",
-                      phoneNumber: "",
-                      faxCountryCode: "+95",
-                      faxNumber: "",
-                      notes: "",
-                      avatar_url: "",
-                      profilePhoto: ""
-                    })}
-                    placeholder="Select existing contact or add another..."
-                    className="w-full"
+                    placeholder="Select organisation..."
                   />
-                )}
+                </div>
+                <div className="flex justify-end gap-2 pt-2">
+                  <Button variant="outline" size="sm" onClick={() => updateField('editingContact', null)}>
+                    Cancel
+                  </Button>
+                  <Button
+                    size="sm"
+                    onClick={() => {
+                      if (formData.editingContact?.firstName && formData.editingContact?.lastName) {
+                        addContact(formData.editingContact as Contact);
+                      }
+                    }}
+                    disabled={!formData.editingContact?.firstName || !formData.editingContact?.lastName}
+                  >
+                    Add Contact
+                  </Button>
+                </div>
               </CardContent>
             </Card>
-          </TabsContent>
+          ) : (
+            <Button
+              variant="outline"
+              onClick={() => updateField('editingContact', {
+                firstName: '',
+                lastName: '',
+                email: '',
+                phone: '',
+                organisationId: '',
+                organisationName: ''
+              })}
+              className="gap-2"
+            >
+              <Plus className="h-4 w-4" />
+              Add Contact
+            </Button>
+          )}
+        </div>
 
-          {/* Documents */}
-          <TabsContent value="documents" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <FileText className="h-5 w-5 text-red-600" />
-                  Project Document Uploads
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                {/* File Upload */}
-                <div className="space-y-2">
-                  <FieldTooltip content={TOOLTIPS.uploadedDocument}>
-                    <Label className="text-sm font-medium">Upload PDF</Label>
-                  </FieldTooltip>
-                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+        {/* Section 5: Documents */}
+        <div className="space-y-4">
+          <div className="flex items-center gap-2 pb-2 border-b">
+            <FileText className="h-5 w-5 text-red-600" />
+            <h3 className="font-semibold text-gray-900">Supporting Documents</h3>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* File Upload */}
+            <div className="space-y-2">
+              <FieldTooltip content={TOOLTIPS.uploadedDocument}>
+                <Label className="text-sm font-medium text-gray-700">Upload Document</Label>
+              </FieldTooltip>
+              <div className="border-2 border-dashed border-gray-200 rounded-lg p-4 text-center hover:border-gray-300 transition-colors">
+                {formData.uploadedDocument ? (
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-center gap-2 text-green-600">
+                      <CheckCircle className="h-5 w-5" />
+                      <span className="text-sm font-medium">{formData.uploadedDocument}</span>
+                    </div>
+                    {formData.uploadedDocumentUrl && (
+                      <a
+                        href={formData.uploadedDocumentUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-xs text-blue-600 hover:underline"
+                      >
+                        View Document
+                      </a>
+                    )}
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        updateField('uploadedDocument', undefined);
+                        updateField('uploadedDocumentUrl', undefined);
+                      }}
+                      className="text-red-500 hover:text-red-700"
+                    >
+                      <Trash2 className="h-4 w-4 mr-1" />
+                      Remove
+                    </Button>
+                  </div>
+                ) : (
+                  <>
                     <Upload className="h-8 w-8 text-gray-400 mx-auto mb-2" />
-                    <p className="text-sm text-gray-600 mb-2">
-                      Drag and drop your PDF file here, or click to browse
-                    </p>
                     <Input
                       type="file"
-                      accept=".pdf"
+                      accept=".pdf,.doc,.docx,.xls,.xlsx"
                       onChange={(e) => {
                         const file = e.target.files?.[0];
-                        if (file) {
-                          updateField('uploadedDocument', file.name);
-                          toast.success(`File "${file.name}" selected`);
-                        }
+                        if (file) handleDocumentUpload(file);
                       }}
                       className="hidden"
-                      id="pdf-upload"
+                      id="doc-upload"
+                      disabled={isUploading}
                     />
-                    <Button 
-                      variant="outline" 
-                      onClick={() => document.getElementById('pdf-upload')?.click()}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => document.getElementById('doc-upload')?.click()}
+                      disabled={isUploading}
                     >
-                      Choose File
+                      {isUploading ? (
+                        <>
+                          <Clock className="h-4 w-4 mr-2 animate-spin" />
+                          Uploading...
+                        </>
+                      ) : (
+                        'Choose File'
+                      )}
                     </Button>
-                    {formData.uploadedDocument && (
-                      <p className="text-sm text-green-600 mt-2">
-                        ✓ {formData.uploadedDocument}
-                      </p>
-                    )}
-                  </div>
-                </div>
+                    <p className="text-xs text-gray-500 mt-2">PDF, Word, or Excel (max 10MB)</p>
+                  </>
+                )}
+              </div>
+            </div>
 
-                {/* External Link */}
-                <div className="space-y-2">
-                  <FieldTooltip content={TOOLTIPS.externalDocumentLink}>
-                    <Label className="text-sm font-medium">External Document Link</Label>
-                  </FieldTooltip>
-                  <Input
-                    type="url"
-                    value={formData.externalDocumentLink || ""}
-                    onChange={(e) => updateField('externalDocumentLink', e.target.value)}
-                    placeholder="https://example.com/document.pdf"
-                  />
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* Remarks */}
-          <TabsContent value="remarks" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <FileText className="h-5 w-5 text-gray-600" />
-                  Remarks
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="space-y-2">
-                  <FieldTooltip content={TOOLTIPS.remarks}>
-                    <Label className="text-sm font-medium">Remarks/Additional Comments</Label>
-                  </FieldTooltip>
-                  <Textarea
-                    value={formData.remarks || ""}
-                    onChange={(e) => updateField('remarks', e.target.value)}
-                    placeholder="Enter any additional notes, explanations, or pending updates..."
-                    rows={6}
-                    className="resize-none"
-                  />
-                  <p className="text-xs text-gray-500">
-                    Use this space for notes, explanations, or any pending updates.
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
+            {/* External Link */}
+            <div className="space-y-2">
+              <FieldTooltip content={TOOLTIPS.externalDocumentLink}>
+                <Label className="text-sm font-medium text-gray-700">External Document Link</Label>
+              </FieldTooltip>
+              <div className="flex items-center gap-2">
+                <Link2 className="h-4 w-4 text-gray-400 flex-shrink-0" />
+                <Input
+                  type="url"
+                  value={formData.externalDocumentLink || ""}
+                  onChange={(e) => updateField('externalDocumentLink', e.target.value)}
+                  placeholder="https://..."
+                  className="flex-1"
+                />
+              </div>
+            </div>
+          </div>
         </div>
-      </Tabs>
 
-      {/* Footer Actions */}
-      <div className="border-t p-6 relative overflow-hidden" style={{
-        background: 'linear-gradient(135deg, #FF5F6D 0%, #FF8E53 20%, #FFA502 40%, #FFD93D 60%, #FF8E53 80%, #FF5F6D 100%)',
-        backgroundSize: '200% 200%',
-        animation: 'gradientShift 15s ease infinite'
-      }}>
-        {/* Overlay for better text readability */}
-        <div className="absolute inset-0 bg-white/20 backdrop-blur-[1px]" />
-        
-        <div className="relative z-10 flex items-center justify-end">
-          <Button variant="outline" onClick={handleExportXLSX}>
-            <Download className="h-4 w-4 mr-2" />
-            Export XLSX
-          </Button>
+        {/* Section 6: Remarks */}
+        <div className="space-y-4">
+          <div className="flex items-center gap-2 pb-2 border-b">
+            <FileText className="h-5 w-5 text-gray-600" />
+            <h3 className="font-semibold text-gray-900">Remarks</h3>
+          </div>
+
+          <div className="space-y-2">
+            <FieldTooltip content={TOOLTIPS.remarks}>
+              <Label className="text-sm font-medium text-gray-700">Additional Notes</Label>
+            </FieldTooltip>
+            <Textarea
+              value={formData.remarks || ""}
+              onChange={(e) => updateField('remarks', e.target.value)}
+              placeholder="Any additional notes, clarifications, or context..."
+              rows={3}
+            />
+          </div>
         </div>
+      </div>
+
+      {/* Footer */}
+      <div className="border-t px-6 py-3 bg-gray-50 flex items-center justify-between">
+        <p className="text-xs text-gray-500">
+          Data is automatically saved as you make changes
+        </p>
+        <Button variant="outline" size="sm" onClick={() => toast.info("Export coming soon")}>
+          <Download className="h-4 w-4 mr-2" />
+          Export XLSX
+        </Button>
       </div>
     </div>
   );
-}; 
+};

@@ -1,7 +1,8 @@
 'use client';
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import Link from 'next/link';
+import { motion, useReducedMotion, type Transition } from 'framer-motion';
 import {
   Tooltip,
   TooltipContent,
@@ -25,9 +26,9 @@ interface SDGAvatarGroupProps {
 }
 
 const sizeClasses = {
-  sm: 'h-6 w-6',
-  md: 'h-8 w-8',
-  lg: 'h-10 w-10',
+  sm: 'h-7 w-7',
+  md: 'h-9 w-9',
+  lg: 'h-11 w-11',
 };
 
 // SDG goal names mapping
@@ -73,18 +74,48 @@ function getSDGImageURL(goalNumber: number): string {
 
 export function SDGAvatarGroup({
   sdgMappings = [],
-  maxDisplay = 3,
+  maxDisplay = 5,
   size = 'sm',
 }: SDGAvatarGroupProps) {
+  const shouldReduceMotion = useReducedMotion();
+
   // Extract unique SDG goals from mappings
-  const sdgGoals = React.useMemo(() => {
+  const sdgGoals = useMemo(() => {
     const goals = sdgMappings
       .map(mapping => extractSDGNumber(mapping.sdgGoal))
       .filter((num): num is number => num !== null);
-    
+
     // Remove duplicates and sort
     return Array.from(new Set(goals)).sort((a, b) => a - b);
   }, [sdgMappings]);
+
+  const animationConfig = useMemo(
+    () =>
+      shouldReduceMotion
+        ? {
+            initial: { opacity: 1, x: 0, scale: 1 },
+            animate: { opacity: 1, x: 0, scale: 1 },
+            whileHover: { scale: 1.08, zIndex: 10 },
+            transition: { duration: 0 },
+          }
+        : {
+            initial: (index: number) => ({
+              opacity: 0,
+              x: -8 * index,
+              scale: 0.85,
+            }),
+            animate: { opacity: 1, x: 0, scale: 1 },
+            whileHover: { scale: 1.12, zIndex: 10 },
+            transition: (index: number) => ({
+              delay: 0.05 * index,
+              type: "spring",
+              stiffness: 320,
+              damping: 24,
+              mass: 0.7,
+            }),
+          },
+    [shouldReduceMotion]
+  );
 
   if (sdgGoals.length === 0) {
     return <span className="text-muted-foreground">—</span>;
@@ -98,52 +129,80 @@ export function SDGAvatarGroup({
     <TooltipProvider>
       <Tooltip>
         <TooltipTrigger asChild>
-          <div className="flex items-center gap-2 cursor-pointer">
-            <div className="flex -space-x-2">
+          <div className="flex items-center cursor-pointer hover:opacity-80 transition-opacity">
+            <motion.ul className="flex -space-x-2" role="list">
               {displaySDGs.map((goalNumber, index) => {
                 const goalName = SDG_GOAL_NAMES[goalNumber];
                 const imageUrl = getSDGImageURL(goalNumber);
-                const sdgGoal = SDG_GOALS.find(g => g.id === goalNumber);
-                
+
                 return (
-                  <Link
+                  <motion.li
                     key={goalNumber}
-                    href={`/sdgs/${goalNumber}`}
-                    onClick={(e) => e.stopPropagation()}
-                    className="block"
+                    role="listitem"
+                    initial={
+                      typeof animationConfig.initial === "function"
+                        ? animationConfig.initial(index)
+                        : animationConfig.initial
+                    }
+                    animate={animationConfig.animate}
+                    whileHover={animationConfig.whileHover}
+                    transition={
+                      (typeof animationConfig.transition === "function"
+                        ? animationConfig.transition(index)
+                        : animationConfig.transition) as Transition
+                    }
+                    className="relative"
+                    style={{ zIndex: displaySDGs.length - index }}
                   >
-                    <div
-                      className={`${sizeClass} border-2 border-white bg-white shadow-sm hover:shadow-md transition-shadow duration-200 overflow-hidden`}
-                      style={{ zIndex: displaySDGs.length - index }}
+                    <Link
+                      href={`/sdgs/${goalNumber}`}
+                      onClick={(e) => e.stopPropagation()}
+                      className="block"
                     >
-                      <img
-                        src={imageUrl}
-                        alt={`SDG ${goalNumber}: ${goalName}`}
-                        className="w-full h-full object-cover"
-                        onError={(e) => {
-                          // Fallback to colored circle with number
-                          const target = e.target as HTMLImageElement;
-                          target.style.display = 'none';
-                          const parent = target.parentElement;
-                          if (parent) {
-                            parent.className = `${sizeClass} border-2 border-white bg-blue-100 flex items-center justify-center text-xs font-semibold text-blue-700`;
-                            parent.textContent = goalNumber.toString();
-                          }
-                        }}
-                      />
-                    </div>
-                  </Link>
+                      <div
+                        className={`${sizeClass} rounded-full border-2 border-white bg-white shadow-sm overflow-hidden`}
+                      >
+                        <img
+                          src={imageUrl}
+                          alt={`SDG ${goalNumber}: ${goalName}`}
+                          className="w-full h-full object-cover rounded-full"
+                          onError={(e) => {
+                            // Fallback to colored circle with number
+                            const target = e.target as HTMLImageElement;
+                            target.style.display = 'none';
+                            const parent = target.parentElement;
+                            if (parent) {
+                              parent.className = `${sizeClass} rounded-full border-2 border-white bg-blue-500 flex items-center justify-center`;
+                              const span = document.createElement('span');
+                              span.className = 'text-[10px] font-semibold text-white';
+                              span.textContent = goalNumber.toString();
+                              parent.appendChild(span);
+                            }
+                          }}
+                        />
+                      </div>
+                    </Link>
+                  </motion.li>
                 );
               })}
-              {remainingCount > 0 && (
-                <div
-                  className={`${sizeClass} border-2 border-white bg-gray-100 flex items-center justify-center text-[10px] font-medium text-gray-600 shadow-sm`}
-                  style={{ zIndex: 0 }}
-                >
-                  +{remainingCount}
-                </div>
-              )}
-            </div>
+            </motion.ul>
+            {remainingCount > 0 && (
+              <motion.span
+                initial={{
+                  opacity: shouldReduceMotion ? 1 : 0,
+                  x: shouldReduceMotion ? 0 : -8,
+                }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={
+                  shouldReduceMotion
+                    ? { duration: 0 }
+                    : { delay: 0.05 * displaySDGs.length, duration: 0.25, ease: "easeOut" }
+                }
+                className="ml-2 text-xs font-medium text-muted-foreground"
+              >
+                +{remainingCount}
+              </motion.span>
+            )}
           </div>
         </TooltipTrigger>
         <TooltipContent className="max-w-sm bg-white border shadow-lg p-3">
@@ -155,10 +214,10 @@ export function SDGAvatarGroup({
               const goalName = SDG_GOAL_NAMES[goalNumber];
               const sdgGoal = SDG_GOALS.find(g => g.id === goalNumber);
               const mappings = sdgMappings.filter(m => extractSDGNumber(m.sdgGoal) === goalNumber);
-              
+
               return (
                 <div key={goalNumber} className="flex items-center gap-2">
-                  <div className="h-5 w-5 overflow-hidden border border-gray-200 flex-shrink-0">
+                  <div className="h-6 w-6 rounded-full overflow-hidden border border-gray-200 flex-shrink-0">
                     <img
                       src={getSDGImageURL(goalNumber)}
                       alt={`SDG ${goalNumber}`}

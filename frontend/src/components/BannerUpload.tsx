@@ -1,22 +1,40 @@
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useState, useRef, useEffect } from "react";
 import { useDropzone } from "react-dropzone";
-import { Upload, X, Image as ImageIcon } from "lucide-react";
+import { Upload, X, Image as ImageIcon, Move, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 
 interface BannerUploadProps {
   currentBanner?: string;
-  onBannerChange: (banner: string | null) => void;
+  currentPosition?: number; // 0-100, represents Y position percentage
+  onBannerChange: (banner: string | null, position?: number) => void;
   activityId: string;
 }
 
 export const BannerUpload: React.FC<BannerUploadProps> = ({
   currentBanner,
+  currentPosition = 50, // Default to center
   onBannerChange,
   activityId,
 }) => {
   const [uploading, setUploading] = useState(false);
   const [preview, setPreview] = useState<string | null>(currentBanner || null);
+  const [position, setPosition] = useState<number>(currentPosition);
+  const [isRepositioning, setIsRepositioning] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const startYRef = useRef<number>(0);
+  const startPositionRef = useRef<number>(0);
+
+  // Update preview when currentBanner changes
+  useEffect(() => {
+    setPreview(currentBanner || null);
+  }, [currentBanner]);
+
+  // Update position when currentPosition changes
+  useEffect(() => {
+    setPosition(currentPosition);
+  }, [currentPosition]);
 
   const onDrop = useCallback(
     async (acceptedFiles: File[]) => {
@@ -43,11 +61,12 @@ export const BannerUpload: React.FC<BannerUploadProps> = ({
         reader.onloadend = () => {
           const base64String = reader.result as string;
           setPreview(base64String);
-          onBannerChange(base64String);
+          setPosition(50); // Reset to center for new images
+          onBannerChange(base64String, 50);
           if (activityId && activityId !== "new") {
-            toast.success("Banner uploaded and saved successfully");
+            toast.success("Banner uploaded successfully. You can now reposition it.");
           } else {
-            toast.success("The banner has been uploaded and will be saved after activity creation.");
+            toast.success("Banner uploaded. You can reposition it before saving.");
           }
         };
         reader.readAsDataURL(file);
@@ -67,52 +86,196 @@ export const BannerUpload: React.FC<BannerUploadProps> = ({
       "image/*": [".png", ".jpg", ".jpeg", ".gif", ".webp"],
     },
     maxFiles: 1,
-    disabled: uploading,
+    disabled: uploading || isRepositioning,
   });
 
   const removeBanner = () => {
     setPreview(null);
+    setPosition(50);
     onBannerChange(null);
     if (activityId && activityId !== "new") {
-      toast.success("Banner removed and saved successfully");
+      toast.success("Banner removed successfully");
     } else {
-      toast.success("The banner has been removed and will be saved after activity creation.");
+      toast.success("Banner removed");
     }
+  };
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    if (!isRepositioning) return;
+    e.preventDefault();
+    setIsDragging(true);
+    startYRef.current = e.clientY;
+    startPositionRef.current = position;
+  };
+
+  const handleMouseMove = useCallback(
+    (e: MouseEvent) => {
+      if (!isDragging || !containerRef.current) return;
+
+      const containerHeight = containerRef.current.offsetHeight;
+      const deltaY = e.clientY - startYRef.current;
+      // Invert the direction: dragging down should move the image up (decrease position)
+      const deltaPercent = (deltaY / containerHeight) * 100;
+      const newPosition = Math.max(0, Math.min(100, startPositionRef.current - deltaPercent));
+      setPosition(newPosition);
+    },
+    [isDragging]
+  );
+
+  const handleMouseUp = useCallback(() => {
+    if (isDragging) {
+      setIsDragging(false);
+    }
+  }, [isDragging]);
+
+  // Handle touch events for mobile
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (!isRepositioning) return;
+    setIsDragging(true);
+    startYRef.current = e.touches[0].clientY;
+    startPositionRef.current = position;
+  };
+
+  const handleTouchMove = useCallback(
+    (e: TouchEvent) => {
+      if (!isDragging || !containerRef.current) return;
+      e.preventDefault();
+
+      const containerHeight = containerRef.current.offsetHeight;
+      const deltaY = e.touches[0].clientY - startYRef.current;
+      const deltaPercent = (deltaY / containerHeight) * 100;
+      const newPosition = Math.max(0, Math.min(100, startPositionRef.current - deltaPercent));
+      setPosition(newPosition);
+    },
+    [isDragging]
+  );
+
+  const handleTouchEnd = useCallback(() => {
+    if (isDragging) {
+      setIsDragging(false);
+    }
+  }, [isDragging]);
+
+  // Add/remove global event listeners for drag
+  useEffect(() => {
+    if (isDragging) {
+      window.addEventListener("mousemove", handleMouseMove);
+      window.addEventListener("mouseup", handleMouseUp);
+      window.addEventListener("touchmove", handleTouchMove, { passive: false });
+      window.addEventListener("touchend", handleTouchEnd);
+    }
+
+    return () => {
+      window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("mouseup", handleMouseUp);
+      window.removeEventListener("touchmove", handleTouchMove);
+      window.removeEventListener("touchend", handleTouchEnd);
+    };
+  }, [isDragging, handleMouseMove, handleMouseUp, handleTouchMove, handleTouchEnd]);
+
+  const savePosition = () => {
+    setIsRepositioning(false);
+    onBannerChange(preview, position);
+    toast.success("Banner position saved");
+  };
+
+  const cancelReposition = () => {
+    setIsRepositioning(false);
+    setPosition(currentPosition); // Reset to original position
   };
 
   if (preview) {
     return (
-      <div className="space-y-2">
-        <div className="relative h-48 rounded-lg overflow-hidden group">
+      <div className="space-y-3">
+        <div
+          ref={containerRef}
+          className={`relative h-48 rounded-lg overflow-hidden group ${
+            isRepositioning ? "cursor-grab" : ""
+          } ${isDragging ? "cursor-grabbing" : ""}`}
+          onMouseDown={handleMouseDown}
+          onTouchStart={handleTouchStart}
+        >
           <img
             src={preview}
             alt="Activity banner"
-            className="w-full h-full object-cover"
+            className="w-full h-full object-cover select-none"
+            style={{ objectPosition: `center ${position}%` }}
+            draggable={false}
           />
-          <div className="absolute inset-0 bg-black bg-opacity-50 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2">
-            <div {...getRootProps()}>
-              <input {...getInputProps()} />
+
+          {/* Reposition mode overlay */}
+          {isRepositioning && (
+            <div className="absolute inset-0 bg-black/30 flex items-center justify-center pointer-events-none">
+              <div className="bg-white/90 backdrop-blur-sm rounded-lg px-4 py-2 shadow-lg">
+                <p className="text-sm font-medium text-gray-800 flex items-center gap-2">
+                  <Move className="h-4 w-4" />
+                  Drag up or down to reposition
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* Normal hover overlay */}
+          {!isRepositioning && (
+            <div className="absolute inset-0 bg-black bg-opacity-50 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2">
               <Button
                 size="sm"
                 variant="secondary"
+                onClick={() => setIsRepositioning(true)}
                 disabled={uploading}
               >
-                <Upload className="h-4 w-4 mr-2" />
-                Replace
+                <Move className="h-4 w-4 mr-2" />
+                Reposition
+              </Button>
+              <div {...getRootProps()}>
+                <input {...getInputProps()} />
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  disabled={uploading}
+                >
+                  <Upload className="h-4 w-4 mr-2" />
+                  Replace
+                </Button>
+              </div>
+              <Button
+                size="sm"
+                variant="destructive"
+                onClick={removeBanner}
+                disabled={uploading}
+              >
+                <X className="h-4 w-4 mr-2" />
+                Delete
               </Button>
             </div>
-            <Button
-              size="sm"
-              variant="destructive"
-              onClick={removeBanner}
-              disabled={uploading}
-            >
-              <X className="h-4 w-4 mr-2" />
-              Delete
-            </Button>
-          </div>
+          )}
         </div>
 
+        {/* Reposition controls */}
+        {isRepositioning && (
+          <div className="flex items-center justify-between bg-slate-50 rounded-lg p-3">
+            <div className="flex items-center gap-2 text-sm text-slate-600">
+              <span>Position: {Math.round(position)}%</span>
+              <input
+                type="range"
+                min="0"
+                max="100"
+                value={position}
+                onChange={(e) => setPosition(Number(e.target.value))}
+                className="w-24 h-2 accent-primary"
+              />
+            </div>
+            <div className="flex gap-2">
+              <Button size="sm" variant="ghost" onClick={cancelReposition}>
+                Cancel
+              </Button>
+              <Button size="sm" onClick={savePosition}>
+                <Check className="h-4 w-4 mr-2" />
+                Save Position
+              </Button>
+            </div>
+          </div>
+        )}
       </div>
     );
   }
@@ -137,7 +300,6 @@ export const BannerUpload: React.FC<BannerUploadProps> = ({
           <p className="text-xs mt-2 text-gray-400">PNG, JPG, GIF up to 5MB</p>
         </div>
       </div>
-
     </div>
   );
-}; 
+};

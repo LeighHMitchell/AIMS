@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, getSortIcon } from "@/components/ui/table"
 import { Switch } from "@/components/ui/switch"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { UserAvatar, getInitials } from "@/components/ui/user-avatar"
 import {
   Tooltip,
   TooltipContent,
@@ -702,13 +703,26 @@ export function AdminUserTable() {
               {paginatedUsers.length > 0 ? (
                 paginatedUsers.map((user) => (
                   <TableRow key={user.id}>
-                    {/* User column with name only */}
+                    {/* User column with profile picture and name */}
                     <TableCell>
-                      <p className="font-medium">
-                        {user.firstName && user.lastName
-                          ? `${user.firstName}${user.middleName ? ` ${user.middleName}` : ''} ${user.lastName}`
-                          : user.name}
-                      </p>
+                      <div className="flex items-center gap-3">
+                        <UserAvatar
+                          src={user.profilePicture}
+                          seed={user.id || user.email || ''}
+                          name={user.firstName && user.lastName
+                            ? `${user.firstName} ${user.lastName}`
+                            : user.name || user.email || ''}
+                          size="sm"
+                          initials={getInitials(user.firstName && user.lastName
+                            ? `${user.firstName} ${user.lastName}`
+                            : user.name || user.email || '')}
+                        />
+                        <p className="font-medium">
+                          {user.firstName && user.lastName
+                            ? `${user.firstName}${user.middleName ? ` ${user.middleName}` : ''} ${user.lastName}`
+                            : user.name}
+                        </p>
+                      </div>
                     </TableCell>
 
                     {/* Email column */}

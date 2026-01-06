@@ -35,7 +35,7 @@ function seededRandom(seed: string, index: number = 0): number {
 }
 
 /**
- * Generate OKLCH colors based on a seed string
+ * Generate colors from the custom palette based on a seed string
  * Returns consistent colors for the same seed
  */
 function generateOrbColors(seed: string): {
@@ -44,29 +44,31 @@ function generateOrbColors(seed: string): {
   c2: string;
   c3: string;
 } {
-  // Generate base hue from seed
-  const baseHue = Math.floor(seededRandom(seed, 0) * 360);
+  // Color palette: Primary Scarlet, Pale Slate, Blue Slate, Cool Steel, Platinum
+  const palette = [
+    "#dc2625", // Primary Scarlet (always included)
+    "#cfd0d5", // Pale Slate
+    "#4c5568", // Blue Slate
+    "#7b95a7", // Cool Steel
+    "#f1f4f8", // Platinum
+  ];
   
-  // Create a harmonious color palette
-  // Using triadic/split-complementary harmony with some variation
-  const hue1 = baseHue;
-  const hue2 = (baseHue + 120 + seededRandom(seed, 1) * 40 - 20) % 360;
-  const hue3 = (baseHue + 240 + seededRandom(seed, 2) * 40 - 20) % 360;
+  // Use Platinum as the background color
+  const bg = palette[4]; // Platinum
   
-  // Vary lightness and chroma slightly for each color
-  const lightness1 = 0.72 + seededRandom(seed, 3) * 0.08;
-  const lightness2 = 0.75 + seededRandom(seed, 4) * 0.08;
-  const lightness3 = 0.70 + seededRandom(seed, 5) * 0.10;
-  
-  const chroma1 = 0.12 + seededRandom(seed, 6) * 0.06;
-  const chroma2 = 0.10 + seededRandom(seed, 7) * 0.06;
-  const chroma3 = 0.14 + seededRandom(seed, 8) * 0.04;
+  // Always include Primary Scarlet (red), then select 2 more colors from the remaining palette
+  // Use seeded random to ensure consistency for the same seed
+  const gradientColors = palette.slice(1, 4); // Exclude Platinum and Primary Scarlet
+  const indices = [
+    Math.floor(seededRandom(seed, 0) * gradientColors.length),
+    Math.floor(seededRandom(seed, 1) * gradientColors.length),
+  ];
 
   return {
-    bg: "oklch(96% 0.01 264.695)",
-    c1: `oklch(${(lightness1 * 100).toFixed(0)}% ${chroma1.toFixed(2)} ${hue1})`,
-    c2: `oklch(${(lightness2 * 100).toFixed(0)}% ${chroma2.toFixed(2)} ${hue2})`,
-    c3: `oklch(${(lightness3 * 100).toFixed(0)}% ${chroma3.toFixed(2)} ${hue3})`,
+    bg,
+    c1: palette[0], // Always Primary Scarlet (red)
+    c2: gradientColors[indices[0]],
+    c3: gradientColors[indices[1]],
   };
 }
 
@@ -241,10 +243,9 @@ const UserOrbAvatar: React.FC<UserOrbAvatarProps> = ({
       {/* Optional initials overlay */}
       {initials && (
         <div 
-          className="flex items-center justify-center text-white font-semibold drop-shadow-sm"
+          className="flex items-center justify-center text-white font-semibold"
           style={{ 
-            fontSize: `${Math.max(sizeValue * 0.35, 10)}px`,
-            textShadow: '0 1px 2px rgba(0,0,0,0.3)'
+            fontSize: `${Math.max(sizeValue * 0.35, 10)}px`
           }}
         >
           {initials}

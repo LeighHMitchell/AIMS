@@ -1,6 +1,5 @@
 import React from 'react';
-import ActivityCard from './ActivityCard';
-import ActivityCardWithSDG from './ActivityCardWithSDG';
+import ActivityCardModern from './ActivityCardModern';
 import { ActivityCardSkeleton } from './ActivityCardSkeleton';
 
 interface SDGMapping {
@@ -19,6 +18,7 @@ interface Activity {
   acronym?: string;
   activity_status?: string;
   publication_status?: string;
+  submission_status?: string;
   planned_start_date?: string;
   planned_end_date?: string;
   updated_at?: string;
@@ -34,6 +34,7 @@ interface Activity {
   default_aid_modality_override?: boolean;
   // Financial and reporting fields
   created_by_org_name?: string;
+  created_by_org_acronym?: string;
   totalBudget?: number;
   totalDisbursed?: number;
   sdgMappings?: SDGMapping[];
@@ -58,7 +59,7 @@ export const ActivityList: React.FC<ActivityListProps> = ({
 }) => {
   if (loading) {
     return (
-      <div className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 ${className}`}>
+      <div className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 ${className}`}>
         {Array.from({ length: skeletonCount }).map((_, index) => (
           <ActivityCardSkeleton key={index} />
         ))}
@@ -80,15 +81,13 @@ export const ActivityList: React.FC<ActivityListProps> = ({
   }
 
   return (
-    <div className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 ${className}`}>
+    <div className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 ${className}`}>
       {activities.map((activity) => (
-        <ActivityCardWithSDG
+        <ActivityCardModern
           key={activity.id}
           activity={activity}
           onEdit={onEdit}
           onDelete={onDelete}
-          showSDGs={true}
-          maxSDGDisplay={3}
         />
       ))}
     </div>

@@ -765,7 +765,9 @@ export async function POST(request: NextRequest) {
       recipient_region_code: body.recipient_region_code ?? '',
       recipient_region_vocab: body.recipient_region_vocab ?? '',
       aid_type_vocabulary: body.aid_type_vocabulary ?? '',
-      activity_iati_ref: body.activity_iati_ref ?? ''
+      activity_iati_ref: body.activity_iati_ref ?? '',
+      // Sector inheritance flag - default to true (inherit from activity)
+      use_activity_sectors: body.use_activity_sectors ?? true
     };
 
     console.log('[Transactions API] Inserting transaction:', transactionData);

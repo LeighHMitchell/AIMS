@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { UserAvatar, getInitials } from '@/components/ui/user-avatar';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -57,8 +58,8 @@ export function PersonCard({
   const [isUserEditModalOpen, setIsUserEditModalOpen] = useState(false);
   // Use unified role utilities for consistent styling
   
-  // Generate initials for avatar
-  const getInitials = (name: string) => {
+  // Generate initials for avatar (keeping for backward compatibility)
+  const getInitialsLocal = (name: string) => {
     if (!name) return 'U';
     return name
       .split(' ')
@@ -192,14 +193,13 @@ export function PersonCard({
     return (
       <div className="flex items-start justify-between p-3 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors">
         <div className="flex items-start space-x-3 min-w-0 flex-1">
-          <Avatar className="h-8 w-8 flex-shrink-0">
-            {person.profile_photo && (
-              <AvatarImage src={person.profile_photo} alt={displayName} />
-            )}
-            <AvatarFallback className="text-xs font-medium">
-              {getInitials(displayName)}
-            </AvatarFallback>
-          </Avatar>
+          <UserAvatar
+            src={person.profile_photo}
+            seed={person.id || person.email || displayName}
+            name={displayName}
+            size="sm"
+            initials={getInitials(displayName)}
+          />
           
           <div className="min-w-0 flex-1 space-y-1">
             <div className="flex items-start justify-between">
@@ -335,14 +335,13 @@ export function PersonCard({
         <div className="flex flex-col space-y-3">
           {/* Top row: Avatar (top-left) and Source Badge (top-right) */}
           <div className="flex items-start justify-between">
-            <Avatar className="h-12 w-12 flex-shrink-0">
-              {person.profile_photo && (
-                <AvatarImage src={person.profile_photo} alt={displayName} />
-              )}
-              <AvatarFallback className="text-sm font-medium bg-slate-100">
-                {getInitials(displayName)}
-              </AvatarFallback>
-            </Avatar>
+            <UserAvatar
+              src={person.profile_photo}
+              seed={person.id || person.email || displayName}
+              name={displayName}
+              size="md"
+              initials={getInitials(displayName)}
+            />
             
             {/* Source Badge in top-right */}
             <div className="flex items-center space-x-2">

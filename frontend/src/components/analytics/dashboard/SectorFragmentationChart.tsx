@@ -62,43 +62,8 @@ export function SectorFragmentationChart({
 
   return (
     <div className="space-y-4">
-      {/* Controls Row */}
-      <div className="flex items-center justify-between flex-wrap gap-2">
-        <div className="flex items-center gap-2">
-          {/* Measure Dropdown */}
-          <Select value={measure} onValueChange={(v) => setMeasure(v as MeasureType)}>
-            <SelectTrigger className="w-[180px] h-9 text-sm bg-white">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="commitments">Actual Commitments</SelectItem>
-              <SelectItem value="disbursements">Actual Disbursements</SelectItem>
-            </SelectContent>
-          </Select>
-
-          {/* Dimension Dropdown - Sector levels */}
-          <Select defaultValue="primary">
-            <SelectTrigger className="w-[180px] h-9 text-sm bg-white">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="primary">Primary Sector</SelectItem>
-            </SelectContent>
-          </Select>
-
-          {/* Swap Axes Button */}
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setSwapAxes(!swapAxes)}
-            className="h-9"
-          >
-            <ArrowLeftRight className="h-4 w-4 mr-1" />
-            Swap Axes
-          </Button>
-        </div>
-
-        {/* View Toggle */}
+      {/* View Toggle - Top Right */}
+      <div className="flex items-center justify-end">
         <div className="flex items-center border rounded-md overflow-hidden">
           <Button
             variant="ghost"
@@ -141,8 +106,43 @@ export function SectorFragmentationChart({
           No sector fragmentation data available
         </div>
       ) : (
-        <FragmentationHeatmap data={data} swapAxes={swapAxes} />
+        <FragmentationHeatmap data={data} swapAxes={swapAxes} viewMode={viewMode} />
       )}
+
+      {/* Controls Row - Below Chart */}
+      <div className="flex items-center gap-2 flex-wrap pt-2 border-t border-slate-100">
+        {/* Measure Dropdown */}
+        <Select value={measure} onValueChange={(v) => setMeasure(v as MeasureType)}>
+          <SelectTrigger className="w-[140px] h-9 text-sm bg-white">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="commitments">Commitments</SelectItem>
+            <SelectItem value="disbursements">Disbursements</SelectItem>
+          </SelectContent>
+        </Select>
+
+        {/* Dimension Dropdown - Sector levels */}
+        <Select defaultValue="primary">
+          <SelectTrigger className="w-[180px] h-9 text-sm bg-white">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="primary">Primary Sector</SelectItem>
+          </SelectContent>
+        </Select>
+
+        {/* Swap Axes Button */}
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setSwapAxes(!swapAxes)}
+          className="h-9"
+        >
+          <ArrowLeftRight className="h-4 w-4 mr-1" />
+          Swap Axes
+        </Button>
+      </div>
     </div>
   );
 }

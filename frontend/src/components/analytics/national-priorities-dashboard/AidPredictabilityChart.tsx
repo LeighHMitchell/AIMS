@@ -47,6 +47,8 @@ import { cn } from "@/lib/utils";
 import { AidPredictabilityPoint } from "@/types/national-priorities";
 import { CHART_STRUCTURE_COLORS } from "@/lib/chart-colors";
 import { toast } from "sonner";
+import { useCustomYears } from "@/hooks/useCustomYears";
+import { CustomYearSelector } from "@/components/ui/custom-year-selector";
 
 type ChartType = "bar" | "line" | "area";
 type ViewMode = "chart" | "table";
@@ -76,12 +78,27 @@ export function AidPredictabilityChart() {
   const [viewMode, setViewMode] = useState<ViewMode>("chart");
   const [isExpanded, setIsExpanded] = useState(false);
 
+  // Custom year selection
+  const {
+    customYears,
+    selectedId: selectedCustomYearId,
+    setSelectedId: setSelectedCustomYearId,
+    loading: customYearsLoading,
+  } = useCustomYears();
+
   const fetchData = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
 
-      const response = await fetch("/api/analytics/aid-predictability");
+      // Build query params
+      const params = new URLSearchParams();
+      if (selectedCustomYearId) {
+        params.set("customYearId", selectedCustomYearId);
+      }
+
+      const url = `/api/analytics/aid-predictability${params.toString() ? `?${params.toString()}` : ""}`;
+      const response = await fetch(url);
       const result = await response.json();
 
       if (!result.success) {
@@ -95,7 +112,7 @@ export function AidPredictabilityChart() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [selectedCustomYearId]);
 
   useEffect(() => {
     fetchData();
@@ -108,8 +125,8 @@ export function AidPredictabilityChart() {
     }
 
     const csvContent = [
-      ["Year", "Planned Disbursements (USD)", "Actual Disbursements (USD)"],
-      ...data.map((d) => [d.year, d.plannedDisbursements, d.actualDisbursements]),
+      ["Year", "Year Label", "Planned Disbursements (USD)", "Actual Disbursements (USD)"],
+      ...data.map((d) => [d.year, d.yearLabel, d.plannedDisbursements, d.actualDisbursements]),
     ]
       .map((row) => row.join(","))
       .join("\n");
@@ -124,9 +141,11 @@ export function AidPredictabilityChart() {
 
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
+      // Get the yearLabel from the payload's data point
+      const yearLabel = payload[0]?.payload?.yearLabel || label;
       return (
         <div className="bg-white p-3 border border-slate-200 rounded-lg shadow-lg">
-          <p className="font-semibold text-slate-900 mb-2">Year {label}</p>
+          <p className="font-semibold text-slate-900 mb-2">{yearLabel}</p>
           {payload.map((entry: any, index: number) => (
             <p
               key={index}
@@ -143,7 +162,7 @@ export function AidPredictabilityChart() {
   };
 
   const renderBarChart = (expanded: boolean = false) => (
-    <div className={expanded ? "flex-1 min-h-[400px]" : "h-[280px]"}>
+    <div className={expanded ? "h-[500px]" : "h-[280px]"}>
       <ResponsiveContainer width="100%" height="100%">
         <BarChart
           data={data}
@@ -151,10 +170,9 @@ export function AidPredictabilityChart() {
         >
           <CartesianGrid strokeDasharray="3 3" stroke={CHART_STRUCTURE_COLORS.grid} />
           <XAxis
-            dataKey="year"
+            dataKey="yearLabel"
             tick={{ fontSize: 11, fill: CHART_STRUCTURE_COLORS.axis }}
             stroke={CHART_STRUCTURE_COLORS.axis}
-            tickFormatter={(v) => v.toString()}
           />
           <YAxis
             tickFormatter={formatCurrency}
@@ -193,7 +211,7 @@ export function AidPredictabilityChart() {
   );
 
   const renderLineChart = (expanded: boolean = false) => (
-    <div className={expanded ? "flex-1 min-h-[400px]" : "h-[280px]"}>
+    <div className={expanded ? "h-[500px]" : "h-[280px]"}>
       <ResponsiveContainer width="100%" height="100%">
         <LineChart
           data={data}
@@ -201,10 +219,9 @@ export function AidPredictabilityChart() {
         >
           <CartesianGrid strokeDasharray="3 3" stroke={CHART_STRUCTURE_COLORS.grid} />
           <XAxis
-            dataKey="year"
+            dataKey="yearLabel"
             tick={{ fontSize: 11, fill: CHART_STRUCTURE_COLORS.axis }}
             stroke={CHART_STRUCTURE_COLORS.axis}
-            tickFormatter={(v) => v.toString()}
           />
           <YAxis
             tickFormatter={formatCurrency}
@@ -265,10 +282,9 @@ export function AidPredictabilityChart() {
           </defs>
           <CartesianGrid strokeDasharray="3 3" stroke={CHART_STRUCTURE_COLORS.grid} />
           <XAxis
-            dataKey="year"
+            dataKey="yearLabel"
             tick={{ fontSize: 11, fill: CHART_STRUCTURE_COLORS.axis }}
             stroke={CHART_STRUCTURE_COLORS.axis}
-            tickFormatter={(v) => v.toString()}
           />
           <YAxis
             tickFormatter={formatCurrency}
@@ -324,7 +340,7 @@ export function AidPredictabilityChart() {
             const variance = row.actualDisbursements - row.plannedDisbursements;
             return (
               <TableRow key={row.year}>
-                <TableCell className="text-sm font-medium">{row.year}</TableCell>
+                <TableCell className="text-sm font-medium">{row.yearLabel}</TableCell>
                 <TableCell className="text-sm text-right">{formatCurrency(row.plannedDisbursements)}</TableCell>
                 <TableCell className="text-sm text-right">{formatCurrency(row.actualDisbursements)}</TableCell>
                 <TableCell className={cn(
@@ -379,7 +395,21 @@ export function AidPredictabilityChart() {
   };
 
   const renderControls = (expanded: boolean = false) => (
-    <div className="flex items-center justify-end gap-2 mt-2 pt-2 border-t">
+    <div className="flex items-center justify-between gap-2 mt-2 pt-2 border-t">
+      {/* Left side - Custom Year Selector (only in expanded view) */}
+      <div className="flex items-center gap-2">
+        {expanded && (
+          <CustomYearSelector
+            customYears={customYears}
+            selectedId={selectedCustomYearId}
+            onSelect={setSelectedCustomYearId}
+            loading={customYearsLoading}
+            placeholder="Year type"
+          />
+        )}
+      </div>
+
+      {/* Right side - Chart controls */}
       <div className="flex items-center gap-1">
         {/* Chart type toggles - only show when in chart view */}
         {(!expanded || viewMode === "chart") && (

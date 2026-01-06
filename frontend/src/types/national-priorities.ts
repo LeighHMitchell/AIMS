@@ -188,6 +188,8 @@ export interface FundingByType {
  */
 export interface AidPredictabilityPoint {
   year: number;
+  /** Display label for the year (e.g., "AU FY 2024-25" or "CY 2024") */
+  yearLabel: string;
   plannedDisbursements: number;
   actualDisbursements: number;
 }

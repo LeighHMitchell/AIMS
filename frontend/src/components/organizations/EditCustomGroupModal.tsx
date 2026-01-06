@@ -14,7 +14,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Switch } from '@/components/ui/switch'
-import { Plus, X, Search, Check, Users, Upload, ImageIcon } from 'lucide-react'
+import { Plus, X, Search, Check, Users, Upload, ImageIcon, CircleDashed } from 'lucide-react'
 import { toast } from 'sonner'
 import { Badge } from '@/components/ui/badge'
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command'
@@ -232,12 +232,19 @@ export function EditCustomGroupModal({ group, open, onOpenChange, onSuccess }: E
         onOpenChange(false)
         onSuccess?.()
       } else {
-        const error = await response.json()
-        toast.error(error.error || error.message || 'Failed to update group')
+        // Try to parse error response, fallback to status text if not JSON
+        let errorMessage = 'Failed to update group'
+        try {
+          const errorData = await response.json()
+          errorMessage = errorData.error || errorData.message || errorMessage
+        } catch {
+          errorMessage = `Server error: ${response.status} ${response.statusText}`
+        }
+        toast.error(errorMessage)
       }
     } catch (error) {
       console.error('Error updating group:', error)
-      toast.error('Error updating group')
+      toast.error(error instanceof Error ? error.message : 'Error updating group')
     } finally {
       setLoading(false)
     }
@@ -597,8 +604,8 @@ export function EditCustomGroupModal({ group, open, onOpenChange, onSuccess }: E
             <Button type="submit" disabled={loading}>
               {loading ? (
                 <>
-                  <span className="animate-spin mr-2">⏳</span>
-                  Updating...
+                  <CircleDashed className="mr-2 h-4 w-4 animate-spin" />
+                  Saving...
                 </>
               ) : (
                 'Update Group'

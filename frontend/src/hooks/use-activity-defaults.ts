@@ -7,6 +7,7 @@ interface ActivityDefaults {
   default_flow_type: string | null;
   default_currency: string | null;
   default_tied_status: string | null;
+  geography_level: 'activity' | 'transaction' | null;
 }
 
 interface UseActivityDefaultsOptions {
@@ -26,6 +27,7 @@ export function useActivityDefaults(options: UseActivityDefaultsOptions) {
     default_flow_type: initialValues?.default_flow_type || null,
     default_currency: initialValues?.default_currency || null,
     default_tied_status: initialValues?.default_tied_status || null,
+    geography_level: initialValues?.geography_level || 'activity',
   });
 
   // Update local values when initial values change
@@ -111,6 +113,11 @@ export function useActivityDefaults(options: UseActivityDefaultsOptions) {
     [updateDefaultField]
   );
 
+  const updateGeographyLevel = useCallback(
+    (value: 'activity' | 'transaction' | null) => updateDefaultField('geography_level', value),
+    [updateDefaultField]
+  );
+
   // Batch update multiple fields
   const updateMultipleDefaults = useCallback(async (updates: Partial<ActivityDefaults>) => {
     console.log('[ActivityDefaults] Updating multiple defaults:', updates);
@@ -139,6 +146,7 @@ export function useActivityDefaults(options: UseActivityDefaultsOptions) {
       default_flow_type: initialValues?.default_flow_type || null,
       default_currency: initialValues?.default_currency || null,
       default_tied_status: initialValues?.default_tied_status || null,
+      geography_level: initialValues?.geography_level || 'activity',
     });
   }, [initialValues]);
 
@@ -153,6 +161,7 @@ export function useActivityDefaults(options: UseActivityDefaultsOptions) {
     updateDefaultFlowType,
     updateDefaultCurrency,
     updateDefaultTiedStatus,
+    updateGeographyLevel,
     updateMultipleDefaults,
     
     // Utility methods

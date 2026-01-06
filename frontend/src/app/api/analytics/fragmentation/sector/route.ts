@@ -36,7 +36,7 @@ export async function GET(request: NextRequest) {
         reporting_org_id,
         organizations!reporting_org_id (id, name, acronym, country),
         activity_sectors (sector_code, category_code, category_name, percentage),
-        transactions!transactions_activity_id_fkey1 (usd_value, transaction_type, transaction_date, status)
+        transactions!transactions_activity_id_fkey1 (value_usd, transaction_type, transaction_date, status)
       `);
 
     if (error) {
@@ -72,7 +72,7 @@ export async function GET(request: NextRequest) {
       if (validTransactions.length === 0) return;
 
       const totalTransactionValue = validTransactions.reduce(
-        (sum: number, t: any) => sum + (parseFloat(t.usd_value) || 0), 0
+        (sum: number, t: any) => sum + (parseFloat(t.value_usd) || 0), 0
       );
 
       if (!donorData.has(orgId)) {

@@ -143,7 +143,7 @@ export function AidPredictabilityChart() {
   };
 
   const renderBarChart = (expanded: boolean = false) => (
-    <div className={expanded ? "flex-1 min-h-[400px]" : "h-[300px]"}>
+    <div className={expanded ? "h-[500px]" : "h-[300px]"}>
       <ResponsiveContainer width="100%" height="100%">
         <BarChart
           data={data}
@@ -191,7 +191,7 @@ export function AidPredictabilityChart() {
   );
 
   const renderLineChart = (expanded: boolean = false) => (
-    <div className={expanded ? "flex-1 min-h-[400px]" : "h-[300px]"}>
+    <div className={expanded ? "h-[500px]" : "h-[300px]"}>
       <ResponsiveContainer width="100%" height="100%">
         <LineChart
           data={data}

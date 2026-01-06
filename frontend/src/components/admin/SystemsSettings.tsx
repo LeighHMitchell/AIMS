@@ -5,12 +5,13 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { toast } from "sonner"
-import { Globe, Save, CheckCircle, AlertCircle, Languages, DollarSign } from "lucide-react"
+import { Globe, Save, CheckCircle, AlertCircle, Languages, DollarSign, Calendar } from "lucide-react"
 import { countries } from "@/data/countries"
 import { useSystemSettings } from "@/hooks/useSystemSettings"
 import { HelpTextTooltip } from "@/components/ui/help-text-tooltip"
 import { SearchableSelect } from "@/components/ui/searchable-select"
 import Flag from "react-world-flags"
+import { CustomYearsManagement } from "./CustomYearsManagement"
 
 // Get unique countries sorted alphabetically by name
 const sortedCountries = Array.from(new Map(countries.map(c => [c.code, c])).values())
@@ -372,6 +373,22 @@ export function SystemsSettings() {
               {savingCurrency ? 'Saving...' : 'Save'}
             </Button>
           </div>
+        </CardContent>
+      </Card>
+
+      {/* Custom Years Card - spans 2 columns on next row */}
+      <Card className="md:col-span-2">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Calendar className="h-5 w-5" />
+            Custom Years
+          </CardTitle>
+          <CardDescription>
+            Define fiscal years for reporting and analytics
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <CustomYearsManagement />
         </CardContent>
       </Card>
     </div>

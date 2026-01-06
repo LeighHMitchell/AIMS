@@ -31,6 +31,13 @@ const SupabaseDisbursementChannelSelect = withSupabaseIntegration(DisbursementCh
 const SupabaseFinanceTypeSearchableSelect = withSupabaseIntegration(FinanceTypeSearchableSelect);
 const SupabaseModalitySearchableSelect = withSupabaseIntegration(ModalitySearchableSelect);
 
+interface ActivitySector {
+  id?: string;
+  sector_code?: string;
+  sector_name?: string;
+  percentage?: number;
+}
+
 interface EnhancedFinancesSectionProps {
   activityId: string | null;
   general: {
@@ -50,6 +57,8 @@ interface EnhancedFinancesSectionProps {
   onRefreshNeeded?: () => Promise<void>;
   disabled?: boolean;
   initialTransactionId?: string;
+  geographyLevel?: 'activity' | 'transaction';
+  activitySectors?: ActivitySector[];
 }
 
 export function EnhancedFinancesSection({
@@ -60,7 +69,9 @@ export function EnhancedFinancesSection({
   onTransactionsChange,
   onRefreshNeeded,
   disabled = false,
-  initialTransactionId
+  initialTransactionId,
+  geographyLevel = 'activity',
+  activitySectors = []
 }: EnhancedFinancesSectionProps) {
   const [updateStats, setUpdateStats] = useState({
     totalUpdates: 0,
@@ -437,6 +448,8 @@ export function EnhancedFinancesSection({
             defaultFlowType={general.defaultFlowType || undefined}
             defaultDisbursementChannel={general.defaultDisbursementChannel || undefined}
             initialTransactionId={initialTransactionId}
+            geographyLevel={geographyLevel}
+            activitySectors={activitySectors}
           />
         </TabsContent>
       </Tabs>

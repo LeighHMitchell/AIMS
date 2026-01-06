@@ -33,6 +33,8 @@ import { ImplementingAgenciesChart } from "./ImplementingAgenciesChart";
 import { ExecutingAgenciesChart } from "./ExecutingAgenciesChart";
 import { AidPredictabilityChart } from "./AidPredictabilityChart";
 import { SubnationalAllocationsChart } from "./SubnationalAllocationsChart";
+import { TopCapitalSpendChart } from "./TopCapitalSpendChart";
+import { CapitalSpendOverTimeChart } from "./CapitalSpendOverTimeChart";
 import { FundingByModalityChart } from "../dashboard/FundingByModalityChart";
 import { RecipientGovBodiesChart } from "../dashboard/RecipientGovBodiesChart";
 import { ProgramFragmentationChart } from "../dashboard/ProgramFragmentationChart";
@@ -184,6 +186,12 @@ export function Dashboard() {
 
             {/* Funding Over Time Chart */}
             <FundingByModalityChart />
+
+            {/* Top Activities by Capital Spend */}
+            <TopCapitalSpendChart />
+
+            {/* Capital vs Non-Capital Spend Over Time */}
+            <CapitalSpendOverTimeChart />
           </div>
         </TabsContent>
 

@@ -1,13 +1,17 @@
 "use client"
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Command,
   CommandEmpty,
@@ -27,20 +31,26 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { 
-  Check, 
+import {
+  Check,
   CheckCircle,
-  ChevronsUpDown, 
-  X, 
-  AlertCircle,
-  Plus,
+  X,
   Target,
-  Globe
+  ChevronRight,
+  Sparkles,
+  Zap,
+  Circle,
+  Loader2,
+  ChevronsUpDown,
+  Plus
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { SDG_GOALS, SDG_TARGETS, getTargetsForGoal } from "@/data/sdg-targets";
 import { SDGImageGrid } from "@/components/ui/SDGImageGrid";
 import { toast } from "sonner";
+
+// Alignment strength types
+type AlignmentStrength = 'primary' | 'secondary' | 'indirect';
 
 interface SDGMapping {
   id?: string;
@@ -48,72 +58,68 @@ interface SDGMapping {
   sdgTarget: string;
   contributionPercent?: number;
   notes?: string;
+  alignmentStrength?: AlignmentStrength;
 }
 
 interface SDGAlignmentSectionProps {
   sdgMappings: SDGMapping[];
   onUpdate: (mappings: SDGMapping[]) => void;
-  contributionMode?: 'simple' | 'percentage'; // Default to 'simple'
+  contributionMode?: 'simple' | 'percentage';
   canEdit?: boolean;
-  activityId?: string; // For saving to backend
+  activityId?: string;
 }
 
-export default function SDGAlignmentSection({ 
-  sdgMappings = [], 
+const ALIGNMENT_OPTIONS: { value: AlignmentStrength; label: string; description: string; icon: React.ReactNode }[] = [
+  {
+    value: 'primary',
+    label: 'Primary',
+    description: 'Core focus of this activity',
+    icon: <Sparkles className="h-4 w-4" />
+  },
+  {
+    value: 'secondary',
+    label: 'Secondary',
+    description: 'Significant but not main focus',
+    icon: <Zap className="h-4 w-4" />
+  },
+  {
+    value: 'indirect',
+    label: 'Indirect',
+    description: 'Contributing benefit',
+    icon: <Circle className="h-4 w-4" />
+  },
+];
+
+export default function SDGAlignmentSection({
+  sdgMappings = [],
   onUpdate,
   contributionMode = 'simple',
   canEdit = true,
   activityId
 }: SDGAlignmentSectionProps) {
-  const [selectedGoals, setSelectedGoals] = useState<number[]>([]);
   const [mappings, setMappings] = useState<SDGMapping[]>(sdgMappings);
-  const [expandedGoal, setExpandedGoal] = useState<number | null>(null);
-  const [targetSearchOpen, setTargetSearchOpen] = useState<{ [key: number]: boolean }>({});
-  
+  const [targetPopoverOpen, setTargetPopoverOpen] = useState<{ [key: number]: boolean }>({});
+
   // Save state tracking
   const [isSaving, setIsSaving] = useState(false);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [saveTimeout, setSaveTimeout] = useState<NodeJS.Timeout | null>(null);
-  const [hasInitialized, setHasInitialized] = useState(false);
   const [hasUserEdited, setHasUserEdited] = useState(false);
   const [savedMappings, setSavedMappings] = useState<SDGMapping[]>([]);
 
-  // Calculate total contribution percentage
-  const totalContribution = mappings.reduce((sum, m) => sum + (m.contributionPercent || 0), 0);
-  const isValidContribution = contributionMode === 'simple' || totalContribution === 100;
-
-  // Helper function to check if an SDG goal has been saved
-  const isGoalSaved = (goalId: number): boolean => {
-    const currentGoalMappings = mappings.filter(m => m.sdgGoal === goalId);
-    const savedGoalMappings = savedMappings.filter(m => m.sdgGoal === goalId);
-    
-    // If no current mappings for this goal, it's considered "saved" (empty state)
-    if (currentGoalMappings.length === 0) {
-      return savedGoalMappings.length === 0;
-    }
-    
-    // Check if current mappings match saved mappings
-    return currentGoalMappings.length === savedGoalMappings.length &&
-           currentGoalMappings.every(current => 
-             savedGoalMappings.some(saved => 
-               saved.sdgGoal === current.sdgGoal &&
-               saved.sdgTarget === current.sdgTarget &&
-               saved.contributionPercent === current.contributionPercent &&
-               saved.notes === current.notes
-             )
-           );
-  };
+  // Get selected goal IDs
+  const selectedGoalIds = useMemo(() => {
+    return Array.from(new Set(mappings.map(m => m.sdgGoal)));
+  }, [mappings]);
 
   // Debounced save function
   const debouncedSave = async (updatedMappings: SDGMapping[]) => {
     if (!activityId || !canEdit) return;
-    
-    // Clear existing timeout
+
     if (saveTimeout) {
       clearTimeout(saveTimeout);
     }
-    
-    // Set new timeout for debounced save
+
     const timeout = setTimeout(async () => {
       setIsSaving(true);
       try {
@@ -122,13 +128,13 @@ export default function SDGAlignmentSection({
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ sdgMappings: updatedMappings })
         });
-        
+
         if (response.ok) {
           setLastSaved(new Date());
-          setSavedMappings([...updatedMappings]); // Track which mappings are saved
-          toast.success('SDG mappings saved successfully', { 
+          setSavedMappings([...updatedMappings]);
+          toast.success('SDG mappings saved', {
             position: 'top-center',
-            duration: 2000 
+            duration: 2000
           });
         } else {
           throw new Error('Failed to save SDG mappings');
@@ -139,27 +145,23 @@ export default function SDGAlignmentSection({
       } finally {
         setIsSaving(false);
       }
-    }, 1000); // 1 second debounce
-    
+    }, 1000);
+
     setSaveTimeout(timeout);
   };
 
   // Update parent and trigger save when mappings change
   useEffect(() => {
     onUpdate(mappings);
-    // Only save when user has made edits (not on initial load)
     if (hasUserEdited && mappings.length > 0 && mappings.some(m => m.sdgGoal)) {
       debouncedSave(mappings);
     }
   }, [mappings, activityId, hasUserEdited]);
 
-  // Initialize selected goals from existing mappings
+  // Initialize from props
   useEffect(() => {
-    const goals = Array.from(new Set(sdgMappings.map(m => m.sdgGoal)));
-    setSelectedGoals(goals);
     setMappings(sdgMappings);
-    setSavedMappings([...sdgMappings]); // Initialize with current data as "saved"
-    setHasInitialized(true);
+    setSavedMappings([...sdgMappings]);
   }, [sdgMappings]);
 
   // Cleanup timeout on unmount
@@ -173,371 +175,391 @@ export default function SDGAlignmentSection({
 
   const toggleGoal = (goalId: number) => {
     if (!canEdit) return;
-
     setHasUserEdited(true);
 
-    if (selectedGoals.includes(goalId)) {
+    if (selectedGoalIds.includes(goalId)) {
       // Remove goal and all its mappings
-      setSelectedGoals(selectedGoals.filter(g => g !== goalId));
       setMappings(mappings.filter(m => m.sdgGoal !== goalId));
-      if (expandedGoal === goalId) setExpandedGoal(null);
     } else {
-      // Add goal and create a basic mapping to trigger save
-      setSelectedGoals([...selectedGoals, goalId]);
-      setExpandedGoal(goalId);
-      
-      // Create a basic goal mapping to trigger save and show completion
+      // Add goal with default mapping
       const newMapping: SDGMapping = {
         sdgGoal: goalId,
-        sdgTarget: '', // Empty target since we're not using targets
-        contributionPercent: undefined,
+        sdgTarget: '',
+        alignmentStrength: 'primary',
         notes: ''
       };
-      
       setMappings([...mappings, newMapping]);
     }
   };
 
-  const addTargetMapping = (goalId: number, targetId: string) => {
+  const addTarget = (goalId: number, targetId: string) => {
     if (!canEdit) return;
-
     setHasUserEdited(true);
 
-    // Check if this target is already mapped
     const exists = mappings.find(m => m.sdgGoal === goalId && m.sdgTarget === targetId);
-    if (exists) return;
-
-    // Create new mapping
-    const newMapping: SDGMapping = {
-      sdgGoal: goalId,
-      sdgTarget: targetId,
-      contributionPercent: contributionMode === 'percentage' ? 0 : undefined,
-      notes: ''
-    };
-    
-    setMappings([...mappings, newMapping]);
+    if (!exists) {
+      const newMapping: SDGMapping = {
+        sdgGoal: goalId,
+        sdgTarget: targetId,
+        alignmentStrength: 'secondary',
+        notes: ''
+      };
+      setMappings([...mappings, newMapping]);
+    }
+    setTargetPopoverOpen({ ...targetPopoverOpen, [goalId]: false });
   };
 
-  const removeTargetMapping = (goalId: number, targetId: string) => {
+  const removeTarget = (goalId: number, targetId: string) => {
     if (!canEdit) return;
-    
     setHasUserEdited(true);
-    
-    // Simply remove the target mapping
     setMappings(mappings.filter(m => !(m.sdgGoal === goalId && m.sdgTarget === targetId)));
-    
-    // Note: The goal remains selected in selectedGoals even if all targets are removed
   };
 
-  const updateMappingContribution = (goalId: number, targetId: string, percent: number) => {
+  const updateAlignmentStrength = (goalId: number, strength: AlignmentStrength) => {
     if (!canEdit) return;
-
     setHasUserEdited(true);
 
-    setMappings(mappings.map(m => 
-      m.sdgGoal === goalId && m.sdgTarget === targetId 
-        ? { ...m, contributionPercent: percent }
+    setMappings(mappings.map(m =>
+      m.sdgGoal === goalId && m.sdgTarget === ''
+        ? { ...m, alignmentStrength: strength }
         : m
     ));
   };
 
-  const updateMappingNotes = (goalId: number, targetId: string, notes: string) => {
+  const updateGoalNotes = (goalId: number, notes: string) => {
     if (!canEdit) return;
-
     setHasUserEdited(true);
 
-    setMappings(mappings.map(m => 
-      m.sdgGoal === goalId && m.sdgTarget === targetId 
+    setMappings(mappings.map(m =>
+      m.sdgGoal === goalId && m.sdgTarget === ''
         ? { ...m, notes }
         : m
     ));
   };
 
-  const getGoalMappings = (goalId: number) => {
-    return mappings.filter(m => m.sdgGoal === goalId);
+  const getGoalMapping = (goalId: number) => {
+    return mappings.find(m => m.sdgGoal === goalId && m.sdgTarget === '');
   };
-  
+
   const getGoalTargetMappings = (goalId: number) => {
     return mappings.filter(m => m.sdgGoal === goalId && m.sdgTarget !== '');
   };
 
-  // Helper function to format time ago
-  const formatTimeAgo = (date: Date): string => {
-    const now = new Date();
-    const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
-    
-    if (diffInSeconds < 60) return `${diffInSeconds}s ago`;
-    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`;
-    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`;
-    return `${Math.floor(diffInSeconds / 86400)}d ago`;
-  };
+  const isGoalSaved = (goalId: number): boolean => {
+    const currentGoalMappings = mappings.filter(m => m.sdgGoal === goalId);
+    const savedGoalMappings = savedMappings.filter(m => m.sdgGoal === goalId);
 
-  // Success indicator component
-  const SaveIndicator = () => {
-    if (isSaving) {
-      return (
-        <div className="flex items-center gap-1 text-orange-600">
-          <div className="animate-spin h-3 w-3 border border-orange-600 border-t-transparent rounded-full"></div>
-          <span className="text-xs">Saving...</span>
-        </div>
-      );
+    if (currentGoalMappings.length === 0) {
+      return savedGoalMappings.length === 0;
     }
-    
-    if (lastSaved) {
-      return (
-        <div className="flex items-center gap-1 text-green-600">
-          <CheckCircle className="h-3 w-3" />
-          <span className="text-xs">Saved {formatTimeAgo(lastSaved)}</span>
-        </div>
-      );
-    }
-    
-    return null;
+
+    return currentGoalMappings.length === savedGoalMappings.length &&
+           currentGoalMappings.every(current =>
+             savedGoalMappings.some(saved =>
+               saved.sdgGoal === current.sdgGoal &&
+               saved.sdgTarget === current.sdgTarget &&
+               saved.alignmentStrength === current.alignmentStrength &&
+               saved.notes === current.notes
+             )
+           );
   };
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-      {/* Left Column - SDG Goals Selection */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Globe className="h-5 w-5" />
-              Select Sustainable Development Goals
+    <div className="space-y-6">
+      {/* Header with save status */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h3 className="text-lg font-semibold flex items-center gap-2">
+            <Target className="h-5 w-5" />
+            SDG Alignment
+          </h3>
+          <p className="text-sm text-muted-foreground mt-1">
+            Select the Sustainable Development Goals this activity contributes to
+          </p>
+        </div>
+        <div className="flex items-center gap-3">
+          {selectedGoalIds.length > 0 && (
+            <Badge variant="secondary" className="text-sm">
+              {selectedGoalIds.length} SDG{selectedGoalIds.length !== 1 ? 's' : ''} selected
+            </Badge>
+          )}
+          {isSaving && (
+            <div className="flex items-center gap-1.5 text-amber-600">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              <span className="text-sm">Saving...</span>
             </div>
+          )}
+          {!isSaving && lastSaved && (
+            <div className="flex items-center gap-1.5 text-green-600">
+              <CheckCircle className="h-4 w-4" />
+              <span className="text-sm">Saved</span>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* SDG Selection Grid - Full Width with Larger Icons */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-sm font-medium text-muted-foreground">
+            Click to select SDGs
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-3 md:grid-cols-4 gap-4">
-            {SDG_GOALS.map(goal => (
-              <TooltipProvider key={goal.id}>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <button
-                      onClick={() => toggleGoal(goal.id)}
-                      disabled={!canEdit}
-                      className={cn(
-                        "relative aspect-square rounded-lg border-2 transition-all hover:scale-105 overflow-hidden bg-white",
-                        selectedGoals.includes(goal.id)
-                          ? "border-primary ring-2 ring-primary/20 shadow-lg"
-                          : "border-gray-200 hover:border-gray-300 hover:shadow-md",
-                        !canEdit && "opacity-50 cursor-not-allowed"
-                      )}
-                    >
-                      <div className="w-full h-full p-2">
-                        <SDGImageGrid 
-                          sdgCodes={[goal.id]} 
+          <div className="grid grid-cols-9 sm:grid-cols-17 gap-2">
+            {SDG_GOALS.map(goal => {
+              const isSelected = selectedGoalIds.includes(goal.id);
+              return (
+                <TooltipProvider key={goal.id}>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <button
+                        onClick={() => toggleGoal(goal.id)}
+                        disabled={!canEdit}
+                        className={cn(
+                          "relative aspect-square rounded-lg border-2 transition-all hover:scale-105 overflow-hidden",
+                          isSelected
+                            ? "border-primary ring-2 ring-primary/20 shadow-lg"
+                            : "border-gray-200 hover:border-gray-300 grayscale hover:grayscale-0",
+                          !canEdit && "opacity-50 cursor-not-allowed"
+                        )}
+                      >
+                        <SDGImageGrid
+                          sdgCodes={[goal.id]}
                           size="xl"
                           showTooltips={false}
+                          clickable={false}
                           className="w-full h-full"
                         />
-                        {selectedGoals.includes(goal.id) && (
-                          <div className={cn(
-                            "absolute bottom-2 right-2 rounded-full p-1 shadow-lg",
-                            isGoalSaved(goal.id) 
-                              ? "bg-green-600" 
-                              : "bg-blue-600"
-                          )}>
-                            <Check className="h-4 w-4 text-white" />
+                        {isSelected && (
+                          <div className="absolute -top-1 -right-1 bg-primary rounded-full p-0.5 shadow">
+                            <Check className="h-3 w-3 text-white" />
                           </div>
                         )}
-                      </div>
-                    </button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <div>
-                      <p className="font-semibold">Goal {goal.id}: {goal.name}</p>
-                      <p className="max-w-xs text-sm">{goal.description}</p>
-                    </div>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            ))}
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom">
+                      <p className="font-medium">Goal {goal.id}: {goal.name}</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              );
+            })}
           </div>
         </CardContent>
       </Card>
 
-      {/* Right Column - Selected Goals */}
-      <Card className={selectedGoals.length === 0 ? "opacity-50" : ""}>
-          <CardHeader>
-            <CardTitle className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Target className="h-5 w-5" />
-                Selected SDG Goals
-              </div>
+      {/* Selected SDGs - 2-Column Grid of Cards */}
+      {selectedGoalIds.length > 0 && (
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Configure selected SDGs
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
-            {selectedGoals.length === 0 ? (
-              <div className="text-center py-8 text-gray-500">
-                <Target className="h-12 w-12 mx-auto mb-3 opacity-50" />
-                <p>Select SDGs from the left to view selected goals</p>
-              </div>
-            ) : (
-              selectedGoals.map(goalId => {
-              const goal = SDG_GOALS.find(g => g.id === goalId)!;
-              const goalTargets = getTargetsForGoal(goalId);
-              const goalTargetMappings = getGoalTargetMappings(goalId);
+          <CardContent className="pt-0">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              {selectedGoalIds.sort((a, b) => a - b).map(goalId => {
+                const goal = SDG_GOALS.find(g => g.id === goalId)!;
+                const goalMapping = getGoalMapping(goalId);
+                const goalTargets = getTargetsForGoal(goalId);
+                const selectedTargets = getGoalTargetMappings(goalId);
+                const isSaved = isGoalSaved(goalId);
 
-              return (
-                <div key={goalId} className="border rounded-lg p-4 relative">
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-start gap-3">
-                      <div className="w-16 h-16 flex-shrink-0">
-                        <SDGImageGrid 
-                          sdgCodes={[goal.id]} 
-                          size="lg"
-                          showTooltips={false}
-                        />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                          <h4 className="font-semibold">Goal {goal.id}: {goal.name}</h4>
-                          {isGoalSaved(goalId) && (
-                            <CheckCircle className="h-4 w-4 text-green-600" />
-                          )}
+                return (
+                  <Card
+                    key={goalId}
+                    className="overflow-hidden"
+                    style={{ borderLeftColor: goal.color, borderLeftWidth: '4px' }}
+                  >
+                    <CardContent className="p-4 space-y-4">
+                      {/* Header */}
+                      <div className="flex items-start justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className="w-12 h-12 flex-shrink-0">
+                            <SDGImageGrid
+                              sdgCodes={[goalId]}
+                              size="lg"
+                              showTooltips={false}
+                              clickable={false}
+                            />
+                          </div>
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <span className="font-semibold">Goal {goalId}</span>
+                              {isSaved && (
+                                <CheckCircle className="h-4 w-4 text-green-600" />
+                              )}
+                            </div>
+                            <p className="text-sm text-muted-foreground">{goal.name}</p>
+                          </div>
                         </div>
-                        <p className="text-sm text-muted-foreground mt-1">{goal.description}</p>
+                        {canEdit && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => toggleGoal(goalId)}
+                            className="h-8 w-8 p-0 text-gray-400 hover:text-red-500"
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        )}
                       </div>
-                    </div>
-                    {canEdit && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => toggleGoal(goalId)}
-                        className="flex-shrink-0 ml-2"
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
-                    )}
-                  </div>
 
-                    {/* Target Selection - Hidden for now */}
-                    {false && (
-                    <div className="flex flex-col items-start space-y-3 pl-4">
-                      <Popover open={targetSearchOpen[goalId]} onOpenChange={(open: boolean) => 
-                        setTargetSearchOpen({ ...targetSearchOpen, [goalId]: open })
-                      }>
-                        <PopoverTrigger 
+                      {/* Alignment Strength Dropdown */}
+                      <div>
+                        <label className="text-sm font-medium text-gray-700 mb-1.5 block">
+                          Alignment Strength
+                        </label>
+                        <Select
+                          value={goalMapping?.alignmentStrength || 'primary'}
+                          onValueChange={(value) => updateAlignmentStrength(goalId, value as AlignmentStrength)}
                           disabled={!canEdit}
-                          className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-10 px-4 py-2 justify-start w-full max-w-xs"
                         >
-                          <Plus className="h-4 w-4 mr-2" />
-                          <span>Add Target</span>
-                          <ChevronsUpDown className="ml-auto h-4 w-4 shrink-0 opacity-50" />
-                        </PopoverTrigger>
-                        <PopoverContent className="w-[600px] p-0">
-                          <Command>
-                            <CommandInput placeholder="Search targets..." autoFocus />
-                            <CommandList>
-                              <CommandEmpty>No target found.</CommandEmpty>
-                              <CommandGroup>
-                                {goalTargets.map(target => (
-                                  <CommandItem
-                                    key={target.id}
-                                    onSelect={() => {
-                                      addTargetMapping(goalId, target.id);
-                                      setTargetSearchOpen({ ...targetSearchOpen, [goalId]: false });
-                                    }}
-                                  >
-                                    <Check
-                                      className={cn(
-                                        "mr-2 h-4 w-4",
-                                        goalTargetMappings.find(m => m.sdgTarget === target.id)
-                                          ? "opacity-100"
-                                          : "opacity-0"
-                                      )}
-                                    />
-                                    <div className="flex-1">
-                                      <div className="font-medium">{target.id} - {target.text}</div>
-                                      <div className="text-xs text-muted-foreground line-clamp-2">
-                                        {target.description}
-                                      </div>
-                                    </div>
-                                  </CommandItem>
-                                ))}
-                              </CommandGroup>
-                            </CommandList>
-                          </Command>
-                        </PopoverContent>
-                      </Popover>
+                          <SelectTrigger className="w-full">
+                            <SelectValue placeholder="Select alignment strength" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {ALIGNMENT_OPTIONS.map(option => (
+                              <SelectItem key={option.value} value={option.value}>
+                                <div className="flex items-center gap-2">
+                                  {option.icon}
+                                  <span>{option.label}</span>
+                                  <span className="text-muted-foreground text-xs">- {option.description}</span>
+                                </div>
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
 
-                      {/* Selected Targets */}
-                      {goalTargetMappings.length > 0 && (
-                        <div className="space-y-2 w-full">
-                          {goalTargetMappings.map(mapping => {
-                            // Skip rendering goal-only mappings (empty targets)
-                            if (!mapping.sdgTarget) return null;
-                            
-                            const target = SDG_TARGETS.find(t => t.id === mapping.sdgTarget);
-                            if (!target) return null;
-                            
-                            return (
-                              <div key={mapping.sdgTarget} className="border rounded p-3 space-y-2">
-                                <div className="flex items-start justify-between">
-                                  <div className="flex-1">
-                                    <div className="font-medium">
-                                      Target {target.id}: {target.text}
-                                    </div>
-                                    <div className="text-sm text-muted-foreground">
-                                      {target.description}
-                                    </div>
+                      {/* Specific Targets - Searchable Combobox */}
+                      <div>
+                        <label className="text-sm font-medium text-gray-700 mb-1.5 block">
+                          Specific Targets <span className="font-normal text-muted-foreground">(optional)</span>
+                        </label>
+                        <Popover
+                          open={targetPopoverOpen[goalId]}
+                          onOpenChange={(open) => setTargetPopoverOpen({ ...targetPopoverOpen, [goalId]: open })}
+                        >
+                          <PopoverTrigger asChild>
+                            <Button
+                              variant="outline"
+                              role="combobox"
+                              aria-expanded={targetPopoverOpen[goalId]}
+                              className="w-full justify-between font-normal"
+                              disabled={!canEdit}
+                            >
+                              <span className="text-muted-foreground">
+                                {selectedTargets.length > 0
+                                  ? `${selectedTargets.length} target${selectedTargets.length !== 1 ? 's' : ''} selected`
+                                  : 'Search and add targets...'}
+                              </span>
+                              <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-[400px] p-0" align="start">
+                            <Command>
+                              <CommandInput placeholder="Search targets..." />
+                              <CommandList className="max-h-64">
+                                <CommandEmpty>No target found.</CommandEmpty>
+                                <CommandGroup>
+                                  {goalTargets.map(target => {
+                                    const isSelected = selectedTargets.some(m => m.sdgTarget === target.id);
+                                    return (
+                                      <CommandItem
+                                        key={target.id}
+                                        onSelect={() => {
+                                          if (!isSelected) {
+                                            addTarget(goalId, target.id);
+                                          }
+                                        }}
+                                        className={cn(isSelected && "opacity-50")}
+                                      >
+                                        <Check
+                                          className={cn(
+                                            "mr-2 h-4 w-4 flex-shrink-0",
+                                            isSelected ? "opacity-100" : "opacity-0"
+                                          )}
+                                        />
+                                        <div className="flex-1 min-w-0">
+                                          <div className="font-medium text-sm">{target.id}</div>
+                                          <div className="text-xs text-muted-foreground line-clamp-2">
+                                            {target.text}
+                                          </div>
+                                        </div>
+                                      </CommandItem>
+                                    );
+                                  })}
+                                </CommandGroup>
+                              </CommandList>
+                            </Command>
+                          </PopoverContent>
+                        </Popover>
+
+                        {/* Selected Targets Display */}
+                        {selectedTargets.length > 0 && (
+                          <div className="mt-2 space-y-1.5">
+                            {selectedTargets.map(mapping => {
+                              const target = SDG_TARGETS.find(t => t.id === mapping.sdgTarget);
+                              return target ? (
+                                <div
+                                  key={target.id}
+                                  className="flex items-center justify-between gap-2 p-2 bg-gray-50 rounded-md text-sm"
+                                >
+                                  <div className="flex items-center gap-2 min-w-0">
+                                    <ChevronRight className="h-3.5 w-3.5 text-gray-400 flex-shrink-0" />
+                                    <span className="font-medium">{target.id}:</span>
+                                    <span className="text-gray-600 truncate">{target.text}</span>
                                   </div>
                                   {canEdit && (
                                     <Button
                                       variant="ghost"
                                       size="sm"
-                                      onClick={() => removeTargetMapping(goalId, mapping.sdgTarget)}
+                                      onClick={() => removeTarget(goalId, target.id)}
+                                      className="h-6 w-6 p-0 text-gray-400 hover:text-red-500 flex-shrink-0"
                                     >
-                                      <X className="h-4 w-4" />
+                                      <X className="h-3.5 w-3.5" />
                                     </Button>
                                   )}
                                 </div>
+                              ) : null;
+                            })}
+                          </div>
+                        )}
+                      </div>
 
-                              {contributionMode === 'percentage' && (
-                                <div className="flex items-center gap-2">
-                                  <label className="text-sm font-medium">Contribution %:</label>
-                                  <Input
-                                    type="number"
-                                    min="0"
-                                    max="100"
-                                    value={mapping.contributionPercent || 0}
-                                    onChange={(e) => updateMappingContribution(
-                                      goalId, 
-                                      mapping.sdgTarget, 
-                                      Math.min(100, Math.max(0, parseInt(e.target.value) || 0))
-                                    )}
-                                    className="w-20"
-                                    disabled={!canEdit}
-                                  />
-                                </div>
-                              )}
-
-                              <div>
-                                <label className="text-sm font-medium">Notes (optional):</label>
-                                <Textarea
-                                  value={mapping.notes || ''}
-                                  onChange={(e) => updateMappingNotes(goalId, mapping.sdgTarget, e.target.value)}
-                                  placeholder="Add any specific notes about this target alignment..."
-                                  className="mt-1"
-                                  rows={2}
-                                  disabled={!canEdit}
-                                />
-                              </div>
-                            </div>
-                          );
-                        })}
-                        </div>
-                      )}
-                    </div>
-                    )}
-                </div>
-              );
-            })
-            )}
+                      {/* Notes */}
+                      <div>
+                        <label className="text-sm font-medium text-gray-700 mb-1.5 block">
+                          How does this activity contribute?
+                        </label>
+                        <Textarea
+                          value={goalMapping?.notes || ''}
+                          onChange={(e) => updateGoalNotes(goalId, e.target.value)}
+                          placeholder="Briefly describe the contribution..."
+                          className="resize-none"
+                          rows={2}
+                          disabled={!canEdit}
+                        />
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
           </CardContent>
         </Card>
+      )}
 
+      {/* Empty state */}
+      {selectedGoalIds.length === 0 && (
+        <div className="text-center py-8 text-muted-foreground border-2 border-dashed rounded-lg">
+          <Target className="h-12 w-12 mx-auto mb-3 opacity-30" />
+          <p className="font-medium">No SDGs selected</p>
+          <p className="text-sm">Click on the SDG icons above to get started</p>
+        </div>
+      )}
     </div>
   );
-} 
+}
