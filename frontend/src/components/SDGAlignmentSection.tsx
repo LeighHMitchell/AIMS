@@ -42,11 +42,9 @@ import {
   Circle,
   Loader2,
   ChevronsUpDown,
-  Plus
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { SDG_GOALS, SDG_TARGETS, getTargetsForGoal } from "@/data/sdg-targets";
-import { SDGImageGrid } from "@/components/ui/SDGImageGrid";
 import { toast } from "sonner";
 
 // Alignment strength types
@@ -89,6 +87,12 @@ const ALIGNMENT_OPTIONS: { value: AlignmentStrength; label: string; description:
     icon: <Circle className="h-4 w-4" />
   },
 ];
+
+// Helper to get SDG image URL
+function getSDGImageURL(goalNumber: number): string {
+  const paddedNumber = goalNumber.toString().padStart(2, '0');
+  return `/images/sdg/E_SDG_Icons-${paddedNumber}.jpg`;
+}
 
 export default function SDGAlignmentSection({
   sdgMappings = [],
@@ -306,7 +310,7 @@ export default function SDGAlignmentSection({
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-9 sm:grid-cols-17 gap-2">
+          <div className="grid grid-cols-6 sm:grid-cols-9 lg:grid-cols-17 gap-3">
             {SDG_GOALS.map(goal => {
               const isSelected = selectedGoalIds.includes(goal.id);
               return (
@@ -317,22 +321,20 @@ export default function SDGAlignmentSection({
                         onClick={() => toggleGoal(goal.id)}
                         disabled={!canEdit}
                         className={cn(
-                          "relative aspect-square rounded-lg border-2 transition-all hover:scale-105 overflow-hidden",
+                          "relative aspect-square rounded-lg border-2 transition-all hover:scale-105 overflow-visible",
                           isSelected
                             ? "border-primary ring-2 ring-primary/20 shadow-lg"
                             : "border-gray-200 hover:border-gray-300 grayscale hover:grayscale-0",
                           !canEdit && "opacity-50 cursor-not-allowed"
                         )}
                       >
-                        <SDGImageGrid
-                          sdgCodes={[goal.id]}
-                          size="xl"
-                          showTooltips={false}
-                          clickable={false}
-                          className="w-full h-full"
+                        <img
+                          src={getSDGImageURL(goal.id)}
+                          alt={`SDG ${goal.id}: ${goal.name}`}
+                          className="w-full h-full object-cover rounded-md"
                         />
                         {isSelected && (
-                          <div className="absolute -top-1 -right-1 bg-primary rounded-full p-0.5 shadow">
+                          <div className="absolute -top-2 -right-2 bg-primary rounded-full p-1 shadow-md z-10">
                             <Check className="h-3 w-3 text-white" />
                           </div>
                         )}
@@ -374,24 +376,21 @@ export default function SDGAlignmentSection({
                   >
                     <CardContent className="p-4 space-y-4">
                       {/* Header */}
-                      <div className="flex items-start justify-between">
-                        <div className="flex items-center gap-3">
-                          <div className="w-12 h-12 flex-shrink-0">
-                            <SDGImageGrid
-                              sdgCodes={[goalId]}
-                              size="lg"
-                              showTooltips={false}
-                              clickable={false}
-                            />
-                          </div>
-                          <div>
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex items-start gap-4">
+                          <img
+                            src={getSDGImageURL(goalId)}
+                            alt={`SDG ${goalId}: ${goal.name}`}
+                            className="w-14 h-14 rounded-md shadow-sm flex-shrink-0"
+                          />
+                          <div className="pt-1">
                             <div className="flex items-center gap-2">
-                              <span className="font-semibold">Goal {goalId}</span>
+                              <span className="font-semibold text-base">Goal {goalId}</span>
                               {isSaved && (
                                 <CheckCircle className="h-4 w-4 text-green-600" />
                               )}
                             </div>
-                            <p className="text-sm text-muted-foreground">{goal.name}</p>
+                            <p className="text-sm text-muted-foreground mt-0.5">{goal.name}</p>
                           </div>
                         </div>
                         {canEdit && (
@@ -399,7 +398,7 @@ export default function SDGAlignmentSection({
                             variant="ghost"
                             size="sm"
                             onClick={() => toggleGoal(goalId)}
-                            className="h-8 w-8 p-0 text-gray-400 hover:text-red-500"
+                            className="h-8 w-8 p-0 text-gray-400 hover:text-red-500 flex-shrink-0"
                           >
                             <X className="h-4 w-4" />
                           </Button>
@@ -458,10 +457,10 @@ export default function SDGAlignmentSection({
                               <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                             </Button>
                           </PopoverTrigger>
-                          <PopoverContent className="w-[400px] p-0" align="start">
+                          <PopoverContent className="w-[500px] p-0" align="start">
                             <Command>
                               <CommandInput placeholder="Search targets..." />
-                              <CommandList className="max-h-64">
+                              <CommandList className="max-h-72">
                                 <CommandEmpty>No target found.</CommandEmpty>
                                 <CommandGroup>
                                   {goalTargets.map(target => {
@@ -483,9 +482,9 @@ export default function SDGAlignmentSection({
                                           )}
                                         />
                                         <div className="flex-1 min-w-0">
-                                          <div className="font-medium text-sm">{target.id}</div>
-                                          <div className="text-xs text-muted-foreground line-clamp-2">
-                                            {target.text}
+                                          <div className="font-medium text-sm">Target {target.id}</div>
+                                          <div className="text-xs text-muted-foreground mt-0.5">
+                                            {target.description}
                                           </div>
                                         </div>
                                       </CommandItem>
@@ -505,12 +504,14 @@ export default function SDGAlignmentSection({
                               return target ? (
                                 <div
                                   key={target.id}
-                                  className="flex items-center justify-between gap-2 p-2 bg-gray-50 rounded-md text-sm"
+                                  className="flex items-start justify-between gap-2 p-2.5 bg-gray-50 rounded-md text-sm"
                                 >
-                                  <div className="flex items-center gap-2 min-w-0">
-                                    <ChevronRight className="h-3.5 w-3.5 text-gray-400 flex-shrink-0" />
-                                    <span className="font-medium">{target.id}:</span>
-                                    <span className="text-gray-600 truncate">{target.text}</span>
+                                  <div className="flex items-start gap-2 min-w-0 flex-1">
+                                    <ChevronRight className="h-4 w-4 text-gray-400 flex-shrink-0 mt-0.5" />
+                                    <div className="min-w-0">
+                                      <span className="font-medium">Target {target.id}:</span>{' '}
+                                      <span className="text-gray-600">{target.description}</span>
+                                    </div>
                                   </div>
                                   {canEdit && (
                                     <Button

@@ -28,6 +28,15 @@ import {
   Upload,
   ChevronDown
 } from "lucide-react"
+import {
+  HomeIcon,
+  MagnifierIcon,
+  UnorderedListIcon,
+  CurrencyDollarIcon,
+  UsersGroupIcon,
+  Stack3Icon,
+  InfoCircleIcon,
+} from "@/components/ui/icons"
 import { cn } from "@/lib/utils"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
@@ -64,12 +73,12 @@ export function SidebarNav({
   const pathname = usePathname()
   const router = useRouter()
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({
-    "Explore": true,
-    "Finances": true,
-    "Activities": true,
-    "Actors": true,
-    "Operations": true,
-    "Support": true,
+    "EXPLORE": true,
+    "FINANCES": true,
+    "ACTIVITIES": true,
+    "ACTORS": true,
+    "OPERATIONS": true,
+    "SUPPORT": true,
   })
   const [showQuickAddModal, setShowQuickAddModal] = useState(false)
   const [isImporting, setIsImporting] = useState(false)
@@ -88,8 +97,9 @@ export function SidebarNav({
 
   const navGroups = [
     {
-      label: "Explore",
-      icon: Search,
+      label: "EXPLORE",
+      icon: MagnifierIcon,
+      isAnimated: true,
       defaultOpen: true,
       items: [
         { name: "Analytics", href: "/analytics-dashboard", show: true },
@@ -102,16 +112,18 @@ export function SidebarNav({
       ]
     },
     {
-      label: "Activities",
-      icon: Activity,
+      label: "ACTIVITIES",
+      icon: UnorderedListIcon,
+      isAnimated: true,
       defaultOpen: true,
       items: [
         { name: "Activity List", href: "/activities", show: true },
       ]
     },
     {
-      label: "Finances",
-      icon: Wallet,
+      label: "FINANCES",
+      icon: CurrencyDollarIcon,
+      isAnimated: true,
       defaultOpen: true,
       items: [
         { name: "Transactions", href: "/transactions", show: true },
@@ -120,8 +132,9 @@ export function SidebarNav({
       ]
     },
     {
-      label: "Actors",
-      icon: Users,
+      label: "ACTORS",
+      icon: UsersGroupIcon,
+      isAnimated: true,
       defaultOpen: true,
       items: [
         { name: "Organizations", href: "/organizations", show: true },
@@ -129,8 +142,9 @@ export function SidebarNav({
       ]
     },
     {
-      label: "Operations",
-      icon: Calendar,
+      label: "OPERATIONS",
+      icon: Stack3Icon,
+      isAnimated: true,
       defaultOpen: true,
       items: [
         { name: "Calendar", href: "/calendar", show: true },
@@ -138,8 +152,9 @@ export function SidebarNav({
       ]
     },
     {
-      label: "Support",
-      icon: HelpCircle,
+      label: "SUPPORT",
+      icon: InfoCircleIcon,
+      isAnimated: true,
       defaultOpen: true,
       items: [
         { name: "FAQ", href: "/faq", show: true },
@@ -156,7 +171,7 @@ export function SidebarNav({
 
   // Top-level navigation items (outside groups)
   const topLevelItems = [
-    { name: "Dashboard", href: "/dashboard", icon: Home, show: true },
+    { name: "DASHBOARD", href: "/dashboard", icon: HomeIcon, isAnimated: true, show: true },
   ]
 
   return (
@@ -254,7 +269,7 @@ export function SidebarNav({
                 <Link
                   href={item.href}
                   className={cn(
-                    "group relative flex items-center gap-3 py-2 px-3 text-sm font-medium rounded-md",
+                    "group relative flex items-center gap-3 py-2 px-3 text-sm font-bold rounded-md",
                     "transition-colors duration-200",
                     "hover:bg-gray-100 dark:hover:bg-gray-800",
                     isActive
@@ -262,7 +277,11 @@ export function SidebarNav({
                       : "text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100"
                   )}
                 >
-                  <ItemIcon className="h-5 w-5 flex-shrink-0" />
+                  {item.isAnimated ? (
+                    <ItemIcon size={20} className="flex-shrink-0" />
+                  ) : (
+                    <ItemIcon className="h-5 w-5 flex-shrink-0" />
+                  )}
                   <span
                     className={cn(
                       "whitespace-nowrap",
@@ -288,7 +307,7 @@ export function SidebarNav({
                       <TooltipTrigger asChild>
                         {linkContent}
                       </TooltipTrigger>
-                      <TooltipContent side="right" className="font-medium">
+                      <TooltipContent side="right" className="font-bold">
                         {item.name}
                       </TooltipContent>
                     </Tooltip>
@@ -322,20 +341,28 @@ export function SidebarNav({
                       <TooltipTrigger asChild>
                         <button
                           onClick={() => toggleGroup(group.label)}
-                          className="flex w-full items-center justify-center px-3 py-2 text-sm font-medium text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 transition-colors rounded-md hover:bg-gray-50 dark:hover:bg-gray-800/50"
+                          className="flex w-full items-center justify-center px-3 py-2 text-sm font-bold text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 transition-colors rounded-md hover:bg-gray-50 dark:hover:bg-gray-800/50"
                         >
-                          <GroupIcon className="h-5 w-5 flex-shrink-0" />
+                          {group.isAnimated ? (
+                            <GroupIcon size={20} className="flex-shrink-0" />
+                          ) : (
+                            <GroupIcon className="h-5 w-5 flex-shrink-0" />
+                          )}
                         </button>
                       </TooltipTrigger>
-                      <TooltipContent side="right" className="font-medium">
+                      <TooltipContent side="right" className="font-bold">
                         {group.label}
                       </TooltipContent>
                     </Tooltip>
                   ) : (
                     <CollapsibleTrigger asChild>
-                      <button className="flex w-full items-center justify-between px-3 py-2 text-sm font-medium text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 transition-colors rounded-md hover:bg-gray-50 dark:hover:bg-gray-800/50">
+                      <button className="flex w-full items-center justify-between px-3 py-2 text-sm font-bold text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 transition-colors rounded-md hover:bg-gray-50 dark:hover:bg-gray-800/50">
                         <div className="flex items-center gap-3">
-                          <GroupIcon className="h-5 w-5 flex-shrink-0" />
+                          {group.isAnimated ? (
+                            <GroupIcon size={20} className="flex-shrink-0" />
+                          ) : (
+                            <GroupIcon className="h-5 w-5 flex-shrink-0" />
+                          )}
                           <span>{group.label}</span>
                         </div>
                         <ChevronRight

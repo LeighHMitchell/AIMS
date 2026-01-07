@@ -799,9 +799,9 @@ export function AdminUserTable() {
                     {/* Role with lock icon */}
                     <TableCell>
                       <div className="flex items-center gap-1.5">
-                        <Badge variant={getRoleBadgeVariant(user.role)} className="!inline-flex !w-fit flex-shrink-0 flex-grow-0">
+                        <span className="text-sm text-gray-700">
                           {ROLE_LABELS[user.role as keyof typeof ROLE_LABELS] || user.role}
-                        </Badge>
+                        </span>
                         <Tooltip>
                           <TooltipTrigger asChild>
                             <Lock className="h-3 w-3 text-muted-foreground/50" />
