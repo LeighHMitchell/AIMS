@@ -109,6 +109,12 @@ export async function GET(
     return NextResponse.json({
       comments: topLevelComments,
       total: comments?.length || 0,
+    }, {
+      headers: {
+        'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0',
+      },
     });
   } catch (error) {
     console.error('Error in GET /api/activities/[id]/public-comments:', error);

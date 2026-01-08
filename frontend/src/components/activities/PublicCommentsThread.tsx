@@ -439,8 +439,13 @@ export function PublicCommentsThread({ activityId }: PublicCommentsThreadProps) 
       if (currentUser?.id) {
         url.searchParams.set("userId", currentUser.id);
       }
+      // Add cache-busting timestamp to prevent stale data
+      url.searchParams.set("_t", Date.now().toString());
 
-      const response = await fetch(url.toString());
+      const response = await fetch(url.toString(), {
+        cache: "no-store",
+        headers: { "Cache-Control": "no-cache" },
+      });
       if (!response.ok) throw new Error("Failed to fetch comments");
 
       const data = await response.json();
@@ -461,6 +466,23 @@ export function PublicCommentsThread({ activityId }: PublicCommentsThreadProps) 
     if (!currentUser) return;
 
     setIsSubmitting(true);
+
+    // Create optimistic comment for instant UI feedback
+    const optimisticComment: PublicComment = {
+      id: `temp-${Date.now()}`,
+      activityId,
+      parentId: null,
+      user: currentUser,
+      content,
+      timestamp: new Date().toISOString(),
+      likes: 0,
+      isLiked: false,
+      replies: [],
+    };
+
+    // Immediately add to UI
+    setComments(prev => [optimisticComment, ...prev]);
+
     try {
       const response = await fetch(`/api/activities/${activityId}/public-comments`, {
         method: "POST",
@@ -471,9 +493,14 @@ export function PublicCommentsThread({ activityId }: PublicCommentsThreadProps) 
         }),
       });
 
-      if (!response.ok) throw new Error("Failed to post comment");
+      if (!response.ok) {
+        // Rollback optimistic update on error
+        setComments(prev => prev.filter(c => c.id !== optimisticComment.id));
+        throw new Error("Failed to post comment");
+      }
 
       toast.success("Comment posted");
+      // Refresh to get real server data (replaces optimistic comment)
       await fetchComments();
     } catch (error) {
       console.error("Error posting comment:", error);
@@ -486,6 +513,30 @@ export function PublicCommentsThread({ activityId }: PublicCommentsThreadProps) 
   const handleAddReply = async (parentId: string, content: string) => {
     if (!currentUser) return;
 
+    // Create optimistic reply for instant UI feedback
+    const optimisticReply: PublicComment = {
+      id: `temp-reply-${Date.now()}`,
+      activityId,
+      parentId,
+      user: currentUser,
+      content,
+      timestamp: new Date().toISOString(),
+      likes: 0,
+      isLiked: false,
+      replies: [],
+    };
+
+    // Immediately add reply to parent comment
+    setComments(prev => prev.map(comment => {
+      if (comment.id === parentId) {
+        return {
+          ...comment,
+          replies: [...(comment.replies || []), optimisticReply],
+        };
+      }
+      return comment;
+    }));
+
     try {
       const response = await fetch(`/api/activities/${activityId}/public-comments`, {
         method: "POST",
@@ -497,7 +548,19 @@ export function PublicCommentsThread({ activityId }: PublicCommentsThreadProps) 
         }),
       });
 
-      if (!response.ok) throw new Error("Failed to post reply");
+      if (!response.ok) {
+        // Rollback optimistic update on error
+        setComments(prev => prev.map(comment => {
+          if (comment.id === parentId) {
+            return {
+              ...comment,
+              replies: (comment.replies || []).filter(r => r.id !== optimisticReply.id),
+            };
+          }
+          return comment;
+        }));
+        throw new Error("Failed to post reply");
+      }
 
       toast.success("Reply posted");
       await fetchComments();
