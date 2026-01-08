@@ -222,15 +222,14 @@ export function TopNav({ user, onLogout }: TopNavProps) {
 
           {/* Share Button - hidden on admin, profile, and settings pages */}
           {user && showShareButton && (
-            <Button
-              variant="ghost"
-              size="icon"
+            <button
               onClick={handleShare}
-              className="h-9 w-9"
+              className="flex h-10 w-10 items-center justify-center rounded-full border border-border bg-card transition-colors hover:bg-muted focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
               title="Share this page"
+              aria-label="Share this page"
             >
               <Share className="h-5 w-5" />
-            </Button>
+            </button>
           )}
         </div>
       </div>

@@ -4,11 +4,11 @@ import { getSupabaseAdmin } from '@/lib/supabase';
 // GET /api/activities/[id]/humanitarian - Fetch humanitarian data for an activity
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const supabase = getSupabaseAdmin();
-    const activityId = params.id;
+    const { id: activityId } = await params;
 
     // Get humanitarian flag from activities table
     const { data: activity, error: activityError } = await supabase
@@ -85,11 +85,11 @@ export async function GET(
 // POST /api/activities/[id]/humanitarian - Update humanitarian data for an activity
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const supabase = getSupabaseAdmin();
-    const activityId = params.id;
+    const { id: activityId } = await params;
     const body = await request.json();
 
     const { humanitarian, humanitarian_scopes } = body;
