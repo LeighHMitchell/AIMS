@@ -98,13 +98,14 @@ async function createCommentNotifications(
       .insert(notifications);
 
     if (notificationError) {
-      console.error('[AIMS Comments API] Error creating notifications:', notificationError);
+      // Log but don't throw - table might not exist in all environments
+      console.log('[AIMS Comments API] Notification insert skipped or failed:', notificationError.message);
     } else {
       console.log(`[AIMS Comments API] Created ${notifications.length} notifications for comment`);
     }
   } catch (error) {
-    // Don't fail the comment creation if notifications fail
-    console.error('[AIMS Comments API] Error in createCommentNotifications:', error);
+    // Don't fail the comment creation if notifications fail - silently log
+    console.log('[AIMS Comments API] Notification creation skipped:', error instanceof Error ? error.message : 'unknown error');
   }
 }
 

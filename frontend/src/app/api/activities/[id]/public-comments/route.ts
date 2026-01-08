@@ -12,7 +12,7 @@ export const dynamic = 'force-dynamic';
 // Fetch all public comments for an activity with nested replies
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const supabase = getSupabaseAdmin();
@@ -23,7 +23,7 @@ export async function GET(
       );
     }
 
-    const activityId = params.id;
+    const { id: activityId } = await params;
 
     // Get current user ID from query params (for checking likes)
     const searchParams = request.nextUrl.searchParams;
@@ -123,7 +123,7 @@ export async function GET(
 // Create a new public comment or reply
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const supabase = getSupabaseAdmin();
@@ -134,7 +134,7 @@ export async function POST(
       );
     }
 
-    const activityId = params.id;
+    const { id: activityId } = await params;
     const body = await request.json();
 
     const { content, parentId, user } = body;
@@ -232,7 +232,7 @@ export async function POST(
 // Delete a public comment (only by the author)
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const supabase = getSupabaseAdmin();
@@ -242,6 +242,8 @@ export async function DELETE(
         { status: 500 }
       );
     }
+
+    const { id: activityId } = await params;
 
     const searchParams = request.nextUrl.searchParams;
     const commentId = searchParams.get('commentId');
@@ -259,7 +261,7 @@ export async function DELETE(
       .from('activity_public_comments')
       .select('id, user_id')
       .eq('id', commentId)
-      .eq('activity_id', params.id)
+      .eq('activity_id', activityId)
       .single();
 
     if (fetchError || !comment) {
