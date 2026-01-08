@@ -6,9 +6,10 @@ export const dynamic = 'force-dynamic';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const supabase = getSupabaseAdmin();
     if (!supabase) {
       return NextResponse.json(
@@ -17,7 +18,7 @@ export async function GET(
       );
     }
 
-    const sdgId = parseInt(params.id);
+    const sdgId = parseInt(id);
     
     // Validate SDG ID
     if (isNaN(sdgId) || sdgId < 1 || sdgId > 17) {

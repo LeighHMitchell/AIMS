@@ -21,10 +21,11 @@ function isValidUUID(uuid: string): boolean {
 // GET comments for an activity (fallback version)
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    console.log('[AIMS Comments API FALLBACK] GET request for activity:', params.id);
+    const { id } = await params;
+    console.log('[AIMS Comments API FALLBACK] GET request for activity:', id);
     
     const supabase = getSupabaseAdmin();
     if (!supabase) {
@@ -36,11 +37,11 @@ export async function GET(
     const { data: activity, error: activityError } = await supabase
       .from('activities')
       .select('id, title_narrative')
-      .eq('id', params.id)
+      .eq('id', id)
       .single();
     
     if (activityError || !activity) {
-      console.error('[AIMS Comments API FALLBACK] Activity not found:', params.id, activityError);
+      console.error('[AIMS Comments API FALLBACK] Activity not found:', id, activityError);
       return NextResponse.json({ error: 'Activity not found' }, { status: 404 });
     }
     
@@ -51,7 +52,7 @@ export async function GET(
       const { data: comments, error: commentsError } = await supabase
         .from('activity_comments')
         .select('*')
-        .eq('activity_id', params.id)
+        .eq('activity_id', id)
         .order('created_at', { ascending: false });
       
       if (commentsError) {
@@ -101,13 +102,14 @@ export async function GET(
 // POST new comment (fallback version)
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const body = await request.json();
     const { user, content, type } = body;
     
-    console.log('[AIMS Comments API FALLBACK] POST request for activity:', params.id);
+    console.log('[AIMS Comments API FALLBACK] POST request for activity:', id);
     console.log('[AIMS Comments API FALLBACK] User:', user);
     console.log('[AIMS Comments API FALLBACK] Content:', content);
     
@@ -121,11 +123,11 @@ export async function POST(
     const { data: activity, error: activityError } = await supabase
       .from('activities')
       .select('id, title_narrative')
-      .eq('id', params.id)
+      .eq('id', id)
       .single();
     
     if (activityError || !activity) {
-      console.error('[AIMS Comments API FALLBACK] Activity not found for comment:', params.id, activityError);
+      console.error('[AIMS Comments API FALLBACK] Activity not found for comment:', id, activityError);
       return NextResponse.json({ error: 'Activity not found' }, { status: 404 });
     }
     
@@ -142,7 +144,7 @@ export async function POST(
     try {
       // Try to insert comment with minimal required fields
       const commentData = {
-        activity_id: params.id,
+        activity_id: id,
         user_id: userId,
         content: content, // Try content field first
         type: type || 'Feedback',
@@ -208,9 +210,10 @@ export async function POST(
 // PATCH to resolve/update a comment (fallback version)
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const body = await request.json();
     const { user, commentId, action } = body;
     

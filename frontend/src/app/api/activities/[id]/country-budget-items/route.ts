@@ -8,11 +8,11 @@ import { CountryBudgetItems, BudgetItem } from '@/types/country-budget-items';
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const supabase = getSupabaseAdmin();
-    const activityId = params.id;
+    const { id: activityId } = await params;
 
     // Fetch country budget items with their budget items
     const { data: countryBudgetItems, error: cbiError } = await supabase
@@ -68,11 +68,11 @@ export async function GET(
  */
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const supabase = getSupabaseAdmin();
-    const activityId = params.id;
+    const { id: activityId } = await params;
     const body: CountryBudgetItems = await request.json();
 
     // Validate request body
@@ -259,11 +259,11 @@ export async function POST(
  */
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const supabase = getSupabaseAdmin();
-    const activityId = params.id;
+    const { id: activityId } = await params;
     const { searchParams } = new URL(request.url);
     const vocabulary = searchParams.get('vocabulary');
 

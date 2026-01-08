@@ -30,13 +30,14 @@ const DEFAULT_PREFS = {
 
 export async function GET(
   _request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const { data: org, error } = await getSupabaseAdmin()
       .from('organizations')
       .select('iati_import_preferences')
-      .eq('id', params.id)
+      .eq('id', id)
       .single();
 
     if (error || !org) {
@@ -56,9 +57,10 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const body = await request.json();
 
     // Basic validation: require version and fields map
@@ -69,7 +71,7 @@ export async function PUT(
     const { error } = await getSupabaseAdmin()
       .from('organizations')
       .update({ iati_import_preferences: body })
-      .eq('id', params.id);
+      .eq('id', id);
 
     if (error) {
       return NextResponse.json({ error: error?.message || 'Failed to save' }, { status: 500 });

@@ -9,11 +9,11 @@ export const revalidate = 0;
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const supabase = getSupabaseAdmin();
-    const activityId = params.id;
+    const { id: activityId } = await params;
 
     console.log('[PlannedDisbursementsAPI] GET request for activityId:', activityId);
     console.log('[PlannedDisbursementsAPI] Admin client exists:', !!supabase);
@@ -66,11 +66,11 @@ export async function GET(
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const supabase = getSupabaseAdmin();
-    const activityId = params.id;
+    const { id: activityId } = await params;
     const body = await request.json();
 
     console.log('[PlannedDisbursementsAPI] Creating disbursement for activity:', activityId, body);
@@ -181,11 +181,11 @@ export async function POST(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const supabase = getSupabaseAdmin();
-    const activityId = params.id;
+    const { id: activityId } = await params;
 
     console.log('[PlannedDisbursementsAPI] Deleting disbursements for activity:', activityId);
 

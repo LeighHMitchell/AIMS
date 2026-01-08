@@ -3,9 +3,10 @@ import { getSupabaseAdmin } from '@/lib/supabase';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const supabase = getSupabaseAdmin();
     if (!supabase) {
       return NextResponse.json({ error: 'Database connection failed' }, { status: 500 });
@@ -15,7 +16,7 @@ export async function GET(
     const { data: unreadComments, error } = await supabase
       .from('activity_comments')
       .select('id')
-      .eq('activity_id', params.id)
+      .eq('activity_id', id)
       .eq('is_read', false);
 
     if (error) {

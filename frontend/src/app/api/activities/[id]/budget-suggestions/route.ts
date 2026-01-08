@@ -9,10 +9,10 @@ import { ClassificationType } from "@/types/aid-on-budget";
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const activityId = params.id;
+    const { id: activityId } = await params;
     const supabase = getSupabaseAdmin();
 
     // Get activity's sectors first (to show in response)
@@ -207,10 +207,10 @@ export async function GET(
  */
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const activityId = params.id;
+    const { id: activityId } = await params;
     const body = await request.json();
     const {
       overwriteExisting = false,

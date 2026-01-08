@@ -5,9 +5,10 @@ export const dynamic = 'force-dynamic';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const supabase = getSupabaseAdmin();
     if (!supabase) {
       return NextResponse.json(
@@ -16,7 +17,7 @@ export async function GET(
       );
     }
 
-    const orgId = params.id;
+    const orgId = id;
     const currentYear = 2025;
     const previousYear = 2024;
 

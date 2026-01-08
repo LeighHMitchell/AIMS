@@ -7,9 +7,9 @@ import { getSupabaseAdmin } from '@/lib/supabase';
  */
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  const activityId = params.id;
+  const { id: activityId } = await params;
   const supabase = getSupabaseAdmin();
 
   if (!supabase) {

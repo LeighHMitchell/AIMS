@@ -4,8 +4,9 @@ import { getSupabaseAdmin } from '@/lib/supabase';
 // GET /api/indicators/[id]/references - Fetch all references for an indicator
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   const supabase = getSupabaseAdmin();
   
   if (!supabase) {
@@ -13,10 +14,11 @@ export async function GET(
   }
 
   try {
+    const { id } = await params;
     const { data, error } = await supabase
       .from('indicator_references')
       .select('*')
-      .eq('indicator_id', params.id)
+      .eq('indicator_id', id)
       .order('created_at', { ascending: true });
 
     if (error) {
@@ -36,8 +38,9 @@ export async function GET(
 // POST /api/indicators/[id]/references - Create a new reference
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   const supabase = getSupabaseAdmin();
   
   if (!supabase) {
@@ -45,6 +48,7 @@ export async function POST(
   }
 
   try {
+    const { id } = await params;
     const body = await request.json();
 
     if (!body.vocabulary || !body.code) {
@@ -54,7 +58,7 @@ export async function POST(
     }
 
     const insertData = {
-      indicator_id: params.id,
+      indicator_id: id,
       vocabulary: body.vocabulary,
       code: body.code,
       vocabulary_uri: body.vocabulary_uri || null,
@@ -84,8 +88,9 @@ export async function POST(
 // DELETE /api/indicators/[id]/references - Delete a reference
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   const supabase = getSupabaseAdmin();
   
   if (!supabase) {
@@ -93,6 +98,7 @@ export async function DELETE(
   }
 
   try {
+    const { id } = await params;
     const { searchParams } = new URL(request.url);
     const referenceId = searchParams.get('referenceId');
 
@@ -106,7 +112,7 @@ export async function DELETE(
       .from('indicator_references')
       .delete()
       .eq('id', referenceId)
-      .eq('indicator_id', params.id);
+      .eq('indicator_id', id);
 
     if (error) {
       console.error('[Indicator References API] Error:', error);

@@ -4,8 +4,9 @@ import { getSupabaseAdmin } from '@/lib/supabase';
 // GET /api/periods/[id]/dimensions - Fetch all dimensions for a period
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   const supabase = getSupabaseAdmin();
   
   if (!supabase) {
@@ -13,13 +14,14 @@ export async function GET(
   }
 
   try {
+    const { id } = await params;
     const { searchParams } = new URL(request.url);
     const dimensionType = searchParams.get('type'); // 'target' or 'actual'
 
     let query = supabase
       .from('period_dimensions')
       .select('*')
-      .eq('period_id', params.id);
+      .eq('period_id', id);
 
     if (dimensionType && (dimensionType === 'target' || dimensionType === 'actual')) {
       query = query.eq('dimension_type', dimensionType);
@@ -44,8 +46,9 @@ export async function GET(
 // POST /api/periods/[id]/dimensions - Create a new dimension
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   const supabase = getSupabaseAdmin();
   
   if (!supabase) {
@@ -53,6 +56,7 @@ export async function POST(
   }
 
   try {
+    const { id } = await params;
     const body = await request.json();
 
     if (!body.name || !body.value || !body.dimension_type) {
@@ -68,7 +72,7 @@ export async function POST(
     }
 
     const insertData = {
-      period_id: params.id,
+      period_id: id,
       dimension_type: body.dimension_type,
       name: body.name,
       value: body.value
@@ -97,8 +101,9 @@ export async function POST(
 // DELETE /api/periods/[id]/dimensions - Delete a dimension
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   const supabase = getSupabaseAdmin();
   
   if (!supabase) {
@@ -106,6 +111,7 @@ export async function DELETE(
   }
 
   try {
+    const { id } = await params;
     const { searchParams } = new URL(request.url);
     const dimensionId = searchParams.get('dimensionId');
 
@@ -119,7 +125,7 @@ export async function DELETE(
       .from('period_dimensions')
       .delete()
       .eq('id', dimensionId)
-      .eq('period_id', params.id);
+      .eq('period_id', id);
 
     if (error) {
       console.error('[Period Dimensions API] Error:', error);

@@ -4,10 +4,10 @@ import { locationFormSchema, type LocationFormSchema } from '@/lib/schemas/locat
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const activityId = params.id;
+    const { id: activityId } = await params;
 
     if (!activityId) {
       return NextResponse.json(
@@ -95,10 +95,10 @@ export async function GET(
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const activityId = params.id;
+    const { id: activityId } = await params;
     const body = await request.json();
 
     if (!activityId) {
@@ -219,10 +219,10 @@ export async function POST(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const activityId = params.id;
+    const { id: activityId } = await params;
     const body = await request.json();
 
     console.log('[Locations API] 🔄 PUT request received for activity:', activityId);
@@ -373,10 +373,10 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const activityId = params.id;
+    const { id: activityId } = await params;
 
     if (!activityId) {
       return NextResponse.json(

@@ -5,13 +5,13 @@ export const dynamic = 'force-dynamic'
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { code: string } }
+  { params }: { params: Promise<{ code: string }> }
 ) {
   console.log('[AIMS API] GET /api/sectors/[code]/activities - Starting request')
   
   try {
-    const { code } = params
-    
+    const { code } = await params;
+
     if (!code) {
       return NextResponse.json(
         { error: 'Sector code is required' },
@@ -40,7 +40,7 @@ export async function GET(
       { 
         error: 'Failed to fetch sector activities',
         details: error instanceof Error ? error.message : 'Unknown error',
-        sectorCode: params.code
+        sectorCode: code
       },
       { status: 500 }
     )

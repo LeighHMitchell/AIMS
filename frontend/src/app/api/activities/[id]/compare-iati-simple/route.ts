@@ -107,10 +107,10 @@ function normalizeTransactions(transactions: any): any[] {
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const activityId = params.id;
+    const { id: activityId } = await params;
     const body: CompareRequest = await request.json();
     
     console.log('[IATI Compare Simple] Starting comparison for activity:', activityId);

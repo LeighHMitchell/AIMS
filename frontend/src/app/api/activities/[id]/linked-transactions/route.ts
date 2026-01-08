@@ -58,10 +58,10 @@ const TRANSACTION_TYPE_LABELS: Record<string, string> = {
 // GET /api/activities/[id]/linked-transactions - Get transactions from linked activities
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const activityId = params.id;
+    const { id: activityId } = await params;
     
     // Get pagination parameters
     const page = parseInt(request.nextUrl.searchParams.get('page') || '1');

@@ -29,7 +29,7 @@ interface TransactionData {
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { orgId: string } }
+  { params }: { params: Promise<{ orgId: string }> }
 ) {
   try {
     const { orgId } = params;

@@ -44,10 +44,10 @@ function validateTransactionSectors(
 // DELETE /api/transactions/[transactionId]/sectors/[sectorLineId]
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { transactionId: string; sectorLineId: string } }
+  { params }: { params: Promise<{ transactionId: string; sectorLineId: string }> }
 ) {
   try {
-    const { transactionId, sectorLineId } = params;
+    const { transactionId, sectorLineId } = await params;
     const supabase = getSupabaseAdmin();
     
     // Verify transaction exists and get details
@@ -134,10 +134,10 @@ export async function DELETE(
 // GET /api/transactions/[transactionId]/sectors/[sectorLineId] (for individual sector line details)
 export async function GET(
   request: NextRequest,
-  { params }: { params: { transactionId: string; sectorLineId: string } }
+  { params }: { params: Promise<{ transactionId: string; sectorLineId: string }> }
 ) {
   try {
-    const { transactionId, sectorLineId } = params;
+    const { transactionId, sectorLineId } = await params;
     const supabase = getSupabaseAdmin();
     
     // Get the specific sector line

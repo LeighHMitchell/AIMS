@@ -4,7 +4,7 @@ import { getSupabaseAdmin } from '@/lib/supabase';
 // PATCH /api/activities/[id]/results/[resultId] - Update a result
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string; resultId: string } }
+  { params }: { params: Promise<{ id: string; resultId: string }> }
 ) {
   const supabase = getSupabaseAdmin();
   
@@ -125,7 +125,7 @@ export async function PATCH(
 // DELETE /api/activities/[id]/results/[resultId] - Delete a result
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string; resultId: string } }
+  { params }: { params: Promise<{ id: string; resultId: string }> }
 ) {
   const supabase = getSupabaseAdmin();
   

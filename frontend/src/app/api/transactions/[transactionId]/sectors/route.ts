@@ -175,10 +175,10 @@ function reconcileRounding(
 // GET /api/transactions/[transactionId]/sectors
 export async function GET(
   request: NextRequest,
-  { params }: { params: { transactionId: string } }
+  { params }: { params: Promise<{ transactionId: string }> }
 ) {
   try {
-    const transactionId = params.transactionId;
+    const { transactionId } = await params;
     const supabase = getSupabaseAdmin();
     
     // First, get the transaction to validate access and get transaction details
@@ -243,10 +243,10 @@ export async function GET(
 // PUT /api/transactions/[transactionId]/sectors
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { transactionId: string } }
+  { params }: { params: Promise<{ transactionId: string }> }
 ) {
   try {
-    const transactionId = params.transactionId;
+    const { transactionId } = await params;
     const body: UpdateTransactionSectorsRequest = await request.json();
     const supabase = getSupabaseAdmin();
     
@@ -381,10 +381,10 @@ export async function PUT(
 // DELETE /api/transactions/[transactionId]/sectors (delete all)
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { transactionId: string } }
+  { params }: { params: Promise<{ transactionId: string }> }
 ) {
   try {
-    const transactionId = params.transactionId;
+    const { transactionId } = await params;
     const supabase = getSupabaseAdmin();
     
     // Verify transaction exists

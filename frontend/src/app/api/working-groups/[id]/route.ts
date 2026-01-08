@@ -14,15 +14,16 @@ export async function OPTIONS() {
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   console.log('[API] GET /api/working-groups/[id] - Starting request');
   
   try {
+    const { id } = await params;
     const { data, error } = await getSupabaseAdmin()
       .from('working_groups')
       .select('*')
-      .eq('id', params.id)
+      .eq('id', id)
       .single();
     
     if (error) {
@@ -31,7 +32,7 @@ export async function GET(
       // If table doesn't exist, try to find in predefined list
       if (error.message.includes('does not exist')) {
         const { WORKING_GROUPS } = await import('@/lib/workingGroups');
-        const workingGroup = WORKING_GROUPS.find(wg => wg.id === params.id);
+        const workingGroup = WORKING_GROUPS.find(wg => wg.id === id);
         
         if (workingGroup) {
           return NextResponse.json(workingGroup);
@@ -64,7 +65,7 @@ export async function GET(
     // Fallback to predefined list
     try {
       const { WORKING_GROUPS } = await import('@/lib/workingGroups');
-      const workingGroup = WORKING_GROUPS.find(wg => wg.id === params.id);
+      const workingGroup = WORKING_GROUPS.find(wg => wg.id === id);
       
       if (workingGroup) {
         return NextResponse.json(workingGroup);
@@ -85,11 +86,12 @@ export async function GET(
 
 export async function PUT(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   console.log('[API] PUT /api/working-groups/[id] - Starting request');
   
   try {
+    const { id } = await params;
     const body = await request.json();
     
     const { data, error } = await getSupabaseAdmin()
@@ -102,7 +104,7 @@ export async function PUT(
         status: body.status,
         updated_at: new Date().toISOString()
       })
-      .eq('id', params.id)
+      .eq('id', id)
       .select()
       .single();
     
@@ -135,15 +137,16 @@ export async function PUT(
 
 export async function DELETE(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   console.log('[API] DELETE /api/working-groups/[id] - Starting request');
   
   try {
+    const { id } = await params;
     const { error } = await getSupabaseAdmin()
       .from('working_groups')
       .delete()
-      .eq('id', params.id);
+      .eq('id', id);
     
     if (error) {
       console.error('[API] Error deleting working group:', error);

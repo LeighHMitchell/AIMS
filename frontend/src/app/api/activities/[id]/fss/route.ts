@@ -4,11 +4,11 @@ import { getSupabaseAdmin } from '@/lib/supabase';
 // GET - Fetch FSS with forecasts for an activity
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const supabase = getSupabaseAdmin();
-    const activityId = params.id;
+    const { id: activityId } = await params;
 
     console.log('[FSS API] GET request for activityId:', activityId);
 
@@ -56,11 +56,11 @@ export async function GET(
 // PUT - Create or update FSS
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const supabase = getSupabaseAdmin();
-    const activityId = params.id;
+    const { id: activityId } = await params;
     const body = await request.json();
 
     console.log('[FSS API] PUT request for activityId:', activityId, 'body:', body);
@@ -116,11 +116,11 @@ export async function PUT(
 // DELETE - Remove FSS and all forecasts
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const supabase = getSupabaseAdmin();
-    const activityId = params.id;
+    const { id: activityId } = await params;
 
     console.log('[FSS API] DELETE request for activityId:', activityId);
 

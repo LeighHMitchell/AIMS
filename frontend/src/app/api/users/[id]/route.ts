@@ -5,11 +5,12 @@ export const dynamic = 'force-dynamic'
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  console.log('[AIMS] PUT /api/users/[id] - Starting request for user:', params.id)
+  console.log('[AIMS] PUT /api/users/[id] - Starting request for user:', id)
   
   try {
+    const { id } = await params;
     const supabase = getSupabaseAdmin()
     if (!supabase) {
       return NextResponse.json(
@@ -63,7 +64,7 @@ export async function PUT(
     const { data, error } = await supabase
       .from('users')
       .update(updateData)
-      .eq('id', params.id)
+      .eq('id', id)
       .select(`
         *,
         organizations:organization_id (
@@ -125,11 +126,12 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  console.log('[AIMS] DELETE /api/users/[id] - Starting request for user:', params.id)
+  console.log('[AIMS] DELETE /api/users/[id] - Starting request for user:', id)
   
   try {
+    const { id } = await params;
     const supabase = getSupabaseAdmin()
     if (!supabase) {
       return NextResponse.json(
@@ -142,7 +144,7 @@ export async function DELETE(
     const { error: profileError } = await supabase
       .from('users')
       .delete()
-      .eq('id', params.id)
+      .eq('id', id)
     
     if (profileError) {
       console.error('[AIMS] Error deleting user profile:', profileError)
@@ -153,14 +155,14 @@ export async function DELETE(
     }
     
     // Then delete the auth user
-    const { error: authError } = await supabase.auth.admin.deleteUser(params.id)
+    const { error: authError } = await supabase.auth.admin.deleteUser(id)
     
     if (authError) {
       console.error('[AIMS] Error deleting auth user:', authError)
       // Profile is already deleted, so we'll continue
     }
     
-    console.log('[AIMS] Deleted user:', params.id)
+    console.log('[AIMS] Deleted user:', id)
     return NextResponse.json({ success: true }, { status: 200 })
     
   } catch (error) {

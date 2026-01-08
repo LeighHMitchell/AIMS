@@ -149,10 +149,11 @@ function parseMentions(message: string): Array<{id: string, name: string, type: 
 // GET comments for an activity with enhanced features
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    console.log('[AIMS Comments API] GET request for activity:', params.id);
+    const { id } = await params;
+    console.log('[AIMS Comments API] GET request for activity:', id);
     
     const supabase = getSupabaseAdmin();
     if (!supabase) {
@@ -174,11 +175,11 @@ export async function GET(
     const { data: activity, error: activityError } = await supabase
       .from('activities')
       .select('id, title_narrative')
-      .eq('id', params.id)
+      .eq('id', id)
       .single();
     
     if (activityError || !activity) {
-      console.error('[AIMS Comments API] Activity not found:', params.id, activityError);
+      console.error('[AIMS Comments API] Activity not found:', id, activityError);
       return NextResponse.json({ error: 'Activity not found' }, { status: 404 });
     }
     
@@ -192,7 +193,7 @@ export async function GET(
           *,
           replies:activity_comment_replies(*)
         `)
-        .eq('activity_id', params.id);
+        .eq('activity_id', id);
         
       // Filter archived comments unless specifically requested
       if (!includeArchived) {
@@ -205,7 +206,7 @@ export async function GET(
       
       console.log('[AIMS Comments API] Query result:', { 
         commentsCount: comments?.length || 0, 
-        activityId: params.id,
+        activityId: id,
         includeArchived,
         error: commentsError 
       });
@@ -252,13 +253,14 @@ export async function GET(
 // POST new comment with enhanced features
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const body = await request.json();
     const { user, content, type, parentCommentId, contextSection, contextField } = body;
     
-    console.log('[AIMS Comments API] POST request for activity:', params.id);
+    console.log('[AIMS Comments API] POST request for activity:', id);
     console.log('[AIMS Comments API] User:', user);
     console.log('[AIMS Comments API] Content:', content);
     
@@ -272,11 +274,11 @@ export async function POST(
     const { data: activity, error: activityError } = await supabase
       .from('activities')
       .select('id, title_narrative')
-      .eq('id', params.id)
+      .eq('id', id)
       .single();
     
     if (activityError || !activity) {
-      console.error('[AIMS Comments API] Activity not found for comment:', params.id, activityError);
+      console.error('[AIMS Comments API] Activity not found for comment:', id, activityError);
       return NextResponse.json({ error: 'Activity not found' }, { status: 404 });
     }
     
@@ -346,7 +348,7 @@ export async function POST(
         // Create notifications for activity stakeholders (async, don't await)
         createCommentNotifications(
           supabase,
-          params.id,
+          id,
           activity.title_narrative || '',
           userId,
           user.name || 'Unknown User',
@@ -363,7 +365,7 @@ export async function POST(
       // Try to insert new comment
       try {
         const commentData = {
-          activity_id: params.id,
+          activity_id: id,
           user_id: userId,
           user_name: user.name || 'Unknown User',
           user_role: user.role || 'user',
@@ -414,7 +416,7 @@ export async function POST(
         // Create notifications for activity stakeholders (async, don't await)
         createCommentNotifications(
           supabase,
-          params.id,
+          id,
           activity.title_narrative || '',
           userId,
           user.name || 'Unknown User',
@@ -443,9 +445,10 @@ export async function POST(
 // PATCH to resolve/update a comment with enhanced features
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const body = await request.json();
     const { user, commentId, action, resolutionNote } = body;
     
@@ -549,9 +552,10 @@ export async function PATCH(
 // DELETE comment with enhanced features and permission checks
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const body = await request.json();
     const { commentId, user } = body;
     
@@ -584,7 +588,7 @@ export async function DELETE(
     }
     
     // Verify the comment belongs to the current activity
-    if (comment.activity_id !== params.id) {
+    if (comment.activity_id !== id) {
       return NextResponse.json({ error: 'Comment does not belong to this activity' }, { status: 403 });
     }
     

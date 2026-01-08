@@ -7,7 +7,7 @@ export const dynamic = 'force-dynamic';
 // GET /api/activities/[id]/policy-markers - Get policy markers for an activity
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const supabase = getSupabaseAdmin();
   
@@ -17,7 +17,7 @@ export async function GET(
   }
 
   try {
-    const { id } = params;
+    const { id } = await params;
     
     if (!id) {
       return NextResponse.json({ 
@@ -103,7 +103,7 @@ export async function GET(
 // POST /api/activities/[id]/policy-markers - Create/update policy markers for an activity
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const supabase = getSupabaseAdmin();
 
@@ -113,7 +113,7 @@ export async function POST(
   }
 
   try {
-    const { id } = params;
+    const { id } = await params;
     const body = await request.json();
 
     if (!id) {
@@ -299,7 +299,7 @@ export async function POST(
 // DELETE /api/activities/[id]/policy-markers - Delete all policy markers for an activity
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const supabase = getSupabaseAdmin();
   
@@ -309,7 +309,7 @@ export async function DELETE(
   }
 
   try {
-    const { id } = params;
+    const { id } = await params;
 
     if (!id) {
       return NextResponse.json({ 

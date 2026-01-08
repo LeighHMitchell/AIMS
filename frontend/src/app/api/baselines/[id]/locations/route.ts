@@ -4,8 +4,9 @@ import { getSupabaseAdmin } from '@/lib/supabase';
 // GET /api/baselines/[id]/locations - Fetch all locations for a baseline
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   const supabase = getSupabaseAdmin();
   
   if (!supabase) {
@@ -13,10 +14,11 @@ export async function GET(
   }
 
   try {
+    const { id } = await params;
     const { data, error } = await supabase
       .from('baseline_locations')
       .select('*')
-      .eq('baseline_id', params.id)
+      .eq('baseline_id', id)
       .order('created_at', { ascending: true });
 
     if (error) {
@@ -36,8 +38,9 @@ export async function GET(
 // POST /api/baselines/[id]/locations - Create a new location reference
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   const supabase = getSupabaseAdmin();
   
   if (!supabase) {
@@ -45,6 +48,7 @@ export async function POST(
   }
 
   try {
+    const { id } = await params;
     const body = await request.json();
 
     if (!body.location_ref) {
@@ -54,7 +58,7 @@ export async function POST(
     }
 
     const insertData = {
-      baseline_id: params.id,
+      baseline_id: id,
       location_ref: body.location_ref
     };
 
@@ -81,8 +85,9 @@ export async function POST(
 // DELETE /api/baselines/[id]/locations - Delete a location reference
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   const supabase = getSupabaseAdmin();
   
   if (!supabase) {
@@ -90,6 +95,7 @@ export async function DELETE(
   }
 
   try {
+    const { id } = await params;
     const { searchParams } = new URL(request.url);
     const locationId = searchParams.get('locationId');
 
@@ -103,7 +109,7 @@ export async function DELETE(
       .from('baseline_locations')
       .delete()
       .eq('id', locationId)
-      .eq('baseline_id', params.id);
+      .eq('baseline_id', id);
 
     if (error) {
       console.error('[Baseline Locations API] Error:', error);

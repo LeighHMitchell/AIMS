@@ -7,13 +7,13 @@ export const revalidate = 0;
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const startTime = Date.now();
   console.log('[General Basic API] ============ PATCH /api/activities/[id]/general-basic ============');
   console.log('[General Basic API] Timestamp:', new Date().toISOString());
   try {
-    const { id } = params;
+    const { id } = await params;
     console.log('[General Basic API] Activity ID:', id);
     if (!id) {
       return NextResponse.json(

@@ -6,9 +6,10 @@ const DATA_FILE_PATH = path.join(process.cwd(), 'data', 'activities.json');
 
 export async function POST(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const { user } = await request.json();
     
     if (!user || !user.id) {
@@ -23,7 +24,7 @@ export async function POST(
     const activities = JSON.parse(data);
     
     // Find the activity
-    const activityIndex = activities.findIndex((a: any) => a.id === params.id);
+    const activityIndex = activities.findIndex((a: any) => a.id === id);
     if (activityIndex === -1) {
       return NextResponse.json(
         { error: 'Activity not found' },
@@ -52,7 +53,7 @@ export async function POST(
     // Save activities
     await fs.writeFile(DATA_FILE_PATH, JSON.stringify(activities, null, 2));
 
-    console.log(`[AIMS] Activity ${params.id} submitted for validation by ${user.name}`);
+    console.log(`[AIMS] Activity ${id} submitted for validation by ${user.name}`);
     
     return NextResponse.json(activity);
   } catch (error) {

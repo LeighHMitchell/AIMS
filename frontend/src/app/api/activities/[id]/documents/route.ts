@@ -6,15 +6,16 @@ export const dynamic = 'force-dynamic';
 // GET - Fetch documents for an activity
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const supabase = getSupabaseAdmin();
     if (!supabase) {
       return NextResponse.json({ error: 'Database connection failed' }, { status: 500 });
     }
 
-    const activityIdParam = params.id;
+    const activityIdParam = id;
 
     // Check if it's a UUID or IATI identifier, and get the actual activity UUID
     let activityId: string;
@@ -104,15 +105,16 @@ export async function GET(
 // POST - Add a new document (external URL or metadata for uploaded file)
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const supabase = getSupabaseAdmin();
     if (!supabase) {
       return NextResponse.json({ error: 'Database connection failed' }, { status: 500 });
     }
 
-    const activityId = params.id;
+    const { id: activityId } = await params;
     const body = await request.json();
 
     // TODO: Add authentication when auth pattern is established
@@ -250,15 +252,16 @@ export async function POST(
 // PUT - Update an existing document
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const supabase = getSupabaseAdmin();
     if (!supabase) {
       return NextResponse.json({ error: 'Database connection failed' }, { status: 500 });
     }
 
-    const activityId = params.id;
+    const { id: activityId } = await params;
     const body = await request.json();
 
     // TODO: Add authentication when auth pattern is established
@@ -403,15 +406,16 @@ export async function PUT(
 // DELETE - Remove a document
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const supabase = getSupabaseAdmin();
     if (!supabase) {
       return NextResponse.json({ error: 'Database connection failed' }, { status: 500 });
     }
 
-    const activityId = params.id;
+    const { id: activityId } = await params;
     const { searchParams } = new URL(request.url);
     const documentId = searchParams.get('documentId');
 

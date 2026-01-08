@@ -19,10 +19,11 @@ export interface SwitchModeRequest {
 // GET - Returns current mode and switching eligibility
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const activityId = params.id
+    const { id } = await params;
+    const activityId = id
     const supabase = getSupabaseAdmin()
 
     if (!supabase) {
@@ -121,10 +122,11 @@ export async function GET(
 // PUT - Switches mode with validation
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const activityId = params.id
+    const { id } = await params;
+    const activityId = id
     const body: SwitchModeRequest = await request.json()
     const { mode } = body
 

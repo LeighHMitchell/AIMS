@@ -48,7 +48,7 @@ function toMultilingual(text: string | undefined, lang = 'en') {
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const supabase = getSupabaseAdmin();
   
@@ -60,7 +60,7 @@ export async function POST(
   }
 
   try {
-    const activityId = params.id;
+    const { id: activityId } = await params;
     const body = await request.json();
     const { results, mode = 'create' } = body;
 

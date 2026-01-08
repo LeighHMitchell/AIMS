@@ -4,7 +4,7 @@ import { getSupabaseAdmin } from '@/lib/supabase';
 // GET /api/activities/[id]/results/[resultId]/indicators - Fetch indicators for a result
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string; resultId: string } }
+  { params }: { params: Promise<{ id: string; resultId: string }> }
 ) {
   const supabase = getSupabaseAdmin();
   
@@ -63,7 +63,7 @@ export async function GET(
 // POST /api/activities/[id]/results/[resultId]/indicators - Create a new indicator
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string; resultId: string } }
+  { params }: { params: Promise<{ id: string; resultId: string }> }
 ) {
   const supabase = getSupabaseAdmin();
   

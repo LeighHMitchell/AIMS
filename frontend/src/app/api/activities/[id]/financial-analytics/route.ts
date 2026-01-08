@@ -10,11 +10,12 @@ export const dynamic = 'force-dynamic'
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const supabase = createClient(supabaseUrl, supabaseServiceKey)
-    const activityId = params.id
+    const activityId = id
 
     console.log(`[Financial Analytics] Optimized version - fetching data for activity ${activityId}`)
 

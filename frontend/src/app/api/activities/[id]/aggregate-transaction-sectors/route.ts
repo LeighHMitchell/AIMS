@@ -21,10 +21,11 @@ export interface AggregateTransactionSectorsResponse {
 // GET - Calculate weighted average of sector percentages across all transactions
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const activityId = params.id
+    const { id } = await params;
+    const activityId = id
     const supabase = getSupabaseAdmin()
 
     if (!supabase) {
@@ -178,10 +179,11 @@ export async function GET(
 // POST - Apply aggregated sectors to activity_sectors table
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const activityId = params.id
+    const { id } = await params;
+    const activityId = id
     const body = await request.json()
     const { sectors } = body as { sectors: AggregatedSector[] }
 

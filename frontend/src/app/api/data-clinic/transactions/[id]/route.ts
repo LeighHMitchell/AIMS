@@ -4,10 +4,10 @@ import { cleanFieldValue } from '@/lib/transaction-field-cleaner';
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const supabase = getSupabaseAdmin();
-  const { id } = params;
+  const { id } = await params;
   const body = await request.json();
   const { field, value, userId } = body;
 

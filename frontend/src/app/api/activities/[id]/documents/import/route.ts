@@ -9,7 +9,7 @@ export const dynamic = 'force-dynamic';
  */
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const supabase = getSupabaseAdmin();
   if (!supabase) {
@@ -17,7 +17,7 @@ export async function POST(
   }
 
   try {
-    const activityId = params.id;
+    const { id: activityId } = await params;
     const { documents } = await request.json();
 
     console.log(`[Document Import API] Starting import for activity: ${activityId}`);

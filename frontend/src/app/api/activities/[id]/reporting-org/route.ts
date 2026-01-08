@@ -3,10 +3,10 @@ import { getSupabaseAdmin } from '@/lib/supabase';
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = params;
+    const { id } = await params;
     const { reporting_org_id } = await request.json();
     
     console.log('[AIMS] Reporting org update request:', { activityId: id, reporting_org_id });

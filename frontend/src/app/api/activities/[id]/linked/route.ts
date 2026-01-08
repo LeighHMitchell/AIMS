@@ -4,9 +4,9 @@ import { getRelationshipTypeName } from '@/data/iati-relationship-types';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  const activityId = params.id;
+  const { id: activityId } = await params;
   const supabase = getSupabaseAdmin();
 
   if (!supabase) {
@@ -129,9 +129,9 @@ export async function GET(
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  const activityId = params.id;
+  const { id: activityId } = await params;
   const supabase = getSupabaseAdmin();
 
   if (!supabase) {

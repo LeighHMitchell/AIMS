@@ -4,8 +4,9 @@ import { getSupabaseAdmin } from '@/lib/supabase';
 // GET /api/periods/[id]/locations - Fetch all locations for a period
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   const supabase = getSupabaseAdmin();
   
   if (!supabase) {
@@ -13,13 +14,14 @@ export async function GET(
   }
 
   try {
+    const { id } = await params;
     const { searchParams } = new URL(request.url);
     const locationType = searchParams.get('type'); // 'target' or 'actual'
 
     let query = supabase
       .from('period_locations')
       .select('*')
-      .eq('period_id', params.id);
+      .eq('period_id', id);
 
     if (locationType && (locationType === 'target' || locationType === 'actual')) {
       query = query.eq('location_type', locationType);
@@ -44,8 +46,9 @@ export async function GET(
 // POST /api/periods/[id]/locations - Create a new location reference
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   const supabase = getSupabaseAdmin();
   
   if (!supabase) {
@@ -53,6 +56,7 @@ export async function POST(
   }
 
   try {
+    const { id } = await params;
     const body = await request.json();
 
     if (!body.location_ref || !body.location_type) {
@@ -68,7 +72,7 @@ export async function POST(
     }
 
     const insertData = {
-      period_id: params.id,
+      period_id: id,
       location_type: body.location_type,
       location_ref: body.location_ref
     };
@@ -96,8 +100,9 @@ export async function POST(
 // DELETE /api/periods/[id]/locations - Delete a location reference
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   const supabase = getSupabaseAdmin();
   
   if (!supabase) {
@@ -105,6 +110,7 @@ export async function DELETE(
   }
 
   try {
+    const { id } = await params;
     const { searchParams } = new URL(request.url);
     const locationId = searchParams.get('locationId');
 
@@ -118,7 +124,7 @@ export async function DELETE(
       .from('period_locations')
       .delete()
       .eq('id', locationId)
-      .eq('period_id', params.id);
+      .eq('period_id', id);
 
     if (error) {
       console.error('[Period Locations API] Error:', error);

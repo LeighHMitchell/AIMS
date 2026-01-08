@@ -5,10 +5,10 @@ export const dynamic = 'force-dynamic';
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { transactionId: string } }
+  { params }: { params: Promise<{ transactionId: string }> }
 ) {
   try {
-    const transactionId = params.transactionId;
+    const { transactionId } = await params;
     const body = await request.json();
     const { acceptingActivityId, acceptingUserId } = body;
 

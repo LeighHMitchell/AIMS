@@ -10,10 +10,11 @@ export const dynamic = 'force-dynamic';
 // Fallback upload that saves to activities.documents JSON field
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    console.log('[Upload Fallback API] Starting upload for activity:', params.id);
+    const { id } = await params;
+    console.log('[Upload Fallback API] Starting upload for activity:', id);
     
     const supabase = getSupabaseAdmin();
     if (!supabase) {
@@ -21,7 +22,7 @@ export async function POST(
       return NextResponse.json({ error: 'Database connection failed' }, { status: 500 });
     }
 
-    const activityId = params.id;
+    const { id: activityId } = await params;
     
     // Parse form data
     const formData = await request.formData();

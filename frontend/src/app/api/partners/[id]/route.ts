@@ -54,9 +54,9 @@ export async function OPTIONS() {
 }
 
 // GET /api/partners/[id]
-export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const { id } = params;
+    const { id } = await params;
     const supabaseAdmin = getSupabaseAdmin();
     const homeCountry = await getSystemHomeCountry(supabaseAdmin);
 
@@ -174,9 +174,9 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
 }
 
 // PUT /api/partners/[id]
-export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const { id } = params;
+    const { id } = await params;
     const supabaseAdmin = getSupabaseAdmin();
     const homeCountry = await getSystemHomeCountry(supabaseAdmin);
     const body = await request.json();
@@ -357,9 +357,9 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
 }
 
 // DELETE /api/partners/[id]
-export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const { id } = params;
+    const { id } = await params;
 
     console.log('[AIMS] DELETE /api/partners/[id] - Deleting organization:', id);
 

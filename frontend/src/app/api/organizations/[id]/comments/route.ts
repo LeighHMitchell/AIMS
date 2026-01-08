@@ -58,10 +58,11 @@ function parseMentions(message: string): Array<{id: string, name: string, type: 
 // GET comments for an organization with enhanced features
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    console.log('[Org Comments API] GET request for organization:', params.id);
+    const { id } = await params;
+    console.log('[Org Comments API] GET request for organization:', id);
     
     const supabase = getSupabaseAdmin();
     if (!supabase) {
@@ -83,11 +84,11 @@ export async function GET(
     const { data: organization, error: orgError } = await supabase
       .from('organizations')
       .select('id, name')
-      .eq('id', params.id)
+      .eq('id', id)
       .single();
     
     if (orgError || !organization) {
-      console.error('[Org Comments API] Organization not found:', params.id, orgError);
+      console.error('[Org Comments API] Organization not found:', id, orgError);
       return NextResponse.json({ error: 'Organization not found' }, { status: 404 });
     }
     
@@ -99,7 +100,7 @@ export async function GET(
           *,
           replies:organization_comment_replies(*)
         `)
-        .eq('organization_id', params.id);
+        .eq('organization_id', id);
         
       // Filter archived comments unless specifically requested
       if (!includeArchived) {
@@ -112,7 +113,7 @@ export async function GET(
       
       console.log('[Org Comments API] Query result:', { 
         commentsCount: comments?.length || 0, 
-        organizationId: params.id,
+        organizationId: id,
         includeArchived,
         error: commentsError 
       });
@@ -159,13 +160,14 @@ export async function GET(
 // POST new comment with enhanced features
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const body = await request.json();
     const { user, content, type, parentCommentId, contextSection, contextField } = body;
     
-    console.log('[Org Comments API] POST request for organization:', params.id);
+    console.log('[Org Comments API] POST request for organization:', id);
     
     const supabase = getSupabaseAdmin();
     if (!supabase) {
@@ -177,11 +179,11 @@ export async function POST(
     const { data: organization, error: orgError } = await supabase
       .from('organizations')
       .select('id, name')
-      .eq('id', params.id)
+      .eq('id', id)
       .single();
     
     if (orgError || !organization) {
-      console.error('[Org Comments API] Organization not found for comment:', params.id, orgError);
+      console.error('[Org Comments API] Organization not found for comment:', id, orgError);
       return NextResponse.json({ error: 'Organization not found' }, { status: 404 });
     }
     
@@ -204,7 +206,7 @@ export async function POST(
     if (parentCommentId) {
       try {
         const replyData = {
-          organization_id: params.id,
+          organization_id: id,
           parent_comment_id: parentCommentId,
           user_id: userId,
           user_name: user.name || 'Unknown User',
@@ -242,7 +244,7 @@ export async function POST(
       // Try to insert new comment
       try {
         const commentData = {
-          organization_id: params.id,
+          organization_id: id,
           user_id: userId,
           user_name: user.name || 'Unknown User',
           user_role: user.role || 'user',
@@ -299,9 +301,10 @@ export async function POST(
 // PATCH to resolve/update a comment
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const body = await request.json();
     const { commentId, status, resolved } = body;
     
@@ -318,7 +321,7 @@ export async function PATCH(
       .from('organization_comments')
       .update(updateData)
       .eq('id', commentId)
-      .eq('organization_id', params.id);
+      .eq('organization_id', id);
 
     if (error) {
       console.error('[Org Comments API] Error updating comment:', error);

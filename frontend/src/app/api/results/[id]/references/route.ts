@@ -4,8 +4,9 @@ import { getSupabaseAdmin } from '@/lib/supabase';
 // GET /api/results/[id]/references - Fetch all references for a result
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   const supabase = getSupabaseAdmin();
   
   if (!supabase) {
@@ -13,10 +14,11 @@ export async function GET(
   }
 
   try {
+    const { id } = await params;
     const { data, error } = await supabase
       .from('result_references')
       .select('*')
-      .eq('result_id', params.id)
+      .eq('result_id', id)
       .order('created_at', { ascending: true });
 
     if (error) {
@@ -36,8 +38,9 @@ export async function GET(
 // POST /api/results/[id]/references - Create a new reference
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   const supabase = getSupabaseAdmin();
   
   if (!supabase) {
@@ -45,6 +48,7 @@ export async function POST(
   }
 
   try {
+    const { id } = await params;
     const body = await request.json();
 
     // Validate required fields
@@ -55,7 +59,7 @@ export async function POST(
     }
 
     const insertData = {
-      result_id: params.id,
+      result_id: id,
       vocabulary: body.vocabulary,
       code: body.code,
       vocabulary_uri: body.vocabulary_uri || null
@@ -84,8 +88,9 @@ export async function POST(
 // DELETE /api/results/[id]/references - Delete a reference
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   const supabase = getSupabaseAdmin();
   
   if (!supabase) {
@@ -93,6 +98,7 @@ export async function DELETE(
   }
 
   try {
+    const { id } = await params;
     const { searchParams } = new URL(request.url);
     const referenceId = searchParams.get('referenceId');
 
@@ -106,7 +112,7 @@ export async function DELETE(
       .from('result_references')
       .delete()
       .eq('id', referenceId)
-      .eq('result_id', params.id);
+      .eq('result_id', id);
 
     if (error) {
       console.error('[Result References API] Error:', error);

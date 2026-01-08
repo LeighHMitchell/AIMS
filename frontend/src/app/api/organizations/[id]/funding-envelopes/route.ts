@@ -7,11 +7,11 @@ export const dynamic = 'force-dynamic';
 // GET - Fetch all funding envelopes for an organization
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const supabase = getSupabaseAdmin();
-    const organizationId = params.id;
+    const { id: organizationId } = await params;
 
     if (!organizationId) {
       return NextResponse.json({ error: 'Organization ID is required' }, { status: 400 });
@@ -45,11 +45,11 @@ export async function GET(
 // POST - Create a new funding envelope
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const supabase = getSupabaseAdmin();
-    const organizationId = params.id;
+    const { id: organizationId } = await params;
     const body = await request.json();
 
     if (!organizationId) {
@@ -114,7 +114,7 @@ export async function POST(
 // PUT - Update a funding envelope
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const supabase = getSupabaseAdmin();

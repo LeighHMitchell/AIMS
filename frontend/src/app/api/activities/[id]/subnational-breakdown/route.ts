@@ -3,11 +3,12 @@ import { NextRequest, NextResponse } from 'next/server'
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const supabase = getSupabaseAdmin()
-    const activityId = params.id
+    const activityId = id
 
     if (!activityId) {
       return NextResponse.json({ error: 'Activity ID is required' }, { status: 400 })
@@ -51,11 +52,12 @@ export async function GET(
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const supabase = getSupabaseAdmin()
-    const activityId = params.id
+    const activityId = id
 
     if (!activityId) {
       return NextResponse.json({ error: 'Activity ID is required' }, { status: 400 })
@@ -150,11 +152,12 @@ export async function POST(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const supabase = getSupabaseAdmin()
-    const activityId = params.id
+    const activityId = id
 
     if (!activityId) {
       return NextResponse.json({ error: 'Activity ID is required' }, { status: 400 })

@@ -6,9 +6,9 @@ export const dynamic = 'force-dynamic';
 // GET - Fetch government inputs for an activity
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  const activityId = params.id;
+  const { id: activityId } = await params;
   
   try {
     
@@ -94,9 +94,9 @@ export async function GET(
 // POST/PUT - Create or update government inputs for an activity
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  const activityId = params.id;
+  const { id: activityId } = await params;
   let body: any;
   
   try {
@@ -218,7 +218,7 @@ export async function POST(
 // PUT - Update government inputs (alias for POST for consistency)
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   return POST(request, { params });
 }
@@ -226,10 +226,10 @@ export async function PUT(
 // DELETE - Delete government inputs for an activity
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const activityId = params.id;
+    const { id: activityId } = await params;
     
     if (!activityId) {
       return NextResponse.json({ error: 'Activity ID is required' }, { status: 400 });

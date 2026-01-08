@@ -4,8 +4,9 @@ import { getSupabaseAdmin } from '@/lib/supabase';
 // GET /api/results/[id]/documents - Fetch all document links for a result
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   const supabase = getSupabaseAdmin();
   
   if (!supabase) {
@@ -13,10 +14,11 @@ export async function GET(
   }
 
   try {
+    const { id } = await params;
     const { data, error } = await supabase
       .from('result_document_links')
       .select('*')
-      .eq('result_id', params.id)
+      .eq('result_id', id)
       .order('created_at', { ascending: true });
 
     if (error) {
@@ -36,8 +38,9 @@ export async function GET(
 // POST /api/results/[id]/documents - Create a new document link
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   const supabase = getSupabaseAdmin();
   
   if (!supabase) {
@@ -45,6 +48,7 @@ export async function POST(
   }
 
   try {
+    const { id } = await params;
     const body = await request.json();
 
     // Validate required fields
@@ -64,7 +68,7 @@ export async function POST(
       : null;
 
     const insertData = {
-      result_id: params.id,
+      result_id: id,
       url: body.url,
       title,
       description,
@@ -97,8 +101,9 @@ export async function POST(
 // PUT /api/results/[id]/documents - Update a document link
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   const supabase = getSupabaseAdmin();
   
   if (!supabase) {
@@ -106,6 +111,7 @@ export async function PUT(
   }
 
   try {
+    const { id } = await params;
     const body = await request.json();
     const { documentId, ...updateData } = body;
 
@@ -127,7 +133,7 @@ export async function PUT(
       .from('result_document_links')
       .update({ ...updateData, updated_at: new Date().toISOString() })
       .eq('id', documentId)
-      .eq('result_id', params.id)
+      .eq('result_id', id)
       .select()
       .single();
 
@@ -148,8 +154,9 @@ export async function PUT(
 // DELETE /api/results/[id]/documents - Delete a document link
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   const supabase = getSupabaseAdmin();
   
   if (!supabase) {
@@ -157,6 +164,7 @@ export async function DELETE(
   }
 
   try {
+    const { id } = await params;
     const { searchParams } = new URL(request.url);
     const documentId = searchParams.get('documentId');
 
@@ -170,7 +178,7 @@ export async function DELETE(
       .from('result_document_links')
       .delete()
       .eq('id', documentId)
-      .eq('result_id', params.id);
+      .eq('result_id', id);
 
     if (error) {
       console.error('[Result Documents API] Error:', error);

@@ -4,8 +4,9 @@ import { getSupabaseAdmin } from '@/lib/supabase';
 // GET /api/baselines/[id]/dimensions - Fetch all dimensions for a baseline
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   const supabase = getSupabaseAdmin();
   
   if (!supabase) {
@@ -13,10 +14,11 @@ export async function GET(
   }
 
   try {
+    const { id } = await params;
     const { data, error } = await supabase
       .from('baseline_dimensions')
       .select('*')
-      .eq('baseline_id', params.id)
+      .eq('baseline_id', id)
       .order('created_at', { ascending: true });
 
     if (error) {
@@ -36,8 +38,9 @@ export async function GET(
 // POST /api/baselines/[id]/dimensions - Create a new dimension
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   const supabase = getSupabaseAdmin();
   
   if (!supabase) {
@@ -45,6 +48,7 @@ export async function POST(
   }
 
   try {
+    const { id } = await params;
     const body = await request.json();
 
     if (!body.name || !body.value) {
@@ -54,7 +58,7 @@ export async function POST(
     }
 
     const insertData = {
-      baseline_id: params.id,
+      baseline_id: id,
       name: body.name,
       value: body.value
     };
@@ -82,8 +86,9 @@ export async function POST(
 // DELETE /api/baselines/[id]/dimensions - Delete a dimension
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   const supabase = getSupabaseAdmin();
   
   if (!supabase) {
@@ -91,6 +96,7 @@ export async function DELETE(
   }
 
   try {
+    const { id } = await params;
     const { searchParams } = new URL(request.url);
     const dimensionId = searchParams.get('dimensionId');
 
@@ -104,7 +110,7 @@ export async function DELETE(
       .from('baseline_dimensions')
       .delete()
       .eq('id', dimensionId)
-      .eq('baseline_id', params.id);
+      .eq('baseline_id', id);
 
     if (error) {
       console.error('[Baseline Dimensions API] Error:', error);

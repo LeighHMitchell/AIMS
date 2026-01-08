@@ -7,7 +7,7 @@ export const dynamic = 'force-dynamic';
 // Toggle like on a public comment
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string; commentId: string } }
+  { params }: { params: Promise<{ id: string; commentId: string }> }
 ) {
   try {
     const supabase = getSupabaseAdmin();

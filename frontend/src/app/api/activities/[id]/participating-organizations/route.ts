@@ -51,10 +51,10 @@ export async function OPTIONS() {
 // GET /api/activities/[id]/participating-organizations
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const activityId = params.id;
+    const { id: activityId } = await params;
     console.log('[AIMS] GET /api/activities/[id]/participating-organizations for activity:', activityId);
     
     const supabaseAdmin = getSupabaseAdmin();
@@ -103,10 +103,10 @@ export async function GET(
 // POST /api/activities/[id]/participating-organizations
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const activityId = params.id;
+    const { id: activityId } = await params;
     const body = await request.json();
     console.log('[AIMS] POST /api/activities/[id]/participating-organizations for activity:', activityId);
     console.log('[AIMS] Request body:', JSON.stringify(body, null, 2));
@@ -233,10 +233,10 @@ export async function POST(
 // PUT /api/activities/[id]/participating-organizations
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const activityId = params.id;
+    const { id: activityId } = await params;
     const body = await request.json();
     console.log('[AIMS] PUT /api/activities/[id]/participating-organizations for activity:', activityId);
     console.log('[AIMS] Request body:', JSON.stringify(body, null, 2));
@@ -348,10 +348,10 @@ export async function PUT(
 // DELETE /api/activities/[id]/participating-organizations
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const activityId = params.id;
+    const { id: activityId } = await params;
     const url = new URL(request.url);
     const participatingOrgId = url.searchParams.get('id');
     const organizationId = url.searchParams.get('organization_id');

@@ -3,10 +3,10 @@ import { getSupabaseAdmin } from '@/lib/supabase';
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string; tagId: string } }
+  { params }: { params: Promise<{ id: string; tagId: string }> }
 ) {
   try {
-    const { id: activityId, tagId } = params;
+    const { id: activityId, tagId } = await params;
 
     if (!activityId || !tagId) {
       return NextResponse.json(

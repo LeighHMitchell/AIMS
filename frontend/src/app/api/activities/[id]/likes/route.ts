@@ -7,7 +7,7 @@ export const dynamic = 'force-dynamic';
 // Get likes info for an activity
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const supabase = getSupabaseAdmin();
@@ -18,7 +18,7 @@ export async function GET(
       );
     }
 
-    const { id: activityId } = params;
+    const { id: activityId } = await params;
     const { searchParams } = new URL(request.url);
     const userId = searchParams.get('userId');
     const limit = parseInt(searchParams.get('limit') || '10');
@@ -113,7 +113,7 @@ export async function GET(
 // Toggle like on an activity
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const supabase = getSupabaseAdmin();
@@ -124,7 +124,7 @@ export async function POST(
       );
     }
 
-    const { id: activityId } = params;
+    const { id: activityId } = await params;
     const body = await request.json();
     const { userId } = body;
 

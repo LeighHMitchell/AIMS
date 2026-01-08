@@ -15,11 +15,12 @@ export async function OPTIONS() {
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  console.log('[AIMS] GET /api/organizations/[id] - Starting request for ID:', params.id);
+  console.log('[AIMS] GET /api/organizations/[id] - Starting request for ID:', id);
   
   try {
+    const { id } = await params;
     // Check if getSupabaseAdmin() is properly initialized
     if (!getSupabaseAdmin()) {
       console.error('[AIMS] getSupabaseAdmin() is not initialized');
@@ -32,7 +33,7 @@ export async function GET(
     const { data: organization, error } = await getSupabaseAdmin()
       .from('organizations')
       .select('*')
-      .eq('id', params.id)
+      .eq('id', id)
       .single();
     
     if (error) {
@@ -55,12 +56,12 @@ export async function GET(
     const { data: activities, error: activitiesError } = await getSupabaseAdmin()
       .from('activities')
       .select('id')
-      .eq('reporting_org_id', params.id);
+      .eq('reporting_org_id', id);
     
     const { data: contributions, error: contributionsError } = await getSupabaseAdmin()
       .from('activity_contributors')
       .select('activity_id')
-      .eq('organization_id', params.id)
+      .eq('organization_id', id)
       .in('contribution_type', ['funder', 'implementer', 'funding', 'implementing']);
     
     let totalActivitiesCount = 0;
@@ -119,11 +120,12 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  console.log('[AIMS] PUT /api/organizations/[id] - Updating organization:', params.id);
+  console.log('[AIMS] PUT /api/organizations/[id] - Updating organization:', id);
   
   try {
+    const { id } = await params;
     const body = await request.json();
     
     // Remove computed fields before updating
@@ -145,7 +147,7 @@ export async function PUT(
             .from('organizations')
             .select('id, iati_org_id, name')
             .in('iati_org_id', updates.alias_refs)
-            .neq('id', params.id);
+            .neq('id', id);
           
           if (conflictOrgs && conflictOrgs.length > 0) {
             const conflicts = conflictOrgs.map(o => `${o.iati_org_id} (${o.name})`).join(', ');
@@ -213,7 +215,7 @@ export async function PUT(
     const { data, error } = await getSupabaseAdmin()
       .from('organizations')
       .update(updates)
-      .eq('id', params.id)
+      .eq('id', id)
       .select()
       .single();
     
@@ -243,16 +245,17 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  console.log('[AIMS] DELETE /api/organizations/[id] - Deleting organization:', params.id);
+  console.log('[AIMS] DELETE /api/organizations/[id] - Deleting organization:', id);
   
   try {
+    const { id } = await params;
     // Check if organization has dependencies
     const { data: users } = await getSupabaseAdmin()
       .from('users')
       .select('id')
-      .eq('organization_id', params.id)
+      .eq('organization_id', id)
       .limit(1);
     
     if (users && users.length > 0) {
@@ -266,7 +269,7 @@ export async function DELETE(
     const { data: activities } = await getSupabaseAdmin()
       .from('activities')
       .select('id')
-      .eq('created_by_org', params.id)
+      .eq('created_by_org', id)
       .limit(1);
     
     if (activities && activities.length > 0) {
@@ -279,14 +282,14 @@ export async function DELETE(
     const { error } = await getSupabaseAdmin()
       .from('organizations')
       .delete()
-      .eq('id', params.id);
+      .eq('id', id);
     
     if (error) {
       console.error('[AIMS] Error deleting organization:', error);
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
     
-    console.log('[AIMS] Deleted organization:', params.id);
+    console.log('[AIMS] Deleted organization:', id);
     
     const response = NextResponse.json({ success: true });
     

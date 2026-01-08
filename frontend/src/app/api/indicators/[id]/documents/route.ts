@@ -4,8 +4,9 @@ import { getSupabaseAdmin } from '@/lib/supabase';
 // GET /api/indicators/[id]/documents - Fetch all document links for an indicator
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   const supabase = getSupabaseAdmin();
   
   if (!supabase) {
@@ -13,10 +14,11 @@ export async function GET(
   }
 
   try {
+    const { id } = await params;
     const { data, error } = await supabase
       .from('indicator_document_links')
       .select('*')
-      .eq('indicator_id', params.id)
+      .eq('indicator_id', id)
       .order('created_at', { ascending: true });
 
     if (error) {
@@ -36,8 +38,9 @@ export async function GET(
 // POST /api/indicators/[id]/documents - Create a new document link
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   const supabase = getSupabaseAdmin();
   
   if (!supabase) {
@@ -45,6 +48,7 @@ export async function POST(
   }
 
   try {
+    const { id } = await params;
     const body = await request.json();
 
     if (!body.url || !body.title) {
@@ -59,7 +63,7 @@ export async function POST(
       : null;
 
     const insertData = {
-      indicator_id: params.id,
+      indicator_id: id,
       url: body.url,
       title,
       description,
@@ -92,8 +96,9 @@ export async function POST(
 // DELETE /api/indicators/[id]/documents - Delete a document link
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   const supabase = getSupabaseAdmin();
   
   if (!supabase) {
@@ -101,6 +106,7 @@ export async function DELETE(
   }
 
   try {
+    const { id } = await params;
     const { searchParams } = new URL(request.url);
     const documentId = searchParams.get('documentId');
 
@@ -114,7 +120,7 @@ export async function DELETE(
       .from('indicator_document_links')
       .delete()
       .eq('id', documentId)
-      .eq('indicator_id', params.id);
+      .eq('indicator_id', id);
 
     if (error) {
       console.error('[Indicator Documents API] Error:', error);

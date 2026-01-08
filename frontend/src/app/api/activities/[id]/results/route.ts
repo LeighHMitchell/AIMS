@@ -4,7 +4,7 @@ import { getSupabaseAdmin } from '@/lib/supabase';
 // GET /api/activities/[id]/results - Fetch all results for an activity
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const supabase = getSupabaseAdmin();
   
@@ -17,7 +17,7 @@ export async function GET(
   }
 
   try {
-    const activityId = params.id;
+    const { id: activityId } = await params;
     console.log(`[Results API] Fetching results for activity: ${activityId}`);
 
     // Fetch results with all IATI-compliant relations
@@ -118,7 +118,7 @@ export async function GET(
 // POST /api/activities/[id]/results - Create a new result
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const supabase = getSupabaseAdmin();
   
@@ -128,7 +128,7 @@ export async function POST(
   }
 
   try {
-    const activityId = params.id;
+    const { id: activityId } = await params;
     const body = await request.json();
 
     console.log(`[Results API] Creating result for activity: ${activityId}`);

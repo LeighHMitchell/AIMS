@@ -4,10 +4,10 @@ import { applyAutoMapping } from '@/lib/sector-budget-mapping-service';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const activityId = params.id;
+    const { id: activityId } = await params;
     
     // Fetch existing sector allocations for this activity
     const { data: sectors, error } = await getSupabaseAdmin()
@@ -30,10 +30,10 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const activityId = params.id;
+    const { id: activityId } = await params;
     const { sectors } = await request.json();
 
     // Validate total percentage
@@ -126,10 +126,10 @@ export async function PUT(
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const activityId = params.id;
+    const { id: activityId } = await params;
     const { sectors, replace = false } = await request.json();
 
     console.log('[Sectors API] POST request for activity:', activityId);

@@ -5,10 +5,11 @@ import { locationFormSchema, type LocationFormSchema } from '@/lib/schemas/locat
 // GET - Fetch a single location
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const locationId = params.id;
+    const { id } = await params;
+    const locationId = id;
 
     if (!locationId) {
       return NextResponse.json(
@@ -102,10 +103,11 @@ export async function GET(
 // PATCH - Update a single location
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const locationId = params.id;
+    const { id } = await params;
+    const locationId = id;
     const body = await request.json();
 
     console.log('[Location API] 🔄 PATCH request received for location:', locationId);
@@ -245,10 +247,11 @@ export async function PATCH(
 // DELETE - Delete a single location
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const locationId = params.id;
+    const { id } = await params;
+    const locationId = id;
 
     if (!locationId) {
       return NextResponse.json(

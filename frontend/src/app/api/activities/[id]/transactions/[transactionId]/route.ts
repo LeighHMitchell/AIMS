@@ -5,10 +5,10 @@ import { convertTransactionToUSD, addUSDFieldsToTransaction } from '@/lib/transa
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string; transactionId: string } }
+  { params }: { params: Promise<{ id: string; transactionId: string }> }
 ) {
   try {
-    const { transactionId } = params;
+    const { transactionId } = await params;
     const body = await request.json();
 
     // Handle value_date logic - only store if different from transaction_date
@@ -171,10 +171,10 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string; transactionId: string } }
+  { params }: { params: Promise<{ id: string; transactionId: string }> }
 ) {
   try {
-    const { transactionId } = params;
+    const { transactionId } = await params;
     if (!transactionId || transactionId === 'undefined') {
       return NextResponse.json(
         { error: 'Transaction ID is required and must be a valid UUID.' },

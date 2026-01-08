@@ -5,10 +5,10 @@ import { CopyFromActivityRequest, TransactionSectorsResponse } from '@/types/tra
 // POST /api/transactions/[transactionId]/sectors/copy-from-activity
 export async function POST(
   request: NextRequest,
-  { params }: { params: { transactionId: string } }
+  { params }: { params: Promise<{ transactionId: string }> }
 ) {
   try {
-    const transactionId = params.transactionId;
+    const { transactionId } = await params;
     const body: CopyFromActivityRequest = await request.json();
     const supabase = getSupabaseAdmin();
     
