@@ -12,23 +12,37 @@ const MagnifierIcon = forwardRef<AnimatedIconHandle, AnimatedIconProps>(
     const [scope, animate] = useAnimate();
 
     const start = async () => {
-      await animate(
-        ".magnifier-group",
-        {
-          x: [0, 1, 0, -1, 0],
-          y: [0, -1, -2, -1, 0],
-          rotate: [0, -5, 5, -5, 0],
-        },
-        { duration: 1, ease: "easeInOut" },
-      );
+      // Guard: check if scope is mounted and elements exist
+      if (!scope.current?.querySelector('.magnifier-group')) return;
+
+      try {
+        await animate(
+          ".magnifier-group",
+          {
+            x: [0, 1, 0, -1, 0],
+            y: [0, -1, -2, -1, 0],
+            rotate: [0, -5, 5, -5, 0],
+          },
+          { duration: 1, ease: "easeInOut" },
+        );
+      } catch (e) {
+        // Ignore animation errors during unmount/hydration
+      }
     };
 
     const stop = () => {
-      animate(
-        ".magnifier-group",
-        { x: 0, y: 0, rotate: 0 },
-        { duration: 0.2, ease: "easeOut" },
-      );
+      // Guard: check if scope is mounted
+      if (!scope.current) return;
+
+      try {
+        animate(
+          ".magnifier-group",
+          { x: 0, y: 0, rotate: 0 },
+          { duration: 0.2, ease: "easeOut" },
+        );
+      } catch (e) {
+        // Ignore animation errors
+      }
     };
 
     useImperativeHandle(ref, () => ({

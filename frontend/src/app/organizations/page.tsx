@@ -353,6 +353,8 @@ interface Organization {
   updated_at: string
   // Computed fields
   activeProjects: number
+  reportedActivities?: number
+  associatedActivities?: number
   totalBudgeted?: number
   totalDisbursed?: number
   displayName: string
@@ -1193,7 +1195,7 @@ function OrganizationsPageContent() {
   const [selectedGroup, setSelectedGroup] = useState<any>(null)
   
   // Sorting state for table view
-  const [sortField, setSortField] = useState<'name' | 'acronym' | 'type' | 'location' | 'activities' | 'funding' | 'created_at'>('name')
+  const [sortField, setSortField] = useState<'name' | 'acronym' | 'type' | 'location' | 'activities' | 'reported' | 'associated' | 'funding' | 'created_at'>('name')
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc')
   
   // AbortController refs for race condition prevention
@@ -1255,6 +1257,14 @@ function OrganizationsPageContent() {
         case 'activities':
           aValue = a.activeProjects || 0
           bValue = b.activeProjects || 0
+          break
+        case 'reported':
+          aValue = a.reportedActivities ?? a.activeProjects ?? 0
+          bValue = b.reportedActivities ?? b.activeProjects ?? 0
+          break
+        case 'associated':
+          aValue = a.associatedActivities ?? 0
+          bValue = b.associatedActivities ?? 0
           break
         case 'funding':
           aValue = a.totalBudgeted || 0
@@ -1596,7 +1606,7 @@ function OrganizationsPageContent() {
   }
 
   // Handle table sorting
-  const handleSort = (field: 'name' | 'acronym' | 'type' | 'location' | 'activities' | 'funding' | 'created_at') => {
+  const handleSort = (field: 'name' | 'acronym' | 'type' | 'location' | 'activities' | 'reported' | 'associated' | 'funding' | 'created_at') => {
     if (sortField === field) {
       setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')
     } else {
@@ -1897,7 +1907,7 @@ function OrganizationsPageContent() {
                 <div className="space-y-6">
                   {/* Action buttons for custom groups */}
                   <div className="flex justify-end">
-                    <Button 
+                    <Button
                       onClick={() => setCreateGroupModalOpen(true)}
                       className="flex items-center space-x-2"
                     >
@@ -1905,38 +1915,144 @@ function OrganizationsPageContent() {
                       <span>Create New Group</span>
                     </Button>
                   </div>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {customGroups.map((group) => (
-                      <CustomGroupCard
-                        key={group.id}
-                        group={group}
-                        onEdit={(group) => {
-                          setSelectedGroup(group)
-                          setEditGroupModalOpen(true)
-                        }}
-                        onDelete={async (group) => {
-                          if (!confirm('Are you sure you want to delete this group?')) return
-                          
-                          try {
-                            const response = await fetch(`/api/custom-groups/${group.id}`, {
-                              method: 'DELETE'
-                            })
-                            
-                            if (response.ok) {
-                              toast.success('Group deleted successfully')
-                              fetchCustomGroups()
-                            } else {
-                              toast.error('Failed to delete group')
+
+                  {viewMode === 'card' ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                      {customGroups.map((group) => (
+                        <CustomGroupCard
+                          key={group.id}
+                          group={group}
+                          onEdit={(group) => {
+                            setSelectedGroup(group)
+                            setEditGroupModalOpen(true)
+                          }}
+                          onDelete={async (group) => {
+                            if (!confirm('Are you sure you want to delete this group?')) return
+
+                            try {
+                              const response = await fetch(`/api/custom-groups/${group.id}`, {
+                                method: 'DELETE'
+                              })
+
+                              if (response.ok) {
+                                toast.success('Group deleted successfully')
+                                fetchCustomGroups()
+                              } else {
+                                toast.error('Failed to delete group')
+                              }
+                            } catch (error) {
+                              console.error('Error deleting group:', error)
+                              toast.error('Error deleting group')
                             }
-                          } catch (error) {
-                            console.error('Error deleting group:', error)
-                            toast.error('Error deleting group')
-                          }
-                        }}
-                      />
-                    ))}
-                  </div>
+                          }}
+                        />
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="bg-white rounded-md shadow-sm border border-gray-200 overflow-hidden">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead className="w-[30%]">Group Name</TableHead>
+                            <TableHead className="w-[35%]">Description</TableHead>
+                            <TableHead className="text-center w-[10%]">Members</TableHead>
+                            <TableHead className="text-center w-[10%]">Visibility</TableHead>
+                            <TableHead className="text-right w-[15%]">Actions</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {customGroups.map((group) => (
+                            <TableRow
+                              key={group.id}
+                              className="cursor-pointer hover:bg-muted"
+                              onClick={() => router.push(`/partners/groups/${group.id}`)}
+                            >
+                              <TableCell className="font-medium">
+                                <div className="flex items-center gap-3">
+                                  {group.logo ? (
+                                    <img src={group.logo} alt={group.name} className="w-8 h-8 rounded-full object-contain" />
+                                  ) : (
+                                    <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
+                                      <Users className="h-4 w-4 text-purple-600" />
+                                    </div>
+                                  )}
+                                  <span>{group.name}</span>
+                                </div>
+                              </TableCell>
+                              <TableCell className="text-gray-600 text-sm">
+                                {group.description ? (
+                                  <span className="line-clamp-2">{group.description}</span>
+                                ) : (
+                                  <span className="text-gray-400">No description</span>
+                                )}
+                              </TableCell>
+                              <TableCell className="text-center">
+                                <span className="font-medium">{group.members?.length || 0}</span>
+                              </TableCell>
+                              <TableCell className="text-center">
+                                {group.is_public ? (
+                                  <span className="inline-flex items-center text-xs text-green-700">
+                                    <Globe className="h-3 w-3 mr-1" />
+                                    Public
+                                  </span>
+                                ) : (
+                                  <span className="inline-flex items-center text-xs text-gray-600">
+                                    <Lock className="h-3 w-3 mr-1" />
+                                    Private
+                                  </span>
+                                )}
+                              </TableCell>
+                              <TableCell className="text-right">
+                                <div className="flex items-center justify-end gap-1" onClick={(e) => e.stopPropagation()}>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => router.push(`/partners/groups/${group.id}`)}
+                                  >
+                                    <Eye className="h-4 w-4" />
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => {
+                                      setSelectedGroup(group)
+                                      setEditGroupModalOpen(true)
+                                    }}
+                                  >
+                                    <Edit2 className="h-4 w-4" />
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="text-red-600 hover:text-red-700"
+                                    onClick={async () => {
+                                      if (!confirm('Are you sure you want to delete this group?')) return
+                                      try {
+                                        const response = await fetch(`/api/custom-groups/${group.id}`, {
+                                          method: 'DELETE'
+                                        })
+                                        if (response.ok) {
+                                          toast.success('Group deleted successfully')
+                                          fetchCustomGroups()
+                                        } else {
+                                          toast.error('Failed to delete group')
+                                        }
+                                      } catch (error) {
+                                        console.error('Error deleting group:', error)
+                                        toast.error('Error deleting group')
+                                      }
+                                    }}
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  )}
                 </div>
               ) : (
                 <div className="text-center py-12">

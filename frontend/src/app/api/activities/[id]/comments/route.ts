@@ -19,6 +19,95 @@ function isValidUUID(uuid: string): boolean {
   return uuidRegex.test(uuid);
 }
 
+// Helper to create notifications for activity stakeholders
+async function createCommentNotifications(
+  supabase: any,
+  activityId: string,
+  activityTitle: string,
+  commentAuthorId: string,
+  commentAuthorName: string,
+  commentContent: string,
+  commentType: string
+) {
+  try {
+    // Get the activity's submitted_by user
+    const { data: activity } = await supabase
+      .from('activities')
+      .select('submitted_by, submitted_by_name')
+      .eq('id', activityId)
+      .single();
+
+    // Get focal points for this activity
+    const { data: focalPoints } = await supabase
+      .from('activity_contact_persons')
+      .select('user_id, person_name, type')
+      .eq('activity_id', activityId)
+      .in('type', ['government_focal_point', 'development_partner_focal_point']);
+
+    // Collect all recipient user IDs (excluding the comment author)
+    const recipientUserIds = new Set<string>();
+
+    // Add submitted_by user if they exist and are not the comment author
+    if (activity?.submitted_by && activity.submitted_by !== commentAuthorId) {
+      recipientUserIds.add(activity.submitted_by);
+    }
+
+    // Add focal points who are not the comment author
+    if (focalPoints && focalPoints.length > 0) {
+      for (const fp of focalPoints) {
+        if (fp.user_id && fp.user_id !== commentAuthorId) {
+          recipientUserIds.add(fp.user_id);
+        }
+      }
+    }
+
+    if (recipientUserIds.size === 0) {
+      console.log('[AIMS Comments API] No recipients for notification (author is the only stakeholder)');
+      return;
+    }
+
+    // Create a preview of the comment (first 100 characters)
+    const commentPreview = commentContent.length > 100
+      ? commentContent.substring(0, 100) + '...'
+      : commentContent;
+
+    // Truncate activity title if too long
+    const shortTitle = activityTitle && activityTitle.length > 50
+      ? activityTitle.substring(0, 50) + '...'
+      : (activityTitle || 'an activity');
+
+    // Create notifications for each recipient
+    const notifications = Array.from(recipientUserIds).map(userId => ({
+      user_id: userId,
+      type: 'activity_comment',
+      title: `New ${commentType.toLowerCase()} on "${shortTitle}"`,
+      message: `${commentAuthorName}: "${commentPreview}"`,
+      link: `/activities/${activityId}`,
+      metadata: {
+        activity_id: activityId,
+        comment_author_id: commentAuthorId,
+        comment_author_name: commentAuthorName,
+        comment_type: commentType
+      },
+      is_read: false,
+      created_at: new Date().toISOString()
+    }));
+
+    const { error: notificationError } = await supabase
+      .from('user_notifications')
+      .insert(notifications);
+
+    if (notificationError) {
+      console.error('[AIMS Comments API] Error creating notifications:', notificationError);
+    } else {
+      console.log(`[AIMS Comments API] Created ${notifications.length} notifications for comment`);
+    }
+  } catch (error) {
+    // Don't fail the comment creation if notifications fail
+    console.error('[AIMS Comments API] Error in createCommentNotifications:', error);
+  }
+}
+
 // Helper to parse mentions from message
 function parseMentions(message: string): Array<{id: string, name: string, type: 'user' | 'organization'}> {
   const mentions: Array<{id: string, name: string, type: 'user' | 'organization'}> = [];
@@ -237,21 +326,32 @@ export async function POST(
         
         if (replyError) {
           console.error('[AIMS Comments API] Error adding reply:', replyError);
-          
+
           // Check if table doesn't exist
           if (replyError.code === '42P01') {
-            return NextResponse.json({ 
-              error: 'Comments feature not available - database setup required. Run activate-advanced-comments.sql in Supabase.' 
+            return NextResponse.json({
+              error: 'Comments feature not available - database setup required. Run activate-advanced-comments.sql in Supabase.'
             }, { status: 503 });
           }
-          
+
           return NextResponse.json(
             { error: `Failed to add reply: ${replyError.message}` },
             { status: 500 }
           );
         }
-        
+
         console.log(`[AIMS Comments API] Reply added successfully:`, newReply);
+
+        // Create notifications for activity stakeholders (async, don't await)
+        createCommentNotifications(
+          supabase,
+          params.id,
+          activity.title_narrative || '',
+          userId,
+          user.name || 'Unknown User',
+          content,
+          type || 'Feedback'
+        );
       } catch (tableError) {
         console.error('[AIMS Comments API] Table access error for replies:', tableError);
         return NextResponse.json({ 
@@ -288,14 +388,14 @@ export async function POST(
         
         if (commentError) {
           console.error('[AIMS Comments API] Error adding comment:', commentError);
-          
+
           // Check if table doesn't exist
           if (commentError.code === '42P01') {
-            return NextResponse.json({ 
-              error: 'Comments feature not available - database setup required. Run activate-advanced-comments.sql in Supabase.' 
+            return NextResponse.json({
+              error: 'Comments feature not available - database setup required. Run activate-advanced-comments.sql in Supabase.'
             }, { status: 503 });
           }
-          
+
           console.error('[AIMS Comments API] Error details:', {
             code: commentError.code,
             message: commentError.message,
@@ -307,8 +407,19 @@ export async function POST(
             { status: 500 }
           );
         }
-        
+
         console.log(`[AIMS Comments API] Comment added successfully:`, newComment);
+
+        // Create notifications for activity stakeholders (async, don't await)
+        createCommentNotifications(
+          supabase,
+          params.id,
+          activity.title_narrative || '',
+          userId,
+          user.name || 'Unknown User',
+          content,
+          type || 'Feedback'
+        );
       } catch (tableError) {
         console.error('[AIMS Comments API] Table access error for comments:', tableError);
         return NextResponse.json({ 

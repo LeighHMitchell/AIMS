@@ -184,7 +184,55 @@ export async function GET(
     }
 
     const transactions = allTransactions;
-    
+
+    // Fetch sector lines and aid type lines for all transactions
+    const transactionIds = transactions.map((t: any) => t.uuid).filter(Boolean);
+
+    let sectorLinesMap: Record<string, any[]> = {};
+    let aidTypeLinesMap: Record<string, any[]> = {};
+
+    if (transactionIds.length > 0) {
+      // Fetch sector lines
+      const { data: sectorLines } = await getSupabaseAdmin()
+        .from('transaction_sector_lines')
+        .select('transaction_id, sector_code, sector_vocabulary, sector_name, percentage')
+        .in('transaction_id', transactionIds)
+        .is('deleted_at', null);
+
+      if (sectorLines) {
+        sectorLines.forEach((sl: any) => {
+          if (!sectorLinesMap[sl.transaction_id]) {
+            sectorLinesMap[sl.transaction_id] = [];
+          }
+          sectorLinesMap[sl.transaction_id].push({
+            code: sl.sector_code,
+            vocabulary: sl.sector_vocabulary,
+            narrative: sl.sector_name,
+            percentage: sl.percentage
+          });
+        });
+      }
+
+      // Fetch aid type lines
+      const { data: aidTypeLines } = await getSupabaseAdmin()
+        .from('transaction_aid_type_lines')
+        .select('transaction_id, aid_type_code, aid_type_vocabulary')
+        .in('transaction_id', transactionIds)
+        .is('deleted_at', null);
+
+      if (aidTypeLines) {
+        aidTypeLines.forEach((atl: any) => {
+          if (!aidTypeLinesMap[atl.transaction_id]) {
+            aidTypeLinesMap[atl.transaction_id] = [];
+          }
+          aidTypeLinesMap[atl.transaction_id].push({
+            code: atl.aid_type_code,
+            vocabulary: atl.aid_type_vocabulary
+          });
+        });
+      }
+    }
+
     // Map uuid to id for frontend compatibility and ensure all required fields
     const transformedTransactions = (transactions || []).map((t: any) => ({
       ...t,
@@ -197,6 +245,9 @@ export async function GET(
       // Update org names to use joined data if available
       provider_org_name: t.provider_organization?.acronym || t.provider_organization?.name || t.provider_org_name,
       receiver_org_name: t.receiver_organization?.acronym || t.receiver_organization?.name || t.receiver_org_name,
+      // Include sector lines and aid type lines
+      sectors: sectorLinesMap[t.uuid] || [],
+      aid_types: aidTypeLinesMap[t.uuid] || [],
     }));
     
     console.log(`[AIMS] Successfully fetched ${transformedTransactions.length} transactions for activity ${activityId}`);

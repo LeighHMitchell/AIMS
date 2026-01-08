@@ -9,13 +9,18 @@ import { Card, CardContent } from "@/components/ui/card";
 import { useRouter } from "next/navigation";
 import { format } from "date-fns";
 import { toast } from "sonner";
-import { Download, ChevronUp, ChevronDown, ChevronsUpDown, Frown, ChevronLeft, ChevronRight, Columns3, Search, Receipt, ShieldCheck, Building2, Banknote } from "lucide-react";
+import { Download, ChevronUp, ChevronDown, ChevronsUpDown, Frown, ChevronLeft, ChevronRight, Receipt, ShieldCheck, Building2, Banknote, Search } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { MultiSelectFilter } from "@/components/ui/multi-select-filter";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Badge } from "@/components/ui/badge";
+import { ColumnSelector } from "@/components/ui/column-selector";
+import {
+  TransactionColumnId,
+  transactionColumns,
+  transactionColumnGroups,
+  defaultVisibleTransactionColumns,
+  TRANSACTION_COLUMNS_LOCALSTORAGE_KEY,
+} from "./columns";
 import { TransactionTable } from "@/components/transactions/TransactionTable";
 import { useTransactions } from "@/hooks/useTransactions";
 import { TRANSACTION_TYPE_LABELS, Transaction } from "@/types/transaction";
@@ -41,287 +46,6 @@ type FilterState = {
   transactionSource: string;
 };
 
-// Column configuration for the transaction list table
-export type TransactionColumnId = 
-  // Always visible
-  | 'checkbox' | 'actions'
-  // Default visible
-  | 'activity' | 'transactionDate' | 'transactionType' | 'organizations' 
-  | 'amount' | 'valueDate' | 'usdValue' | 'financeType'
-  // Activity Context (optional)
-  | 'activityId' | 'iatiIdentifier' | 'reportingOrg'
-  // Transaction Details (optional)
-  | 'currency' | 'transactionUuid' | 'transactionReference'
-  // Status Indicators (optional)
-  | 'linkedStatus' | 'acceptanceStatus' | 'validatedStatus'
-  // Classification (optional, gray if inherited)
-  | 'aidType' | 'flowType' | 'tiedStatus' | 'humanitarian'
-  // Organization Details (optional)
-  | 'providerActivity' | 'receiverActivity'
-  // Additional Details (optional)
-  | 'description' | 'disbursementChannel';
-
-interface TransactionColumnConfig {
-  id: TransactionColumnId;
-  label: string;
-  group: 'default' | 'activityContext' | 'transactionDetails' | 'statusIndicators' 
-       | 'classification' | 'organizationDetails' | 'additionalDetails';
-  width?: string;
-  alwaysVisible?: boolean;
-  defaultVisible?: boolean;
-  sortable?: boolean;
-  align?: 'left' | 'center' | 'right';
-}
-
-const TRANSACTION_COLUMN_CONFIGS: TransactionColumnConfig[] = [
-  // Default columns (8 default visible + 2 always visible)
-  { id: 'checkbox', label: 'Select', group: 'default', alwaysVisible: true, defaultVisible: true },
-  { id: 'activity', label: 'Activity', group: 'default', defaultVisible: true, sortable: true },
-  { id: 'transactionDate', label: 'Date', group: 'default', defaultVisible: true, sortable: true },
-  { id: 'transactionType', label: 'Type', group: 'default', defaultVisible: true, sortable: true },
-  { id: 'organizations', label: 'Provider → Receiver', group: 'default', defaultVisible: true, sortable: true },
-  { id: 'amount', label: 'Amount', group: 'default', defaultVisible: true, sortable: true, align: 'right' },
-  { id: 'valueDate', label: 'Value Date', group: 'default', defaultVisible: true, sortable: true },
-  { id: 'usdValue', label: 'USD Value', group: 'default', defaultVisible: true, sortable: true, align: 'right' },
-  { id: 'financeType', label: 'Finance Type', group: 'default', defaultVisible: true },
-  { id: 'actions', label: 'Actions', group: 'default', alwaysVisible: true, defaultVisible: true },
-  
-  // Activity Context
-  { id: 'activityId', label: 'Activity ID', group: 'activityContext', defaultVisible: false },
-  { id: 'iatiIdentifier', label: 'IATI Identifier', group: 'activityContext', defaultVisible: false },
-  { id: 'reportingOrg', label: 'Reporting Org', group: 'activityContext', defaultVisible: false },
-  
-  // Transaction Details
-  { id: 'currency', label: 'Currency', group: 'transactionDetails', defaultVisible: false },
-  { id: 'transactionUuid', label: 'Transaction UUID', group: 'transactionDetails', defaultVisible: false },
-  { id: 'transactionReference', label: 'Transaction Reference', group: 'transactionDetails', defaultVisible: false },
-  
-  // Status Indicators
-  { id: 'linkedStatus', label: 'Linked Status', group: 'statusIndicators', defaultVisible: false },
-  { id: 'acceptanceStatus', label: 'Acceptance Status', group: 'statusIndicators', defaultVisible: false },
-  { id: 'validatedStatus', label: 'Validated', group: 'statusIndicators', defaultVisible: false },
-  
-  // Classification (gray if inherited)
-  { id: 'aidType', label: 'Aid Type', group: 'classification', defaultVisible: false },
-  { id: 'flowType', label: 'Flow Type', group: 'classification', defaultVisible: false },
-  { id: 'tiedStatus', label: 'Tied Status', group: 'classification', defaultVisible: false },
-  { id: 'humanitarian', label: 'Humanitarian', group: 'classification', defaultVisible: false },
-  
-  // Organization Details
-  { id: 'providerActivity', label: 'Provider Activity', group: 'organizationDetails', defaultVisible: false },
-  { id: 'receiverActivity', label: 'Receiver Activity', group: 'organizationDetails', defaultVisible: false },
-  
-  // Additional Details
-  { id: 'description', label: 'Description', group: 'additionalDetails', defaultVisible: false },
-  { id: 'disbursementChannel', label: 'Disbursement Channel', group: 'additionalDetails', defaultVisible: false },
-];
-
-const TRANSACTION_COLUMN_GROUPS = {
-  default: 'Default Columns',
-  activityContext: 'Activity Context',
-  transactionDetails: 'Transaction Details',
-  statusIndicators: 'Status Indicators',
-  classification: 'Classification',
-  organizationDetails: 'Organization Details',
-  additionalDetails: 'Additional Details',
-};
-
-const DEFAULT_VISIBLE_TRANSACTION_COLUMNS: TransactionColumnId[] = 
-  TRANSACTION_COLUMN_CONFIGS.filter(col => col.defaultVisible).map(col => col.id);
-
-const TRANSACTION_COLUMNS_LOCALSTORAGE_KEY = 'aims_transaction_list_visible_columns';
-
-// Column Selector Component
-interface TransactionColumnSelectorProps {
-  visibleColumns: TransactionColumnId[];
-  onColumnsChange: (columns: TransactionColumnId[]) => void;
-}
-
-function TransactionColumnSelector({ visibleColumns, onColumnsChange }: TransactionColumnSelectorProps) {
-  const [open, setOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
-
-  const toggleColumn = (columnId: TransactionColumnId) => {
-    const config = TRANSACTION_COLUMN_CONFIGS.find(c => c.id === columnId);
-    if (config?.alwaysVisible) return; // Can't toggle always-visible columns
-    
-    if (visibleColumns.includes(columnId)) {
-      onColumnsChange(visibleColumns.filter(id => id !== columnId));
-    } else {
-      onColumnsChange([...visibleColumns, columnId]);
-    }
-  };
-
-  const toggleGroup = (group: keyof typeof TRANSACTION_COLUMN_GROUPS) => {
-    const groupColumns = TRANSACTION_COLUMN_CONFIGS.filter(c => c.group === group && !c.alwaysVisible);
-    const allVisible = groupColumns.every(c => visibleColumns.includes(c.id));
-    
-    if (allVisible) {
-      // Hide all columns in this group
-      onColumnsChange(visibleColumns.filter(id => !groupColumns.find(c => c.id === id)));
-    } else {
-      // Show all columns in this group
-      const newColumns = [...visibleColumns];
-      groupColumns.forEach(c => {
-        if (!newColumns.includes(c.id)) {
-          newColumns.push(c.id);
-        }
-      });
-      onColumnsChange(newColumns);
-    }
-  };
-
-  const resetToDefaults = () => {
-    onColumnsChange(DEFAULT_VISIBLE_TRANSACTION_COLUMNS);
-  };
-
-  const selectAll = () => {
-    const allColumnIds = TRANSACTION_COLUMN_CONFIGS.map(c => c.id);
-    onColumnsChange(allColumnIds);
-  };
-
-  const visibleCount = visibleColumns.filter(id => {
-    const config = TRANSACTION_COLUMN_CONFIGS.find(c => c.id === id);
-    return config && !config.alwaysVisible;
-  }).length;
-
-  const totalToggleable = TRANSACTION_COLUMN_CONFIGS.filter(c => !c.alwaysVisible).length;
-
-  // Filter columns based on search query
-  const filteredColumns = useMemo(() => {
-    if (!searchQuery.trim()) return null; // null means show grouped view
-    const query = searchQuery.toLowerCase();
-    return TRANSACTION_COLUMN_CONFIGS.filter(c => 
-      !c.alwaysVisible && c.label.toLowerCase().includes(query)
-    );
-  }, [searchQuery]);
-
-  return (
-    <Popover open={open} onOpenChange={(isOpen) => {
-      setOpen(isOpen);
-      if (!isOpen) setSearchQuery(''); // Clear search when closing
-    }}>
-      <PopoverTrigger asChild>
-        <Button variant="outline" size="sm" className="gap-2">
-          <Columns3 className="h-4 w-4" />
-          <span className="hidden sm:inline">Columns</span>
-          <Badge variant="secondary" className="ml-1 px-1.5 py-0 text-xs">
-            {visibleCount}
-          </Badge>
-          <ChevronDown className="h-3 w-3 opacity-50" />
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent className="w-80 p-0 z-[100]" align="end" sideOffset={5}>
-        <div className="p-3 border-b">
-          <div className="flex items-center justify-between">
-            <h4 className="font-medium text-sm">Visible Columns</h4>
-            <div className="flex items-center gap-1">
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                onClick={selectAll}
-                className="h-7 text-xs"
-              >
-                Select all
-              </Button>
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                onClick={resetToDefaults}
-                className="h-7 text-xs"
-              >
-                Reset
-              </Button>
-            </div>
-          </div>
-          <p className="text-xs text-muted-foreground mt-1">
-            {visibleCount} of {totalToggleable} columns visible
-          </p>
-          <div className="relative mt-2">
-            <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search columns..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-8 h-8 text-sm"
-            />
-          </div>
-        </div>
-        <div className="max-h-[400px] overflow-y-auto">
-          {filteredColumns ? (
-            // Show flat filtered list when searching
-            filteredColumns.length === 0 ? (
-              <div className="p-3 text-sm text-muted-foreground text-center">
-                No columns match "{searchQuery}"
-              </div>
-            ) : (
-              <div className="py-1">
-                {filteredColumns.map(column => (
-                  <div
-                    key={column.id}
-                    className="flex items-center gap-2 px-3 py-1.5 hover:bg-muted/50 cursor-pointer"
-                    onClick={() => toggleColumn(column.id)}
-                  >
-                    <Checkbox 
-                      checked={visibleColumns.includes(column.id)}
-                      onCheckedChange={() => toggleColumn(column.id)}
-                    />
-                    <span className="text-sm">{column.label}</span>
-                    <span className="text-xs text-muted-foreground ml-auto">
-                      {TRANSACTION_COLUMN_GROUPS[column.group as keyof typeof TRANSACTION_COLUMN_GROUPS]}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            )
-          ) : (
-            // Show grouped view when not searching
-            (Object.keys(TRANSACTION_COLUMN_GROUPS) as Array<keyof typeof TRANSACTION_COLUMN_GROUPS>).map(groupKey => {
-              const groupColumns = TRANSACTION_COLUMN_CONFIGS.filter(c => c.group === groupKey && !c.alwaysVisible);
-              if (groupColumns.length === 0) return null;
-              
-              const allVisible = groupColumns.every(c => visibleColumns.includes(c.id));
-              const someVisible = groupColumns.some(c => visibleColumns.includes(c.id));
-              
-              return (
-                <div key={groupKey} className="border-b last:border-b-0">
-                  <div 
-                    className="flex items-center gap-2 px-3 py-2 bg-muted/50 cursor-pointer hover:bg-muted/80"
-                    onClick={() => toggleGroup(groupKey)}
-                  >
-                    <Checkbox 
-                      checked={allVisible}
-                      // @ts-ignore - indeterminate is valid but not in types
-                      indeterminate={someVisible && !allVisible}
-                      onCheckedChange={() => toggleGroup(groupKey)}
-                    />
-                    <span className="text-sm font-medium">{TRANSACTION_COLUMN_GROUPS[groupKey]}</span>
-                  </div>
-                  <div className="py-1">
-                    {groupColumns.map(column => (
-                      <div
-                        key={column.id}
-                        className="flex items-center gap-2 px-3 py-1.5 hover:bg-muted/50 cursor-pointer"
-                        onClick={() => toggleColumn(column.id)}
-                      >
-                        <Checkbox 
-                          checked={visibleColumns.includes(column.id)}
-                          onCheckedChange={() => toggleColumn(column.id)}
-                        />
-                        <span className="text-sm">{column.label}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              );
-            })
-          )}
-        </div>
-      </PopoverContent>
-    </Popover>
-  );
-}
-
 export default function TransactionsPage() {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
@@ -343,7 +67,7 @@ export default function TransactionsPage() {
   const [isBulkRejecting, setIsBulkRejecting] = useState(false);
   
   // Column visibility state with localStorage persistence
-  const [visibleColumns, setVisibleColumns] = useState<TransactionColumnId[]>(DEFAULT_VISIBLE_TRANSACTION_COLUMNS);
+  const [visibleColumns, setVisibleColumns] = useState<TransactionColumnId[]>(defaultVisibleTransactionColumns);
   
   const [filters, setFilters] = useState<FilterState>({
     transactionTypes: [],
@@ -964,7 +688,7 @@ export default function TransactionsPage() {
         </div>
 
         {/* Search, Filters, and View Controls - All in One Row */}
-        <div className="flex items-end gap-3 py-3 bg-slate-50 rounded-lg px-3 border border-gray-200 overflow-visible relative z-[50]">
+        <div className="flex items-end gap-3 py-3 bg-slate-50 rounded-lg px-3 border border-gray-200">
           {/* Search */}
           <div className="flex flex-col gap-1">
             <Label className="text-xs text-muted-foreground">Search</Label>
@@ -1070,9 +794,12 @@ export default function TransactionsPage() {
           {/* Column Selector */}
           <div className="flex flex-col gap-1">
             <Label className="text-xs text-muted-foreground">Columns</Label>
-            <TransactionColumnSelector
+            <ColumnSelector<TransactionColumnId>
+              columns={transactionColumns}
               visibleColumns={visibleColumns}
-              onColumnsChange={handleColumnsChange}
+              defaultVisibleColumns={defaultVisibleTransactionColumns}
+              onChange={handleColumnsChange}
+              groupLabels={transactionColumnGroups}
             />
           </div>
         </div>

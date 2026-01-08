@@ -342,6 +342,54 @@ export async function GET(request: Request) {
       paginatedTransactions = allTransactions.slice(0, limit);
     }
     
+    // Fetch sector lines and aid type lines for all transactions
+    const transactionIds = paginatedTransactions.map((t: any) => t.uuid).filter(Boolean);
+
+    let sectorLinesMap: Record<string, any[]> = {};
+    let aidTypeLinesMap: Record<string, any[]> = {};
+
+    if (transactionIds.length > 0) {
+      // Fetch sector lines
+      const { data: sectorLines } = await getSupabaseAdmin()
+        .from('transaction_sector_lines')
+        .select('transaction_id, sector_code, sector_vocabulary, sector_name, percentage')
+        .in('transaction_id', transactionIds)
+        .is('deleted_at', null);
+
+      if (sectorLines) {
+        sectorLines.forEach((sl: any) => {
+          if (!sectorLinesMap[sl.transaction_id]) {
+            sectorLinesMap[sl.transaction_id] = [];
+          }
+          sectorLinesMap[sl.transaction_id].push({
+            code: sl.sector_code,
+            vocabulary: sl.sector_vocabulary,
+            narrative: sl.sector_name,
+            percentage: sl.percentage
+          });
+        });
+      }
+
+      // Fetch aid type lines
+      const { data: aidTypeLines } = await getSupabaseAdmin()
+        .from('transaction_aid_type_lines')
+        .select('transaction_id, aid_type_code, aid_type_vocabulary')
+        .in('transaction_id', transactionIds)
+        .is('deleted_at', null);
+
+      if (aidTypeLines) {
+        aidTypeLines.forEach((atl: any) => {
+          if (!aidTypeLinesMap[atl.transaction_id]) {
+            aidTypeLinesMap[atl.transaction_id] = [];
+          }
+          aidTypeLinesMap[atl.transaction_id].push({
+            code: atl.aid_type_code,
+            vocabulary: atl.aid_type_vocabulary
+          });
+        });
+      }
+    }
+
     // Transform the data for frontend compatibility
     const transformedTransactions = paginatedTransactions.map((t: any) => ({
       ...t,
@@ -358,6 +406,9 @@ export async function GET(request: Request) {
       // Include organization logos
       provider_org_logo: t.provider_organization?.logo,
       receiver_org_logo: t.receiver_organization?.logo,
+      // Include sector lines and aid type lines
+      sectors: sectorLinesMap[t.uuid] || [],
+      aid_types: aidTypeLinesMap[t.uuid] || [],
     }));
     
     // Return paginated response
@@ -803,13 +854,84 @@ export async function POST(request: NextRequest) {
     }
 
     console.log('[Transactions API] Successfully saved transaction:', data.uuid);
-    
+
     // Ensure we return the transaction with both uuid and id (for compatibility)
     const responseData = {
       ...data,
       id: data.uuid // Add id field for backward compatibility
     };
-    
+
+    // Save sectors if provided and not using activity sectors
+    console.log('[Transactions API] Sectors debug:', {
+      hasSectors: !!body.sectors,
+      isArray: Array.isArray(body.sectors),
+      length: body.sectors?.length || 0,
+      use_activity_sectors: body.use_activity_sectors,
+      sectors: body.sectors
+    });
+    if (body.sectors && Array.isArray(body.sectors) && body.sectors.length > 0 && body.use_activity_sectors === false) {
+      try {
+        const transactionValue = parseFloat(body.value?.toString() || '0') || 0;
+        const sectorLinesToInsert = body.sectors.map((s: any, idx: number) => {
+          const percentage = s.percentage || 0;
+          // Calculate amount_minor: value * percentage / 100, converted to minor units (cents)
+          const amountMinor = Math.round(transactionValue * percentage / 100 * 100);
+          return {
+            transaction_id: data.uuid,
+            sector_vocabulary: s.vocabulary || '1',
+            sector_code: s.code,
+            sector_name: s.narrative || null,
+            percentage: percentage || null,
+            amount_minor: amountMinor,
+            sort_order: idx
+          };
+        });
+
+        const { error: sectorError } = await getSupabaseAdmin()
+          .from('transaction_sector_lines')
+          .insert(sectorLinesToInsert);
+
+        if (sectorError) {
+          console.error('[Transactions API] Error inserting sector lines:', sectorError);
+        } else {
+          console.log('[Transactions API] Successfully inserted sector lines:', sectorLinesToInsert.length);
+        }
+      } catch (sectorErr) {
+        console.error('[Transactions API] Error saving sectors:', sectorErr);
+      }
+    }
+
+    // Save aid_types if provided
+    console.log('[Transactions API] Aid Types debug:', {
+      hasAidTypes: !!body.aid_types,
+      isArray: Array.isArray(body.aid_types),
+      length: body.aid_types?.length || 0,
+      aid_types: body.aid_types
+    });
+    if (body.aid_types && Array.isArray(body.aid_types) && body.aid_types.length > 0) {
+      try {
+        const aidTypeLinesToInsert = body.aid_types.map((a: any, idx: number) => ({
+          transaction_id: data.uuid,
+          aid_type_vocabulary: a.vocabulary || '1',
+          aid_type_code: a.code,
+          sort_order: idx
+        }));
+
+        const { error: aidTypeError } = await getSupabaseAdmin()
+          .from('transaction_aid_type_lines')
+          .insert(aidTypeLinesToInsert);
+
+        if (aidTypeError) {
+          console.error('[Transactions API] Error inserting aid_type lines:', aidTypeError);
+          // Don't fail the request - aid_types table might not exist yet
+        } else {
+          console.log('[Transactions API] Successfully inserted aid_type lines:', aidTypeLinesToInsert.length);
+        }
+      } catch (aidTypeErr) {
+        console.error('[Transactions API] Error saving aid_types:', aidTypeErr);
+      }
+    }
+
     // Perform currency conversion for all transactions (including USD to populate USD Value field)
     // Support manual exchange rate override from the request body
     await performCurrencyConversion(
@@ -1030,13 +1152,102 @@ export async function PUT(request: NextRequest) {
     }
 
     console.log('[Transactions API] Successfully updated transaction:', data.uuid);
-    
+
     // Ensure we return the transaction with both uuid and id (for compatibility)
     const responseData = {
       ...data,
       id: data.uuid // Add id field for backward compatibility
     };
-    
+
+    // Update sectors if provided
+    console.log('[Transactions API] PUT Sectors debug:', {
+      hasSectors: body.sectors !== undefined,
+      isArray: Array.isArray(body.sectors),
+      length: body.sectors?.length || 0,
+      use_activity_sectors: body.use_activity_sectors,
+      sectors: body.sectors
+    });
+    if (body.sectors !== undefined) {
+      try {
+        // First, delete existing sector lines
+        await getSupabaseAdmin()
+          .from('transaction_sector_lines')
+          .delete()
+          .eq('transaction_id', transactionId);
+
+        // Then insert new ones if not using activity sectors
+        if (body.sectors && Array.isArray(body.sectors) && body.sectors.length > 0 && body.use_activity_sectors === false) {
+          const transactionValue = parseFloat(data.value?.toString() || body.value?.toString() || '0') || 0;
+          const sectorLinesToInsert = body.sectors.map((s: any, idx: number) => {
+            const percentage = s.percentage || 0;
+            // Calculate amount_minor: value * percentage / 100, converted to minor units (cents)
+            const amountMinor = Math.round(transactionValue * percentage / 100 * 100);
+            return {
+              transaction_id: transactionId,
+              sector_vocabulary: s.vocabulary || '1',
+              sector_code: s.code,
+              sector_name: s.narrative || null,
+              percentage: percentage || null,
+              amount_minor: amountMinor,
+              sort_order: idx
+            };
+          });
+
+          const { error: sectorError } = await getSupabaseAdmin()
+            .from('transaction_sector_lines')
+            .insert(sectorLinesToInsert);
+
+          if (sectorError) {
+            console.error('[Transactions API] Error updating sector lines:', sectorError);
+          } else {
+            console.log('[Transactions API] Successfully updated sector lines:', sectorLinesToInsert.length);
+          }
+        }
+      } catch (sectorErr) {
+        console.error('[Transactions API] Error updating sectors:', sectorErr);
+      }
+    }
+
+    // Update aid_types if provided
+    console.log('[Transactions API] PUT Aid Types debug:', {
+      hasAidTypes: body.aid_types !== undefined,
+      isArray: Array.isArray(body.aid_types),
+      length: body.aid_types?.length || 0,
+      aid_types: body.aid_types
+    });
+    if (body.aid_types !== undefined) {
+      try {
+        // First, delete existing aid_type lines
+        await getSupabaseAdmin()
+          .from('transaction_aid_type_lines')
+          .delete()
+          .eq('transaction_id', transactionId);
+
+        // Then insert new ones
+        if (body.aid_types && Array.isArray(body.aid_types) && body.aid_types.length > 0) {
+          const aidTypeLinesToInsert = body.aid_types.map((a: any, idx: number) => ({
+            transaction_id: transactionId,
+            aid_type_vocabulary: a.vocabulary || '1',
+            aid_type_code: a.code,
+            sort_order: idx
+          }));
+
+          const { error: aidTypeError } = await getSupabaseAdmin()
+            .from('transaction_aid_type_lines')
+            .insert(aidTypeLinesToInsert);
+
+          if (aidTypeError) {
+            console.error('[Transactions API] Error updating aid_type lines:', aidTypeError);
+            // Don't fail the request - aid_types table might not exist yet
+          } else {
+            console.log('[Transactions API] Successfully updated aid_type lines:', aidTypeLinesToInsert.length);
+          }
+        }
+      } catch (aidTypeErr) {
+        console.error('[Transactions API] Error updating aid_types:', aidTypeErr);
+      }
+    }
+
     // Perform currency conversion for all transactions (including USD to populate USD Value field)
     // Support manual exchange rate override from the request body
     await performCurrencyConversion(

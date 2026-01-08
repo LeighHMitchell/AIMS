@@ -78,6 +78,31 @@ import { useTransactionFieldAutosave } from '@/hooks/use-transaction-field-autos
 import { IATI_FIELD_HELP } from '@/components/ActivityFieldHelpers';
 import { IATI_COUNTRIES } from '@/data/iati-countries';
 import { IATI_REGIONS } from '@/data/iati-regions';
+import dacSectorsData from '@/data/dac-sectors.json';
+
+// Helper to get full sector info from DAC sectors data
+interface DacSectorInfo {
+  code: string;
+  name: string;
+  description: string;
+  category?: string;
+  categoryName?: string;
+}
+
+const getDacSectorInfo = (code: string): DacSectorInfo => {
+  const sectors = dacSectorsData as { [key: string]: Array<{ code: string; name: string; description: string }> };
+  for (const [category, sectorList] of Object.entries(sectors)) {
+    const sector = sectorList.find(s => s.code === code);
+    if (sector) {
+      // Extract category code and name from the category key (e.g., "110 - Education")
+      const categoryMatch = category.match(/^(\d+)\s*[-–]\s*(.+)$/);
+      const categoryCode = categoryMatch ? categoryMatch[1] : category.substring(0, 3);
+      const categoryName = categoryMatch ? categoryMatch[2] : category;
+      return { ...sector, category, categoryName, categoryCode };
+    }
+  }
+  return { code, name: `Sector ${code}`, description: '', category: 'Unknown', categoryName: 'Unknown' };
+};
 import { InfoTooltipWithSaveIndicator, LabelWithInfoAndSave } from '@/components/ui/info-tooltip-with-save-indicator';
 import { OrgTypeMappingModal, useOrgTypeMappingModal } from '@/components/organizations/OrgTypeMappingModal';
 // Remove lodash import (not used)
@@ -275,6 +300,9 @@ interface ActivitySector {
   id?: string;
   sector_code?: string;
   sector_name?: string;
+  // Alternative property names used in some contexts
+  code?: string;
+  name?: string;
   percentage?: number;
 }
 
@@ -653,10 +681,10 @@ export default function TransactionModal({
     } else {
       // Switching to custom sectors - pre-populate from activity sectors
       const prePopulatedSectors = activitySectors.map(s => ({
-        code: s.sector_code || '',
+        code: s.code || s.sector_code || '',
         vocabulary: '1', // Default to DAC 5-digit
         percentage: s.percentage || undefined,
-        narrative: s.sector_name || undefined
+        narrative: s.name || s.sector_name || undefined
       }));
       setFormData({ ...formData, sectors: prePopulatedSectors, use_activity_sectors: false });
     }
@@ -911,6 +939,19 @@ export default function TransactionModal({
       return;
     }
 
+    // Cancel any pending autosave to prevent duplicate creation
+    if (createTransactionTimeoutRef.current) {
+      clearTimeout(createTransactionTimeoutRef.current);
+      createTransactionTimeoutRef.current = null;
+    }
+
+    // Wait for any in-progress autosave creation to complete
+    if (isCreatingRef.current) {
+      console.log('[TransactionModal] Waiting for autosave to complete...');
+      // Wait a bit for the autosave to finish
+      await new Promise(resolve => setTimeout(resolve, 600));
+    }
+
     // Mark as submitting
     isSubmittingRef.current = true;
 
@@ -921,6 +962,17 @@ export default function TransactionModal({
       receiver_org_name: organizations.find(o => o.id === formData.receiver_org_id)?.acronym || organizations.find(o => o.id === formData.receiver_org_id)?.name || '',
       financing_classification: isClassificationOverridden ? manualClassification : computedClassification
     });
+
+    // Debug: Log what's being submitted for sectors and aid_types
+    console.log('[TransactionModal] Submission payload debug:', {
+      sectors: submissionData.sectors,
+      aid_types: submissionData.aid_types,
+      use_activity_sectors: submissionData.use_activity_sectors,
+      formData_sectors: formData.sectors,
+      formData_aid_types: formData.aid_types,
+      formData_use_activity_sectors: formData.use_activity_sectors
+    });
+
     const validationError = validateTransaction(submissionData);
     // Let the backend handle duplicate reference validation
     if (validationError) {
@@ -1337,12 +1389,13 @@ export default function TransactionModal({
     };
   }, []);
 
-  // Watch required fields and trigger autosave creation (only for new transactions, not when editing)
-  useEffect(() => {
-    if (!isEditing && !createdTransactionId && hasAllRequiredFields(formData)) {
-      debouncedCreateTransaction(formData);
-    }
-  }, [formData.transaction_type, formData.transaction_date, formData.value, formData.currency, activityId, isEditing]);
+  // DISABLED: Auto-create transaction when required fields are filled
+  // This was causing duplicate transactions. Users should explicitly click "Add Transaction" to save.
+  // useEffect(() => {
+  //   if (!isEditing && !createdTransactionId && hasAllRequiredFields(formData) && !isSubmittingRef.current && !isInternallySubmitting) {
+  //     debouncedCreateTransaction(formData);
+  //   }
+  // }, [formData.transaction_type, formData.transaction_date, formData.value, formData.currency, activityId, isEditing, isInternallySubmitting]);
 
   // Clear toasts when modal closes
   useEffect(() => {
@@ -2503,7 +2556,7 @@ export default function TransactionModal({
                               className="h-4 w-4 text-blue-600"
                               disabled={isSubmitting}
                             />
-                            <span className="text-sm text-gray-600">None (use activity geography)</span>
+                            <span className="text-sm text-gray-600">Activity-level default</span>
                           </label>
                           <label className="flex items-center gap-2 cursor-pointer">
                             <input
@@ -2723,15 +2776,65 @@ export default function TransactionModal({
                       {useActivitySectorChoice && activitySectors.length > 0 && (
                         <div className="ml-7 p-3 bg-white rounded-md border border-gray-200">
                           <p className="text-xs font-medium text-gray-600 mb-2">Activity sectors:</p>
-                          <div className="space-y-1">
-                            {activitySectors.map((sector, idx) => (
-                              <div key={idx} className="flex justify-between text-xs text-gray-600">
-                                <span>{sector.sector_name || sector.sector_code}</span>
-                                {sector.percentage && (
-                                  <span className="text-gray-400">{sector.percentage}%</span>
-                                )}
-                              </div>
-                            ))}
+                          <div className="space-y-2">
+                            {(() => {
+                              // Group sectors by category
+                              const grouped = activitySectors.reduce((acc, sector) => {
+                                const categoryCode = (sector as any).categoryCode || '';
+                                const rawCategoryName = (sector as any).categoryName || (sector as any).category || '';
+                                // Strip the code prefix from category name (e.g., "250 - Business" -> "Business")
+                                const categoryName = rawCategoryName.replace(/^\d+\s*[-–]\s*/, '');
+                                const categoryKey = categoryCode || 'uncategorized';
+                                if (!acc[categoryKey]) {
+                                  acc[categoryKey] = { categoryCode, categoryName, sectors: [] };
+                                }
+                                acc[categoryKey].sectors.push(sector);
+                                return acc;
+                              }, {} as Record<string, { categoryCode: string; categoryName: string; sectors: typeof activitySectors }>);
+
+                              const groupEntries = Object.entries(grouped);
+                              return groupEntries.map(([key, group], groupIdx) => (
+                                <div key={key} className="space-y-1">
+                                  {/* Category header - only show if there's a category */}
+                                  {group.categoryCode && (
+                                    <div className="flex items-center gap-1.5 text-[10px] text-gray-500 font-medium">
+                                      <span className="font-mono bg-gray-50 px-1 py-0.5 rounded">
+                                        {group.categoryCode}
+                                      </span>
+                                      <span>{group.categoryName}</span>
+                                    </div>
+                                  )}
+                                  {/* Sectors in this category */}
+                                  <div className={cn("space-y-1", group.categoryCode && "ml-3")}>
+                                    {group.sectors.map((sector, idx) => {
+                                      const sectorCode = (sector as any).code || sector.sector_code;
+                                      const rawSectorName = (sector as any).name || sector.sector_name || '';
+                                      // Strip the code prefix from sector name (e.g., "11220 - Primary education" -> "Primary education")
+                                      const sectorName = rawSectorName.replace(/^\d+\s*[-–]\s*/, '');
+                                      return (
+                                        <div key={idx} className="flex items-center justify-between text-xs text-gray-600 gap-2">
+                                          <div className="flex items-center gap-1.5 min-w-0">
+                                            {sectorCode && (
+                                              <span className="font-mono bg-gray-100 px-1.5 py-0.5 rounded text-gray-700 shrink-0">
+                                                {sectorCode}
+                                              </span>
+                                            )}
+                                            <span className="truncate">{sectorName || sectorCode}</span>
+                                          </div>
+                                          {sector.percentage !== undefined && sector.percentage > 0 && (
+                                            <span className="text-gray-500 shrink-0">{sector.percentage}%</span>
+                                          )}
+                                        </div>
+                                      );
+                                    })}
+                                  </div>
+                                  {/* Divider line between categories */}
+                                  {groupIdx < groupEntries.length - 1 && (
+                                    <div className="border-b border-gray-200 mt-2" />
+                                  )}
+                                </div>
+                              ));
+                            })()}
                             {activitySectors.reduce((sum, s) => sum + (s.percentage || 0), 0) > 0 && (
                               <div className="flex justify-between text-xs font-medium text-gray-700 pt-1 border-t">
                                 <span>Total</span>
@@ -2766,8 +2869,88 @@ export default function TransactionModal({
                           </p>
                         </label>
                       </div>
+
+                      {/* Show custom sectors preview table when custom sectors is selected */}
+                      {!useActivitySectorChoice && formData.sectors && formData.sectors.length > 0 && (
+                        <div className="ml-7 p-3 bg-white rounded-md border border-gray-200">
+                          <p className="text-xs font-medium text-gray-600 mb-2">Transaction sectors:</p>
+                          <div className="space-y-2">
+                            {(() => {
+                              // Group sectors by category using DAC sector data lookup
+                              const grouped = (formData.sectors || []).reduce((acc, sector) => {
+                                const sectorInfo = getDacSectorInfo(sector.code);
+                                const categoryCode = sectorInfo.category?.match(/^(\d+)/)?.[1] || sector.code?.substring(0, 3) || '';
+                                const categoryName = sectorInfo.categoryName || '';
+                                const categoryKey = categoryCode || 'uncategorized';
+                                if (!acc[categoryKey]) {
+                                  acc[categoryKey] = { categoryCode, categoryName, sectors: [] };
+                                }
+                                acc[categoryKey].sectors.push({ ...sector, sectorInfo });
+                                return acc;
+                              }, {} as Record<string, { categoryCode: string; categoryName: string; sectors: Array<typeof formData.sectors[0] & { sectorInfo: DacSectorInfo }> }>);
+
+                              const groupEntries = Object.entries(grouped);
+                              return groupEntries.map(([key, group], groupIdx) => (
+                                <div key={key} className="space-y-1">
+                                  {/* Category header with code and name */}
+                                  {group.categoryCode && (
+                                    <div className="flex items-center gap-1.5 text-[10px] text-gray-500 font-medium">
+                                      <span className="font-mono bg-gray-50 px-1 py-0.5 rounded">
+                                        {group.categoryCode}
+                                      </span>
+                                      <span>{group.categoryName}</span>
+                                    </div>
+                                  )}
+                                  {/* Sectors in this category */}
+                                  <div className={cn("space-y-1", group.categoryCode && "ml-3")}>
+                                    {group.sectors.map((sector, idx) => {
+                                      const sectorCode = sector.code;
+                                      // Use DAC sector name, fallback to narrative, strip code prefix
+                                      const rawName = sector.sectorInfo?.name || sector.narrative || '';
+                                      const cleanName = rawName.replace(/^\d+\s*[-–]\s*/, '');
+                                      return (
+                                        <div key={idx} className="flex items-center justify-between text-xs text-gray-600 gap-2">
+                                          <div className="flex items-center gap-1.5 min-w-0">
+                                            {sectorCode && (
+                                              <span className="font-mono bg-gray-100 px-1.5 py-0.5 rounded text-gray-700 shrink-0">
+                                                {sectorCode}
+                                              </span>
+                                            )}
+                                            <span className="truncate">{cleanName || sectorCode}</span>
+                                          </div>
+                                          {sector.percentage !== undefined && sector.percentage > 0 && (
+                                            <span className="text-gray-500 shrink-0">{sector.percentage}%</span>
+                                          )}
+                                        </div>
+                                      );
+                                    })}
+                                  </div>
+                                  {/* Divider line between categories */}
+                                  {groupIdx < groupEntries.length - 1 && (
+                                    <div className="border-b border-gray-200 mt-2" />
+                                  )}
+                                </div>
+                              ));
+                            })()}
+                            {(formData.sectors || []).reduce((sum, s) => sum + (s.percentage || 0), 0) > 0 && (
+                              <div className="flex justify-between text-xs font-medium text-gray-700 pt-1 border-t">
+                                <span>Total</span>
+                                <span>{(formData.sectors || []).reduce((sum, s) => sum + (s.percentage || 0), 0)}%</span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
+
+                      {!useActivitySectorChoice && (!formData.sectors || formData.sectors.length === 0) && (
+                        <div className="ml-7 p-3 bg-amber-50 rounded-md border border-amber-200">
+                          <p className="text-xs text-amber-700">
+                            No custom sectors defined yet. Use the sector editor below to add sectors.
+                          </p>
+                        </div>
+                      )}
                     </div>
-                    
+
                     {/* Show TransactionSectorManager only when custom sectors is selected */}
                     {!useActivitySectorChoice && (
                       <div className="mt-4 pt-4 border-t border-gray-200">

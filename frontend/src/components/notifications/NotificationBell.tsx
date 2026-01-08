@@ -42,15 +42,23 @@ interface Notification {
 
 interface NotificationBellProps {
   userId: string;
+  onOpen?: () => void;
 }
 
-export function NotificationBell({ userId }: NotificationBellProps) {
+export function NotificationBell({ userId, onOpen }: NotificationBellProps) {
   const router = useRouter();
   const shouldReduceMotion = useReducedMotion();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
+
+  const handleOpenChange = (isOpen: boolean) => {
+    setOpen(isOpen);
+    if (isOpen && onOpen) {
+      onOpen();
+    }
+  };
   const [isRinging, setIsRinging] = useState(false);
   const [prevUnreadCount, setPrevUnreadCount] = useState(0);
 
@@ -164,6 +172,8 @@ export function NotificationBell({ userId }: NotificationBellProps) {
         return <MessageSquare className="h-4 w-4 text-gray-500" />;
       case 'calendar_event_pending':
         return <Calendar className="h-4 w-4 text-gray-500" />;
+      case 'activity_comment':
+        return <MessageSquare className="h-4 w-4 text-blue-500" />;
       default:
         return <Bell className="h-4 w-4 text-gray-500" />;
     }
@@ -172,7 +182,7 @@ export function NotificationBell({ userId }: NotificationBellProps) {
   const displayCount = unreadCount > 99 ? "99+" : unreadCount > 9 ? "9+" : unreadCount;
 
   return (
-    <DropdownMenu open={open} onOpenChange={setOpen}>
+    <DropdownMenu open={open} onOpenChange={handleOpenChange}>
       <DropdownMenuTrigger asChild>
         <motion.button
           variants={ringVariants}

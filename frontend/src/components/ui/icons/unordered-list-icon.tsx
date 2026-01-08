@@ -12,37 +12,51 @@ const UnorderedListIcon = forwardRef<AnimatedIconHandle, AnimatedIconProps>(
     const [scope, animate] = useAnimate();
 
     const start = useCallback(async () => {
-      animate(
-        ".list-line-1",
-        { scaleX: [0, 1] },
-        { duration: 0.25, ease: "easeOut" },
-      );
+      // Guard: check if scope is mounted and elements exist
+      if (!scope.current?.querySelector('.list-line-1')) return;
 
-      animate(
-        ".list-line-2",
-        { scaleX: [0, 1] },
-        { duration: 0.25, ease: "easeOut", delay: 0.1 },
-      );
+      try {
+        animate(
+          ".list-line-1",
+          { scaleX: [0, 1] },
+          { duration: 0.25, ease: "easeOut" },
+        );
 
-      animate(
-        ".list-line-3",
-        { scaleX: [0, 1] },
-        { duration: 0.25, ease: "easeOut", delay: 0.2 },
-      );
+        animate(
+          ".list-line-2",
+          { scaleX: [0, 1] },
+          { duration: 0.25, ease: "easeOut", delay: 0.1 },
+        );
 
-      animate(
-        ".list-bullets",
-        { scale: [1, 1.3, 1] },
-        { duration: 0.4, ease: "easeInOut" },
-      );
-    }, [animate]);
+        animate(
+          ".list-line-3",
+          { scaleX: [0, 1] },
+          { duration: 0.25, ease: "easeOut", delay: 0.2 },
+        );
+
+        animate(
+          ".list-bullets",
+          { scale: [1, 1.3, 1] },
+          { duration: 0.4, ease: "easeInOut" },
+        );
+      } catch (e) {
+        // Ignore animation errors during unmount/hydration
+      }
+    }, [animate, scope]);
 
     const stop = useCallback(async () => {
-      animate(".list-line-1", { scaleX: 1 }, { duration: 0.2 });
-      animate(".list-line-2", { scaleX: 1 }, { duration: 0.2 });
-      animate(".list-line-3", { scaleX: 1 }, { duration: 0.2 });
-      animate(".list-bullets", { scale: 1 }, { duration: 0.2 });
-    }, [animate]);
+      // Guard: check if scope is mounted
+      if (!scope.current) return;
+
+      try {
+        animate(".list-line-1", { scaleX: 1 }, { duration: 0.2 });
+        animate(".list-line-2", { scaleX: 1 }, { duration: 0.2 });
+        animate(".list-line-3", { scaleX: 1 }, { duration: 0.2 });
+        animate(".list-bullets", { scale: 1 }, { duration: 0.2 });
+      } catch (e) {
+        // Ignore animation errors
+      }
+    }, [animate, scope]);
 
     useImperativeHandle(ref, () => ({
       startAnimation: start,

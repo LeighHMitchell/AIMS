@@ -1,6 +1,5 @@
-import React, { useState, useMemo } from "react";
+import React, { useState } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
 import {
   ChevronUp,
   ChevronDown,
@@ -8,18 +7,13 @@ import {
   Trash2,
   MoreVertical,
   Calendar,
-  Columns3,
-  Search,
 } from "lucide-react";
 import { format } from "date-fns";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
-  Tooltip,
-  TooltipContent,
   TooltipProvider,
-  TooltipTrigger,
 } from "@/components/ui/tooltip";
 import {
   DropdownMenu,
@@ -37,232 +31,41 @@ import {
   getSortIcon,
 } from "@/components/ui/table";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Input } from "@/components/ui/input";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Budget, BUDGET_TYPE_LABELS, BUDGET_STATUS_LABELS, BudgetType, BudgetStatus } from "@/types/budget";
+import { ColumnSelector } from "@/components/ui/column-selector";
+import { EmptyState } from "@/components/ui/empty-state";
+import { TableSkeleton } from "@/components/ui/table-skeleton";
+import {
+  BudgetColumnId,
+  budgetColumns,
+  budgetColumnGroups,
+  defaultVisibleBudgetColumns,
+  BUDGET_COLUMNS_LOCALSTORAGE_KEY,
+} from "@/app/budgets/columns";
 
-// Column configuration for Budget Table
-type BudgetColumnId = 
-  | 'activity' | 'periodStart' | 'periodEnd' | 'type' 
-  | 'status' | 'value' | 'valueDate' | 'valueUsd' | 'reportingOrganisation';
+// Re-export column types for parent components
+export type { BudgetColumnId };
+export { defaultVisibleBudgetColumns, BUDGET_COLUMNS_LOCALSTORAGE_KEY, budgetColumns, budgetColumnGroups };
 
-interface BudgetColumnConfig {
-  id: BudgetColumnId;
-  label: string;
-  group: 'default' | 'details';
-  defaultVisible?: boolean;
-  sortable?: boolean;
-  sortField?: string;
-  align?: 'left' | 'center' | 'right';
-}
-
-const BUDGET_COLUMN_CONFIGS: BudgetColumnConfig[] = [
-  { id: 'activity', label: 'Activity Title', group: 'default', defaultVisible: true, sortable: true, sortField: 'activity', align: 'left' },
-  { id: 'periodStart', label: 'Start Date', group: 'default', defaultVisible: true, sortable: true, sortField: 'period_start', align: 'left' },
-  { id: 'periodEnd', label: 'End Date', group: 'default', defaultVisible: true, sortable: true, sortField: 'period_end', align: 'left' },
-  { id: 'type', label: 'Type', group: 'default', defaultVisible: true, sortable: true, sortField: 'type', align: 'left' },
-  { id: 'status', label: 'Status', group: 'default', defaultVisible: true, sortable: true, sortField: 'status', align: 'left' },
-  { id: 'value', label: 'Currency Value', group: 'default', defaultVisible: true, sortable: true, sortField: 'value', align: 'right' },
-  { id: 'valueDate', label: 'Value Date', group: 'details', defaultVisible: false, sortable: true, sortField: 'value_date', align: 'left' },
-  { id: 'valueUsd', label: 'USD Value', group: 'default', defaultVisible: true, sortable: true, sortField: 'value_usd', align: 'right' },
-  { id: 'reportingOrganisation', label: 'Reporting Organisation', group: 'details', defaultVisible: false, sortable: false, align: 'left' },
-];
-
-const BUDGET_COLUMN_GROUPS = {
-  default: 'Default Columns',
-  details: 'Additional Details',
-};
-
-const DEFAULT_VISIBLE_BUDGET_COLUMNS: BudgetColumnId[] = 
-  BUDGET_COLUMN_CONFIGS.filter(col => col.defaultVisible).map(col => col.id);
-
-const BUDGET_COLUMNS_LOCALSTORAGE_KEY = 'aims_budget_table_visible_columns';
-
-// Column Selector Component for Budget Table
-interface BudgetColumnSelectorProps {
+// Wrapper for backward compatibility
+export const BudgetColumnSelector = ({
+  visibleColumns,
+  onColumnsChange,
+}: {
   visibleColumns: BudgetColumnId[];
   onColumnsChange: (columns: BudgetColumnId[]) => void;
-}
+}) => (
+  <ColumnSelector<BudgetColumnId>
+    columns={budgetColumns}
+    visibleColumns={visibleColumns}
+    defaultVisibleColumns={defaultVisibleBudgetColumns}
+    onChange={onColumnsChange}
+    groupLabels={budgetColumnGroups}
+  />
+);
 
-function BudgetColumnSelector({ visibleColumns, onColumnsChange }: BudgetColumnSelectorProps) {
-  const [open, setOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
-
-  const toggleColumn = (columnId: BudgetColumnId) => {
-    if (visibleColumns.includes(columnId)) {
-      onColumnsChange(visibleColumns.filter(id => id !== columnId));
-    } else {
-      onColumnsChange([...visibleColumns, columnId]);
-    }
-  };
-
-  const toggleGroup = (group: keyof typeof BUDGET_COLUMN_GROUPS) => {
-    const groupColumns = BUDGET_COLUMN_CONFIGS.filter(c => c.group === group);
-    const allVisible = groupColumns.every(c => visibleColumns.includes(c.id));
-    
-    if (allVisible) {
-      onColumnsChange(visibleColumns.filter(id => !groupColumns.find(c => c.id === id)));
-    } else {
-      const newColumns = [...visibleColumns];
-      groupColumns.forEach(c => {
-        if (!newColumns.includes(c.id)) {
-          newColumns.push(c.id);
-        }
-      });
-      onColumnsChange(newColumns);
-    }
-  };
-
-  const resetToDefaults = () => {
-    onColumnsChange(DEFAULT_VISIBLE_BUDGET_COLUMNS);
-  };
-
-  const selectAll = () => {
-    const allColumnIds = BUDGET_COLUMN_CONFIGS.map(c => c.id);
-    onColumnsChange(allColumnIds);
-  };
-
-  const visibleCount = visibleColumns.length;
-  const totalColumns = BUDGET_COLUMN_CONFIGS.length;
-
-  // Filter columns based on search query
-  const filteredColumns = useMemo(() => {
-    if (!searchQuery.trim()) return null; // null means show grouped view
-    const query = searchQuery.toLowerCase();
-    return BUDGET_COLUMN_CONFIGS.filter(c => 
-      c.label.toLowerCase().includes(query)
-    );
-  }, [searchQuery]);
-
-  return (
-    <Popover open={open} onOpenChange={(isOpen) => {
-      setOpen(isOpen);
-      if (!isOpen) setSearchQuery(''); // Clear search when closing
-    }}>
-      <PopoverTrigger asChild>
-        <Button variant="outline" size="sm" className="gap-2">
-          <Columns3 className="h-4 w-4" />
-          <span className="hidden sm:inline">Columns</span>
-          <Badge variant="secondary" className="ml-1 px-1.5 py-0 text-xs">
-            {visibleCount}
-          </Badge>
-          <ChevronDown className="h-3 w-3 opacity-50" />
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent className="w-80 p-0 z-[100]" align="end" sideOffset={5}>
-        <div className="p-3 border-b">
-          <div className="flex items-center justify-between">
-            <h4 className="font-medium text-sm">Visible Columns</h4>
-            <div className="flex items-center gap-1">
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                onClick={selectAll}
-                className="h-7 text-xs"
-              >
-                Select all
-              </Button>
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                onClick={resetToDefaults}
-                className="h-7 text-xs"
-              >
-                Reset
-              </Button>
-            </div>
-          </div>
-          <p className="text-xs text-muted-foreground mt-1">
-            {visibleCount} of {totalColumns} columns visible
-          </p>
-          <div className="relative mt-2">
-            <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search columns..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-8 h-8 text-sm"
-            />
-          </div>
-        </div>
-        <div className="max-h-[400px] overflow-y-auto">
-          {filteredColumns ? (
-            // Show flat filtered list when searching
-            filteredColumns.length === 0 ? (
-              <div className="p-3 text-sm text-muted-foreground text-center">
-                No columns match "{searchQuery}"
-              </div>
-            ) : (
-              <div className="py-1">
-                {filteredColumns.map(column => (
-                  <div
-                    key={column.id}
-                    className="flex items-center gap-2 px-3 py-1.5 hover:bg-muted/50 cursor-pointer"
-                    onClick={() => toggleColumn(column.id)}
-                  >
-                    <Checkbox 
-                      checked={visibleColumns.includes(column.id)}
-                      onCheckedChange={() => toggleColumn(column.id)}
-                    />
-                    <span className="text-sm">{column.label}</span>
-                    <span className="text-xs text-muted-foreground ml-auto">
-                      {BUDGET_COLUMN_GROUPS[column.group as keyof typeof BUDGET_COLUMN_GROUPS]}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            )
-          ) : (
-            // Show grouped view when not searching
-            (Object.keys(BUDGET_COLUMN_GROUPS) as Array<keyof typeof BUDGET_COLUMN_GROUPS>).map(groupKey => {
-              const groupColumns = BUDGET_COLUMN_CONFIGS.filter(c => c.group === groupKey);
-              if (groupColumns.length === 0) return null;
-              
-              const allVisible = groupColumns.every(c => visibleColumns.includes(c.id));
-              const someVisible = groupColumns.some(c => visibleColumns.includes(c.id));
-              
-              return (
-                <div key={groupKey} className="border-b last:border-b-0">
-                  <div 
-                    className="flex items-center gap-2 px-3 py-2 bg-muted/50 cursor-pointer hover:bg-muted/80"
-                    onClick={() => toggleGroup(groupKey)}
-                  >
-                    <Checkbox 
-                      checked={allVisible}
-                      // @ts-ignore - indeterminate is valid but not in types
-                      indeterminate={someVisible && !allVisible}
-                      onCheckedChange={() => toggleGroup(groupKey)}
-                    />
-                    <span className="text-sm font-medium">{BUDGET_COLUMN_GROUPS[groupKey]}</span>
-                  </div>
-                  <div className="py-1">
-                    {groupColumns.map(column => (
-                      <div
-                        key={column.id}
-                        className="flex items-center gap-2 px-3 py-1.5 hover:bg-muted/50 cursor-pointer"
-                        onClick={() => toggleColumn(column.id)}
-                      >
-                        <Checkbox 
-                          checked={visibleColumns.includes(column.id)}
-                          onCheckedChange={() => toggleColumn(column.id)}
-                        />
-                        <span className="text-sm">{column.label}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              );
-            })
-          )}
-        </div>
-      </PopoverContent>
-    </Popover>
-  );
-}
-
-// Export column types for parent components
-export type { BudgetColumnId };
-export { DEFAULT_VISIBLE_BUDGET_COLUMNS, BUDGET_COLUMNS_LOCALSTORAGE_KEY, BudgetColumnSelector };
+// Backward compatibility alias
+export const DEFAULT_VISIBLE_BUDGET_COLUMNS = defaultVisibleBudgetColumns;
 
 interface BudgetTableProps {
   budgets: Budget[];
@@ -367,12 +170,7 @@ export function BudgetTable({
   };
 
   if (loading) {
-    return (
-      <div className="p-8 text-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto"></div>
-        <p className="mt-4 text-gray-600">Loading budgets...</p>
-      </div>
-    );
+    return <TableSkeleton rows={5} columns={visibleColumns.length + 2} />;
   }
 
   if (error) {
@@ -384,11 +182,7 @@ export function BudgetTable({
   }
 
   if (budgets.length === 0) {
-    return (
-      <div className="p-8 text-center">
-        <p className="text-gray-600">No budgets found</p>
-      </div>
-    );
+    return <EmptyState message="No budgets found" />;
   }
 
   return (
@@ -521,13 +315,13 @@ export function BudgetTable({
                 <React.Fragment key={budget.id}>
                   <TableRow
                     className={cn(
-                      "border-b border-border/40 hover:bg-muted/30 transition-colors cursor-pointer",
+                      "border-b border-border/40 hover:bg-muted/50 transition-colors cursor-pointer",
                       isSelected && "bg-blue-50 border-blue-200"
                     )}
                     onClick={() => onRowClick?.(budgetId)}
                   >
                     {/* Checkbox or Expand/Collapse Button */}
-                    <td className="py-3 px-4 text-center" onClick={(e) => e.stopPropagation()}>
+                    <TableCell className="py-3 px-4 text-center" onClick={(e) => e.stopPropagation()}>
                       {onSelectBudget && selectedIds ? (
                         <div className="flex items-center justify-center">
                           <Checkbox
@@ -553,11 +347,11 @@ export function BudgetTable({
                           )}
                         </Button>
                       )}
-                    </td>
+                    </TableCell>
 
                     {/* Activity Title */}
                     {isColumnVisible('activity') && (
-                      <td className="py-3 px-4 max-w-[200px]">
+                      <TableCell className="py-3 px-4 max-w-[200px]">
                         <div
                           className="space-y-0.5 cursor-pointer hover:opacity-75 group"
                           onClick={(e) => {
@@ -576,58 +370,58 @@ export function BudgetTable({
                             </span>
                           )}
                         </div>
-                      </td>
+                      </TableCell>
                     )}
 
                     {/* Start Date */}
                     {isColumnVisible('periodStart') && (
-                      <td className="py-3 px-4 whitespace-nowrap">
+                      <TableCell className="py-3 px-4 whitespace-nowrap">
                         {formatDate(budget.period_start)}
-                      </td>
+                      </TableCell>
                     )}
 
                     {/* End Date */}
                     {isColumnVisible('periodEnd') && (
-                      <td className="py-3 px-4 whitespace-nowrap">
+                      <TableCell className="py-3 px-4 whitespace-nowrap">
                         {formatDate(budget.period_end)}
-                      </td>
+                      </TableCell>
                     )}
 
                     {/* Type */}
                     {isColumnVisible('type') && (
-                      <td className="py-3 px-4 whitespace-nowrap">
+                      <TableCell className="py-3 px-4 whitespace-nowrap">
                         <Badge variant="outline" className="bg-muted/50">
                           {getBudgetTypeLabel(budget.type)}
                         </Badge>
-                      </td>
+                      </TableCell>
                     )}
 
                     {/* Status */}
                     {isColumnVisible('status') && (
-                      <td className="py-3 px-4 whitespace-nowrap">
+                      <TableCell className="py-3 px-4 whitespace-nowrap">
                         <Badge variant="outline" className="bg-muted/50">
                           {getBudgetStatusLabel(budget.status)}
                         </Badge>
-                      </td>
+                      </TableCell>
                     )}
 
                     {/* Currency Value */}
                     {isColumnVisible('value') && (
-                      <td className="py-3 px-4 text-right whitespace-nowrap">
+                      <TableCell className="py-3 px-4 text-right whitespace-nowrap">
                         {budget.value != null ? formatCurrency(budget.value, budget.currency) : '—'}
-                      </td>
+                      </TableCell>
                     )}
 
                     {/* Value Date */}
                     {isColumnVisible('valueDate') && (
-                      <td className="py-3 px-4 whitespace-nowrap">
+                      <TableCell className="py-3 px-4 whitespace-nowrap">
                         {formatDate(budget.value_date)}
-                      </td>
+                      </TableCell>
                     )}
 
                     {/* USD Value */}
                     {isColumnVisible('valueUsd') && (
-                      <td className="py-3 px-4 text-right whitespace-nowrap">
+                      <TableCell className="py-3 px-4 text-right whitespace-nowrap">
                         {budget.value_usd != null ? (
                           <span className="font-medium">
                             {formatCurrency(budget.value_usd, 'USD')}
@@ -635,12 +429,12 @@ export function BudgetTable({
                         ) : (
                           <span className="text-muted-foreground">—</span>
                         )}
-                      </td>
+                      </TableCell>
                     )}
 
                     {/* Reporting Organisation */}
                     {isColumnVisible('reportingOrganisation') && (
-                      <td className="py-3 px-4">
+                      <TableCell className="py-3 px-4">
                         {budget.activity?.reporting_org ? (
                           <div className="text-sm text-foreground flex flex-wrap items-center gap-1">
                             <span>
@@ -658,10 +452,10 @@ export function BudgetTable({
                         ) : (
                           <span className="text-muted-foreground">—</span>
                         )}
-                      </td>
+                      </TableCell>
                     )}
 
-                    <td className="py-3 px-4 text-right" onClick={(e) => e.stopPropagation()}>
+                    <TableCell className="py-3 px-4 text-right" onClick={(e) => e.stopPropagation()}>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <Button
@@ -697,7 +491,7 @@ export function BudgetTable({
                           )}
                         </DropdownMenuContent>
                       </DropdownMenu>
-                    </td>
+                    </TableCell>
                   </TableRow>
 
                   {/* Expanded Row Content */}

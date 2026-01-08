@@ -101,6 +101,14 @@ import {
   getBudgetStatusLabel,
   BUDGET_STATUS_COLORS
 } from '@/types/activity-budget-status';
+import { ColumnSelector } from "@/components/ui/column-selector";
+import {
+  ActivityColumnId,
+  activityColumns,
+  activityColumnGroups,
+  defaultVisibleActivityColumns,
+  ACTIVITY_COLUMNS_LOCALSTORAGE_KEY,
+} from "./columns";
 
 // Dynamically import SectorHierarchyFilter to avoid hydration issues
 const SectorHierarchyFilter = dynamic(
@@ -472,416 +480,6 @@ const formatDateLong = (dateString: string | null | undefined): string => {
   }
 };
 
-// Column configuration for the activity list table
-type ColumnId = 
-  // Default columns
-  | 'checkbox'
-  | 'title'
-  | 'activityStatus'
-  | 'publicationStatus'
-  | 'reportedBy'
-  | 'totalBudgeted'
-  | 'totalPlannedDisbursement'
-  | 'lastEdited'
-  | 'modalityClassification'
-  | 'actions'
-  // Optional default fields
-  | 'aidType'
-  | 'defaultFinanceType'
-  | 'defaultFlowType'
-  | 'defaultTiedStatus'
-  | 'defaultModality'
-  | 'humanitarian'
-  // Transaction type totals
-  | 'totalIncomingCommitments'
-  | 'totalCommitments'
-  | 'totalDisbursements'
-  | 'totalExpenditures'
-  | 'totalInterestRepayment'
-  | 'totalLoanRepayment'
-  | 'totalReimbursement'
-  | 'totalPurchaseOfEquity'
-  | 'totalSaleOfEquity'
-  | 'totalCreditGuarantee'
-  | 'totalIncomingFunds'
-  | 'totalCommitmentCancellation'
-  // Publication status columns
-  | 'isPublished'
-  | 'isValidated'
-  | 'iatiSyncStatus'
-  // Participating organisation columns
-  | 'fundingOrganisations'
-  | 'extendingOrganisations'
-  | 'implementingOrganisations'
-  | 'accountableOrganisations'
-  // Description columns
-  | 'descriptionGeneral'
-  | 'descriptionObjectives'
-  | 'descriptionTargetGroups'
-  | 'descriptionOther'
-  // Progress & Metrics columns
-  | 'timeElapsed'
-  | 'committedSpentPercent'
-  | 'budgetSpentPercent'
-  // Portfolio Share columns (% of system-wide totals)
-  | 'budgetShare'
-  | 'plannedDisbursementShare'
-  | 'commitmentShare'
-  | 'disbursementShare'
-  // Duration columns
-  | 'actualLength'
-  | 'totalExpectedLength'
-  | 'implementationToDate'
-  | 'remainingDuration'
-  | 'durationBand'
-  // Date columns
-  | 'plannedStartDate'
-  | 'plannedEndDate'
-  | 'actualStartDate'
-  | 'actualEndDate'
-  // Sector allocation columns
-  | 'sectorCategories'
-  | 'sectors'
-  | 'subSectors'
-  // Location columns
-  | 'locations'
-  // SDG column
-  | 'sdgs'
-  // Budget status column
-  | 'budgetStatus'
-  // Capital Spend columns
-  | 'capitalSpendPercent'
-  | 'capitalSpendTotalBudget'
-  | 'capitalSpendPlannedDisbursements'
-  | 'capitalSpendCommitments'
-  | 'capitalSpendDisbursements';
-
-interface ColumnConfig {
-  id: ColumnId;
-  label: string;
-  group: 'default' | 'activityDefaults' | 'transactionTypeTotals' | 'publicationStatuses' | 'participatingOrgs' | 'descriptions' | 'progressMetrics' | 'portfolioShares' | 'durations' | 'dates' | 'sectors' | 'locations' | 'sdgs' | 'capitalSpend';
-  width?: string;
-  alwaysVisible?: boolean; // For columns that can't be hidden (checkbox, actions)
-  defaultVisible?: boolean;
-  sortable?: boolean;
-  align?: 'left' | 'center' | 'right';
-}
-
-const COLUMN_CONFIGS: ColumnConfig[] = [
-  // Default columns
-  { id: 'checkbox', label: 'Select', group: 'default', width: 'w-[50px]', alwaysVisible: true, defaultVisible: true, align: 'center' },
-  { id: 'title', label: 'Activity Title', group: 'default', width: 'w-[30%]', defaultVisible: true, sortable: true, align: 'left' },
-  { id: 'activityStatus', label: 'Activity Status', group: 'default', width: 'w-[120px]', defaultVisible: true, sortable: true, align: 'left' },
-  { id: 'publicationStatus', label: 'Publication Status', group: 'default', width: 'w-[120px]', defaultVisible: true, align: 'center' },
-  { id: 'reportedBy', label: 'Reported By', group: 'default', width: 'min-w-[140px]', defaultVisible: true, sortable: true, align: 'left' },
-  { id: 'totalBudgeted', label: 'Total Budgeted', group: 'default', width: 'min-w-[120px]', defaultVisible: true, sortable: true, align: 'right' },
-  { id: 'totalPlannedDisbursement', label: 'Total Planned Disbursements', group: 'default', width: 'min-w-[100px]', defaultVisible: true, sortable: true, align: 'right' },
-  { id: 'lastEdited', label: 'Last Edited', group: 'default', width: 'min-w-[100px]', defaultVisible: true, sortable: true, align: 'right' },
-  { id: 'modalityClassification', label: 'Modality & Classification', group: 'default', width: 'w-[120px]', defaultVisible: true, align: 'center' },
-  { id: 'sectorCategories', label: 'Sector Categories', group: 'sectors', width: 'min-w-[160px]', defaultVisible: false, align: 'center' },
-  { id: 'sectors', label: 'Sectors', group: 'sectors', width: 'min-w-[160px]', defaultVisible: false, align: 'center' },
-  { id: 'subSectors', label: 'Sub-sectors', group: 'sectors', width: 'min-w-[180px]', defaultVisible: false, align: 'center' },
-  { id: 'locations', label: 'Locations', group: 'locations', width: 'min-w-[160px]', defaultVisible: false, align: 'center' },
-  { id: 'actions', label: 'Actions', group: 'default', width: 'w-[80px]', alwaysVisible: true, defaultVisible: true, align: 'right' },
-  
-  // Activity defaults (optional columns)
-  { id: 'aidType', label: 'Default Aid Type', group: 'activityDefaults', width: 'min-w-[150px]', defaultVisible: false, align: 'left' },
-  { id: 'defaultFinanceType', label: 'Default Finance Type', group: 'activityDefaults', width: 'min-w-[150px]', defaultVisible: false, align: 'left' },
-  { id: 'defaultFlowType', label: 'Default Flow Type', group: 'activityDefaults', width: 'min-w-[150px]', defaultVisible: false, align: 'left' },
-  { id: 'defaultTiedStatus', label: 'Default Tied Status', group: 'activityDefaults', width: 'min-w-[130px]', defaultVisible: false, align: 'left' },
-  { id: 'defaultModality', label: 'Default Modality', group: 'activityDefaults', width: 'min-w-[130px]', defaultVisible: false, align: 'left' },
-  { id: 'humanitarian', label: 'Humanitarian', group: 'activityDefaults', width: 'w-[100px]', defaultVisible: false, align: 'center' },
-  
-  // Transaction type totals
-  { id: 'totalIncomingCommitments', label: 'Incoming Commitments', group: 'transactionTypeTotals', width: 'min-w-[120px]', defaultVisible: false, align: 'right' },
-  { id: 'totalCommitments', label: 'Outgoing Commitments', group: 'transactionTypeTotals', width: 'min-w-[120px]', defaultVisible: false, align: 'right' },
-  { id: 'totalDisbursements', label: 'Disbursements', group: 'transactionTypeTotals', width: 'min-w-[120px]', defaultVisible: false, align: 'right' },
-  { id: 'totalExpenditures', label: 'Expenditures', group: 'transactionTypeTotals', width: 'min-w-[120px]', defaultVisible: false, align: 'right' },
-  { id: 'totalInterestRepayment', label: 'Interest Repayment', group: 'transactionTypeTotals', width: 'min-w-[120px]', defaultVisible: false, align: 'right' },
-  { id: 'totalLoanRepayment', label: 'Loan Repayment', group: 'transactionTypeTotals', width: 'min-w-[120px]', defaultVisible: false, align: 'right' },
-  { id: 'totalReimbursement', label: 'Reimbursement', group: 'transactionTypeTotals', width: 'min-w-[120px]', defaultVisible: false, align: 'right' },
-  { id: 'totalPurchaseOfEquity', label: 'Purchase of Equity', group: 'transactionTypeTotals', width: 'min-w-[120px]', defaultVisible: false, align: 'right' },
-  { id: 'totalSaleOfEquity', label: 'Sale of Equity', group: 'transactionTypeTotals', width: 'min-w-[120px]', defaultVisible: false, align: 'right' },
-  { id: 'totalCreditGuarantee', label: 'Credit Guarantee', group: 'transactionTypeTotals', width: 'min-w-[120px]', defaultVisible: false, align: 'right' },
-  { id: 'totalIncomingFunds', label: 'Incoming Funds', group: 'transactionTypeTotals', width: 'min-w-[120px]', defaultVisible: false, align: 'right' },
-  { id: 'totalCommitmentCancellation', label: 'Commitment Cancellation', group: 'transactionTypeTotals', width: 'min-w-[120px]', defaultVisible: false, align: 'right' },
-  
-  // Publication status columns
-  { id: 'isPublished', label: 'Published', group: 'publicationStatuses', width: 'w-[100px]', defaultVisible: false, align: 'left' },
-  { id: 'isValidated', label: 'Validated', group: 'publicationStatuses', width: 'w-[100px]', defaultVisible: false, align: 'left' },
-  { id: 'iatiSyncStatus', label: 'IATI Synced', group: 'publicationStatuses', width: 'min-w-[120px]', defaultVisible: false, align: 'left' },
-  
-  // Participating organisation columns
-  { id: 'fundingOrganisations', label: 'Funding Organisations', group: 'participatingOrgs', width: 'min-w-[180px]', defaultVisible: false, align: 'left' },
-  { id: 'extendingOrganisations', label: 'Extending Organisations', group: 'participatingOrgs', width: 'min-w-[180px]', defaultVisible: false, align: 'left' },
-  { id: 'implementingOrganisations', label: 'Implementing Organisations', group: 'participatingOrgs', width: 'min-w-[180px]', defaultVisible: false, align: 'left' },
-  { id: 'accountableOrganisations', label: 'Accountable Organisations', group: 'participatingOrgs', width: 'min-w-[180px]', defaultVisible: false, align: 'left' },
-  
-  // SDG column
-  { id: 'sdgs', label: 'SDGs', group: 'sdgs', width: 'min-w-[120px]', defaultVisible: false, align: 'left' },
-
-  // Budget status column
-  { id: 'budgetStatus', label: 'Budget Status', group: 'governmentSystemsAlignment', width: 'min-w-[130px]', defaultVisible: false, align: 'center' },
-
-  // Description columns
-  { id: 'descriptionGeneral', label: 'Activity Description – General', group: 'descriptions', width: 'min-w-[200px]', defaultVisible: false, align: 'left' },
-  { id: 'descriptionObjectives', label: 'Activity Description – Objectives', group: 'descriptions', width: 'min-w-[200px]', defaultVisible: false, align: 'left' },
-  { id: 'descriptionTargetGroups', label: 'Activity Description – Target Groups', group: 'descriptions', width: 'min-w-[200px]', defaultVisible: false, align: 'left' },
-  { id: 'descriptionOther', label: 'Activity Description – Other', group: 'descriptions', width: 'min-w-[200px]', defaultVisible: false, align: 'left' },
-  
-  // Progress & Metrics columns
-  { id: 'timeElapsed', label: 'Time Elapsed', group: 'progressMetrics', width: 'min-w-[140px]', defaultVisible: false, align: 'left' },
-  { id: 'committedSpentPercent', label: '% Committed Spent', group: 'progressMetrics', width: 'min-w-[140px]', defaultVisible: false, align: 'left' },
-  { id: 'budgetSpentPercent', label: '% Budget Spent', group: 'progressMetrics', width: 'min-w-[140px]', defaultVisible: false, align: 'left' },
-  
-  // Portfolio Share columns (% of system-wide totals)
-  { id: 'budgetShare', label: 'Budget Share', group: 'portfolioShares', width: 'min-w-[100px]', defaultVisible: false, align: 'right' },
-  { id: 'plannedDisbursementShare', label: 'Planned Disb. Share', group: 'portfolioShares', width: 'min-w-[120px]', defaultVisible: false, align: 'right' },
-  { id: 'commitmentShare', label: 'Commitment Share', group: 'portfolioShares', width: 'min-w-[120px]', defaultVisible: false, align: 'right' },
-  { id: 'disbursementShare', label: 'Disbursement Share', group: 'portfolioShares', width: 'min-w-[120px]', defaultVisible: false, align: 'right' },
-  
-  // Duration columns
-  { id: 'totalExpectedLength', label: 'Total Expected Length', group: 'durations', width: 'min-w-[160px]', defaultVisible: false, sortable: true, align: 'left' },
-  { id: 'implementationToDate', label: 'Implementation to Date', group: 'durations', width: 'min-w-[160px]', defaultVisible: false, sortable: true, align: 'left' },
-  { id: 'remainingDuration', label: 'Remaining Duration', group: 'durations', width: 'min-w-[160px]', defaultVisible: false, sortable: true, align: 'left' },
-  { id: 'actualLength', label: 'Actual Length', group: 'durations', width: 'min-w-[160px]', defaultVisible: false, sortable: true, align: 'left' },
-  { id: 'durationBand', label: 'Duration Band', group: 'durations', width: 'min-w-[180px]', defaultVisible: false, sortable: true, align: 'left' },
-  
-  // Date columns
-  { id: 'plannedStartDate', label: 'Planned Start Date', group: 'dates', width: 'min-w-[130px]', defaultVisible: false, sortable: true, align: 'left' },
-  { id: 'plannedEndDate', label: 'Planned End Date', group: 'dates', width: 'min-w-[130px]', defaultVisible: false, sortable: true, align: 'left' },
-  { id: 'actualStartDate', label: 'Actual Start Date', group: 'dates', width: 'min-w-[130px]', defaultVisible: false, sortable: true, align: 'left' },
-  { id: 'actualEndDate', label: 'Actual End Date', group: 'dates', width: 'min-w-[130px]', defaultVisible: false, sortable: true, align: 'left' },
-
-  // Capital Spend columns
-  { id: 'capitalSpendPercent', label: 'Capital Spend %', group: 'capitalSpend', width: 'min-w-[100px]', defaultVisible: false, align: 'right' },
-  { id: 'capitalSpendTotalBudget', label: 'Capital Spend - Total Budget', group: 'capitalSpend', width: 'min-w-[180px]', defaultVisible: false, align: 'right' },
-  { id: 'capitalSpendPlannedDisbursements', label: 'Capital Spend - Planned Disb.', group: 'capitalSpend', width: 'min-w-[200px]', defaultVisible: false, align: 'right' },
-  { id: 'capitalSpendCommitments', label: 'Capital Spend - Commitments', group: 'capitalSpend', width: 'min-w-[180px]', defaultVisible: false, align: 'right' },
-  { id: 'capitalSpendDisbursements', label: 'Capital Spend - Disbursements', group: 'capitalSpend', width: 'min-w-[180px]', defaultVisible: false, align: 'right' },
-];
-
-const COLUMN_GROUPS = {
-  default: 'Default Columns',
-  sectors: 'Sectors',
-  locations: 'Locations',
-  publicationStatuses: 'Publication Status',
-  activityDefaults: 'Activity Defaults',
-  transactionTypeTotals: 'Transaction Type Totals',
-  flowTypeTotals: 'Flow Type Totals',
-  participatingOrgs: 'Participating Organisations',
-  descriptions: 'Descriptions',
-  progressMetrics: 'Progress & Metrics',
-  portfolioShares: 'Portfolio Shares',
-  durations: 'Activity Durations',
-  dates: 'Activity Dates',
-  sdgs: 'SDGs',
-  governmentSystemsAlignment: 'Government Systems Alignment',
-  capitalSpend: 'Capital Spend',
-};
-
-const DEFAULT_VISIBLE_COLUMNS: ColumnId[] = COLUMN_CONFIGS
-  .filter(col => col.defaultVisible)
-  .map(col => col.id);
-
-const LOCALSTORAGE_KEY = 'aims_activity_list_visible_columns';
-
-// Column Selector Component
-interface ColumnSelectorProps {
-  visibleColumns: ColumnId[];
-  onColumnsChange: (columns: ColumnId[]) => void;
-}
-
-function ColumnSelector({ visibleColumns, onColumnsChange }: ColumnSelectorProps) {
-  const [open, setOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
-
-  const toggleColumn = (columnId: ColumnId) => {
-    const config = COLUMN_CONFIGS.find(c => c.id === columnId);
-    if (config?.alwaysVisible) return; // Can't toggle always-visible columns
-    
-    if (visibleColumns.includes(columnId)) {
-      onColumnsChange(visibleColumns.filter(id => id !== columnId));
-    } else {
-      onColumnsChange([...visibleColumns, columnId]);
-    }
-  };
-
-  const toggleGroup = (group: keyof typeof COLUMN_GROUPS) => {
-    const groupColumns = COLUMN_CONFIGS.filter(c => c.group === group && !c.alwaysVisible);
-    const allVisible = groupColumns.every(c => visibleColumns.includes(c.id));
-    
-    if (allVisible) {
-      // Hide all columns in this group
-      onColumnsChange(visibleColumns.filter(id => !groupColumns.find(c => c.id === id)));
-    } else {
-      // Show all columns in this group
-      const newColumns = [...visibleColumns];
-      groupColumns.forEach(c => {
-        if (!newColumns.includes(c.id)) {
-          newColumns.push(c.id);
-        }
-      });
-      onColumnsChange(newColumns);
-    }
-  };
-
-  const resetToDefaults = () => {
-    onColumnsChange(DEFAULT_VISIBLE_COLUMNS);
-  };
-
-  const selectAll = () => {
-    const allColumnIds = COLUMN_CONFIGS.map(c => c.id);
-    onColumnsChange(allColumnIds);
-  };
-
-  const visibleCount = visibleColumns.filter(id => {
-    const config = COLUMN_CONFIGS.find(c => c.id === id);
-    return config && !config.alwaysVisible;
-  }).length;
-
-  const totalToggleable = COLUMN_CONFIGS.filter(c => !c.alwaysVisible).length;
-
-  // Filter columns based on search query
-  const filteredColumns = useMemo(() => {
-    if (!searchQuery.trim()) return null; // null means show grouped view
-    const query = searchQuery.toLowerCase();
-    return COLUMN_CONFIGS.filter(c => 
-      !c.alwaysVisible && c.label.toLowerCase().includes(query)
-    );
-  }, [searchQuery]);
-
-  return (
-    <Popover open={open} onOpenChange={(isOpen) => {
-      setOpen(isOpen);
-      if (!isOpen) setSearchQuery(''); // Clear search when closing
-    }}>
-      <PopoverTrigger asChild>
-        <Button variant="outline" size="sm" className="gap-2">
-          <Columns3 className="h-4 w-4" />
-          <span className="hidden sm:inline">Columns</span>
-          <Badge variant="secondary" className="ml-1 px-1.5 py-0 text-xs">
-            {visibleCount}
-          </Badge>
-          <ChevronDown className="h-3 w-3 opacity-50" />
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent className="w-80 p-0" align="end">
-        <div className="p-3 border-b">
-          <div className="flex items-center justify-between">
-            <h4 className="font-medium text-sm">Visible Columns</h4>
-            <div className="flex items-center gap-1">
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                onClick={selectAll}
-                className="h-7 text-xs"
-              >
-                Select all
-              </Button>
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                onClick={resetToDefaults}
-                className="h-7 text-xs"
-              >
-                Reset
-              </Button>
-            </div>
-          </div>
-          <p className="text-xs text-muted-foreground mt-1">
-            {visibleCount} of {totalToggleable} columns visible
-          </p>
-          <div className="flex items-center border rounded-md px-3 py-1 mt-2">
-            <Search className="h-4 w-4 text-muted-foreground mr-2 shrink-0" />
-            <Input
-              placeholder="Search columns..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="border-0 h-8 focus-visible:ring-0 focus-visible:ring-offset-0 px-0 text-sm"
-            />
-            {searchQuery && (
-              <X
-                className="h-4 w-4 text-muted-foreground cursor-pointer hover:text-foreground shrink-0"
-                onClick={() => setSearchQuery('')}
-              />
-            )}
-          </div>
-        </div>
-        <div className="max-h-[400px] overflow-y-auto">
-          {filteredColumns ? (
-            // Show flat filtered list when searching
-            filteredColumns.length === 0 ? (
-              <div className="p-3 text-sm text-muted-foreground text-center">
-                No columns match "{searchQuery}"
-              </div>
-            ) : (
-              <div className="py-1">
-                {filteredColumns.map(column => (
-                  <div
-                    key={column.id}
-                    className="flex items-center gap-2 px-3 py-1.5 hover:bg-muted/50 cursor-pointer"
-                    onClick={() => toggleColumn(column.id)}
-                  >
-                    <Checkbox 
-                      checked={visibleColumns.includes(column.id)}
-                      onCheckedChange={() => toggleColumn(column.id)}
-                    />
-                    <span className="text-sm">{column.label}</span>
-                    <span className="text-xs text-muted-foreground ml-auto">
-                      {COLUMN_GROUPS[column.group as keyof typeof COLUMN_GROUPS]}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            )
-          ) : (
-            // Show grouped view when not searching
-            (Object.keys(COLUMN_GROUPS) as Array<keyof typeof COLUMN_GROUPS>).map(groupKey => {
-              const groupColumns = COLUMN_CONFIGS.filter(c => c.group === groupKey && !c.alwaysVisible);
-              if (groupColumns.length === 0) return null;
-              
-              const allVisible = groupColumns.every(c => visibleColumns.includes(c.id));
-              const someVisible = groupColumns.some(c => visibleColumns.includes(c.id));
-              
-              return (
-                <div key={groupKey} className="border-b last:border-b-0">
-                  <div 
-                    className="flex items-center gap-2 px-3 py-2 bg-muted/50 cursor-pointer hover:bg-muted/80"
-                    onClick={() => toggleGroup(groupKey)}
-                  >
-                    <Checkbox 
-                      checked={allVisible}
-                      // @ts-ignore - indeterminate is valid but not in types
-                      indeterminate={someVisible && !allVisible}
-                      onCheckedChange={() => toggleGroup(groupKey)}
-                    />
-                    <span className="text-sm font-medium">{COLUMN_GROUPS[groupKey]}</span>
-                  </div>
-                  <div className="py-1">
-                    {groupColumns.map(column => (
-                      <div
-                        key={column.id}
-                        className="flex items-center gap-2 px-3 py-1.5 hover:bg-muted/50 cursor-pointer"
-                        onClick={() => toggleColumn(column.id)}
-                      >
-                        <Checkbox 
-                          checked={visibleColumns.includes(column.id)}
-                          onCheckedChange={() => toggleColumn(column.id)}
-                        />
-                        <span className="text-sm">{column.label}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              );
-            })
-          )}
-        </div>
-      </PopoverContent>
-    </Popover>
-  );
-}
 
 function ActivitiesPageContent() {
   // Enable optimization to get conditional image loading
@@ -914,7 +512,7 @@ function ActivitiesPageContent() {
   });
   
   // Column visibility state with localStorage persistence
-  const [visibleColumns, setVisibleColumns] = useState<ColumnId[]>(DEFAULT_VISIBLE_COLUMNS);
+  const [visibleColumns, setVisibleColumns] = useState<ActivityColumnId[]>(defaultVisibleActivityColumns);
   
   // Location display mode state (percentage or USD)
   const [locationDisplayMode, setLocationDisplayMode] = useState<'percentage' | 'usd'>('percentage');
@@ -922,15 +520,15 @@ function ActivitiesPageContent() {
   // Load visible columns from localStorage on mount
   useEffect(() => {
     try {
-      const saved = localStorage.getItem(LOCALSTORAGE_KEY);
+      const saved = localStorage.getItem(ACTIVITY_COLUMNS_LOCALSTORAGE_KEY);
       if (saved) {
-        const parsed = JSON.parse(saved) as ColumnId[];
+        const parsed = JSON.parse(saved) as ActivityColumnId[];
         // Validate that all saved columns are valid column IDs
-        const validColumns = parsed.filter(id => 
-          COLUMN_CONFIGS.some(config => config.id === id)
+        const validColumns = parsed.filter(id =>
+          activityColumns.some(config => config.id === id)
         );
         // Ensure always-visible columns are included
-        const alwaysVisible = COLUMN_CONFIGS
+        const alwaysVisible = activityColumns
           .filter(c => c.alwaysVisible)
           .map(c => c.id);
         const merged = [...new Set([...alwaysVisible, ...validColumns])];
@@ -940,12 +538,12 @@ function ActivitiesPageContent() {
       console.error('Failed to load column preferences from localStorage:', e);
     }
   }, []);
-  
+
   // Save visible columns to localStorage when they change
-  const handleColumnsChange = useCallback((newColumns: ColumnId[]) => {
+  const handleColumnsChange = useCallback((newColumns: ActivityColumnId[]) => {
     setVisibleColumns(newColumns);
     try {
-      localStorage.setItem(LOCALSTORAGE_KEY, JSON.stringify(newColumns));
+      localStorage.setItem(ACTIVITY_COLUMNS_LOCALSTORAGE_KEY, JSON.stringify(newColumns));
     } catch (e) {
       console.error('Failed to save column preferences to localStorage:', e);
     }
@@ -2088,8 +1686,11 @@ const router = useRouter();
           <div className="flex flex-col gap-1">
             <Label className="text-xs text-muted-foreground">Columns</Label>
             <ColumnSelector
+              columns={activityColumns}
               visibleColumns={visibleColumns}
-              onColumnsChange={handleColumnsChange}
+              defaultVisibleColumns={defaultVisibleActivityColumns}
+              onChange={handleColumnsChange}
+              groupLabels={activityColumnGroups}
             />
           </div>
         )}

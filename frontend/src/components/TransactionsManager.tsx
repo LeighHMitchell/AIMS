@@ -541,27 +541,43 @@ export default function TransactionsManager({
   const handleSubmit = async (formData: Partial<Transaction>) => {
     setSubmitting(true);
     try {
-    if (!formData.value || formData.value <= 0) {
-      toast.error("Transaction value must be greater than 0");
-      return;
-    }
-    if (!formData.provider_org_name && !formData.provider_org_id) {
-      toast.error("Provider organisation is required");
-      return;
-    }
-    if (!formData.receiver_org_name && !formData.receiver_org_id) {
-      toast.error("Receiver organisation is required");
-      return;
-    }
+      // If transaction already has a uuid/id, it was already saved by TransactionModal
+      // Just refresh the list and close the dialog - don't make another POST request
+      if (formData.uuid || (formData.id && typeof formData.id === 'string' && formData.id.includes('-'))) {
+        console.log('[TransactionsManager] Transaction already saved by modal, skipping duplicate save:', formData.uuid || formData.id);
+
+        // Refresh from server to get complete data
+        if (onRefreshNeeded) {
+          await onRefreshNeeded();
+        }
+
+        setShowAddDialog(false);
+        setEditingTransaction(null);
+        return;
+      }
+
+      // Validate required fields
+      if (!formData.value || formData.value <= 0) {
+        toast.error("Transaction value must be greater than 0");
+        return;
+      }
+      if (!formData.provider_org_name && !formData.provider_org_id) {
+        toast.error("Provider organisation is required");
+        return;
+      }
+      if (!formData.receiver_org_name && !formData.receiver_org_id) {
+        toast.error("Receiver organisation is required");
+        return;
+      }
 
       const transactionData = {
-      activity_id: activityId,
-      transaction_type: formData.transaction_type as TransactionType,
-      transaction_date: formData.transaction_date || format(new Date(), "yyyy-MM-dd"),
-      value: formData.value || 0,
-      currency: formData.currency || 'USD',
-      status: formData.status || 'draft',
-      ...formData,
+        activity_id: activityId,
+        transaction_type: formData.transaction_type as TransactionType,
+        transaction_date: formData.transaction_date || format(new Date(), "yyyy-MM-dd"),
+        value: formData.value || 0,
+        currency: formData.currency || 'USD',
+        status: formData.status || 'draft',
+        ...formData,
       };
 
       let response;

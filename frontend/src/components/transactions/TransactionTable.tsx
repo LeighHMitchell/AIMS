@@ -350,17 +350,7 @@ export function TransactionTable({
   // Helper function to check if a column is visible
   const isColumnVisible = (columnId: TransactionColumnId): boolean => {
     if (!visibleColumns) return true; // Show all if not provided (backward compat)
-    const isVisible = visibleColumns.includes(columnId);
-    // Debug logging for finance type column
-    if (columnId === 'financeType') {
-      console.log('[TransactionTable] financeType visibility check:', { 
-        columnId, 
-        isVisible, 
-        visibleColumns,
-        variant 
-      });
-    }
-    return isVisible;
+    return visibleColumns.includes(columnId);
   };
 
   // USD conversion tracking

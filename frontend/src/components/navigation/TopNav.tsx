@@ -55,6 +55,7 @@ export function TopNav({ user, onLogout }: TopNavProps) {
   const [isFeedbackModalOpen, setIsFeedbackModalOpen] = useState(false);
   const [isAskQuestionModalOpen, setIsAskQuestionModalOpen] = useState(false);
   const [isAboutModalOpen, setIsAboutModalOpen] = useState(false);
+  const [isSearchExpanded, setIsSearchExpanded] = useState(false);
 
   // Determine if share button should be shown (hide on admin, profile, settings pages)
   const hideShareOnPages = ['/admin', '/profile', '/settings'];
@@ -95,11 +96,17 @@ export function TopNav({ user, onLogout }: TopNavProps) {
       <div className="flex h-16 items-center px-6">
         <div className="ml-auto flex items-center space-x-4">
           {/* Global Search Bar */}
-          <GlobalSearchBar />
+          <GlobalSearchBar
+            isExpanded={isSearchExpanded}
+            onExpandedChange={setIsSearchExpanded}
+          />
 
           {/* Notification Bell */}
           {user && (
-            <NotificationBell userId={user.id} />
+            <NotificationBell
+              userId={user.id}
+              onOpen={() => setIsSearchExpanded(false)}
+            />
           )}
 
           {/* User Menu - always rendered if user exists */}

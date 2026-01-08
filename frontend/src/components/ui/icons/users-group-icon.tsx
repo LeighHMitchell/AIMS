@@ -12,40 +12,44 @@ const UsersGroupIcon = forwardRef<AnimatedIconHandle, AnimatedIconProps>(
     const [scope, animate] = useAnimate();
 
     const start = useCallback(async () => {
-      animate(
-        ".user-center",
-        { y: -2, scale: 1.05 },
-        { duration: 0.3, ease: "easeOut" },
-      );
-      animate(
-        ".user-left",
-        { x: -1, scale: 1.02 },
-        { duration: 0.3, ease: "easeOut" },
-      );
-      animate(
-        ".user-right",
-        { x: 1, scale: 1.02 },
-        { duration: 0.3, ease: "easeOut" },
-      );
-    }, [animate]);
+      // Guard: check if scope is mounted and elements exist
+      if (!scope.current?.querySelector('.user-center')) return;
+
+      try {
+        animate(
+          ".user-center",
+          { y: -2, scale: 1.05 },
+          { duration: 0.3, ease: "easeOut" },
+        );
+        animate(
+          ".user-right",
+          { x: 1, scale: 1.02 },
+          { duration: 0.3, ease: "easeOut" },
+        );
+      } catch (e) {
+        // Ignore animation errors during unmount/hydration
+      }
+    }, [animate, scope]);
 
     const stop = useCallback(() => {
-      animate(
-        ".user-center",
-        { y: 0, scale: 1 },
-        { duration: 0.2, ease: "easeOut" },
-      );
-      animate(
-        ".user-left",
-        { x: 0, scale: 1 },
-        { duration: 0.2, ease: "easeOut" },
-      );
-      animate(
-        ".user-right",
-        { x: 0, scale: 1 },
-        { duration: 0.2, ease: "easeOut" },
-      );
-    }, [animate]);
+      // Guard: check if scope is mounted
+      if (!scope.current) return;
+
+      try {
+        animate(
+          ".user-center",
+          { y: 0, scale: 1 },
+          { duration: 0.2, ease: "easeOut" },
+        );
+        animate(
+          ".user-right",
+          { x: 0, scale: 1 },
+          { duration: 0.2, ease: "easeOut" },
+        );
+      } catch (e) {
+        // Ignore animation errors
+      }
+    }, [animate, scope]);
 
     useImperativeHandle(ref, () => ({
       startAnimation: start,

@@ -143,8 +143,8 @@ const ActivityCardModern: React.FC<ActivityCardModernProps> = ({
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, type: "spring", bounce: 0.3 }}
       whileHover={{ y: -8 }}
-      className={`group relative flex w-full flex-col rounded-3xl shadow-sm hover:shadow-xl transition-shadow duration-300 isolate overflow-hidden ${className}`}
-      style={{ backgroundColor: colors.platinum, borderColor: colors.paleSlate, borderWidth: 1 }}
+      className={`group relative flex w-full flex-col rounded-3xl shadow-sm hover:shadow-xl transition-shadow duration-300 isolate overflow-hidden border ${className}`}
+      style={{ backgroundColor: 'white' }}
       role="article"
       aria-label={`Activity: ${activity.title}`}
     >
@@ -280,7 +280,7 @@ const ActivityCardModern: React.FC<ActivityCardModernProps> = ({
 
       {/* Ticket Details Section */}
       <Link href={`/activities/${activity.id}`} className="block flex-1">
-        <div className="relative flex-1 p-5 flex flex-col" style={{ backgroundColor: colors.platinum }}>
+        <div className="relative flex-1 p-5 flex flex-col" style={{ backgroundColor: 'white' }}>
           <div className="flex-1">
             <div className="grid grid-cols-2 gap-4 mt-2">
               {/* Start Date */}

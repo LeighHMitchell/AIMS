@@ -12,38 +12,52 @@ const CurrencyDollarIcon = forwardRef<AnimatedIconHandle, AnimatedIconProps>(
     const [scope, animate] = useAnimate();
 
     const start = async () => {
-      await animate(
-        ".usd-main, .usd-line",
-        { pathLength: 0, opacity: 0 },
-        { duration: 0 },
-      );
+      // Guard: check if scope is mounted and elements exist
+      if (!scope.current?.querySelector('.usd-main')) return;
 
-      await animate(
-        ".usd-line",
-        { pathLength: 1, opacity: 1 },
-        { duration: 0.25, ease: "easeOut" },
-      );
+      try {
+        await animate(
+          ".usd-main, .usd-line",
+          { pathLength: 0, opacity: 0 },
+          { duration: 0 },
+        );
 
-      await animate(
-        ".usd-main",
-        { pathLength: 1, opacity: 1 },
-        { duration: 0.4, ease: "easeOut" },
-      );
+        await animate(
+          ".usd-line",
+          { pathLength: 1, opacity: 1 },
+          { duration: 0.25, ease: "easeOut" },
+        );
 
-      animate(
-        ".usd-symbol",
-        { scale: [0.96, 1] },
-        { duration: 0.2, ease: "easeOut" },
-      );
+        await animate(
+          ".usd-main",
+          { pathLength: 1, opacity: 1 },
+          { duration: 0.4, ease: "easeOut" },
+        );
+
+        animate(
+          ".usd-symbol",
+          { scale: [0.96, 1] },
+          { duration: 0.2, ease: "easeOut" },
+        );
+      } catch (e) {
+        // Ignore animation errors during unmount/hydration
+      }
     };
 
     const stop = () => {
-      animate(
-        ".usd-main, .usd-line",
-        { pathLength: 1, opacity: 1 },
-        { duration: 0.2 },
-      );
-      animate(".usd-symbol", { scale: 1 }, { duration: 0.2 });
+      // Guard: check if scope is mounted
+      if (!scope.current) return;
+
+      try {
+        animate(
+          ".usd-main, .usd-line",
+          { pathLength: 1, opacity: 1 },
+          { duration: 0.2 },
+        );
+        animate(".usd-symbol", { scale: 1 }, { duration: 0.2 });
+      } catch (e) {
+        // Ignore animation errors
+      }
     };
 
     useImperativeHandle(ref, () => {

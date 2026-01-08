@@ -73,13 +73,27 @@ interface SearchSuggestion {
 interface GlobalSearchBarProps {
   className?: string
   placeholder?: string
+  isExpanded?: boolean
+  onExpandedChange?: (expanded: boolean) => void
 }
 
 export function GlobalSearchBar({
   className,
-  placeholder = "Search projects, donors, tags…"
+  placeholder = "Search projects, donors, tags…",
+  isExpanded: controlledExpanded,
+  onExpandedChange
 }: GlobalSearchBarProps) {
-  const [isExpanded, setIsExpanded] = useState(false)
+  const [internalExpanded, setInternalExpanded] = useState(false)
+
+  // Use controlled or uncontrolled mode
+  const isExpanded = controlledExpanded !== undefined ? controlledExpanded : internalExpanded
+  const setIsExpanded = (expanded: boolean) => {
+    if (onExpandedChange) {
+      onExpandedChange(expanded)
+    } else {
+      setInternalExpanded(expanded)
+    }
+  }
   const [open, setOpen] = useState(false)
   const [query, setQuery] = useState('')
   const [results, setResults] = useState<SearchResult[]>([])
@@ -543,7 +557,7 @@ export function GlobalSearchBar({
             exit={{ scale: 0, opacity: 0 }}
             transition={{ duration: 0.15 }}
             onClick={handleExpand}
-            className="flex h-10 w-10 items-center justify-center rounded-full border border-border bg-card transition-colors hover:bg-muted"
+            className="flex h-10 w-10 items-center justify-center rounded-full border border-border bg-card transition-colors hover:bg-muted focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
             aria-label="Open search"
           >
             <Search className="h-4 w-4 text-muted-foreground" />
@@ -568,7 +582,7 @@ export function GlobalSearchBar({
             >
               <Popover open={open} onOpenChange={setOpen}>
                 <PopoverTrigger asChild>
-                  <div className="relative flex items-center overflow-hidden rounded-full border border-border bg-card/80 backdrop-blur-md focus-within:ring-0 focus-within:border-border">
+                  <div className="relative flex items-center overflow-hidden rounded-full border border-border bg-card focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2">
                     <div className="ml-4">
                       <Search className="h-4 w-4 text-muted-foreground" />
                     </div>

@@ -99,8 +99,8 @@ const OrganizationCardModern: React.FC<OrganizationCardModernProps> = ({
       transition={{ duration: 0.5, type: "spring", bounce: 0.3 }}
       whileHover={{ y: -8 }}
       onClick={handleView}
-      className={`group relative flex w-full flex-col rounded-3xl shadow-sm hover:shadow-xl transition-shadow duration-300 cursor-pointer isolate overflow-hidden ${className}`}
-      style={{ backgroundColor: colors.platinum, borderColor: colors.paleSlate, borderWidth: 1 }}
+      className={`group relative flex w-full flex-col rounded-3xl shadow-sm hover:shadow-xl transition-shadow duration-300 cursor-pointer isolate overflow-hidden border ${className}`}
+      style={{ backgroundColor: 'white' }}
       role="article"
       aria-label={`Organization: ${organization.name}`}
     >
@@ -210,7 +210,7 @@ const OrganizationCardModern: React.FC<OrganizationCardModernProps> = ({
       )}
 
       {/* Details Section */}
-      <div className="relative flex-1 p-5 flex flex-col" style={{ backgroundColor: colors.platinum }}>
+      <div className="relative flex-1 p-5 flex flex-col" style={{ backgroundColor: 'white' }}>
         <div className="flex-1">
           {/* Description */}
           {organization.description && (

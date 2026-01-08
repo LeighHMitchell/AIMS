@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
@@ -11,8 +11,6 @@ import {
   ArrowRight,
   Loader2,
   NotepadText,
-  Columns3,
-  Search,
 } from "lucide-react";
 import { format } from "date-fns";
 import { Badge } from "@/components/ui/badge";
@@ -40,232 +38,41 @@ import {
   getSortIcon,
 } from "@/components/ui/table";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Input } from "@/components/ui/input";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { OrganizationLogo } from "@/components/ui/organization-logo";
+import { ColumnSelector } from "@/components/ui/column-selector";
+import { EmptyState } from "@/components/ui/empty-state";
+import { TableSkeleton } from "@/components/ui/table-skeleton";
+import {
+  PlannedDisbursementColumnId,
+  plannedDisbursementColumns,
+  plannedDisbursementColumnGroups,
+  defaultVisiblePlannedDisbursementColumns,
+  PLANNED_DISBURSEMENT_COLUMNS_LOCALSTORAGE_KEY,
+} from "@/app/planned-disbursements/columns";
 
-// Column configuration for Planned Disbursements Table
-type PlannedDisbursementColumnId = 
-  | 'activity' | 'periodStart' | 'periodEnd' | 'type' 
-  | 'providerReceiver' | 'amount' | 'valueDate' | 'valueUsd' | 'notes';
+// Re-export column types for parent components
+export type { PlannedDisbursementColumnId };
+export { defaultVisiblePlannedDisbursementColumns, PLANNED_DISBURSEMENT_COLUMNS_LOCALSTORAGE_KEY, plannedDisbursementColumns, plannedDisbursementColumnGroups };
 
-interface PlannedDisbursementColumnConfig {
-  id: PlannedDisbursementColumnId;
-  label: string;
-  group: 'default' | 'details';
-  defaultVisible?: boolean;
-  sortable?: boolean;
-  sortField?: string;
-  align?: 'left' | 'center' | 'right';
-}
-
-const PLANNED_DISBURSEMENT_COLUMN_CONFIGS: PlannedDisbursementColumnConfig[] = [
-  { id: 'activity', label: 'Activity', group: 'default', defaultVisible: true, sortable: true, sortField: 'activity', align: 'left' },
-  { id: 'periodStart', label: 'Start Date', group: 'default', defaultVisible: true, sortable: true, sortField: 'period_start', align: 'left' },
-  { id: 'periodEnd', label: 'End Date', group: 'default', defaultVisible: true, sortable: true, sortField: 'period_end', align: 'left' },
-  { id: 'type', label: 'Type', group: 'default', defaultVisible: true, sortable: true, sortField: 'type', align: 'left' },
-  { id: 'providerReceiver', label: 'Provider / Receiver', group: 'default', defaultVisible: true, sortable: false, align: 'left' },
-  { id: 'amount', label: 'Amount', group: 'default', defaultVisible: true, sortable: true, sortField: 'value', align: 'right' },
-  { id: 'valueDate', label: 'Value Date', group: 'details', defaultVisible: false, sortable: true, sortField: 'value_date', align: 'left' },
-  { id: 'valueUsd', label: 'USD Value', group: 'default', defaultVisible: true, sortable: true, sortField: 'value_usd', align: 'right' },
-  { id: 'notes', label: 'Notes', group: 'details', defaultVisible: false, sortable: false, align: 'center' },
-];
-
-const PLANNED_DISBURSEMENT_COLUMN_GROUPS = {
-  default: 'Default Columns',
-  details: 'Additional Details',
-};
-
-const DEFAULT_VISIBLE_PLANNED_DISBURSEMENT_COLUMNS: PlannedDisbursementColumnId[] = 
-  PLANNED_DISBURSEMENT_COLUMN_CONFIGS.filter(col => col.defaultVisible).map(col => col.id);
-
-const PLANNED_DISBURSEMENT_COLUMNS_LOCALSTORAGE_KEY = 'aims_planned_disbursement_table_visible_columns';
-
-// Column Selector Component for Planned Disbursements Table
-interface PlannedDisbursementColumnSelectorProps {
+// Wrapper for backward compatibility
+export const PlannedDisbursementColumnSelector = ({
+  visibleColumns,
+  onColumnsChange,
+}: {
   visibleColumns: PlannedDisbursementColumnId[];
   onColumnsChange: (columns: PlannedDisbursementColumnId[]) => void;
-}
+}) => (
+  <ColumnSelector<PlannedDisbursementColumnId>
+    columns={plannedDisbursementColumns}
+    visibleColumns={visibleColumns}
+    defaultVisibleColumns={defaultVisiblePlannedDisbursementColumns}
+    onChange={onColumnsChange}
+    groupLabels={plannedDisbursementColumnGroups}
+  />
+);
 
-function PlannedDisbursementColumnSelector({ visibleColumns, onColumnsChange }: PlannedDisbursementColumnSelectorProps) {
-  const [open, setOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
-
-  const toggleColumn = (columnId: PlannedDisbursementColumnId) => {
-    if (visibleColumns.includes(columnId)) {
-      onColumnsChange(visibleColumns.filter(id => id !== columnId));
-    } else {
-      onColumnsChange([...visibleColumns, columnId]);
-    }
-  };
-
-  const toggleGroup = (group: keyof typeof PLANNED_DISBURSEMENT_COLUMN_GROUPS) => {
-    const groupColumns = PLANNED_DISBURSEMENT_COLUMN_CONFIGS.filter(c => c.group === group);
-    const allVisible = groupColumns.every(c => visibleColumns.includes(c.id));
-    
-    if (allVisible) {
-      onColumnsChange(visibleColumns.filter(id => !groupColumns.find(c => c.id === id)));
-    } else {
-      const newColumns = [...visibleColumns];
-      groupColumns.forEach(c => {
-        if (!newColumns.includes(c.id)) {
-          newColumns.push(c.id);
-        }
-      });
-      onColumnsChange(newColumns);
-    }
-  };
-
-  const resetToDefaults = () => {
-    onColumnsChange(DEFAULT_VISIBLE_PLANNED_DISBURSEMENT_COLUMNS);
-  };
-
-  const selectAll = () => {
-    const allColumnIds = PLANNED_DISBURSEMENT_COLUMN_CONFIGS.map(c => c.id);
-    onColumnsChange(allColumnIds);
-  };
-
-  const visibleCount = visibleColumns.length;
-  const totalColumns = PLANNED_DISBURSEMENT_COLUMN_CONFIGS.length;
-
-  // Filter columns based on search query
-  const filteredColumns = useMemo(() => {
-    if (!searchQuery.trim()) return null; // null means show grouped view
-    const query = searchQuery.toLowerCase();
-    return PLANNED_DISBURSEMENT_COLUMN_CONFIGS.filter(c => 
-      c.label.toLowerCase().includes(query)
-    );
-  }, [searchQuery]);
-
-  return (
-    <Popover open={open} onOpenChange={(isOpen) => {
-      setOpen(isOpen);
-      if (!isOpen) setSearchQuery(''); // Clear search when closing
-    }}>
-      <PopoverTrigger asChild>
-        <Button variant="outline" size="sm" className="gap-2">
-          <Columns3 className="h-4 w-4" />
-          <span className="hidden sm:inline">Columns</span>
-          <Badge variant="secondary" className="ml-1 px-1.5 py-0 text-xs">
-            {visibleCount}
-          </Badge>
-          <ChevronDown className="h-3 w-3 opacity-50" />
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent className="w-80 p-0 z-[100]" align="end" sideOffset={5}>
-        <div className="p-3 border-b">
-          <div className="flex items-center justify-between">
-            <h4 className="font-medium text-sm">Visible Columns</h4>
-            <div className="flex items-center gap-1">
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                onClick={selectAll}
-                className="h-7 text-xs"
-              >
-                Select all
-              </Button>
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                onClick={resetToDefaults}
-                className="h-7 text-xs"
-              >
-                Reset
-              </Button>
-            </div>
-          </div>
-          <p className="text-xs text-muted-foreground mt-1">
-            {visibleCount} of {totalColumns} columns visible
-          </p>
-          <div className="relative mt-2">
-            <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search columns..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-8 h-8 text-sm"
-            />
-          </div>
-        </div>
-        <div className="max-h-[400px] overflow-y-auto">
-          {filteredColumns ? (
-            // Show flat filtered list when searching
-            filteredColumns.length === 0 ? (
-              <div className="p-3 text-sm text-muted-foreground text-center">
-                No columns match "{searchQuery}"
-              </div>
-            ) : (
-              <div className="py-1">
-                {filteredColumns.map(column => (
-                  <div
-                    key={column.id}
-                    className="flex items-center gap-2 px-3 py-1.5 hover:bg-muted/50 cursor-pointer"
-                    onClick={() => toggleColumn(column.id)}
-                  >
-                    <Checkbox 
-                      checked={visibleColumns.includes(column.id)}
-                      onCheckedChange={() => toggleColumn(column.id)}
-                    />
-                    <span className="text-sm">{column.label}</span>
-                    <span className="text-xs text-muted-foreground ml-auto">
-                      {PLANNED_DISBURSEMENT_COLUMN_GROUPS[column.group as keyof typeof PLANNED_DISBURSEMENT_COLUMN_GROUPS]}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            )
-          ) : (
-            // Show grouped view when not searching
-            (Object.keys(PLANNED_DISBURSEMENT_COLUMN_GROUPS) as Array<keyof typeof PLANNED_DISBURSEMENT_COLUMN_GROUPS>).map(groupKey => {
-              const groupColumns = PLANNED_DISBURSEMENT_COLUMN_CONFIGS.filter(c => c.group === groupKey);
-              if (groupColumns.length === 0) return null;
-              
-              const allVisible = groupColumns.every(c => visibleColumns.includes(c.id));
-              const someVisible = groupColumns.some(c => visibleColumns.includes(c.id));
-              
-              return (
-                <div key={groupKey} className="border-b last:border-b-0">
-                  <div 
-                    className="flex items-center gap-2 px-3 py-2 bg-muted/50 cursor-pointer hover:bg-muted/80"
-                    onClick={() => toggleGroup(groupKey)}
-                  >
-                    <Checkbox 
-                      checked={allVisible}
-                      // @ts-ignore - indeterminate is valid but not in types
-                      indeterminate={someVisible && !allVisible}
-                      onCheckedChange={() => toggleGroup(groupKey)}
-                    />
-                    <span className="text-sm font-medium">{PLANNED_DISBURSEMENT_COLUMN_GROUPS[groupKey]}</span>
-                  </div>
-                  <div className="py-1">
-                    {groupColumns.map(column => (
-                      <div
-                        key={column.id}
-                        className="flex items-center gap-2 px-3 py-1.5 hover:bg-muted/50 cursor-pointer"
-                        onClick={() => toggleColumn(column.id)}
-                      >
-                        <Checkbox 
-                          checked={visibleColumns.includes(column.id)}
-                          onCheckedChange={() => toggleColumn(column.id)}
-                        />
-                        <span className="text-sm">{column.label}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              );
-            })
-          )}
-        </div>
-      </PopoverContent>
-    </Popover>
-  );
-}
-
-// Export column types for parent components
-export type { PlannedDisbursementColumnId };
-export { DEFAULT_VISIBLE_PLANNED_DISBURSEMENT_COLUMNS, PLANNED_DISBURSEMENT_COLUMNS_LOCALSTORAGE_KEY, PlannedDisbursementColumnSelector };
+// Backward compatibility alias
+export const DEFAULT_VISIBLE_PLANNED_DISBURSEMENT_COLUMNS = defaultVisiblePlannedDisbursementColumns;
 
 interface PlannedDisbursement {
   id: string;

@@ -22,6 +22,11 @@ export function useTransactionFieldAutosave({
 
   // Debounced save
   const triggerFieldSave = useCallback(async (value: any) => {
+    // Skip autosave if no valid transactionId (new transaction not yet saved)
+    if (!transactionId || transactionId === '') {
+      return;
+    }
+
     setIsSaving(true);
     setError(null);
     setIsSaved(false);

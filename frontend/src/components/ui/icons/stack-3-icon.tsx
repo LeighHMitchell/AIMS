@@ -12,16 +12,30 @@ const Stack3Icon = forwardRef<AnimatedIconHandle, AnimatedIconProps>(
     const [scope, animate] = useAnimate();
 
     const start = useCallback(async () => {
-      animate(".layer-1", { y: -3, scale: 1.05 }, { duration: 0.3, ease: "easeOut" });
-      animate(".layer-2", { y: -1, opacity: 0.8 }, { duration: 0.3, delay: 0.05, ease: "easeOut" });
-      animate(".layer-3", { y: 1, opacity: 0.6 }, { duration: 0.3, delay: 0.1, ease: "easeOut" });
-    }, [animate]);
+      // Guard: check if scope is mounted and elements exist
+      if (!scope.current?.querySelector('.layer-1')) return;
+
+      try {
+        animate(".layer-1", { y: -3, scale: 1.05 }, { duration: 0.3, ease: "easeOut" });
+        animate(".layer-2", { y: -1, opacity: 0.8 }, { duration: 0.3, delay: 0.05, ease: "easeOut" });
+        animate(".layer-3", { y: 1, opacity: 0.6 }, { duration: 0.3, delay: 0.1, ease: "easeOut" });
+      } catch (e) {
+        // Ignore animation errors during unmount/hydration
+      }
+    }, [animate, scope]);
 
     const stop = useCallback(() => {
-      animate(".layer-1", { y: 0, scale: 1 }, { duration: 0.25 });
-      animate(".layer-2", { y: 0, opacity: 1 }, { duration: 0.25 });
-      animate(".layer-3", { y: 0, opacity: 1 }, { duration: 0.25 });
-    }, [animate]);
+      // Guard: check if scope is mounted
+      if (!scope.current) return;
+
+      try {
+        animate(".layer-1", { y: 0, scale: 1 }, { duration: 0.25 });
+        animate(".layer-2", { y: 0, opacity: 1 }, { duration: 0.25 });
+        animate(".layer-3", { y: 0, opacity: 1 }, { duration: 0.25 });
+      } catch (e) {
+        // Ignore animation errors
+      }
+    }, [animate, scope]);
 
     useImperativeHandle(ref, () => ({ startAnimation: start, stopAnimation: stop }));
 

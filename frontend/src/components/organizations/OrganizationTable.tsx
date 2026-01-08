@@ -51,6 +51,8 @@ type Organization = {
   description?: string;
   website?: string;
   activeProjects: number;
+  reportedActivities?: number;
+  associatedActivities?: number;
   totalBudgeted?: number;
   totalDisbursed?: number;
   logo?: string;
@@ -66,7 +68,7 @@ type OrganizationType = {
   sort_order: number;
 };
 
-type SortField = 'name' | 'acronym' | 'type' | 'location' | 'activities' | 'funding' | 'created_at';
+type SortField = 'name' | 'acronym' | 'type' | 'location' | 'activities' | 'reported' | 'associated' | 'funding' | 'created_at';
 type SortOrder = 'asc' | 'desc';
 
 interface OrganizationTableProps {
@@ -222,12 +224,21 @@ export const OrganizationTable: React.FC<OrganizationTableProps> = ({
                 </div>
               </TableHead>
               <TableHead
-                className="text-center cursor-pointer hover:bg-muted/80 transition-colors w-[9%]"
-                onClick={() => onSort('activities')}
+                className="text-center cursor-pointer hover:bg-muted/80 transition-colors w-[7%]"
+                onClick={() => onSort('reported')}
               >
                 <div className="flex items-center justify-center gap-1">
-                  <span>Activities</span>
-                  {getSortIcon('activities', sortField, sortOrder)}
+                  <span>Reported</span>
+                  {getSortIcon('reported', sortField, sortOrder)}
+                </div>
+              </TableHead>
+              <TableHead
+                className="text-center cursor-pointer hover:bg-muted/80 transition-colors w-[7%]"
+                onClick={() => onSort('associated')}
+              >
+                <div className="flex items-center justify-center gap-1">
+                  <span>Associated</span>
+                  {getSortIcon('associated', sortField, sortOrder)}
                 </div>
               </TableHead>
               <TableHead
@@ -253,14 +264,14 @@ export const OrganizationTable: React.FC<OrganizationTableProps> = ({
               </TableHead>
             </TableRow>
           </TableHeader>
-          <TableBody className="divide-y divide-slate-200 bg-white">
+          <TableBody>
             {organizations.map((org) => {
               const typeLabel = getOrganizationTypeLabel(org.Organisation_Type_Code, availableTypes);
 
               return (
                 <TableRow
                   key={org.id}
-                  className="group hover:bg-muted transition-colors cursor-pointer"
+                  className="group hover:bg-muted/50 transition-colors cursor-pointer"
                   onClick={(e) => handleRowClick(org.id, e)}
                 >
                   <TableCell className="px-4 py-3 text-sm text-foreground">
@@ -336,7 +347,7 @@ export const OrganizationTable: React.FC<OrganizationTableProps> = ({
                     </div>
                   </TableCell>
                   <TableCell className="px-4 py-3 text-sm text-foreground">
-                    <span className={`text-xs ${getTypeInlineColors(org.Organisation_Type_Code)} px-1.5 py-0.5 rounded inline box-decoration-clone font-normal leading-relaxed`}>
+                    <span className="text-sm text-gray-700">
                       {typeLabel}
                     </span>
                   </TableCell>
@@ -357,7 +368,12 @@ export const OrganizationTable: React.FC<OrganizationTableProps> = ({
                   </TableCell>
                   <TableCell className="px-4 py-3 text-sm text-foreground text-center">
                     <span className="font-medium">
-                      {org.activeProjects || 0}
+                      {org.reportedActivities ?? org.activeProjects ?? 0}
+                    </span>
+                  </TableCell>
+                  <TableCell className="px-4 py-3 text-sm text-foreground text-center">
+                    <span className="font-medium">
+                      {org.associatedActivities ?? 0}
                     </span>
                   </TableCell>
                   <TableCell className="px-4 py-3 text-sm text-foreground text-right font-medium">

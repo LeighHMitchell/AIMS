@@ -81,31 +81,36 @@ export async function GET(request: NextRequest) {
     }
     
     // Fetch organizations with pagination and all related data in parallel for maximum efficiency
-    const [orgsResult, activitiesResult, contributorsResult, transactionsResult, countResult] = await Promise.all([
+    const [orgsResult, activitiesResult, contributorsResult, transactionsResult, plannedDisbursementsResult, countResult] = await Promise.all([
       // Get organizations with pagination
       getSupabaseAdmin()
         .from('organizations')
         .select('id, name, acronym, type, Organisation_Type_Code, Organisation_Type_Name, country, logo, banner, description, website, email, phone, address, country_represented, cooperation_modality, iati_org_id, alias_refs, name_aliases, created_at, updated_at')
         .order('name')
         .range(offset, offset + limit - 1),
-      
+
       // Get all activities with reporting org info (no pagination needed for counting)
       getSupabaseAdmin()
         .from('activities')
         .select('id, reporting_org_id, activity_status')
         .not('reporting_org_id', 'is', null),
-        
+
       // Get all activity contributors to count participating organizations
       getSupabaseAdmin()
         .from('activity_contributors')
         .select('organization_id, activity_id, contribution_type')
         .in('contribution_type', ['funder', 'implementer', 'funding', 'implementing']),
-        
-      // Get all transactions for financial calculations
+
+      // Get all transactions for financial calculations and activity associations
       getSupabaseAdmin()
         .from('transactions')
-        .select('provider_org_id, receiver_org_id, transaction_type, value, currency'),
-        
+        .select('activity_id, provider_org_id, receiver_org_id, transaction_type, value, currency'),
+
+      // Get all planned disbursements for activity associations
+      getSupabaseAdmin()
+        .from('planned_disbursements')
+        .select('activity_id, provider_org_id, receiver_org_id'),
+
       // Get total count for pagination metadata
       getSupabaseAdmin()
         .from('organizations')
@@ -116,6 +121,7 @@ export async function GET(request: NextRequest) {
     const { data: activities, error: activitiesError } = activitiesResult;
     const { data: contributors, error: contributorsError } = contributorsResult;
     const { data: transactions, error: transactionsError } = transactionsResult;
+    const { data: plannedDisbursements, error: plannedDisbursementsError } = plannedDisbursementsResult;
     const { count: totalCount, error: countError } = countResult;
     
     if (orgsError) {
@@ -145,6 +151,7 @@ export async function GET(request: NextRequest) {
     // Create maps for efficient lookups
     const reportingOrgActivityCount = new Map<string, number>();
     const contributingOrgActivityCount = new Map<string, number>();
+    const associatedOrgActivities = new Map<string, Set<string>>(); // org_id -> Set of activity_ids
     const orgTotalCommitted = new Map<string, number>();
     const orgTotalDisbursed = new Map<string, number>();
 
@@ -181,6 +188,52 @@ export async function GET(request: NextRequest) {
       });
     }
 
+    // Count activities associated via transactions (provider or receiver org)
+    if (transactions && !transactionsError) {
+      transactions.forEach((transaction: any) => {
+        const activityId = transaction.activity_id;
+        if (activityId) {
+          // Add activity for provider org
+          if (transaction.provider_org_id) {
+            if (!associatedOrgActivities.has(transaction.provider_org_id)) {
+              associatedOrgActivities.set(transaction.provider_org_id, new Set());
+            }
+            associatedOrgActivities.get(transaction.provider_org_id)!.add(activityId);
+          }
+          // Add activity for receiver org
+          if (transaction.receiver_org_id) {
+            if (!associatedOrgActivities.has(transaction.receiver_org_id)) {
+              associatedOrgActivities.set(transaction.receiver_org_id, new Set());
+            }
+            associatedOrgActivities.get(transaction.receiver_org_id)!.add(activityId);
+          }
+        }
+      });
+    }
+
+    // Count activities associated via planned disbursements (provider or receiver org)
+    if (plannedDisbursements && !plannedDisbursementsError) {
+      plannedDisbursements.forEach((pd: any) => {
+        const activityId = pd.activity_id;
+        if (activityId) {
+          // Add activity for provider org
+          if (pd.provider_org_id) {
+            if (!associatedOrgActivities.has(pd.provider_org_id)) {
+              associatedOrgActivities.set(pd.provider_org_id, new Set());
+            }
+            associatedOrgActivities.get(pd.provider_org_id)!.add(activityId);
+          }
+          // Add activity for receiver org
+          if (pd.receiver_org_id) {
+            if (!associatedOrgActivities.has(pd.receiver_org_id)) {
+              associatedOrgActivities.set(pd.receiver_org_id, new Set());
+            }
+            associatedOrgActivities.get(pd.receiver_org_id)!.add(activityId);
+          }
+        }
+      });
+    }
+
     // Calculate financial totals per organization
     if (transactions && !transactionsError) {
       transactions.forEach((transaction: any) => {
@@ -210,10 +263,12 @@ export async function GET(request: NextRequest) {
     const enhancedOrganizations = organizations.map((org: any) => {
       const reportingCount = reportingOrgActivityCount.get(org.id) || 0;
       const contributingCount = contributingOrgActivityCount.get(org.id) || 0;
-      
+      const associatedActivitiesSet = associatedOrgActivities.get(org.id);
+      const associatedCount = associatedActivitiesSet ? associatedActivitiesSet.size : 0;
+
       // Total active projects (avoid double counting if org is both reporting and contributing to same activity)
       const totalActiveProjects = Math.max(reportingCount, contributingCount);
-      
+
       // Get financial totals for this organization
       const totalCommitted = orgTotalCommitted.get(org.id) || 0;
       const totalDisbursed = orgTotalDisbursed.get(org.id) || 0;
@@ -223,16 +278,18 @@ export async function GET(request: NextRequest) {
         // Ensure we use the correct Organisation_Type_Code field
         Organisation_Type_Code: org.Organisation_Type_Code || org.type,
         activeProjects: totalActiveProjects,
+        reportedActivities: reportingCount, // Activities where org is the reporting org
+        associatedActivities: associatedCount, // Activities associated via transactions/planned disbursements
         totalBudgeted: totalCommitted, // Total committed funds (incoming + outgoing commitments)
         totalDisbursed: totalDisbursed, // Total disbursed funds
         displayName: org.name && org.acronym ? `${org.name} (${org.acronym})` : org.name,
         derived_category: deriveCategory(org.Organisation_Type_Code || org.type, org.country_represented || org.country || ''),
         // Initialize project status breakdown with active count
-        projectsByStatus: { 
-          active: totalActiveProjects, 
-          pipeline: 0, 
-          completed: 0, 
-          cancelled: 0 
+        projectsByStatus: {
+          active: totalActiveProjects,
+          pipeline: 0,
+          completed: 0,
+          cancelled: 0
         },
         lastProjectActivity: org.updated_at,
         totalDisbursement: totalDisbursed

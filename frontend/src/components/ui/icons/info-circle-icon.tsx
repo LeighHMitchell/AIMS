@@ -12,36 +12,50 @@ const InfoCircleIcon = forwardRef<AnimatedIconHandle, AnimatedIconProps>(
     const [scope, animate] = useAnimate();
 
     const start = useCallback(async () => {
-      await animate(
-        ".info-circle-i",
-        {
-          pathLength: [0, 1],
-        },
-        {
-          duration: 0.3,
-          ease: "easeOut",
-        },
-      );
+      // Guard: check if scope is mounted and elements exist
+      if (!scope.current?.querySelector('.info-circle-i')) return;
 
-      animate(
-        ".info-line-i",
-        {
-          pathLength: [0, 1],
-        },
-        {
-          duration: 0.4,
-          ease: "easeOut",
-        },
-      );
-    }, [animate]);
+      try {
+        await animate(
+          ".info-circle-i",
+          {
+            pathLength: [0, 1],
+          },
+          {
+            duration: 0.3,
+            ease: "easeOut",
+          },
+        );
+
+        animate(
+          ".info-line-i",
+          {
+            pathLength: [0, 1],
+          },
+          {
+            duration: 0.4,
+            ease: "easeOut",
+          },
+        );
+      } catch (e) {
+        // Ignore animation errors during unmount/hydration
+      }
+    }, [animate, scope]);
 
     const stop = useCallback(() => {
-      animate(
-        ".info-circle-i, .info-line-i",
-        { pathLength: 1 },
-        { duration: 0.2, ease: "easeInOut" },
-      );
-    }, [animate]);
+      // Guard: check if scope is mounted
+      if (!scope.current) return;
+
+      try {
+        animate(
+          ".info-circle-i, .info-line-i",
+          { pathLength: 1 },
+          { duration: 0.2, ease: "easeInOut" },
+        );
+      } catch (e) {
+        // Ignore animation errors
+      }
+    }, [animate, scope]);
 
     useImperativeHandle(ref, () => ({
       startAnimation: start,
