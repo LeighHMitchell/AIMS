@@ -17,10 +17,9 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  console.log('[AIMS] GET /api/organizations/[id] - Starting request for ID:', id);
-  
   try {
     const { id } = await params;
+    console.log('[AIMS] GET /api/organizations/[id] - Starting request for ID:', id);
     // Check if getSupabaseAdmin() is properly initialized
     if (!getSupabaseAdmin()) {
       console.error('[AIMS] getSupabaseAdmin() is not initialized');
@@ -122,10 +121,9 @@ export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  console.log('[AIMS] PUT /api/organizations/[id] - Updating organization:', id);
-  
   try {
     const { id } = await params;
+    console.log('[AIMS] PUT /api/organizations/[id] - Updating organization:', id);
     const body = await request.json();
     
     // Remove computed fields before updating
@@ -247,10 +245,9 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  console.log('[AIMS] DELETE /api/organizations/[id] - Deleting organization:', id);
-  
   try {
     const { id } = await params;
+    console.log('[AIMS] DELETE /api/organizations/[id] - Deleting organization:', id);
     // Check if organization has dependencies
     const { data: users } = await getSupabaseAdmin()
       .from('users')
