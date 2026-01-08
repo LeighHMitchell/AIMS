@@ -97,6 +97,10 @@ export async function GET(request: NextRequest) {
         budget_status,
         on_budget_percentage,
         capital_spend_percentage,
+        likes_count,
+        vote_score,
+        upvote_count,
+        downvote_count,
         banner,
         icon,
         activity_sdg_mappings (
@@ -690,6 +694,9 @@ export async function GET(request: NextRequest) {
         budgetStatus: activity.budget_status || 'unknown',
         onBudgetPercentage: activity.on_budget_percentage,
         capitalSpendPercentage: activity.capital_spend_percentage,
+        vote_score: activity.vote_score || 0,
+        upvote_count: activity.upvote_count || 0,
+        downvote_count: activity.downvote_count || 0,
         banner: activity.banner, // Include banner for card view
         icon: activity.icon, // Include icon for card view
         createdAt: activity.created_at,

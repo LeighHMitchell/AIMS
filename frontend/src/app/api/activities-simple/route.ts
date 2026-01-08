@@ -74,6 +74,7 @@ export async function GET(request: NextRequest) {
         default_modality_override,
         created_by,
         capital_spend_percentage,
+        likes_count,
         ${includeImages ? 'banner, icon,' : ''}
         activity_sdg_mappings (
           id,

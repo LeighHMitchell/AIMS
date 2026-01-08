@@ -58,7 +58,7 @@ import { HelpTextTooltip } from "@/components/ui/help-text-tooltip";
 import {
   Plus, Download, Edit2, Trash2, AlertCircle, ArrowUp, ArrowDown, ArrowUpDown, ChevronLeft, ChevronRight, Users, Grid3X3, TableIcon, Search, MoreVertical, Edit,
   PencilLine, BookOpenCheck, BookLock, CheckCircle2, AlertTriangle, Circle, Info, ReceiptText, Handshake, Shuffle, Link2,
-  FileCheck, ShieldCheck, Globe, DatabaseZap, RefreshCw, Copy, Check, Blocks, DollarSign, Settings, ExternalLink, FileCode, Columns3, ChevronDown, Heart,
+  FileCheck, ShieldCheck, Globe, DatabaseZap, RefreshCw, Copy, Check, Blocks, DollarSign, Settings, ExternalLink, FileCode, Columns3, ChevronDown, ChevronUp, Heart,
   Building2, ArrowRightLeft, X, FileText, FileSpreadsheet, Bookmark, BookmarkCheck
 } from "lucide-react";
 import { exportActivityToPDF, exportActivityToExcel } from "@/lib/activity-export";
@@ -2151,6 +2151,32 @@ const router = useRouter();
                     </th>
                   )}
 
+                  {/* Engagement Columns */}
+                  {visibleColumns.includes('voteScore') && (
+                    <th className="h-12 px-4 py-3 text-center align-middle text-sm font-medium text-muted-foreground min-w-[80px]">
+                      <div className="flex items-center justify-center gap-1">
+                        <ArrowUpDown className="h-4 w-4" />
+                        Score
+                      </div>
+                    </th>
+                  )}
+                  {visibleColumns.includes('upvotes') && (
+                    <th className="h-12 px-4 py-3 text-center align-middle text-sm font-medium text-muted-foreground min-w-[80px]">
+                      <div className="flex items-center justify-center gap-1">
+                        <ChevronUp className="h-4 w-4 text-primary" />
+                        Upvotes
+                      </div>
+                    </th>
+                  )}
+                  {visibleColumns.includes('downvotes') && (
+                    <th className="h-12 px-4 py-3 text-center align-middle text-sm font-medium text-muted-foreground min-w-[80px]">
+                      <div className="flex items-center justify-center gap-1">
+                        <ChevronDown className="h-4 w-4 text-red-500" />
+                        Downvotes
+                      </div>
+                    </th>
+                  )}
+
                   {/* Description Columns */}
                   {visibleColumns.includes('descriptionGeneral') && (
                     <th className="h-12 px-4 py-3 text-left align-middle text-sm font-medium text-muted-foreground min-w-[200px]">
@@ -3147,6 +3173,37 @@ const router = useRouter();
                               </TooltipContent>
                             </Tooltip>
                           </TooltipProvider>
+                        </td>
+                      )}
+
+                      {/* Engagement Cells */}
+                      {visibleColumns.includes('voteScore') && (
+                        <td className="px-4 py-2 text-sm text-center">
+                          <div className="flex items-center justify-center gap-1">
+                            <span className={`font-medium ${(activity.vote_score || 0) > 0 ? 'text-primary' : (activity.vote_score || 0) < 0 ? 'text-red-500' : 'text-muted-foreground'}`}>
+                              {(activity.vote_score || 0) > 0 ? '+' : ''}{activity.vote_score || 0}
+                            </span>
+                          </div>
+                        </td>
+                      )}
+                      {visibleColumns.includes('upvotes') && (
+                        <td className="px-4 py-2 text-sm text-center">
+                          <div className="flex items-center justify-center gap-1">
+                            <ChevronUp className="h-4 w-4 text-primary" />
+                            <span className={(activity.upvote_count || 0) > 0 ? 'font-medium text-primary' : 'text-muted-foreground'}>
+                              {activity.upvote_count || 0}
+                            </span>
+                          </div>
+                        </td>
+                      )}
+                      {visibleColumns.includes('downvotes') && (
+                        <td className="px-4 py-2 text-sm text-center">
+                          <div className="flex items-center justify-center gap-1">
+                            <ChevronDown className="h-4 w-4 text-red-500" />
+                            <span className={(activity.downvote_count || 0) > 0 ? 'font-medium text-red-500' : 'text-muted-foreground'}>
+                              {activity.downvote_count || 0}
+                            </span>
+                          </div>
                         </td>
                       )}
 

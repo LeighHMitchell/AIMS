@@ -12,7 +12,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { useUser } from "@/hooks/useUser"
 import { USER_ROLES } from "@/types/user"
 import { getRoleBadgeVariant, getRoleDisplayLabel } from "@/lib/role-badge-utils"
@@ -26,6 +26,7 @@ import {
   MapPin,
   ArrowRightLeft,
   Stethoscope,
+  Briefcase,
 } from "lucide-react"
 import { Skeleton } from "@/components/ui/skeleton"
 import { DashboardStatsSkeleton } from "@/components/ui/skeleton-loader"
@@ -33,7 +34,7 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
 
 // Import new dashboard components
 import { HeroVisualizationCards } from "@/components/dashboard/HeroVisualizationCards"
-import { OrgSummaryCards } from "@/components/dashboard/OrgSummaryCards"
+import { DashboardHeroCards } from "@/components/dashboard/DashboardHeroCards"
 import { RecencyCards } from "@/components/dashboard/RecencyCards"
 import { ActionsRequiredPanel } from "@/components/dashboard/ActionsRequiredPanel"
 import { OrgActivitiesTable } from "@/components/dashboard/OrgActivitiesTable"
@@ -44,10 +45,14 @@ import { BookmarkedActivitiesTable } from "@/components/dashboard/BookmarkedActi
 import { MissingImagesCard } from "@/components/dashboard/MissingImagesCard"
 import { FocalPointCheckCard } from "@/components/dashboard/FocalPointCheckCard"
 import { DataClinicHeader } from "@/components/dashboard/DataClinicHeader"
+import { MyPortfolioTab } from "@/components/dashboard/MyPortfolioTab"
 
 export default function Dashboard() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { user, permissions, isLoading } = useUser();
+
+  const defaultTab = searchParams.get('tab') || 'overview';
 
   // Loading state
   if (isLoading) {
@@ -265,7 +270,7 @@ export default function Dashboard() {
             </div>
 
             {/* Dashboard Tabs */}
-            <Tabs defaultValue="overview" className="w-full">
+            <Tabs defaultValue={defaultTab} className="w-full">
               <TabsList className="p-1 h-auto bg-background gap-1 border mb-6">
                 <TabsTrigger 
                   value="overview" 
@@ -302,22 +307,29 @@ export default function Dashboard() {
                   <Stethoscope className="h-4 w-4" />
                   Data Clinic
                 </TabsTrigger>
-                <TabsTrigger 
-                  value="bookmarks" 
+                <TabsTrigger
+                  value="bookmarks"
                   className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
                 >
                   <Bookmark className="h-4 w-4" />
                   Bookmarks
                 </TabsTrigger>
+                <TabsTrigger
+                  value="my-portfolio"
+                  className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+                >
+                  <Briefcase className="h-4 w-4" />
+                  My Portfolio
+                </TabsTrigger>
               </TabsList>
 
               {/* Overview Tab Content */}
               <TabsContent value="overview" className="space-y-6">
-                {/* Row 1: Hero Visualization Cards (charts) */}
-                <HeroVisualizationCards organizationId={user.organizationId} />
+                {/* Row 1: Dashboard Hero Cards (dual-metric cards) */}
+                <DashboardHeroCards organizationId={user.organizationId} userId={user.id} />
 
-                {/* Row 2: Summary Stats Cards */}
-                <OrgSummaryCards organizationId={user.organizationId} />
+                {/* Row 2: Hero Visualization Cards (charts) */}
+                <HeroVisualizationCards organizationId={user.organizationId} />
 
                 {/* Row 3: Recency Cards */}
                 <RecencyCards organizationId={user.organizationId} />
@@ -373,6 +385,11 @@ export default function Dashboard() {
               {/* Bookmarks Tab Content */}
               <TabsContent value="bookmarks">
                 <BookmarkedActivitiesTable />
+              </TabsContent>
+
+              {/* My Portfolio Tab Content */}
+              <TabsContent value="my-portfolio" className="space-y-6">
+                <MyPortfolioTab userId={user.id} organizationId={user.organizationId} />
               </TabsContent>
             </Tabs>
           </div>

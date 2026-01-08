@@ -12,6 +12,7 @@ import { toast } from "sonner";
 import { useUser } from "@/hooks/useUser";
 import { GmailLogin } from "@/components/auth/GmailLogin";
 import { supabase } from "@/lib/supabase";
+import { WavesBackground } from "@/components/landing/WavesBackground";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -73,13 +74,14 @@ export default function LoginPage() {
   };
 
   return (
-    <div 
-      className="min-h-screen flex items-center justify-center p-4 bg-white"
-      style={{ 
+    <div
+      className="min-h-screen flex items-center justify-center p-4 relative"
+      style={{
         fontFamily: 'ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji"'
       }}
     >
-      <Card className="w-full max-w-md" style={{ backgroundColor: '#F6F5F4' }}>
+      <WavesBackground />
+      <Card className="w-full max-w-md relative z-10 shadow-xl" style={{ backgroundColor: '#F6F5F4' }}>
         <CardHeader className="text-center">
           <div className="flex justify-center mb-4">
             <img 

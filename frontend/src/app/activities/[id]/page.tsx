@@ -78,8 +78,7 @@ import { DisbursementGauge, CumulativeFinanceChart } from "@/components/Activity
 import financeTypes from "@/data/finance-types.json"
 import { BannerUpload } from "@/components/BannerUpload"
 import { IconUpload } from "@/components/IconUpload"
-import { NativeLikesCounter } from "@/components/ui/native-likes-counter"
-import { useEntityLikes } from "@/hooks/use-entity-likes"
+import { ActivityVote } from "@/components/ui/activity-vote"
 import {
   Table,
   TableBody,
@@ -451,18 +450,6 @@ export default function ActivityDetailPage() {
   const router = useRouter()
   const { user } = useUser()
   const { isBookmarked, toggleBookmark, isToggling } = useBookmarks()
-  const {
-    count: likesCount,
-    users: likeUsers,
-    isLiked,
-    hasMore: hasMoreLikes,
-    toggleLike,
-    loadMore: loadMoreLikes,
-  } = useEntityLikes({
-    entityType: 'activity',
-    entityId: id as string,
-    userId: user?.id,
-  })
   const searchParams = useSearchParams()
   const [copiedId, setCopiedId] = useState<string | null>(null)
   const [partnershipsSortField, setPartnershipsSortField] = useState<string>('organization')
@@ -1596,16 +1583,14 @@ export default function ActivityDetailPage() {
                   </>
                 )}
               </Button>
-              <NativeLikesCounter
-                count={likesCount}
-                users={likeUsers}
-                variant="outline"
-                size="default"
-                liked={isLiked}
-                onLike={toggleLike}
-                onLoadMore={loadMoreLikes}
-                hasMore={hasMoreLikes}
-              />
+              <div className="inline-flex items-center justify-center rounded-md border border-slate-300 px-4 h-10 hover:bg-slate-100 transition-colors">
+                <ActivityVote
+                  activityId={activity?.id || ''}
+                  userId={user?.id}
+                  size="sm"
+                  variant="horizontal"
+                />
+              </div>
               <Link
                 href={`/activities/new?id=${activity?.id}`}
                 className="inline-flex items-center justify-center rounded-md bg-slate-600 px-4 py-2 text-sm font-medium text-white hover:bg-slate-700 transition-colors"

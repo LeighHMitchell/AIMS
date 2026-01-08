@@ -84,7 +84,11 @@ export type ActivityColumnId =
   | "capitalSpendTotalBudget"
   | "capitalSpendPlannedDisbursements"
   | "capitalSpendCommitments"
-  | "capitalSpendDisbursements";
+  | "capitalSpendDisbursements"
+  // Engagement columns
+  | "voteScore"
+  | "upvotes"
+  | "downvotes";
 
 /**
  * Column configuration for the Activities table
@@ -181,6 +185,11 @@ export const activityColumns: ColumnConfig<ActivityColumnId>[] = [
   { id: "capitalSpendPlannedDisbursements", label: "Capital Spend - Planned Disb.", group: "capitalSpend", defaultVisible: false },
   { id: "capitalSpendCommitments", label: "Capital Spend - Commitments", group: "capitalSpend", defaultVisible: false },
   { id: "capitalSpendDisbursements", label: "Capital Spend - Disbursements", group: "capitalSpend", defaultVisible: false },
+
+  // Engagement columns
+  { id: "voteScore", label: "Vote Score", group: "engagement", defaultVisible: false },
+  { id: "upvotes", label: "Upvotes", group: "engagement", defaultVisible: false },
+  { id: "downvotes", label: "Downvotes", group: "engagement", defaultVisible: false },
 ];
 
 /**
@@ -203,6 +212,7 @@ export const activityColumnGroups: Record<string, string> = {
   sdgs: "SDGs",
   governmentSystemsAlignment: "Government Systems Alignment",
   capitalSpend: "Capital Spend",
+  engagement: "Engagement",
 };
 
 /**

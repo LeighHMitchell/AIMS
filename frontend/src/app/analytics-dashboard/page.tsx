@@ -69,6 +69,7 @@ import { Top10ActiveProjectsChart } from '@/components/analytics/Top10ActiveProj
 import { Top10DisbursementCommitmentRatioChart } from '@/components/analytics/Top10DisbursementCommitmentRatioChart'
 import { Top10GovernmentValidatedChart } from '@/components/analytics/Top10GovernmentValidatedChart'
 import { Top10SectorFocusedChart } from '@/components/analytics/Top10SectorFocusedChart'
+import { TopLikedActivitiesChart } from '@/components/analytics/TopLikedActivitiesChart'
 import { ODAByFlowTypeChart } from '@/components/analytics/ODAByFlowTypeChart'
 import { PolicyMarkersChart } from '@/components/analytics/PolicyMarkersChart'
 
@@ -741,6 +742,16 @@ export default function AnalyticsDashboardPage() {
                     >
                       <AllActivitiesFundingSourceBreakdown
                         dateRange={fiveYearRange}
+                        refreshKey={refreshKey}
+                      />
+                    </CompactChartCard>
+
+                    <CompactChartCard
+                      title="Top Voted Activities"
+                      shortDescription="Activities ranked by vote score (upvotes - downvotes)"
+                      fullDescription="Top 10 activities ranked by net vote score from user upvotes and downvotes"
+                    >
+                      <TopLikedActivitiesChart
                         refreshKey={refreshKey}
                       />
                     </CompactChartCard>

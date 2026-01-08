@@ -61,6 +61,7 @@ export function NotificationBell({ userId, onOpen }: NotificationBellProps) {
   };
   const [isRinging, setIsRinging] = useState(false);
   const [prevUnreadCount, setPrevUnreadCount] = useState(0);
+  const [lastMarkAllReadTime, setLastMarkAllReadTime] = useState<number>(0);
 
   // Trigger ring animation when new notifications arrive
   useEffect(() => {
@@ -73,17 +74,27 @@ export function NotificationBell({ userId, onOpen }: NotificationBellProps) {
   }, [unreadCount, prevUnreadCount, shouldReduceMotion]);
 
   const fetchNotifications = useCallback(async () => {
+    const fetchStartTime = Date.now();
     try {
       const response = await fetch(`/api/notifications/user?userId=${userId}&limit=10`);
       if (response.ok) {
         const data = await response.json();
-        console.log('[NotificationBell] Fetched notifications:', { 
-          count: data.data?.length || 0, 
+        console.log('[NotificationBell] Fetched notifications:', {
+          count: data.data?.length || 0,
           unreadCount: data.unreadCount || 0,
-          userId 
+          userId
         });
-        setNotifications(data.data || []);
-        setUnreadCount(data.unreadCount || 0);
+
+        // If we marked all as read within the last 5 seconds, don't overwrite with stale data
+        // This prevents race conditions where a fetch that started before mark-all-read returns after
+        if (lastMarkAllReadTime > 0 && fetchStartTime < lastMarkAllReadTime + 5000) {
+          console.log('[NotificationBell] Ignoring stale fetch after mark-all-read');
+          // Still update notifications list but keep unreadCount at 0
+          setNotifications(data.data?.map((n: Notification) => ({ ...n, is_read: true })) || []);
+        } else {
+          setNotifications(data.data || []);
+          setUnreadCount(data.unreadCount || 0);
+        }
       } else {
         const errorData = await response.json().catch(() => ({}));
         console.error('[NotificationBell] Error response:', response.status, errorData);
@@ -93,7 +104,7 @@ export function NotificationBell({ userId, onOpen }: NotificationBellProps) {
     } finally {
       setLoading(false);
     }
-  }, [userId]);
+  }, [userId, lastMarkAllReadTime]);
 
   useEffect(() => {
     fetchNotifications();
@@ -119,36 +130,42 @@ export function NotificationBell({ userId, onOpen }: NotificationBellProps) {
     // Store previous state for rollback
     const prevUnreadCount = unreadCount;
     const prevNotifications = notifications;
-    
+
     try {
+      // Set timestamp to prevent stale fetches from overwriting our optimistic update
+      const markTime = Date.now();
+      setLastMarkAllReadTime(markTime);
+
       // Optimistically update UI immediately
       setUnreadCount(0);
-      setNotifications(prev => 
+      setNotifications(prev =>
         prev.map(n => ({ ...n, is_read: true, read_at: new Date().toISOString() }))
       );
       setOpen(false); // Close the dropdown
-      
+
       // Then make the API call
       const response = await fetch('/api/notifications/user', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId, markAllRead: true }),
       });
-      
+
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
         console.error('[NotificationBell] Mark all read failed:', response.status, errorData);
         // Rollback optimistic update on error
+        setLastMarkAllReadTime(0);
         setUnreadCount(prevUnreadCount);
         setNotifications(prevNotifications);
         return;
       }
-      
+
       console.log('[NotificationBell] Successfully marked all as read');
       // Don't refetch - optimistic update is now the source of truth
     } catch (error) {
       console.error('[NotificationBell] Error marking all read:', error);
       // Rollback optimistic update on error
+      setLastMarkAllReadTime(0);
       setUnreadCount(prevUnreadCount);
       setNotifications(prevNotifications);
     }

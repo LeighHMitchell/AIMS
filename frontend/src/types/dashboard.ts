@@ -40,6 +40,26 @@ export interface OrgDashboardStats {
   lastValidationEvent: ValidationEvent | null;
 }
 
+// Dashboard hero cards statistics
+export interface DashboardHeroStats {
+  // Validation Status card
+  pendingValidationCount: number;
+  validatedCount: number;
+  // Activities card
+  publishedCount: number;
+  draftCount: number;
+  // Financial Transactions card
+  orgTransactionCount: number;
+  userTransactionCount: number;
+  // Budgets & Planned Disbursements card
+  orgBudgetCount: number;
+  orgPlannedDisbursementCount: number;
+  orgBudgetAndDisbursementCount: number;
+  userBudgetCount: number;
+  userPlannedDisbursementCount: number;
+  userBudgetAndDisbursementCount: number;
+}
+
 // Action types for the actions required panel
 export type ActionType =
   | 'validation_returned'

@@ -21,14 +21,27 @@ export async function GET(request: NextRequest) {
         updated_at,
         reporting_org_id,
         iati_identifier,
-        activity_budgets(usd_value),
-        planned_disbursements(usd_amount)
+        activity_budgets(usd_value)
       `)
       .limit(50) // Reduced limit to prevent cache issues
 
     if (error) {
       console.error('[MyPortfolio API] Database error:', error)
       return NextResponse.json({ error: error.message }, { status: 500 })
+    }
+
+    // Fetch planned disbursements separately to avoid ambiguous relationship error
+    const activityIds = activities?.map((a: any) => a.id) || []
+    let plannedDisbursementsTotal = 0
+
+    if (activityIds.length > 0) {
+      const { data: disbursements } = await supabase
+        .from('planned_disbursements')
+        .select('activity_id, usd_amount')
+        .in('activity_id', activityIds)
+
+      plannedDisbursementsTotal = disbursements?.reduce((sum: number, d: any) =>
+        sum + (d.usd_amount || 0), 0) || 0
     }
 
     // Calculate summary statistics
@@ -38,13 +51,9 @@ export async function GET(request: NextRequest) {
         const budget = activity.activity_budgets?.[0]?.usd_value || 0
         return sum + budget
       }, 0) || 0,
-      totalPlannedDisbursements: activities?.reduce((sum: number, activity: any) => {
-        const planned = activity.planned_disbursements?.reduce((disbSum: number, d: any) => 
-          disbSum + (d.usd_amount || 0), 0) || 0
-        return sum + planned
-      }, 0) || 0,
+      totalPlannedDisbursements: plannedDisbursementsTotal,
       totalCommitments: 0, // Will add back when we fix transaction column names
-      totalDisbursements: 0, // Will add back when we fix transaction column names  
+      totalDisbursements: 0, // Will add back when we fix transaction column names
       totalExpenditure: 0 // Will add back when we fix transaction column names
     }
 

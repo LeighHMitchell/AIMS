@@ -167,7 +167,7 @@ export function TopNav({ user, onLogout }: TopNavProps) {
                   <Settings className="mr-2 h-4 w-4" />
                   <span>My Profile</span>
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => router.push("/my-portfolio")} className="cursor-pointer">
+                <DropdownMenuItem onClick={() => router.push("/dashboard?tab=my-portfolio")} className="cursor-pointer">
                   <Briefcase className="mr-2 h-4 w-4" />
                   <span>My Portfolio</span>
                 </DropdownMenuItem>

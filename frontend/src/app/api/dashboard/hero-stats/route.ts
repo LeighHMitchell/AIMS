@@ -1,0 +1,171 @@
+import { NextResponse, NextRequest } from 'next/server';
+import { getSupabaseAdmin } from '@/lib/supabase';
+import type { DashboardHeroStats } from '@/types/dashboard';
+
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
+// Helper to validate UUID format
+function isValidUUID(uuid: string): boolean {
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  return uuidRegex.test(uuid);
+}
+
+export async function GET(request: NextRequest) {
+  try {
+    const supabase = getSupabaseAdmin();
+    if (!supabase) {
+      return NextResponse.json(
+        { error: 'Database connection failed' },
+        { status: 500 }
+      );
+    }
+
+    // Parse query parameters
+    const searchParams = request.nextUrl.searchParams;
+    const organizationId = searchParams.get('organizationId');
+    const userId = searchParams.get('userId');
+
+    if (!organizationId) {
+      return NextResponse.json(
+        { error: 'organizationId is required' },
+        { status: 400 }
+      );
+    }
+
+    if (!isValidUUID(organizationId)) {
+      return NextResponse.json(
+        { error: 'Invalid organizationId format' },
+        { status: 400 }
+      );
+    }
+
+    // Get all activity IDs for this organization
+    const { data: orgActivities, error: orgActivitiesError } = await supabase
+      .from('activities')
+      .select('id, publication_status, submission_status')
+      .eq('reporting_org_id', organizationId);
+
+    if (orgActivitiesError) {
+      console.error('[Dashboard Hero Stats] Error fetching activities:', orgActivitiesError);
+      throw orgActivitiesError;
+    }
+
+    const activityIds = (orgActivities || []).map(a => a.id);
+
+    // Calculate validation status counts
+    const pendingValidationCount = (orgActivities || []).filter(
+      a => a.submission_status === 'submitted'
+    ).length;
+
+    const validatedCount = (orgActivities || []).filter(
+      a => a.submission_status === 'validated'
+    ).length;
+
+    // Calculate publication status counts
+    const publishedCount = (orgActivities || []).filter(
+      a => a.publication_status === 'published' || a.publication_status === 'public'
+    ).length;
+
+    const draftCount = (orgActivities || []).filter(
+      a => a.publication_status === 'draft' || a.publication_status === 'unpublished' || !a.publication_status
+    ).length;
+
+    // Fetch transaction, budget, and planned disbursement counts in parallel
+    const [
+      orgTransactionsResult,
+      userTransactionsResult,
+      orgBudgetsResult,
+      userBudgetsResult,
+      orgPlannedDisbursementsResult,
+      userPlannedDisbursementsResult,
+    ] = await Promise.all([
+      // Organization total transactions
+      activityIds.length > 0
+        ? supabase
+            .from('activity_transactions')
+            .select('*', { count: 'exact', head: true })
+            .in('activity_id', activityIds)
+        : Promise.resolve({ count: 0, error: null }),
+
+      // User's transactions
+      userId && activityIds.length > 0
+        ? supabase
+            .from('activity_transactions')
+            .select('*', { count: 'exact', head: true })
+            .in('activity_id', activityIds)
+            .eq('created_by', userId)
+        : Promise.resolve({ count: 0, error: null }),
+
+      // Organization total budgets
+      activityIds.length > 0
+        ? supabase
+            .from('activity_budgets')
+            .select('*', { count: 'exact', head: true })
+            .in('activity_id', activityIds)
+        : Promise.resolve({ count: 0, error: null }),
+
+      // User's budgets
+      userId && activityIds.length > 0
+        ? supabase
+            .from('activity_budgets')
+            .select('*', { count: 'exact', head: true })
+            .in('activity_id', activityIds)
+            .eq('created_by', userId)
+        : Promise.resolve({ count: 0, error: null }),
+
+      // Organization total planned disbursements
+      activityIds.length > 0
+        ? supabase
+            .from('activity_planned_disbursements')
+            .select('*', { count: 'exact', head: true })
+            .in('activity_id', activityIds)
+        : Promise.resolve({ count: 0, error: null }),
+
+      // User's planned disbursements
+      userId && activityIds.length > 0
+        ? supabase
+            .from('activity_planned_disbursements')
+            .select('*', { count: 'exact', head: true })
+            .in('activity_id', activityIds)
+            .eq('created_by', userId)
+        : Promise.resolve({ count: 0, error: null }),
+    ]);
+
+    // Extract counts
+    const orgTransactionCount = orgTransactionsResult.count || 0;
+    const userTransactionCount = userTransactionsResult.count || 0;
+    const orgBudgetCount = orgBudgetsResult.count || 0;
+    const userBudgetCount = userBudgetsResult.count || 0;
+    const orgPlannedDisbursementCount = orgPlannedDisbursementsResult.count || 0;
+    const userPlannedDisbursementCount = userPlannedDisbursementsResult.count || 0;
+
+    // Construct response
+    const stats: DashboardHeroStats = {
+      // Validation Status card
+      pendingValidationCount,
+      validatedCount,
+      // Activities card
+      publishedCount,
+      draftCount,
+      // Financial Transactions card
+      orgTransactionCount,
+      userTransactionCount,
+      // Budgets & Planned Disbursements card
+      orgBudgetCount,
+      orgPlannedDisbursementCount,
+      orgBudgetAndDisbursementCount: orgBudgetCount + orgPlannedDisbursementCount,
+      userBudgetCount,
+      userPlannedDisbursementCount,
+      userBudgetAndDisbursementCount: userBudgetCount + userPlannedDisbursementCount,
+    };
+
+    return NextResponse.json(stats);
+  } catch (error) {
+    console.error('[Dashboard Hero Stats] Error:', error);
+    return NextResponse.json(
+      { error: 'Failed to fetch dashboard hero stats' },
+      { status: 500 }
+    );
+  }
+}
