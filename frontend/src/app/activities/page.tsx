@@ -23,6 +23,7 @@ import { AsyncErrorBoundary } from "@/components/errors/AsyncErrorBoundary";
 import { PerformanceMetrics } from "@/components/optimization/OptimizedActivityList";
 import { MainLayout } from "@/components/layout/main-layout";
 import { ActivityList } from "@/components/activities/ActivityList";
+import { ActivityActionMenu } from "@/components/activities/ActivityActionMenu";
 import { SectorMiniBar } from "@/components/activities/SectorMiniBar";
 import {
   Card,
@@ -84,6 +85,7 @@ import { SectorFilterSelection, matchesSectorFilter } from "@/components/maps/Se
 import { SafeHtml } from '@/components/ui/safe-html';
 import { OrganizationAvatarGroup } from '@/components/ui/organization-avatar-group';
 import { SDGAvatarGroup } from '@/components/ui/sdg-avatar-group';
+import { PolicyMarkerAvatarGroup } from '@/components/ui/policy-marker-avatar-group';
 import { Progress } from "@/components/ui/progress";
 import { 
   calculateDurationDetailed,
@@ -307,7 +309,10 @@ type Activity = {
 
   // Capital Spend
   capitalSpendPercentage?: number | null;
-  
+
+  // Humanitarian flag
+  humanitarian?: boolean;
+
   // Locations data
   locations?: {
     site_locations?: Array<{
@@ -327,6 +332,22 @@ type Activity = {
       state_region_code?: string;
     }>;
   };
+
+  // Policy markers
+  policyMarkers?: Array<{
+    policy_marker_id: string;
+    significance?: number;
+    code?: string;
+    name?: string;
+    iati_code?: string;
+    is_iati_standard?: boolean;
+  }>;
+
+  // Creator profile for metadata columns
+  creatorProfile?: {
+    name: string;
+    department: string | null;
+  } | null;
 };
 
 type SortField = 'title' | 'partnerId' | 'createdBy' | 'commitments' | 'disbursements' | 'plannedDisbursements' | 'createdAt' | 'updatedAt' | 'activityStatus' | 'actualLength' | 'totalExpectedLength' | 'implementationToDate' | 'remainingDuration' | 'durationBand' | 'plannedStartDate' | 'plannedEndDate' | 'actualStartDate' | 'actualEndDate';
@@ -2117,6 +2138,30 @@ const router = useRouter();
                     </th>
                   )}
 
+                  {/* Policy Markers Column */}
+                  {visibleColumns.includes('policyMarkers') && (
+                    <th className="h-12 px-4 py-3 text-left align-middle text-sm font-medium text-muted-foreground min-w-[140px]">
+                      Policy Markers
+                    </th>
+                  )}
+
+                  {/* Metadata Columns */}
+                  {visibleColumns.includes('createdByName') && (
+                    <th className="h-12 px-4 py-3 text-left align-middle text-sm font-medium text-muted-foreground min-w-[150px]">
+                      Created By
+                    </th>
+                  )}
+                  {visibleColumns.includes('createdAt') && (
+                    <th className="h-12 px-4 py-3 text-left align-middle text-sm font-medium text-muted-foreground min-w-[160px]">
+                      Created Date & Time
+                    </th>
+                  )}
+                  {visibleColumns.includes('createdByDepartment') && (
+                    <th className="h-12 px-4 py-3 text-left align-middle text-sm font-medium text-muted-foreground min-w-[150px]">
+                      Creator's Department
+                    </th>
+                  )}
+
                   {/* Budget Status Column */}
                   {visibleColumns.includes('budgetStatus') && (
                     <th className="h-12 px-4 py-3 text-center align-middle text-sm font-medium text-muted-foreground min-w-[130px]">
@@ -2839,9 +2884,9 @@ const router = useRouter();
                         </td>
                       )}
                       {visibleColumns.includes('humanitarian') && (
-                        <td className="px-4 py-2 text-sm text-foreground text-center">
+                        <td className="px-4 py-2 text-sm text-foreground text-left">
                           {activity.humanitarian ? (
-                            <Heart className="h-4 w-4 text-red-500 fill-red-500 mx-auto" />
+                            <span>Humanitarian Activity</span>
                           ) : (
                             <span className="text-muted-foreground">—</span>
                           )}
@@ -3033,6 +3078,48 @@ const router = useRouter();
                             maxDisplay={3}
                             size="sm"
                           />
+                        </td>
+                      )}
+
+                      {/* Policy Markers Column */}
+                      {visibleColumns.includes('policyMarkers') && (
+                        <td className="px-4 py-2 text-sm text-foreground text-left">
+                          <PolicyMarkerAvatarGroup
+                            policyMarkers={activity.policyMarkers || []}
+                            maxDisplay={3}
+                            size="sm"
+                          />
+                        </td>
+                      )}
+
+                      {/* Metadata Columns */}
+                      {visibleColumns.includes('createdByName') && (
+                        <td className="px-4 py-2 text-sm text-foreground text-left">
+                          {activity.creatorProfile?.name || '—'}
+                        </td>
+                      )}
+                      {visibleColumns.includes('createdAt') && (
+                        <td className="px-4 py-2 text-sm text-foreground text-left">
+                          {activity.createdAt ? (
+                            <span title={new Date(activity.createdAt).toLocaleString()}>
+                              {new Date(activity.createdAt).toLocaleDateString('en-GB', {
+                                day: '2-digit',
+                                month: 'short',
+                                year: 'numeric'
+                              })}{' '}
+                              <span className="text-muted-foreground">
+                                {new Date(activity.createdAt).toLocaleTimeString('en-GB', {
+                                  hour: '2-digit',
+                                  minute: '2-digit'
+                                })}
+                              </span>
+                            </span>
+                          ) : '—'}
+                        </td>
+                      )}
+                      {visibleColumns.includes('createdByDepartment') && (
+                        <td className="px-4 py-2 text-sm text-foreground text-left">
+                          {activity.creatorProfile?.department || '—'}
                         </td>
                       )}
 
@@ -3681,87 +3768,17 @@ const router = useRouter();
                       {/* Actions cell - always visible */}
                       <td className="px-4 py-2 text-sm text-foreground text-right">
                         <div className="flex items-center justify-end">
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button
-                                variant="outline"
-                                size="icon"
-                                className="h-8 w-8"
-                              >
-                                <MoreVertical className="h-4 w-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="w-56">
-                              <DropdownMenuItem
-                                onClick={(e) => {
-                                  e.preventDefault();
-                                  toggleBookmark(activity.id);
-                                }}
-                                className="cursor-pointer"
-                              >
-                                {isBookmarked(activity.id) ? (
-                                  <>
-                                    <BookmarkCheck className="mr-2 h-4 w-4 text-slate-600" />
-                                    Remove Bookmark
-                                  </>
-                                ) : (
-                                  <>
-                                    <Bookmark className="mr-2 h-4 w-4" />
-                                    Add Bookmark
-                                  </>
-                                )}
-                              </DropdownMenuItem>
-                              {canUserEditActivity(user, activity) && (
-                                <DropdownMenuItem 
-                                  onClick={() => router.push(`/activities/new?id=${activity.id}`)}
-                                  className="cursor-pointer"
-                                >
-                                  <PencilLine className="mr-2 h-4 w-4" />
-                                  Edit
-                                </DropdownMenuItem>
-                              )}
-                              <DropdownMenuSeparator />
-                              <DropdownMenuSub>
-                                <DropdownMenuSubTrigger>
-                                  <FileText className="mr-2 h-4 w-4" />
-                                  Export
-                                </DropdownMenuSubTrigger>
-                                <DropdownMenuSubContent className="w-48">
-                                  <DropdownMenuItem
-                                    onClick={() => {
-                                      toast.info("Export to IATI XML feature coming soon");
-                                    }}
-                                    className="cursor-pointer"
-                                  >
-                                    <FileCode className="mr-2 h-4 w-4" />
-                                    Export to XML
-                                  </DropdownMenuItem>
-                                  <DropdownMenuItem
-                                    onClick={() => handleExportActivityPDF(activity.id)}
-                                    className="cursor-pointer"
-                                  >
-                                    <FileText className="mr-2 h-4 w-4" />
-                                    Export as PDF
-                                  </DropdownMenuItem>
-                                  <DropdownMenuItem
-                                    onClick={() => handleExportActivityExcel(activity.id)}
-                                    className="cursor-pointer"
-                                  >
-                                    <FileSpreadsheet className="mr-2 h-4 w-4" />
-                                    Export as Excel
-                                  </DropdownMenuItem>
-                                </DropdownMenuSubContent>
-                              </DropdownMenuSub>
-                              <DropdownMenuSeparator />
-                              <DropdownMenuItem
-                                onClick={() => setDeleteActivityId(activity.id)}
-                                className="cursor-pointer text-red-600 hover:text-red-700 hover:bg-red-50"
-                              >
-                                <Trash2 className="mr-2 h-4 w-4" />
-                                Delete
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
+                          <ActivityActionMenu
+                            activityId={activity.id}
+                            isBookmarked={isBookmarked(activity.id)}
+                            canEdit={canUserEditActivity(user, activity)}
+                            onToggleBookmark={() => toggleBookmark(activity.id)}
+                            onEdit={() => router.push(`/activities/new?id=${activity.id}`)}
+                            onExportXML={() => toast.info("Export to IATI XML feature coming soon")}
+                            onExportPDF={() => handleExportActivityPDF(activity.id)}
+                            onExportExcel={() => handleExportActivityExcel(activity.id)}
+                            onDelete={() => setDeleteActivityId(activity.id)}
+                          />
                         </div>
                       </td>
                     </tr>

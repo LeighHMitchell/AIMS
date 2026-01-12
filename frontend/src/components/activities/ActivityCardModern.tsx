@@ -3,18 +3,12 @@
 import React, { useRef } from 'react';
 import Link from 'next/link';
 import html2canvas from 'html2canvas';
-import { Calendar, MoreVertical, Edit3, Trash2, Clock, Download, Copy, Bookmark, BookmarkCheck, Building2, DollarSign } from 'lucide-react';
+import { Calendar, Clock, Copy, Building2, DollarSign } from 'lucide-react';
 import { useBookmarks } from '@/hooks/use-bookmarks';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 import { formatActivityDate, formatRelativeTime } from '@/lib/date-utils';
 import { ActivityCardSkeleton } from './ActivityCardSkeleton';
+import { ActivityCardActionMenu } from './ActivityCardActionMenu';
 
 // Color palette
 const colors = {
@@ -143,13 +137,25 @@ const ActivityCardModern: React.FC<ActivityCardModernProps> = ({
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, type: "spring", bounce: 0.3 }}
       whileHover={{ y: -8 }}
-      className={`group relative flex w-full flex-col rounded-3xl shadow-sm hover:shadow-xl transition-shadow duration-300 isolate overflow-hidden border ${className}`}
+      className={`group relative flex w-full flex-col rounded-3xl shadow-sm hover:shadow-xl transition-shadow duration-300 isolate border ${className}`}
       style={{ backgroundColor: 'white' }}
       role="article"
       aria-label={`Activity: ${activity.title}`}
     >
+      {/* Action Menu - positioned at card level to avoid overflow clipping */}
+      <div className="absolute top-4 left-4 z-50" onClick={(e) => e.stopPropagation()}>
+        <ActivityCardActionMenu
+          activityId={activity.id}
+          isBookmarked={isBookmarked(activity.id)}
+          onToggleBookmark={() => toggleBookmark(activity.id)}
+          onExportJPG={handleExport}
+          onEdit={onEdit ? handleEdit : undefined}
+          onDelete={onDelete ? handleDelete : undefined}
+        />
+      </div>
+
       {/* Banner/Poster Section */}
-      <div className="relative h-48 w-full overflow-hidden" style={{ backgroundColor: colors.blueSlate }}>
+      <div className="relative h-48 w-full overflow-hidden rounded-t-3xl" style={{ backgroundColor: colors.blueSlate }}>
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent z-10" />
         {activity.banner ? (
           <motion.img
@@ -166,65 +172,6 @@ const ActivityCardModern: React.FC<ActivityCardModernProps> = ({
             <Building2 className="h-16 w-16" style={{ color: colors.coolSteel, opacity: 0.3 }} />
           </div>
         )}
-
-        {/* Action Menu - Top Left */}
-        <div className="absolute top-4 left-4 z-20">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8 backdrop-blur-sm rounded-full border-0"
-                style={{ backgroundColor: 'rgba(0,0,0,0.3)' }}
-                onClick={(e) => e.stopPropagation()}
-              >
-                <MoreVertical className="h-4 w-4 text-white" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="start" className="w-48">
-              <DropdownMenuItem
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  toggleBookmark(activity.id);
-                }}
-                className="cursor-pointer"
-              >
-                {isBookmarked(activity.id) ? (
-                  <>
-                    <BookmarkCheck className="mr-2 h-4 w-4" style={{ color: colors.blueSlate }} />
-                    Remove Bookmark
-                  </>
-                ) : (
-                  <>
-                    <Bookmark className="mr-2 h-4 w-4" style={{ color: colors.blueSlate }} />
-                    Add Bookmark
-                  </>
-                )}
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={handleExport} className="cursor-pointer">
-                <Download className="mr-2 h-4 w-4" style={{ color: colors.blueSlate }} />
-                Export as JPG
-              </DropdownMenuItem>
-              {onEdit && (
-                <DropdownMenuItem onClick={handleEdit} className="cursor-pointer">
-                  <Edit3 className="mr-2 h-4 w-4" style={{ color: colors.blueSlate }} />
-                  Edit
-                </DropdownMenuItem>
-              )}
-              {onDelete && (
-                <DropdownMenuItem
-                  onClick={handleDelete}
-                  className="cursor-pointer"
-                  style={{ color: colors.primaryScarlet }}
-                >
-                  <Trash2 className="mr-2 h-4 w-4" />
-                  Delete
-                </DropdownMenuItem>
-              )}
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
 
         {/* Title & Metadata - Bottom of banner */}
         <div className="absolute bottom-0 left-0 right-0 p-4 z-20">

@@ -3,9 +3,6 @@ import { useRouter } from "next/navigation";
 import {
   ChevronUp,
   ChevronDown,
-  Edit,
-  Trash2,
-  MoreVertical,
   Calendar,
 } from "lucide-react";
 import { format } from "date-fns";
@@ -15,12 +12,7 @@ import { Button } from "@/components/ui/button";
 import {
   TooltipProvider,
 } from "@/components/ui/tooltip";
-import {
-  DropdownMenu,
-  DropdownMenuTrigger,
-  DropdownMenuContent,
-  DropdownMenuItem,
-} from '@/components/ui/dropdown-menu';
+import { BudgetActionMenu } from "@/components/budgets/BudgetActionMenu";
 import {
   Table,
   TableBody,
@@ -456,41 +448,11 @@ export function BudgetTable({
                     )}
 
                     <TableCell className="py-3 px-4 text-right" onClick={(e) => e.stopPropagation()}>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button
-                            variant="outline"
-                            size="icon"
-                            className="h-8 w-8"
-                            aria-label="Open menu"
-                          >
-                            <span className="sr-only">Open menu</span>
-                            <MoreVertical className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" onCloseAutoFocus={(e) => e.preventDefault()}>
-                          {onEdit && (
-                            <DropdownMenuItem onSelect={(e) => {
-                              e.preventDefault();
-                              e.stopPropagation();
-                              onEdit(budget);
-                            }}>
-                              <Edit className="mr-2 h-4 w-4" />
-                              Edit
-                            </DropdownMenuItem>
-                          )}
-                          {onDelete && (
-                            <DropdownMenuItem onSelect={(e) => {
-                              e.preventDefault();
-                              e.stopPropagation();
-                              onDelete(budgetId);
-                            }} className="text-red-600">
-                              <Trash2 className="mr-2 h-4 w-4" />
-                              Delete
-                            </DropdownMenuItem>
-                          )}
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                      <BudgetActionMenu
+                        budgetId={budgetId}
+                        onEdit={onEdit ? () => onEdit(budget) : undefined}
+                        onDelete={onDelete ? () => onDelete(budgetId) : undefined}
+                      />
                     </TableCell>
                   </TableRow>
 

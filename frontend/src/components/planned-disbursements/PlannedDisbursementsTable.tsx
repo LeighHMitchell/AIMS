@@ -4,9 +4,6 @@ import Link from "next/link";
 import {
   ChevronUp,
   ChevronDown,
-  Edit,
-  Trash2,
-  MoreVertical,
   MessageSquare,
   ArrowRight,
   Loader2,
@@ -22,12 +19,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import {
-  DropdownMenu,
-  DropdownMenuTrigger,
-  DropdownMenuContent,
-  DropdownMenuItem,
-} from '@/components/ui/dropdown-menu';
+import { PlannedDisbursementActionMenu } from "@/components/planned-disbursements/PlannedDisbursementActionMenu";
 import {
   Table,
   TableBody,
@@ -659,41 +651,11 @@ export function PlannedDisbursementsTable({
 
                     {/* Actions */}
                     <td className="py-3 px-4 text-right" onClick={(e) => e.stopPropagation()}>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button
-                            variant="outline"
-                            size="icon"
-                            className="h-8 w-8"
-                            aria-label="Open menu"
-                          >
-                            <span className="sr-only">Open menu</span>
-                            <MoreVertical className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" onCloseAutoFocus={(e) => e.preventDefault()}>
-                          {onEdit && (
-                            <DropdownMenuItem onSelect={(e) => {
-                              e.preventDefault();
-                              e.stopPropagation();
-                              onEdit(disbursement);
-                            }}>
-                              <Edit className="mr-2 h-4 w-4" />
-                              Edit
-                            </DropdownMenuItem>
-                          )}
-                          {onDelete && (
-                            <DropdownMenuItem onSelect={(e) => {
-                              e.preventDefault();
-                              e.stopPropagation();
-                              onDelete(disbursementId);
-                            }} className="text-red-600">
-                              <Trash2 className="mr-2 h-4 w-4" />
-                              Delete
-                            </DropdownMenuItem>
-                          )}
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                      <PlannedDisbursementActionMenu
+                        disbursementId={disbursementId}
+                        onEdit={onEdit ? () => onEdit(disbursement) : undefined}
+                        onDelete={onDelete ? () => onDelete(disbursementId) : undefined}
+                      />
                     </td>
                   </TableRow>
 

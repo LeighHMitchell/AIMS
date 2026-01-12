@@ -1,8 +1,46 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase';
+import { unstable_cache } from 'next/cache';
 
 // Force dynamic rendering
 export const dynamic = 'force-dynamic';
+
+// Cache the summary calculations for 60 seconds
+const getCachedSummary = unstable_cache(
+  async () => {
+    console.log('[AIMS] Summary Cache MISS - Fetching fresh summary from database');
+
+    // Fetch all data in parallel for better performance
+    const [organizationsResult, activitiesResult, transactionsResult, groupsResult] = await Promise.all([
+      getSupabaseAdmin()
+        .from('organizations')
+        .select('id, updated_at'),
+      getSupabaseAdmin()
+        .from('activities')
+        .select('id')
+        .in('activity_status', ['2', '3']),
+      getSupabaseAdmin()
+        .from('transactions')
+        .select('value')
+        .eq('transaction_type', '2'),
+      getSupabaseAdmin()
+        .from('custom_groups')
+        .select('id')
+    ]);
+
+    return {
+      organizationsResult,
+      activitiesResult,
+      transactionsResult,
+      groupsResult
+    };
+  },
+  ['organization-summary'],
+  {
+    revalidate: 60, // Cache for 60 seconds
+    tags: ['organizations']
+  }
+);
 
 // Handle OPTIONS requests for CORS
 export async function OPTIONS() {
@@ -15,7 +53,7 @@ export async function OPTIONS() {
 
 export async function GET(request: NextRequest) {
   console.log('[AIMS] GET /api/organizations/summary - Starting request');
-  
+
   try {
     // Check if getSupabaseAdmin is properly initialized
     if (!getSupabaseAdmin()) {
@@ -26,47 +64,35 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Fetch organizations count
-    const { data: organizations, error: orgsError } = await getSupabaseAdmin()
-      .from('organizations')
-      .select('id, name, type, created_at, updated_at');
+    // Check if cache should be bypassed
+    const { searchParams } = new URL(request.url);
+    const bustCache = searchParams.has('_');
 
-    if (orgsError) {
-      console.error('[AIMS] Error fetching organizations:', orgsError);
-      return NextResponse.json({ error: orgsError.message }, { status: 500 });
-    }
+    let organizations: any[] | null = null;
+    let activities: any[] | null = null;
+    let transactions: any[] | null = null;
+    let groups: any[] | null = null;
 
-    // Fetch activities count for active projects calculation
-    // Note: Using reporting_org_id to link to organizations
-    const { data: activities, error: activitiesError } = await getSupabaseAdmin()
-      .from('activities')
-      .select('id, reporting_org_id, activity_status')
-      .in('activity_status', ['2', '3']); // 2=Implementation, 3=Finalisation
-
-    if (activitiesError) {
-      console.error('[AIMS] Error fetching activities:', activitiesError);
-      // Don't fail the request if activities fetch fails, just set to 0
-    }
-
-    // Fetch transaction data for funding calculation
-    const { data: transactions, error: transactionsError } = await getSupabaseAdmin()
-      .from('transactions')
-      .select('value, transaction_type')
-      .eq('transaction_type', '2'); // Outgoing Commitment (IATI code)
-
-    if (transactionsError) {
-      console.error('[AIMS] Error fetching transactions:', transactionsError);
-      // Don't fail the request if transactions fetch fails, just set to 0
-    }
-
-    // Fetch custom groups count
-    const { data: groups, error: groupsError } = await getSupabaseAdmin()
-      .from('custom_groups')
-      .select('id');
-
-    if (groupsError) {
-      console.error('[AIMS] Error fetching custom groups:', groupsError);
-      // Don't fail the request if groups fetch fails, just set to 0
+    if (bustCache) {
+      console.log('[AIMS] Summary Cache BUST - Fetching fresh data');
+      // Fetch directly without cache when busting
+      const [orgsResult, activitiesResult, transactionsResult, groupsResult] = await Promise.all([
+        getSupabaseAdmin().from('organizations').select('id, updated_at'),
+        getSupabaseAdmin().from('activities').select('id').in('activity_status', ['2', '3']),
+        getSupabaseAdmin().from('transactions').select('value').eq('transaction_type', '2'),
+        getSupabaseAdmin().from('custom_groups').select('id')
+      ]);
+      organizations = orgsResult.data;
+      activities = activitiesResult.data;
+      transactions = transactionsResult.data;
+      groups = groupsResult.data;
+    } else {
+      // Use server-side cache for normal requests
+      const cachedResults = await getCachedSummary();
+      organizations = cachedResults.organizationsResult.data;
+      activities = cachedResults.activitiesResult.data;
+      transactions = cachedResults.transactionsResult.data;
+      groups = cachedResults.groupsResult.data;
     }
 
     // Calculate summary statistics
@@ -74,9 +100,9 @@ export async function GET(request: NextRequest) {
     const totalActiveProjects = activities?.length || 0;
     const totalCommittedFunding = transactions?.reduce((sum: number, t: any) => sum + (t.value || 0), 0) || 0;
     const totalCustomGroups = groups?.length || 0;
-    
+
     // Get the most recent update timestamp
-    const lastUpdated = organizations && organizations.length > 0 
+    const lastUpdated = organizations && organizations.length > 0
       ? organizations.reduce((latest: string, org: any) => {
           const orgUpdate = new Date(org.updated_at);
           return orgUpdate > new Date(latest) ? org.updated_at : latest;
@@ -92,14 +118,15 @@ export async function GET(request: NextRequest) {
     };
 
     console.log('[AIMS] Organization summary calculated:', summary);
-    
+
     const response = NextResponse.json(summary);
-    
-    // Add CORS headers
+
+    // Add CORS and cache headers
     response.headers.set('Access-Control-Allow-Origin', '*');
-    response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    response.headers.set('Access-Control-Allow-Methods', 'GET, OPTIONS');
     response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-    
+    response.headers.set('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=120');
+
     return response;
   } catch (error) {
     console.error('[AIMS] Unexpected error in organizations summary:', error);

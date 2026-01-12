@@ -12,12 +12,10 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
-import { 
+import {
   AlertTriangle,
   Copy,
   HelpCircle,
-  ImageIcon,
-  Upload,
   X,
   Mail,
   Phone,
@@ -56,6 +54,7 @@ import { IATIDocumentManager } from './IATIDocumentManager'
 import IATIImportPreferences from './IATIImportPreferences'
 import { HelpTextTooltip } from '@/components/ui/help-text-tooltip'
 import { StringArrayInput } from '@/components/ui/string-array-input'
+import { OrganizationBannerUpload, OrganizationLogoUpload } from '@/components/ui/enhanced-image-upload'
 import { IATI_COUNTRIES } from '@/data/iati-countries'
 import { 
   INSTITUTIONAL_GROUPS, 
@@ -202,7 +201,9 @@ interface Organization {
   phone?: string
   address?: string
   logo?: string
+  logo_scale?: number
   banner?: string
+  banner_position?: number
   country?: string
   country_represented?: string
   cooperation_modality?: string
@@ -230,125 +231,6 @@ interface EditOrganizationModalProps {
   initialMergeSourceOrgId?: string
   /** Start on a specific tab when opening */
   initialTab?: string
-}
-
-// Drag and Drop Image Upload Component
-const ImageUpload: React.FC<{
-  value: string
-  onChange: (value: string) => void
-  label: string
-  recommendedSize: string
-  isLogo?: boolean
-}> = ({ value, onChange, label, recommendedSize, isLogo = false }) => {
-  const [uploading, setUploading] = useState(false)
-  const [preview, setPreview] = useState<string | null>(value || null)
-
-  const onDrop = useCallback(async (acceptedFiles: File[]) => {
-    const file = acceptedFiles[0]
-    if (!file) return
-
-    if (!file.type.startsWith('image/')) {
-      toast.error('Please upload an image file')
-      return
-    }
-
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error('Image size should be less than 5MB')
-      return
-    }
-
-    setUploading(true)
-
-    try {
-      const reader = new FileReader()
-      reader.onloadend = () => {
-        const base64String = reader.result as string
-        setPreview(base64String)
-        onChange(base64String)
-        toast.success(`${label} uploaded successfully`)
-      }
-      reader.readAsDataURL(file)
-    } catch (error) {
-      console.error('Error uploading image:', error)
-      toast.error(`Failed to upload ${label.toLowerCase()}`)
-    } finally {
-      setUploading(false)
-    }
-  }, [onChange, label])
-
-  const { getRootProps, getInputProps, isDragActive } = useDropzone({
-    onDrop,
-    accept: {
-      'image/*': ['.png', '.jpg', '.jpeg', '.gif', '.webp']
-    },
-    maxFiles: 1,
-    disabled: uploading
-  })
-
-  const removeImage = () => {
-    setPreview(null)
-    onChange('')
-  }
-
-  useEffect(() => {
-    setPreview(value || null)
-  }, [value])
-
-  return (
-    <div className="space-y-2">
-      <Label className="text-sm font-medium">{label}</Label>
-      
-      {preview ? (
-        <div className="relative">
-          <div className={`rounded-lg overflow-hidden border-2 border-dashed border-gray-300 ${isLogo ? 'w-32 h-40' : 'w-full h-40'}`}>
-            <img 
-              src={preview} 
-              alt={label}
-              className="w-full h-full object-cover"
-            />
-          </div>
-          <Button
-            variant="destructive"
-            size="sm"
-            onClick={removeImage}
-            className="absolute top-2 right-2"
-          >
-            <X className="h-4 w-4" />
-          </Button>
-        </div>
-      ) : (
-        <div
-          {...getRootProps()}
-          className={`border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors
-            ${isDragActive ? 'border-primary bg-primary/5' : 'border-gray-300 hover:border-gray-400'}
-            ${uploading ? 'opacity-50 cursor-not-allowed' : ''}
-            h-40`}
-        >
-          <input {...getInputProps()} />
-          {uploading ? (
-            <div className="flex flex-col items-center justify-center h-full">
-              <Upload className="h-8 w-8 text-gray-400 animate-pulse" />
-              <p className="text-sm text-gray-600 mt-2">Uploading...</p>
-            </div>
-          ) : isDragActive ? (
-            <div className="flex flex-col items-center justify-center h-full">
-              <Upload className="h-8 w-8 text-primary" />
-              <p className="text-sm text-primary mt-2">Drop image here</p>
-            </div>
-          ) : (
-            <div className="flex flex-col items-center justify-center h-full">
-              <ImageIcon className="h-8 w-8 text-gray-400" />
-              <p className="text-sm text-gray-600 mt-2">Drag & drop or click to upload</p>
-            </div>
-          )}
-        </div>
-      )}
-      
-      <p className="text-xs text-gray-500 text-center">
-        Recommended size: {recommendedSize}
-      </p>
-    </div>
-  )
 }
 
 export function EditOrganizationModal({
@@ -449,7 +331,9 @@ export function EditOrganizationModal({
         cooperation_modality: organization.cooperation_modality || '',
         description: organization.description || '',
         logo: organization.logo || '',
+        logo_scale: organization.logo_scale ?? 100,
         banner: organization.banner || '',
+        banner_position: organization.banner_position ?? 50,
         website: organization.website || '',
         email: organization.email || '',
         phone: organization.phone || '',
@@ -485,7 +369,9 @@ export function EditOrganizationModal({
         cooperation_modality: '',
         description: '',
         logo: '',
+        logo_scale: 100,
         banner: '',
+        banner_position: 50,
         website: '',
         email: '',
         phone: '',
@@ -529,7 +415,7 @@ export function EditOrganizationModal({
     }
   }, [modalOpen, initialTab, initialMergeSourceOrgId])
 
-  const handleInputChange = (field: string, value: string) => {
+  const handleInputChange = (field: string, value: string | number | string[]) => {
     setFormData(prev => ({ ...prev, [field]: value }))
     if (validationErrors.length > 0) {
       setValidationErrors([])
@@ -1310,31 +1196,28 @@ export function EditOrganizationModal({
           {/* Branding Tab */}
           <TabsContent value="branding" className="h-full overflow-y-auto px-2 mt-4 space-y-6">
             <div className="space-y-6">
-              <p className="text-sm text-muted-foreground">Upload logos and banner images for your organization profile</p>
-              
-              {/* Logo and Banner */}
-              <div className="flex gap-4 items-start">
-                {/* Partner Logo - Smaller fixed width */}
-                <div className="w-48 flex-shrink-0">
-                  <ImageUpload
-                    value={formData.logo || ''}
-                    onChange={(value) => handleInputChange('logo', value)}
-                    label="Logo"
-                    recommendedSize="512×512px"
-                    isLogo={true}
-                  />
-                </div>
-                
-                {/* Banner Image - Larger flexible width */}
-                <div className="flex-grow">
-                  <ImageUpload
-                    value={formData.banner || ''}
-                    onChange={(value) => handleInputChange('banner', value)}
-                    label="Banner"
-                    recommendedSize="1200×300px"
-                    isLogo={false}
-                  />
-                </div>
+              <p className="text-sm text-muted-foreground">Upload logos and banner images for your organization profile. Hover over images to reposition, replace, or remove them.</p>
+
+              {/* Logo */}
+              <div>
+                <OrganizationLogoUpload
+                  value={formData.logo || ''}
+                  onChange={(value) => handleInputChange('logo', value)}
+                  scale={formData.logo_scale ?? 100}
+                  onScaleChange={(scale) => handleInputChange('logo_scale', scale)}
+                  disabled={saving}
+                />
+              </div>
+
+              {/* Banner */}
+              <div>
+                <OrganizationBannerUpload
+                  value={formData.banner || ''}
+                  onChange={(value) => handleInputChange('banner', value)}
+                  position={formData.banner_position ?? 50}
+                  onPositionChange={(position) => handleInputChange('banner_position', position)}
+                  disabled={saving}
+                />
               </div>
             </div>
           </TabsContent>

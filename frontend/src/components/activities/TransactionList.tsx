@@ -4,13 +4,13 @@ import React, { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow
 } from "@/components/ui/table";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -1285,19 +1285,16 @@ export default function TransactionList({
 
   return (
     <>
-      <Card className="border-0">
-        <CardHeader>
+      <Card className="border-0 shadow-none">
+        <CardHeader className={hideSummaryCards ? "hidden" : ""}>
           <div className="flex items-center justify-between gap-4">
             {/* Left side: Title and Description */}
-            {!hideSummaryCards && (
-              <div className="flex-shrink-0">
-                <CardTitle>Transactions</CardTitle>
-                <CardDescription>
-                  Commitments, disbursements, and expenditures
-                </CardDescription>
-              </div>
-            )}
-            {hideSummaryCards && <div />}
+            <div className="flex-shrink-0">
+              <CardTitle>Transactions</CardTitle>
+              <CardDescription>
+                Commitments, disbursements, and expenditures
+              </CardDescription>
+            </div>
             
             {/* Right side: Filters and Actions - All on same row (only show when hideSummaryCards is false) */}
             {!hideSummaryCards && (
@@ -1504,7 +1501,7 @@ export default function TransactionList({
             </Button>
           </div>
         )}
-        <CardContent>
+        <CardContent className={hideSummaryCards ? "p-0" : ""}>
           {/* Transaction Type Summary Cards */}
           {!hideSummaryCards && transactions.length > 0 && (
             <div className="mb-6">
@@ -1531,9 +1528,9 @@ export default function TransactionList({
             </div>
           ) : (
             <>
-            <div className="rounded-md border">
+            <div className={hideSummaryCards ? "w-full" : "rounded-md border"}>
               <div className="overflow-x-auto">
-              <Table className="table-fixed min-w-max">
+              <Table className={hideSummaryCards ? "w-full" : "table-fixed min-w-max"}>
                 <TableHeader className="bg-muted/50 border-b border-border/70">
                   <TableRow>
                     {/* Expand/collapse column - always visible */}
@@ -2727,19 +2724,6 @@ export default function TransactionList({
             </>
           )}
 
-          {/* Multiple Currencies Notice */}
-          {Object.keys(summary.byCurrency).length > 1 && (
-            <div className="mt-4 p-3 bg-amber-50 border border-amber-200 rounded-lg">
-              <p className="text-sm text-amber-800">
-                <strong>Note:</strong> This activity has transactions in multiple currencies: {' '}
-                {Object.entries(summary.byCurrency).map(([curr, amount]) => (
-                  <span key={curr} className="font-mono">
-                    {formatCurrency(amount, curr)}
-                  </span>
-                )).reduce((prev, curr, i) => [prev, i > 0 ? ', ' : '', curr] as any)}
-              </p>
-            </div>
-          )}
         </CardContent>
       </Card>
 

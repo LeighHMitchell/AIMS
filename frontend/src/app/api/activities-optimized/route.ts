@@ -1,6 +1,7 @@
 import { NextResponse, NextRequest } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase';
 import { fetchSystemTotals, SystemTotals } from '@/lib/system-totals';
+import { calculateModality } from '@/utils/modality-calculation';
 
 /**
  * Optimized Activities API
@@ -101,6 +102,7 @@ export async function GET(request: NextRequest) {
         vote_score,
         upvote_count,
         downvote_count,
+        humanitarian,
         banner,
         icon,
         activity_sdg_mappings (
@@ -280,120 +282,121 @@ export async function GET(request: NextRequest) {
       accountable: OrgEntry[];
     }>();
     
-    if (activityIds.length > 0) {
-      // Fetch budget totals
-      const { data: budgets, error: budgetError } = await supabase
-        .from('activity_budgets')
-        .select('activity_id, value, currency, usd_value')
-        .in('activity_id', activityIds);
+    // Fetch subnational breakdowns map (declared here for use later)
+    let subnationalBreakdownsMap = new Map<string, any[]>();
 
+    // Policy markers map (declared here for use later)
+    const policyMarkersMap = new Map<string, any[]>();
+
+    // Creator profiles map (for metadata columns)
+    const creatorProfilesMap = new Map<string, { name: string; department: string | null }>();
+
+    if (activityIds.length > 0) {
+      // PERFORMANCE OPTIMIZATION: Run all independent queries in parallel
+      console.log('[AIMS Optimized] Starting parallel data fetch for', activityIds.length, 'activities');
+      const parallelStartTime = Date.now();
+
+      // Execute all independent queries in parallel
+      const [
+        budgetsResult,
+        plannedDisbursementsResult,
+        participatingOrgsResult,
+        transactionsResult,
+        breakdownsResult,
+        policyMarkersResult
+      ] = await Promise.all([
+        // 1. Budgets
+        supabase
+          .from('activity_budgets')
+          .select('activity_id, value, currency, usd_value')
+          .in('activity_id', activityIds),
+
+        // 2. Planned disbursements
+        supabase
+          .from('planned_disbursements')
+          .select('activity_id, amount, currency, usd_amount')
+          .in('activity_id', activityIds),
+
+        // 3. Participating organizations (initial fetch)
+        supabase
+          .from('activity_participating_organizations')
+          .select('activity_id, iati_role_code, role_type, narrative, organization_id')
+          .in('activity_id', activityIds),
+
+        // 4. Transactions
+        supabase
+          .from('transactions')
+          .select('activity_id, transaction_type, status, value, value_usd')
+          .in('activity_id', activityIds),
+
+        // 5. Subnational breakdowns
+        supabase
+          .from('subnational_breakdowns')
+          .select('id, activity_id, region_name, percentage, is_nationwide')
+          .in('activity_id', activityIds),
+
+        // 6. Policy markers (with marker details)
+        supabase
+          .from('activity_policy_markers')
+          .select('activity_id, policy_marker_id, significance')
+          .in('activity_id', activityIds)
+      ]);
+
+      console.log('[AIMS Optimized] Parallel fetch completed in', Date.now() - parallelStartTime, 'ms');
+
+      // Process budgets
+      const { data: budgets, error: budgetError } = budgetsResult;
       if (budgetError) {
         console.error('[AIMS Optimized] Budget fetch error:', budgetError);
       } else if (budgets) {
-        console.log('[AIMS Optimized] Budget data fetched:', budgets.length, 'entries');
         budgets.forEach((b: any) => {
           const current = budgetMap.get(b.activity_id) || 0;
           const currentOriginal = budgetOriginalMap.get(b.activity_id) || 0;
-          // Use USD converted value for aggregation
-          const budgetValue = b.usd_value || 0;
-          budgetMap.set(b.activity_id, current + budgetValue);
-          // Sum original currency values
-          const originalValue = b.value || 0;
-          budgetOriginalMap.set(b.activity_id, currentOriginal + originalValue);
+          budgetMap.set(b.activity_id, current + (b.usd_value || 0));
+          budgetOriginalMap.set(b.activity_id, currentOriginal + (b.value || 0));
         });
-        console.log('[AIMS Optimized] Budget map:', Object.fromEntries(budgetMap));
-      } else {
-        console.log('[AIMS Optimized] No budget data found');
       }
 
-      // Fetch planned disbursements totals
-      const { data: plannedDisbursements, error: plannedDisbursementError } = await supabase
-        .from('planned_disbursements')
-        .select('activity_id, amount, currency, usd_amount')
-        .in('activity_id', activityIds);
-
+      // Process planned disbursements
+      const { data: plannedDisbursements, error: plannedDisbursementError } = plannedDisbursementsResult;
       if (plannedDisbursementError) {
         console.error('[AIMS Optimized] Planned disbursement fetch error:', plannedDisbursementError);
       } else if (plannedDisbursements) {
-        console.log('[AIMS Optimized] Planned disbursement data fetched:', plannedDisbursements.length, 'entries');
         plannedDisbursements.forEach((pd: any) => {
           const current = plannedDisbursementMap.get(pd.activity_id) || 0;
           const currentOriginal = plannedDisbursementOriginalMap.get(pd.activity_id) || 0;
-          const pdValue = pd.usd_amount || 0;
-          plannedDisbursementMap.set(pd.activity_id, current + pdValue);
-          // Sum original currency values
-          const originalValue = pd.amount || 0;
-          plannedDisbursementOriginalMap.set(pd.activity_id, currentOriginal + originalValue);
+          plannedDisbursementMap.set(pd.activity_id, current + (pd.usd_amount || 0));
+          plannedDisbursementOriginalMap.set(pd.activity_id, currentOriginal + (pd.amount || 0));
         });
-        console.log('[AIMS Optimized] Planned disbursement map:', Object.fromEntries(plannedDisbursementMap));
-      } else {
-        console.log('[AIMS Optimized] No planned disbursement data found');
       }
 
-      // Fetch participating organisations for all activities
-      console.log('[AIMS Optimized] Fetching participating orgs for', activityIds.length, 'activities');
-      console.log('[AIMS Optimized] Sample activity IDs:', activityIds.slice(0, 5));
-
-      // Only fetch participating orgs if we have activity IDs
-      let participatingOrgs: any[] = [];
-      let participatingOrgsError: any = null;
-      
-      if (activityIds.length > 0) {
-        try {
-          // Try with organization join first
-          const result = await supabase
-            .from('activity_participating_organizations')
-            .select(`
-              activity_id,
-              iati_role_code,
-              role_type,
-              narrative,
-              organization_id
-            `)
-            .in('activity_id', activityIds);
-          
-          participatingOrgs = result.data || [];
-          participatingOrgsError = result.error;
-          
-          // If we got orgs, fetch organization names separately
-          if (participatingOrgs.length > 0) {
-            const orgIds = [...new Set(participatingOrgs.map(o => o.organization_id).filter(Boolean))];
-            if (orgIds.length > 0) {
-              const { data: orgsData } = await supabase
-                .from('organizations')
-                .select('id, name, acronym, logo')
-                .in('id', orgIds);
-              
-              if (orgsData) {
-                const orgsMap = new Map(orgsData.map(o => [o.id, o]));
-                participatingOrgs = participatingOrgs.map(po => ({
-                  ...po,
-                  organizations: orgsMap.get(po.organization_id) || null
-                }));
-              }
-            }
-          }
-        } catch (err) {
-          console.error('[AIMS Optimized] Error fetching participating orgs:', err);
-          participatingOrgsError = err;
-        }
-      }
+      // Process participating organizations
+      let participatingOrgs = participatingOrgsResult.data || [];
+      const participatingOrgsError = participatingOrgsResult.error;
 
       if (participatingOrgsError) {
         console.error('[AIMS Optimized] Participating orgs fetch error:', participatingOrgsError);
-        console.error('[AIMS Optimized] Error details:', {
-          message: participatingOrgsError.message,
-          details: participatingOrgsError.details,
-          hint: participatingOrgsError.hint,
-          code: participatingOrgsError.code
-        });
       }
-      
+
+      // Fetch organization names in a follow-up query (depends on participatingOrgs)
       if (participatingOrgs.length > 0) {
-        console.log('[AIMS Optimized] Participating orgs fetched:', participatingOrgs.length, 'entries');
-        console.log('[AIMS Optimized] Raw participating orgs data sample:', participatingOrgs.slice(0, 3));
-        console.log('[AIMS Optimized] First org structure:', participatingOrgs[0]);
-        
+        const orgIds = [...new Set(participatingOrgs.map((o: any) => o.organization_id).filter(Boolean))];
+        if (orgIds.length > 0) {
+          const { data: orgsData } = await supabase
+            .from('organizations')
+            .select('id, name, acronym, logo')
+            .in('id', orgIds);
+
+          if (orgsData) {
+            const orgsLookup = new Map(orgsData.map((o: any) => [o.id, o]));
+            participatingOrgs = participatingOrgs.map((po: any) => ({
+              ...po,
+              organizations: orgsLookup.get(po.organization_id) || null
+            }));
+          }
+        }
+
+        // Process participating orgs into the map
         participatingOrgs.forEach((org: any) => {
           const activityId = org.activity_id;
           if (!participatingOrgsMap.has(activityId)) {
@@ -404,219 +407,94 @@ export async function GET(request: NextRequest) {
               accountable: []
             });
           }
-          
+
           const orgData = participatingOrgsMap.get(activityId)!;
-          
-          // Get organisation name with enhanced fallback logic
-          // Priority: narrative > organization.name (with acronym) > organization_id > placeholder
-          const orgName = org.narrative || 
-            (org.organizations?.acronym 
-              ? `${org.organizations.name} (${org.organizations.acronym})` 
+          const orgName = org.narrative ||
+            (org.organizations?.acronym
+              ? `${org.organizations.name} (${org.organizations.acronym})`
               : org.organizations?.name) ||
             (org.organization_id ? `Org ID: ${org.organization_id.substring(0, 8)}...` : null) ||
             'No name available';
-          
-          // Create org entry object with name, acronym, and logo
+
           const orgEntry: OrgEntry = {
             name: orgName,
             acronym: org.organizations?.acronym || null,
             logo: org.organizations?.logo || null
           };
-          
-          // Helper to check if org already exists in array (by name)
+
           const orgExists = (arr: OrgEntry[], name: string) => arr.some(o => o.name === name);
-          
-          // Validate and handle IATI role codes with fallback to role_type
+
           let roleCode = org.iati_role_code;
-          
-          // Fallback: map role_type to role code if iati_role_code is missing
           if (!roleCode && org.role_type) {
             const roleTypeMap: Record<string, number> = {
-              'funding': 1,
-              'government': 2,
-              'extending': 3,
-              'implementing': 4
+              'funding': 1, 'government': 2, 'extending': 3, 'implementing': 4
             };
             roleCode = roleTypeMap[org.role_type] || 4;
-            console.log('[AIMS Optimized] Using role_type fallback:', org.role_type, '->', roleCode);
           }
-          
+
           if (!roleCode || roleCode < 1 || roleCode > 4) {
-            console.warn('[AIMS Optimized] Invalid role code for org:', { 
-              activity_id: activityId, 
-              org_name: orgName, 
-              role_code: roleCode,
-              role_type: org.role_type,
-              org_id: org.organization_id 
-            });
-            // Default to implementing if role is invalid
             if (!orgExists(orgData.implementing, orgName)) {
               orgData.implementing.push(orgEntry);
             }
             return;
           }
-          
-          // Map IATI role codes: 1=Funding, 2=Accountable, 3=Extending, 4=Implementing
+
           switch (roleCode) {
-            case 1:
-              if (!orgExists(orgData.funding, orgName)) orgData.funding.push(orgEntry);
-              break;
-            case 2:
-              if (!orgExists(orgData.accountable, orgName)) orgData.accountable.push(orgEntry);
-              break;
-            case 3:
-              if (!orgExists(orgData.extending, orgName)) orgData.extending.push(orgEntry);
-              break;
-            case 4:
-              if (!orgExists(orgData.implementing, orgName)) orgData.implementing.push(orgEntry);
-              break;
+            case 1: if (!orgExists(orgData.funding, orgName)) orgData.funding.push(orgEntry); break;
+            case 2: if (!orgExists(orgData.accountable, orgName)) orgData.accountable.push(orgEntry); break;
+            case 3: if (!orgExists(orgData.extending, orgName)) orgData.extending.push(orgEntry); break;
+            case 4: if (!orgExists(orgData.implementing, orgName)) orgData.implementing.push(orgEntry); break;
           }
         });
-        
-        // Debug: Check if our test activity is in the results
-        const testActivityId = activities.find(a => 
-          a.iati_identifier === 'AA-AAA-123456789-ABC123'
-        )?.id;
-        
-        if (testActivityId) {
-          console.log('[AIMS Optimized] Test activity ID found:', testActivityId);
-          if (participatingOrgsMap.has(testActivityId)) {
-            console.log('[AIMS Optimized] Test activity orgs:', participatingOrgsMap.get(testActivityId));
-          } else {
-            console.warn('[AIMS Optimized] Test activity has no participating orgs in map');
+      }
+
+      // Process transactions
+      const { data: transactions, error: txError } = transactionsResult;
+      if (!txError && transactions) {
+        transactions.forEach((t: any) => {
+          const current = summariesMap.get(t.activity_id) || {
+            commitments: 0, disbursements: 0, expenditures: 0, inflows: 0,
+            totalTransactions: 0, totalBudget: 0, totalBudgetOriginal: 0,
+            totalDisbursed: 0, totalPlannedDisbursementsUSD: 0, totalPlannedDisbursementsOriginal: 0
+          };
+
+          current.totalTransactions++;
+          const transactionValue = t.value_usd || 0;
+
+          switch(t.transaction_type) {
+            case '2': current.commitments += transactionValue; break;
+            case '3': current.disbursements += transactionValue; current.totalDisbursed += transactionValue; break;
+            case '4': current.expenditures += transactionValue; current.totalDisbursed += transactionValue; break;
+            case '1': case '11': current.inflows += transactionValue; break;
           }
+
+          summariesMap.set(t.activity_id, current);
+        });
+      }
+
+      // Ensure all activities have budget data
+      activityIds.forEach((activityId: string) => {
+        if (!summariesMap.has(activityId)) {
+          summariesMap.set(activityId, {
+            commitments: 0, disbursements: 0, expenditures: 0, inflows: 0,
+            totalTransactions: 0,
+            totalBudget: budgetMap.get(activityId) || 0,
+            totalBudgetOriginal: budgetOriginalMap.get(activityId) || 0,
+            totalDisbursed: 0,
+            totalPlannedDisbursementsUSD: plannedDisbursementMap.get(activityId) || 0,
+            totalPlannedDisbursementsOriginal: plannedDisbursementOriginalMap.get(activityId) || 0
+          });
         } else {
-          console.warn('[AIMS Optimized] Test activity AA-AAA-123456789-ABC123 not found in current page');
+          const summary = summariesMap.get(activityId)!;
+          summary.totalBudget = budgetMap.get(activityId) || 0;
+          summary.totalBudgetOriginal = budgetOriginalMap.get(activityId) || 0;
+          summary.totalPlannedDisbursementsUSD = plannedDisbursementMap.get(activityId) || 0;
+          summary.totalPlannedDisbursementsOriginal = plannedDisbursementOriginalMap.get(activityId) || 0;
         }
-      }
+      });
 
-      // Temporarily disable materialized view to force USD calculation
-      // Comment out the materialized view code since we're forcing fallback
-      /*
-      const { data: summaries, error: summariesError } = await supabase
-        .from('activity_transaction_summaries')
-        .select('*')
-        .in('activity_id', activityIds);
-
-      if (!summariesError && summaries) {
-        console.log('[AIMS Optimized] Transaction summaries fetched:', summaries.length, 'entries');
-        summaries.forEach((s: any) => {
-          summariesMap.set(s.activity_id, {
-            commitments: s.commitments || 0,
-            disbursements: s.disbursements || 0,
-            expenditures: s.expenditures || 0,
-            inflows: s.inflows || 0,
-            totalTransactions: s.total_transactions || 0,
-            totalBudget: budgetMap.get(s.activity_id) || 0,
-            totalDisbursed: (s.disbursements || 0) + (s.expenditures || 0)
-          });
-        });
-        console.log('[AIMS Optimized] Summaries map:', Object.fromEntries(summariesMap));
-      } else {
-      */
-      
-      // Force fallback to USD calculation
-      const summariesError = { message: 'Forcing fallback to USD calculation' };
-      if (summariesError) {
-        // Fallback: Calculate summaries directly if materialized view doesn't exist
-        console.warn('[AIMS Optimized] Materialized view error:', summariesError);
-        console.warn('[AIMS Optimized] Falling back to direct calculation');
-        
-        const { data: transactions, error: txError } = await supabase
-          .from('transactions')
-          .select('activity_id, transaction_type, status, value, value_usd')
-          .in('activity_id', activityIds);
-          // Remove status filter temporarily to see all transactions
-        
-        if (!txError && transactions) {
-          console.log('[AIMS Optimized] Fallback: Found', transactions.length, 'transactions');
-          // Group by activity_id and calculate summaries
-          transactions.forEach((t: any) => {
-            const current = summariesMap.get(t.activity_id) || {
-              commitments: 0,
-              disbursements: 0,
-              expenditures: 0,
-              inflows: 0,
-              totalTransactions: 0,
-              totalBudget: budgetMap.get(t.activity_id) || 0,
-              totalBudgetOriginal: budgetOriginalMap.get(t.activity_id) || 0,
-              totalDisbursed: 0,
-              totalPlannedDisbursementsUSD: plannedDisbursementMap.get(t.activity_id) || 0,
-              totalPlannedDisbursementsOriginal: plannedDisbursementOriginalMap.get(t.activity_id) || 0
-            };
-            
-            // Ensure planned disbursements are included
-            if (!current.totalPlannedDisbursementsUSD) {
-              current.totalPlannedDisbursementsUSD = plannedDisbursementMap.get(t.activity_id) || 0;
-            }
-            if (!current.totalPlannedDisbursementsOriginal) {
-              current.totalPlannedDisbursementsOriginal = plannedDisbursementOriginalMap.get(t.activity_id) || 0;
-            }
-            // Ensure budget original is included
-            if (!current.totalBudgetOriginal) {
-              current.totalBudgetOriginal = budgetOriginalMap.get(t.activity_id) || 0;
-            }
-            
-            current.totalTransactions++;
-            
-            // Use USD converted value for aggregation
-            const transactionValue = t.value_usd || 0;
-            
-            switch(t.transaction_type) {
-              case '2':
-                current.commitments += transactionValue;
-                break;
-              case '3':
-                current.disbursements += transactionValue;
-                current.totalDisbursed += transactionValue;
-                break;
-              case '4':
-                current.expenditures += transactionValue;
-                current.totalDisbursed += transactionValue;
-                break;
-              case '1':
-              case '11':
-                current.inflows += transactionValue;
-                break;
-            }
-            
-            summariesMap.set(t.activity_id, current);
-          });
-        }
-        
-        // Ensure all activities have budget data even if no transactions
-        activityIds.forEach((activityId: string) => {
-          if (!summariesMap.has(activityId)) {
-            summariesMap.set(activityId, {
-              commitments: 0,
-              disbursements: 0,
-              expenditures: 0,
-              inflows: 0,
-              totalTransactions: 0,
-              totalBudget: budgetMap.get(activityId) || 0,
-              totalBudgetOriginal: budgetOriginalMap.get(activityId) || 0,
-              totalDisbursed: 0,
-              totalPlannedDisbursementsUSD: plannedDisbursementMap.get(activityId) || 0,
-              totalPlannedDisbursementsOriginal: plannedDisbursementOriginalMap.get(activityId) || 0
-            });
-          } else {
-            // Add planned disbursements to existing summary
-            const summary = summariesMap.get(activityId)!;
-            summary.totalPlannedDisbursementsUSD = plannedDisbursementMap.get(activityId) || 0;
-            summary.totalPlannedDisbursementsOriginal = plannedDisbursementOriginalMap.get(activityId) || 0;
-          }
-        });
-      }
-    }
-
-    // Fetch subnational breakdowns for all activities (for Locations % column)
-    let subnationalBreakdownsMap = new Map<string, any[]>();
-    if (activityIds.length > 0) {
-      const { data: breakdowns, error: breakdownsError } = await supabase
-        .from('subnational_breakdowns')
-        .select('id, activity_id, region_name, percentage, is_nationwide')
-        .in('activity_id', activityIds);
-
+      // Process subnational breakdowns
+      const { data: breakdowns, error: breakdownsError } = breakdownsResult;
       if (breakdownsError) {
         console.error('[AIMS Optimized] Subnational breakdowns fetch error:', breakdownsError);
       } else if (breakdowns) {
@@ -626,6 +504,60 @@ export async function GET(request: NextRequest) {
           }
           subnationalBreakdownsMap.get(b.activity_id)!.push(b);
         });
+      }
+
+      // Process policy markers
+      const { data: activityPolicyMarkers, error: policyMarkersError } = policyMarkersResult;
+      if (policyMarkersError) {
+        console.error('[AIMS Optimized] Policy markers fetch error:', policyMarkersError);
+      } else if (activityPolicyMarkers && activityPolicyMarkers.length > 0) {
+        // Fetch policy marker details for all markers
+        const markerIds = [...new Set(activityPolicyMarkers.map((m: any) => m.policy_marker_id).filter(Boolean))];
+        if (markerIds.length > 0) {
+          const { data: markerDetails } = await supabase
+            .from('policy_markers')
+            .select('uuid, code, name, iati_code, is_iati_standard')
+            .in('uuid', markerIds);
+
+          if (markerDetails) {
+            const markerDetailsMap = new Map(markerDetails.map((m: any) => [m.uuid, m]));
+            activityPolicyMarkers.forEach((apm: any) => {
+              if (!policyMarkersMap.has(apm.activity_id)) {
+                policyMarkersMap.set(apm.activity_id, []);
+              }
+              const markerDetail = markerDetailsMap.get(apm.policy_marker_id);
+              if (markerDetail) {
+                policyMarkersMap.get(apm.activity_id)!.push({
+                  ...apm,
+                  code: markerDetail.code,
+                  name: markerDetail.name,
+                  iati_code: markerDetail.iati_code,
+                  is_iati_standard: markerDetail.is_iati_standard
+                });
+              }
+            });
+          }
+        }
+      }
+
+      // Fetch creator profiles for metadata columns (from users table)
+      const creatorIds = [...new Set(activities.map((a: any) => a.created_by).filter(Boolean))];
+      if (creatorIds.length > 0) {
+        const { data: users } = await supabase
+          .from('users')
+          .select('id, first_name, last_name, department, job_title')
+          .in('id', creatorIds);
+
+        if (users) {
+          users.forEach((user: any) => {
+            const fullName = [user.first_name, user.last_name].filter(Boolean).join(' ') || 'Unknown';
+            creatorProfilesMap.set(user.id, {
+              name: fullName,
+              department: user.department || null,
+              jobTitle: user.job_title || null
+            });
+          });
+        }
       }
     }
 
@@ -689,11 +621,13 @@ export async function GET(request: NextRequest) {
         default_flow_type: activity.default_flow_type,
         default_tied_status: activity.default_tied_status,
         tied_status: activity.default_tied_status, // Legacy compatibility
-        default_aid_modality: activity.default_modality, // Map from correct DB column
+        // Calculate modality on-the-fly if not stored (for backwards compatibility with older activities)
+        default_aid_modality: activity.default_modality || calculateModality(activity.default_aid_type || '', activity.default_finance_type || ''),
         default_aid_modality_override: activity.default_modality_override, // Map from correct DB column
         budgetStatus: activity.budget_status || 'unknown',
         onBudgetPercentage: activity.on_budget_percentage,
         capitalSpendPercentage: activity.capital_spend_percentage,
+        humanitarian: activity.humanitarian,
         vote_score: activity.vote_score || 0,
         upvote_count: activity.upvote_count || 0,
         downvote_count: activity.downvote_count || 0,
@@ -726,7 +660,7 @@ export async function GET(request: NextRequest) {
         // Include locations for Locations % column (subnational breakdowns)
         locations: (() => {
           const subnationalBreakdowns = subnationalBreakdownsMap.get(activity.id) || [];
-          
+
           // Use subnational breakdowns for the bar chart (includes Nationwide as full-width bar)
           const broadCoverageLocations = subnationalBreakdowns.map((b: any) => ({
             id: b.id,
@@ -736,12 +670,16 @@ export async function GET(request: NextRequest) {
             state_region_name: b.is_nationwide ? 'Nationwide' : b.region_name,
             state_region_code: null
           }));
-          
+
           return {
             site_locations: [],
             broad_coverage_locations: broadCoverageLocations
           };
-        })()
+        })(),
+        // Include policy markers for Policy Markers column
+        policyMarkers: policyMarkersMap.get(activity.id) || [],
+        // Include creator profile for Metadata columns
+        creatorProfile: creatorProfilesMap.get(activity.created_by) || null
       };
     });
 

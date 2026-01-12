@@ -205,6 +205,7 @@ class PreCacheManager {
   private async fetchAndCache(url: string, cacheKey: string, ttl: number): Promise<any> {
     try {
       const response = await fetch(url, {
+        credentials: 'same-origin',
         headers: {
           'Cache-Control': 'no-cache',
           'Pragma': 'no-cache',
@@ -222,7 +223,10 @@ class PreCacheManager {
       
       return data
     } catch (error) {
-      console.error(`[PreCache] Failed to fetch ${url}:`, error)
+      // Only log in development, and use debug level since prefetch failures are not critical
+      if (process.env.NODE_ENV === 'development') {
+        console.debug(`[PreCache] Failed to fetch ${url}:`, error)
+      }
       throw error
     }
   }
@@ -253,8 +257,8 @@ class PreCacheManager {
           if (item.options.background) {
             await new Promise(resolve => setTimeout(resolve, 50))
           }
-        } catch (error) {
-          console.warn(`[PreCache] Failed to preload ${item.url}:`, error)
+        } catch {
+          // Silently ignore prefetch failures - they're not critical
         }
       }
     } finally {

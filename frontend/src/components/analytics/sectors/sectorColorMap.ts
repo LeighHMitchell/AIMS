@@ -200,17 +200,25 @@ export const CHART_BAR_COLORS = {
 
 /**
  * Financial Overview chart colors - transaction types
- * Using brand palette for consistent visual identity
+ * Brand color palette for consistent visual identity
+ *
+ * Brand Colors:
+ * - Primary Scarlet: #dc2625
+ * - Pale Slate: #cfd0d5
+ * - Blue Slate: #4c5568
+ * - Cool Steel: #7b95a7
+ * - Platinum: #f1f4f8
+ * - Teal: #5f7f7a
  */
 export const FINANCIAL_OVERVIEW_COLORS = {
-  'Incoming Commitment': BRAND_COLORS.coolSteel,      // Cool Steel
-  'Incoming Funds': PALETTE_VARIATIONS.coolSteelLight, // Cool Steel Light
-  'Outgoing Commitment': BRAND_COLORS.blueSlate,      // Blue Slate
-  'Credit Guarantee': PALETTE_VARIATIONS.blueSlateLight, // Blue Slate Light
-  'Disbursements': BRAND_COLORS.primaryScarlet,       // Primary Scarlet (highlight)
-  'Expenditures': PALETTE_VARIATIONS.warmAccent,      // Warm Accent
-  'Planned Disbursements': PALETTE_VARIATIONS.coolSteelDark, // Cool Steel Dark (dashed)
-  'Budgets': BRAND_COLORS.paleSlate,                  // Pale Slate (dashed)
+  'Incoming Commitments': '#4c5568',    // Blue Slate - incoming promises
+  'Incoming Funds': '#5f7f7a',          // Teal - actual funds received
+  'Outgoing Commitments': '#7b95a7',    // Cool Steel - outgoing promises
+  'Credit Guarantee': '#8a9199',        // Neutral accent - guarantees
+  'Disbursements': '#dc2625',           // Primary Scarlet - money out (actual/highlight)
+  'Expenditures': '#a85a52',            // Warm accent - spent money
+  'Planned Disbursements': '#c9a24d',   // Gold - planned
+  'Budgets': '#5f7f7a',                 // Teal - budgets
 } as const
 
 /**

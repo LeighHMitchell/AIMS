@@ -152,7 +152,7 @@ export function CompactChartCard({
 
       {/* Expanded Dialog View */}
       <Dialog open={isExpanded} onOpenChange={setIsExpanded}>
-        <DialogContent className="max-w-7xl w-[95vw] max-h-[95vh] overflow-y-auto">
+        <DialogContent className="max-w-[1800px] w-[98vw] max-h-[95vh] overflow-y-auto overflow-x-visible">
           <DialogHeader>
             <div className="flex items-start justify-between">
               <div className="flex-1 pr-8">

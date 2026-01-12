@@ -149,10 +149,27 @@ export function Top10GovernmentValidatedChart({
             <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" horizontal={false} />
             <XAxis type="number" tickFormatter={formatCurrency} tick={{ fontSize: 10 }} />
             <YAxis type="category" dataKey="shortName" tick={{ fontSize: 9 }} width={55} />
-            <Tooltip content={<CustomTooltip />} />
+            <Tooltip
+              formatter={(value: number, name: string, props: any) => {
+                if (name === 'totalValue') {
+                  return [
+                    formatCurrency(value),
+                    `Value (${props.payload.projectCount} project${props.payload.projectCount !== 1 ? 's' : ''})`
+                  ]
+                }
+                return [value, name]
+              }}
+              contentStyle={{
+                backgroundColor: '#1e293b',
+                border: 'none',
+                borderRadius: '8px',
+                color: '#fff'
+              }}
+              labelStyle={{ color: '#94a3b8' }}
+            />
             <Bar dataKey="totalValue" radius={[0, 4, 4, 0]}>
-              {data.map((_, index) => (
-                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+              {data.map((entry, index) => (
+                <Cell key={`cell-${index}`} fill={entry.orgId === 'others' ? '#94a3b8' : barColors[index % (barColors.length - 1)]} />
               ))}
             </Bar>
           </BarChart>

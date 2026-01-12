@@ -5,12 +5,10 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
-import { 
+import {
   AlertTriangle,
   Copy,
   HelpCircle,
-  ImageIcon,
-  Upload,
   X,
   Mail,
   Phone,
@@ -42,12 +40,12 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Separator } from "@/components/ui/separator"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { useDropzone } from 'react-dropzone'
 import Flag from 'react-world-flags'
 import { IATIBudgetManager } from './IATIBudgetManager'
 import { IATIDocumentManager } from './IATIDocumentManager'
 import IATIImportPreferences from './IATIImportPreferences'
 import { StringArrayInput } from '@/components/ui/string-array-input'
+import { OrganizationBannerUpload, OrganizationLogoUpload } from '@/components/ui/enhanced-image-upload'
 import { IATI_COUNTRIES } from '@/data/iati-countries'
 import { 
   INSTITUTIONAL_GROUPS, 
@@ -200,7 +198,9 @@ export interface Organization {
   phone?: string
   address?: string
   logo?: string
+  logo_scale?: number
   banner?: string
+  banner_position?: number
   country?: string
   country_represented?: string
   cooperation_modality?: string
@@ -240,142 +240,8 @@ export interface OrganizationFormContentProps {
   onCancel?: () => void
   /** Whether the form is currently saving */
   externalSaving?: boolean
-}
-
-// Drag and Drop Image Upload Component
-const ImageUpload: React.FC<{
-  value: string
-  onChange: (value: string) => void
-  label: string
-  recommendedSize: string
-  isLogo?: boolean
-}> = ({ value, onChange, label, recommendedSize, isLogo = false }) => {
-  const [uploading, setUploading] = useState(false)
-  const [preview, setPreview] = useState<string | null>(value || null)
-
-  const onDrop = useCallback(async (acceptedFiles: File[]) => {
-    const file = acceptedFiles[0]
-    if (!file) return
-
-    if (!file.type.startsWith('image/')) {
-      toast.error('Please upload an image file')
-      return
-    }
-
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error('File size must be less than 5MB')
-      return
-    }
-
-    setUploading(true)
-    try {
-      const formData = new FormData()
-      formData.append('file', file)
-
-      const response = await fetch('/api/upload', {
-        method: 'POST',
-        body: formData,
-      })
-
-      if (!response.ok) {
-        throw new Error('Upload failed')
-      }
-
-      const data = await response.json()
-      const imageUrl = data.url
-      setPreview(imageUrl)
-      onChange(imageUrl)
-      toast.success(`${label} uploaded successfully`)
-    } catch (error) {
-      console.error('Upload error:', error)
-      toast.error(`Failed to upload ${label.toLowerCase()}`)
-    } finally {
-      setUploading(false)
-    }
-  }, [onChange, label])
-
-  const { getRootProps, getInputProps, isDragActive } = useDropzone({
-    onDrop,
-    accept: {
-      'image/*': ['.png', '.jpg', '.jpeg', '.gif', '.webp']
-    },
-    maxFiles: 1
-  })
-
-  const handleRemove = () => {
-    setPreview(null)
-    onChange('')
-  }
-
-  // Update preview when value changes externally
-  useEffect(() => {
-    setPreview(value || null)
-  }, [value])
-
-  return (
-    <div className="space-y-2">
-      <Label className="text-sm font-medium">{label}</Label>
-      
-      {preview ? (
-        <div className="relative group">
-          <div className={`relative ${isLogo ? 'w-32 h-32' : 'w-full h-32'} rounded-lg overflow-hidden border border-gray-200`}>
-            <img
-              src={preview}
-              alt={label}
-              className={`w-full h-full ${isLogo ? 'object-contain' : 'object-cover'}`}
-            />
-          </div>
-          <Button
-            type="button"
-            variant="destructive"
-            size="sm"
-            className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
-            onClick={handleRemove}
-          >
-            <X className="h-4 w-4" />
-          </Button>
-        </div>
-      ) : (
-        <div
-          {...getRootProps()}
-          className={`
-            ${isLogo ? 'w-32 h-32' : 'w-full h-32'}
-            border-2 border-dashed rounded-lg
-            flex flex-col items-center justify-center gap-2
-            cursor-pointer transition-colors
-            ${isDragActive 
-              ? 'border-blue-500 bg-blue-50' 
-              : 'border-gray-300 hover:border-gray-400 hover:bg-gray-50'
-            }
-            ${uploading ? 'pointer-events-none opacity-60' : ''}
-          `}
-        >
-          <input {...getInputProps()} />
-          {uploading ? (
-            <div className="flex flex-col items-center gap-2">
-              <div className="h-6 w-6 animate-spin rounded-full border-2 border-gray-300 border-t-blue-600" />
-              <p className="text-xs text-gray-500">Uploading...</p>
-            </div>
-          ) : (
-            <>
-              {isLogo ? (
-                <ImageIcon className="h-8 w-8 text-gray-400" />
-              ) : (
-                <Upload className="h-8 w-8 text-gray-400" />
-              )}
-              <p className="text-xs text-gray-500 text-center px-2">
-                {isDragActive ? 'Drop here' : 'Drag & drop or click'}
-              </p>
-            </>
-          )}
-        </div>
-      )}
-      
-      <p className="text-xs text-muted-foreground">
-        Recommended size: {recommendedSize}
-      </p>
-    </div>
-  )
+  /** Called to navigate to next section (for Save and Next) */
+  onNextSection?: () => void
 }
 
 export function OrganizationFormContent({
@@ -387,7 +253,8 @@ export function OrganizationFormContent({
   initialMergeSourceOrgId,
   initialTab,
   onCancel,
-  externalSaving
+  externalSaving,
+  onNextSection
 }: OrganizationFormContentProps) {
   const [formData, setFormData] = useState<Partial<Organization>>({})
   const [validationErrors, setValidationErrors] = useState<string[]>([])
@@ -465,7 +332,9 @@ export function OrganizationFormContent({
         cooperation_modality: organization.cooperation_modality || '',
         description: organization.description || '',
         logo: organization.logo || '',
+        logo_scale: organization.logo_scale ?? 100,
         banner: organization.banner || '',
+        banner_position: organization.banner_position ?? 50,
         website: organization.website || '',
         email: organization.email || '',
         phone: organization.phone || '',
@@ -499,7 +368,9 @@ export function OrganizationFormContent({
         cooperation_modality: '',
         description: '',
         logo: '',
+        logo_scale: 100,
         banner: '',
+        banner_position: 50,
         website: '',
         email: '',
         phone: '',
@@ -535,7 +406,7 @@ export function OrganizationFormContent({
     }
   }, [initialTab, initialMergeSourceOrgId])
 
-  const handleInputChange = (field: string, value: string | string[]) => {
+  const handleInputChange = (field: string, value: string | number | string[]) => {
     setFormData(prev => ({ ...prev, [field]: value }))
     if (validationErrors.length > 0) {
       setValidationErrors([])
@@ -597,6 +468,14 @@ export function OrganizationFormContent({
       toast.error(errorMessage)
     } finally {
       setSaving(false)
+    }
+  }
+
+  const handleSaveAndNext = async () => {
+    await handleSave()
+    // Only navigate to next if save was successful (no validation errors)
+    if (validationErrors.length === 0 && onNextSection) {
+      onNextSection()
     }
   }
 
@@ -1165,31 +1044,28 @@ export function OrganizationFormContent({
       {/* Branding Tab */}
       <TabsContent value="branding" className="h-full overflow-y-auto px-2 mt-4 space-y-6">
         <div className="space-y-6">
-          <p className="text-sm text-muted-foreground">Upload logos and banner images for your organization profile</p>
-          
-          {/* Logo and Banner */}
-          <div className="flex gap-4 items-start">
-            {/* Partner Logo - Smaller fixed width */}
-            <div className="w-48 flex-shrink-0">
-              <ImageUpload
-                value={formData.logo || ''}
-                onChange={(value) => handleInputChange('logo', value)}
-                label="Logo"
-                recommendedSize="512×512px"
-                isLogo={true}
-              />
-            </div>
-            
-            {/* Banner Image - Larger flexible width */}
-            <div className="flex-grow">
-              <ImageUpload
-                value={formData.banner || ''}
-                onChange={(value) => handleInputChange('banner', value)}
-                label="Banner"
-                recommendedSize="1200×300px"
-                isLogo={false}
-              />
-            </div>
+          <p className="text-sm text-muted-foreground">Upload logos and banner images for your organization profile. Hover over images to reposition, replace, or remove them.</p>
+
+          {/* Logo */}
+          <div>
+            <OrganizationLogoUpload
+              value={formData.logo || ''}
+              onChange={(value) => handleInputChange('logo', value)}
+              scale={formData.logo_scale ?? 100}
+              onScaleChange={(scale) => handleInputChange('logo_scale', scale)}
+              disabled={saving || externalSaving}
+            />
+          </div>
+
+          {/* Banner */}
+          <div>
+            <OrganizationBannerUpload
+              value={formData.banner || ''}
+              onChange={(value) => handleInputChange('banner', value)}
+              position={formData.banner_position ?? 50}
+              onPositionChange={(position) => handleInputChange('banner_position', position)}
+              disabled={saving || externalSaving}
+            />
           </div>
         </div>
       </TabsContent>
@@ -1559,17 +1435,33 @@ export function OrganizationFormContent({
       <Button
         onClick={handleSave}
         disabled={isSaving}
-        className="bg-slate-600 hover:bg-slate-700"
+        variant="outline"
       >
         {isSaving ? (
           <>
-            <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+            <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-slate-600 border-t-transparent" />
             Saving...
           </>
         ) : (
-          'Save Changes'
+          'Save'
         )}
       </Button>
+      {onNextSection && (
+        <Button
+          onClick={handleSaveAndNext}
+          disabled={isSaving}
+          className="bg-slate-600 hover:bg-slate-700"
+        >
+          {isSaving ? (
+            <>
+              <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+              Saving...
+            </>
+          ) : (
+            'Save & Next'
+          )}
+        </Button>
+      )}
     </div>
   )
 
@@ -1711,8 +1603,8 @@ export function OrganizationFormContent({
             {renderTabsContent()}
           </div>
 
-          {/* Footer with Save Button - Floating */}
-          <div className="flex-shrink-0 px-6 py-4 sticky bottom-0">
+          {/* Footer with Save Button */}
+          <div className="flex-shrink-0 px-6 py-4 border-t bg-white">
             {renderButtons()}
           </div>
         </div>

@@ -25,8 +25,9 @@ import {
   ListTodo,
   MapPin,
   ArrowRightLeft,
-  Stethoscope,
+  ClipboardCheck,
   Briefcase,
+  ClipboardList,
 } from "lucide-react"
 import { Skeleton } from "@/components/ui/skeleton"
 import { DashboardStatsSkeleton } from "@/components/ui/skeleton-loader"
@@ -46,6 +47,8 @@ import { MissingImagesCard } from "@/components/dashboard/MissingImagesCard"
 import { FocalPointCheckCard } from "@/components/dashboard/FocalPointCheckCard"
 import { DataClinicHeader } from "@/components/dashboard/DataClinicHeader"
 import { MyPortfolioTab } from "@/components/dashboard/MyPortfolioTab"
+import { ValidationRulesCard } from "@/components/data-clinic/ValidationRulesCard"
+import { TaskingTab } from "@/components/tasks/TaskingTab"
 
 export default function Dashboard() {
   const router = useRouter();
@@ -300,12 +303,12 @@ export default function Dashboard() {
                   <ArrowRightLeft className="h-4 w-4" />
                   Aid Flows
                 </TabsTrigger>
-                <TabsTrigger 
-                  value="data-clinic" 
+                <TabsTrigger
+                  value="data-clinic"
                   className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
                 >
-                  <Stethoscope className="h-4 w-4" />
-                  Data Clinic
+                  <ClipboardCheck className="h-4 w-4" />
+                  Validation Rules Check
                 </TabsTrigger>
                 <TabsTrigger
                   value="bookmarks"
@@ -320,6 +323,13 @@ export default function Dashboard() {
                 >
                   <Briefcase className="h-4 w-4" />
                   My Portfolio
+                </TabsTrigger>
+                <TabsTrigger
+                  value="tasks"
+                  className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+                >
+                  <ClipboardList className="h-4 w-4" />
+                  Tasking
                 </TabsTrigger>
               </TabsList>
 
@@ -375,11 +385,9 @@ export default function Dashboard() {
                 <OrgSankeyFlow organizationId={user.organizationId} />
               </TabsContent>
 
-              {/* Data Clinic Tab Content */}
+              {/* Validation Rules Check Tab Content */}
               <TabsContent value="data-clinic" className="space-y-6">
-                <DataClinicHeader organizationId={user.organizationId} />
-                <FocalPointCheckCard organizationId={user.organizationId} />
-                <MissingImagesCard organizationId={user.organizationId} />
+                <ValidationRulesCard organizationId={user.organizationId} />
               </TabsContent>
 
               {/* Bookmarks Tab Content */}
@@ -390,6 +398,15 @@ export default function Dashboard() {
               {/* My Portfolio Tab Content */}
               <TabsContent value="my-portfolio" className="space-y-6">
                 <MyPortfolioTab userId={user.id} organizationId={user.organizationId} />
+              </TabsContent>
+
+              {/* Tasks Tab Content */}
+              <TabsContent value="tasks" className="space-y-6">
+                <TaskingTab
+                  userId={user.id}
+                  canCreateTasks={user.role === USER_ROLES.SUPER_USER || permissions?.canManageOrganizations}
+                  canViewAnalytics={user.role === USER_ROLES.SUPER_USER || permissions?.canManageOrganizations}
+                />
               </TabsContent>
             </Tabs>
           </div>

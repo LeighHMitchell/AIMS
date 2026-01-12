@@ -88,7 +88,13 @@ export type ActivityColumnId =
   // Engagement columns
   | "voteScore"
   | "upvotes"
-  | "downvotes";
+  | "downvotes"
+  // Policy Markers column
+  | "policyMarkers"
+  // Metadata columns
+  | "createdByName"
+  | "createdAt"
+  | "createdByDepartment";
 
 /**
  * Column configuration for the Activities table
@@ -190,6 +196,14 @@ export const activityColumns: ColumnConfig<ActivityColumnId>[] = [
   { id: "voteScore", label: "Vote Score", group: "engagement", defaultVisible: false },
   { id: "upvotes", label: "Upvotes", group: "engagement", defaultVisible: false },
   { id: "downvotes", label: "Downvotes", group: "engagement", defaultVisible: false },
+
+  // Policy Markers column
+  { id: "policyMarkers", label: "Policy Markers", group: "policyMarkers", defaultVisible: false },
+
+  // Metadata columns
+  { id: "createdByName", label: "Created By", group: "metadata", defaultVisible: false },
+  { id: "createdAt", label: "Created Date & Time", group: "metadata", defaultVisible: false },
+  { id: "createdByDepartment", label: "Creator's Department", group: "metadata", defaultVisible: false },
 ];
 
 /**
@@ -213,6 +227,8 @@ export const activityColumnGroups: Record<string, string> = {
   governmentSystemsAlignment: "Government Systems Alignment",
   capitalSpend: "Capital Spend",
   engagement: "Engagement",
+  policyMarkers: "Policy Markers",
+  metadata: "Metadata",
 };
 
 /**

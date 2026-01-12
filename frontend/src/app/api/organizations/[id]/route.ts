@@ -93,7 +93,10 @@ export async function GET(
       // Add default values for IATI fields if not present
       default_currency: organization.default_currency || 'USD',
       default_language: organization.default_language || 'en',
-      secondary_reporter: organization.secondary_reporter || false
+      secondary_reporter: organization.secondary_reporter || false,
+      // Add default values for image positioning fields
+      banner_position: organization.banner_position ?? 50,
+      logo_scale: organization.logo_scale ?? 100
     };
     
     console.log('[AIMS] Found organization:', organization.name);
@@ -190,7 +193,19 @@ export async function PUT(
     if ('default_language' in updates) {
       updates.default_language = updates.default_language || 'en';
     }
-    
+
+    // Handle banner_position field - ensure it's a valid integer between 0-100
+    if ('banner_position' in updates) {
+      const pos = parseInt(updates.banner_position);
+      updates.banner_position = isNaN(pos) ? 50 : Math.max(0, Math.min(100, pos));
+    }
+
+    // Handle logo_scale field - ensure it's a valid integer between 50-150
+    if ('logo_scale' in updates) {
+      const scale = parseInt(updates.logo_scale);
+      updates.logo_scale = isNaN(scale) ? 100 : Math.max(50, Math.min(150, scale));
+    }
+
     // Handle iati_org_id field - convert empty strings to null to avoid unique constraint issues
     if ('iati_org_id' in updates) {
       if (!updates.iati_org_id || updates.iati_org_id.trim() === '') {

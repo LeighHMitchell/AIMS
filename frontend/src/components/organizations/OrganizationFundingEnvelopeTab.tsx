@@ -27,7 +27,7 @@ import {
 } from '@/components/ui/dialog'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Plus, Edit2, Trash2, AlertCircle, Info, Loader2, BarChart3, Table as TableIcon } from 'lucide-react'
+import { Plus, Edit2, Trash2, AlertCircle, Info, Loader2, BarChart3, Table as TableIcon, HelpCircle, ChevronDown, X } from 'lucide-react'
 import { toast } from 'sonner'
 import OrganizationFundingVisualization from './OrganizationFundingVisualization'
 import {
@@ -37,9 +37,19 @@ import {
   FUNDING_TYPE_FLAGS,
   ENVELOPE_STATUSES,
   CONFIDENCE_LEVELS,
+  YEAR_TYPES,
+  FISCAL_YEAR_START_MONTHS,
+  FIELD_HELP_TEXTS,
   getTemporalCategory,
-  FundingTypeFlag
+  FundingTypeFlag,
+  YearType
 } from '@/types/organization-funding-envelope'
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip'
 import { getAllCurrenciesWithPinned, type Currency } from '@/data/currencies'
 
 interface OrganizationFundingEnvelopeTabProps {
@@ -126,6 +136,37 @@ export default function OrganizationFundingEnvelopeTab({
     }, 0)
   }
 
+  // Format number with commas for display
+  const formatNumberWithCommas = (value: number | string): string => {
+    const num = typeof value === 'string' ? parseFloat(value.replace(/,/g, '')) : value
+    if (isNaN(num)) return ''
+    return new Intl.NumberFormat('en-US', {
+      maximumFractionDigits: 2,
+      useGrouping: true
+    }).format(num)
+  }
+
+  // Parse formatted number back to raw number
+  const parseFormattedNumber = (value: string): number => {
+    return parseFloat(value.replace(/,/g, '')) || 0
+  }
+
+  // Help icon component
+  const HelpIcon = ({ helpKey }: { helpKey: keyof typeof FIELD_HELP_TEXTS }) => (
+    <TooltipProvider>
+      <Tooltip delayDuration={300}>
+        <TooltipTrigger asChild>
+          <button type="button" className="ml-1 text-gray-400 hover:text-gray-600 focus:outline-none">
+            <HelpCircle className="h-4 w-4" />
+          </button>
+        </TooltipTrigger>
+        <TooltipContent side="top" className="max-w-sm text-xs leading-relaxed">
+          {FIELD_HELP_TEXTS[helpKey]}
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+  )
+
   // Open modal for add/edit
   const openModal = (envelope?: OrganizationFundingEnvelope) => {
     if (envelope) {
@@ -134,10 +175,13 @@ export default function OrganizationFundingEnvelopeTab({
       setEditingEnvelope({
         organization_id: organizationId,
         period_type: 'single_year',
+        year_type: 'calendar',
         year_start: currentYear,
         year_end: null,
+        fiscal_year_start_month: null,
         amount: 0,
         currency: 'USD',
+        value_date: null,
         flow_direction: 'incoming',
         organization_role: 'original_funder',
         funding_type_flags: [],
@@ -306,6 +350,21 @@ export default function OrganizationFundingEnvelopeTab({
     }).format(amount)
   }
 
+  // Format currency compact (e.g., $56.5m, $53.2k)
+  const formatCurrencyCompact = (amount: number | null | undefined) => {
+    if (amount === null || amount === undefined) return 'N/A'
+    if (amount >= 1_000_000_000) {
+      return `$${(amount / 1_000_000_000).toFixed(1)}b`
+    }
+    if (amount >= 1_000_000) {
+      return `$${(amount / 1_000_000).toFixed(1)}m`
+    }
+    if (amount >= 1_000) {
+      return `$${(amount / 1_000).toFixed(1)}k`
+    }
+    return `$${amount}`
+  }
+
   // Format year range
   const formatYearRange = (envelope: OrganizationFundingEnvelope) => {
     if (envelope.period_type === 'single_year') {
@@ -378,10 +437,13 @@ export default function OrganizationFundingEnvelopeTab({
                       const newEnvelope: OrganizationFundingEnvelope = {
                         organization_id: organizationId,
                         period_type: 'single_year',
+                        year_type: 'calendar',
                         year_start: currentYear,
                         year_end: null,
+                        fiscal_year_start_month: null,
                         amount: 0,
                         currency: 'USD',
+                        value_date: null,
                         flow_direction: 'incoming',
                         organization_role: 'original_funder',
                         funding_type_flags: [],
@@ -399,6 +461,40 @@ export default function OrganizationFundingEnvelopeTab({
               </div>
             </CardHeader>
             <CardContent>
+              {/* Hero Cards for Totals */}
+              {sortedEnvelopes.length > 0 && (
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+                  <div className="bg-gray-50 rounded-lg p-3 text-center">
+                    <div className="text-xs text-gray-500 uppercase tracking-wide">Past</div>
+                    <div className="text-lg font-semibold text-gray-900">
+                      {formatCurrencyCompact(calculateSubtotal(categorizedEnvelopes.past))}
+                    </div>
+                  </div>
+                  <div className="bg-gray-50 rounded-lg p-3 text-center">
+                    <div className="text-xs text-gray-500 uppercase tracking-wide">Current</div>
+                    <div className="text-lg font-semibold text-gray-900">
+                      {formatCurrencyCompact(calculateSubtotal(categorizedEnvelopes.current))}
+                    </div>
+                  </div>
+                  <div className="bg-gray-50 rounded-lg p-3 text-center">
+                    <div className="text-xs text-gray-500 uppercase tracking-wide">Future</div>
+                    <div className="text-lg font-semibold text-gray-900">
+                      {formatCurrencyCompact(calculateSubtotal(categorizedEnvelopes.future))}
+                    </div>
+                  </div>
+                  <div className="bg-blue-50 rounded-lg p-3 text-center">
+                    <div className="text-xs text-blue-600 uppercase tracking-wide">All (indicative)</div>
+                    <div className="text-lg font-semibold text-blue-900">
+                      {formatCurrencyCompact(
+                        calculateSubtotal(categorizedEnvelopes.past) +
+                        calculateSubtotal(categorizedEnvelopes.current) +
+                        calculateSubtotal(categorizedEnvelopes.future)
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {loading ? (
                 <div className="flex items-center justify-center py-8">
                   <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
@@ -407,7 +503,7 @@ export default function OrganizationFundingEnvelopeTab({
                 <div className="text-center py-12 text-gray-500">
                   <p className="text-sm mb-2">No funding envelope entries yet.</p>
                   {!readOnly && (
-                    <p className="text-sm">Click "Add Entry" to add a funding declaration.</p>
+                    <p className="text-sm">Click &quot;Add Entry&quot; to add a funding declaration.</p>
                   )}
                 </div>
               ) : (
@@ -419,6 +515,8 @@ export default function OrganizationFundingEnvelopeTab({
                           <TableHead>Category</TableHead>
                           <TableHead>Period</TableHead>
                           <TableHead>Amount</TableHead>
+                          <TableHead>Value Date</TableHead>
+                          <TableHead>USD Value</TableHead>
                           <TableHead>Flow</TableHead>
                           <TableHead>Role</TableHead>
                           <TableHead>Status</TableHead>
@@ -432,14 +530,7 @@ export default function OrganizationFundingEnvelopeTab({
                           return (
                             <TableRow key={envelope.id}>
                               <TableCell>
-                                <Badge 
-                                  variant={
-                                    category === 'Past' ? 'default' :
-                                    category === 'Current' ? 'secondary' : 'outline'
-                                  }
-                                >
-                                  {category}
-                                </Badge>
+                                {category}
                               </TableCell>
                               <TableCell className="font-mono text-sm">
                                 {formatYearRange(envelope)}
@@ -448,42 +539,44 @@ export default function OrganizationFundingEnvelopeTab({
                                 <div className="font-medium">
                                   {formatCurrency(envelope.amount, envelope.currency)}
                                 </div>
-                                {envelope.amount_usd && envelope.currency !== 'USD' && (
-                                  <div className="text-xs text-gray-500">
-                                    ≈ {formatCurrency(envelope.amount_usd, 'USD')}
-                                  </div>
+                              </TableCell>
+                              <TableCell className="text-sm">
+                                {envelope.value_date ? (
+                                  new Date(envelope.value_date).toLocaleDateString('en-GB', {
+                                    day: '2-digit',
+                                    month: 'short',
+                                    year: 'numeric'
+                                  })
+                                ) : (
+                                  <span className="text-gray-400">-</span>
                                 )}
                               </TableCell>
                               <TableCell>
-                                <Badge variant="outline">
-                                  {FLOW_DIRECTIONS.find(f => f.value === envelope.flow_direction)?.label || envelope.flow_direction}
-                                </Badge>
+                                {envelope.amount_usd ? (
+                                  <div className="font-medium">
+                                    {formatCurrency(envelope.amount_usd, 'USD')}
+                                  </div>
+                                ) : (
+                                  <span className="text-gray-400">-</span>
+                                )}
                               </TableCell>
                               <TableCell>
-                                <Badge variant="secondary">
-                                  {ORGANIZATION_ROLES.find(r => r.value === envelope.organization_role)?.label || envelope.organization_role}
-                                </Badge>
+                                {FLOW_DIRECTIONS.find(f => f.value === envelope.flow_direction)?.label || envelope.flow_direction}
                               </TableCell>
                               <TableCell>
-                                <Badge variant={
-                                  envelope.status === 'actual' ? 'default' :
-                                  envelope.status === 'current' ? 'secondary' : 'outline'
-                                }>
-                                  {ENVELOPE_STATUSES.find(s => s.value === envelope.status)?.label || envelope.status}
-                                </Badge>
+                                {ORGANIZATION_ROLES.find(r => r.value === envelope.organization_role)?.label || envelope.organization_role}
                               </TableCell>
                               <TableCell>
-                                <div className="flex flex-wrap gap-1">
-                                  {envelope.funding_type_flags && envelope.funding_type_flags.length > 0 ? (
-                                    envelope.funding_type_flags.map(flag => (
-                                      <Badge key={flag} variant="outline" className="text-xs">
-                                        {FUNDING_TYPE_FLAGS.find(f => f.value === flag)?.label || flag}
-                                      </Badge>
-                                    ))
-                                  ) : (
-                                    <span className="text-xs text-gray-400">None</span>
-                                  )}
-                                </div>
+                                {ENVELOPE_STATUSES.find(s => s.value === envelope.status)?.label || envelope.status}
+                              </TableCell>
+                              <TableCell>
+                                {envelope.funding_type_flags && envelope.funding_type_flags.length > 0 ? (
+                                  envelope.funding_type_flags
+                                    .map(flag => FUNDING_TYPE_FLAGS.find(f => f.value === flag)?.label || flag)
+                                    .join(', ')
+                                ) : (
+                                  <span className="text-gray-400">None</span>
+                                )}
                               </TableCell>
                               {!readOnly && (
                                 <TableCell>
@@ -517,41 +610,6 @@ export default function OrganizationFundingEnvelopeTab({
                       </TableBody>
                     </Table>
                   </div>
-                  {sortedEnvelopes.length > 0 && (
-                    <div className="mt-4 pt-4 border-t">
-                      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm">
-                        <div>
-                          <span className="text-gray-600">Past Total: </span>
-                          <span className="font-semibold">
-                            {formatCurrency(calculateSubtotal(categorizedEnvelopes.past), 'USD')}
-                          </span>
-                        </div>
-                        <div>
-                          <span className="text-gray-600">Current Total: </span>
-                          <span className="font-semibold">
-                            {formatCurrency(calculateSubtotal(categorizedEnvelopes.current), 'USD')}
-                          </span>
-                        </div>
-                        <div>
-                          <span className="text-gray-600">Future Total: </span>
-                          <span className="font-semibold">
-                            {formatCurrency(calculateSubtotal(categorizedEnvelopes.future), 'USD')}
-                          </span>
-                        </div>
-                        <div className="text-right md:text-left">
-                          <span className="text-gray-600">All (indicative): </span>
-                          <span className="font-semibold">
-                            {formatCurrency(
-                              calculateSubtotal(categorizedEnvelopes.past) +
-                              calculateSubtotal(categorizedEnvelopes.current) +
-                              calculateSubtotal(categorizedEnvelopes.future),
-                              'USD'
-                            )}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  )}
                 </>
               )}
             </CardContent>
@@ -581,36 +639,113 @@ export default function OrganizationFundingEnvelopeTab({
             // Generate year options for dropdown
             const currentYear = new Date().getFullYear()
             const yearOptions = Array.from({ length: 111 }, (_, i) => currentYear - 20 + i) // 20 years ago to 90 years in future
-            
+
+            // Get selected currency details for display
+            const selectedCurrency = currencies.find(c => c.code === editingEnvelope.currency)
+
+            // Get selected role details for display
+            const selectedRole = ORGANIZATION_ROLES.find(r => r.value === editingEnvelope.organization_role)
+
+            // Get selected status details for display
+            const selectedStatus = ENVELOPE_STATUSES.find(s => s.value === editingEnvelope.status)
+
+            // Get fiscal year period label
+            const getFiscalYearLabel = (year: number, startMonth: number | null | undefined) => {
+              if (!startMonth || startMonth === 1) return year.toString()
+              const monthInfo = FISCAL_YEAR_START_MONTHS.find(m => m.value === startMonth)
+              return `FY${year} (${monthInfo?.period || ''})`
+            }
+
             return (
               <div className="space-y-4 py-4">
-                {/* Period Type - Full Width */}
-                <div className="space-y-2">
-                  <Label>Period Type *</Label>
-                  <Select
-                    value={editingEnvelope.period_type}
-                    onValueChange={(value: 'single_year' | 'multi_year') => {
-                      updateField('period_type', value)
-                      if (value === 'single_year') {
-                        updateField('year_end', null)
-                      }
-                    }}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="single_year">Single Year</SelectItem>
-                      <SelectItem value="multi_year">Multi-Year Range</SelectItem>
-                    </SelectContent>
-                  </Select>
+                {/* Period Type and Year Type Row */}
+                <div className="grid grid-cols-2 gap-4">
+                  {/* Period Type */}
+                  <div className="space-y-2">
+                    <div className="flex items-center">
+                      <Label>Period Type *</Label>
+                      <HelpIcon helpKey="period_type" />
+                    </div>
+                    <Select
+                      value={editingEnvelope.period_type}
+                      onValueChange={(value: 'single_year' | 'multi_year') => {
+                        updateField('period_type', value)
+                        if (value === 'single_year') {
+                          updateField('year_end', null)
+                        }
+                      }}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="single_year">Single Year</SelectItem>
+                        <SelectItem value="multi_year">Multi-Year Range</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* Year Type */}
+                  <div className="space-y-2">
+                    <div className="flex items-center">
+                      <Label>Year Type *</Label>
+                      <HelpIcon helpKey="year_type" />
+                    </div>
+                    <Select
+                      value={editingEnvelope.year_type || 'calendar'}
+                      onValueChange={(value: YearType) => {
+                        updateField('year_type', value)
+                        if (value === 'calendar') {
+                          updateField('fiscal_year_start_month', null)
+                        } else if (!editingEnvelope.fiscal_year_start_month) {
+                          updateField('fiscal_year_start_month', 4) // Default to April
+                        }
+                      }}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {YEAR_TYPES.map((type) => (
+                          <SelectItem key={type.value} value={type.value}>
+                            {type.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
 
-                {/* Two Column Layout */}
+                {/* Fiscal Year Start Month (only when fiscal year is selected) */}
+                {editingEnvelope.year_type === 'fiscal' && (
+                  <div className="space-y-2">
+                    <Label>Fiscal Year Starts In</Label>
+                    <Select
+                      value={editingEnvelope.fiscal_year_start_month?.toString() || '4'}
+                      onValueChange={(value) => updateField('fiscal_year_start_month', parseInt(value))}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {FISCAL_YEAR_START_MONTHS.map((month) => (
+                          <SelectItem key={month.value} value={month.value.toString()}>
+                            {month.label} ({month.period})
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+
+                {/* Year Selection Row */}
                 <div className="grid grid-cols-2 gap-4">
                   {/* Year Start */}
                   <div className="space-y-2">
-                    <Label>Start Year *</Label>
+                    <div className="flex items-center">
+                      <Label>{editingEnvelope.period_type === 'multi_year' ? 'Start Year *' : 'Year *'}</Label>
+                      <HelpIcon helpKey="year_start" />
+                    </div>
                     <Select
                       value={editingEnvelope.year_start?.toString() || ''}
                       onValueChange={(value) => updateField('year_start', parseInt(value) || 0)}
@@ -621,7 +756,9 @@ export default function OrganizationFundingEnvelopeTab({
                       <SelectContent className="max-h-[200px]">
                         {yearOptions.map((year) => (
                           <SelectItem key={year} value={year.toString()}>
-                            {year}
+                            {editingEnvelope.year_type === 'fiscal'
+                              ? getFiscalYearLabel(year, editingEnvelope.fiscal_year_start_month)
+                              : year}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -634,7 +771,10 @@ export default function OrganizationFundingEnvelopeTab({
                   {/* Year End (only for multi-year) */}
                   {editingEnvelope.period_type === 'multi_year' ? (
                     <div className="space-y-2">
-                      <Label>End Year *</Label>
+                      <div className="flex items-center">
+                        <Label>End Year *</Label>
+                        <HelpIcon helpKey="year_end" />
+                      </div>
                       <Select
                         value={editingEnvelope.year_end?.toString() || ''}
                         onValueChange={(value) => updateField('year_end', parseInt(value) || null)}
@@ -647,7 +787,9 @@ export default function OrganizationFundingEnvelopeTab({
                             .filter(year => year >= (editingEnvelope.year_start || 1990))
                             .map((year) => (
                               <SelectItem key={year} value={year.toString()}>
-                                {year}
+                                {editingEnvelope.year_type === 'fiscal'
+                                  ? getFiscalYearLabel(year, editingEnvelope.fiscal_year_start_month)
+                                  : year}
                               </SelectItem>
                             ))}
                         </SelectContent>
@@ -659,16 +801,25 @@ export default function OrganizationFundingEnvelopeTab({
                   ) : (
                     <div></div>
                   )}
+                </div>
 
+                {/* Amount, Currency, and Value Date Row */}
+                <div className="grid grid-cols-3 gap-4">
                   {/* Amount */}
                   <div className="space-y-2">
-                    <Label>Amount *</Label>
+                    <div className="flex items-center">
+                      <Label>Amount *</Label>
+                      <HelpIcon helpKey="amount" />
+                    </div>
                     <Input
-                      type="number"
-                      step="0.01"
-                      value={editingEnvelope.amount || ''}
-                      onChange={(e) => updateField('amount', parseFloat(e.target.value) || 0)}
-                      min={0}
+                      type="text"
+                      inputMode="numeric"
+                      value={editingEnvelope.amount ? formatNumberWithCommas(editingEnvelope.amount) : ''}
+                      onChange={(e) => {
+                        const rawValue = e.target.value.replace(/[^0-9.]/g, '')
+                        updateField('amount', parseFloat(rawValue) || 0)
+                      }}
+                      placeholder="0"
                     />
                     {fieldErrors.amount && (
                       <p className="text-sm text-red-600">{fieldErrors.amount}</p>
@@ -677,19 +828,27 @@ export default function OrganizationFundingEnvelopeTab({
 
                   {/* Currency */}
                   <div className="space-y-2">
-                    <Label>Currency *</Label>
+                    <div className="flex items-center">
+                      <Label>Currency *</Label>
+                      <HelpIcon helpKey="currency" />
+                    </div>
                     <Select
                       value={editingEnvelope.currency}
                       onValueChange={(value) => updateField('currency', value)}
                     >
-                      <SelectTrigger>
-                        <SelectValue />
+                      <SelectTrigger className="w-full">
+                        <span className="flex items-center gap-2 truncate">
+                          <span className="font-mono text-xs bg-gray-100 px-1.5 py-0.5 rounded flex-shrink-0">
+                            {editingEnvelope.currency}
+                          </span>
+                          <span className="truncate">{selectedCurrency?.name || ''}</span>
+                        </span>
                       </SelectTrigger>
                       <SelectContent className="max-h-[200px]">
                         {currencies.map((currency) => (
                           <SelectItem key={currency.code} value={currency.code}>
-                            <span className="inline-flex items-center gap-2">
-                              <span className="font-mono text-xs bg-gray-100 px-1.5 py-0.5 rounded">
+                            <span className="flex items-center gap-2">
+                              <span className="font-mono text-xs bg-gray-100 px-1.5 py-0.5 rounded flex-shrink-0">
                                 {currency.code}
                               </span>
                               <span>{currency.name}</span>
@@ -703,9 +862,28 @@ export default function OrganizationFundingEnvelopeTab({
                     )}
                   </div>
 
+                  {/* Value Date */}
+                  <div className="space-y-2">
+                    <div className="flex items-center">
+                      <Label>Value Date</Label>
+                      <HelpIcon helpKey="value_date" />
+                    </div>
+                    <Input
+                      type="date"
+                      value={editingEnvelope.value_date || ''}
+                      onChange={(e) => updateField('value_date', e.target.value || null)}
+                    />
+                  </div>
+                </div>
+
+                {/* Flow Direction and Organisation Role Row */}
+                <div className="grid grid-cols-2 gap-4">
                   {/* Flow Direction */}
                   <div className="space-y-2">
-                    <Label>Flow Direction *</Label>
+                    <div className="flex items-center">
+                      <Label>Flow Direction *</Label>
+                      <HelpIcon helpKey="flow_direction" />
+                    </div>
                     <Select
                       value={editingEnvelope.flow_direction}
                       onValueChange={(value: 'incoming' | 'outgoing') => updateField('flow_direction', value)}
@@ -725,20 +903,26 @@ export default function OrganizationFundingEnvelopeTab({
 
                   {/* Organisation Role */}
                   <div className="space-y-2">
-                    <Label>Organisation Role *</Label>
+                    <div className="flex items-center">
+                      <Label>Organisation Role *</Label>
+                      <HelpIcon helpKey="organization_role" />
+                    </div>
                     <Select
                       value={editingEnvelope.organization_role}
-                      onValueChange={(value: 'original_funder' | 'fund_manager' | 'implementer') => 
+                      onValueChange={(value: 'original_funder' | 'fund_manager' | 'implementer') =>
                         updateField('organization_role', value)
                       }
                     >
-                      <SelectTrigger>
-                        <SelectValue />
+                      <SelectTrigger className="h-auto min-h-[40px]">
+                        <span className="text-left py-1">
+                          <span className="block">{selectedRole?.label}</span>
+                          <span className="block text-xs text-gray-500">{selectedRole?.description}</span>
+                        </span>
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent className="w-[var(--radix-select-trigger-width)]">
                         {ORGANIZATION_ROLES.map((role) => (
-                          <SelectItem key={role.value} value={role.value}>
-                            <div>
+                          <SelectItem key={role.value} value={role.value} className="py-2">
+                            <div className="text-left">
                               <div className="font-medium">{role.label}</div>
                               <div className="text-xs text-gray-500">{role.description}</div>
                             </div>
@@ -750,21 +934,30 @@ export default function OrganizationFundingEnvelopeTab({
                       <p className="text-sm text-red-600">{fieldErrors.organization_role}</p>
                     )}
                   </div>
+                </div>
 
+                {/* Status and Confidence Level Row */}
+                <div className="grid grid-cols-2 gap-4">
                   {/* Status */}
                   <div className="space-y-2">
-                    <Label>Status *</Label>
+                    <div className="flex items-center">
+                      <Label>Status *</Label>
+                      <HelpIcon helpKey="status" />
+                    </div>
                     <Select
                       value={editingEnvelope.status}
                       onValueChange={(value: 'actual' | 'current' | 'indicative') => updateField('status', value)}
                     >
-                      <SelectTrigger>
-                        <SelectValue />
+                      <SelectTrigger className="h-auto min-h-[40px]">
+                        <span className="text-left py-1">
+                          <span className="block">{selectedStatus?.label}</span>
+                          <span className="block text-xs text-gray-500">{selectedStatus?.description}</span>
+                        </span>
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent className="w-[var(--radix-select-trigger-width)]">
                         {ENVELOPE_STATUSES.map((status) => (
-                          <SelectItem key={status.value} value={status.value}>
-                            <div>
+                          <SelectItem key={status.value} value={status.value} className="py-2">
+                            <div className="text-left">
                               <div className="font-medium">{status.label}</div>
                               <div className="text-xs text-gray-500">{status.description}</div>
                             </div>
@@ -779,7 +972,10 @@ export default function OrganizationFundingEnvelopeTab({
 
                   {/* Confidence Level */}
                   <div className="space-y-2">
-                    <Label>Confidence Level (Optional)</Label>
+                    <div className="flex items-center">
+                      <Label>Confidence Level</Label>
+                      <HelpIcon helpKey="confidence_level" />
+                    </div>
                     <Select
                       value={editingEnvelope.confidence_level || 'none'}
                       onValueChange={(value: string) => updateField('confidence_level', value === 'none' ? null : value)}
@@ -799,31 +995,78 @@ export default function OrganizationFundingEnvelopeTab({
                   </div>
                 </div>
 
-                {/* Funding Type Flags - Full Width */}
+                {/* Funding Type Flags - Full Width Dropdown */}
                 <div className="space-y-2">
-                  <Label>Funding Type Flags</Label>
-                  <div className="space-y-2 border rounded-md p-3">
-                    {FUNDING_TYPE_FLAGS.map((flag) => (
-                      <div key={flag.value} className="flex items-center space-x-2">
-                        <Checkbox
-                          id={`flag-${flag.value}`}
-                          checked={editingEnvelope.funding_type_flags?.includes(flag.value as FundingTypeFlag) || false}
-                          onCheckedChange={() => toggleFundingTypeFlag(flag.value as FundingTypeFlag)}
-                        />
-                        <Label
-                          htmlFor={`flag-${flag.value}`}
-                          className="text-sm font-normal cursor-pointer"
-                        >
-                          {flag.label}
-                        </Label>
-                      </div>
-                    ))}
+                  <div className="flex items-center">
+                    <Label>Funding Type Flags</Label>
+                    <HelpIcon helpKey="funding_type_flags" />
                   </div>
+                  <div className="relative">
+                    <Select
+                      value="_multiselect_placeholder"
+                      onValueChange={(value) => {
+                        if (value !== '_multiselect_placeholder') {
+                          toggleFundingTypeFlag(value as FundingTypeFlag)
+                        }
+                      }}
+                    >
+                      <SelectTrigger>
+                        <span className="text-gray-500">
+                          {editingEnvelope.funding_type_flags && editingEnvelope.funding_type_flags.length > 0
+                            ? `${editingEnvelope.funding_type_flags.length} selected`
+                            : 'Select funding types...'}
+                        </span>
+                      </SelectTrigger>
+                      <SelectContent>
+                        {FUNDING_TYPE_FLAGS.map((flag) => {
+                          const isSelected = editingEnvelope.funding_type_flags?.includes(flag.value as FundingTypeFlag)
+                          return (
+                            <SelectItem
+                              key={flag.value}
+                              value={flag.value}
+                              className="cursor-pointer"
+                            >
+                              <div className="flex items-center gap-2">
+                                <div className={`w-4 h-4 border rounded flex items-center justify-center ${isSelected ? 'bg-primary border-primary' : 'border-gray-300'}`}>
+                                  {isSelected && <span className="text-white text-xs">✓</span>}
+                                </div>
+                                <span>{flag.label}</span>
+                              </div>
+                            </SelectItem>
+                          )
+                        })}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  {/* Selected flags display */}
+                  {editingEnvelope.funding_type_flags && editingEnvelope.funding_type_flags.length > 0 && (
+                    <div className="flex flex-wrap gap-2 mt-2">
+                      {editingEnvelope.funding_type_flags.map(flag => (
+                        <Badge
+                          key={flag}
+                          variant="secondary"
+                          className="flex items-center gap-1 pr-1"
+                        >
+                          {FUNDING_TYPE_FLAGS.find(f => f.value === flag)?.label || flag}
+                          <button
+                            type="button"
+                            onClick={() => toggleFundingTypeFlag(flag)}
+                            className="ml-1 hover:bg-gray-300 rounded-full p-0.5"
+                          >
+                            <X className="h-3 w-3" />
+                          </button>
+                        </Badge>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
                 {/* Notes - Full Width */}
                 <div className="space-y-2">
-                  <Label>Notes (Optional)</Label>
+                  <div className="flex items-center">
+                    <Label>Notes</Label>
+                    <HelpIcon helpKey="notes" />
+                  </div>
                   <Textarea
                     value={editingEnvelope.notes || ''}
                     onChange={(e) => updateField('notes', e.target.value || null)}

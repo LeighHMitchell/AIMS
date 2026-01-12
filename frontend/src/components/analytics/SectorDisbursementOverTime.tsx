@@ -1,9 +1,13 @@
 "use client"
 
 import React, { useState, useEffect, useMemo, useRef } from 'react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 import {
   Table,
   TableBody,
@@ -12,6 +16,8 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
+import { CustomYear, getCustomYearRange, getCustomYearLabel } from '@/types/custom-years'
+import { format } from 'date-fns'
 import {
   AreaChart,
   Area,
@@ -24,28 +30,39 @@ import {
   ResponsiveContainer,
   TooltipProps,
 } from 'recharts'
-import { Download, TrendingUp, LineChart as LineChartIcon, Table as TableIcon } from 'lucide-react'
+import { Download, TrendingUp, LineChart as LineChartIcon, Table as TableIcon, CalendarIcon, Filter, Check, Search } from 'lucide-react'
 import html2canvas from 'html2canvas'
 
-// Time range filter options
-type TimeRange = '3m' | '6m' | '12m' | '3y' | '5y'
-
-const TIME_RANGE_OPTIONS: { value: TimeRange; label: string }[] = [
-  { value: '3m', label: 'Last 3 months' },
-  { value: '6m', label: 'Last 6 months' },
-  { value: '12m', label: 'Last 12 months' },
-  { value: '3y', label: 'Last 3 years' },
-  { value: '5y', label: 'Last 5 years' },
-]
-
-// Color palette - custom scheme (cycles through)
+// Color palette based on brand colors - distinct colors for data visualization
+// Brand colors: Primary Scarlet, Blue Slate, Cool Steel, Deep Teal, Soft Ochre, Pale Slate
 const SECTOR_COLORS = [
   '#dc2625', // Primary Scarlet
   '#4c5568', // Blue Slate
+  '#5f7f7a', // Deep Teal
+  '#c9a24d', // Soft Ochre
   '#7b95a7', // Cool Steel
-  '#cfd0d5', // Pale Slate
-  '#f1f4f8', // Platinum
+  '#b91f1f', // Darker Scarlet
+  '#3a4050', // Darker Blue Slate
+  '#4a635f', // Darker Teal
+  '#9a7a3a', // Darker Ochre
+  '#5f7a8c', // Darker Cool Steel
+  '#e85454', // Lighter Scarlet
+  '#6b7789', // Lighter Blue Slate
+  '#7a9994', // Lighter Teal
+  '#d4b76a', // Lighter Ochre
+  '#9bb0bf', // Lighter Cool Steel
+  '#8c4642', // Muted Scarlet
+  '#5d6b7a', // Medium Slate
+  '#6a8494', // Steel Blue
+  '#a85a52', // Warm Accent
+  '#8a9199', // Neutral Accent
 ]
+
+// Generate list of available years (from 2010 to current year + 10 to cover all possible data)
+const AVAILABLE_YEARS = Array.from(
+  { length: new Date().getFullYear() - 2010 + 11 },
+  (_, i) => 2010 + i
+)
 
 interface YearData {
   year: number
@@ -64,6 +81,7 @@ interface SectorData {
 }
 
 
+
 interface DateRange {
   from: Date
   to: Date
@@ -80,57 +98,239 @@ type ViewMode = 'area' | 'line' | 'table'
 type AggregationLevel = 'group' | 'category' | 'sector'
 
 export function SectorDisbursementOverTime({
-  dateRange,
+  dateRange: initialDateRange,
   refreshKey = 0,
   compact = false
 }: SectorDisbursementOverTimeProps) {
   const [dataMode, setDataMode] = useState<DataMode>('actual')
   const [viewMode, setViewMode] = useState<ViewMode>('area')
-  const [aggregationLevel, setAggregationLevel] = useState<AggregationLevel>('category')
+  const [aggregationLevel, setAggregationLevel] = useState<AggregationLevel>('group') // Default to Sector Categories
   const [data, setData] = useState<SectorData[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [visibleSectors, setVisibleSectors] = useState<Set<string>>(new Set())
-  const [selectedTimeRange, setSelectedTimeRange] = useState<TimeRange>('5y')
+
+  // Ensure we have a valid initial date range
+  const getValidInitialDateRange = (): DateRange => {
+    if (initialDateRange?.from && initialDateRange?.to &&
+        !isNaN(initialDateRange.from.getTime()) && !isNaN(initialDateRange.to.getTime())) {
+      return initialDateRange
+    }
+    // Fallback to 5 years range
+    const now = new Date()
+    const from = new Date()
+    from.setFullYear(now.getFullYear() - 5)
+    return { from, to: now }
+  }
+  const [localDateRange, setLocalDateRange] = useState<DateRange>(getValidInitialDateRange)
+  const [filterSearch, setFilterSearch] = useState('')
+  const [hasInitialized, setHasInitialized] = useState(false)
   const chartRef = useRef<HTMLDivElement>(null)
 
-  // Calculate date range based on time range selection
-  const effectiveDateRange = useMemo(() => {
-    const now = new Date()
-    let from: Date
+  // Calendar type state (will be set from custom years on load)
+  const [calendarType, setCalendarType] = useState<string>('')
+  const [selectedYears, setSelectedYears] = useState<number[]>([])
+  const [customYears, setCustomYears] = useState<CustomYear[]>([])
+  const [customYearsLoading, setCustomYearsLoading] = useState(true)
+  const [actualDataRange, setActualDataRange] = useState<{ minYear: number; maxYear: number } | null>(null)
 
-    switch (selectedTimeRange) {
-      case '3m':
-        from = new Date(now.getFullYear(), now.getMonth() - 3, 1)
-        break
-      case '6m':
-        from = new Date(now.getFullYear(), now.getMonth() - 6, 1)
-        break
-      case '12m':
-        from = new Date(now.getFullYear() - 1, now.getMonth(), 1)
-        break
-      case '3y':
-        from = new Date(now.getFullYear() - 3, 0, 1)
-        break
-      case '5y':
-      default:
-        from = new Date(now.getFullYear() - 5, 0, 1)
-        break
+  // Fetch custom years on mount and set system default
+  useEffect(() => {
+    const fetchCustomYears = async () => {
+      try {
+        const response = await fetch('/api/custom-years')
+        if (response.ok) {
+          const result = await response.json()
+          const years = result.data || []
+          setCustomYears(years)
+
+          // Determine which calendar to use
+          let selectedCalendar: CustomYear | undefined
+
+          // First priority: system default
+          if (result.defaultId) {
+            selectedCalendar = years.find((cy: CustomYear) => cy.id === result.defaultId)
+          }
+
+          // Fallback: first available custom year
+          if (!selectedCalendar && years.length > 0) {
+            selectedCalendar = years[0]
+          }
+
+          // Set the calendar type and date range
+          if (selectedCalendar) {
+            setCalendarType(selectedCalendar.id)
+            // Use the full year range (first to last selected year)
+            const sortedYears = [...selectedYears].sort((a, b) => a - b)
+            const firstYearRange = getCustomYearRange(selectedCalendar, sortedYears[0])
+            const lastYearRange = getCustomYearRange(selectedCalendar, sortedYears[sortedYears.length - 1])
+            setLocalDateRange({ from: firstYearRange.start, to: lastYearRange.end })
+          }
+        }
+      } catch (err) {
+        console.error('Failed to fetch custom years:', err)
+      } finally {
+        setCustomYearsLoading(false)
+      }
     }
+    fetchCustomYears()
+  }, [])
 
-    return { from, to: now }
-  }, [selectedTimeRange])
 
-  // Fetch data from API
+  // Update date range when calendar type or years change
+  useEffect(() => {
+    if (customYears.length > 0 && calendarType) {
+      const customYear = customYears.find(cy => cy.id === calendarType)
+      if (customYear) {
+        // If we have selected years, use them
+        if (selectedYears.length > 0) {
+          const sortedYears = [...selectedYears].sort((a, b) => a - b)
+          const firstYearRange = getCustomYearRange(customYear, sortedYears[0])
+          const lastYearRange = getCustomYearRange(customYear, sortedYears[sortedYears.length - 1])
+
+          setLocalDateRange({
+            from: firstYearRange.start,
+            to: lastYearRange.end
+          })
+        }
+        // Fallback: use actual data range if available
+        else if (actualDataRange) {
+          const firstYearRange = getCustomYearRange(customYear, actualDataRange.minYear)
+          const lastYearRange = getCustomYearRange(customYear, actualDataRange.maxYear)
+
+          setLocalDateRange({
+            from: firstYearRange.start,
+            to: lastYearRange.end
+          })
+        }
+        // Final fallback: use 5 years from now
+        else {
+          const currentYear = new Date().getFullYear()
+          const firstYearRange = getCustomYearRange(customYear, currentYear - 5)
+          const lastYearRange = getCustomYearRange(customYear, currentYear)
+
+          setLocalDateRange({
+            from: firstYearRange.start,
+            to: lastYearRange.end
+          })
+        }
+      }
+    }
+  }, [calendarType, selectedYears, customYears, actualDataRange])
+
+  // Update local date range when prop changes (only if no calendar type set yet)
+  useEffect(() => {
+    // Only update if we haven't set a calendar type yet (waiting for custom years to load)
+    if (!calendarType && initialDateRange?.from && initialDateRange?.to) {
+      setLocalDateRange(initialDateRange)
+    }
+  }, [initialDateRange, calendarType])
+
+  // Handle year click - select start and end of range (max 2 years)
+  const handleYearClick = (year: number, shiftKey: boolean) => {
+    if (shiftKey && selectedYears.length === 1) {
+      // Shift+click with one year selected: set as end of range
+      const start = Math.min(selectedYears[0], year)
+      const end = Math.max(selectedYears[0], year)
+      setSelectedYears([start, end])
+    } else if (selectedYears.length === 0) {
+      // No selection: set as start
+      setSelectedYears([year])
+    } else if (selectedYears.length === 1) {
+      if (selectedYears[0] === year) {
+        // Clicking same year: deselect
+        setSelectedYears([])
+      } else {
+        // Clicking different year: set range
+        const start = Math.min(selectedYears[0], year)
+        const end = Math.max(selectedYears[0], year)
+        setSelectedYears([start, end])
+      }
+    } else {
+      // Already have 2 years (range): start fresh with this year
+      setSelectedYears([year])
+    }
+  }
+
+  // Select all years (first to last)
+  const selectAllYears = () => {
+    setSelectedYears([AVAILABLE_YEARS[0], AVAILABLE_YEARS[AVAILABLE_YEARS.length - 1]])
+  }
+
+  // Select only the data range (years where data exists)
+  const selectDataRange = () => {
+    if (actualDataRange) {
+      setSelectedYears([actualDataRange.minYear, actualDataRange.maxYear])
+    } else {
+      // Fallback if actualDataRange not yet loaded - use current year range
+      const currentYear = new Date().getFullYear()
+      setSelectedYears([currentYear - 10, currentYear + 3])
+    }
+  }
+
+  // Check if a year is between start and end (for light blue highlighting)
+  const isYearInRange = (year: number) => {
+    if (selectedYears.length < 2) return false
+    const minYear = Math.min(...selectedYears)
+    const maxYear = Math.max(...selectedYears)
+    return year > minYear && year < maxYear
+  }
+
+  // Get year label for a specific year
+  const getYearLabel = (year: number) => {
+    const customYear = customYears.find(cy => cy.id === calendarType)
+    if (customYear) {
+      return getCustomYearLabel(customYear, year)
+    }
+    return `${year}`
+  }
+
+  // Toggle visibility for an item at current level
+  const toggleItemVisibility = (code: string) => {
+    setVisibleSectors(prev => {
+      const newSet = new Set(prev)
+      if (newSet.has(code)) {
+        newSet.delete(code)
+      } else {
+        newSet.add(code)
+      }
+      return newSet
+    })
+  }
+
+  // Select all items at current level
+  const selectAllItems = () => {
+    setVisibleSectors(new Set(aggregatedData.map(item => item.code)))
+  }
+
+  // Clear all items
+  const clearAllItems = () => {
+    setVisibleSectors(new Set())
+  }
+
+  // Select top N items by total value
+  const selectTopN = (n: number) => {
+    const itemTotals = aggregatedData.map(item => {
+      const total = item.years.reduce((sum, y) => sum + (dataMode === 'planned' ? y.planned : y.actual), 0)
+      return { code: item.code, total }
+    })
+    itemTotals.sort((a, b) => b.total - a.total)
+    const topCodes = itemTotals.slice(0, n).map(item => item.code)
+    setVisibleSectors(new Set(topCodes))
+  }
+
+  // Fetch ALL data from API once (no date filtering - filter client-side for instant switching)
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true)
       setError(null)
 
       try {
+        // Fetch all data without date filtering for instant year switching
+        // Use a very wide date range to get all data
         const params = new URLSearchParams()
-        params.append('dateFrom', effectiveDateRange.from.toISOString())
-        params.append('dateTo', effectiveDateRange.to.toISOString())
+        params.append('dateFrom', '2000-01-01T00:00:00.000Z')
+        params.append('dateTo', '2050-12-31T23:59:59.999Z')
 
         const response = await fetch(`/api/analytics/disbursements-by-sector?${params.toString()}`)
 
@@ -141,6 +341,28 @@ export function SectorDisbursementOverTime({
         const result = await response.json()
         const sectors = result.sectors || []
         setData(sectors)
+
+        // Calculate actual data range from the fetched sector data
+        // This ensures "Data" button shows only years with actual disbursement data
+        let dataMinYear = Infinity
+        let dataMaxYear = -Infinity
+        sectors.forEach((sector: SectorData) => {
+          sector.years.forEach((yearData: YearData) => {
+            // Only consider years with actual data (planned or actual > 0)
+            if (yearData.planned > 0 || yearData.actual > 0) {
+              if (yearData.year < dataMinYear) dataMinYear = yearData.year
+              if (yearData.year > dataMaxYear) dataMaxYear = yearData.year
+            }
+          })
+        })
+
+        if (dataMinYear !== Infinity && dataMaxYear !== -Infinity) {
+          setActualDataRange({ minYear: dataMinYear, maxYear: dataMaxYear })
+          // Set default selected years to the actual data range
+          if (selectedYears.length === 0) {
+            setSelectedYears([dataMinYear, dataMaxYear])
+          }
+        }
         // Note: visibleSectors initialization is handled by the aggregationLevel useEffect
         // to ensure codes match the current aggregation level (group/category/sector)
       } catch (err) {
@@ -152,7 +374,7 @@ export function SectorDisbursementOverTime({
     }
 
     fetchData()
-  }, [effectiveDateRange, refreshKey])
+  }, [refreshKey]) // Only refetch on refreshKey change, not on date range change
 
   // Aggregate data based on aggregation level (group, category, or sector)
   const aggregatedData = useMemo(() => {
@@ -264,43 +486,82 @@ export function SectorDisbursementOverTime({
     }
   }, [data, aggregationLevel])
 
-  // Build color map for aggregated data
+  // Build color map for VISIBLE items only (so colors are always distinct)
   const colorMap = useMemo(() => {
     const map = new Map<string, string>()
-    aggregatedData.forEach((item, idx) => {
+    // Only assign colors to visible items, ensuring they get distinct colors
+    const visibleItems = aggregatedData.filter(item => visibleSectors.has(item.code))
+    visibleItems.forEach((item, idx) => {
       map.set(item.code, SECTOR_COLORS[idx % SECTOR_COLORS.length])
     })
     return map
-  }, [aggregatedData])
+  }, [aggregatedData, visibleSectors])
 
+  // Reset visible sectors when aggregation level changes (start with none selected)
+  useEffect(() => {
+    if (aggregatedData.length > 0) {
+      // Start fresh when switching levels - user must intentionally select what to compare
+      setVisibleSectors(new Set())
+      setFilterSearch('')
+    }
+  }, [aggregationLevel])
+
+  // Filter items based on search text
+  const filteredItems = useMemo(() => {
+    if (!filterSearch.trim()) return aggregatedData
+    const search = filterSearch.toLowerCase()
+    return aggregatedData.filter(item =>
+      item.code.toLowerCase().includes(search) ||
+      item.name.toLowerCase().includes(search)
+    )
+  }, [aggregatedData, filterSearch])
 
   // Transform data for time series chart (uses aggregatedData)
   const timeSeriesData = useMemo(() => {
     if (aggregatedData.length === 0) return []
 
-    // Get min and max years to create sequential range
-    let minYear = Infinity
-    let maxYear = -Infinity
-    aggregatedData.forEach(item => {
-      item.years.forEach(yearData => {
-        if (yearData.year < minYear) minYear = yearData.year
-        if (yearData.year > maxYear) maxYear = yearData.year
+    // Use selected years to determine the display range (not just data range)
+    let minYear: number
+    let maxYear: number
+
+    if (selectedYears.length >= 2) {
+      // Use the selected year range
+      minYear = Math.min(...selectedYears)
+      maxYear = Math.max(...selectedYears)
+    } else if (selectedYears.length === 1) {
+      minYear = selectedYears[0]
+      maxYear = selectedYears[0]
+    } else {
+      // Fallback: derive from data if no years selected
+      minYear = Infinity
+      maxYear = -Infinity
+      aggregatedData.forEach(item => {
+        item.years.forEach(yearData => {
+          if (yearData.year < minYear) minYear = yearData.year
+          if (yearData.year > maxYear) maxYear = yearData.year
+        })
       })
-    })
+    }
 
     if (minYear === Infinity || maxYear === -Infinity) return []
 
-    // Create sequential years array (fill gaps)
+    // Create sequential years array for the full selected range
     const years: number[] = []
     for (let y = minYear; y <= maxYear; y++) {
       years.push(y)
     }
 
-    // Create data points for each year (calendar year format)
+    // Get the custom year for label formatting
+    const customYear = customYears.find(cy => cy.id === calendarType)
+
+    // Create data points for each year (with calendar-appropriate labels)
     return years.map(year => {
-      const dataPoint: Record<string, any> = { 
+      // Use getCustomYearLabel for proper formatting based on calendar type
+      const yearLabel = customYear ? getCustomYearLabel(customYear, year) : year.toString()
+
+      const dataPoint: Record<string, any> = {
         year,
-        calendarYear: year.toString()
+        calendarYear: yearLabel
       }
 
       aggregatedData.forEach(item => {
@@ -313,14 +574,22 @@ export function SectorDisbursementOverTime({
 
       return dataPoint
     })
-  }, [aggregatedData, dataMode])
+  }, [aggregatedData, dataMode, customYears, calendarType, selectedYears])
 
-  // Reset visible items when aggregation level changes
+  // Initialize visible sectors when data first loads - select Top 5 by default
   useEffect(() => {
-    if (aggregatedData.length > 0) {
-      setVisibleSectors(new Set(aggregatedData.map(item => item.code)))
+    if (aggregatedData.length > 0 && !hasInitialized) {
+      // Select Top 5 by value on initial load
+      const itemTotals = aggregatedData.map(item => {
+        const total = item.years.reduce((sum, y) => sum + y.actual, 0)
+        return { code: item.code, total }
+      })
+      itemTotals.sort((a, b) => b.total - a.total)
+      const topCodes = itemTotals.slice(0, 5).map(item => item.code)
+      setVisibleSectors(new Set(topCodes))
+      setHasInitialized(true)
     }
-  }, [aggregationLevel, aggregatedData.length])
+  }, [aggregatedData.length, hasInitialized])
 
 
   // Format currency for Y-axis (e.g., $27m)
@@ -441,12 +710,14 @@ export function SectorDisbursementOverTime({
         </div>
 
         {/* Scrollable Content */}
-        <div 
-          className="p-3 pt-2 max-h-[280px] overflow-y-auto hover:overflow-y-scroll"
-          style={{ 
+        <div
+          className="p-3 pt-2 max-h-[350px] overflow-y-auto"
+          style={{
             scrollbarWidth: 'thin',
-            scrollbarColor: '#94a3b8 #e2e8f0'
+            scrollbarColor: '#94a3b8 #e2e8f0',
+            overscrollBehavior: 'contain'
           }}
+          onWheel={(e) => e.stopPropagation()}
         >
           <div className="space-y-2">
           {aggregationLevel === 'group' ? (
@@ -596,12 +867,15 @@ export function SectorDisbursementOverTime({
     }
   }
 
-  // Get visible items for rendering (based on aggregation level)
-  const visibleItemData = aggregatedData.filter(item => visibleSectors.has(item.code))
+  // Get visible items for rendering - simple check against visibleSectors set
+  const visibleItemData = useMemo(() => {
+    return aggregatedData.filter(item => visibleSectors.has(item.code))
+  }, [aggregatedData, visibleSectors])
 
   // Compact mode check FIRST - before any Card returns
   if (compact) {
-    if (loading && data.length === 0) {
+    // Show loading until: data loaded, custom years loaded, AND defaults initialized
+    if ((loading && data.length === 0) || customYearsLoading || !hasInitialized) {
       return <div className="h-full w-full flex items-center justify-center"><div className="text-muted-foreground">Loading...</div></div>
     }
     if (error) {
@@ -633,7 +907,7 @@ export function SectorDisbursementOverTime({
               axisLine={false}
               tickLine={false}
             />
-            <Tooltip content={<CustomTooltip />} />
+            <Tooltip content={<CustomTooltip />} wrapperStyle={{ pointerEvents: 'auto' }} />
             {visibleItemData.map(item => (
               <Area
                 key={item.code}
@@ -654,67 +928,142 @@ export function SectorDisbursementOverTime({
 
   if (loading && data.length === 0) {
     return (
-      <Card className="bg-white border-slate-200">
-        <CardHeader>
-          <CardTitle className="text-lg font-semibold text-slate-900">
-            Sector Financial Trends
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="h-80 flex items-center justify-center">
-          <div className="text-muted-foreground">Loading...</div>
-        </CardContent>
-      </Card>
+      <div className="h-80 flex items-center justify-center">
+        <div className="text-muted-foreground">Loading...</div>
+      </div>
     )
   }
 
   if (error) {
     return (
-      <Card className="bg-white border-slate-200">
-        <CardHeader>
-          <CardTitle className="text-lg font-semibold text-slate-900">
-            Sector Financial Trends
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="p-6">
-          <p className="text-red-600">Error loading data: {error}</p>
-        </CardContent>
-      </Card>
+      <div className="p-6">
+        <p className="text-red-600">Error loading data: {error}</p>
+      </div>
     )
   }
 
   return (
-    <Card className="bg-white border-slate-200">
-      <CardHeader className="pb-2">
-        <div className="flex items-center justify-between flex-wrap gap-4">
-          <CardTitle className="text-lg font-semibold text-slate-900">
-            Sector Financial Trends
-          </CardTitle>
-          
-          <div className="flex items-center gap-2 flex-wrap">
-            {/* Time Range Filter */}
-            <div className="w-[140px]">
-              <Select
-                value={selectedTimeRange}
-                onValueChange={(value) => setSelectedTimeRange(value as TimeRange)}
-              >
-                <SelectTrigger className="h-9 bg-white">
-                  <SelectValue placeholder="Time Range" />
-                </SelectTrigger>
-                <SelectContent>
-                  {TIME_RANGE_OPTIONS.map((option) => (
-                    <SelectItem key={option.value} value={option.value}>
-                      {option.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+    <div className="space-y-3">
+      {/* Controls Row - single line, scrollable if needed */}
+        <div className="flex items-start gap-2 overflow-x-auto pb-1">
+          {/* Calendar & Year Selectors */}
+          <div className="flex items-start gap-2 flex-shrink-0">
+            {customYears.length > 0 && (
+              <>
+                {/* Calendar Type Selector */}
+                <div className="flex gap-1 border rounded-lg p-1 bg-white">
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="sm" className="h-8 gap-1">
+                        {customYears.find(cy => cy.id === calendarType)?.name || 'Select calendar'}
+                        <svg className="h-4 w-4 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                        </svg>
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="start">
+                      {customYears.map(cy => (
+                        <DropdownMenuItem
+                          key={cy.id}
+                          className={calendarType === cy.id ? 'bg-slate-100 font-medium' : ''}
+                          onClick={() => setCalendarType(cy.id)}
+                        >
+                          {cy.name}
+                        </DropdownMenuItem>
+                      ))}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
 
+                {/* Year Range Selector with Date Range below */}
+                <div className="flex flex-col gap-1">
+                  <div className="flex gap-1 border rounded-lg p-1 bg-white">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="sm" className="h-8 gap-1">
+                          <CalendarIcon className="h-4 w-4" />
+                          {selectedYears.length === 0
+                            ? 'Select years'
+                            : selectedYears.length === 1
+                              ? getYearLabel(selectedYears[0])
+                              : `${getYearLabel(Math.min(...selectedYears))} - ${getYearLabel(Math.max(...selectedYears))}`}
+                          <svg className="h-4 w-4 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                          </svg>
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="start" className="p-3 w-auto">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-xs font-medium text-slate-700">Select Year Range</span>
+                          <div className="flex gap-1">
+                            <button
+                              onClick={selectAllYears}
+                              className="text-xs text-slate-500 hover:text-slate-700 px-2 py-0.5 hover:bg-slate-100 rounded"
+                              title="Select all available years"
+                            >
+                              All
+                            </button>
+                            <button
+                              onClick={selectDataRange}
+                              className="text-xs text-slate-500 hover:text-slate-700 px-2 py-0.5 hover:bg-slate-100 rounded"
+                              title={actualDataRange ? `Select only years with data: ${getYearLabel(actualDataRange.minYear)} - ${getYearLabel(actualDataRange.maxYear)}` : 'Select years with data'}
+                            >
+                              Data
+                            </button>
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-3 gap-1">
+                          {AVAILABLE_YEARS.map((year) => {
+                            const isStartOrEnd = selectedYears.length > 0 &&
+                              (year === Math.min(...selectedYears) || year === Math.max(...selectedYears))
+                            const inRange = isYearInRange(year)
+
+                            return (
+                              <button
+                                key={year}
+                                onClick={(e) => handleYearClick(year, e.shiftKey)}
+                                className={`
+                                  px-2 py-1.5 text-xs font-medium rounded transition-colors whitespace-nowrap
+                                  ${isStartOrEnd
+                                    ? 'bg-primary text-primary-foreground'
+                                    : inRange
+                                      ? 'bg-primary/20 text-primary'
+                                      : 'text-slate-600 hover:bg-slate-100'
+                                  }
+                                `}
+                                title="Click to select start, then click another to select end"
+                              >
+                                {getYearLabel(year)}
+                              </button>
+                            )
+                          })}
+                        </div>
+                        <p className="text-[10px] text-slate-400 mt-2 text-center">
+                          Click start year, then click end year
+                        </p>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
+                  {/* Date Range Indicator */}
+                  {localDateRange?.from && localDateRange?.to &&
+                   !isNaN(localDateRange.from.getTime()) && !isNaN(localDateRange.to.getTime()) && (
+                    <span className="text-xs text-slate-500 text-center">
+                      {format(localDateRange.from, 'MMM d, yyyy')} – {format(localDateRange.to, 'MMM d, yyyy')}
+                    </span>
+                  )}
+                </div>
+              </>
+            )}
+          </div>
+
+          {/* Controls - Right Side */}
+          <div className="flex items-center gap-2 flex-shrink-0 ml-auto">
             {/* Data Mode Toggle */}
             <div className="flex gap-1 border rounded-lg p-1 bg-white">
               <Button
                 variant={dataMode === 'planned' ? 'default' : 'ghost'}
                 size="sm"
+                className="h-8"
                 onClick={() => setDataMode('planned')}
               >
                 Planned
@@ -722,6 +1071,7 @@ export function SectorDisbursementOverTime({
               <Button
                 variant={dataMode === 'actual' ? 'default' : 'ghost'}
                 size="sm"
+                className="h-8"
                 onClick={() => setDataMode('actual')}
               >
                 Actual
@@ -733,24 +1083,136 @@ export function SectorDisbursementOverTime({
               <Button
                 variant={aggregationLevel === 'group' ? 'default' : 'ghost'}
                 size="sm"
+                className="h-8"
                 onClick={() => setAggregationLevel('group')}
               >
-                Group
+                Sector Category
               </Button>
               <Button
                 variant={aggregationLevel === 'category' ? 'default' : 'ghost'}
                 size="sm"
+                className="h-8"
                 onClick={() => setAggregationLevel('category')}
               >
-                Category
+                Sector
               </Button>
               <Button
                 variant={aggregationLevel === 'sector' ? 'default' : 'ghost'}
                 size="sm"
+                className="h-8"
                 onClick={() => setAggregationLevel('sector')}
               >
-                Sector
+                Sub-sector
               </Button>
+            </div>
+
+            {/* Sector Filter */}
+            <div className="flex gap-1 border rounded-lg p-1 bg-white">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 gap-1"
+                  >
+                    <Filter className="h-4 w-4" />
+                    Filter
+                    {visibleItemData.length < aggregatedData.length && (
+                      <span className="ml-1 px-1.5 py-0.5 text-xs bg-primary text-primary-foreground rounded-full">
+                        {visibleItemData.length}
+                      </span>
+                    )}
+                    <svg className="h-4 w-4 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="p-3 w-[340px]">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs font-medium text-slate-700">
+                      Filter {aggregationLevel === 'group' ? 'Sector Categories' : aggregationLevel === 'category' ? 'Sectors' : 'Sub-sectors'}
+                    </span>
+                    <div className="flex gap-1">
+                      <button
+                        onClick={() => selectAllItems()}
+                        className="text-xs text-slate-500 hover:text-slate-700 px-2 py-0.5 hover:bg-slate-100 rounded"
+                      >
+                        All
+                      </button>
+                      <button
+                        onClick={() => clearAllItems()}
+                        className="text-xs text-slate-500 hover:text-slate-700 px-2 py-0.5 hover:bg-slate-100 rounded"
+                      >
+                        Clear
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Search box */}
+                  <div className="relative mb-2">
+                    <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
+                    <input
+                      type="text"
+                      placeholder="Search by code or name..."
+                      value={filterSearch}
+                      onChange={(e) => setFilterSearch(e.target.value)}
+                      className="w-full pl-7 pr-3 py-1.5 text-xs border rounded-md focus:outline-none focus:ring-1 focus:ring-primary"
+                    />
+                  </div>
+
+                  {/* Top N shortcuts */}
+                  <div className="flex gap-1 mb-2 flex-wrap">
+                    <span className="text-[10px] text-slate-500 self-center mr-1">Quick:</span>
+                    {[3, 5, 10].map(n => (
+                      <button
+                        key={n}
+                        onClick={() => selectTopN(n)}
+                        className="text-[10px] px-2 py-0.5 bg-slate-100 hover:bg-slate-200 rounded text-slate-600"
+                      >
+                        Top {n}
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Flat list of items at current level */}
+                  <div className="max-h-[320px] overflow-y-auto space-y-0.5 border-t pt-2">
+                    {filteredItems.length === 0 ? (
+                      <div className="text-center text-xs text-slate-400 py-4">
+                        No matching items found
+                      </div>
+                    ) : (
+                      filteredItems.map((item) => {
+                        const isSelected = visibleSectors.has(item.code)
+
+                        return (
+                          <button
+                            key={item.code}
+                            onClick={() => toggleItemVisibility(item.code)}
+                            className="flex items-start gap-2 w-full py-1.5 px-1 text-left rounded hover:bg-slate-50"
+                          >
+                            <div className={`
+                              w-4 h-4 rounded border flex items-center justify-center flex-shrink-0 mt-0.5
+                              ${isSelected ? 'bg-primary border-primary' : 'border-slate-300'}
+                            `}>
+                              {isSelected && <Check className="h-3 w-3 text-white" />}
+                            </div>
+                            <span className="font-mono text-xs px-1.5 py-0.5 rounded flex-shrink-0 bg-slate-100 text-slate-600">
+                              {item.code}
+                            </span>
+                            <span className="text-sm text-slate-700 leading-tight">
+                              {item.name}
+                            </span>
+                          </button>
+                        )
+                      })
+                    )}
+                  </div>
+
+                  <p className="text-[10px] text-slate-400 mt-2 pt-2 border-t text-center">
+                    {visibleItemData.length} of {aggregatedData.length} {aggregationLevel === 'group' ? 'sector categories' : aggregationLevel === 'category' ? 'sectors' : 'sub-sectors'} selected
+                  </p>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
 
             {/* View Mode Toggle */}
@@ -758,6 +1220,7 @@ export function SectorDisbursementOverTime({
               <Button
                 variant={viewMode === 'area' ? 'default' : 'ghost'}
                 size="sm"
+                className="h-8"
                 onClick={() => setViewMode('area')}
                 title="Area"
               >
@@ -766,6 +1229,7 @@ export function SectorDisbursementOverTime({
               <Button
                 variant={viewMode === 'line' ? 'default' : 'ghost'}
                 size="sm"
+                className="h-8"
                 onClick={() => setViewMode('line')}
                 title="Line"
               >
@@ -774,6 +1238,7 @@ export function SectorDisbursementOverTime({
               <Button
                 variant={viewMode === 'table' ? 'default' : 'ghost'}
                 size="sm"
+                className="h-8"
                 onClick={() => setViewMode('table')}
                 title="Table"
               >
@@ -782,24 +1247,30 @@ export function SectorDisbursementOverTime({
             </div>
 
             {/* Save Button */}
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={handleSaveChart}
-              className="text-gray-500 hover:text-gray-700 hover:bg-gray-100"
-              title="Save chart as image"
-            >
-              <Download className="h-4 w-4" />
-            </Button>
+            <div className="flex gap-1 border rounded-lg p-1 bg-white">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-8 px-2"
+                onClick={handleSaveChart}
+                title="Save chart as image"
+              >
+                <Download className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
         </div>
-      </CardHeader>
 
-      <CardContent className="pb-4">
         <div ref={chartRef} className="bg-white">
           {/* Charts */}
           {viewMode === 'area' ? (
-            timeSeriesData.length === 0 ? (
+            visibleItemData.length === 0 ? (
+              <div className="h-80 flex flex-col items-center justify-center text-slate-500 gap-2">
+                <Filter className="h-8 w-8 text-slate-300" />
+                <p>No {aggregationLevel === 'group' ? 'sector categories' : aggregationLevel === 'category' ? 'sectors' : 'sub-sectors'} selected</p>
+                <p className="text-xs text-slate-400">Use the Filter button to select items to compare</p>
+              </div>
+            ) : timeSeriesData.length === 0 ? (
               <div className="h-80 flex items-center justify-center text-slate-500">
                 No data available
               </div>
@@ -821,7 +1292,7 @@ export function SectorDisbursementOverTime({
                     axisLine={false}
                     tickLine={false}
                   />
-                  <Tooltip content={<CustomTooltip />} />
+                  <Tooltip content={<CustomTooltip />} wrapperStyle={{ pointerEvents: 'auto' }} />
                   {visibleItemData.map(item => (
                     <Area
                       key={item.code}
@@ -838,7 +1309,13 @@ export function SectorDisbursementOverTime({
               </ResponsiveContainer>
             )
           ) : viewMode === 'line' ? (
-            timeSeriesData.length === 0 ? (
+            visibleItemData.length === 0 ? (
+              <div className="h-80 flex flex-col items-center justify-center text-slate-500 gap-2">
+                <Filter className="h-8 w-8 text-slate-300" />
+                <p>No {aggregationLevel === 'group' ? 'sector categories' : aggregationLevel === 'category' ? 'sectors' : 'sub-sectors'} selected</p>
+                <p className="text-xs text-slate-400">Use the Filter button to select items to compare</p>
+              </div>
+            ) : timeSeriesData.length === 0 ? (
               <div className="h-80 flex items-center justify-center text-slate-500">
                 No data available
               </div>
@@ -860,7 +1337,7 @@ export function SectorDisbursementOverTime({
                     axisLine={false}
                     tickLine={false}
                   />
-                  <Tooltip content={<CustomTooltip />} />
+                  <Tooltip content={<CustomTooltip />} wrapperStyle={{ pointerEvents: 'auto' }} />
                   {visibleItemData.map(item => (
                     <Line
                       key={item.code}
@@ -878,6 +1355,13 @@ export function SectorDisbursementOverTime({
             )
           ) : (
             /* Table View */
+            visibleItemData.length === 0 ? (
+              <div className="h-80 flex flex-col items-center justify-center text-slate-500 gap-2">
+                <Filter className="h-8 w-8 text-slate-300" />
+                <p>No {aggregationLevel === 'group' ? 'sector categories' : aggregationLevel === 'category' ? 'sectors' : 'sub-sectors'} selected</p>
+                <p className="text-xs text-slate-400">Use the Filter button to select items to compare</p>
+              </div>
+            ) : (
             <div className="overflow-auto max-h-[500px]">
               <Table>
                 <TableHeader>
@@ -958,10 +1442,19 @@ export function SectorDisbursementOverTime({
                 </TableBody>
               </Table>
             </div>
+            )
           )}
         </div>
-      </CardContent>
-    </Card>
+
+        {/* Explanatory Text */}
+        <p className="text-xs text-gray-500 mt-4">
+          This chart shows sector disbursement trends over time. Toggle between Planned Disbursements and Actual Disbursements
+          using the Planned/Actual buttons. View data at different aggregation levels: Sector Category (DAC 1-digit),
+          Sector (DAC 3-digit), or Sub-sector (DAC 5-digit). The stacked area chart shows cumulative values across all sectors;
+          switch to line view to compare individual sector trends. Hover over the chart to see a breakdown by sector for each year.
+          Year labels adjust based on the selected calendar type (e.g., &ldquo;CY 2025&rdquo; for Calendar Year, &ldquo;FY 2024-25&rdquo; for Fiscal Year).
+        </p>
+    </div>
   )
 }
 

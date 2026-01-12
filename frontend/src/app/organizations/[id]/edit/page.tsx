@@ -20,7 +20,9 @@ interface Organization {
   phone?: string
   address?: string
   logo?: string
+  logo_scale?: number
   banner?: string
+  banner_position?: number
   country?: string
   country_represented?: string
   cooperation_modality?: string

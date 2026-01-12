@@ -18,16 +18,27 @@ import {
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Button } from '@/components/ui/button'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Badge } from '@/components/ui/badge'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { AlertCircle, Download, BarChart3, LineChart as LineChartIcon, TrendingUp as TrendingUpIcon, Table as TableIcon, X, Image } from 'lucide-react'
+import { AlertCircle, Download, BarChart3, LineChart as LineChartIcon, TrendingUp as TrendingUpIcon, Table as TableIcon, X, Image, CalendarIcon, RotateCcw } from 'lucide-react'
 import { MultiSelect } from '@/components/ui/multi-select'
-import { HelpTextTooltip } from '@/components/ui/help-text-tooltip'
-import { Switch } from '@/components/ui/switch'
-import { Label } from '@/components/ui/label'
 import { splitTransactionAcrossYears } from '@/utils/year-allocation'
 import { FLOW_TYPE_COLORS, TRANSACTION_TYPE_CHART_COLORS, BRAND_COLORS } from '@/components/analytics/sectors/sectorColorMap'
+import { CustomYear, getCustomYearRange, getCustomYearLabel } from '@/types/custom-years'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import { format } from 'date-fns'
+
+// Generate list of available years (from 2010 to current year + 10)
+const currentYear = new Date().getFullYear()
+const AVAILABLE_YEARS = Array.from(
+  { length: currentYear + 10 - 2010 + 1 },
+  (_, i) => 2010 + i
+)
 // Inline currency formatter to avoid initialization issues
 const formatCurrencyAbbreviated = (value: number): string => {
   const isNegative = value < 0
@@ -59,15 +70,6 @@ interface FinanceTypeFlowChartProps {
 
 type ViewMode = 'bar' | 'line' | 'area' | 'table'
 type TimeMode = 'periodic' | 'cumulative'
-type TimeRange = '3m' | '6m' | '12m' | '3y' | '5y'
-
-const TIME_RANGE_OPTIONS: { value: TimeRange; label: string }[] = [
-  { value: '3m', label: 'Last 3 months' },
-  { value: '6m', label: 'Last 6 months' },
-  { value: '12m', label: 'Last 12 months' },
-  { value: '3y', label: 'Last 3 years' },
-  { value: '5y', label: 'Last 5 years' },
-]
 
 // Use imported brand colors for flow types and transaction types
 // FLOW_TYPE_COLORS and TRANSACTION_TYPE_CHART_COLORS are imported from sectorColorMap
@@ -133,41 +135,32 @@ export function FinanceTypeFlowChart({
   const [allFlowTypes, setAllFlowTypes] = useState<Array<{code: string, name: string}>>([])
   const [allFinanceTypes, setAllFinanceTypes] = useState<Array<{code: string, name: string}>>([])
   const [selectedFlowTypes, setSelectedFlowTypes] = useState<string[]>(['10']) // Default to ODA (code 10)
-  const [selectedFinanceTypes, setSelectedFinanceTypes] = useState<string[]>([]) // Empty = all finance types
-  const [selectedTransactionTypes, setSelectedTransactionTypes] = useState<string[]>(['1']) // Default to Incoming Commitment (code 1) - most commonly has finance type data
+  const [selectedFinanceTypes, setSelectedFinanceTypes] = useState<string[]>(['110', '421']) // Default to Standard grant (110) and Aid loan (421)
+  const [selectedTransactionTypes, setSelectedTransactionTypes] = useState<string[]>(['3']) // Default to Disbursement (code 3)
   const [viewMode, setViewMode] = useState<ViewMode>('bar')
   const [timeMode, setTimeMode] = useState<TimeMode>('periodic')
-  const [selectedTimeRange, setSelectedTimeRange] = useState<TimeRange>('5y')
-  
-  // Allocation method toggle (for future use when budgets/disbursements are added)
-  const [allocationMethod, setAllocationMethod] = useState<'proportional' | 'period-start'>('proportional')
 
-  // Calculate date range based on time range selection
+
+  // Calendar and year selection state (like other charts)
+  const [calendarType, setCalendarType] = useState<string>('')
+  const [selectedYears, setSelectedYears] = useState<number[]>([])
+  const [customYears, setCustomYears] = useState<CustomYear[]>([])
+  const [customYearsLoading, setCustomYearsLoading] = useState(true)
+  const [actualDataRange, setActualDataRange] = useState<{ minYear: number; maxYear: number } | null>(null)
+  const [localDateRange, setLocalDateRange] = useState<{ from: Date; to: Date } | null>(null)
+
+  // Calculate effective date range from selected years and local date range
   const effectiveDateRange = useMemo(() => {
-    const now = new Date()
-    let from: Date
-
-    switch (selectedTimeRange) {
-      case '3m':
-        from = new Date(now.getFullYear(), now.getMonth() - 3, 1)
-        break
-      case '6m':
-        from = new Date(now.getFullYear(), now.getMonth() - 6, 1)
-        break
-      case '12m':
-        from = new Date(now.getFullYear() - 1, now.getMonth(), 1)
-        break
-      case '3y':
-        from = new Date(now.getFullYear() - 3, 0, 1)
-        break
-      case '5y':
-      default:
-        from = new Date(now.getFullYear() - 5, 0, 1)
-        break
+    if (localDateRange?.from && localDateRange?.to) {
+      return localDateRange
     }
-
-    return { from, to: now }
-  }, [selectedTimeRange])
+    // Fallback to a reasonable default if no years selected yet
+    const now = new Date()
+    return {
+      from: new Date(now.getFullYear() - 5, 0, 1),
+      to: now
+    }
+  }, [localDateRange])
 
   // Transaction type options
   const transactionTypes = [
@@ -184,6 +177,177 @@ export function FinanceTypeFlowChart({
     { code: '12', name: 'Incoming Funds' },
     { code: '13', name: 'Commitment Cancellation' }
   ]
+
+  // Fetch custom years on mount and set system default
+  useEffect(() => {
+    const fetchCustomYears = async () => {
+      try {
+        const response = await fetch('/api/custom-years')
+        if (response.ok) {
+          const result = await response.json()
+          const years = result.data || []
+          setCustomYears(years)
+
+          let selectedCalendar: CustomYear | undefined
+
+          if (result.defaultId) {
+            selectedCalendar = years.find((cy: CustomYear) => cy.id === result.defaultId)
+          }
+
+          if (!selectedCalendar && years.length > 0) {
+            selectedCalendar = years[0]
+          }
+
+          if (selectedCalendar) {
+            setCalendarType(selectedCalendar.id)
+          }
+        }
+      } catch (err) {
+        console.error('Failed to fetch custom years:', err)
+      } finally {
+        setCustomYearsLoading(false)
+      }
+    }
+    fetchCustomYears()
+  }, [])
+
+  // Fetch actual data range on mount to know which years have data
+  useEffect(() => {
+    const fetchActualDataRange = async () => {
+      try {
+        // Query with a wide date range to find actual data bounds
+        const params = new URLSearchParams({
+          dateFrom: '2000-01-01',
+          dateTo: '2050-12-31'
+        })
+        const response = await fetch(`/api/analytics/finance-type-flow-data?${params}`)
+        if (response.ok) {
+          const result = await response.json()
+          const transactions = result.transactions || []
+
+          if (transactions.length > 0) {
+            // Find min/max years from the transaction dates
+            let minYear = Infinity
+            let maxYear = -Infinity
+
+            transactions.forEach((t: any) => {
+              if (t.date) {
+                const year = new Date(t.date).getFullYear()
+                if (year < minYear) minYear = year
+                if (year > maxYear) maxYear = year
+              }
+            })
+
+            if (minYear !== Infinity && maxYear !== -Infinity) {
+              setActualDataRange({ minYear, maxYear })
+              // Set initial selected years to the data range
+              setSelectedYears([minYear, maxYear])
+            }
+          }
+        }
+      } catch (err) {
+        console.error('Failed to fetch actual data range:', err)
+      }
+    }
+    fetchActualDataRange()
+  }, [])
+
+  // Update date range when calendar type or years change
+  useEffect(() => {
+    if (customYears.length > 0 && selectedYears.length > 0) {
+      const customYear = customYears.find(cy => cy.id === calendarType)
+      if (customYear) {
+        const sortedYears = [...selectedYears].sort((a, b) => a - b)
+        const firstYearRange = getCustomYearRange(customYear, sortedYears[0])
+        const lastYearRange = getCustomYearRange(customYear, sortedYears[sortedYears.length - 1])
+
+        setLocalDateRange({
+          from: firstYearRange.start,
+          to: lastYearRange.end
+        })
+      }
+    }
+  }, [calendarType, selectedYears, customYears])
+
+  // Handle year click - select start and end of range (max 2 years)
+  const handleYearClick = (year: number, shiftKey: boolean) => {
+    if (shiftKey && selectedYears.length === 1) {
+      const start = Math.min(selectedYears[0], year)
+      const end = Math.max(selectedYears[0], year)
+      setSelectedYears([start, end])
+    } else if (selectedYears.length === 0) {
+      setSelectedYears([year])
+    } else if (selectedYears.length === 1) {
+      if (selectedYears[0] === year) {
+        setSelectedYears([])
+      } else {
+        const start = Math.min(selectedYears[0], year)
+        const end = Math.max(selectedYears[0], year)
+        setSelectedYears([start, end])
+      }
+    } else {
+      setSelectedYears([year])
+    }
+  }
+
+  // Select all years (first to last)
+  const selectAllYears = () => {
+    setSelectedYears([AVAILABLE_YEARS[0], AVAILABLE_YEARS[AVAILABLE_YEARS.length - 1]])
+  }
+
+  // Select only years with actual data
+  const selectDataRange = () => {
+    if (actualDataRange) {
+      setSelectedYears([actualDataRange.minYear, actualDataRange.maxYear])
+    } else {
+      const currentYr = new Date().getFullYear()
+      setSelectedYears([currentYr - 5, currentYr])
+    }
+  }
+
+  // Check if a year is between start and end (for light blue highlighting)
+  const isYearInRange = (year: number) => {
+    if (selectedYears.length < 2) return false
+    const minYear = Math.min(...selectedYears)
+    const maxYear = Math.max(...selectedYears)
+    return year > minYear && year < maxYear
+  }
+
+  // Get year label based on calendar type
+  const getYearLabel = (year: number) => {
+    const customYear = customYears.find(cy => cy.id === calendarType)
+    if (customYear) {
+      return getCustomYearLabel(customYear, year)
+    }
+    return `${year}`
+  }
+
+  // Reset to defaults
+  const handleReset = () => {
+    // Reset to data range (or fallback to all years)
+    if (actualDataRange) {
+      setSelectedYears([actualDataRange.minYear, actualDataRange.maxYear])
+    } else {
+      setSelectedYears([AVAILABLE_YEARS[0], AVAILABLE_YEARS[AVAILABLE_YEARS.length - 1]])
+    }
+    // Reset to ODA flow type
+    setSelectedFlowTypes(['10'])
+    // Reset finance types to standard grant and aid loan
+    setSelectedFinanceTypes(['110', '421'])
+    // Reset transaction types to Disbursement
+    setSelectedTransactionTypes(['3'])
+    // Reset view mode
+    setViewMode('bar')
+    setTimeMode('periodic')
+    // Reset calendar to default
+    const calendarYear = customYears.find(cy =>
+      cy.name.toLowerCase().includes('calendar') ||
+      cy.name.toLowerCase().includes('gregorian')
+    ) || customYears[0]
+    if (calendarYear) {
+      setCalendarType(calendarYear.id)
+    }
+  }
 
   // Fetch data from consolidated API (with server-side caching)
   useEffect(() => {
@@ -215,15 +379,12 @@ export function FinanceTypeFlowChart({
           return
         }
 
-        // Process data for year allocation if needed
+        // Process data for year allocation
         const processedData: any[] = []
 
         data.transactions.forEach((t: any) => {
-          // Apply proportional allocation if enabled
           // Pass value_usd (set from the value field) since the API already converts values to USD
-          const txToProcess = allocationMethod === 'proportional'
-            ? { ...t, transaction_date: t.date, value_usd: t.value }
-            : { ...t, transaction_date: t.date, value_usd: t.value, period_start: null, period_end: null }
+          const txToProcess = { ...t, transaction_date: t.date, value_usd: t.value }
 
           const yearAllocations = splitTransactionAcrossYears(txToProcess)
 
@@ -278,7 +439,7 @@ export function FinanceTypeFlowChart({
     }
 
     fetchData()
-  }, [effectiveDateRange, refreshKey, allocationMethod]) // Removed selectedTransactionTypes - filter client-side instead
+  }, [effectiveDateRange, refreshKey]) // Removed selectedTransactionTypes - filter client-side instead
 
   // Aggregate data - restructured to show flow types on X-axis
   const chartData = useMemo(() => {
@@ -710,48 +871,122 @@ export function FinanceTypeFlowChart({
     )
   }
 
-  // Get available flow types for dropdown (exclude already selected)
-  const availableFlowTypes = allFlowTypes.filter(ft => !selectedFlowTypes.includes(ft.code))
-
   return (
     <Card className="bg-white border-slate-200">
-      <CardHeader>
-        <div className="flex flex-col gap-4">
-          {/* Title and Description */}
-          <div>
-            <CardTitle className="text-lg font-semibold text-slate-900">
-              Financial Flows by Finance Type
-            </CardTitle>
-            <CardDescription>
-              {timeMode === 'cumulative' ? 'Cumulative' : 'Period-by-period'} tracking of how finance types (grants, loans, debt relief, etc.) contribute to flows across ODA, OOF, and other categories
-            </CardDescription>
-          </div>
+      <CardHeader className="pb-2">
+        {/* Controls Row */}
+        <div className="flex items-start justify-between gap-2">
+          {/* Calendar & Year Selectors - Left Side */}
+          <div className="flex items-start gap-2">
+            {customYears.length > 0 && (
+              <>
+                {/* Calendar Type Selector */}
+                <div className="flex gap-1 border rounded-lg p-1 bg-white">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="sm" className="h-8 gap-1">
+                          {customYears.find(cy => cy.id === calendarType)?.name || 'Select calendar'}
+                          <svg className="h-4 w-4 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                          </svg>
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="start">
+                        {customYears.map(cy => (
+                          <DropdownMenuItem
+                            key={cy.id}
+                            className={calendarType === cy.id ? 'bg-slate-100 font-medium' : ''}
+                            onClick={() => setCalendarType(cy.id)}
+                          >
+                            {cy.name}
+                          </DropdownMenuItem>
+                        ))}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
 
-          {/* Controls Row */}
-          <div className="flex items-center justify-between gap-2 flex-wrap">
-            {/* Filters - Left Side */}
-            <div className="flex items-center gap-2 flex-wrap">
-              {/* Time Range Filter */}
-              <div className="w-[140px]">
-                <Select
-                  value={selectedTimeRange}
-                  onValueChange={(value) => setSelectedTimeRange(value as TimeRange)}
-                >
-                  <SelectTrigger className="h-9 bg-white">
-                    <SelectValue placeholder="Time Range" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {TIME_RANGE_OPTIONS.map((option) => (
-                      <SelectItem key={option.value} value={option.value}>
-                        {option.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+                  {/* Year Range Selector with Date Range below */}
+                  <div className="flex flex-col items-center gap-0.5">
+                    <div className="flex gap-1 border rounded-lg p-1 bg-white">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="sm" className="h-8 gap-1">
+                            <CalendarIcon className="h-4 w-4" />
+                            {selectedYears.length === 0
+                              ? 'Select years'
+                              : selectedYears.length === 1
+                                ? getYearLabel(selectedYears[0])
+                                : `${getYearLabel(Math.min(...selectedYears))} - ${getYearLabel(Math.max(...selectedYears))}`}
+                            <svg className="h-4 w-4 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                            </svg>
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="start" className="p-3 w-auto">
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-xs font-medium text-slate-700">Select Year Range</span>
+                            <div className="flex gap-1">
+                              <button
+                                onClick={selectAllYears}
+                                className="text-xs text-slate-500 hover:text-slate-700 px-2 py-0.5 hover:bg-slate-100 rounded"
+                              >
+                                All
+                              </button>
+                              <button
+                                onClick={selectDataRange}
+                                className="text-xs text-slate-500 hover:text-slate-700 px-2 py-0.5 hover:bg-slate-100 rounded"
+                              >
+                                Data
+                              </button>
+                            </div>
+                          </div>
+                          <div className="grid grid-cols-3 gap-1">
+                            {AVAILABLE_YEARS.map((year) => {
+                              const isStartOrEnd = selectedYears.length > 0 &&
+                                (year === Math.min(...selectedYears) || year === Math.max(...selectedYears))
+                              const inRange = isYearInRange(year)
 
+                              return (
+                                <button
+                                  key={year}
+                                  onClick={(e) => handleYearClick(year, e.shiftKey)}
+                                  className={`
+                                    px-2 py-1.5 text-xs font-medium rounded transition-colors whitespace-nowrap
+                                    ${isStartOrEnd
+                                      ? 'bg-primary text-primary-foreground'
+                                      : inRange
+                                        ? 'bg-primary/20 text-primary'
+                                        : 'text-slate-600 hover:bg-slate-100'
+                                    }
+                                  `}
+                                  title="Click to select start, then click another to select end"
+                                >
+                                  {getYearLabel(year)}
+                                </button>
+                              )
+                            })}
+                          </div>
+                          <p className="text-[10px] text-slate-400 mt-2 text-center">
+                            Click start year, then click end year
+                          </p>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+                    {/* Date Range Indicator */}
+                    {localDateRange?.from && localDateRange?.to && (
+                      <span className="text-[10px] text-slate-500">
+                        {format(localDateRange.from, 'MMM d, yyyy')} – {format(localDateRange.to, 'MMM d, yyyy')}
+                      </span>
+                    )}
+                  </div>
+                </>
+              )}
+            </div>
+
+            {/* All Other Controls - Right Side */}
+            <div className="flex items-center gap-2">
               {/* Flow Type Multi-Select */}
-              <div className="w-[240px]">
+              <div className="w-[200px]">
                 <MultiSelect
                   options={allFlowTypes.map(ft => ({
                     label: `${ft.code} - ${ft.name}`,
@@ -776,7 +1011,7 @@ export function FinanceTypeFlowChart({
               </div>
 
               {/* Finance Type Multi-Select */}
-              <div className="w-[280px]">
+              <div className="w-[220px]">
                 <MultiSelect
                   options={allFinanceTypes.map(ft => ({
                     label: `${ft.code} - ${ft.name}`,
@@ -801,7 +1036,7 @@ export function FinanceTypeFlowChart({
               </div>
 
               {/* Transaction Type Multi-Select */}
-              <div className="w-[240px]">
+              <div className="w-[200px]">
                 <MultiSelect
                   options={transactionTypes.map(tt => ({
                     label: `${tt.code} - ${tt.name}`,
@@ -827,10 +1062,6 @@ export function FinanceTypeFlowChart({
                   )}
                 />
               </div>
-            </div>
-
-            {/* View Controls and Export - Right Side */}
-            <div className="flex items-center gap-2 flex-wrap">
               {/* Time Mode Toggle */}
               <div className="flex gap-1 border rounded-lg p-1 bg-white">
                 <Button
@@ -849,27 +1080,6 @@ export function FinanceTypeFlowChart({
                 >
                   Cumulative
                 </Button>
-              </div>
-
-              {/* Allocation Method Toggle */}
-              <div className="flex items-center gap-2">
-                <div className="flex items-center gap-2 border rounded-lg px-3 py-1.5 bg-white">
-                  <Label htmlFor="allocation-toggle-finance-type" className="text-sm text-slate-700 cursor-pointer">
-                    {allocationMethod === 'proportional' ? 'Proportional' : 'Period Start'}
-                  </Label>
-                  <Switch
-                    id="allocation-toggle-finance-type"
-                    checked={allocationMethod === 'proportional'}
-                    onCheckedChange={(checked) => setAllocationMethod(checked ? 'proportional' : 'period-start')}
-                  />
-                </div>
-                <HelpTextTooltip 
-                  content={
-                    allocationMethod === 'proportional'
-                      ? "Allocates budget and planned disbursement amounts across their time periods. For example, a $100,000 budget from July 2024 to June 2025 will be split proportionally across those 12 months."
-                      : "Shows the full budget or planned disbursement amount at its start date. Useful for seeing when amounts were originally planned or committed."
-                  }
-                />
               </div>
 
               {/* View Mode Toggle */}
@@ -912,22 +1122,35 @@ export function FinanceTypeFlowChart({
                 </Button>
               </div>
 
-              {/* Export Buttons */}
-              <div className="flex gap-1">
+              {/* Reset Button */}
+              <div className="flex gap-1 border rounded-lg p-1 bg-white">
                 <Button
-                  variant="outline"
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 px-2"
+                  onClick={handleReset}
+                  title="Reset to defaults"
+                >
+                  <RotateCcw className="h-4 w-4" />
+                </Button>
+              </div>
+
+              {/* Export Buttons */}
+              <div className="flex gap-1 border rounded-lg p-1 bg-white">
+                <Button
+                  variant="ghost"
                   size="sm"
                   onClick={handleExportCSV}
-                  className="h-8 w-8 p-0"
+                  className="h-8 px-2"
                   title="Export to CSV"
                 >
                   <Download className="h-4 w-4" />
                 </Button>
                 <Button
-                  variant="outline"
+                  variant="ghost"
                   size="sm"
                   onClick={handleExportJPG}
-                  className="h-8 w-8 p-0"
+                  className="h-8 px-2"
                   title="Export to JPG"
                 >
                   <Image className="h-4 w-4" />
@@ -935,7 +1158,6 @@ export function FinanceTypeFlowChart({
               </div>
             </div>
           </div>
-        </div>
       </CardHeader>
       <CardContent id="finance-type-flow-chart">
         {chartData.length > 0 ? (
@@ -946,7 +1168,7 @@ export function FinanceTypeFlowChart({
                 <BarChart
                   data={chartData}
                   margin={{ top: 20, right: 30, left: 20, bottom: 60 }}
-                  key={`bar-${selectedFlowTypes.join('-')}-${selectedFinanceTypes.join('-')}-${allocationMethod}`}
+                  key={`bar-${selectedFlowTypes.join('-')}-${selectedFinanceTypes.join('-')}`}
                 >
                   <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e1" opacity={0.5} />
                   <XAxis
@@ -1002,7 +1224,7 @@ export function FinanceTypeFlowChart({
                 <LineChart
                   data={chartData}
                   margin={{ top: 20, right: 30, left: 20, bottom: 60 }}
-                  key={`line-${selectedFlowTypes.join('-')}-${selectedFinanceTypes.join('-')}-${allocationMethod}`}
+                  key={`line-${selectedFlowTypes.join('-')}-${selectedFinanceTypes.join('-')}`}
                 >
                   <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e1" opacity={0.5} />
                   <XAxis
@@ -1064,7 +1286,7 @@ export function FinanceTypeFlowChart({
                 <AreaChart
                   data={chartData}
                   margin={{ top: 20, right: 30, left: 20, bottom: 60 }}
-                  key={`area-${selectedFlowTypes.join('-')}-${selectedFinanceTypes.join('-')}-${allocationMethod}`}
+                  key={`area-${selectedFlowTypes.join('-')}-${selectedFinanceTypes.join('-')}`}
                 >
                   <defs>
                     {selectedFlowTypes.map(flowType => {
@@ -1227,6 +1449,19 @@ export function FinanceTypeFlowChart({
           </div>
         )}
       </CardContent>
+
+      {/* Chart Description */}
+      <div className="border-t border-slate-200 px-6 py-4 bg-white">
+        <p className="text-sm text-slate-600">
+          This chart visualizes financial flows by breaking down transactions according to their flow type (e.g., ODA, OOF, private flows)
+          and finance type (e.g., grants, loans, equity investments). Understanding these classifications is essential for analyzing
+          the nature and terms of development assistance—whether funds are concessional or non-concessional, repayable or not,
+          and how they align with international reporting standards like the OECD DAC. Use the filters to compare different
+          transaction types (commitments, disbursements, expenditures) across time periods, helping identify trends in how
+          aid is structured and delivered. The periodic view shows year-by-year flows, while cumulative view reveals the
+          total accumulated value over time.
+        </p>
+      </div>
 
       {/* Selected Filters Display */}
       {(selectedTransactionTypes.length > 0 || selectedFlowTypes.length > 0 || selectedFinanceTypes.length > 0) && (

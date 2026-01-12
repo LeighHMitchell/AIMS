@@ -1329,22 +1329,26 @@ export default function PlannedDisbursementsTab({
 
   const getOrganizationAcronym = (orgId?: string, orgName?: string) => {
     if (!orgId && !orgName) return '-';
-    
+
     // Try to find organization by ID to get acronym
     if (orgId) {
       const org = organizations.find(o => o.id === orgId);
       if (org) {
-        // Prefer acronym, but fall back to name if no acronym
-        return org.acronym || org.name || orgName || '-';
+        // Prefer acronym, but fall back to generated acronym from name
+        if (org.acronym) return org.acronym;
+        if (org.name) {
+          // Generate acronym from name (first letter of each word)
+          return org.name.split(/\s+/).map(word => word[0]).join('').toUpperCase().slice(0, 6);
+        }
       }
     }
-    
-    // If no org found by ID, just use the name directly
-    // Don't generate acronyms - show the full name
+
+    // If no org found by ID, generate acronym from orgName
     if (orgName) {
-      return orgName;
+      // Generate acronym from name (first letter of each word, max 6 chars)
+      return orgName.split(/\s+/).map(word => word[0]).join('').toUpperCase().slice(0, 6);
     }
-    
+
     return '-';
   };
 
@@ -1548,15 +1552,12 @@ export default function PlannedDisbursementsTab({
 
           {/* Planned Disbursements Table */}
           <Card data-planned-tab className="border-0 shadow-none">
-        <CardHeader>
+        <CardHeader className={hideSummaryCards ? "hidden" : ""}>
           <div className="flex items-center justify-between">
-            {!hideSummaryCards && (
-              <div>
-                <CardTitle>Planned Disbursements</CardTitle>
-                <CardDescription>Scheduled future disbursements</CardDescription>
-              </div>
-            )}
-            {hideSummaryCards && <div />}
+            <div>
+              <CardTitle>Planned Disbursements</CardTitle>
+              <CardDescription>Scheduled future disbursements</CardDescription>
+            </div>
             <div className={`flex items-center gap-2 ${hideSummaryCards ? 'hidden' : ''}`}>
               {!readOnly && (
                 <DropdownMenu>
@@ -1743,7 +1744,7 @@ export default function PlannedDisbursementsTab({
             </div>
           )}
         </CardHeader>
-        <CardContent>
+        <CardContent className={hideSummaryCards ? "p-0" : ""}>
 
           {/* Table */}
           {disbursements.length === 0 ? (
@@ -1756,13 +1757,13 @@ export default function PlannedDisbursementsTab({
             </div>
           ) : (
             <>
-              <div className="rounded-md border">
-                <Table aria-label="Planned disbursements table" className="table-fixed">
+              <div className={hideSummaryCards ? "w-full" : "rounded-md border w-full"}>
+                <Table aria-label="Planned disbursements table" className="w-full">
                   <TableHeader className="bg-muted/50 border-b border-border/70">
                     <TableRow>
-                      <TableHead className="py-3 px-2" style={{ width: '40px' }}></TableHead>
+                      <TableHead className="py-3 px-2 w-10"></TableHead>
                       {!readOnly && (
-                        <TableHead className="text-center" style={{ width: '50px' }}>
+                        <TableHead className="text-center w-12">
                           <Checkbox
                             checked={selectedDisbursementIds.size === sortedFilteredDisbursements.length && sortedFilteredDisbursements.length > 0}
                             onCheckedChange={handleSelectAll}
@@ -1772,7 +1773,7 @@ export default function PlannedDisbursementsTab({
                         </TableHead>
                       )}
                       <TableHead className="text-sm font-medium text-foreground/90 py-3 px-4">
-                        <div 
+                        <div
                           className="flex items-center gap-1 cursor-pointer hover:bg-muted/30 transition-colors"
                           onClick={() => handleSort('period')}
                         >
@@ -1785,7 +1786,7 @@ export default function PlannedDisbursementsTab({
                         </div>
                       </TableHead>
                       <TableHead className="text-sm font-medium text-foreground/90 py-3 px-4">
-                        <div 
+                        <div
                           className="flex items-center gap-1 cursor-pointer hover:bg-muted/30 transition-colors"
                           onClick={() => handleSort('status')}
                         >
@@ -1797,8 +1798,8 @@ export default function PlannedDisbursementsTab({
                           )}
                         </div>
                       </TableHead>
-                      <TableHead className="text-sm font-medium text-foreground/90 py-3 px-4" style={{ maxWidth: '300px' }}>
-                        <div 
+                      <TableHead className="text-sm font-medium text-foreground/90 py-3 px-4">
+                        <div
                           className="flex items-center gap-1 cursor-pointer hover:bg-muted/30 transition-colors"
                           onClick={() => handleSort('provider')}
                         >
@@ -1810,8 +1811,8 @@ export default function PlannedDisbursementsTab({
                           )}
                         </div>
                       </TableHead>
-                      <TableHead className="text-sm font-medium text-foreground/90 py-3 px-4 text-right" style={{ width: '160px' }}>
-                        <div 
+                      <TableHead className="text-sm font-medium text-foreground/90 py-3 px-4 text-right">
+                        <div
                           className="flex items-center gap-1 justify-end cursor-pointer hover:bg-muted/30 transition-colors"
                           onClick={() => handleSort('amount')}
                         >
@@ -1823,8 +1824,8 @@ export default function PlannedDisbursementsTab({
                           )}
                         </div>
                       </TableHead>
-                      <TableHead className="text-sm font-medium text-foreground/90 py-3 px-4" style={{ width: '140px' }}>
-                        <div 
+                      <TableHead className="text-sm font-medium text-foreground/90 py-3 px-4">
+                        <div
                           className="flex items-center gap-1 cursor-pointer hover:bg-muted/30 transition-colors"
                           onClick={() => handleSort('value_date')}
                         >
@@ -1836,8 +1837,8 @@ export default function PlannedDisbursementsTab({
                           )}
                         </div>
                       </TableHead>
-                      <TableHead className="text-sm font-medium text-foreground/90 py-3 px-4 text-right" style={{ width: '150px' }}>
-                        <div 
+                      <TableHead className="text-sm font-medium text-foreground/90 py-3 px-4 text-right">
+                        <div
                           className="flex items-center gap-1 justify-end cursor-pointer hover:bg-muted/30 transition-colors"
                           onClick={() => handleSort('usd_value')}
                         >
@@ -1850,7 +1851,7 @@ export default function PlannedDisbursementsTab({
                         </div>
                       </TableHead>
                       {!readOnly && (
-                        <TableHead className="text-sm font-medium text-foreground/90 py-3 px-4 text-right" style={{ width: '80px' }}>
+                        <TableHead className="text-sm font-medium text-foreground/90 py-3 px-4 text-right w-20">
                           Actions
                         </TableHead>
                       )}
@@ -1907,11 +1908,12 @@ export default function PlannedDisbursementsTab({
                             </span>
                           </TableCell>
 
-                          {/* Status */}
-                          <TableCell className="py-3 px-4 whitespace-nowrap">
-                            <span className={`rounded-md px-2 py-0.5 text-xs ${(disbursement.status || 'original') !== 'original' ? 'bg-muted/60' : ''}`}>
-                                {(disbursement.status || 'original').charAt(0).toUpperCase() + (disbursement.status || 'original').slice(1)}
-                              </span>
+                          {/* Status/Type */}
+                          <TableCell className="py-3 px-4 whitespace-nowrap text-sm">
+                            <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded mr-1.5">
+                              {(disbursement.status || 'original') === 'original' ? '1' : '2'}
+                            </code>
+                            {(disbursement.status || 'original') === 'original' ? 'Original' : 'Revised'}
                           </TableCell>
 
                           {/* Provider → Receiver */}

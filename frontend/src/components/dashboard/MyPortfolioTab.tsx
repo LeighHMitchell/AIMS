@@ -23,7 +23,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Skeleton } from "@/components/ui/skeleton"
 import Link from "next/link"
 import { SectorDistributionChart } from "@/components/charts/SectorDistributionChart"
-import { ActivityTimelineHeatmap } from "@/components/charts/ActivityTimelineHeatmap"
+import { ActivityCalendarHeatmap } from "@/components/charts/ActivityCalendarHeatmap"
 
 interface MyPortfolioTabProps {
   userId: string
@@ -239,14 +239,14 @@ export function MyPortfolioTab({ userId, organizationId }: MyPortfolioTabProps) 
         <TabsContent value="timeline" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>Activity Timeline</CardTitle>
-              <CardDescription>Coverage of your activities over time</CardDescription>
+              <CardTitle>System Activity</CardTitle>
+              <CardDescription>Your contributions: activities created, transactions added, budgets updated, and more</CardDescription>
             </CardHeader>
-            <CardContent className="h-96 overflow-y-auto">
+            <CardContent>
               {isLoading ? (
-                <Skeleton className="w-full h-full" />
+                <Skeleton className="w-full h-96" />
               ) : (
-                <ActivityTimelineHeatmap activities={data.activityTimeline} />
+                <ActivityCalendarHeatmap events={data.userActivityEvents || []} />
               )}
             </CardContent>
           </Card>

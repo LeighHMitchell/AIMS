@@ -150,6 +150,30 @@ export function OrganizationEditor({
     return mapping[section] || 'basic'
   }
 
+  // Section order for navigation
+  const sectionOrder = [
+    'general',
+    'branding',
+    'contact',
+    'aliases',
+    'merge',
+    'funding-envelope',
+    'iati-import',
+    'budgets',
+    'documents',
+    'iati-prefs'
+  ]
+
+  // Navigate to next section
+  const handleNextSection = useCallback(() => {
+    const currentIndex = sectionOrder.indexOf(activeSection)
+    if (currentIndex < sectionOrder.length - 1) {
+      const nextSection = sectionOrder[currentIndex + 1]
+      setActiveSection(nextSection)
+      router.replace(`/organizations/${organizationId}/edit?section=${nextSection}`, { scroll: false })
+    }
+  }, [activeSection, organizationId, router])
+
   // Render section content
   const renderSectionContent = () => {
     const currentOrgId = organizationId || organization?.id
@@ -175,6 +199,7 @@ export function OrganizationEditor({
           }}
           initialTab={getFormTab(activeSection)}
           externalSaving={saving}
+          onNextSection={handleNextSection}
         />
       )
     }

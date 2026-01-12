@@ -188,8 +188,38 @@ export async function getTransactionUSDValue(transaction: any): Promise<number> 
 }
 
 /**
+ * Synchronous version of getTransactionUSDValue for use in render contexts.
+ *
+ * This function:
+ * - Only uses stored USD values (no real-time conversion)
+ * - Falls back to original value only if currency is USD
+ * - Returns 0 for non-USD transactions without stored USD conversion
+ *
+ * @param transaction - Transaction object with value, currency, value_usd, etc.
+ * @returns number - USD value or 0 if no USD value available
+ */
+export function getTransactionUSDValueSync(transaction: any): number {
+  // Check stored USD values (explicitly check for null/undefined)
+  if (transaction.value_usd != null && !isNaN(Number(transaction.value_usd))) {
+    return Number(transaction.value_usd);
+  }
+  if (transaction.value_USD != null && !isNaN(Number(transaction.value_USD))) {
+    return Number(transaction.value_USD);
+  }
+  if (transaction.usd_value != null && !isNaN(Number(transaction.usd_value))) {
+    return Number(transaction.usd_value);
+  }
+  // Only use original value if currency is USD
+  if (transaction.currency === 'USD' && transaction.value != null && Number(transaction.value) > 0) {
+    return Number(transaction.value);
+  }
+  // Return 0 for non-USD transactions without USD conversion (never mix currencies)
+  return 0;
+}
+
+/**
  * Normalize transaction type to string for consistent comparison
- * 
+ *
  * @param transactionType - Transaction type (can be string, number, or undefined)
  * @returns Normalized transaction type as string
  */

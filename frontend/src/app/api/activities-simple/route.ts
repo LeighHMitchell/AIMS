@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase';
+import { calculateModality } from '@/utils/modality-calculation';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -75,6 +76,7 @@ export async function GET(request: NextRequest) {
         created_by,
         capital_spend_percentage,
         likes_count,
+        humanitarian,
         ${includeImages ? 'banner, icon,' : ''}
         activity_sdg_mappings (
           id,
@@ -118,42 +120,55 @@ export async function GET(request: NextRequest) {
 
     // Fetch budget data and transaction summaries for each activity
     const activityIds = data?.map((a: any) => a.id) || [];
-    
+
     let budgetMap = new Map();
     let summariesMap = new Map();
-    
-    if (activityIds.length > 0) {
-      // Fetch budget totals
-      const { data: budgets, error: budgetError } = await supabase
-        .from('activity_budgets')
-        .select('activity_id, value, currency, usd_value')
-        .in('activity_id', activityIds);
+    let locationsMap = new Map<string, { site_locations: any[], broad_coverage_locations: any[] }>();
+    let subnationalBreakdownsMap = new Map<string, any[]>();
 
-      if (budgetError) {
-        console.error('[AIMS-SIMPLE] Budget fetch error:', budgetError);
-      } else if (budgets) {
-        console.log('[AIMS-SIMPLE] Budget data fetched:', budgets.length, 'entries');
-        budgets.forEach((b: any) => {
+    if (activityIds.length > 0) {
+      // Run all 4 queries in PARALLEL for better performance
+      const startTime = Date.now();
+
+      const [budgetResult, txResult, locationsResult, breakdownsResult] = await Promise.all([
+        // Query 1: Budget totals
+        supabase
+          .from('activity_budgets')
+          .select('activity_id, usd_value')
+          .in('activity_id', activityIds),
+
+        // Query 2: Transaction summaries
+        supabase
+          .from('transactions')
+          .select('activity_id, transaction_type, value_usd')
+          .in('activity_id', activityIds),
+
+        // Query 3: Locations
+        supabase
+          .from('activity_locations')
+          .select('id, activity_id, location_type, location_name, description, latitude, longitude, admin_unit, state_region_name, state_region_code, percentage_allocation')
+          .in('activity_id', activityIds),
+
+        // Query 4: Subnational breakdowns
+        supabase
+          .from('subnational_breakdowns')
+          .select('id, activity_id, region_name, percentage, is_nationwide')
+          .in('activity_id', activityIds)
+      ]);
+
+      console.log(`[AIMS-SIMPLE] Parallel queries completed in ${Date.now() - startTime}ms`);
+
+      // Process budget results
+      if (!budgetResult.error && budgetResult.data) {
+        budgetResult.data.forEach((b: any) => {
           const current = budgetMap.get(b.activity_id) || 0;
-          // Use USD converted value for aggregation
-          const budgetValue = b.usd_value || 0;
-          budgetMap.set(b.activity_id, current + budgetValue);
+          budgetMap.set(b.activity_id, current + (b.usd_value || 0));
         });
-        console.log('[AIMS-SIMPLE] Budget map:', Object.fromEntries(budgetMap));
-      } else {
-        console.log('[AIMS-SIMPLE] No budget data found');
       }
 
-      // Fetch transaction summaries
-      const { data: transactions, error: txError } = await supabase
-        .from('transactions')
-        .select('activity_id, transaction_type, status, value, value_usd')
-        .in('activity_id', activityIds);
-        // Remove status filter temporarily to see all transactions
-      
-      if (!txError && transactions) {
-        // Group by activity_id and calculate summaries
-        transactions.forEach((t: any) => {
+      // Process transaction results
+      if (!txResult.error && txResult.data) {
+        txResult.data.forEach((t: any) => {
           const current = summariesMap.get(t.activity_id) || {
             commitments: 0,
             disbursements: 0,
@@ -162,12 +177,10 @@ export async function GET(request: NextRequest) {
             totalTransactions: 0,
             totalDisbursed: 0
           };
-          
+
           current.totalTransactions++;
-          
-          // Use USD converted value for aggregation
           const transactionValue = t.value_usd || 0;
-          
+
           switch(t.transaction_type) {
             case '2':
               current.commitments += transactionValue;
@@ -185,29 +198,16 @@ export async function GET(request: NextRequest) {
               current.inflows += transactionValue;
               break;
           }
-          
+
           summariesMap.set(t.activity_id, current);
         });
       }
-    }
 
-    // Fetch locations for all activities
-    let locationsMap = new Map<string, { site_locations: any[], broad_coverage_locations: any[] }>();
-    
-    if (activityIds.length > 0) {
-      const { data: locations, error: locationsError } = await supabase
-        .from('activity_locations')
-        .select('id, activity_id, location_type, location_name, description, latitude, longitude, admin_unit, state_region_name, state_region_code, percentage_allocation')
-        .in('activity_id', activityIds);
-
-      if (locationsError) {
-        console.error('[AIMS-SIMPLE] Locations fetch error:', locationsError);
-      } else if (locations) {
-        console.log('[AIMS-SIMPLE] Locations data fetched:', locations.length, 'entries');
-        
-        locations.forEach((loc: any) => {
+      // Process locations results
+      if (!locationsResult.error && locationsResult.data) {
+        locationsResult.data.forEach((loc: any) => {
           const current = locationsMap.get(loc.activity_id) || { site_locations: [], broad_coverage_locations: [] };
-          
+
           if (loc.location_type === 'site') {
             current.site_locations.push({
               id: loc.id,
@@ -216,7 +216,6 @@ export async function GET(request: NextRequest) {
               lat: loc.latitude,
               lng: loc.longitude
             });
-            // Also add to broad_coverage if it has a state_region_name (for location bar aggregation)
             if (loc.state_region_name) {
               current.broad_coverage_locations.push({
                 id: loc.id,
@@ -237,24 +236,14 @@ export async function GET(request: NextRequest) {
               state_region_code: loc.state_region_code
             });
           }
-          
+
           locationsMap.set(loc.activity_id, current);
         });
       }
-    }
 
-    // Fetch subnational breakdowns for all activities (for Locations % column)
-    let subnationalBreakdownsMap = new Map<string, any[]>();
-    if (activityIds.length > 0) {
-      const { data: breakdowns, error: breakdownsError } = await supabase
-        .from('subnational_breakdowns')
-        .select('id, activity_id, region_name, percentage, is_nationwide')
-        .in('activity_id', activityIds);
-
-      if (breakdownsError) {
-        console.error('[AIMS-SIMPLE] Subnational breakdowns fetch error:', breakdownsError);
-      } else if (breakdowns) {
-        breakdowns.forEach((b: any) => {
+      // Process subnational breakdowns results
+      if (!breakdownsResult.error && breakdownsResult.data) {
+        breakdownsResult.data.forEach((b: any) => {
           if (!subnationalBreakdownsMap.has(b.activity_id)) {
             subnationalBreakdownsMap.set(b.activity_id, []);
           }
@@ -311,8 +300,9 @@ export async function GET(request: NextRequest) {
       default_tied_status: activity.default_tied_status,
       default_finance_type: activity.default_finance_type,
       default_currency: activity.default_currency,
-      default_aid_modality: activity.default_modality, // Map from correct DB column
-      default_aid_modality_override: activity.default_modality_override, // Map from correct DB column
+      // Calculate modality on-the-fly if not stored (for backwards compatibility with older activities)
+      default_aid_modality: activity.default_modality || calculateModality(activity.default_aid_type || '', activity.default_finance_type || ''),
+      default_aid_modality_override: activity.default_modality_override,
       // Add IATI sync fields (set to defaults)
       autoSync: false,
       lastSyncTime: null,
@@ -355,6 +345,7 @@ export async function GET(request: NextRequest) {
       totalBudget: totalBudget,
       totalDisbursed: summary.totalDisbursed,
       capitalSpendPercentage: activity.capital_spend_percentage,
+      humanitarian: activity.humanitarian,
       // Add empty arrays for organizations
       funders: [],
       implementers: [],

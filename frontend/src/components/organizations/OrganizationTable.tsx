@@ -3,34 +3,17 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import Flag from "react-world-flags";
 import {
-  Eye,
-  Edit2,
-  Trash2,
-  MoreVertical,
   Building2,
-  DollarSign,
   Copy,
-  FileText,
-  FileSpreadsheet,
 } from "lucide-react";
 import { getCountryCode } from "@/lib/country-utils";
-import { Button } from "@/components/ui/button";
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import {
-  DropdownMenu,
-  DropdownMenuTrigger,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuSub,
-  DropdownMenuSubContent,
-  DropdownMenuSubTrigger,
-} from "@/components/ui/dropdown-menu";
+import { OrganizationActionMenu } from "@/components/organizations/OrganizationActionMenu";
 import {
   Table,
   TableBody,
@@ -397,86 +380,16 @@ export const OrganizationTable: React.FC<OrganizationTableProps> = ({
                       {formatDate(org.created_at)}
                     </span>
                   </TableCell>
-                  <TableCell className="px-4 py-3 text-sm text-foreground text-right">
+                  <TableCell className="px-4 py-3 text-sm text-foreground text-right" onClick={(e) => e.stopPropagation()}>
                     <div className="flex items-center justify-end">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button
-                            variant="outline"
-                            size="icon"
-                            className="h-8 w-8"
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            <MoreVertical className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-56">
-                          <DropdownMenuItem
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              router.push(`/organizations/${org.id}`);
-                            }}
-                            className="cursor-pointer"
-                          >
-                            <Eye className="mr-2 h-4 w-4" />
-                            View
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              onEdit(org);
-                            }}
-                            className="cursor-pointer"
-                          >
-                            <Edit2 className="mr-2 h-4 w-4" />
-                            Edit
-                          </DropdownMenuItem>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuSub>
-                            <DropdownMenuSubTrigger>
-                              <FileText className="mr-2 h-4 w-4" />
-                              Export
-                            </DropdownMenuSubTrigger>
-                            <DropdownMenuSubContent className="w-48">
-                              {onExportPDF && (
-                                <DropdownMenuItem
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    onExportPDF(org.id);
-                                  }}
-                                  className="cursor-pointer"
-                                >
-                                  <FileText className="mr-2 h-4 w-4" />
-                                  Export as PDF
-                                </DropdownMenuItem>
-                              )}
-                              {onExportExcel && (
-                                <DropdownMenuItem
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    onExportExcel(org.id);
-                                  }}
-                                  className="cursor-pointer"
-                                >
-                                  <FileSpreadsheet className="mr-2 h-4 w-4" />
-                                  Export as Excel
-                                </DropdownMenuItem>
-                              )}
-                            </DropdownMenuSubContent>
-                          </DropdownMenuSub>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              onDelete(org);
-                            }}
-                            className="cursor-pointer text-red-600 hover:text-red-700 hover:bg-red-50"
-                          >
-                            <Trash2 className="mr-2 h-4 w-4" />
-                            Delete
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                      <OrganizationActionMenu
+                        organizationId={org.id}
+                        onView={() => router.push(`/organizations/${org.id}`)}
+                        onEdit={() => onEdit(org)}
+                        onExportPDF={onExportPDF ? () => onExportPDF(org.id) : undefined}
+                        onExportExcel={onExportExcel ? () => onExportExcel(org.id) : undefined}
+                        onDelete={() => onDelete(org)}
+                      />
                     </div>
                   </TableCell>
                 </TableRow>

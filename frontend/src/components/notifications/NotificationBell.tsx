@@ -10,7 +10,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Bell, Check, HelpCircle, MessageSquare, ExternalLink, Calendar } from 'lucide-react';
+import { Bell, Check, HelpCircle, MessageSquare, ExternalLink, Calendar, ClipboardList, AlertTriangle, CheckCircle2, ArrowRightLeft, Share2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
 import { formatDistanceToNow } from 'date-fns';
@@ -191,6 +191,19 @@ export function NotificationBell({ userId, onOpen }: NotificationBellProps) {
         return <Calendar className="h-4 w-4 text-gray-500" />;
       case 'activity_comment':
         return <MessageSquare className="h-4 w-4 text-blue-500" />;
+      // Task notifications
+      case 'task_assigned':
+        return <ClipboardList className="h-4 w-4 text-blue-500" />;
+      case 'task_deadline_reminder':
+        return <AlertTriangle className="h-4 w-4 text-orange-500" />;
+      case 'task_completed':
+        return <CheckCircle2 className="h-4 w-4 text-green-500" />;
+      case 'task_declined':
+        return <ClipboardList className="h-4 w-4 text-gray-500" />;
+      case 'task_reassigned':
+        return <ArrowRightLeft className="h-4 w-4 text-purple-500" />;
+      case 'task_shared':
+        return <Share2 className="h-4 w-4 text-indigo-500" />;
       default:
         return <Bell className="h-4 w-4 text-gray-500" />;
     }

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase';
 import { resolveCurrencySync, resolveValueDate } from '@/lib/currency-helpers';
+import { calculateModality } from '@/utils/modality-calculation';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -1187,9 +1188,10 @@ export async function GET(
       flowType: activity.default_flow_type, // (optional: keep for backward compatibility)
       activityScope: activity.activity_scope,
       language: activity.language,
-      defaultAidModality: activity.default_aid_modality,
-      default_aid_modality: activity.default_aid_modality,
-      defaultAidModalityOverride: activity.default_aid_modality_override,
+      // Check both column names (due to duplicate migrations) and calculate on-the-fly if neither exists
+      defaultAidModality: activity.default_aid_modality || activity.default_modality || calculateModality(activity.default_aid_type || '', activity.default_finance_type || ''),
+      default_aid_modality: activity.default_aid_modality || activity.default_modality || calculateModality(activity.default_aid_type || '', activity.default_finance_type || ''),
+      defaultAidModalityOverride: activity.default_aid_modality_override || activity.default_modality_override,
       defaultDisbursementChannel: activity.default_disbursement_channel,
       banner: activity.banner,
       bannerPosition: activity.banner_position ?? 50,

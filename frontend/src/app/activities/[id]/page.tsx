@@ -70,7 +70,8 @@ import {
   LayoutGrid,
   Bookmark,
   BookmarkCheck,
-  Layers
+  Layers,
+  Scale
 } from "lucide-react"
 import { toast } from "sonner"
 import { Transaction } from "@/types/transaction"
@@ -89,7 +90,7 @@ import {
 } from "@/components/ui/table"
 import { useUser } from "@/hooks/useUser"
 import { useBookmarks } from "@/hooks/use-bookmarks"
-import { fetchActivityWithCache, invalidateActivityCache, forceActivityCacheRefresh } from '@/lib/activity-cache'
+import { fetchActivityWithCache, invalidateActivityCache } from '@/lib/activity-cache'
 import { CommentsDrawer } from "@/components/activities/CommentsDrawer"
 import { TRANSACTION_TYPE_LABELS } from "@/types/transaction"
 import TransactionTab from "@/components/activities/TransactionTab"
@@ -155,7 +156,7 @@ import { Label } from "@/components/ui/label"
 import { HelpTextTooltip } from "@/components/ui/help-text-tooltip"
 import { CodelistTooltip } from "@/components/ui/codelist-tooltip"
 import { splitBudgetAcrossYears, splitPlannedDisbursementAcrossYears } from "@/utils/year-allocation"
-import { getTransactionUSDValue, normalizeTransactionType } from "@/lib/transaction-usd-helper"
+import { getTransactionUSDValue, getTransactionUSDValueSync, normalizeTransactionType } from "@/lib/transaction-usd-helper"
 
 // Hierarchy levels mapping
 type HierarchyOption = {
@@ -377,26 +378,6 @@ function formatCurrencyShort(value: number): string {
   return `${sign}$${value.toFixed(2)}`;
 }
 
-// Helper to safely extract USD value from transaction without mixing currencies
-function getTransactionUSDValueSync(t: any): number {
-  // Check stored USD values (explicitly check for null/undefined)
-  if (t.value_usd != null && !isNaN(Number(t.value_usd))) {
-    return Number(t.value_usd);
-  }
-  if (t.value_USD != null && !isNaN(Number(t.value_USD))) {
-    return Number(t.value_USD);
-  }
-  if (t.usd_value != null && !isNaN(Number(t.usd_value))) {
-    return Number(t.usd_value);
-  }
-  // Only use original value if currency is USD
-  if (t.currency === 'USD' && t.value != null && Number(t.value) > 0) {
-    return Number(t.value);
-  }
-  // Return 0 for non-USD transactions without USD conversion (never mix currencies)
-  return 0;
-}
-
 // Helper function to get activity scope label from code
 function getActivityScopeLabel(code: string | undefined): string | null {
   if (!code) return null;
@@ -600,22 +581,52 @@ export default function ActivityDetailPage() {
   const [showAllAccountablePartners, setShowAllAccountablePartners] = useState(false)
   const [showAllSidebarPartners, setShowAllSidebarPartners] = useState(false)
 
+  // Track which tabs have loaded their data (for lazy loading)
+  const [loadedTabs, setLoadedTabs] = useState<Set<string>>(new Set(['finances']))
+  const [loadingTabs, setLoadingTabs] = useState<Set<string>>(new Set())
+
+  // Initial data fetch - only essential data for sidebar and default tab
   useEffect(() => {
     if (params?.id) {
-      // Force refresh cache to ensure we get the latest data
-      forceActivityCacheRefresh(Array.isArray(params.id) ? params.id[0] : params.id);
       fetchActivity(true)
       loadAllPartners();
-      // fetchBudgets() removed - ActivityBudgetsTab handles fetching via onBudgetsChange callback
       fetchParticipatingOrgs();
       fetchPlannedDisbursements();
-      fetchDocuments();
-      fetchActivityLocations();
-      fetchSubnationalBreakdowns();
       fetchCountriesRegions();
       fetchGovernmentEndorsement();
     }
   }, [params?.id])
+
+  // Lazy load tab-specific data when tab is first visited
+  useEffect(() => {
+    if (!params?.id || loadedTabs.has(activeTab)) return;
+
+    const loadTabData = async () => {
+      setLoadingTabs(prev => new Set([...prev, activeTab]));
+      try {
+        switch (activeTab) {
+          case 'geography':
+            await Promise.all([
+              fetchActivityLocations(),
+              fetchSubnationalBreakdowns()
+            ]);
+            break;
+          case 'library':
+            await fetchDocuments();
+            break;
+        }
+        setLoadedTabs(prev => new Set([...prev, activeTab]));
+      } finally {
+        setLoadingTabs(prev => {
+          const next = new Set(prev);
+          next.delete(activeTab);
+          return next;
+        });
+      }
+    };
+
+    loadTabData();
+  }, [activeTab, params?.id])
 
   const fetchParticipatingOrgs = async () => {
     if (!params?.id) return;
@@ -806,9 +817,7 @@ export default function ActivityDetailPage() {
 
     try {
       if (showLoading) setLoading(true)
-      // Force fresh fetch to ensure we get latest banner position
       const activityId = Array.isArray(params.id) ? params.id[0] : params.id;
-      invalidateActivityCache(activityId);
       const found = await fetchActivityWithCache(activityId)
       if (found) {
           console.log('[ACTIVITY DETAIL DEBUG] Found activity:', found);
@@ -2382,26 +2391,54 @@ export default function ActivityDetailPage() {
                         <div className="text-xs font-medium text-slate-600 mb-2">Policy Markers</div>
                         <div className="flex flex-wrap gap-2">
                           {activity.policyMarkers.map((marker: any, index: number) => {
-                            // Get specific icon for each policy marker based on IATI code
-                            const getIconForMarker = (iatiCode: string) => {
-                              switch (iatiCode) {
-                                case '1': return Sparkles; // Gender Equality
-                                case '2': return Leaf; // Aid to Environment
-                                case '3': return Shield; // Good Governance
-                                case '4': return Handshake; // Trade Development
-                                case '5': return TreePine; // Biodiversity
-                                case '6': return Wind; // Climate Mitigation
-                                case '7': return Waves; // Climate Adaptation
-                                case '8': return MountainSnow; // Desertification
-                                case '9': return Baby; // RMNCH
-                                case '10': return AlertCircle; // Disaster Risk Reduction
-                                case '11': return Heart; // Disability
-                                case '12': return Droplets; // Nutrition
-                                default: return Wrench; // Default/Other
+                            // Get specific icon for each policy marker based on IATI code or code name
+                            const getIconForMarker = (iatiCode: string | null | undefined, code: string | null | undefined) => {
+                              // First check IATI code
+                              if (iatiCode) {
+                                switch (iatiCode) {
+                                  case '1': return Sparkles; // Gender Equality
+                                  case '2': return Leaf; // Aid to Environment
+                                  case '3': return Shield; // Good Governance
+                                  case '4': return Handshake; // Trade Development
+                                  case '5': return TreePine; // Biodiversity
+                                  case '6': return Wind; // Climate Mitigation
+                                  case '7': return Waves; // Climate Adaptation
+                                  case '8': return MountainSnow; // Desertification
+                                  case '9': return Baby; // RMNCH
+                                  case '10': return AlertCircle; // Disaster Risk Reduction
+                                  case '11': return Heart; // Disability
+                                  case '12': return Droplets; // Nutrition
+                                }
                               }
+
+                              // Fallback to code-based matching for custom markers
+                              if (code) {
+                                const lowerCode = code.toLowerCase();
+                                if (lowerCode.includes('gender')) return Sparkles;
+                                if (lowerCode.includes('environment') || lowerCode.includes('environ')) return Leaf;
+                                if (lowerCode.includes('governance') || lowerCode.includes('pdgg')) return Shield;
+                                if (lowerCode.includes('trade')) return Handshake;
+                                if (lowerCode.includes('biodiversity')) return TreePine;
+                                if (lowerCode.includes('mitigation')) return Wind;
+                                if (lowerCode.includes('adaptation') || lowerCode.includes('climate')) return Waves;
+                                if (lowerCode.includes('desertification')) return MountainSnow;
+                                if (lowerCode.includes('rmnch') || lowerCode.includes('maternal') || lowerCode.includes('child')) return Baby;
+                                if (lowerCode.includes('disaster') || lowerCode.includes('drr')) return AlertCircle;
+                                if (lowerCode.includes('disability')) return Heart;
+                                if (lowerCode.includes('nutrition')) return Droplets;
+                                if (lowerCode.includes('human_rights') || lowerCode.includes('rights')) return Scale;
+                                if (lowerCode.includes('peace') || lowerCode.includes('conflict')) return Shield;
+                                if (lowerCode.includes('rural')) return Building2;
+                                if (lowerCode.includes('participatory')) return Users;
+                              }
+
+                              return Leaf; // Default icon (more neutral than Wrench)
                             };
-                            
-                            const IconComponent = getIconForMarker(marker.policy_marker_details?.iati_code || '');
+
+                            const IconComponent = getIconForMarker(
+                              marker.policy_marker_details?.iati_code,
+                              marker.policy_marker_details?.code
+                            );
                             
                             const markerUuid = marker.policy_marker_id || marker.policy_marker_details?.uuid || '';
                             
@@ -3104,7 +3141,7 @@ export default function ActivityDetailPage() {
                       </div>
                     </div>
                     {isBudgetsOpen && (
-                      <div className="p-4">
+                      <>
                         <div className={budgetsLoading ? "hidden" : ""}>
                           <ActivityBudgetsTab
                             activityId={activity.id}
@@ -3124,8 +3161,8 @@ export default function ActivityDetailPage() {
                             }}
                           />
                         </div>
-                        {budgetsLoading && <BudgetsSkeleton />}
-                      </div>
+                        {budgetsLoading && <div className="p-4"><BudgetsSkeleton /></div>}
+                      </>
                     )}
                   </div>
 
@@ -3150,7 +3187,7 @@ export default function ActivityDetailPage() {
                       </div>
                     </div>
                     {isPlannedOpen && (
-                      <div className="p-4">
+                      <>
                         <div className={plannedLoading ? "hidden" : ""}>
                           <PlannedDisbursementsTab
                             activityId={activity.id}
@@ -3170,8 +3207,8 @@ export default function ActivityDetailPage() {
                             }}
                           />
                         </div>
-                        {plannedLoading && <PlannedDisbursementsSkeleton />}
-                      </div>
+                        {plannedLoading && <div className="p-4"><PlannedDisbursementsSkeleton /></div>}
+                      </>
                     )}
                   </div>
 
@@ -3196,10 +3233,10 @@ export default function ActivityDetailPage() {
                       </div>
                     </div>
                     {isTransactionsOpen && (
-                      <div className="p-4">
+                      <>
                         <div className={transactionsLoading ? "hidden" : ""}>
-                          <TransactionTab 
-                            activityId={activity.id} 
+                          <TransactionTab
+                            activityId={activity.id}
                             readOnly={true}
                             defaultFinanceType={activity.defaultFinanceType}
                             defaultAidType={activity.defaultAidType}
@@ -3217,8 +3254,8 @@ export default function ActivityDetailPage() {
                             }}
                           />
                         </div>
-                        {transactionsLoading && <TransactionsSkeleton />}
-                      </div>
+                        {transactionsLoading && <div className="p-4"><TransactionsSkeleton /></div>}
+                      </>
                     )}
                   </div>
                 </div>
@@ -4359,6 +4396,13 @@ export default function ActivityDetailPage() {
               <TabsContent value="geography" className="p-6 border-0 space-y-6">
                 {activeTab === "geography" && (
                   <>
+                {/* Loading indicator for lazy-loaded geography data */}
+                {loadingTabs.has('geography') && (
+                  <div className="flex items-center justify-center py-12">
+                    <RefreshCw className="h-6 w-6 animate-spin text-muted-foreground" />
+                    <span className="ml-2 text-muted-foreground">Loading location data...</span>
+                  </div>
+                )}
                 {/* Country/Region Allocation Chart - Hero Card */}
                 {(countryAllocations.length > 0 || regionAllocations.length > 0) && (() => {
                   // New color palette
@@ -4841,6 +4885,12 @@ export default function ActivityDetailPage() {
               {/* Library Tab */}
               <TabsContent value="library" className="p-6 border-0">
                 {activeTab === "library" && (
+                  loadingTabs.has('library') ? (
+                    <div className="flex items-center justify-center py-12">
+                      <RefreshCw className="h-6 w-6 animate-spin text-muted-foreground" />
+                      <span className="ml-2 text-muted-foreground">Loading documents...</span>
+                    </div>
+                  ) : (
                 <DocumentsAndImagesTabV2
                   activityId={activity.id}
                   documents={documents}
@@ -4848,6 +4898,7 @@ export default function ActivityDetailPage() {
                   locale="en"
                   readOnly={true}
                 />
+                  )
                 )}
               </TabsContent>
 

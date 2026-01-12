@@ -388,65 +388,40 @@ interface OrganizationSummary {
   lastUpdated: string
 }
 
-// Myanmar-specific cooperation modality calculation with debugging
+// Myanmar-specific cooperation modality calculation
 const deriveCooperationModality = (orgTypeCode: string, country: string): string => {
   const typeCode = orgTypeCode?.trim();
   const countryValue = country?.trim().toLowerCase();
-  
-  // Debug logging for development
-  console.log('[Cooperation Modality] Input Debug:', {
-    originalOrgTypeCode: orgTypeCode,
-    originalCountry: country,
-    normalizedTypeCode: typeCode,
-    normalizedCountry: countryValue
-  })
 
   // Check if it's an institutional group (multilateral organization)
   const isInstitutional = isInstitutionalGroup(country);
-  
-  // Also check for legacy "Global or Regional" value
-  const isLegacyGlobal = countryValue === 'global or regional' || 
-    countryValue?.includes('global') || 
-    countryValue?.includes('regional');
 
-  let result: string;
+  // Also check for legacy "Global or Regional" value
+  const isLegacyGlobal = countryValue === 'global or regional' ||
+    countryValue?.includes('global') ||
+    countryValue?.includes('regional');
 
   // Updated logic to work with type codes and institutional groups
   if (isInstitutional || isLegacyGlobal) {
-    result = 'Global or Regional';
-    console.log('[Cooperation Modality] Rule: Institutional Group → Global or Regional');
+    return 'Global or Regional';
   } else if (typeCode === '10' && countryValue !== 'myanmar') {
     // Government (code 10) from foreign country
-    result = 'External';
-    console.log('[Cooperation Modality] Rule: Government (10) + Foreign Country → External');
+    return 'External';
   } else if (['22', '40'].includes(typeCode)) {
     // Multilateral (22) or Academic/Research (40)
-    result = 'Global or Regional';
-    console.log('[Cooperation Modality] Rule: Multilateral/Academic → Global or Regional');
+    return 'Global or Regional';
   } else if (typeCode === '15' && countryValue === 'myanmar') {
     // NGO (code 15) based in Myanmar
-    result = 'Internal';
-    console.log('[Cooperation Modality] Rule: NGO (15) + Myanmar → Internal');
+    return 'Internal';
   } else if (typeCode === '23') {
     // Bilateral (code 23) - typically external
-    result = 'External';
-    console.log('[Cooperation Modality] Rule: Bilateral (23) → External');
+    return 'External';
   } else if (countryValue === 'myanmar') {
     // Any other organization based in Myanmar
-    result = 'Internal';
-    console.log('[Cooperation Modality] Rule: Myanmar-based → Internal');
+    return 'Internal';
   } else {
-    result = 'Other';
-    console.log('[Cooperation Modality] Rule: Default → Other');
+    return 'Other';
   }
-
-  console.log('[Cooperation Modality] Final Result:', {
-    orgTypeCode: orgTypeCode,
-    country: country,
-    derivedModality: result
-  });
-
-  return result;
 }
 
 // Derive Category based on organization type and country
@@ -778,13 +753,13 @@ const ImageUpload: React.FC<{
         `}
       >
         <input {...getInputProps()} />
-        <div className="h-full flex flex-col items-center justify-center text-gray-500 p-4">
-          <ImageIcon className={`${iconSize} mb-4`} />
-          <p className="text-sm font-medium text-center">
+        <div className="h-full w-full flex flex-col items-center justify-center text-gray-500 p-4 text-center">
+          <ImageIcon className={`${iconSize} mb-2`} />
+          <p className="text-sm font-medium">
             {isDragActive ? `Drop ${label.toLowerCase()}` : `Drag & drop`}
           </p>
-          <p className="text-xs mt-2">or click to select</p>
-          <p className="text-xs mt-3 text-gray-400">PNG, JPG, GIF up to 5MB</p>
+          <p className="text-xs mt-1">or click to upload</p>
+          <p className="text-xs mt-2 text-gray-400">PNG, JPG, GIF up to 5MB</p>
         </div>
       </div>
       <p className="text-xs text-gray-500 text-center">
@@ -917,15 +892,77 @@ const OrganizationCard: React.FC<{
   }
 
   return (
-    <Card 
-      className="bg-white border border-gray-300 hover:border-gray-400 hover:shadow-lg transition-all duration-300 ease-in-out cursor-pointer overflow-hidden h-full flex flex-col shadow-sm"
+    <Card
+      className="bg-white border border-gray-300 hover:border-gray-400 hover:shadow-lg transition-all duration-300 ease-in-out cursor-pointer h-full flex flex-col shadow-sm relative"
       onClick={handleView}
     >
+      {/* Actions Dropdown - positioned at card level to avoid overflow clipping */}
+      <div
+        className="absolute top-3 right-3 z-50"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="outline"
+              size="icon"
+              className="bg-white/90 hover:bg-white"
+            >
+              <MoreVertical className="h-5 w-5" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent
+            align="end"
+            sideOffset={5}
+            className="min-w-[160px] shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+            onCloseAutoFocus={(e) => e.preventDefault()}
+          >
+            <DropdownMenuItem
+              className="cursor-pointer"
+              onClick={(e) => { e.stopPropagation(); handleView(); }}
+            >
+              <Eye className="h-4 w-4 mr-2" />
+              View
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              className="cursor-pointer"
+              onClick={(e) => { e.stopPropagation(); onEdit(organization); }}
+            >
+              <Edit2 className="h-4 w-4 mr-2" />
+              Edit
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              className="cursor-pointer"
+              onClick={(e) => { e.stopPropagation(); onExportPDF(organization.id); }}
+            >
+              <FileText className="h-4 w-4 mr-2" />
+              Export as PDF
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              className="cursor-pointer"
+              onClick={(e) => { e.stopPropagation(); onExportExcel(organization.id); }}
+            >
+              <FileSpreadsheet className="h-4 w-4 mr-2" />
+              Export as Excel
+            </DropdownMenuItem>
+            <DropdownMenuSeparator className="bg-gray-200" />
+            <DropdownMenuItem
+              className="cursor-pointer text-red-600 hover:bg-red-50"
+              onClick={(e) => { e.stopPropagation(); onDelete(organization); }}
+            >
+              <Trash2 className="h-4 w-4 mr-2" />
+              Delete
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+
       {/* Banner Image */}
       <div className="h-64 bg-gradient-to-r from-blue-500 to-teal-600 relative overflow-hidden flex-shrink-0">
         {organization.banner ? (
-          <img 
-            src={organization.banner} 
+          <img
+            src={organization.banner}
             alt={`${organization.name} banner`}
             className="w-full h-full object-cover"
           />
@@ -934,52 +971,9 @@ const OrganizationCard: React.FC<{
             <Building2 className="h-20 w-20 text-white/20" />
           </div>
         )}
-        
+
         {/* Gradient fade overlay at bottom */}
         <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-white to-transparent" />
-        
-        {/* Actions Dropdown - overlaid on banner */}
-        <div 
-          className="absolute top-3 right-3" 
-          onClick={(e) => e.stopPropagation()}
-        >
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button 
-                variant="outline" 
-                size="icon"
-              >
-                <MoreVertical className="h-5 w-5" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => handleView()}>
-                <Eye className="h-4 w-4 mr-2" />
-                View
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => onEdit(organization)}>
-                <Edit2 className="h-4 w-4 mr-2" />
-                Edit
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => onExportPDF(organization.id)}>
-                <FileText className="h-4 w-4 mr-2" />
-                Export as PDF
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => onExportExcel(organization.id)}>
-                <FileSpreadsheet className="h-4 w-4 mr-2" />
-                Export as Excel
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem 
-                onClick={() => onDelete(organization)}
-                className="text-red-600"
-              >
-                <Trash2 className="h-4 w-4 mr-2" />
-                Delete
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
       </div>
 
       <CardContent className="p-4 flex flex-col flex-grow">
@@ -1202,14 +1196,17 @@ function OrganizationsPageContent() {
   const mainFetchControllerRef = useRef<AbortController | null>(null)
   const typesControllerRef = useRef<AbortController | null>(null)
   const groupsControllerRef = useRef<AbortController | null>(null)
-  
+
   // Pre-caching for better performance
   const { preCacheOrganizations } = usePreCache()
-  
-  // Initialize organizations pre-caching
+
+  // Initialize organizations pre-caching (but don't block the main fetch)
   useEffect(() => {
-    preCacheOrganizations().catch(console.warn)
-  }, [preCacheOrganizations])
+    // Only pre-cache if we already have data (to avoid competing fetches)
+    if (organizations.length > 0) {
+      preCacheOrganizations().catch(console.warn)
+    }
+  }, [preCacheOrganizations, organizations.length])
 
   // IATI-aligned tab definitions
   const IATI_TABS = [
@@ -1297,9 +1294,10 @@ function OrganizationsPageContent() {
 
   // Fetch organizations data and types
   useEffect(() => {
-    fetchOrganizations(true) // FIXED: Use cache-busting on initial load to ensure fresh data on browser refresh
+    // Use server cache on initial load for faster response, only bust cache after mutations
+    fetchOrganizations(false)
     fetchAvailableTypes()
-    
+
     // Cleanup function to abort requests on unmount
     return () => {
       if (mainFetchControllerRef.current) {
@@ -1468,19 +1466,10 @@ function OrganizationsPageContent() {
 
       if (orgsResponse.ok) {
         const response = await orgsResponse.json()
-        
+
         // Handle both paginated and non-paginated responses for backward compatibility
         const orgsWithActiveProjects = response.data || response;
-        
-        // Debug organizations with Global/Regional
-        const globalRegionalOrgs = orgsWithActiveProjects.filter((org: any) => 
-          org.country_represented?.toLowerCase().includes('global') || 
-          org.country_represented?.toLowerCase().includes('regional')
-        );
-        if (globalRegionalOrgs.length > 0) {
-          console.log('[FetchOrgs] Organizations with Global/Regional:', globalRegionalOrgs);
-        }
-        
+
         // Organizations are already processed with statistics from bulk endpoint
         setOrganizations(orgsWithActiveProjects)
         

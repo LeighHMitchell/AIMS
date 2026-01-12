@@ -22,6 +22,7 @@ export interface MultiSelectOption {
   label: string
   value: string
   group?: string
+  subtitle?: string
 }
 
 interface MultiSelectProps {
@@ -36,6 +37,10 @@ interface MultiSelectProps {
   onClear?: () => void
   selectedLabel?: string
   onOpenChange?: (open: boolean) => void
+  searchable?: boolean
+  searchPlaceholder?: string
+  dropdownAlign?: "start" | "center" | "end"
+  dropdownSide?: "top" | "right" | "bottom" | "left"
 }
 
 export function MultiSelect({
@@ -50,6 +55,10 @@ export function MultiSelect({
   onClear,
   selectedLabel,
   onOpenChange,
+  searchable = false,
+  searchPlaceholder = "Search...",
+  dropdownAlign = "start",
+  dropdownSide = "bottom",
 }: MultiSelectProps) {
   const [open, setOpen] = React.useState(false)
   const isSelectingRef = React.useRef(false)
@@ -97,15 +106,15 @@ export function MultiSelect({
   // Group options by their group property
   const groupedOptions = React.useMemo(() => {
     const groups: Record<string, MultiSelectOption[]> = {}
-    
+
     options.forEach((option) => {
-      const groupName = option.group || "Other"
+      const groupName = option.group || ""
       if (!groups[groupName]) {
         groups[groupName] = []
       }
       groups[groupName].push(option)
     })
-    
+
     return groups
   }, [options])
 
@@ -139,42 +148,48 @@ export function MultiSelect({
           </div>
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-full p-0" align="start">
+      <PopoverContent className="w-full p-0" align={dropdownAlign} side={dropdownSide} sideOffset={4}>
         <Command>
-          {showSelectAll && (
-            <CommandGroup>
-              <CommandItem
-                onSelect={() => handleSelect("SELECT_ALL")}
-                className="font-semibold"
-              >
-                <Check
-                  className={cn(
-                    "mr-2 h-4 w-4",
-                    selected.length === options.length ? "opacity-100" : "opacity-0"
-                  )}
-                />
-                Select All
-              </CommandItem>
-            </CommandGroup>
+          {searchable && (
+            <CommandInput placeholder={searchPlaceholder} className="h-9" />
           )}
-          {Object.entries(groupedOptions).map(([groupName, groupOptions]) => (
-            <CommandGroup key={groupName} heading={groupName}>
-              {groupOptions.map((option) => (
+          <CommandEmpty>No results found.</CommandEmpty>
+          <div className="max-h-[300px] overflow-y-auto">
+            {showSelectAll && (
+              <CommandGroup>
                 <CommandItem
-                  key={option.value}
-                  onSelect={() => handleSelect(option.value)}
+                  onSelect={() => handleSelect("SELECT_ALL")}
+                  className="font-semibold"
                 >
                   <Check
                     className={cn(
                       "mr-2 h-4 w-4",
-                      selected.includes(option.value) ? "opacity-100" : "opacity-0"
+                      selected.length === options.length ? "opacity-100" : "opacity-0"
                     )}
                   />
-                  {renderOption ? renderOption(option) : option.label}
+                  Select All
                 </CommandItem>
-              ))}
-            </CommandGroup>
-          ))}
+              </CommandGroup>
+            )}
+            {Object.entries(groupedOptions).map(([groupName, groupOptions]) => (
+              <CommandGroup key={groupName || "_ungrouped"} heading={groupName || undefined}>
+                {groupOptions.map((option) => (
+                  <CommandItem
+                    key={option.value}
+                    onSelect={() => handleSelect(option.value)}
+                  >
+                    <Check
+                      className={cn(
+                        "mr-2 h-4 w-4",
+                        selected.includes(option.value) ? "opacity-100" : "opacity-0"
+                      )}
+                    />
+                    {renderOption ? renderOption(option) : option.label}
+                  </CommandItem>
+                ))}
+              </CommandGroup>
+            ))}
+          </div>
         </Command>
       </PopoverContent>
     </Popover>

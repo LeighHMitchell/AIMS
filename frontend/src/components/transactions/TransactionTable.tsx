@@ -17,7 +17,6 @@ import {
   CheckCircle,
   FileClock,
   Edit,
-  Trash2,
   Info,
   ArrowUpFromLine,
   ArrowDownToLine,
@@ -27,7 +26,6 @@ import {
   Shuffle,
   Link2,
   Copy,
-  MoreVertical,
   Check,
   Globe,
   MapPin,
@@ -51,6 +49,7 @@ import { OrganizationLogo } from "@/components/ui/organization-logo";
 import { OrganizationHoverCard } from "@/components/ui/organization-hover-card";
 import { TIED_STATUS_LABELS } from "@/types/transaction";
 import { TransactionColumnId } from "@/app/transactions/page";
+import { TransactionActionMenu } from "@/components/transactions/TransactionActionMenu";
 
 import { format } from "date-fns";
 import { Badge } from "@/components/ui/badge";
@@ -63,12 +62,6 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import {
-  DropdownMenu,
-  DropdownMenuTrigger,
-  DropdownMenuContent,
-  DropdownMenuItem,
-} from '@/components/ui/dropdown-menu';
 import {
   Table,
   TableBody,
@@ -1540,92 +1533,23 @@ export function TransactionTable({
 
               {/* Actions - always visible */}
               <td className="py-3 px-4 text-right">
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      className="h-8 w-8"
-                      aria-label="Open menu"
-                    >
-                      <span className="sr-only">Open menu</span>
-                      <MoreVertical className="h-4 w-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" onCloseAutoFocus={(e) => e.preventDefault()}>
-                    {/* Accept/Reject actions for linked transactions */}
-                    {transaction.transaction_source === 'linked' && transaction.acceptance_status === 'pending' && (
-                      <>
-                        {onAcceptTransaction && currentActivityId && (
-                          <DropdownMenuItem onSelect={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            onAcceptTransaction(transaction.uuid || transaction.id, currentActivityId);
-                          }} className="text-green-600">
-                            <CheckCircle className="mr-2 h-4 w-4" />
-                            Accept Transaction
-                          </DropdownMenuItem>
-                        )}
-                        {onRejectTransaction && (
-                          <DropdownMenuItem onSelect={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            onRejectTransaction(transaction.uuid || transaction.id);
-                          }} className="text-red-600">
-                            <UserX className="mr-2 h-4 w-4" />
-                            Reject Transaction
-                          </DropdownMenuItem>
-                        )}
-                      </>
-                    )}
-                    
-                    {/* Standard edit action - disabled for linked transactions */}
-                    {transaction.transaction_source !== 'linked' && (
-                      <DropdownMenuItem onSelect={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        if (onEdit) {
-                          // If onEdit is provided, use it (for modal editing)
-                          onEdit(transaction);
-                        } else if (transaction.activity_id) {
-                          // Fallback to navigation if no onEdit handler
-                          router.push(`/activities/new?id=${transaction.activity_id}&section=finances`);
-                        } else {
-                          console.error('No activity_id found for transaction:', transaction);
-                        }
-                      }}>
-                        <Edit className="mr-2 h-4 w-4" />
-                        {onEdit ? 'Edit' : 'Edit in Activity Editor'}
-                      </DropdownMenuItem>
-                    )}
-                    
-                    {/* Delete action - only for own transactions */}
-                    {onDelete && transaction.transaction_source !== 'linked' && (
-                      <DropdownMenuItem onSelect={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        onDelete(transaction.uuid || transaction.id);
-                      }} className="text-red-600">
-                        <Trash2 className="mr-2 h-4 w-4" />
-                        Delete
-                      </DropdownMenuItem>
-                    )}
-                    
-                    {/* View details for linked transactions */}
-                    {transaction.transaction_source === 'linked' && (
-                      <DropdownMenuItem onSelect={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        if (transaction.linked_from_activity_id) {
-                          window.open(`/activities/${transaction.linked_from_activity_id}`, '_blank');
-                        }
-                      }}>
-                        <ExternalLink className="mr-2 h-4 w-4" />
-                        View Source Activity
-                      </DropdownMenuItem>
-                    )}
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                <TransactionActionMenu
+                  transactionId={transaction.uuid || transaction.id}
+                  isLinkedTransaction={transaction.transaction_source === 'linked'}
+                  acceptanceStatus={transaction.acceptance_status}
+                  linkedFromActivityId={transaction.linked_from_activity_id}
+                  onEdit={transaction.transaction_source !== 'linked' ? () => {
+                    if (onEdit) {
+                      onEdit(transaction);
+                    } else if (transaction.activity_id) {
+                      router.push(`/activities/new?id=${transaction.activity_id}&section=finances`);
+                    }
+                  } : undefined}
+                  onDelete={onDelete && transaction.transaction_source !== 'linked' ? () => onDelete(transaction.uuid || transaction.id) : undefined}
+                  onAccept={onAcceptTransaction && currentActivityId ? () => onAcceptTransaction(transaction.uuid || transaction.id, currentActivityId) : undefined}
+                  onReject={onRejectTransaction ? () => onRejectTransaction(transaction.uuid || transaction.id) : undefined}
+                  onViewSourceActivity={transaction.linked_from_activity_id ? () => window.open(`/activities/${transaction.linked_from_activity_id}`, '_blank') : undefined}
+                />
               </td>
             </TableRow>
             

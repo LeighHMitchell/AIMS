@@ -1,8 +1,67 @@
 import { NextResponse, NextRequest } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase';
+import { unstable_cache } from 'next/cache';
 
 // Force dynamic rendering
 export const dynamic = 'force-dynamic';
+
+// Cache the expensive database operations for 60 seconds
+const getCachedOrganizationStats = unstable_cache(
+  async (limit: number, offset: number) => {
+    console.log('[AIMS] Cache MISS - Fetching fresh organization stats from database');
+
+    // Fetch organizations with pagination and all related data in parallel for maximum efficiency
+    const [orgsResult, activitiesResult, contributorsResult, transactionsResult, plannedDisbursementsResult, countResult] = await Promise.all([
+      // Get organizations with pagination
+      getSupabaseAdmin()
+        .from('organizations')
+        .select('id, name, acronym, type, Organisation_Type_Code, Organisation_Type_Name, country, logo, banner, description, website, email, phone, address, country_represented, cooperation_modality, iati_org_id, alias_refs, name_aliases, created_at, updated_at')
+        .order('name')
+        .range(offset, offset + limit - 1),
+
+      // Get all activities with reporting org info (no pagination needed for counting)
+      getSupabaseAdmin()
+        .from('activities')
+        .select('id, reporting_org_id, activity_status')
+        .not('reporting_org_id', 'is', null),
+
+      // Get all activity contributors to count participating organizations
+      getSupabaseAdmin()
+        .from('activity_contributors')
+        .select('organization_id, activity_id, contribution_type')
+        .in('contribution_type', ['funder', 'implementer', 'funding', 'implementing']),
+
+      // Get all transactions for financial calculations and activity associations
+      getSupabaseAdmin()
+        .from('transactions')
+        .select('activity_id, provider_org_id, receiver_org_id, transaction_type, value, currency'),
+
+      // Get all planned disbursements for activity associations
+      getSupabaseAdmin()
+        .from('planned_disbursements')
+        .select('activity_id, provider_org_id, receiver_org_id'),
+
+      // Get total count for pagination metadata
+      getSupabaseAdmin()
+        .from('organizations')
+        .select('id', { count: 'exact', head: true })
+    ]);
+
+    return {
+      orgsResult,
+      activitiesResult,
+      contributorsResult,
+      transactionsResult,
+      plannedDisbursementsResult,
+      countResult
+    };
+  },
+  ['organization-bulk-stats'],
+  {
+    revalidate: 60, // Cache for 60 seconds
+    tags: ['organizations']
+  }
+);
 
 // Handle OPTIONS requests for CORS
 export async function OPTIONS() {
@@ -79,43 +138,50 @@ export async function GET(request: NextRequest) {
         { status: 500, headers }
       );
     }
-    
-    // Fetch organizations with pagination and all related data in parallel for maximum efficiency
-    const [orgsResult, activitiesResult, contributorsResult, transactionsResult, plannedDisbursementsResult, countResult] = await Promise.all([
-      // Get organizations with pagination
-      getSupabaseAdmin()
-        .from('organizations')
-        .select('id, name, acronym, type, Organisation_Type_Code, Organisation_Type_Name, country, logo, banner, description, website, email, phone, address, country_represented, cooperation_modality, iati_org_id, alias_refs, name_aliases, created_at, updated_at')
-        .order('name')
-        .range(offset, offset + limit - 1),
 
-      // Get all activities with reporting org info (no pagination needed for counting)
-      getSupabaseAdmin()
-        .from('activities')
-        .select('id, reporting_org_id, activity_status')
-        .not('reporting_org_id', 'is', null),
+    // Check if cache should be bypassed (cache busting via timestamp)
+    const bustCache = searchParams.has('_');
 
-      // Get all activity contributors to count participating organizations
-      getSupabaseAdmin()
-        .from('activity_contributors')
-        .select('organization_id, activity_id, contribution_type')
-        .in('contribution_type', ['funder', 'implementer', 'funding', 'implementing']),
+    // Use cached data unless explicitly busting cache
+    let orgsResult, activitiesResult, contributorsResult, transactionsResult, plannedDisbursementsResult, countResult;
 
-      // Get all transactions for financial calculations and activity associations
-      getSupabaseAdmin()
-        .from('transactions')
-        .select('activity_id, provider_org_id, receiver_org_id, transaction_type, value, currency'),
-
-      // Get all planned disbursements for activity associations
-      getSupabaseAdmin()
-        .from('planned_disbursements')
-        .select('activity_id, provider_org_id, receiver_org_id'),
-
-      // Get total count for pagination metadata
-      getSupabaseAdmin()
-        .from('organizations')
-        .select('id', { count: 'exact', head: true })
-    ]);
+    if (bustCache) {
+      console.log('[AIMS] Cache BUST - Fetching fresh data');
+      // Fetch directly without cache when busting
+      [orgsResult, activitiesResult, contributorsResult, transactionsResult, plannedDisbursementsResult, countResult] = await Promise.all([
+        getSupabaseAdmin()
+          .from('organizations')
+          .select('id, name, acronym, type, Organisation_Type_Code, Organisation_Type_Name, country, logo, banner, description, website, email, phone, address, country_represented, cooperation_modality, iati_org_id, alias_refs, name_aliases, created_at, updated_at')
+          .order('name')
+          .range(offset, offset + limit - 1),
+        getSupabaseAdmin()
+          .from('activities')
+          .select('id, reporting_org_id, activity_status')
+          .not('reporting_org_id', 'is', null),
+        getSupabaseAdmin()
+          .from('activity_contributors')
+          .select('organization_id, activity_id, contribution_type')
+          .in('contribution_type', ['funder', 'implementer', 'funding', 'implementing']),
+        getSupabaseAdmin()
+          .from('transactions')
+          .select('activity_id, provider_org_id, receiver_org_id, transaction_type, value, currency'),
+        getSupabaseAdmin()
+          .from('planned_disbursements')
+          .select('activity_id, provider_org_id, receiver_org_id'),
+        getSupabaseAdmin()
+          .from('organizations')
+          .select('id', { count: 'exact', head: true })
+      ]);
+    } else {
+      // Use server-side cache for normal requests
+      const cachedResults = await getCachedOrganizationStats(limit, offset);
+      orgsResult = cachedResults.orgsResult;
+      activitiesResult = cachedResults.activitiesResult;
+      contributorsResult = cachedResults.contributorsResult;
+      transactionsResult = cachedResults.transactionsResult;
+      plannedDisbursementsResult = cachedResults.plannedDisbursementsResult;
+      countResult = cachedResults.countResult;
+    }
 
     const { data: organizations, error: orgsError } = orgsResult;
     const { data: activities, error: activitiesError } = activitiesResult;

@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useEffect, useMemo } from 'react'
+import React, { useState, useEffect, useMemo, useRef } from 'react'
 import {
   ResponsiveContainer,
   LineChart,
@@ -16,30 +16,29 @@ import {
   Tooltip,
   Legend,
 } from 'recharts'
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
-import { AlertCircle, Download, FileImage, LineChart as LineChartIcon, BarChart3, Table as TableIcon, TrendingUp as TrendingUpIcon } from 'lucide-react'
+import { AlertCircle, Download, FileImage, LineChart as LineChartIcon, BarChart3, Table as TableIcon, TrendingUp as TrendingUpIcon, CalendarIcon } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { Button } from '@/components/ui/button'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { exportToCSV } from '@/lib/csv-export'
-import { MultiSelect } from '@/components/ui/multi-select'
 import { HelpTextTooltip } from '@/components/ui/help-text-tooltip'
 import { Switch } from '@/components/ui/switch'
 import { Label } from '@/components/ui/label'
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
-import { 
-  splitBudgetAcrossYears, 
-  splitPlannedDisbursementAcrossYears, 
-  splitTransactionAcrossYears 
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import html2canvas from 'html2canvas'
+import {
+  splitBudgetAcrossYears,
+  splitPlannedDisbursementAcrossYears,
+  splitTransactionAcrossYears
 } from '@/utils/year-allocation'
 import { FINANCIAL_OVERVIEW_COLORS, BRAND_COLORS } from '@/components/analytics/sectors/sectorColorMap'
+import { CustomYear, getCustomYearRange, getCustomYearLabel } from '@/types/custom-years'
+import { format } from 'date-fns'
 // Inline currency formatter to avoid initialization issues
 const formatCurrencyAbbreviated = (value: number): string => {
   const isNegative = value < 0
@@ -61,15 +60,12 @@ const formatCurrencyAbbreviated = (value: number): string => {
 
 type DataMode = 'cumulative' | 'periodic'
 type ChartType = 'line' | 'bar' | 'area' | 'table' | 'total'
-type TimeRange = '3m' | '6m' | '12m' | '3y' | '5y'
 
-const TIME_RANGE_OPTIONS: { value: TimeRange; label: string }[] = [
-  { value: '3m', label: 'Last 3 months' },
-  { value: '6m', label: 'Last 6 months' },
-  { value: '12m', label: 'Last 12 months' },
-  { value: '3y', label: 'Last 3 years' },
-  { value: '5y', label: 'Last 5 years' },
-]
+// Generate list of available years (from 2010 to current year + 10 to cover all possible data)
+const AVAILABLE_YEARS = Array.from(
+  { length: new Date().getFullYear() - 2010 + 11 },
+  (_, i) => 2010 + i
+)
 
 interface CumulativeFinancialOverviewProps {
   dateRange?: {
@@ -94,108 +90,242 @@ export function CumulativeFinancialOverview({
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [cumulativeData, setCumulativeData] = useState<any[]>([])
+  const [rawData, setRawData] = useState<{ transactions: any[]; plannedDisbursements: any[]; budgets: any[] } | null>(null)
   const [dataMode, setDataMode] = useState<DataMode>('cumulative')
   const [chartType, setChartType] = useState<ChartType>('line')
   const [hiddenSeries, setHiddenSeries] = useState<Set<string>>(new Set())
-  const [selectedActivities, setSelectedActivities] = useState<string[]>([])
-  const [activities, setActivities] = useState<Array<{ id: string; title: string; iati_identifier?: string }>>([])
   const [allocationMethod, setAllocationMethod] = useState<'proportional' | 'period-start'>('proportional')
-  const [selectedTimeRange, setSelectedTimeRange] = useState<TimeRange>('5y')
 
-  // Calculate effective date range based on selected time range
+  // Calendar type and year selection state
+  const [calendarType, setCalendarType] = useState<string>('')
+  const [selectedYears, setSelectedYears] = useState<number[]>([])
+  const [customYears, setCustomYears] = useState<CustomYear[]>([])
+  const [customYearsLoading, setCustomYearsLoading] = useState(true)
+  const [actualDataRange, setActualDataRange] = useState<{ minYear: number; maxYear: number } | null>(null)
+  const chartRef = useRef<HTMLDivElement>(null)
+
+  // Calculate effective date range based on custom years and selected years
   const effectiveDateRange = useMemo(() => {
+    const customYear = customYears.find(cy => cy.id === calendarType)
+
+    // If we have selected years, use them
+    if (customYears.length > 0 && selectedYears.length > 0 && calendarType && customYear) {
+      const sortedYears = [...selectedYears].sort((a, b) => a - b)
+      const firstYearRange = getCustomYearRange(customYear, sortedYears[0])
+      const lastYearRange = getCustomYearRange(customYear, sortedYears[sortedYears.length - 1])
+      return { from: firstYearRange.start, to: lastYearRange.end }
+    }
+
+    // Fallback: use actual data range if available
+    if (actualDataRange && customYear) {
+      const firstYearRange = getCustomYearRange(customYear, actualDataRange.minYear)
+      const lastYearRange = getCustomYearRange(customYear, actualDataRange.maxYear)
+      return { from: firstYearRange.start, to: lastYearRange.end }
+    }
+
+    // Final fallback: use 5 years from now
     const now = new Date()
     const from = new Date()
-
-    switch (selectedTimeRange) {
-      case '3m':
-        from.setMonth(now.getMonth() - 3)
-        break
-      case '6m':
-        from.setMonth(now.getMonth() - 6)
-        break
-      case '12m':
-        from.setFullYear(now.getFullYear() - 1)
-        break
-      case '3y':
-        from.setFullYear(now.getFullYear() - 3)
-        break
-      case '5y':
-        from.setFullYear(now.getFullYear() - 5)
-        break
-    }
-
+    from.setFullYear(now.getFullYear() - 5)
     return { from, to: now }
-  }, [selectedTimeRange])
+  }, [customYears, selectedYears, calendarType, actualDataRange])
 
-  // Fetch activities list for filter
+  // Fetch custom years on mount and set system default
   useEffect(() => {
-    const fetchActivities = async () => {
+    const fetchCustomYears = async () => {
       try {
-        const response = await fetch('/api/activities?limit=1000')
+        const response = await fetch('/api/custom-years')
         if (response.ok) {
-          const data = await response.json()
-          const activitiesList = (data.activities || data).map((activity: any) => ({
-            id: activity.id,
-            title: activity.title_narrative || activity.title || 'Untitled Activity',
-            iati_identifier: activity.iati_identifier
-          }))
-          setActivities(activitiesList)
+          const result = await response.json()
+          const years = result.data || []
+          setCustomYears(years)
+
+          // Determine which calendar to use
+          let selectedCalendar: CustomYear | undefined
+
+          // First priority: system default
+          if (result.defaultId) {
+            selectedCalendar = years.find((cy: CustomYear) => cy.id === result.defaultId)
+          }
+
+          // Fallback: first available custom year
+          if (!selectedCalendar && years.length > 0) {
+            selectedCalendar = years[0]
+          }
+
+          // Set the calendar type
+          if (selectedCalendar) {
+            setCalendarType(selectedCalendar.id)
+          }
         }
-      } catch (error) {
-        console.error('[CumulativeFinancialOverview] Error fetching activities:', error)
+      } catch (err) {
+        console.error('Failed to fetch custom years:', err)
+      } finally {
+        setCustomYearsLoading(false)
       }
     }
-    fetchActivities()
+    fetchCustomYears()
   }, [])
 
+  // Fetch actual date range from data on mount to set default year selection
+  useEffect(() => {
+    const fetchDateRange = async () => {
+      if (!supabase) return
+
+      try {
+        // Query actual date range from transactions, budgets and planned disbursements
+        const { data: transactionDates } = await supabase
+          .from('transactions')
+          .select('transaction_date')
+          .not('transaction_date', 'is', null)
+
+        const { data: budgetDates } = await supabase
+          .from('activity_budgets')
+          .select('period_start, period_end')
+          .not('period_start', 'is', null)
+
+        const { data: pdDates } = await supabase
+          .from('planned_disbursements')
+          .select('period_start, period_end')
+          .not('period_start', 'is', null)
+
+        // Find the actual min/max years from the data
+        const allDates: string[] = []
+
+        if (transactionDates) {
+          transactionDates.forEach(t => {
+            if (t.transaction_date) allDates.push(t.transaction_date)
+          })
+        }
+
+        if (budgetDates) {
+          budgetDates.forEach(b => {
+            if (b.period_start) allDates.push(b.period_start)
+            if (b.period_end) allDates.push(b.period_end)
+          })
+        }
+
+        if (pdDates) {
+          pdDates.forEach(pd => {
+            if (pd.period_start) allDates.push(pd.period_start)
+            if (pd.period_end) allDates.push(pd.period_end)
+          })
+        }
+
+        if (allDates.length > 0) {
+          const years = allDates.map(d => new Date(d).getFullYear()).filter(y => !isNaN(y))
+          if (years.length > 0) {
+            const minYear = Math.min(...years)
+            const maxYear = Math.max(...years)
+            // Store the actual data range for the "Data Range" button
+            setActualDataRange({ minYear, maxYear })
+            // Set the default selected years based on actual data
+            setSelectedYears([minYear, maxYear])
+          }
+        } else {
+          // Fallback to current year range if no data
+          const currentYear = new Date().getFullYear()
+          setActualDataRange({ minYear: currentYear - 5, maxYear: currentYear })
+          setSelectedYears([currentYear - 5, currentYear])
+        }
+      } catch (err) {
+        console.error('[CumulativeFinancialOverview] Error fetching date range:', err)
+        // Fallback to current year range
+        const currentYear = new Date().getFullYear()
+        setActualDataRange({ minYear: currentYear - 5, maxYear: currentYear })
+        setSelectedYears([currentYear - 5, currentYear])
+      }
+    }
+
+    fetchDateRange()
+  }, [])
+
+  // Handle year click - select start and end of range
+  const handleYearClick = (year: number, shiftKey: boolean) => {
+    if (shiftKey && selectedYears.length === 1) {
+      const start = Math.min(selectedYears[0], year)
+      const end = Math.max(selectedYears[0], year)
+      setSelectedYears([start, end])
+    } else if (selectedYears.length === 0) {
+      setSelectedYears([year])
+    } else if (selectedYears.length === 1) {
+      if (selectedYears[0] === year) {
+        setSelectedYears([])
+      } else {
+        const start = Math.min(selectedYears[0], year)
+        const end = Math.max(selectedYears[0], year)
+        setSelectedYears([start, end])
+      }
+    } else {
+      setSelectedYears([year])
+    }
+  }
+
+  // Select all years
+  const selectAllYears = () => {
+    setSelectedYears([AVAILABLE_YEARS[0], AVAILABLE_YEARS[AVAILABLE_YEARS.length - 1]])
+  }
+
+  // Clear all years
+  const clearAllYears = () => {
+    setSelectedYears([])
+  }
+
+  // Select only the data range (years where data exists)
+  const selectDataRange = () => {
+    if (actualDataRange) {
+      setSelectedYears([actualDataRange.minYear, actualDataRange.maxYear])
+    } else {
+      // Fallback if actualDataRange not yet loaded - use current year range
+      const currentYear = new Date().getFullYear()
+      setSelectedYears([currentYear - 10, currentYear + 3])
+    }
+  }
+
+  // Check if a year is in range
+  const isYearInRange = (year: number) => {
+    if (selectedYears.length < 2) return false
+    const minYear = Math.min(...selectedYears)
+    const maxYear = Math.max(...selectedYears)
+    return year > minYear && year < maxYear
+  }
+
+  // Get year label
+  const getYearLabel = (year: number) => {
+    const customYear = customYears.find(cy => cy.id === calendarType)
+    if (customYear) {
+      return getCustomYearLabel(customYear, year)
+    }
+    return `${year}`
+  }
+
+  // Fetch raw data (separate from processing to allow allocationMethod changes without refetch)
   useEffect(() => {
     const fetchData = async () => {
       try {
         setLoading(true)
         setError(null)
 
-        // Check if Supabase client is available
         if (!supabase) {
           console.error('[CumulativeFinancialOverview] Supabase client is not initialized')
           setError('Database connection not available. Please check your environment configuration.')
           return
         }
 
-        // Fetch all transactions
-        console.log('[CumulativeFinancialOverview] === FETCHING TRANSACTIONS ===')
-        console.log('[CumulativeFinancialOverview] Query filters:', {
-          effectiveDateRange: { from: effectiveDateRange.from.toISOString(), to: effectiveDateRange.to.toISOString() },
-          selectedTimeRange,
-          donor: filters?.donor || 'none',
-          selectedActivities: selectedActivities.length > 0 ? selectedActivities : 'none'
-        })
-
+        // Fetch ALL data without date filtering - filtering happens in the processing step
+        // This allows instant switching between year ranges without refetching
         let transactionsQuery = supabase
           .from('transactions')
           .select('transaction_date, transaction_type, value, value_usd, currency, activity_id, provider_org_id')
           .eq('status', 'actual')
+          .not('transaction_date', 'is', null)
           .order('transaction_date', { ascending: true })
 
-        // Apply date range filter based on selected time range
-        transactionsQuery = transactionsQuery
-          .gte('transaction_date', effectiveDateRange.from.toISOString())
-          .lte('transaction_date', effectiveDateRange.to.toISOString())
-
-        // Apply donor filter
         if (filters?.donor) {
           transactionsQuery = transactionsQuery.eq('provider_org_id', filters.donor)
         }
 
-        // Apply activity filter
-        if (selectedActivities.length > 0) {
-          transactionsQuery = transactionsQuery.in('activity_id', selectedActivities)
-        }
-
-        console.log('[CumulativeFinancialOverview] Executing query...')
         const { data: transactions, error: transactionsError } = await transactionsQuery
-        console.log('[CumulativeFinancialOverview] Query completed. Error:', transactionsError ? transactionsError.message : 'none')
-        console.log('[CumulativeFinancialOverview] Transactions count:', transactions?.length ?? 'null/undefined')
 
         if (transactionsError) {
           console.error('[CumulativeFinancialOverview] Error fetching transactions:', transactionsError)
@@ -203,346 +333,32 @@ export function CumulativeFinancialOverview({
           return
         }
 
-        console.log('[CumulativeFinancialOverview] Transactions fetched:', transactions?.length || 0)
-        if (transactions && transactions.length > 0) {
-          console.log('[CumulativeFinancialOverview] Sample transaction:', transactions[0])
-        } else {
-          console.log('[CumulativeFinancialOverview] No transactions found or transactions is null/undefined')
-        }
-
-        // Debug: Log transaction type distribution
-        if (transactions && transactions.length > 0) {
-          const typeCounts = transactions.reduce((acc: Record<string, number>, tx: any) => {
-            const type = tx.transaction_type || 'unknown'
-            acc[type] = (acc[type] || 0) + 1
-            return acc
-          }, {})
-          console.log('[CumulativeFinancialOverview] Transaction type counts:', typeCounts)
-          console.log('[CumulativeFinancialOverview] Total transactions:', transactions.length)
-          
-          // Check for type '2' transactions specifically
-          const type2Transactions = transactions.filter((tx: any) => tx.transaction_type === '2')
-          console.log('[CumulativeFinancialOverview] Type 2 (Outgoing Commitment) transactions:', type2Transactions.length)
-          if (type2Transactions.length > 0) {
-            console.log('[CumulativeFinancialOverview] Sample type 2 transactions:', type2Transactions.slice(0, 3).map((tx: any) => ({
-              date: tx.transaction_date,
-              value: tx.value,
-              value_usd: tx.value_usd,
-              currency: tx.currency
-            })))
-          }
-        }
-
-        // Fetch planned disbursements
-        let plannedDisbursementsQuery = supabase
+        const { data: plannedDisbursements, error: plannedError } = await supabase
           .from('planned_disbursements')
           .select('period_start, period_end, amount, usd_amount, currency, activity_id')
+          .not('period_start', 'is', null)
           .order('period_start', { ascending: true })
-
-        // Apply date range filter based on selected time range
-        plannedDisbursementsQuery = plannedDisbursementsQuery
-          .gte('period_start', effectiveDateRange.from.toISOString())
-          .lte('period_start', effectiveDateRange.to.toISOString())
-
-        // Apply activity filter
-        if (selectedActivities.length > 0) {
-          plannedDisbursementsQuery = plannedDisbursementsQuery.in('activity_id', selectedActivities)
-        }
-
-        const { data: plannedDisbursements, error: plannedError } = await plannedDisbursementsQuery
 
         if (plannedError) {
           console.error('[CumulativeFinancialOverview] Error fetching planned disbursements:', plannedError)
         }
 
-        // Fetch budgets
-        let budgetsQuery = supabase
+        const { data: budgets, error: budgetsError } = await supabase
           .from('activity_budgets')
           .select('period_start, period_end, value, usd_value, currency, activity_id')
+          .not('period_start', 'is', null)
           .order('period_start', { ascending: true })
-
-        // Apply date range filter based on selected time range
-        budgetsQuery = budgetsQuery
-          .gte('period_start', effectiveDateRange.from.toISOString())
-          .lte('period_start', effectiveDateRange.to.toISOString())
-
-        // Apply activity filter
-        if (selectedActivities.length > 0) {
-          budgetsQuery = budgetsQuery.in('activity_id', selectedActivities)
-        }
-
-        const { data: budgets, error: budgetsError } = await budgetsQuery
 
         if (budgetsError) {
           console.error('[CumulativeFinancialOverview] Error fetching budgets:', budgetsError)
         }
 
-        // Process data using year-based proportional allocation
-        // Aggregate directly into yearly buckets
-        const yearlyDataMap = new Map<number, {
-          incomingCommitment: number  // Type '1'
-          incomingFunds: number       // Type '12'
-          outgoingCommitment: number // Type '2'
-          creditGuarantee: number     // Type '11'
-          disbursements: number       // Type '3'
-          expenditures: number        // Type '4'
-          plannedDisbursements: number
-          plannedBudgets: number
-        }>()
-
-        // Helper to initialize year entry if needed
-        const ensureYearEntry = (year: number) => {
-          if (!yearlyDataMap.has(year)) {
-            yearlyDataMap.set(year, {
-              incomingCommitment: 0,
-              incomingFunds: 0,
-              outgoingCommitment: 0,
-              creditGuarantee: 0,
-              disbursements: 0,
-              expenditures: 0,
-              plannedDisbursements: 0,
-              plannedBudgets: 0
-            })
-          }
-        }
-
-        // Process transactions by type and year
-        let skippedTransactions = 0
-        let processedByType: Record<string, number> = {}
-        
-        transactions?.forEach((transaction: any) => {
-          // If allocation method is NOT proportional, we force single-date behavior
-          // even if the transaction has a period range.
-          // If it IS proportional, splitTransactionAcrossYears will handle period ranges if present.
-          const txToProcess = allocationMethod === 'proportional' 
-            ? transaction 
-            : { ...transaction, period_start: null, period_end: null }
-
-          const yearAllocations = splitTransactionAcrossYears(txToProcess)
-          
-          // Track if transaction was skipped (no allocations returned)
-          if (yearAllocations.length === 0) {
-            skippedTransactions++
-            const type = transaction.transaction_type || 'unknown'
-            if (!processedByType[type]) processedByType[type] = 0
-            return
-          }
-          
-          yearAllocations.forEach(({ year, amount }) => {
-            ensureYearEntry(year)
-            const yearData = yearlyDataMap.get(year)!
-            const type = transaction.transaction_type
-
-            // Track processed transactions by type
-            if (!processedByType[type]) processedByType[type] = 0
-            processedByType[type]++
-
-            if (type === '1') {
-              yearData.incomingCommitment += amount
-            } else if (type === '12') {
-              yearData.incomingFunds += amount
-            } else if (type === '2') {
-              yearData.outgoingCommitment += amount
-            } else if (type === '11') {
-              yearData.creditGuarantee += amount
-            } else if (type === '3') {
-              yearData.disbursements += amount
-            } else if (type === '4') {
-              yearData.expenditures += amount
-            } else {
-              // Log unhandled transaction types for debugging
-              console.warn('[CumulativeFinancialOverview] Unhandled transaction type:', type, transaction)
-            }
-          })
+        // Store raw data for processing
+        setRawData({
+          transactions: transactions || [],
+          plannedDisbursements: plannedDisbursements || [],
+          budgets: budgets || []
         })
-        
-        // Debug: Log processing summary
-        if (skippedTransactions > 0) {
-          console.warn('[CumulativeFinancialOverview] Skipped transactions (no value or invalid date):', skippedTransactions)
-        }
-        console.log('[CumulativeFinancialOverview] Processed transactions by type:', processedByType)
-
-        // Process planned disbursements
-        plannedDisbursements?.forEach((pd: any) => {
-          if (allocationMethod === 'proportional') {
-            // Use year-based proportional allocation
-            const yearAllocations = splitPlannedDisbursementAcrossYears(pd)
-            yearAllocations.forEach(({ year, amount }) => {
-              ensureYearEntry(year)
-              yearlyDataMap.get(year)!.plannedDisbursements += amount
-            })
-          } else {
-            // Period start allocation: full amount to start year
-            if (pd.period_start) {
-              const startDate = new Date(pd.period_start)
-              if (!isNaN(startDate.getTime())) {
-                const year = startDate.getFullYear()
-                ensureYearEntry(year)
-                
-                // Get value (prefer USD)
-                let value = parseFloat(String(pd.usd_amount)) || 0
-                if (!value && pd.currency === 'USD' && pd.amount) {
-                  value = parseFloat(String(pd.amount)) || 0
-                }
-                
-                if (value) {
-                  yearlyDataMap.get(year)!.plannedDisbursements += value
-                }
-              }
-            }
-          }
-        })
-
-        // Process budgets
-        budgets?.forEach((budget: any) => {
-          if (allocationMethod === 'proportional') {
-            // Use year-based proportional allocation
-            const yearAllocations = splitBudgetAcrossYears(budget)
-            yearAllocations.forEach(({ year, amount }) => {
-              ensureYearEntry(year)
-              yearlyDataMap.get(year)!.plannedBudgets += amount
-            })
-          } else {
-            // Period start allocation: full amount to start year
-            if (budget.period_start) {
-              const startDate = new Date(budget.period_start)
-              if (!isNaN(startDate.getTime())) {
-                const year = startDate.getFullYear()
-                ensureYearEntry(year)
-                
-                // Get value (prefer USD)
-                let value = parseFloat(String(budget.usd_value)) || 0
-                if (!value && budget.currency === 'USD' && budget.value) {
-                  value = parseFloat(String(budget.value)) || 0
-                }
-                
-                if (value) {
-                  yearlyDataMap.get(year)!.plannedBudgets += value
-                }
-              }
-            }
-          }
-        })
-
-        // Convert yearly data to sorted array and calculate cumulative values
-        const sortedYears = Array.from(yearlyDataMap.keys()).sort((a, b) => a - b)
-        
-        let cumulativeIncomingCommitment = 0
-        let cumulativeIncomingFunds = 0
-        let cumulativeOutgoingCommitment = 0
-        let cumulativeCreditGuarantee = 0
-        let cumulativeDisbursements = 0
-        let cumulativeExpenditures = 0
-        let cumulativePlannedDisbursements = 0
-        let cumulativePlannedBudgets = 0
-
-        // Aggregate into yearly buckets for visualization
-        const yearlyMap = new Map<string, any>()
-
-        sortedYears.forEach((year) => {
-          const yearData = yearlyDataMap.get(year)!
-          
-          cumulativeIncomingCommitment += yearData.incomingCommitment
-          cumulativeIncomingFunds += yearData.incomingFunds
-          cumulativeOutgoingCommitment += yearData.outgoingCommitment
-          cumulativeCreditGuarantee += yearData.creditGuarantee
-          cumulativeDisbursements += yearData.disbursements
-          cumulativeExpenditures += yearData.expenditures
-          cumulativePlannedDisbursements += yearData.plannedDisbursements
-          cumulativePlannedBudgets += yearData.plannedBudgets
-
-          // Use year as key for yearly aggregation
-          const yearKey = `${year}`
-          const yearDate = new Date(year, 0, 1) // January 1st of the year
-
-          // Keep the latest cumulative values for each year (end of year snapshot)
-          yearlyMap.set(yearKey, {
-            date: yearDate.toISOString(),
-            timestamp: yearDate.getTime(),
-            yearKey,
-            displayDate: `${year}`,
-            fullDate: `${year}`,
-            'Incoming Commitment': cumulativeIncomingCommitment,
-            'Incoming Funds': cumulativeIncomingFunds,
-            'Outgoing Commitment': cumulativeOutgoingCommitment,
-            'Credit Guarantee': cumulativeCreditGuarantee,
-            'Disbursements': cumulativeDisbursements,
-            'Expenditures': cumulativeExpenditures,
-            'Planned Disbursements': cumulativePlannedDisbursements,
-            'Budgets': cumulativePlannedBudgets
-          })
-        })
-
-        const sortedData = Array.from(yearlyMap.values()).sort((a, b) => a.timestamp - b.timestamp)
-
-        // Fill in missing years to ensure continuous time axis
-        if (sortedData.length === 0) {
-          setCumulativeData([])
-          return
-        }
-
-        const filledData: any[] = []
-        const firstDate = new Date(sortedData[0].timestamp)
-        const lastDate = new Date(sortedData[sortedData.length - 1].timestamp)
-
-        // Create a map for quick lookup
-        const dataMap = new Map(sortedData.map(d => [d.yearKey, d]))
-
-        // Iterate through all years from first to last
-        const startYear = firstDate.getFullYear()
-        const endYear = lastDate.getFullYear()
-
-        let lastCumulativeValues = {
-          incomingCommitment: 0,
-          incomingFunds: 0,
-          outgoingCommitment: 0,
-          creditGuarantee: 0,
-          disbursements: 0,
-          expenditures: 0,
-          plannedDisbursements: 0,
-          plannedBudgets: 0
-        }
-
-        for (let year = startYear; year <= endYear; year++) {
-          const yearKey = `${year}`
-
-          if (dataMap.has(yearKey)) {
-            const existingData = dataMap.get(yearKey)!
-            filledData.push(existingData)
-            // Update last known cumulative values
-            lastCumulativeValues = {
-              incomingCommitment: existingData['Incoming Commitment'],
-              incomingFunds: existingData['Incoming Funds'],
-              outgoingCommitment: existingData['Outgoing Commitment'],
-              creditGuarantee: existingData['Credit Guarantee'],
-              disbursements: existingData['Disbursements'],
-              expenditures: existingData['Expenditures'],
-              plannedDisbursements: existingData['Planned Disbursements'],
-              plannedBudgets: existingData['Budgets']
-            }
-          } else {
-            // Fill missing year with last cumulative values (carry forward) for transactions
-            // but set Budgets to null so only actual budget points are plotted
-            const yearDate = new Date(year, 0, 1)
-            filledData.push({
-              date: yearDate.toISOString(),
-              timestamp: yearDate.getTime(),
-              yearKey,
-              displayDate: `${year}`,
-              fullDate: `${year}`,
-              'Incoming Commitment': lastCumulativeValues.incomingCommitment,
-              'Incoming Funds': lastCumulativeValues.incomingFunds,
-              'Outgoing Commitment': lastCumulativeValues.outgoingCommitment,
-              'Credit Guarantee': lastCumulativeValues.creditGuarantee,
-              'Disbursements': lastCumulativeValues.disbursements,
-              'Expenditures': lastCumulativeValues.expenditures,
-              'Planned Disbursements': lastCumulativeValues.plannedDisbursements,
-              'Budgets': null  // null for years without budget data
-            })
-          }
-        }
-
-        setCumulativeData(filledData)
       } catch (err) {
         console.error('[CumulativeFinancialOverview] Unexpected error:', err)
         setError('An unexpected error occurred')
@@ -552,7 +368,257 @@ export function CumulativeFinancialOverview({
     }
 
     fetchData()
-  }, [effectiveDateRange, filters, refreshKey, selectedActivities, allocationMethod])
+  }, [filters, refreshKey]) // Don't depend on effectiveDateRange - fetch all data once, filter in processing
+
+  // Process raw data into chart data (runs when allocationMethod or calendarType changes without refetching)
+  useEffect(() => {
+    if (!rawData) return
+
+    const { transactions, plannedDisbursements, budgets } = rawData
+
+    // Get the custom year for label formatting
+    const customYear = customYears.find(cy => cy.id === calendarType)
+
+    // Process data using year-based allocation
+    const yearlyDataMap = new Map<number, {
+      incomingCommitment: number
+      incomingFunds: number
+      outgoingCommitment: number
+      creditGuarantee: number
+      disbursements: number
+      expenditures: number
+      plannedDisbursements: number
+      plannedBudgets: number
+    }>()
+
+    const ensureYearEntry = (year: number) => {
+      if (!yearlyDataMap.has(year)) {
+        yearlyDataMap.set(year, {
+          incomingCommitment: 0,
+          incomingFunds: 0,
+          outgoingCommitment: 0,
+          creditGuarantee: 0,
+          disbursements: 0,
+          expenditures: 0,
+          plannedDisbursements: 0,
+          plannedBudgets: 0
+        })
+      }
+    }
+
+    // Process transactions
+    transactions?.forEach((transaction: any) => {
+      const txToProcess = allocationMethod === 'proportional'
+        ? transaction
+        : { ...transaction, period_start: null, period_end: null }
+
+      const yearAllocations = splitTransactionAcrossYears(txToProcess)
+
+      yearAllocations.forEach(({ year, amount }) => {
+        ensureYearEntry(year)
+        const yearData = yearlyDataMap.get(year)!
+        const type = transaction.transaction_type
+
+        if (type === '1') {
+          yearData.incomingCommitment += amount
+        } else if (type === '12') {
+          yearData.incomingFunds += amount
+        } else if (type === '2') {
+          yearData.outgoingCommitment += amount
+        } else if (type === '11') {
+          yearData.creditGuarantee += amount
+        } else if (type === '3') {
+          yearData.disbursements += amount
+        } else if (type === '4') {
+          yearData.expenditures += amount
+        }
+      })
+    })
+
+    // Process planned disbursements
+    plannedDisbursements?.forEach((pd: any) => {
+      if (allocationMethod === 'proportional') {
+        const yearAllocations = splitPlannedDisbursementAcrossYears(pd)
+        yearAllocations.forEach(({ year, amount }) => {
+          ensureYearEntry(year)
+          yearlyDataMap.get(year)!.plannedDisbursements += amount
+        })
+      } else {
+        if (pd.period_start) {
+          const startDate = new Date(pd.period_start)
+          if (!isNaN(startDate.getTime())) {
+            const year = startDate.getFullYear()
+            ensureYearEntry(year)
+            let value = parseFloat(String(pd.usd_amount)) || 0
+            if (!value && pd.currency === 'USD' && pd.amount) {
+              value = parseFloat(String(pd.amount)) || 0
+            }
+            if (value) {
+              yearlyDataMap.get(year)!.plannedDisbursements += value
+            }
+          }
+        }
+      }
+    })
+
+    // Process budgets
+    budgets?.forEach((budget: any) => {
+      if (allocationMethod === 'proportional') {
+        const yearAllocations = splitBudgetAcrossYears(budget)
+        yearAllocations.forEach(({ year, amount }) => {
+          ensureYearEntry(year)
+          yearlyDataMap.get(year)!.plannedBudgets += amount
+        })
+      } else {
+        if (budget.period_start) {
+          const startDate = new Date(budget.period_start)
+          if (!isNaN(startDate.getTime())) {
+            const year = startDate.getFullYear()
+            ensureYearEntry(year)
+            let value = parseFloat(String(budget.usd_value)) || 0
+            if (!value && budget.currency === 'USD' && budget.value) {
+              value = parseFloat(String(budget.value)) || 0
+            }
+            if (value) {
+              yearlyDataMap.get(year)!.plannedBudgets += value
+            }
+          }
+        }
+      }
+    })
+
+    // Convert to cumulative values
+    const sortedYears = Array.from(yearlyDataMap.keys()).sort((a, b) => a - b)
+
+    let cumulativeIncomingCommitment = 0
+    let cumulativeIncomingFunds = 0
+    let cumulativeOutgoingCommitment = 0
+    let cumulativeCreditGuarantee = 0
+    let cumulativeDisbursements = 0
+    let cumulativeExpenditures = 0
+    let cumulativePlannedDisbursements = 0
+    let cumulativePlannedBudgets = 0
+
+    const yearlyMap = new Map<string, any>()
+
+    sortedYears.forEach((year) => {
+      const yearData = yearlyDataMap.get(year)!
+
+      cumulativeIncomingCommitment += yearData.incomingCommitment
+      cumulativeIncomingFunds += yearData.incomingFunds
+      cumulativeOutgoingCommitment += yearData.outgoingCommitment
+      cumulativeCreditGuarantee += yearData.creditGuarantee
+      cumulativeDisbursements += yearData.disbursements
+      cumulativeExpenditures += yearData.expenditures
+      cumulativePlannedDisbursements += yearData.plannedDisbursements
+      cumulativePlannedBudgets += yearData.plannedBudgets
+
+      const yearKey = `${year}`
+      const yearDate = new Date(year, 0, 1)
+
+      // Use calendar-appropriate label for display
+      const displayLabel = customYear ? getCustomYearLabel(customYear, year) : `${year}`
+
+      yearlyMap.set(yearKey, {
+        date: yearDate.toISOString(),
+        timestamp: yearDate.getTime(),
+        yearKey,
+        displayDate: displayLabel,
+        fullDate: displayLabel,
+        'Incoming Commitments': cumulativeIncomingCommitment,
+        'Incoming Funds': cumulativeIncomingFunds,
+        'Outgoing Commitments': cumulativeOutgoingCommitment,
+        'Credit Guarantee': cumulativeCreditGuarantee,
+        'Disbursements': cumulativeDisbursements,
+        'Expenditures': cumulativeExpenditures,
+        'Planned Disbursements': cumulativePlannedDisbursements,
+        'Budgets': cumulativePlannedBudgets
+      })
+    })
+
+    const sortedData = Array.from(yearlyMap.values()).sort((a, b) => a.timestamp - b.timestamp)
+
+    if (sortedData.length === 0) {
+      setCumulativeData([])
+      return
+    }
+
+    // Fill in missing years - use selected year range, not just data range
+    const filledData: any[] = []
+    const dataMap = new Map(sortedData.map(d => [d.yearKey, d]))
+
+    // Use effectiveDateRange to determine the full year range to display
+    const startYear = effectiveDateRange.from.getFullYear()
+    const endYear = effectiveDateRange.to.getFullYear()
+
+    // Initialize with cumulative values from years BEFORE startYear (if any)
+    // This ensures cumulative totals carry forward when viewing a subset of years
+    let lastCumulativeValues = {
+      incomingCommitment: 0,
+      incomingFunds: 0,
+      outgoingCommitment: 0,
+      creditGuarantee: 0,
+      disbursements: 0,
+      expenditures: 0,
+      plannedDisbursements: 0,
+      plannedBudgets: 0
+    }
+
+    // Find the most recent year before startYear that has data
+    const yearsBeforeStart = sortedData.filter(d => parseInt(d.yearKey) < startYear)
+    if (yearsBeforeStart.length > 0) {
+      const mostRecentPriorYear = yearsBeforeStart[yearsBeforeStart.length - 1]
+      lastCumulativeValues = {
+        incomingCommitment: mostRecentPriorYear['Incoming Commitments'] || 0,
+        incomingFunds: mostRecentPriorYear['Incoming Funds'] || 0,
+        outgoingCommitment: mostRecentPriorYear['Outgoing Commitments'] || 0,
+        creditGuarantee: mostRecentPriorYear['Credit Guarantee'] || 0,
+        disbursements: mostRecentPriorYear['Disbursements'] || 0,
+        expenditures: mostRecentPriorYear['Expenditures'] || 0,
+        plannedDisbursements: mostRecentPriorYear['Planned Disbursements'] || 0,
+        plannedBudgets: mostRecentPriorYear['Budgets'] || 0
+      }
+    }
+
+    for (let year = startYear; year <= endYear; year++) {
+      const yearKey = `${year}`
+
+      if (dataMap.has(yearKey)) {
+        const existingData = dataMap.get(yearKey)!
+        filledData.push(existingData)
+        lastCumulativeValues = {
+          incomingCommitment: existingData['Incoming Commitments'],
+          incomingFunds: existingData['Incoming Funds'],
+          outgoingCommitment: existingData['Outgoing Commitments'],
+          creditGuarantee: existingData['Credit Guarantee'],
+          disbursements: existingData['Disbursements'],
+          expenditures: existingData['Expenditures'],
+          plannedDisbursements: existingData['Planned Disbursements'],
+          plannedBudgets: existingData['Budgets']
+        }
+      } else {
+        const yearDate = new Date(year, 0, 1)
+        const displayLabel = customYear ? getCustomYearLabel(customYear, year) : `${year}`
+        filledData.push({
+          date: yearDate.toISOString(),
+          timestamp: yearDate.getTime(),
+          yearKey,
+          displayDate: displayLabel,
+          fullDate: displayLabel,
+          'Incoming Commitments': lastCumulativeValues.incomingCommitment,
+          'Incoming Funds': lastCumulativeValues.incomingFunds,
+          'Outgoing Commitments': lastCumulativeValues.outgoingCommitment,
+          'Credit Guarantee': lastCumulativeValues.creditGuarantee,
+          'Disbursements': lastCumulativeValues.disbursements,
+          'Expenditures': lastCumulativeValues.expenditures,
+          'Planned Disbursements': lastCumulativeValues.plannedDisbursements,
+          'Budgets': null
+        })
+      }
+    }
+
+    setCumulativeData(filledData)
+  }, [rawData, allocationMethod, customYears, calendarType, effectiveDateRange])
 
   // No filtering - use all available data
   const filteredData = useMemo(() => {
@@ -568,9 +634,9 @@ export function CumulativeFinancialOverview({
         // First period shows the actual values (not differences)
         return {
           ...item,
-          'Incoming Commitment': item['Incoming Commitment'],
+          'Incoming Commitments': item['Incoming Commitments'],
           'Incoming Funds': item['Incoming Funds'],
-          'Outgoing Commitment': item['Outgoing Commitment'],
+          'Outgoing Commitments': item['Outgoing Commitments'],
           'Credit Guarantee': item['Credit Guarantee'],
           'Disbursements': item['Disbursements'],
           'Expenditures': item['Expenditures'],
@@ -582,9 +648,9 @@ export function CumulativeFinancialOverview({
       const prevItem = filteredData[index - 1]
       return {
         ...item,
-        'Incoming Commitment': item['Incoming Commitment'] - prevItem['Incoming Commitment'],
+        'Incoming Commitments': item['Incoming Commitments'] - prevItem['Incoming Commitments'],
         'Incoming Funds': item['Incoming Funds'] - prevItem['Incoming Funds'],
-        'Outgoing Commitment': item['Outgoing Commitment'] - prevItem['Outgoing Commitment'],
+        'Outgoing Commitments': item['Outgoing Commitments'] - prevItem['Outgoing Commitments'],
         'Credit Guarantee': item['Credit Guarantee'] - prevItem['Credit Guarantee'],
         'Disbursements': item['Disbursements'] - prevItem['Disbursements'],
         'Expenditures': item['Expenditures'] - prevItem['Expenditures'],
@@ -600,9 +666,9 @@ export function CumulativeFinancialOverview({
 
     const lastItem = filteredData[filteredData.length - 1]
     return {
-      'Incoming Commitment': lastItem['Incoming Commitment'],
+      'Incoming Commitments': lastItem['Incoming Commitments'],
       'Incoming Funds': lastItem['Incoming Funds'],
-      'Outgoing Commitment': lastItem['Outgoing Commitment'],
+      'Outgoing Commitments': lastItem['Outgoing Commitments'],
       'Credit Guarantee': lastItem['Credit Guarantee'],
       'Disbursements': lastItem['Disbursements'],
       'Expenditures': lastItem['Expenditures'],
@@ -622,7 +688,7 @@ export function CumulativeFinancialOverview({
     if (displayData.length === 0) return new Set()
 
     const series = new Set<string>()
-    const seriesKeys = ['Incoming Commitment', 'Incoming Funds', 'Outgoing Commitment', 'Credit Guarantee', 'Disbursements', 'Expenditures', 'Planned Disbursements', 'Budgets']
+    const seriesKeys = ['Incoming Commitments', 'Incoming Funds', 'Outgoing Commitments', 'Credit Guarantee', 'Disbursements', 'Expenditures', 'Planned Disbursements', 'Budgets']
 
     seriesKeys.forEach(key => {
       const hasData = displayData.some(d => d[key] && d[key] > 0)
@@ -664,9 +730,9 @@ export function CumulativeFinancialOverview({
   // Map series names to transaction type codes
   const getTransactionTypeCode = (seriesName: string): string | null => {
     const mapping: Record<string, string | null> = {
-      'Incoming Commitment': '1',
+      'Incoming Commitments': '1',
       'Incoming Funds': '12',
-      'Outgoing Commitment': '2',
+      'Outgoing Commitments': '2',
       'Commitments': '2', // Also handle the display name
       'Credit Guarantee': '11',
       'Disbursements': '3',
@@ -686,11 +752,8 @@ export function CumulativeFinancialOverview({
 
       // Build list of entries with their values
       const entries = payload.map((entry: any) => {
-        // Get value - entry.value should contain the numeric value for the dataKey
-        // If it's not available or is 0/null, try to get from payload using dataKey or name
         let value = entry.value
         if (value == null || value === undefined || (typeof value === 'number' && (isNaN(value) || value === 0))) {
-          // Try to get from payload using dataKey (the key used in the Line/Bar component)
           value = dataPoint?.[entry.dataKey] ?? dataPoint?.[entry.name] ?? 0
         }
         const displayValue = Number(value) || 0
@@ -704,41 +767,62 @@ export function CumulativeFinancialOverview({
         return null
       }
 
+      // Separate transactions from planned/budgets
+      const plannedBudgetNames = ['Planned Disbursements', 'Budgets']
+      const transactions = entries.filter((e: any) => !plannedBudgetNames.includes(e.name))
+      const plannedBudgets = entries.filter((e: any) => plannedBudgetNames.includes(e.name))
+
+      const renderRow = (entry: any, index: number) => {
+        const transactionTypeCode = getTransactionTypeCode(entry.name)
+        return (
+          <tr key={index}>
+            <td className="py-1 pr-4 flex items-center gap-2">
+              <div
+                className="w-3 h-3 rounded-sm flex-shrink-0"
+                style={{ backgroundColor: entry.color }}
+              />
+              <span className="text-slate-700 font-medium flex items-center gap-2">
+                {transactionTypeCode && (
+                  <code className="px-1.5 py-0.5 rounded bg-slate-100 text-slate-700 font-mono text-xs">
+                    {transactionTypeCode}
+                  </code>
+                )}
+                <span>{entry.name}</span>
+              </span>
+            </td>
+            <td className="py-1 text-right font-semibold text-slate-900">
+              {formatTooltipValue(entry.displayValue)}
+            </td>
+          </tr>
+        )
+      }
+
       return (
         <div className="bg-white border border-slate-200 rounded-lg shadow-lg overflow-hidden">
           <div className="bg-slate-100 px-3 py-2 border-b border-slate-200">
             <p className="font-semibold text-slate-900 text-sm">{fullDate}</p>
           </div>
           <div className="p-2">
-            <table className="w-full text-sm">
-              <tbody>
-                {entries.map((entry: any, index: number) => {
-                  const transactionTypeCode = getTransactionTypeCode(entry.name)
-                  
-                  return (
-                    <tr key={index} className="border-b border-slate-100 last:border-b-0">
-                      <td className="py-1.5 pr-4 flex items-center gap-2">
-                        <div
-                          className="w-3 h-3 rounded-sm flex-shrink-0"
-                          style={{ backgroundColor: entry.color }}
-                        />
-                        <span className="text-slate-700 font-medium flex items-center gap-2">
-                          {transactionTypeCode && (
-                            <code className="px-1.5 py-0.5 rounded bg-slate-100 text-slate-700 font-mono text-xs">
-                              {transactionTypeCode}
-                            </code>
-                          )}
-                          <span>{entry.name}</span>
-                        </span>
-                      </td>
-                      <td className="py-1.5 text-right font-semibold text-slate-900">
-                        {formatTooltipValue(entry.displayValue)}
-                      </td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
+            {transactions.length > 0 && (
+              <>
+                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1">Transactions</p>
+                <table className="w-full text-sm mb-2">
+                  <tbody>
+                    {transactions.map(renderRow)}
+                  </tbody>
+                </table>
+              </>
+            )}
+            {plannedBudgets.length > 0 && (
+              <>
+                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1 mt-2 pt-2 border-t border-slate-100">Planned Disbursements & Budgets</p>
+                <table className="w-full text-sm">
+                  <tbody>
+                    {plannedBudgets.map(renderRow)}
+                  </tbody>
+                </table>
+              </>
+            )}
           </div>
         </div>
       )
@@ -765,10 +849,22 @@ export function CumulativeFinancialOverview({
   // Custom legend formatter to show opacity for hidden series
   const renderLegend = (props: any) => {
     const { payload } = props
+    const isDashed = (dataKey: string) => dataKey === 'Planned Disbursements' || dataKey === 'Budgets'
+
+    // Sort payload to put Budgets and Planned Disbursements first
+    const legendOrder = ['Budgets', 'Planned Disbursements']
+    const sortedPayload = [...payload].sort((a: any, b: any) => {
+      const aIndex = legendOrder.indexOf(a.dataKey)
+      const bIndex = legendOrder.indexOf(b.dataKey)
+      if (aIndex !== -1 && bIndex !== -1) return aIndex - bIndex
+      if (aIndex !== -1) return -1
+      if (bIndex !== -1) return 1
+      return 0
+    })
 
     return (
       <ul className="flex flex-wrap justify-center gap-4 mt-4">
-        {payload.map((entry: any, index: number) => {
+        {sortedPayload.map((entry: any, index: number) => {
           const isHidden = hiddenSeries.has(entry.dataKey)
 
           return (
@@ -778,10 +874,31 @@ export function CumulativeFinancialOverview({
               onClick={() => handleLegendClick({ dataKey: entry.dataKey })}
               style={{ opacity: isHidden ? 0.3 : 1 }}
             >
-              <span
-                className="w-3 h-3 rounded-sm"
-                style={{ backgroundColor: entry.color }}
-              />
+              {chartType === 'line' || chartType === 'area' ? (
+                isDashed(entry.dataKey) ? (
+                  <svg width="16" height="3" className="flex-shrink-0">
+                    <line
+                      x1="0" y1="1.5" x2="16" y2="1.5"
+                      stroke={entry.color}
+                      strokeWidth="2"
+                      strokeDasharray="4 2"
+                    />
+                  </svg>
+                ) : (
+                  <svg width="16" height="3" className="flex-shrink-0">
+                    <line
+                      x1="0" y1="1.5" x2="16" y2="1.5"
+                      stroke={entry.color}
+                      strokeWidth="2"
+                    />
+                  </svg>
+                )
+              ) : (
+                <span
+                  className="w-3 h-3 rounded-sm flex-shrink-0"
+                  style={{ backgroundColor: entry.color }}
+                />
+              )}
               <span className="text-sm text-slate-700">{entry.value}</span>
             </li>
           )
@@ -794,9 +911,9 @@ export function CumulativeFinancialOverview({
   const handleExportCSV = () => {
     const dataToExport = displayData.map(d => ({
       'Period': d.fullDate || d.displayDate,
-      'Incoming Commitment': d['Incoming Commitment']?.toFixed(2) || '0.00',
+      'Incoming Commitments': d['Incoming Commitments']?.toFixed(2) || '0.00',
       'Incoming Funds': d['Incoming Funds']?.toFixed(2) || '0.00',
-      'Outgoing Commitment': d['Outgoing Commitment']?.toFixed(2) || '0.00',
+      'Outgoing Commitments': d['Outgoing Commitments']?.toFixed(2) || '0.00',
       'Credit Guarantee': d['Credit Guarantee']?.toFixed(2) || '0.00',
       'Disbursements': d['Disbursements']?.toFixed(2) || '0.00',
       'Expenditures': d['Expenditures']?.toFixed(2) || '0.00',
@@ -809,31 +926,41 @@ export function CumulativeFinancialOverview({
       ...dataToExport.map(row => Object.values(row).map(v => `"${v}"`).join(","))
     ].join("\n")
 
-    exportToCSV(csv, `cumulative-financial-overview-${new Date().getTime()}.csv`)
+    // Download CSV directly
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.setAttribute('href', url)
+    link.setAttribute('download', `cumulative-financial-overview-${new Date().getTime()}.csv`)
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    URL.revokeObjectURL(url)
   }
 
   // Export to JPG
-  const handleExportJPG = () => {
-    const chartElement = document.querySelector('#cumulative-financial-chart') as HTMLElement
+  const handleExportJPG = async () => {
+    const chartElement = chartRef.current || document.querySelector('#cumulative-financial-chart') as HTMLElement
     if (!chartElement) return
 
-    import('html2canvas').then(({ default: html2canvas }) => {
-      html2canvas(chartElement, {
+    try {
+      const canvas = await html2canvas(chartElement, {
         backgroundColor: '#ffffff',
         scale: 2
-      }).then(canvas => {
-        canvas.toBlob((blob) => {
-          if (blob) {
-            const url = URL.createObjectURL(blob)
-            const link = document.createElement('a')
-            link.download = `cumulative-financial-overview-${new Date().getTime()}.jpg`
-            link.href = url
-            link.click()
-            URL.revokeObjectURL(url)
-          }
-        }, 'image/jpeg', 0.95)
       })
-    })
+      canvas.toBlob((blob) => {
+        if (blob) {
+          const url = URL.createObjectURL(blob)
+          const link = document.createElement('a')
+          link.download = `cumulative-financial-overview-${new Date().getTime()}.jpg`
+          link.href = url
+          link.click()
+          URL.revokeObjectURL(url)
+        }
+      }, 'image/jpeg', 0.95)
+    } catch (error) {
+      console.error('Error exporting chart:', error)
+    }
   }
 
   // Compact mode renders just the chart without Card wrapper and filters
@@ -873,8 +1000,8 @@ export function CumulativeFinancialOverview({
             {!hiddenSeries.has('Disbursements') && (
               <Line type="monotone" dataKey="Disbursements" name="Disbursements" stroke={FINANCIAL_OVERVIEW_COLORS['Disbursements']} strokeWidth={2} dot={false} />
             )}
-            {!hiddenSeries.has('Outgoing Commitment') && (
-              <Line type="monotone" dataKey="Outgoing Commitment" name="Commitments" stroke={FINANCIAL_OVERVIEW_COLORS['Outgoing Commitment']} strokeWidth={2} dot={false} />
+            {!hiddenSeries.has('Outgoing Commitments') && (
+              <Line type="monotone" dataKey="Outgoing Commitments" name="Commitments" stroke={FINANCIAL_OVERVIEW_COLORS['Outgoing Commitments']} strokeWidth={2} dot={false} />
             )}
             {!hiddenSeries.has('Planned Disbursements') && (
               <Line type="monotone" dataKey="Planned Disbursements" name="Planned" stroke={FINANCIAL_OVERVIEW_COLORS['Planned Disbursements']} strokeWidth={2} strokeDasharray="5 5" dot={false} />
@@ -887,104 +1014,140 @@ export function CumulativeFinancialOverview({
 
   if (loading) {
     return (
-      <Card className="bg-white border-slate-200">
-        <CardHeader>
-          <CardTitle className="text-lg font-semibold text-slate-900">
-            Cumulative Financial Overview
-          </CardTitle>
-          <CardDescription>
-            Cumulative view of all transaction types, planned disbursements, and planned budgets over time
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Skeleton className="h-[500px] w-full" />
-        </CardContent>
-      </Card>
+      <div className="flex items-center justify-center h-[500px]">
+        <Skeleton className="h-full w-full" />
+      </div>
     )
   }
 
   if (error) {
     return (
-      <Card className="bg-white border-slate-200">
-        <CardHeader>
-          <CardTitle className="text-lg font-semibold text-slate-900">
-            Cumulative Financial Overview
-          </CardTitle>
-          <CardDescription>
-            Cumulative view of all transaction types, planned disbursements, and planned budgets over time
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center justify-center h-96 text-slate-400">
-            <div className="text-center">
-              <AlertCircle className="h-12 w-12 mx-auto mb-2 opacity-50" />
-              <p className="font-medium">{error}</p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      <div className="flex items-center justify-center h-96 text-slate-400">
+        <div className="text-center">
+          <AlertCircle className="h-12 w-12 mx-auto mb-2 opacity-50" />
+          <p className="font-medium">{error}</p>
+        </div>
+      </div>
     )
   }
 
   return (
-    <Card className="border-slate-200">
-      <CardHeader>
-        <div className="flex flex-col gap-4">
-          {/* Title and Description */}
-          <div>
-            <CardTitle className="text-lg font-semibold text-slate-900">
-              Financial Overview
-            </CardTitle>
-            <CardDescription>
-              {dataMode === 'cumulative' && chartType !== 'total' && 'Cumulative tracking of actual transactions, planned disbursements, and budgets across all activities over time'}
-              {dataMode === 'periodic' && chartType !== 'total' && 'Period-by-period changes in actual transactions, planned disbursements, and budgets across all activities'}
-              {chartType === 'total' && 'Total values of transactions, planned disbursements, and budgets aggregated across all periods and activities'}
-            </CardDescription>
-          </div>
+    <div className="space-y-4 overflow-visible">
+      <div className="flex flex-col gap-4 overflow-visible">
 
           {/* Controls Row */}
-          <div className="flex items-center justify-between gap-2 flex-wrap">
-            {/* Filters - Left Side */}
-            <div className="flex items-center gap-2 flex-wrap">
-              {/* Time Range Filter */}
-              <div className="w-[160px]">
-                <Select
-                  value={selectedTimeRange}
-                  onValueChange={(value) => setSelectedTimeRange(value as TimeRange)}
-                >
-                  <SelectTrigger className="h-9 bg-white">
-                    <SelectValue placeholder="Time Range" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {TIME_RANGE_OPTIONS.map((option) => (
-                      <SelectItem key={option.value} value={option.value}>
-                        {option.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+          <div className="flex items-start gap-2 overflow-visible flex-wrap pb-1">
+            {/* Left Side - Calendar & Year Selectors */}
+            <div className="flex items-start gap-2 flex-shrink-0">
+              {customYears.length > 0 && (
+                <>
+                  {/* Calendar Type Selector */}
+                  <div className="flex gap-1 border rounded-lg p-1 bg-white">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="sm" className="h-8 gap-1">
+                          {customYears.find(cy => cy.id === calendarType)?.name || 'Select calendar'}
+                          <svg className="h-4 w-4 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                          </svg>
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="start">
+                        {customYears.map(cy => (
+                          <DropdownMenuItem
+                            key={cy.id}
+                            className={calendarType === cy.id ? 'bg-slate-100 font-medium' : ''}
+                            onClick={() => setCalendarType(cy.id)}
+                          >
+                            {cy.name}
+                          </DropdownMenuItem>
+                        ))}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
 
-              {/* Activity Multi-Select */}
-              <div className="w-[280px]">
-                <MultiSelect
-                  options={activities.map(activity => ({
-                    label: activity.iati_identifier
-                      ? `${activity.title} (${activity.iati_identifier})`
-                      : activity.title,
-                    value: activity.id
-                  }))}
-                  selected={selectedActivities}
-                  onChange={setSelectedActivities}
-                  placeholder="Activities (All)"
-                  showSelectAll={true}
-                  selectedLabel="Activities selected"
-                />
-              </div>
+                  {/* Year Range Selector with Date Range below */}
+                  <div className="flex flex-col gap-1">
+                    <div className="flex gap-1 border rounded-lg p-1 bg-white">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="sm" className="h-8 gap-1">
+                            <CalendarIcon className="h-4 w-4" />
+                            {selectedYears.length === 0
+                              ? 'Select years'
+                              : selectedYears.length === 1
+                                ? getYearLabel(selectedYears[0])
+                                : `${getYearLabel(Math.min(...selectedYears))} - ${getYearLabel(Math.max(...selectedYears))}`}
+                            <svg className="h-4 w-4 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                            </svg>
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="start" className="p-3 w-auto">
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-xs font-medium text-slate-700">Select Year Range</span>
+                            <div className="flex gap-1">
+                              <button
+                                onClick={selectAllYears}
+                                className="text-xs text-slate-500 hover:text-slate-700 px-2 py-0.5 hover:bg-slate-100 rounded"
+                                title="Select all available years"
+                              >
+                                All
+                              </button>
+                              <button
+                                onClick={selectDataRange}
+                                className="text-xs text-slate-500 hover:text-slate-700 px-2 py-0.5 hover:bg-slate-100 rounded"
+                                title={actualDataRange ? `Select only years with data: ${getYearLabel(actualDataRange.minYear)} - ${getYearLabel(actualDataRange.maxYear)}` : 'Select years with data'}
+                              >
+                                Data
+                              </button>
+                            </div>
+                          </div>
+                          <div className="grid grid-cols-3 gap-1">
+                            {AVAILABLE_YEARS.map((year) => {
+                              const isStartOrEnd = selectedYears.length > 0 &&
+                                (year === Math.min(...selectedYears) || year === Math.max(...selectedYears))
+                              const inRange = isYearInRange(year)
+
+                              return (
+                                <button
+                                  key={year}
+                                  onClick={(e) => handleYearClick(year, e.shiftKey)}
+                                  className={`
+                                    px-2 py-1.5 text-xs font-medium rounded transition-colors whitespace-nowrap
+                                    ${isStartOrEnd
+                                      ? 'bg-primary text-primary-foreground'
+                                      : inRange
+                                        ? 'bg-primary/20 text-primary'
+                                        : 'text-slate-600 hover:bg-slate-100'
+                                    }
+                                  `}
+                                  title="Click to select start, then click another to select end"
+                                >
+                                  {getYearLabel(year)}
+                                </button>
+                              )
+                            })}
+                          </div>
+                          <p className="text-[10px] text-slate-400 mt-2 text-center">
+                            Click start year, then click end year
+                          </p>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+                    {/* Date Range Indicator */}
+                    {effectiveDateRange?.from && effectiveDateRange?.to && (
+                      <span className="text-xs text-slate-500 text-center">
+                        {format(effectiveDateRange.from, 'MMM d, yyyy')} – {format(effectiveDateRange.to, 'MMM d, yyyy')}
+                      </span>
+                    )}
+                  </div>
+                </>
+              )}
             </div>
 
-            {/* View Controls and Export - Right Side */}
-            <div className="flex items-center gap-2 flex-wrap">
+            {/* Right Side Controls */}
+            <div className="flex items-center gap-2 flex-wrap ml-auto">
               {/* Periodic/Cumulative Toggle */}
               <div className="flex gap-1 border rounded-lg p-1 bg-white">
                 <Button
@@ -1007,8 +1170,8 @@ export function CumulativeFinancialOverview({
 
               {/* Allocation Method Toggle */}
               <div className="flex items-center gap-2">
-                <div className="flex items-center gap-2 border rounded-lg px-3 py-1.5 bg-white">
-                  <Label htmlFor="allocation-toggle" className="text-sm text-slate-700 cursor-pointer">
+                <div className="flex items-center gap-2 border rounded-lg px-3 py-1.5 bg-white h-[34px]">
+                  <Label htmlFor="allocation-toggle" className="text-sm text-slate-700 cursor-pointer whitespace-nowrap">
                     {allocationMethod === 'proportional' ? 'Proportional' : 'Period Start'}
                   </Label>
                   <Switch
@@ -1017,7 +1180,7 @@ export function CumulativeFinancialOverview({
                     onCheckedChange={(checked) => setAllocationMethod(checked ? 'proportional' : 'period-start')}
                   />
                 </div>
-                <HelpTextTooltip 
+                <HelpTextTooltip
                   content={
                     allocationMethod === 'proportional'
                       ? "Allocates budget and planned disbursement amounts across their time periods. For example, a $100,000 budget from July 2024 to June 2025 will be split proportionally across those 12 months."
@@ -1076,9 +1239,9 @@ export function CumulativeFinancialOverview({
               </div>
 
               {/* Export Buttons */}
-              <div className="flex gap-1">
+              <div className="flex gap-1 border rounded-lg p-1 bg-white">
                 <Button
-                  variant="outline"
+                  variant="ghost"
                   size="sm"
                   onClick={handleExportCSV}
                   className="h-8 px-2"
@@ -1087,7 +1250,7 @@ export function CumulativeFinancialOverview({
                   <Download className="h-4 w-4" />
                 </Button>
                 <Button
-                  variant="outline"
+                  variant="ghost"
                   size="sm"
                   onClick={handleExportJPG}
                   className="h-8 px-2"
@@ -1100,8 +1263,8 @@ export function CumulativeFinancialOverview({
             </div>
           </div>
         </div>
-      </CardHeader>
-      <CardContent id="cumulative-financial-chart">
+
+        <div ref={chartRef} id="cumulative-financial-chart">
         {displayData.length > 0 ? (
           <>
             {/* Table View */}
@@ -1111,14 +1274,14 @@ export function CumulativeFinancialOverview({
                   <TableHeader>
                     <TableRow className="sticky top-0 bg-white z-10">
                       <TableHead className="bg-white">Period</TableHead>
-                      {activeSeries.has('Incoming Commitment') && (
-                        <TableHead className="text-right bg-white">Incoming Commitment</TableHead>
+                      {activeSeries.has('Incoming Commitments') && (
+                        <TableHead className="text-right bg-white">Incoming Commitments</TableHead>
                       )}
                       {activeSeries.has('Incoming Funds') && (
                         <TableHead className="text-right bg-white">Incoming Funds</TableHead>
                       )}
-                      {activeSeries.has('Outgoing Commitment') && (
-                        <TableHead className="text-right bg-white">Outgoing Commitment</TableHead>
+                      {activeSeries.has('Outgoing Commitments') && (
+                        <TableHead className="text-right bg-white">Outgoing Commitments</TableHead>
                       )}
                       {activeSeries.has('Credit Guarantee') && (
                         <TableHead className="text-right bg-white">Credit Guarantee</TableHead>
@@ -1141,14 +1304,14 @@ export function CumulativeFinancialOverview({
                     {displayData.map((item, index) => (
                       <TableRow key={index}>
                         <TableCell className="font-medium">{item.fullDate || item.displayDate}</TableCell>
-                        {activeSeries.has('Incoming Commitment') && (
-                          <TableCell className="text-right">{formatTooltipValue(item['Incoming Commitment'] || 0)}</TableCell>
+                        {activeSeries.has('Incoming Commitments') && (
+                          <TableCell className="text-right">{formatTooltipValue(item['Incoming Commitments'] || 0)}</TableCell>
                         )}
                         {activeSeries.has('Incoming Funds') && (
                           <TableCell className="text-right">{formatTooltipValue(item['Incoming Funds'] || 0)}</TableCell>
                         )}
-                        {activeSeries.has('Outgoing Commitment') && (
-                          <TableCell className="text-right">{formatTooltipValue(item['Outgoing Commitment'] || 0)}</TableCell>
+                        {activeSeries.has('Outgoing Commitments') && (
+                          <TableCell className="text-right">{formatTooltipValue(item['Outgoing Commitments'] || 0)}</TableCell>
                         )}
                         {activeSeries.has('Credit Guarantee') && (
                           <TableCell className="text-right">{formatTooltipValue(item['Credit Guarantee'] || 0)}</TableCell>
@@ -1171,11 +1334,11 @@ export function CumulativeFinancialOverview({
                     {displayData.length > 0 && (
                       <TableRow className="bg-slate-50 font-semibold border-t-2 border-slate-300 sticky bottom-0">
                         <TableCell className="font-semibold">Total</TableCell>
-                        {activeSeries.has('Incoming Commitment') && (
+                        {activeSeries.has('Incoming Commitments') && (
                           <TableCell className="text-right">
                             {dataMode === 'cumulative'
-                              ? formatTooltipValue(displayData[displayData.length - 1]['Incoming Commitment'] || 0)
-                              : formatTooltipValue(displayData.reduce((sum, item) => sum + (item['Incoming Commitment'] || 0), 0))
+                              ? formatTooltipValue(displayData[displayData.length - 1]['Incoming Commitments'] || 0)
+                              : formatTooltipValue(displayData.reduce((sum, item) => sum + (item['Incoming Commitments'] || 0), 0))
                             }
                           </TableCell>
                         )}
@@ -1187,11 +1350,11 @@ export function CumulativeFinancialOverview({
                             }
                           </TableCell>
                         )}
-                        {activeSeries.has('Outgoing Commitment') && (
+                        {activeSeries.has('Outgoing Commitments') && (
                           <TableCell className="text-right">
                             {dataMode === 'cumulative'
-                              ? formatTooltipValue(displayData[displayData.length - 1]['Outgoing Commitment'] || 0)
-                              : formatTooltipValue(displayData.reduce((sum, item) => sum + (item['Outgoing Commitment'] || 0), 0))
+                              ? formatTooltipValue(displayData[displayData.length - 1]['Outgoing Commitments'] || 0)
+                              : formatTooltipValue(displayData.reduce((sum, item) => sum + (item['Outgoing Commitments'] || 0), 0))
                             }
                           </TableCell>
                         )}
@@ -1295,10 +1458,12 @@ export function CumulativeFinancialOverview({
             {/* Bar Chart View */}
             {chartType === 'bar' && (
               <ResponsiveContainer width="100%" height={600}>
-                <BarChart 
-                  data={displayData} 
+                <BarChart
+                  data={displayData}
                   margin={{ top: 20, right: 30, left: 20, bottom: 60 }}
                   key={`bar-${allocationMethod}-${dataMode}`}
+                  barGap={0}
+                  barCategoryGap="20%"
                 >
                   <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e1" opacity={0.5} />
                   <XAxis
@@ -1313,11 +1478,11 @@ export function CumulativeFinancialOverview({
                   <YAxis tickFormatter={formatCurrency} stroke="#64748B" fontSize={12} />
                   <Tooltip content={<CustomTooltip />} />
                   <Legend content={renderLegend} />
-                  {activeSeries.has('Incoming Commitment') && (
+                  {activeSeries.has('Incoming Commitments') && (
                     <Bar
-                      dataKey="Incoming Commitment"
-                      fill={hiddenSeries.has('Incoming Commitment') ? '#cbd5e1' : FINANCIAL_OVERVIEW_COLORS['Incoming Commitment']}
-                      opacity={hiddenSeries.has('Incoming Commitment') ? 0.3 : 1}
+                      dataKey="Incoming Commitments"
+                      fill={hiddenSeries.has('Incoming Commitments') ? '#cbd5e1' : FINANCIAL_OVERVIEW_COLORS['Incoming Commitments']}
+                      opacity={hiddenSeries.has('Incoming Commitments') ? 0.3 : 1}
                       isAnimationActive={true}
                       animationDuration={600}
                       animationEasing="ease-in-out"
@@ -1333,11 +1498,11 @@ export function CumulativeFinancialOverview({
                       animationEasing="ease-in-out"
                     />
                   )}
-                  {activeSeries.has('Outgoing Commitment') && (
+                  {activeSeries.has('Outgoing Commitments') && (
                     <Bar
-                      dataKey="Outgoing Commitment"
-                      fill={hiddenSeries.has('Outgoing Commitment') ? '#cbd5e1' : FINANCIAL_OVERVIEW_COLORS['Outgoing Commitment']}
-                      opacity={hiddenSeries.has('Outgoing Commitment') ? 0.3 : 1}
+                      dataKey="Outgoing Commitments"
+                      fill={hiddenSeries.has('Outgoing Commitments') ? '#cbd5e1' : FINANCIAL_OVERVIEW_COLORS['Outgoing Commitments']}
+                      opacity={hiddenSeries.has('Outgoing Commitments') ? 0.3 : 1}
                       isAnimationActive={true}
                       animationDuration={600}
                       animationEasing="ease-in-out"
@@ -1418,17 +1583,17 @@ export function CumulativeFinancialOverview({
                   <YAxis tickFormatter={formatCurrency} stroke="#64748B" fontSize={12} />
                   <Tooltip content={<CustomTooltip />} />
                   <Legend content={renderLegend} />
-                  {activeSeries.has('Incoming Commitment') && (
+                  {activeSeries.has('Incoming Commitments') && (
                     <Line
                       type="monotone"
-                      dataKey="Incoming Commitment"
-                      stroke={hiddenSeries.has('Incoming Commitment') ? '#cbd5e1' : FINANCIAL_OVERVIEW_COLORS['Incoming Commitment']}
-                      strokeWidth={hiddenSeries.has('Incoming Commitment') ? 1 : 2.5}
-                      dot={{ fill: hiddenSeries.has('Incoming Commitment') ? '#cbd5e1' : FINANCIAL_OVERVIEW_COLORS['Incoming Commitment'], r: 3 }}
+                      dataKey="Incoming Commitments"
+                      stroke={hiddenSeries.has('Incoming Commitments') ? '#cbd5e1' : FINANCIAL_OVERVIEW_COLORS['Incoming Commitments']}
+                      strokeWidth={hiddenSeries.has('Incoming Commitments') ? 1 : 2.5}
+                      dot={{ fill: hiddenSeries.has('Incoming Commitments') ? '#cbd5e1' : FINANCIAL_OVERVIEW_COLORS['Incoming Commitments'], r: 3 }}
                       isAnimationActive={true}
                       animationDuration={600}
                       animationEasing="ease-in-out"
-                      opacity={hiddenSeries.has('Incoming Commitment') ? 0.3 : 1}
+                      opacity={hiddenSeries.has('Incoming Commitments') ? 0.3 : 1}
                     />
                   )}
                   {activeSeries.has('Incoming Funds') && (
@@ -1444,17 +1609,17 @@ export function CumulativeFinancialOverview({
                       opacity={hiddenSeries.has('Incoming Funds') ? 0.3 : 1}
                     />
                   )}
-                  {activeSeries.has('Outgoing Commitment') && (
+                  {activeSeries.has('Outgoing Commitments') && (
                     <Line
                       type="monotone"
-                      dataKey="Outgoing Commitment"
-                      stroke={hiddenSeries.has('Outgoing Commitment') ? '#cbd5e1' : FINANCIAL_OVERVIEW_COLORS['Outgoing Commitment']}
-                      strokeWidth={hiddenSeries.has('Outgoing Commitment') ? 1 : 2.5}
-                      dot={{ fill: hiddenSeries.has('Outgoing Commitment') ? '#cbd5e1' : FINANCIAL_OVERVIEW_COLORS['Outgoing Commitment'], r: 3 }}
+                      dataKey="Outgoing Commitments"
+                      stroke={hiddenSeries.has('Outgoing Commitments') ? '#cbd5e1' : FINANCIAL_OVERVIEW_COLORS['Outgoing Commitments']}
+                      strokeWidth={hiddenSeries.has('Outgoing Commitments') ? 1 : 2.5}
+                      dot={{ fill: hiddenSeries.has('Outgoing Commitments') ? '#cbd5e1' : FINANCIAL_OVERVIEW_COLORS['Outgoing Commitments'], r: 3 }}
                       isAnimationActive={true}
                       animationDuration={600}
                       animationEasing="ease-in-out"
-                      opacity={hiddenSeries.has('Outgoing Commitment') ? 0.3 : 1}
+                      opacity={hiddenSeries.has('Outgoing Commitments') ? 0.3 : 1}
                     />
                   )}
                   {activeSeries.has('Credit Guarantee') && (
@@ -1538,10 +1703,10 @@ export function CumulativeFinancialOverview({
                   key={`area-${allocationMethod}-${dataMode}`}
                 >
                   <defs>
-                    {activeSeries.has('Incoming Commitment') && (
+                    {activeSeries.has('Incoming Commitments') && (
                       <linearGradient id="colorIncomingCommitment" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor={FINANCIAL_OVERVIEW_COLORS['Incoming Commitment']} stopOpacity={0.8}/>
-                        <stop offset="95%" stopColor={FINANCIAL_OVERVIEW_COLORS['Incoming Commitment']} stopOpacity={0.1}/>
+                        <stop offset="5%" stopColor={FINANCIAL_OVERVIEW_COLORS['Incoming Commitments']} stopOpacity={0.8}/>
+                        <stop offset="95%" stopColor={FINANCIAL_OVERVIEW_COLORS['Incoming Commitments']} stopOpacity={0.1}/>
                       </linearGradient>
                     )}
                     {activeSeries.has('Incoming Funds') && (
@@ -1550,10 +1715,10 @@ export function CumulativeFinancialOverview({
                         <stop offset="95%" stopColor={FINANCIAL_OVERVIEW_COLORS['Incoming Funds']} stopOpacity={0.1}/>
                       </linearGradient>
                     )}
-                    {activeSeries.has('Outgoing Commitment') && (
+                    {activeSeries.has('Outgoing Commitments') && (
                       <linearGradient id="colorOutgoingCommitment" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor={FINANCIAL_OVERVIEW_COLORS['Outgoing Commitment']} stopOpacity={0.8}/>
-                        <stop offset="95%" stopColor={FINANCIAL_OVERVIEW_COLORS['Outgoing Commitment']} stopOpacity={0.1}/>
+                        <stop offset="5%" stopColor={FINANCIAL_OVERVIEW_COLORS['Outgoing Commitments']} stopOpacity={0.8}/>
+                        <stop offset="95%" stopColor={FINANCIAL_OVERVIEW_COLORS['Outgoing Commitments']} stopOpacity={0.1}/>
                       </linearGradient>
                     )}
                     {activeSeries.has('Credit Guarantee') && (
@@ -1600,14 +1765,14 @@ export function CumulativeFinancialOverview({
                   <YAxis tickFormatter={formatCurrency} stroke="#64748B" fontSize={12} />
                   <Tooltip content={<CustomTooltip />} />
                   <Legend content={renderLegend} />
-                  {activeSeries.has('Incoming Commitment') && (
+                  {activeSeries.has('Incoming Commitments') && (
                     <Area
                       type="monotone"
-                      dataKey="Incoming Commitment"
-                      stroke={hiddenSeries.has('Incoming Commitment') ? '#cbd5e1' : FINANCIAL_OVERVIEW_COLORS['Incoming Commitment']}
-                      strokeWidth={hiddenSeries.has('Incoming Commitment') ? 1 : 2.5}
-                      fill={hiddenSeries.has('Incoming Commitment') ? 'url(#colorIncomingCommitment)' : 'url(#colorIncomingCommitment)'}
-                      fillOpacity={hiddenSeries.has('Incoming Commitment') ? 0.1 : 0.6}
+                      dataKey="Incoming Commitments"
+                      stroke={hiddenSeries.has('Incoming Commitments') ? '#cbd5e1' : FINANCIAL_OVERVIEW_COLORS['Incoming Commitments']}
+                      strokeWidth={hiddenSeries.has('Incoming Commitments') ? 1 : 2.5}
+                      fill={hiddenSeries.has('Incoming Commitments') ? 'url(#colorIncomingCommitment)' : 'url(#colorIncomingCommitment)'}
+                      fillOpacity={hiddenSeries.has('Incoming Commitments') ? 0.1 : 0.6}
                       isAnimationActive={true}
                       animationDuration={600}
                       animationEasing="ease-in-out"
@@ -1626,14 +1791,14 @@ export function CumulativeFinancialOverview({
                       animationEasing="ease-in-out"
                     />
                   )}
-                  {activeSeries.has('Outgoing Commitment') && (
+                  {activeSeries.has('Outgoing Commitments') && (
                     <Area
                       type="monotone"
-                      dataKey="Outgoing Commitment"
-                      stroke={hiddenSeries.has('Outgoing Commitment') ? '#cbd5e1' : FINANCIAL_OVERVIEW_COLORS['Outgoing Commitment']}
-                      strokeWidth={hiddenSeries.has('Outgoing Commitment') ? 1 : 2.5}
-                      fill={hiddenSeries.has('Outgoing Commitment') ? 'url(#colorOutgoingCommitment)' : 'url(#colorOutgoingCommitment)'}
-                      fillOpacity={hiddenSeries.has('Outgoing Commitment') ? 0.1 : 0.6}
+                      dataKey="Outgoing Commitments"
+                      stroke={hiddenSeries.has('Outgoing Commitments') ? '#cbd5e1' : FINANCIAL_OVERVIEW_COLORS['Outgoing Commitments']}
+                      strokeWidth={hiddenSeries.has('Outgoing Commitments') ? 1 : 2.5}
+                      fill={hiddenSeries.has('Outgoing Commitments') ? 'url(#colorOutgoingCommitment)' : 'url(#colorOutgoingCommitment)'}
+                      fillOpacity={hiddenSeries.has('Outgoing Commitments') ? 0.1 : 0.6}
                       isAnimationActive={true}
                       animationDuration={600}
                       animationEasing="ease-in-out"
@@ -1720,7 +1885,18 @@ export function CumulativeFinancialOverview({
             </div>
           </div>
         )}
-      </CardContent>
-    </Card>
+        </div>
+
+        {/* Explanatory Text */}
+        <p className="text-xs text-gray-500 mt-4">
+          This chart provides a comprehensive view of financial flows over time, tracking all IATI transaction types including
+          Incoming Commitments (type 1), Incoming Funds (type 12), Outgoing Commitments (type 2), Credit Guarantees (type 11),
+          Disbursements (type 3), and Expenditures (type 4), alongside Planned Disbursements and Budgets.
+          Toggle between <strong>Cumulative</strong> view to see running totals over time, or <strong>Periodic</strong> view
+          to see year-by-year changes. The <strong>Proportional</strong> setting distributes multi-year budgets and planned
+          disbursements across their time periods, while <strong>Period Start</strong> shows the full amount at the start date.
+          Click on legend items to show or hide specific data series. Year labels adjust based on the selected calendar type.
+        </p>
+    </div>
   )
 }

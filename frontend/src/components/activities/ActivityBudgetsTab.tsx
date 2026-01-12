@@ -1633,8 +1633,8 @@ export default function ActivityBudgetsTab({
           )}
           
           {/* Budgets Table */}
-          <Card data-budgets-tab>
-        <CardHeader>
+          <Card data-budgets-tab className={hideSummaryCards ? "border-0 shadow-none" : ""}>
+        <CardHeader className={hideSummaryCards ? "hidden" : ""}>
           <div className="flex items-center justify-between">
             {!hideSummaryCards && (
               <div>
@@ -1890,7 +1890,7 @@ export default function ActivityBudgetsTab({
             </div>
           )}
         </CardHeader>
-        <CardContent>
+        <CardContent className={hideSummaryCards ? "p-0" : ""}>
 
           {/* Copy Budget Dialog */}
           <Dialog open={showCopyDialog} onOpenChange={(open) => {
@@ -1966,8 +1966,8 @@ export default function ActivityBudgetsTab({
 
 
           {/* Budget table */}
-          <div className="rounded-md border">
-            <Table aria-label="Budgets table" className="table-fixed">
+          <div className="w-full">
+            <Table aria-label="Budgets table" className="w-full">
               <TableHeader className="bg-muted/50 border-b border-border/70">
                 <TableRow>
                   <TableHead className="py-3 px-2 whitespace-nowrap" style={{ width: '50px' }}></TableHead>
@@ -2090,15 +2090,13 @@ export default function ActivityBudgetsTab({
                           {safeFormatDate(budget.period_start, 'MMM yyyy')} - {safeFormatDate(budget.period_end, 'MMM yyyy')}
                         </span>
                       </TableCell>
-                      <TableCell className="py-3 px-4 whitespace-nowrap" style={{ width: '120px' }}>
-                        <span className="rounded-md bg-muted/60 px-2 py-0.5 text-xs">
-                          {budget.status === 1 ? 'Indicative' : 'Committed'}
-                        </span>
+                      <TableCell className="py-3 px-4 whitespace-nowrap text-sm" style={{ width: '120px' }}>
+                        <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded mr-1.5">{budget.status}</code>
+                        {budget.status === 1 ? 'Indicative' : 'Committed'}
                       </TableCell>
-                      <TableCell className="py-3 px-4 whitespace-nowrap" style={{ width: '110px' }}>
-                        <span className="rounded-md bg-muted/60 px-2 py-0.5 text-xs">
-                          {budget.type === 1 ? 'Original' : 'Revised'}
-                        </span>
+                      <TableCell className="py-3 px-4 whitespace-nowrap text-sm" style={{ width: '110px' }}>
+                        <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded mr-1.5">{budget.type}</code>
+                        {budget.type === 1 ? 'Original' : 'Revised'}
                       </TableCell>
                       <TableCell className="py-3 px-4 text-right whitespace-nowrap" style={{ width: '160px' }}>
                         <span className="font-medium">

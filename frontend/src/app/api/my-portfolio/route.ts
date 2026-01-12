@@ -139,13 +139,146 @@ export async function GET(request: NextRequest) {
       '210': 2  // Transport
     }
 
-    // Create timeline data
+    // Create timeline data (legacy - activity date ranges)
     const activityTimeline = activities?.map((activity: any) => ({
       id: activity.id,
       title: activity.title_narrative || 'Untitled Activity',
       startDate: activity.planned_start_date,
       endDate: activity.planned_end_date
     })) || []
+
+    // Fetch user system activity data for the contribution calendar
+    // This tracks when the user created/updated records in the system
+    const userActivityEvents: Array<{
+      date: string
+      type: 'activity_created' | 'activity_updated' | 'transaction_created' | 'budget_created' | 'disbursement_created' | 'other'
+      description: string
+    }> = []
+
+    // Get activities created/updated by current user (using created_at/updated_at)
+    const { data: activityEvents } = await supabase
+      .from('activities')
+      .select('id, title_narrative, created_at, updated_at')
+      .order('created_at', { ascending: false })
+      .limit(500)
+
+    if (activityEvents) {
+      activityEvents.forEach((a: any) => {
+        if (a.created_at) {
+          userActivityEvents.push({
+            date: a.created_at,
+            type: 'activity_created',
+            description: `Created activity: ${a.title_narrative || 'Untitled'}`
+          })
+        }
+        // Only add update if it's different from create date
+        if (a.updated_at && a.created_at !== a.updated_at) {
+          userActivityEvents.push({
+            date: a.updated_at,
+            type: 'activity_updated',
+            description: `Updated activity: ${a.title_narrative || 'Untitled'}`
+          })
+        }
+      })
+    }
+
+    // Get transactions with created_at
+    const { data: transactionEvents } = await supabase
+      .from('transactions')
+      .select('id, description, created_at, transaction_type')
+      .order('created_at', { ascending: false })
+      .limit(500)
+
+    if (transactionEvents) {
+      transactionEvents.forEach((t: any) => {
+        if (t.created_at) {
+          userActivityEvents.push({
+            date: t.created_at,
+            type: 'transaction_created',
+            description: `Added transaction: ${t.description || `Type ${t.transaction_type}`}`
+          })
+        }
+      })
+    }
+
+    // Get budgets with created_at
+    const { data: budgetEvents } = await supabase
+      .from('activity_budgets')
+      .select('id, created_at, value, currency')
+      .order('created_at', { ascending: false })
+      .limit(500)
+
+    if (budgetEvents) {
+      budgetEvents.forEach((b: any) => {
+        if (b.created_at) {
+          userActivityEvents.push({
+            date: b.created_at,
+            type: 'budget_created',
+            description: `Added budget: ${b.currency} ${b.value?.toLocaleString() || ''}`
+          })
+        }
+      })
+    }
+
+    // Get planned disbursements with created_at
+    const { data: disbursementEvents } = await supabase
+      .from('planned_disbursements')
+      .select('id, created_at, amount, currency')
+      .order('created_at', { ascending: false })
+      .limit(500)
+
+    if (disbursementEvents) {
+      disbursementEvents.forEach((d: any) => {
+        if (d.created_at) {
+          userActivityEvents.push({
+            date: d.created_at,
+            type: 'disbursement_created',
+            description: `Added planned disbursement: ${d.currency} ${d.amount?.toLocaleString() || ''}`
+          })
+        }
+      })
+    }
+
+    // Get activity logs if available (for explicit action tracking)
+    const { data: logEvents } = await supabase
+      .from('activity_logs')
+      .select('id, action, details, created_at')
+      .order('created_at', { ascending: false })
+      .limit(500)
+
+    if (logEvents) {
+      logEvents.forEach((l: any) => {
+        if (l.created_at) {
+          // Categorize based on action string
+          const action = (l.action || '').toLowerCase()
+          let type: string = 'other'
+
+          if (action.includes('comment') || action.includes('discussion')) {
+            type = 'comment_added'
+          } else if (action.includes('document') || action.includes('file') || action.includes('upload')) {
+            type = 'document_uploaded'
+          } else if (action.includes('location') || action.includes('geography')) {
+            type = 'location_updated'
+          } else if (action.includes('sector')) {
+            type = 'sector_updated'
+          } else if (action.includes('result') || action.includes('indicator')) {
+            type = 'result_added'
+          } else if (action.includes('contact') || action.includes('stakeholder')) {
+            type = 'contact_updated'
+          } else if (action.includes('status') || action.includes('validated') || action.includes('approved')) {
+            type = 'status_changed'
+          } else if (action.includes('partner') || action.includes('participating') || action.includes('organization') || action.includes('org')) {
+            type = 'partner_updated'
+          }
+
+          userActivityEvents.push({
+            date: l.created_at,
+            type,
+            description: l.action || 'System action'
+          })
+        }
+      })
+    }
 
     return NextResponse.json({
       summary,
@@ -155,7 +288,8 @@ export async function GET(request: NextRequest) {
       validationStatus,
       participatingOrgActivities: [], // Empty for now
       sectorDistribution,
-      activityTimeline
+      activityTimeline,
+      userActivityEvents
     })
 
   } catch (err) {

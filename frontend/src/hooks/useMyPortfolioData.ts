@@ -45,6 +45,12 @@ interface ParticipatingOrgActivity {
   reportedBy: string
 }
 
+interface UserActivityEvent {
+  date: string
+  type: 'activity_created' | 'activity_updated' | 'transaction_created' | 'budget_created' | 'disbursement_created' | 'comment_added' | 'document_uploaded' | 'location_updated' | 'sector_updated' | 'result_added' | 'contact_updated' | 'status_changed' | 'partner_updated' | 'other'
+  description: string
+}
+
 interface MyPortfolioData {
   summary: ActivitySummary
   pipelinePastStart: PipelineActivity[]
@@ -59,6 +65,7 @@ interface MyPortfolioData {
     startDate: string | null
     endDate: string | null
   }>
+  userActivityEvents: UserActivityEvent[]
 }
 
 export function useMyPortfolioData() {

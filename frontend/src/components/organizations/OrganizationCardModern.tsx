@@ -2,17 +2,10 @@
 
 import React from 'react';
 import { useRouter } from 'next/navigation';
-import { Building2, MapPin, Activity, DollarSign, MoreVertical, Eye, Edit2, Trash2, FileText, FileSpreadsheet, ExternalLink, Copy } from 'lucide-react';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Button } from "@/components/ui/button";
+import { Building2, MapPin, Activity, DollarSign, ExternalLink, Copy } from 'lucide-react';
 import { motion } from "framer-motion";
 import { toast } from "sonner";
+import { OrganizationCardActionMenu } from './OrganizationCardActionMenu';
 
 // Color palette
 const colors = {
@@ -121,54 +114,14 @@ const OrganizationCardModern: React.FC<OrganizationCardModernProps> = ({
 
         {/* Action Menu - Top Left */}
         <div className="absolute top-4 left-4 z-20" onClick={(e) => e.stopPropagation()}>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8 backdrop-blur-sm rounded-full border-0"
-                style={{ backgroundColor: 'rgba(0,0,0,0.3)' }}
-              >
-                <MoreVertical className="h-4 w-4 text-white" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="start">
-              <DropdownMenuItem onClick={() => handleView()}>
-                <Eye className="h-4 w-4 mr-2" style={{ color: colors.blueSlate }} />
-                View
-              </DropdownMenuItem>
-              {onEdit && (
-                <DropdownMenuItem onClick={() => onEdit(organization)}>
-                  <Edit2 className="h-4 w-4 mr-2" style={{ color: colors.blueSlate }} />
-                  Edit
-                </DropdownMenuItem>
-              )}
-              {onExportPDF && (
-                <DropdownMenuItem onClick={() => onExportPDF(organization.id)}>
-                  <FileText className="h-4 w-4 mr-2" style={{ color: colors.blueSlate }} />
-                  Export as PDF
-                </DropdownMenuItem>
-              )}
-              {onExportExcel && (
-                <DropdownMenuItem onClick={() => onExportExcel(organization.id)}>
-                  <FileSpreadsheet className="h-4 w-4 mr-2" style={{ color: colors.blueSlate }} />
-                  Export as Excel
-                </DropdownMenuItem>
-              )}
-              {onDelete && (
-                <>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem
-                    onClick={() => onDelete(organization)}
-                    style={{ color: colors.primaryScarlet }}
-                  >
-                    <Trash2 className="h-4 w-4 mr-2" />
-                    Delete
-                  </DropdownMenuItem>
-                </>
-              )}
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <OrganizationCardActionMenu
+            organizationId={organization.id}
+            onView={handleView}
+            onEdit={onEdit ? () => onEdit(organization) : undefined}
+            onExportPDF={onExportPDF ? () => onExportPDF(organization.id) : undefined}
+            onExportExcel={onExportExcel ? () => onExportExcel(organization.id) : undefined}
+            onDelete={onDelete ? () => onDelete(organization) : undefined}
+          />
         </div>
 
         {/* Title & Metadata - Bottom of banner */}

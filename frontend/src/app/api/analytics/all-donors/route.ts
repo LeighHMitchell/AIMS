@@ -69,6 +69,7 @@ export async function GET(request: Request) {
       type: string | null
       totalBudget: number
       totalPlannedDisbursement: number
+      totalCommitment: number
       totalActualDisbursement: number
     }>()
 
@@ -118,6 +119,7 @@ export async function GET(request: Request) {
             type: orgInfo.type,
             totalBudget: 0,
             totalPlannedDisbursement: 0,
+            totalCommitment: 0,
             totalActualDisbursement: 0
           })
         }
@@ -159,6 +161,7 @@ export async function GET(request: Request) {
           type: orgInfo.type,
           totalBudget: 0,
           totalPlannedDisbursement: 0,
+          totalCommitment: 0,
           totalActualDisbursement: 0
         })
       }
@@ -169,7 +172,65 @@ export async function GET(request: Request) {
 
     console.log('[AllDonors API] Planned disbursements aggregated:', donorData.size)
 
-    // 3. AGGREGATE TOTAL ACTUAL DISBURSEMENTS BY PROVIDER ORG
+    // 3. AGGREGATE TOTAL COMMITMENTS BY PROVIDER ORG
+    console.log('[AllDonors API] Fetching commitments...')
+    const { data: commitments, error: commitError } = await supabase
+      .from('transactions')
+      .select('provider_org_id, value, value_usd, currency, transaction_date, activity_id')
+      .eq('transaction_type', '2') // Outgoing Commitment
+      .eq('status', 'actual')
+      .gte('transaction_date', dateFrom)
+      .lte('transaction_date', dateTo)
+
+    if (commitError) {
+      console.error('[AllDonors API] Error fetching commitments:', commitError)
+    }
+
+    // Get activity reporting org mapping for commitments without provider
+    const commitsWithoutProvider = commitments?.filter((tx: any) => !tx.provider_org_id) || []
+    const activityIdsForCommits = [...new Set(commitsWithoutProvider.map((tx: any) => tx.activity_id).filter(Boolean))]
+
+    let activityToReportingOrgForCommits = new Map<string, string>()
+    if (activityIdsForCommits.length > 0) {
+      const { data: commitActivities } = await supabase
+        .from('activities')
+        .select('id, reporting_org_id')
+        .in('id', activityIdsForCommits)
+
+      activityToReportingOrgForCommits = new Map(commitActivities?.map((a: any) => [a.id, a.reporting_org_id]) || [])
+    }
+
+    // Aggregate commitments by provider org
+    commitments?.forEach((tx: any) => {
+      const providerOrgId = tx.provider_org_id || activityToReportingOrgForCommits.get(tx.activity_id)
+      if (!providerOrgId) return
+
+      const txValue = parseFloat(tx.value_usd) || 0
+      if (isNaN(txValue) || txValue === 0) return
+
+      const orgInfo = orgMap.get(providerOrgId)
+      if (!orgInfo) return
+
+      if (!donorData.has(providerOrgId)) {
+        donorData.set(providerOrgId, {
+          id: providerOrgId,
+          name: orgInfo.name,
+          acronym: orgInfo.acronym,
+          type: orgInfo.type,
+          totalBudget: 0,
+          totalPlannedDisbursement: 0,
+          totalCommitment: 0,
+          totalActualDisbursement: 0
+        })
+      }
+
+      const donor = donorData.get(providerOrgId)!
+      donor.totalCommitment += txValue
+    })
+
+    console.log('[AllDonors API] Commitments aggregated:', donorData.size)
+
+    // 4. AGGREGATE TOTAL ACTUAL DISBURSEMENTS BY PROVIDER ORG
     console.log('[AllDonors API] Fetching actual disbursements...')
     // Fetch transactions with their activity info to get reporting org as fallback
     const { data: transactions, error: txError } = await supabase
@@ -188,14 +249,14 @@ export async function GET(request: Request) {
     // First, get a map of activity_id -> reporting_org_id for transactions without provider
     const txsWithoutProvider = transactions?.filter((tx: any) => !tx.provider_org_id) || []
     const activityIdsForTx = [...new Set(txsWithoutProvider.map((tx: any) => tx.activity_id).filter(Boolean))]
-    
+
     let activityToReportingOrgForTx = new Map<string, string>()
     if (activityIdsForTx.length > 0) {
       const { data: txActivities } = await supabase
         .from('activities')
         .select('id, reporting_org_id')
         .in('id', activityIdsForTx)
-      
+
       activityToReportingOrgForTx = new Map(txActivities?.map((a: any) => [a.id, a.reporting_org_id]) || [])
     }
 
@@ -205,7 +266,7 @@ export async function GET(request: Request) {
       // Use provider_org_id if available, otherwise fall back to activity's reporting_org
       const providerOrgId = tx.provider_org_id || activityToReportingOrgForTx.get(tx.activity_id)
       if (!providerOrgId) return
-      
+
       // Use only USD value - no fallback
       const txValue = parseFloat(tx.value_usd) || 0
       if (isNaN(txValue) || txValue === 0) return
@@ -221,6 +282,7 @@ export async function GET(request: Request) {
           type: orgInfo.type,
           totalBudget: 0,
           totalPlannedDisbursement: 0,
+          totalCommitment: 0,
           totalActualDisbursement: 0
         })
       }

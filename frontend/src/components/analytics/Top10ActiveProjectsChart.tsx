@@ -120,10 +120,19 @@ export function Top10ActiveProjectsChart({
             <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" horizontal={false} />
             <XAxis type="number" tick={{ fontSize: 10 }} />
             <YAxis type="category" dataKey="shortName" tick={{ fontSize: 9 }} width={55} />
-            <Tooltip content={<CustomTooltip />} />
+            <Tooltip
+              formatter={(value: number) => `${value} project${value !== 1 ? 's' : ''}`}
+              contentStyle={{
+                backgroundColor: '#1e293b',
+                border: 'none',
+                borderRadius: '8px',
+                color: '#fff'
+              }}
+              labelStyle={{ color: '#94a3b8' }}
+            />
             <Bar dataKey="projectCount" radius={[0, 4, 4, 0]}>
-              {data.map((_, index) => (
-                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+              {data.map((entry, index) => (
+                <Cell key={`cell-${index}`} fill={entry.orgId === 'others' ? '#94a3b8' : barColors[index % (barColors.length - 1)]} />
               ))}
             </Bar>
           </BarChart>
