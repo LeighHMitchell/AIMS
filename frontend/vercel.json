@@ -91,7 +91,7 @@
   "crons": [
     {
       "path": "/api/cron/tasks/dispatch",
-      "schedule": "*/5 * * * *"
+      "schedule": "0 6 * * *"
     },
     {
       "path": "/api/cron/tasks/recurrence",
@@ -99,7 +99,7 @@
     },
     {
       "path": "/api/cron/tasks/overdue",
-      "schedule": "0 */6 * * *"
+      "schedule": "0 12 * * *"
     },
     {
       "path": "/api/cron/tasks/reminders",
