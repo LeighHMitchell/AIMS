@@ -32,6 +32,7 @@ import { TaskTrackingView } from './TaskTrackingView';
 import { CreatedTasksTable } from './CreatedTasksTable';
 import { TaskCreationWizard } from './wizard';
 import { ReassignTaskModal } from './ReassignTaskModal';
+import { ShareTaskModal } from './ShareTaskModal';
 import { TaskAdminDashboard } from './admin';
 import { TaskDetailModal } from './TaskDetailModal';
 import { EditTaskModal } from './EditTaskModal';
@@ -59,6 +60,8 @@ export function TaskingTab({ userId, canCreateTasks = false, canViewAnalytics = 
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [selectedAssignmentId, setSelectedAssignmentId] = useState<string | null>(null);
   const [editingCreatedTask, setEditingCreatedTask] = useState<Task | null>(null);
+  const [shareModalOpen, setShareModalOpen] = useState(false);
+  const [taskToShare, setTaskToShare] = useState<TaskAssignment | null>(null);
 
   const {
     tasks,
@@ -74,7 +77,7 @@ export function TaskingTab({ userId, canCreateTasks = false, canViewAnalytics = 
     refreshAll,
   } = useTasks({ userId });
 
-  const { updateStatus, reassign, archiveTask, unarchiveTask } = useTaskAssignments({ userId });
+  const { updateStatus, reassign, shareTask, archiveTask, unarchiveTask } = useTaskAssignments({ userId });
 
   // Initial fetch - only run once on mount
   useEffect(() => {
@@ -179,6 +182,26 @@ export function TaskingTab({ userId, canCreateTasks = false, canViewAnalytics = 
   const handleReassign = useCallback(async (assignmentId: string, newAssigneeId: string, note?: string) => {
     return await reassign(assignmentId, newAssigneeId, note);
   }, [reassign]);
+
+  // Handle share modal open
+  const handleOpenShare = useCallback((assignment: TaskAssignment) => {
+    setTaskToShare(assignment);
+    setShareModalOpen(true);
+  }, []);
+
+  // Handle share
+  const handleShare = useCallback(async (assignmentId: string, sharedWithId: string, message?: string) => {
+    const result = await shareTask(assignmentId, {
+      shared_with_id: sharedWithId,
+      share_message: message,
+    });
+    if (result) {
+      toast.success('Task shared successfully');
+      return result;
+    }
+    toast.error('Failed to share task');
+    return null;
+  }, [shareTask]);
 
   // Handle view task details
   const handleViewDetails = useCallback((assignment: TaskAssignment) => {
@@ -425,7 +448,7 @@ export function TaskingTab({ userId, canCreateTasks = false, canViewAnalytics = 
                   key={assignment.id}
                   assignment={assignment}
                   onStatusChange={(status) => handleStatusChange(assignment.id, status)}
-                  onShare={() => {/* TODO: Implement share modal */}}
+                  onShare={() => handleOpenShare(assignment)}
                   onReassign={() => handleOpenReassign(assignment)}
                   onArchive={() => handleArchive(assignment.id)}
                   onUnarchive={() => handleUnarchive(assignment.id)}
@@ -437,7 +460,7 @@ export function TaskingTab({ userId, canCreateTasks = false, canViewAnalytics = 
             <TaskTable
               assignments={filteredAssignments}
               onStatusChange={handleStatusChange}
-              onShare={(a) => {/* TODO: Implement share modal */}}
+              onShare={(a) => handleOpenShare(a)}
               onReassign={(a) => handleOpenReassign(a)}
               onArchive={handleArchive}
               onUnarchive={handleUnarchive}
@@ -503,6 +526,21 @@ export function TaskingTab({ userId, canCreateTasks = false, canViewAnalytics = 
           onSuccess={() => {
             toast.success('Task reassigned successfully');
             fetchAssignedTasks({ includeArchived: showArchived });
+          }}
+        />
+      )}
+
+      {/* Share Task Modal */}
+      {shareModalOpen && taskToShare && (
+        <ShareTaskModal
+          open={shareModalOpen}
+          onOpenChange={setShareModalOpen}
+          assignment={taskToShare}
+          userId={userId}
+          onShare={handleShare}
+          onSuccess={() => {
+            setShareModalOpen(false);
+            setTaskToShare(null);
           }}
         />
       )}

@@ -3128,6 +3128,84 @@ function NewActivityPageContent() {
     }
   }, []);
 
+  // Handle activity approval (Tier 1 users)
+  const handleApprove = useCallback(async () => {
+    if (!general.id || !user) return;
+    setSubmitting(true);
+    try {
+      const response = await fetch(`/api/activities/${general.id}/validate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user, action: 'approve' }),
+      });
+      if (response.ok) {
+        toast.success('Activity approved successfully');
+        router.push(`/activities/${general.id}`);
+      } else {
+        const data = await response.json();
+        toast.error(data.error || 'Failed to approve activity');
+      }
+    } catch (error) {
+      console.error('[ActivityEditor] Error approving activity:', error);
+      toast.error('Failed to approve activity');
+    } finally {
+      setSubmitting(false);
+    }
+  }, [general.id, user, router]);
+
+  // Handle activity rejection (Tier 1 users)
+  const handleReject = useCallback(async () => {
+    const reason = window.prompt('Please provide a reason for rejection:');
+    if (!reason) return; // User cancelled
+    if (!general.id || !user) return;
+
+    setSubmitting(true);
+    try {
+      const response = await fetch(`/api/activities/${general.id}/validate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user, action: 'reject', reason }),
+      });
+      if (response.ok) {
+        toast.success('Activity rejected');
+        router.push(`/activities/${general.id}`);
+      } else {
+        const data = await response.json();
+        toast.error(data.error || 'Failed to reject activity');
+      }
+    } catch (error) {
+      console.error('[ActivityEditor] Error rejecting activity:', error);
+      toast.error('Failed to reject activity');
+    } finally {
+      setSubmitting(false);
+    }
+  }, [general.id, user, router]);
+
+  // Handle submit for validation (Tier 2 users)
+  const handleSubmitForValidation = useCallback(async () => {
+    if (!general.id || !user) return;
+    setSubmitting(true);
+    try {
+      const response = await fetch(`/api/activities/${general.id}/submit`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user }),
+      });
+      if (response.ok) {
+        toast.success('Activity submitted for validation');
+        router.push(`/activities/${general.id}`);
+      } else {
+        const data = await response.json();
+        toast.error(data.error || 'Failed to submit activity');
+      }
+    } catch (error) {
+      console.error('[ActivityEditor] Error submitting activity:', error);
+      toast.error('Failed to submit activity');
+    } finally {
+      setSubmitting(false);
+    }
+  }, [general.id, user, router]);
+
   // NOTE: Participating orgs, linked activities, results, country budget items, and metadata
   // are now loaded in the batch fetch in loadActivity() to prevent gradual green tick appearance
 
@@ -5230,7 +5308,7 @@ function NewActivityPageContent() {
                     <button
                       className="bg-emerald-600 text-white px-4 py-3 rounded-lg hover:bg-emerald-700 transition font-medium text-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 shadow-md"
                       type="button"
-                      onClick={() => console.log('Approve clicked')}
+                      onClick={handleApprove}
                       disabled={submitting}
                     >
                       <CheckCircle className="h-4 w-4" />
@@ -5239,10 +5317,7 @@ function NewActivityPageContent() {
                     <button
                       className="bg-red-600 text-white px-4 py-3 rounded-lg hover:bg-red-700 transition font-medium text-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 shadow-md"
                       type="button"
-                      onClick={() => {
-                        const reason = window.prompt("Please provide a reason for rejection:");
-                        if (reason) console.log('Reject clicked:', reason);
-                      }}
+                      onClick={handleReject}
                       disabled={submitting}
                     >
                       <XCircle className="h-4 w-4" />
@@ -5256,7 +5331,7 @@ function NewActivityPageContent() {
                   <button
                     className="bg-purple-600 text-white px-4 py-3 rounded-lg hover:bg-purple-700 transition font-medium text-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 shadow-md"
                     type="button"
-                    onClick={() => console.log('Submit for validation')}
+                    onClick={handleSubmitForValidation}
                     disabled={submitting}
                   >
                     <Send className="h-4 w-4" />
