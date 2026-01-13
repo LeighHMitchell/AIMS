@@ -94,14 +94,6 @@
       "schedule": "0 6 * * *"
     },
     {
-      "path": "/api/cron/tasks/recurrence",
-      "schedule": "0 0 * * *"
-    },
-    {
-      "path": "/api/cron/tasks/overdue",
-      "schedule": "0 12 * * *"
-    },
-    {
       "path": "/api/cron/tasks/reminders",
       "schedule": "0 9 * * *"
     }
