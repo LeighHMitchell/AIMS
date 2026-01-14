@@ -1,6 +1,7 @@
 "use client"
 
-import React, { useMemo } from 'react'
+import React, { useMemo, useRef } from 'react'
+import html2canvas from 'html2canvas'
 import { 
   ResponsiveContainer, 
   BarChart, 
@@ -101,13 +102,15 @@ export function ProjectTimeline({ activities }: ProjectTimelineProps) {
     return { data, minDate, maxDate }
   }, [activities])
 
+  const chartRef = useRef<HTMLDivElement>(null);
+
   const handleBarClick = (data: any) => {
     if (data?.id) {
       router.push(`/activities/${data.id}`)
     }
   }
 
-  const handleExport = (format: 'png' | 'svg' | 'csv') => {
+  const handleExport = async (format: 'png' | 'svg' | 'csv') => {
     // #region agent log - hypothesis A (Stubbed Implementation)
     fetch('http://127.0.0.1:7242/ingest/b4892be5-ca87-459d-a863-d3e1a440a1d9',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'ProjectTimeline.tsx:handleExport-entry',message:'Export button clicked',data:{format, timelineDataLength: timelineData.data?.length || 0, browser: navigator.userAgent.substring(0,50)},timestamp:Date.now(),sessionId:'debug-session',runId:'post-fix',hypothesisId:'A'})}).catch(()=>{}); // #endregion
 
@@ -140,14 +143,36 @@ export function ProjectTimeline({ activities }: ProjectTimelineProps) {
       a.click();
       URL.revokeObjectURL(url);
       toast.success('Timeline exported as CSV');
-    } else {
-      // Placeholder for PNG/SVG (requires html2canvas or similar)
-      toast.info(`PNG/SVG export coming soon. Use CSV for now.`);
-      
-      // #region agent log - hypothesis E (Browser Compatibility)
-      fetch('http://127.0.0.1:7242/ingest/b4892be5-ca87-459d-a863-d3e1a440a1d9',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'ProjectTimeline.tsx:handleExport-placeholder',message:'Placeholder export clicked',data:{format, supportsCanvas: !!document.createElement('canvas').getContext('2d'), userAgent: navigator.userAgent.substring(0,50)},timestamp:Date.now(),sessionId:'debug-session',runId:'post-fix',hypothesisId:'E'})}).catch(()=>{}); // #endregion
+    } else if (format === 'png' || format === 'svg') {
+      // Export as PNG using html2canvas
+      if (!chartRef.current) {
+        toast.error('Chart not found');
+        return;
+      }
+
+      toast.loading('Generating image...', { id: 'export-image' });
+
+      try {
+        const canvas = await html2canvas(chartRef.current, {
+          backgroundColor: '#ffffff',
+          scale: 2, // Higher resolution
+        });
+
+        const link = document.createElement('a');
+        link.download = `projects-timeline-${formatDate(new Date(), 'yyyy-MM-dd')}.png`;
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+
+        toast.success('Timeline exported as PNG', { id: 'export-image' });
+      } catch (error) {
+        console.error('Error exporting image:', error);
+        toast.error('Failed to export image', { id: 'export-image' });
+      }
     }
   };
+
+  // Helper for date formatting in export filename
+  const formatDate = (date: Date, formatStr: string) => format(date, formatStr);
 
   if (timelineData.data.length === 0) {
     return (
@@ -262,7 +287,7 @@ export function ProjectTimeline({ activities }: ProjectTimelineProps) {
         </div>
       </CardHeader>
       <CardContent>
-        <div className="w-full h-[600px]">
+        <div ref={chartRef} className="w-full h-[600px] bg-white">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart 
               data={timelineData.data} 

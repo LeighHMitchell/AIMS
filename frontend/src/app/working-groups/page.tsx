@@ -48,16 +48,13 @@ export default function WorkingGroupsPage() {
       
       const data = await response.json()
       
-      // Transform data and add mock counts for now
+      // Transform data - use actual counts from API if available
       const transformedData = data.map((wg: any) => ({
         ...wg,
         status: wg.status || (wg.is_active ? 'active' : 'inactive'),
-        member_count: Math.floor(Math.random() * 20) + 5, // Mock data
-        activities_count: Math.floor(Math.random() * 15) + 1, // Mock data
-        lead_person: {
-          name: 'John Doe', // Mock data
-          organization: 'Ministry of Planning'
-        }
+        member_count: wg.member_count || 0,
+        activities_count: wg.activities_count || 0,
+        lead_person: wg.lead_person || null
       }))
       
       setWorkingGroups(transformedData)

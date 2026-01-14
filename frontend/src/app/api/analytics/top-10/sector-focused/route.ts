@@ -59,6 +59,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Build query for transactions in these activities
+    // First try with provider_org_id
     let transactionsQuery = supabase
       .from('transactions')
       .select(`
@@ -70,8 +71,7 @@ export async function GET(request: NextRequest) {
       `)
       .in('activity_id', activityIds)
       .in('transaction_type', ['2', '3']) // Commitments or Disbursements
-      .eq('status', 'actual')
-      .not('provider_org_id', 'is', null);
+      .eq('status', 'actual');
 
     if (dateFrom) {
       transactionsQuery = transactionsQuery.gte('transaction_date', dateFrom);
@@ -106,21 +106,63 @@ export async function GET(request: NextRequest) {
 
     // Aggregate by donor organization
     const donorTotals = new Map<string, number>();
-    let transactionsWithoutProvider = 0;
+    let transactionsWithProvider = 0;
 
     transactions?.forEach((t: any) => {
       if (!t.provider_org_id) {
-        transactionsWithoutProvider++;
         return;
       }
-      
+      transactionsWithProvider++;
       const value = parseFloat(t.value_usd?.toString() || '0') || 0;
       const current = donorTotals.get(t.provider_org_id) || 0;
       donorTotals.set(t.provider_org_id, current + value);
     });
 
-    console.log('[Top10SectorFocused] Transactions without provider_org_id:', transactionsWithoutProvider);
-    console.log('[Top10SectorFocused] Unique organizations:', donorTotals.size);
+    console.log('[Top10SectorFocused] Transactions with provider_org_id:', transactionsWithProvider);
+    console.log('[Top10SectorFocused] Unique organizations from transactions:', donorTotals.size);
+
+    // If no provider_org_id data, fall back to using activity_participating_organizations
+    // with role code '1' (Funding) to aggregate by funding organization
+    if (donorTotals.size === 0 && activityIds.length > 0) {
+      console.log('[Top10SectorFocused] Falling back to activity_participating_organizations');
+
+      // Get participating organizations with Funding role (1) for these activities
+      const { data: participatingOrgs, error: partOrgError } = await supabase
+        .from('activity_participating_organizations')
+        .select('organization_id, activity_id')
+        .in('activity_id', activityIds)
+        .eq('iati_role_code', 1); // Funding role (integer)
+
+      if (partOrgError) {
+        console.error('[Top10SectorFocused] Error fetching participating orgs:', partOrgError);
+      }
+
+      // Get all transactions for these activities (regardless of provider_org_id)
+      const { data: allTransactions } = await supabase
+        .from('transactions')
+        .select('activity_id, value_usd')
+        .in('activity_id', activityIds)
+        .in('transaction_type', ['2', '3'])
+        .eq('status', 'actual');
+
+      // Create a map of activity_id -> total value
+      const activityValues = new Map<string, number>();
+      allTransactions?.forEach((t: any) => {
+        const value = parseFloat(t.value_usd?.toString() || '0') || 0;
+        const current = activityValues.get(t.activity_id) || 0;
+        activityValues.set(t.activity_id, current + value);
+      });
+
+      // Aggregate by funding organization
+      participatingOrgs?.forEach((po: any) => {
+        if (!po.organization_id) return;
+        const activityValue = activityValues.get(po.activity_id) || 0;
+        const current = donorTotals.get(po.organization_id) || 0;
+        donorTotals.set(po.organization_id, current + activityValue);
+      });
+
+      console.log('[Top10SectorFocused] Organizations from participating orgs:', donorTotals.size);
+    }
 
     // Get organization names
     const orgIds = Array.from(donorTotals.keys());

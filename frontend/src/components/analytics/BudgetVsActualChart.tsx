@@ -328,26 +328,29 @@ export function BudgetVsActualChart({ dateRange, filters, refreshKey, onDataChan
             }}
             iconType="rect"
           />
-          <Bar 
-            dataKey="budget" 
+          <Bar
+            dataKey="budget"
             fill="#e2e8f0"
             name="Budget"
+            radius={[4, 4, 0, 0]}
             isAnimationActive={true}
             animationDuration={600}
             animationEasing="ease-in-out"
           />
-          <Bar 
-            dataKey="disbursed" 
+          <Bar
+            dataKey="disbursed"
             fill="#475569"
             name="Disbursed"
+            radius={[4, 4, 0, 0]}
             isAnimationActive={true}
             animationDuration={600}
             animationEasing="ease-in-out"
           />
-          <Bar 
-            dataKey="expenditure" 
+          <Bar
+            dataKey="expenditure"
             fill="#94a3b8"
             name="Expenditure"
+            radius={[4, 4, 0, 0]}
             isAnimationActive={true}
             animationDuration={600}
             animationEasing="ease-in-out"

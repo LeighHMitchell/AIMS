@@ -1,20 +1,21 @@
-// IATI-compliant Enum Type Definitions
+// IATI-compliant Enum Type Definitions (IATI Standard v2.03)
 // These TypeScript enums mirror the PostgreSQL enum types exactly
 
 // Transaction Type Enum - Based on IATI transaction type codes
 export enum TransactionTypeEnum {
-  IncomingCommitment = '1',
+  IncomingFunds = '1',
   OutgoingCommitment = '2',
   Disbursement = '3',
   Expenditure = '4',
-  InterestRepayment = '5',
+  InterestPayment = '5',
   LoanRepayment = '6',
   Reimbursement = '7',
   PurchaseOfEquity = '8',
   SaleOfEquity = '9',
-  CreditGuarantee = '11',
-  IncomingFunds = '12',
-  CommitmentCancellation = '13'
+  CreditGuarantee = '10',
+  IncomingCommitment = '11',
+  OutgoingPledge = '12',
+  IncomingPledge = '13'
 }
 
 // Aid Type Enum - IATI AidType codelist
@@ -174,17 +175,19 @@ export const cleanEnumValue = (value: any): string | null => {
   return String(value).trim();
 };
 
-// Helper to convert legacy transaction types to new format
+// Helper to convert legacy transaction types to new IATI format
 export const LEGACY_TRANSACTION_TYPE_MAP: Record<string, TransactionTypeEnum> = {
   'IF': TransactionTypeEnum.IncomingFunds,
   'C': TransactionTypeEnum.OutgoingCommitment,
   'D': TransactionTypeEnum.Disbursement,
   'E': TransactionTypeEnum.Expenditure,
-  'IR': TransactionTypeEnum.InterestRepayment,
+  'IR': TransactionTypeEnum.InterestPayment,
   'LR': TransactionTypeEnum.LoanRepayment,
   'R': TransactionTypeEnum.Reimbursement,
   'PE': TransactionTypeEnum.PurchaseOfEquity,
   'SE': TransactionTypeEnum.SaleOfEquity,
-  'G': TransactionTypeEnum.CreditGuarantee,
-  'IC': TransactionTypeEnum.IncomingCommitment
+  'CG': TransactionTypeEnum.CreditGuarantee,
+  'IC': TransactionTypeEnum.IncomingCommitment,
+  'OP': TransactionTypeEnum.OutgoingPledge,
+  'IP': TransactionTypeEnum.IncomingPledge
 }; 

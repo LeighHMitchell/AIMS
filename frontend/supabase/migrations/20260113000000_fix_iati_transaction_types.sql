@@ -1,20 +1,26 @@
--- IATI Reference Data Seed Script (Clean Version)
--- This script populates reference data for IATI-compliant transaction fields
--- Uses proper CTE structure to avoid set-returning function issues
--- Version: IATI 2.03
+-- IATI Transaction Types Alignment Migration
+-- Aligns AIMS transaction types with IATI Standard v2.03
+-- Changes:
+--   1. Adds missing enum value '10' (Credit Guarantee)
+--   2. Updates iati_reference_values view with correct IATI labels
 
--- Create helper function to get ENUM values for validation
-CREATE OR REPLACE FUNCTION get_enum_values(enum_type text)
-RETURNS text[] AS $$
-DECLARE
-    result text[];
+-- Add missing enum value '10' (Credit Guarantee)
+-- Using DO block to safely add if not exists
+DO $$
 BEGIN
-    EXECUTE format('SELECT enum_range(NULL::%s)', enum_type) INTO result;
-    RETURN result;
-END;
-$$ LANGUAGE plpgsql;
+  -- Check if '10' already exists in the enum
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_enum
+    WHERE enumlabel = '10'
+    AND enumtypid = (SELECT oid FROM pg_type WHERE typname = 'transaction_type_enum')
+  ) THEN
+    -- Add '10' to the enum (positioned between '9' and '11')
+    ALTER TYPE transaction_type_enum ADD VALUE '10' BEFORE '11';
+  END IF;
+END $$;
 
--- Create a view to easily access all valid ENUM values for frontend dropdowns
+-- Recreate the iati_reference_values view with correct IATI Standard v2.03 labels
+-- This view is used by frontend dropdowns and validation
 CREATE OR REPLACE VIEW iati_reference_values AS
 WITH transaction_type_values AS (
     SELECT
@@ -35,10 +41,10 @@ WITH transaction_type_values AS (
             WHEN '12' THEN 'Outgoing Pledge'
             WHEN '13' THEN 'Incoming Pledge'
         END as name
-    FROM unnest(get_enum_values('transaction_type_enum')) as code
+    FROM unnest(enum_range(NULL::transaction_type_enum)::text[]) as code
 ),
 aid_type_values AS (
-    SELECT 
+    SELECT
         'aid_type' as field_name,
         code,
         CASE code
@@ -58,10 +64,10 @@ aid_type_values AS (
             WHEN 'H01' THEN 'Development awareness'
             WHEN 'H02' THEN 'Refugees/asylum seekers in donor countries'
         END as name
-    FROM unnest(get_enum_values('aid_type_enum')) as code
+    FROM unnest(enum_range(NULL::aid_type_enum)::text[]) as code
 ),
 flow_type_values AS (
-    SELECT 
+    SELECT
         'flow_type' as field_name,
         code,
         CASE code
@@ -77,10 +83,10 @@ flow_type_values AS (
             WHEN '40' THEN 'Non flow: GNI deduction'
             WHEN '50' THEN 'Other flows'
         END as name
-    FROM unnest(get_enum_values('flow_type_enum')) as code
+    FROM unnest(enum_range(NULL::flow_type_enum)::text[]) as code
 ),
 finance_type_values AS (
-    SELECT 
+    SELECT
         'finance_type' as field_name,
         code,
         CASE code
@@ -139,10 +145,10 @@ finance_type_values AS (
             WHEN '910' THEN 'Other bank securities/claims'
             WHEN '1100' THEN 'Guarantees/insurance'
         END as name
-    FROM unnest(get_enum_values('finance_type_enum')) as code
+    FROM unnest(enum_range(NULL::finance_type_enum)::text[]) as code
 ),
 disbursement_channel_values AS (
-    SELECT 
+    SELECT
         'disbursement_channel' as field_name,
         code,
         CASE code
@@ -154,10 +160,10 @@ disbursement_channel_values AS (
             WHEN '6' THEN 'Public-private partnerships'
             WHEN '7' THEN 'Other'
         END as name
-    FROM unnest(get_enum_values('disbursement_channel_enum')) as code
+    FROM unnest(enum_range(NULL::disbursement_channel_enum)::text[]) as code
 ),
 tied_status_values AS (
-    SELECT 
+    SELECT
         'tied_status' as field_name,
         code,
         CASE code
@@ -165,10 +171,10 @@ tied_status_values AS (
             WHEN '4' THEN 'Tied'
             WHEN '5' THEN 'Untied'
         END as name
-    FROM unnest(get_enum_values('tied_status_enum')) as code
+    FROM unnest(enum_range(NULL::tied_status_enum)::text[]) as code
 ),
 organization_type_values AS (
-    SELECT 
+    SELECT
         'organization_type' as field_name,
         code,
         CASE code
@@ -189,7 +195,7 @@ organization_type_values AS (
             WHEN '80' THEN 'Academic, Training and Research'
             WHEN '90' THEN 'Other'
         END as name
-    FROM unnest(get_enum_values('organization_type_enum')) as code
+    FROM unnest(enum_range(NULL::organization_type_enum)::text[]) as code
 )
 SELECT field_name, code, name FROM transaction_type_values WHERE name IS NOT NULL
 UNION ALL
@@ -205,111 +211,6 @@ SELECT field_name, code, name FROM tied_status_values WHERE name IS NOT NULL
 UNION ALL
 SELECT field_name, code, name FROM organization_type_values WHERE name IS NOT NULL;
 
--- Grant permissions to authenticated users
+-- Ensure permissions are maintained
 GRANT SELECT ON iati_reference_values TO authenticated;
-
--- Create a function to validate transaction values before insert/update
-CREATE OR REPLACE FUNCTION validate_transaction_values()
-RETURNS TRIGGER AS $$
-BEGIN
-    -- Validate transaction_type
-    IF NEW.transaction_type IS NOT NULL THEN
-        IF NOT EXISTS (SELECT 1 FROM iati_reference_values WHERE field_name = 'transaction_type' AND code = NEW.transaction_type) THEN
-            RAISE EXCEPTION 'Invalid transaction_type: %. Valid values are: %', 
-                NEW.transaction_type, 
-                (SELECT string_agg(code || ' (' || name || ')', ', ') FROM iati_reference_values WHERE field_name = 'transaction_type');
-        END IF;
-    END IF;
-
-    -- Validate aid_type
-    IF NEW.aid_type IS NOT NULL THEN
-        IF NOT EXISTS (SELECT 1 FROM iati_reference_values WHERE field_name = 'aid_type' AND code = NEW.aid_type) THEN
-            RAISE EXCEPTION 'Invalid aid_type: %. Valid values include: A01, A02, B01, B02, B03, B04, C01, D01, D02, E01, E02, F01, G01, H01, H02', NEW.aid_type;
-        END IF;
-    END IF;
-
-    -- Validate flow_type
-    IF NEW.flow_type IS NOT NULL THEN
-        IF NOT EXISTS (SELECT 1 FROM iati_reference_values WHERE field_name = 'flow_type' AND code = NEW.flow_type) THEN
-            RAISE EXCEPTION 'Invalid flow_type: %. Valid values are: %', 
-                NEW.flow_type,
-                (SELECT string_agg(code || ' (' || name || ')', ', ') FROM iati_reference_values WHERE field_name = 'flow_type');
-        END IF;
-    END IF;
-
-    -- Validate finance_type
-    IF NEW.finance_type IS NOT NULL THEN
-        IF NOT EXISTS (SELECT 1 FROM iati_reference_values WHERE field_name = 'finance_type' AND code = NEW.finance_type) THEN
-            RAISE EXCEPTION 'Invalid finance_type: %. Common values include: 100 (Grant), 110 (Standard grant), 400 (Loan), 410 (Aid loan)', NEW.finance_type;
-        END IF;
-    END IF;
-
-    -- Validate disbursement_channel
-    IF NEW.disbursement_channel IS NOT NULL THEN
-        IF NOT EXISTS (SELECT 1 FROM iati_reference_values WHERE field_name = 'disbursement_channel' AND code = NEW.disbursement_channel) THEN
-            RAISE EXCEPTION 'Invalid disbursement_channel: %. Valid values are: %', 
-                NEW.disbursement_channel,
-                (SELECT string_agg(code || ' (' || name || ')', ', ') FROM iati_reference_values WHERE field_name = 'disbursement_channel');
-        END IF;
-    END IF;
-
-    -- Validate tied_status
-    IF NEW.tied_status IS NOT NULL THEN
-        IF NOT EXISTS (SELECT 1 FROM iati_reference_values WHERE field_name = 'tied_status' AND code = NEW.tied_status) THEN
-            RAISE EXCEPTION 'Invalid tied_status: %. Valid values are: %', 
-                NEW.tied_status,
-                (SELECT string_agg(code || ' (' || name || ')', ', ') FROM iati_reference_values WHERE field_name = 'tied_status');
-        END IF;
-    END IF;
-
-    -- Validate provider_org_type
-    IF NEW.provider_org_type IS NOT NULL THEN
-        IF NOT EXISTS (SELECT 1 FROM iati_reference_values WHERE field_name = 'organization_type' AND code = NEW.provider_org_type) THEN
-            RAISE EXCEPTION 'Invalid provider_org_type: %. Common values include: 10 (Government), 21 (International NGO), 40 (Multilateral), 70 (Private Sector)', NEW.provider_org_type;
-        END IF;
-    END IF;
-
-    -- Validate receiver_org_type
-    IF NEW.receiver_org_type IS NOT NULL THEN
-        IF NOT EXISTS (SELECT 1 FROM iati_reference_values WHERE field_name = 'organization_type' AND code = NEW.receiver_org_type) THEN
-            RAISE EXCEPTION 'Invalid receiver_org_type: %. Common values include: 10 (Government), 21 (International NGO), 40 (Multilateral), 70 (Private Sector)', NEW.receiver_org_type;
-        END IF;
-    END IF;
-
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
--- Create trigger to validate transaction values
-DROP TRIGGER IF EXISTS validate_transaction_values_trigger ON transactions;
-CREATE TRIGGER validate_transaction_values_trigger
-    BEFORE INSERT OR UPDATE ON transactions
-    FOR EACH ROW
-    EXECUTE FUNCTION validate_transaction_values();
-
--- Create API endpoint function to get reference values
-CREATE OR REPLACE FUNCTION get_iati_reference_values(p_field_name text DEFAULT NULL)
-RETURNS TABLE(field_name text, code text, name text) AS $$
-BEGIN
-    IF p_field_name IS NULL THEN
-        RETURN QUERY SELECT * FROM iati_reference_values ORDER BY iati_reference_values.field_name, iati_reference_values.code;
-    ELSE
-        RETURN QUERY SELECT * FROM iati_reference_values WHERE iati_reference_values.field_name = p_field_name ORDER BY iati_reference_values.code;
-    END IF;
-END;
-$$ LANGUAGE plpgsql;
-
--- Grant execute permission to authenticated users
-GRANT EXECUTE ON FUNCTION get_iati_reference_values(text) TO authenticated;
-
--- Add helpful comments
-COMMENT ON VIEW iati_reference_values IS 'IATI reference values for transaction fields based on IATI Standard 2.03';
-COMMENT ON FUNCTION get_iati_reference_values IS 'Get IATI reference values for dropdown fields. Pass field name to filter, or NULL for all fields.';
-COMMENT ON FUNCTION validate_transaction_values IS 'Validates transaction field values against IATI reference values before insert/update';
-
--- Test the view works
-SELECT 'Setup completed successfully!' as status;
-SELECT field_name, count(*) as value_count 
-FROM iati_reference_values 
-GROUP BY field_name 
-ORDER BY field_name;
+GRANT SELECT ON iati_reference_values TO anon;

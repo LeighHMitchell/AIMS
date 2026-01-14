@@ -37,6 +37,7 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { useUser } from "@/hooks/useUser";
 import { supabase } from "@/lib/supabase";
+import * as XLSX from 'xlsx';
 
 // Types for form data
 export interface AidEffectivenessFormData {
@@ -380,6 +381,62 @@ export const AidEffectivenessForm: React.FC<Props> = ({ general, onUpdate }) => 
       clearTimeout(autosaveRef.current);
     }
     autosaveRef.current = setTimeout(autoSave, 2000);
+  };
+
+  // Export form data to XLSX
+  const handleExportXLSX = () => {
+    try {
+      // Prepare data for export
+      const exportData = [
+        // Development Effectiveness section
+        { Section: 'Development Effectiveness', Field: 'Implementing Partner', Value: formData.implementingPartner || '' },
+        { Section: 'Development Effectiveness', Field: 'Linked to Government Framework', Value: formData.linkedToGovFramework ? 'Yes' : 'No' },
+        { Section: 'Development Effectiveness', Field: 'Supports Public Sector', Value: formData.supportsPublicSector ? 'Yes' : 'No' },
+        { Section: 'Development Effectiveness', Field: 'Number of Outcome Indicators', Value: formData.numOutcomeIndicators?.toString() || '' },
+        { Section: 'Development Effectiveness', Field: 'Indicators from Government', Value: formData.indicatorsFromGov ? 'Yes' : 'No' },
+        { Section: 'Development Effectiveness', Field: 'Indicators via Government Data', Value: formData.indicatorsViaGovData ? 'Yes' : 'No' },
+        { Section: 'Development Effectiveness', Field: 'Final Evaluation Planned', Value: formData.finalEvalPlanned ? 'Yes' : 'No' },
+        { Section: 'Development Effectiveness', Field: 'Final Evaluation Date', Value: formData.finalEvalDate || '' },
+        // Government Systems section
+        { Section: 'Government Systems', Field: 'Government Budget System', Value: formData.govBudgetSystem ? 'Yes' : 'No' },
+        { Section: 'Government Systems', Field: 'Government Financial Reporting', Value: formData.govFinReporting ? 'Yes' : 'No' },
+        { Section: 'Government Systems', Field: 'Government Audit', Value: formData.govAudit ? 'Yes' : 'No' },
+        { Section: 'Government Systems', Field: 'Government Procurement', Value: formData.govProcurement ? 'Yes' : 'No' },
+        { Section: 'Government Systems', Field: 'Why Not Using Gov Systems', Value: formData.govSystemWhyNot || '' },
+        // Budget Planning section
+        { Section: 'Budget Planning', Field: 'Annual Budget Shared', Value: formData.annualBudgetShared ? 'Yes' : 'No' },
+        { Section: 'Budget Planning', Field: 'Forward Plan Shared', Value: formData.forwardPlanShared ? 'Yes' : 'No' },
+        { Section: 'Budget Planning', Field: 'Tied Status', Value: formData.tiedStatus || '' },
+        // Remarks section
+        { Section: 'Remarks', Field: 'Additional Notes', Value: formData.remarks || '' },
+      ];
+
+      // Add contacts if any
+      if (formData.contacts && formData.contacts.length > 0) {
+        formData.contacts.forEach((contact, index) => {
+          exportData.push({
+            Section: 'Contacts',
+            Field: `Contact ${index + 1}`,
+            Value: `${contact.firstName} ${contact.lastName}${contact.email ? ` (${contact.email})` : ''}`
+          });
+        });
+      }
+
+      // Create workbook and worksheet
+      const ws = XLSX.utils.json_to_sheet(exportData);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'Aid Effectiveness');
+
+      // Set column widths
+      ws['!cols'] = [{ wch: 25 }, { wch: 35 }, { wch: 50 }];
+
+      // Download file
+      XLSX.writeFile(wb, `aid-effectiveness-${general.iati_id || general.id}.xlsx`);
+      toast.success('Aid effectiveness data exported successfully');
+    } catch (error) {
+      console.error('Error exporting XLSX:', error);
+      toast.error('Failed to export data');
+    }
   };
 
   // Handle document upload to Supabase
@@ -953,7 +1010,7 @@ export const AidEffectivenessForm: React.FC<Props> = ({ general, onUpdate }) => 
         <p className="text-xs text-gray-500">
           Data is automatically saved as you make changes
         </p>
-        <Button variant="outline" size="sm" onClick={() => toast.info("Export coming soon")}>
+        <Button variant="outline" size="sm" onClick={handleExportXLSX}>
           <Download className="h-4 w-4 mr-2" />
           Export XLSX
         </Button>

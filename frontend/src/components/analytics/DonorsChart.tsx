@@ -354,7 +354,7 @@ export function DonorsChart({ dateRange, refreshKey, onDataChange }: DonorsChart
       <ResponsiveContainer width="100%" height={400}>
       <BarChart 
         data={data}
-        layout="horizontal"
+        layout="vertical"
         margin={{ top: 5, right: 30, left: 100, bottom: 5 }}
       >
         <CartesianGrid 

@@ -55,6 +55,24 @@ export async function GET(request: NextRequest) {
     const includeHumanitarian = searchParams.get('includeHumanitarian') !== 'false'
     const transactionType = searchParams.get('transactionType') || '3' // Default: disbursements only
     const minValueUSD = parseInt(searchParams.get('minValueUSD') || '100000') // Default: $100K threshold (lower for smaller datasets)
+    const sectorCodes = searchParams.get('sectors')?.split(',').filter(Boolean) || [] // Comma-separated sector codes
+
+    // If sector filter specified, get activity IDs that have transactions in those sectors
+    let sectorActivityIds: string[] | null = null
+    if (sectorCodes.length > 0) {
+      const { data: sectorActivities, error: sectorError } = await supabaseAdmin
+        .from('activity_sectors')
+        .select('activity_id')
+        .in('sector_code', sectorCodes)
+
+      if (sectorError) {
+        console.error('[EcosystemAPI] Sector filter query error:', sectorError)
+      } else {
+        // Deduplicate activity IDs
+        sectorActivityIds = [...new Set(sectorActivities?.map(s => s.activity_id) || [])]
+        console.log('[EcosystemAPI] Sector filter: found', sectorActivityIds.length, 'activities for sectors:', sectorCodes)
+      }
+    }
 
     // Build the query for transactions with organization details
     // We need to aggregate by both provider and receiver roles
@@ -99,6 +117,17 @@ export async function GET(request: NextRequest) {
       query = query.eq('flow_type', '10')
     } else if (flowType === 'OOF') {
       query = query.eq('flow_type', '20')
+    }
+
+    // Apply sector filter (limit to activities in selected sectors)
+    if (sectorActivityIds !== null) {
+      if (sectorActivityIds.length > 0) {
+        query = query.in('activity_id', sectorActivityIds)
+      } else {
+        // No activities match the selected sectors - return empty results
+        // Use an impossible UUID to ensure no results are returned
+        query = query.eq('activity_id', '00000000-0000-0000-0000-000000000000')
+      }
     }
 
     const { data: transactions, error: txError } = await query
@@ -426,7 +455,8 @@ export async function GET(request: NextRequest) {
         flowType,
         includeHumanitarian,
         transactionType,
-        minValueUSD
+        minValueUSD,
+        sectors: sectorCodes
       }
     })
 

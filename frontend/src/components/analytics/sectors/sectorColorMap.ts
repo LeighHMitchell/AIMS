@@ -239,22 +239,23 @@ export const FLOW_TYPE_COLORS: Record<string, string> = {
 }
 
 /**
- * Transaction Type colors for Finance Type Flow Chart
+ * Transaction Type colors for Finance Type Flow Chart (IATI Standard v2.03)
  * Using brand palette for consistent visual identity
  */
 export const TRANSACTION_TYPE_CHART_COLORS: Record<string, string> = {
-  '1': BRAND_COLORS.coolSteel,           // Incoming Commitment
+  '1': BRAND_COLORS.coolSteel,           // Incoming Funds
   '2': BRAND_COLORS.blueSlate,           // Outgoing Commitment
   '3': BRAND_COLORS.primaryScarlet,      // Disbursement (highlight)
   '4': PALETTE_VARIATIONS.warmAccent,    // Expenditure
-  '5': PALETTE_VARIATIONS.scarletDark,   // Interest Repayment
+  '5': PALETTE_VARIATIONS.scarletDark,   // Interest Payment
   '6': PALETTE_VARIATIONS.scarletLight,  // Loan Repayment
   '7': PALETTE_VARIATIONS.coolSteelLight, // Reimbursement
   '8': PALETTE_VARIATIONS.coolSteelDark, // Purchase of Equity
   '9': PALETTE_VARIATIONS.blueSlateLight, // Sale of Equity
-  '11': PALETTE_VARIATIONS.blueSlateDark, // Credit Guarantee
-  '12': BRAND_COLORS.coolSteel,          // Incoming Funds
-  '13': PALETTE_VARIATIONS.neutralAccent  // Commitment Cancellation
+  '10': PALETTE_VARIATIONS.blueSlateDark, // Credit Guarantee
+  '11': BRAND_COLORS.blueSlate,          // Incoming Commitment
+  '12': BRAND_COLORS.coolSteel,          // Outgoing Pledge
+  '13': PALETTE_VARIATIONS.neutralAccent  // Incoming Pledge
 }
 
 

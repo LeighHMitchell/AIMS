@@ -1,73 +1,45 @@
 "use client"
 
 import React, { useState, useCallback, useRef, useEffect } from 'react'
-import { useRouter, usePathname } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 import { debounce } from 'lodash'
-import { Search, X, Loader2, Building2, Target, UserCircle } from 'lucide-react'
-import { Input } from '@/components/ui/input'
+import { Search, X, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
   Command,
   CommandEmpty,
   CommandGroup,
-  CommandInput,
   CommandItem,
   CommandList,
-  CommandSeparator
 } from '@/components/ui/command'
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover'
-import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
 import { AnimatePresence, motion } from 'framer-motion'
+import { SearchResultRow } from './SearchResultRow'
+import type { SearchResult, SearchResultType, SEARCH_RESULT_ORDER, RESULT_TYPE_LABELS } from '@/types/search'
+import { normalizeSearchResults, type LegacySearchResult } from '@/lib/search-normalizer'
 
-interface SearchResult {
-  id: string
-  type: 'activity' | 'organization' | 'user' | 'sector' | 'tag' | 'contact'
-  title: string
-  subtitle?: string
-  metadata?: {
-    acronym?: string
-    status?: string
-    reporting_org?: string
-    reporting_org_acronym?: string
-    manager?: string
-    tags?: string[]
-    partner_id?: string
-    iati_id?: string
-    iati_identifier?: string
-    updated_at?: string
-    sector_code?: string
-    sector_category?: string
-    profile_picture_url?: string
-    logo_url?: string
-    banner_url?: string
-    activity_icon_url?: string
-    code?: string
-    activity_count?: number
-    // Contact specific metadata
-    activity_id?: string
-    activity_title?: string
-    position?: string
-    organisation?: string
-    email?: string
-    phone?: string
-    contact_type?: string
-  }
-}
+// Result type ordering and labels
+const searchResultOrder: SearchResultType[] = [
+  'activity',
+  'organisation',
+  'sector',
+  'tag',
+  'user',
+  'contact'
+]
 
-interface SearchSuggestion {
-  id: string
-  type: 'activity' | 'organization' | 'sector' | 'tag' | 'user' | 'contact'
-  title: string
-  subtitle?: string
-  metadata?: {
-    count?: number
-    category?: string
-  }
+const resultTypeLabels: Record<SearchResultType, string> = {
+  activity: 'Activities',
+  organisation: 'Organisations',
+  sector: 'Sectors',
+  tag: 'Tags',
+  user: 'Users',
+  contact: 'Contacts'
 }
 
 interface GlobalSearchBarProps {
@@ -79,7 +51,7 @@ interface GlobalSearchBarProps {
 
 export function GlobalSearchBar({
   className,
-  placeholder = "Search projects, donors, tags…",
+  placeholder = "Search projects, donors, tags...",
   isExpanded: controlledExpanded,
   onExpandedChange
 }: GlobalSearchBarProps) {
@@ -101,7 +73,7 @@ export function GlobalSearchBar({
   const [isSearching, setIsSearching] = useState(false)
   const [hasSearched, setHasSearched] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [suggestions, setSuggestions] = useState<SearchSuggestion[]>([])
+  const [suggestions, setSuggestions] = useState<SearchResult[]>([])
   const [popularSearches, setPopularSearches] = useState<string[]>([])
   const [showSuggestions, setShowSuggestions] = useState(false)
   const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false)
@@ -110,7 +82,6 @@ export function GlobalSearchBar({
   const inputRef = useRef<HTMLInputElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   const router = useRouter()
-  const pathname = usePathname()
 
   // Handle expand
   const handleExpand = useCallback(() => {
@@ -187,7 +158,9 @@ export function GlobalSearchBar({
       }
 
       const data = await response.json()
-      setSuggestions(data.suggestions || [])
+      // Normalize suggestions to the new type format
+      const normalizedSuggestions = normalizeSearchResults(data.suggestions || [])
+      setSuggestions(normalizedSuggestions)
       setPopularSearches(data.popularSearches || [])
     } catch (err) {
       console.error('Suggestions error:', err)
@@ -243,7 +216,9 @@ export function GlobalSearchBar({
       }
 
       const data = await response.json()
-      setResults(data.results || [])
+      // Normalize results to the new type format
+      const normalizedResults = normalizeSearchResults(data.results || [])
+      setResults(normalizedResults)
       setHasSearched(true)
     } catch (err) {
       if (err instanceof Error && err.name === 'AbortError') {
@@ -313,15 +288,15 @@ export function GlobalSearchBar({
       case 'activity':
         router.push(`/activities/${result.id}`)
         break
-      case 'organization':
+      case 'organisation':
         router.push(`/organizations/${result.id}`)
         break
       case 'user':
         router.push(`/users/${result.id}`)
         break
       case 'sector':
-        // Navigate to dedicated sector detail page
-        router.push(`/sectors/${encodeURIComponent(result.metadata?.sector_code || result.id)}`)
+        // Navigate to dedicated sector detail page using the code
+        router.push(`/sectors/${encodeURIComponent(result.metadata.code)}`)
         break
       case 'tag':
         router.push(`/activities?tag=${encodeURIComponent(result.title)}`)
@@ -336,7 +311,7 @@ export function GlobalSearchBar({
   }, [router])
 
   // Handle suggestion click
-  const handleSuggestionClick = useCallback((suggestion: SearchSuggestion) => {
+  const handleSuggestionClick = useCallback((suggestion: SearchResult) => {
     setOpen(false)
     setQuery('')
     setSuggestions([])
@@ -348,11 +323,11 @@ export function GlobalSearchBar({
       case 'activity':
         router.push(`/activities/${suggestion.id}`)
         break
-      case 'organization':
+      case 'organisation':
         router.push(`/organizations/${suggestion.id}`)
         break
       case 'sector':
-        router.push(`/sectors/${suggestion.id}`)
+        router.push(`/sectors/${suggestion.metadata.code}`)
         break
       case 'tag':
         router.push(`/tags/${suggestion.id}`)
@@ -421,131 +396,6 @@ export function GlobalSearchBar({
     }
   }, [])
 
-  // Format result subtitle based on type
-  const getResultSubtitle = (result: SearchResult) => {
-    switch (result.type) {
-      case 'activity':
-        const parts = []
-        if (result.metadata?.partner_id) parts.push(result.metadata.partner_id)
-        if (result.metadata?.reporting_org) parts.push(result.metadata.reporting_org)
-        return parts.join(' • ')
-      case 'organization':
-        return result.subtitle || 'Organization'
-      case 'tag':
-        return `Tag • ${result.metadata?.activity_count || 0} activities`
-      case 'user':
-        return result.subtitle || 'User'
-      default:
-        return ''
-    }
-  }
-
-  // Get icon component for result type
-  const getResultIcon = (result: SearchResult) => {
-    const { type, metadata } = result
-
-    // Handle activity icons
-    if (type === 'activity' && metadata?.activity_icon_url) {
-      return (
-        <div className="w-8 h-8 rounded-full overflow-hidden border border-gray-200">
-          <img
-            src={metadata.activity_icon_url}
-            alt="Activity icon"
-            className="w-full h-full object-cover"
-            onError={(e) => {
-              // Fallback to default icon if image fails to load
-              const target = e.target as HTMLImageElement
-              target.style.display = 'none'
-              target.parentElement!.innerHTML = `
-                <div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                  <span class="text-blue-600 font-semibold text-sm">A</span>
-                </div>
-              `
-            }}
-          />
-        </div>
-      )
-    }
-
-    // Handle profile pictures for users
-    if (type === 'user' && metadata?.profile_picture_url) {
-      return (
-        <div className="w-8 h-8 rounded-full overflow-hidden border border-gray-200">
-          <img
-            src={metadata.profile_picture_url}
-            alt="Profile"
-            className="w-full h-full object-cover"
-            onError={(e) => {
-              // Fallback to default icon if image fails to load
-              const target = e.target as HTMLImageElement
-              target.style.display = 'none'
-              target.parentElement!.innerHTML = `
-                <div class="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center">
-                  <span class="text-orange-600 font-semibold text-sm">U</span>
-                </div>
-              `
-            }}
-          />
-        </div>
-      )
-    }
-
-    // Handle logos for organizations
-    if (type === 'organization' && metadata?.logo_url) {
-      return (
-        <div className="w-8 h-8 rounded-lg overflow-hidden border border-gray-200 bg-white">
-          <img
-            src={metadata.logo_url}
-            alt="Organization logo"
-            className="w-full h-full object-contain p-0.5"
-            onError={(e) => {
-              // Fallback to default icon if image fails to load
-              const target = e.target as HTMLImageElement
-              target.style.display = 'none'
-              target.parentElement!.innerHTML = `
-                <div class="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
-                  <span class="text-green-600 font-semibold text-sm">O</span>
-                </div>
-              `
-            }}
-          />
-        </div>
-      )
-    }
-
-    // Default icons for each type
-    switch (type) {
-      case 'activity':
-        return <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-          <span className="text-blue-600 font-semibold text-sm">A</span>
-        </div>
-      case 'organization':
-        return <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
-          <Building2 className="h-4 w-4 text-green-600" />
-        </div>
-      case 'user':
-        return <div className="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center">
-          <span className="text-orange-600 font-semibold text-sm">U</span>
-        </div>
-      case 'sector':
-        return <div className="w-8 h-8 bg-teal-100 rounded-full flex items-center justify-center">
-          <span className="text-teal-600 font-semibold text-sm">S</span>
-        </div>
-      case 'tag':
-        return <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
-          <span className="text-purple-600 font-semibold text-sm">#</span>
-        </div>
-      case 'contact':
-        return <div className="w-8 h-8 bg-indigo-100 rounded-full flex items-center justify-center">
-          <UserCircle className="h-4 w-4 text-indigo-600" />
-        </div>
-      default:
-        return <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">
-          <span className="text-gray-600 font-semibold text-sm">?</span>
-        </div>
-    }
-  }
-
   return (
     <div className={cn("relative", className)} ref={containerRef}>
       <AnimatePresence mode="wait">
@@ -573,16 +423,11 @@ export function GlobalSearchBar({
               stiffness: 300,
               damping: 30,
             }}
-            className="relative"
+            className="relative flex items-center h-10 rounded-full border border-border bg-card"
           >
-            <motion.div
-              initial={{ backdropFilter: "blur(0px)" }}
-              animate={{ backdropFilter: "blur(12px)" }}
-              className="relative"
-            >
               <Popover open={open} onOpenChange={setOpen}>
                 <PopoverTrigger asChild>
-                  <div className="relative flex items-center overflow-hidden rounded-full border border-border bg-card focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2">
+                  <div className="relative flex items-center w-full h-full rounded-full">
                     <div className="ml-4">
                       <Search className="h-4 w-4 text-muted-foreground" />
                     </div>
@@ -663,28 +508,11 @@ export function GlobalSearchBar({
                                   onSelect={() => handleSuggestionClick(suggestion)}
                                   className="cursor-pointer py-3 px-2 hover:bg-gray-50"
                                 >
-                                  <div className="flex items-start gap-3 w-full">
-                                    <div className="flex-shrink-0 mt-0.5">
-                                      {getResultIcon(suggestion as any)}
-                                    </div>
-                                    <div className="flex-1 min-w-0">
-                                      <div
-                                        className="font-medium text-sm truncate text-gray-900"
-                                        dangerouslySetInnerHTML={{ __html: suggestion.title }}
-                                      />
-                                      {suggestion.subtitle && (
-                                        <div
-                                          className="text-xs text-gray-500 mt-1 truncate"
-                                          dangerouslySetInnerHTML={{ __html: suggestion.subtitle }}
-                                        />
-                                      )}
-                                      {suggestion.metadata?.category && (
-                                        <div className="text-xs text-gray-400 mt-1">
-                                          {suggestion.metadata.category}
-                                        </div>
-                                      )}
-                                    </div>
-                                  </div>
+                                  <SearchResultRow
+                                    result={suggestion}
+                                    searchQuery={query}
+                                    variant="compact"
+                                  />
                                 </CommandItem>
                               ))}
                             </CommandGroup>
@@ -721,21 +549,15 @@ export function GlobalSearchBar({
 
                       {!loading && !error && results.length > 0 && (
                         <>
-                          {/* Group results by type */}
-                          {[
-                            { type: 'activity', label: 'Activities', color: 'blue' },
-                            { type: 'organization', label: 'Organizations', color: 'green' },
-                            { type: 'user', label: 'Users', color: 'orange' },
-                            { type: 'sector', label: 'Sectors', color: 'teal' },
-                            { type: 'tag', label: 'Tags', color: 'purple' }
-                          ].map(({ type, label, color }) => {
+                          {/* Group results by type in specified order */}
+                          {searchResultOrder.map((type) => {
                             const typeResults = results.filter(r => r.type === type)
                             if (typeResults.length === 0) return null
 
                             return (
                               <CommandGroup key={type}>
                                 <div className="px-2 py-1.5 text-xs font-semibold text-gray-600 border-b border-gray-100">
-                                  {label}
+                                  {resultTypeLabels[type]}
                                 </div>
                                 {typeResults.map((result) => (
                                   <CommandItem
@@ -743,92 +565,11 @@ export function GlobalSearchBar({
                                     onSelect={() => handleResultClick(result)}
                                     className="cursor-pointer py-3 px-2 hover:bg-gray-50"
                                   >
-                                    <div className="flex items-start gap-3 w-full">
-                                      <div className="flex-shrink-0 mt-0.5">
-                                        {getResultIcon(result)}
-                                      </div>
-                                      <div className="flex-1 min-w-0">
-                                        <div className="font-medium text-sm truncate text-gray-900">
-                                          <span dangerouslySetInnerHTML={{ __html: result.title }} />
-                                          {result.type === 'organization' && result.metadata?.acronym && (
-                                            <span className="ml-2">({result.metadata.acronym})</span>
-                                          )}
-                                          {result.type === 'activity' && result.metadata?.acronym && (
-                                            <span className="ml-2">({result.metadata.acronym})</span>
-                                          )}
-                                        </div>
-                                        {result.type === 'organization' && (
-                                          <div className="text-xs text-gray-500 mt-1">
-                                            {result.subtitle && (
-                                              <div
-                                                className="truncate"
-                                                dangerouslySetInnerHTML={{ __html: result.subtitle }}
-                                              />
-                                            )}
-                                          </div>
-                                        )}
-                                        {result.type === 'activity' && (
-                                          <div className="text-xs text-gray-500 mt-1">
-                                            {result.metadata?.reporting_org && (
-                                              <div className="truncate mb-1">
-                                                {result.metadata.reporting_org}
-                                                {result.metadata.reporting_org_acronym &&
-                                                  ` (${result.metadata.reporting_org_acronym})`
-                                                }
-                                              </div>
-                                            )}
-                                            {(result.metadata?.partner_id || result.metadata?.iati_id) && (
-                                              <div className="flex items-center gap-1 flex-wrap mt-1">
-                                                {result.metadata?.partner_id && (
-                                                  <span className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded truncate">
-                                                    {result.metadata.partner_id}
-                                                  </span>
-                                                )}
-                                                {result.metadata?.iati_id && (
-                                                  <span className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded truncate">
-                                                    {result.metadata.iati_id}
-                                                  </span>
-                                                )}
-                                              </div>
-                                            )}
-                                          </div>
-                                        )}
-                                        {result.type === 'user' && result.subtitle && (
-                                          <div
-                                            className="text-xs text-gray-500 mt-1 truncate"
-                                            dangerouslySetInnerHTML={{ __html: result.subtitle }}
-                                          />
-                                        )}
-                                        {result.type === 'sector' && (
-                                          <div className="text-xs text-gray-500 mt-1">
-                                            Sector
-                                          </div>
-                                        )}
-                                        {result.type === 'tag' && (
-                                          <div className="text-xs text-gray-500 mt-1">
-                                            {result.metadata?.activity_count || 0} activities
-                                          </div>
-                                        )}
-                                        {result.metadata?.tags && result.metadata.tags.length > 0 && (
-                                          <div className="flex gap-1 mt-2 flex-wrap">
-                                            {result.metadata.tags.slice(0, 2).map((tag, idx) => (
-                                              <Badge
-                                                key={idx}
-                                                variant="secondary"
-                                                className="text-xs py-0 h-4"
-                                              >
-                                                {tag}
-                                              </Badge>
-                                            ))}
-                                            {result.metadata.tags.length > 2 && (
-                                              <span className="text-xs text-gray-400">
-                                                +{result.metadata.tags.length - 2}
-                                              </span>
-                                            )}
-                                          </div>
-                                        )}
-                                      </div>
-                                    </div>
+                                    <SearchResultRow
+                                      result={result}
+                                      searchQuery={query}
+                                      variant="compact"
+                                    />
                                   </CommandItem>
                                 ))}
                               </CommandGroup>
@@ -860,7 +601,6 @@ export function GlobalSearchBar({
                   </Command>
                 </PopoverContent>
               </Popover>
-            </motion.div>
           </motion.div>
         )}
       </AnimatePresence>

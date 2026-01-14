@@ -382,13 +382,13 @@ export function ExternalPublisherModal({
       // Transactions - Individual fields for each transaction
       if (parsedActivity.transactions && parsedActivity.transactions.length > 0) {
         parsedActivity.transactions.forEach((transaction: any, transIndex: number) => {
-          // Create transaction summary with type mapping
+          // Create transaction summary with type mapping (IATI Standard v2.03)
           const transactionTypes: Record<string, string> = {
             '1': 'Incoming Funds',
-            '2': 'Commitment',
+            '2': 'Outgoing Commitment',
             '3': 'Disbursement',
             '4': 'Expenditure',
-            '5': 'Interest Repayment',
+            '5': 'Interest Payment',
             '6': 'Loan Repayment',
             '7': 'Reimbursement',
             '8': 'Purchase of Equity',

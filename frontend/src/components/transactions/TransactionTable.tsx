@@ -74,52 +74,55 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { LoadingText } from "@/components/ui/loading-text";
 
-// Transaction type to icon mapping
+// Transaction type to icon mapping (IATI Standard v2.03)
 const TRANSACTION_TYPE_ICONS: Record<string, React.FC<any>> = {
-  '1': ArrowDownToLine, // Incoming Commitment
-  '2': HandCoins,       // Outgoing Commitment  
+  '1': ArrowDownToLine, // Incoming Funds
+  '2': HandCoins,       // Outgoing Commitment
   '3': ArrowUpFromLine, // Disbursement
   '4': Banknote,        // Expenditure
-  '5': TrendingDown,    // Interest Repayment
+  '5': TrendingDown,    // Interest Payment
   '6': ArrowDownToLine, // Loan Repayment
   '7': RefreshCw,       // Reimbursement
   '8': ArrowUpFromLine, // Purchase of Equity
   '9': ArrowDownToLine, // Sale of Equity
-  '11': FileText,       // Credit Guarantee
-  '12': ArrowDownToLine,// Incoming Funds
-  '13': AlertCircle,    // Commitment Cancellation
+  '10': FileText,       // Credit Guarantee
+  '11': ArrowDownToLine,// Incoming Commitment
+  '12': ArrowUpFromLine,// Outgoing Pledge
+  '13': ArrowDownToLine,// Incoming Pledge
 };
 
-// Transaction type labels
+// Transaction type labels (IATI Standard v2.03)
 const TRANSACTION_TYPE_LABELS: Record<string, string> = {
-  '1': 'Incoming Commitment',
+  '1': 'Incoming Funds',
   '2': 'Outgoing Commitment',
   '3': 'Disbursement',
   '4': 'Expenditure',
-  '5': 'Interest Repayment',
+  '5': 'Interest Payment',
   '6': 'Loan Repayment',
   '7': 'Reimbursement',
   '8': 'Purchase of Equity',
   '9': 'Sale of Equity',
-  '11': 'Credit Guarantee',
-  '12': 'Incoming Funds',
-  '13': 'Commitment Cancellation'
+  '10': 'Credit Guarantee',
+  '11': 'Incoming Commitment',
+  '12': 'Outgoing Pledge',
+  '13': 'Incoming Pledge'
 };
 
 // Pluralized labels for grouped headers
 const TRANSACTION_TYPE_PLURAL_LABELS: Record<string, string> = {
-  '1': 'Incoming Commitments',
+  '1': 'Incoming Funds',
   '2': 'Outgoing Commitments',
   '3': 'Disbursements',
   '4': 'Expenditures',
-  '5': 'Interest Repayments',
+  '5': 'Interest Payments',
   '6': 'Loan Repayments',
   '7': 'Reimbursements',
   '8': 'Purchases of Equity',
   '9': 'Sales of Equity',
-  '11': 'Credit Guarantees',
-  '12': 'Incoming Funds',
-  '13': 'Commitment Cancellations'
+  '10': 'Credit Guarantees',
+  '11': 'Incoming Commitments',
+  '12': 'Outgoing Pledges',
+  '13': 'Incoming Pledges'
 };
 
 const getGroupedLabel = (type: string): string => {

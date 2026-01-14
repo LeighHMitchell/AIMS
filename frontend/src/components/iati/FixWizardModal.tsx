@@ -96,8 +96,9 @@ const CURRENCY_OPTIONS = [
   { code: 'ZAR', name: 'South African Rand' }
 ];
 
+// IATI Standard v2.03 transaction type labels
 const TRANSACTION_TYPE_MAPPING = {
-  '1': 'Incoming Commitment',
+  '1': 'Incoming Funds',
   '2': 'Outgoing Commitment',
   '3': 'Disbursement',
   '4': 'Expenditure',
@@ -106,9 +107,10 @@ const TRANSACTION_TYPE_MAPPING = {
   '7': 'Reimbursement',
   '8': 'Purchase of Equity',
   '9': 'Sale of Equity',
-  '11': 'Credit Guarantee',
-  '12': 'Incoming Funds',
-  '13': 'Commitment Cancellation'
+  '10': 'Credit Guarantee',
+  '11': 'Incoming Commitment',
+  '12': 'Outgoing Pledge',
+  '13': 'Incoming Pledge'
 };
 
 export function FixWizardModal({

@@ -17,22 +17,23 @@ $$ LANGUAGE plpgsql;
 -- Create a view to easily access all valid ENUM values for frontend dropdowns
 CREATE OR REPLACE VIEW iati_reference_values AS
 WITH transaction_type_values AS (
-    SELECT 
+    SELECT
         'transaction_type' as field_name,
         code,
         CASE code
-            WHEN '1' THEN 'Incoming Commitment'
+            WHEN '1' THEN 'Incoming Funds'
             WHEN '2' THEN 'Outgoing Commitment'
             WHEN '3' THEN 'Disbursement'
             WHEN '4' THEN 'Expenditure'
-            WHEN '5' THEN 'Interest Repayment'
+            WHEN '5' THEN 'Interest Payment'
             WHEN '6' THEN 'Loan Repayment'
             WHEN '7' THEN 'Reimbursement'
             WHEN '8' THEN 'Purchase of Equity'
             WHEN '9' THEN 'Sale of Equity'
-            WHEN '11' THEN 'Credit Guarantee'
-            WHEN '12' THEN 'Incoming Funds'
-            WHEN '13' THEN 'Commitment Cancellation'
+            WHEN '10' THEN 'Credit Guarantee'
+            WHEN '11' THEN 'Incoming Commitment'
+            WHEN '12' THEN 'Outgoing Pledge'
+            WHEN '13' THEN 'Incoming Pledge'
         END as name
     FROM unnest(get_enum_values('transaction_type_enum')) as code
 ),

@@ -1,32 +1,35 @@
-// IATI-compliant Transaction Types
+// IATI-compliant Transaction Types (IATI Standard v2.03)
 
 // Transaction Type codes based on IATI standard
-export type TransactionType = 
-  | '1'   // Incoming Commitment
-  | '2'   // Outgoing Commitment  
+export type TransactionType =
+  | '1'   // Incoming Funds
+  | '2'   // Outgoing Commitment
   | '3'   // Disbursement
   | '4'   // Expenditure
-  | '5'   // Interest Repayment
+  | '5'   // Interest Payment
   | '6'   // Loan Repayment
   | '7'   // Reimbursement
   | '8'   // Purchase of Equity
   | '9'   // Sale of Equity
-  | '11'  // Credit Guarantee
-  | '12'  | '13'; // Incoming Funds, Commitment Cancellation
+  | '10'  // Credit Guarantee
+  | '11'  // Incoming Commitment
+  | '12'  // Outgoing Pledge
+  | '13'; // Incoming Pledge
 
 export const TRANSACTION_TYPE_LABELS: Record<TransactionType, string> = {
-  '1': 'Incoming Commitment',
+  '1': 'Incoming Funds',
   '2': 'Outgoing Commitment',
   '3': 'Disbursement',
   '4': 'Expenditure',
-  '5': 'Interest Repayment',
+  '5': 'Interest Payment',
   '6': 'Loan Repayment',
   '7': 'Reimbursement',
   '8': 'Purchase of Equity',
   '9': 'Sale of Equity',
-  '11': 'Credit Guarantee',
-  '12': 'Incoming Funds',
-  '13': 'Commitment Cancellation'
+  '10': 'Credit Guarantee',
+  '11': 'Incoming Commitment',
+  '12': 'Outgoing Pledge',
+  '13': 'Incoming Pledge'
 };
 
 export type TransactionStatus = 'draft' | 'actual';

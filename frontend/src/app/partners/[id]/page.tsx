@@ -36,6 +36,19 @@ import {
 } from "lucide-react";
 import { format } from "date-fns";
 import { LEGACY_TRANSACTION_TYPE_MAP } from "@/utils/transactionMigrationHelper";
+import {
+  ResponsiveContainer,
+  BarChart as RechartsBarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  PieChart as RechartsPieChart,
+  Pie,
+  Cell,
+  Legend
+} from 'recharts';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -410,8 +423,55 @@ export default function PartnerProfilePage() {
                         <p className="text-sm text-slate-600">Total Commitments</p>
                         <p className="text-2xl font-bold">${totalFunding.toLocaleString()}</p>
                       </div>
-                      <div className="h-64 flex items-center justify-center bg-slate-50 rounded-lg">
-                        <p className="text-slate-500">Financial charts will be displayed here</p>
+                      <div className="h-64">
+                        {(() => {
+                          // Calculate funding by year
+                          const fundingByYear: Record<string, number> = {};
+                          activities.forEach(activity => {
+                            const isRelated = activity.createdByOrg === partner?.name ||
+                              activity.transactions?.some((t: any) =>
+                                t.providerOrg === partner?.name || t.receiverOrg === partner?.name
+                              );
+                            if (isRelated) {
+                              activity.transactions?.forEach((t: any) => {
+                                const normalizedType = LEGACY_TRANSACTION_TYPE_MAP[t.type] || t.type;
+                                if (t.providerOrg === partner?.name && normalizedType === "2" && t.status === "actual" && t.date) {
+                                  const year = new Date(t.date).getFullYear();
+                                  fundingByYear[year] = (fundingByYear[year] || 0) + t.value;
+                                }
+                              });
+                            }
+                          });
+                          const chartData = Object.entries(fundingByYear)
+                            .sort(([a], [b]) => Number(a) - Number(b))
+                            .map(([year, amount]) => ({ year, amount }));
+
+                          if (chartData.length === 0) {
+                            return (
+                              <div className="h-full flex items-center justify-center bg-slate-50 rounded-lg">
+                                <p className="text-slate-500">No transaction data available</p>
+                              </div>
+                            );
+                          }
+
+                          return (
+                            <ResponsiveContainer width="100%" height="100%">
+                              <RechartsBarChart data={chartData} margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
+                                <CartesianGrid strokeDasharray="3 3" />
+                                <XAxis dataKey="year" />
+                                <YAxis
+                                  tickFormatter={(value) => {
+                                    if (value >= 1000000) return `$${(value / 1000000).toFixed(1)}M`;
+                                    if (value >= 1000) return `$${(value / 1000).toFixed(0)}K`;
+                                    return `$${value}`;
+                                  }}
+                                />
+                                <Tooltip formatter={(value: number) => [`$${value.toLocaleString()}`, 'Funding']} />
+                                <Bar dataKey="amount" fill="#3b82f6" radius={[4, 4, 0, 0]} name="Commitments" />
+                              </RechartsBarChart>
+                            </ResponsiveContainer>
+                          );
+                        })()}
                       </div>
                     </div>
                   </CardContent>
@@ -431,8 +491,42 @@ export default function PartnerProfilePage() {
                         <span className="text-sm text-slate-600">Completed Projects</span>
                         <span className="font-bold">{completedProjects}</span>
                       </div>
-                      <div className="h-48 flex items-center justify-center bg-slate-50 rounded-lg">
-                        <p className="text-slate-500">Status chart will be displayed here</p>
+                      <div className="h-48">
+                        {(() => {
+                          const statusData = [
+                            { name: 'Active', value: activeProjects, color: '#3b82f6' },
+                            { name: 'Completed', value: completedProjects, color: '#10b981' }
+                          ].filter(d => d.value > 0);
+
+                          if (statusData.length === 0) {
+                            return (
+                              <div className="h-full flex items-center justify-center bg-slate-50 rounded-lg">
+                                <p className="text-slate-500">No project data available</p>
+                              </div>
+                            );
+                          }
+
+                          return (
+                            <ResponsiveContainer width="100%" height="100%">
+                              <RechartsPieChart>
+                                <Pie
+                                  data={statusData}
+                                  cx="50%"
+                                  cy="50%"
+                                  innerRadius={40}
+                                  outerRadius={70}
+                                  dataKey="value"
+                                  label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                                >
+                                  {statusData.map((entry, index) => (
+                                    <Cell key={`cell-${index}`} fill={entry.color} />
+                                  ))}
+                                </Pie>
+                                <Tooltip formatter={(value: number) => [value, 'Projects']} />
+                              </RechartsPieChart>
+                            </ResponsiveContainer>
+                          );
+                        })()}
                       </div>
                     </div>
                   </CardContent>

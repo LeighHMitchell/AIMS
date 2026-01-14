@@ -129,14 +129,15 @@ export const activityColumns: ColumnConfig<ActivityColumnId>[] = [
   { id: "totalCommitments", label: "Outgoing Commitments", group: "transactionTypeTotals", defaultVisible: false },
   { id: "totalDisbursements", label: "Disbursements", group: "transactionTypeTotals", defaultVisible: false },
   { id: "totalExpenditures", label: "Expenditures", group: "transactionTypeTotals", defaultVisible: false },
-  { id: "totalInterestRepayment", label: "Interest Repayment", group: "transactionTypeTotals", defaultVisible: false },
+  { id: "totalInterestRepayment", label: "Interest Payment", group: "transactionTypeTotals", defaultVisible: false },
   { id: "totalLoanRepayment", label: "Loan Repayment", group: "transactionTypeTotals", defaultVisible: false },
   { id: "totalReimbursement", label: "Reimbursement", group: "transactionTypeTotals", defaultVisible: false },
   { id: "totalPurchaseOfEquity", label: "Purchase of Equity", group: "transactionTypeTotals", defaultVisible: false },
   { id: "totalSaleOfEquity", label: "Sale of Equity", group: "transactionTypeTotals", defaultVisible: false },
   { id: "totalCreditGuarantee", label: "Credit Guarantee", group: "transactionTypeTotals", defaultVisible: false },
   { id: "totalIncomingFunds", label: "Incoming Funds", group: "transactionTypeTotals", defaultVisible: false },
-  { id: "totalCommitmentCancellation", label: "Commitment Cancellation", group: "transactionTypeTotals", defaultVisible: false },
+  { id: "totalOutgoingPledge", label: "Outgoing Pledge", group: "transactionTypeTotals", defaultVisible: false },
+  { id: "totalIncomingPledge", label: "Incoming Pledge", group: "transactionTypeTotals", defaultVisible: false },
 
   // Publication status columns
   { id: "isPublished", label: "Published", group: "publicationStatuses", defaultVisible: false },

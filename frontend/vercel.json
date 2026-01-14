@@ -87,15 +87,5 @@
       "destination": "/api/health-check",
       "permanent": false
     }
-  ],
-  "crons": [
-    {
-      "path": "/api/cron/tasks/dispatch",
-      "schedule": "0 6 * * *"
-    },
-    {
-      "path": "/api/cron/tasks/reminders",
-      "schedule": "0 9 * * *"
-    }
   ]
 }

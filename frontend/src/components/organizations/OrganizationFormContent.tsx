@@ -1578,15 +1578,24 @@ export function OrganizationFormContent({
                 </p>
               </div>
               {isCreating && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setShowIatiImport(true)}
-                  className="flex items-center gap-2"
-                >
-                  <Globe className="h-4 w-4" />
-                  Import from IATI
-                </Button>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        disabled
+                        className="flex items-center gap-2 opacity-60"
+                      >
+                        <Globe className="h-4 w-4" />
+                        Import from IATI
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>IATI Registry import coming soon</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
               )}
             </div>
           </div>
@@ -1599,12 +1608,12 @@ export function OrganizationFormContent({
           )}
 
           {/* Main Content */}
-          <div className="flex-1 overflow-hidden px-6 py-4">
+          <div className="flex-1 flex flex-col min-h-0 overflow-hidden px-6 pt-4">
             {renderTabsContent()}
           </div>
 
           {/* Footer with Save Button */}
-          <div className="flex-shrink-0 px-6 py-4 border-t bg-white">
+          <div className="flex-shrink-0 px-6 py-1.5 border-t bg-white">
             {renderButtons()}
           </div>
         </div>
@@ -1627,12 +1636,12 @@ export function OrganizationFormContent({
         )}
 
         {/* Tabs Content */}
-        <div className="flex-1 overflow-hidden px-6 py-4">
+        <div className="flex-1 flex flex-col min-h-0 overflow-hidden px-6 py-4">
           {renderTabsContent()}
         </div>
 
         {/* Footer with Save Button - Floating */}
-        <div className="flex-shrink-0 px-6 py-4 border-t">
+        <div className="flex-shrink-0 px-6 py-2 border-t">
           {renderButtons()}
         </div>
       </div>

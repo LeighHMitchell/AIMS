@@ -186,12 +186,22 @@ export function OrphanTransactionFixModal({
   };
 
   const getTransactionTypeLabel = (type: string) => {
+    // IATI Standard v2.03 transaction type labels
     const typeMap: Record<string, string> = {
-      '1': 'Incoming Commitment',
+      '1': 'Incoming Funds',
       '2': 'Outgoing Commitment',
       '3': 'Disbursement',
       '4': 'Expenditure',
-      '11': 'Credit Guarantee',
+      '5': 'Interest Payment',
+      '6': 'Loan Repayment',
+      '7': 'Reimbursement',
+      '8': 'Purchase of Equity',
+      '9': 'Sale of Equity',
+      '10': 'Credit Guarantee',
+      '11': 'Incoming Commitment',
+      '12': 'Outgoing Pledge',
+      '13': 'Incoming Pledge',
+      // Legacy codes
       'D': 'Disbursement',
       'C': 'Commitment',
       'E': 'Expenditure'

@@ -162,7 +162,7 @@ export function Top10DisbursementCommitmentRatioChart({
     <ResponsiveContainer width="100%" height={400}>
       <BarChart
         data={sanitizedData}
-        layout="horizontal"
+        layout="vertical"
         margin={{ top: 5, right: 30, left: 100, bottom: 5 }}
       >
         <CartesianGrid

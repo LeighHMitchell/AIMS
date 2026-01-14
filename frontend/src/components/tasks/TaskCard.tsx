@@ -26,6 +26,7 @@ import {
 } from '@/components/ui/tooltip';
 import { TaskActionMenu } from './TaskActionMenu';
 import { formatDistanceToNow, format } from 'date-fns';
+import { toast } from 'sonner';
 import type { TaskAssignment, TaskStatus } from '@/types/task';
 import {
   getPriorityLabel,
@@ -66,7 +67,7 @@ async function downloadAttachment(taskId: string, attachmentId: string, fileName
 
     if (!userId) {
       console.error('User not authenticated');
-      alert('You must be logged in to download attachments');
+      toast.error('You must be logged in to download attachments');
       return;
     }
 
@@ -80,13 +81,13 @@ async function downloadAttachment(taskId: string, attachmentId: string, fileName
 
     if (!response.ok) {
       console.error('[Download] API error:', data.error);
-      alert(`Download failed: ${data.error || 'Unknown error'}`);
+      toast.error(`Download failed: ${data.error || 'Unknown error'}`);
       return;
     }
 
     if (!data.success || !data.data?.download_url) {
       console.error('[Download] No download URL in response');
-      alert('Failed to get download URL');
+      toast.error('Failed to get download URL');
       return;
     }
 
@@ -104,7 +105,7 @@ async function downloadAttachment(taskId: string, attachmentId: string, fileName
     document.body.removeChild(a);
   } catch (error) {
     console.error('Error downloading attachment:', error);
-    alert('Failed to download attachment');
+    toast.error('Failed to download attachment. Please try again.');
   }
 }
 

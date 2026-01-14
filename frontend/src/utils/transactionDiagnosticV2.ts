@@ -24,23 +24,24 @@ interface ImportSummary {
   criticalIssues: string[];
 }
 
-// Comprehensive mappings based on IATI standard
+// Comprehensive mappings based on IATI Standard v2.03
 const TRANSACTION_TYPE_MAP: Record<string, string> = {
   // IATI numeric codes to our enum values
-  '1': '1',   // Incoming Commitment
-  '2': '2',   // Outgoing Commitment  
-  '3': '3',   // Disbursement/Expenditure
+  '1': '1',   // Incoming Funds
+  '2': '2',   // Outgoing Commitment
+  '3': '3',   // Disbursement
   '4': '4',   // Expenditure
   '5': '5',   // Interest Payment
   '6': '6',   // Loan Repayment
   '7': '7',   // Reimbursement
   '8': '8',   // Purchase of Equity
   '9': '9',   // Sale of Equity
-  '11': '11', // Credit Guarantee
-  '12': '12', // Incoming Funds
-  '13': '13', // Commitment Cancellation
-  // Text mappings
-  'incoming commitment': '1',
+  '10': '10', // Credit Guarantee
+  '11': '11', // Incoming Commitment
+  '12': '12', // Outgoing Pledge
+  '13': '13', // Incoming Pledge
+  // Text mappings (lowercase)
+  'incoming funds': '1',
   'outgoing commitment': '2',
   'disbursement': '3',
   'expenditure': '4',
@@ -49,13 +50,15 @@ const TRANSACTION_TYPE_MAP: Record<string, string> = {
   'reimbursement': '7',
   'purchase of equity': '8',
   'sale of equity': '9',
-  'credit guarantee': '11',
-  'incoming funds': '12',
-  'commitment cancellation': '13',
+  'credit guarantee': '10',
+  'incoming commitment': '11',
+  'outgoing pledge': '12',
+  'incoming pledge': '13',
+  'commitment cancellation': '13', // Legacy alias
   // Common variations
   'D': '3',  // Disbursement
   'E': '4',  // Expenditure
-  'IF': '12', // Incoming Funds
+  'IF': '1', // Incoming Funds
   'C': '2'   // Commitment
 };
 

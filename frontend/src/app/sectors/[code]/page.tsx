@@ -17,6 +17,19 @@ import {
   ExternalLink
 } from 'lucide-react'
 import { Skeleton } from '@/components/ui/skeleton'
+import {
+  ResponsiveContainer,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  PieChart,
+  Pie,
+  Cell,
+  Legend
+} from 'recharts'
 import { getSectorLabel, getSectorDescription } from '@/components/forms/SectorSelect'
 import dacSectorsData from '@/data/dac-sectors.json'
 import sectorGroupData from '@/data/SectorGroup.json'
@@ -398,23 +411,154 @@ export default function SectorDetailPage() {
           </TabsContent>
 
           <TabsContent value="analytics">
-            <Card>
-              <CardHeader>
-                <CardTitle>Sector Analytics</CardTitle>
-                <CardDescription>
-                  Detailed analytics and trends for this sector
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="text-center py-12">
-                  <BarChart3 className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                  <p className="text-gray-600">Analytics coming soon</p>
-                  <p className="text-sm text-gray-500 mt-2">
-                    This section will include funding trends, activity timelines, and comparative analysis.
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
+            <div className="space-y-6">
+              {/* Status Distribution */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">Activity Status Distribution</CardTitle>
+                  <CardDescription>
+                    Breakdown of activities by their current status
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {sectorInfo && sectorInfo.activities.length > 0 ? (
+                    <div className="h-[300px]">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <PieChart>
+                          <Pie
+                            data={(() => {
+                              const statusCounts = sectorInfo.activities.reduce((acc, activity) => {
+                                const status = activity.status || 'Unknown'
+                                acc[status] = (acc[status] || 0) + 1
+                                return acc
+                              }, {} as Record<string, number>)
+                              return Object.entries(statusCounts).map(([name, value]) => ({ name, value }))
+                            })()}
+                            cx="50%"
+                            cy="50%"
+                            labelLine={false}
+                            label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
+                            outerRadius={100}
+                            fill="#8884d8"
+                            dataKey="value"
+                          >
+                            {(() => {
+                              const COLORS = ['#10b981', '#3b82f6', '#f59e0b', '#ef4444', '#6b7280']
+                              const statusCounts = sectorInfo.activities.reduce((acc, activity) => {
+                                const status = activity.status || 'Unknown'
+                                acc[status] = (acc[status] || 0) + 1
+                                return acc
+                              }, {} as Record<string, number>)
+                              return Object.keys(statusCounts).map((_, index) => (
+                                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                              ))
+                            })()}
+                          </Pie>
+                          <Tooltip />
+                          <Legend />
+                        </PieChart>
+                      </ResponsiveContainer>
+                    </div>
+                  ) : (
+                    <div className="text-center py-8 text-gray-500">
+                      <BarChart3 className="h-10 w-10 mx-auto mb-2 opacity-50" />
+                      <p>No activity data available</p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Top Organizations */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">Top Organizations by Budget</CardTitle>
+                  <CardDescription>
+                    Organizations with the highest funding in this sector
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {sectorInfo && sectorInfo.topDonors.length > 0 ? (
+                    <div className="h-[300px]">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart
+                          data={sectorInfo.topDonors.map(d => ({
+                            name: d.name.length > 20 ? d.name.substring(0, 20) + '...' : d.name,
+                            fullName: d.name,
+                            budget: d.amount
+                          }))}
+                          layout="vertical"
+                          margin={{ top: 5, right: 30, left: 100, bottom: 5 }}
+                        >
+                          <CartesianGrid strokeDasharray="3 3" />
+                          <XAxis
+                            type="number"
+                            tickFormatter={(value) => {
+                              if (value >= 1000000) return `$${(value / 1000000).toFixed(1)}M`
+                              if (value >= 1000) return `$${(value / 1000).toFixed(0)}K`
+                              return `$${value}`
+                            }}
+                          />
+                          <YAxis dataKey="name" type="category" width={100} />
+                          <Tooltip
+                            formatter={(value: number) => [`$${value.toLocaleString()}`, 'Budget']}
+                            labelFormatter={(label, payload) => payload?.[0]?.payload?.fullName || label}
+                          />
+                          <Bar dataKey="budget" fill="#3b82f6" radius={[0, 4, 4, 0]} />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </div>
+                  ) : (
+                    <div className="text-center py-8 text-gray-500">
+                      <Building2 className="h-10 w-10 mx-auto mb-2 opacity-50" />
+                      <p>No organization data available</p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Activities by Year */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">Activities by Year</CardTitle>
+                  <CardDescription>
+                    Number of activities started each year in this sector
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {sectorInfo && sectorInfo.activities.length > 0 ? (
+                    <div className="h-[300px]">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart
+                          data={(() => {
+                            const yearCounts = sectorInfo.activities.reduce((acc, activity) => {
+                              const year = activity.startDate ? new Date(activity.startDate).getFullYear() : 'Unknown'
+                              acc[year] = (acc[year] || 0) + 1
+                              return acc
+                            }, {} as Record<string | number, number>)
+                            return Object.entries(yearCounts)
+                              .filter(([year]) => year !== 'Unknown')
+                              .sort(([a], [b]) => Number(a) - Number(b))
+                              .map(([year, count]) => ({ year, count }))
+                          })()}
+                          margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+                        >
+                          <CartesianGrid strokeDasharray="3 3" />
+                          <XAxis dataKey="year" />
+                          <YAxis allowDecimals={false} />
+                          <Tooltip />
+                          <Bar dataKey="count" fill="#10b981" radius={[4, 4, 0, 0]} name="Activities" />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </div>
+                  ) : (
+                    <div className="text-center py-8 text-gray-500">
+                      <TrendingUp className="h-10 w-10 mx-auto mb-2 opacity-50" />
+                      <p>No timeline data available</p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
           </TabsContent>
         </Tabs>
       </div>

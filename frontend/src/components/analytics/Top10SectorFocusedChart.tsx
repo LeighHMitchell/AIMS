@@ -12,7 +12,8 @@ import {
   Cell
 } from 'recharts'
 import { Skeleton } from '@/components/ui/skeleton'
-import { BarChart3, Target } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { BarChart3, Target, Table as TableIcon } from 'lucide-react'
 
 interface Top10SectorFocusedChartProps {
   dateRange: {
@@ -32,6 +33,8 @@ interface PartnerData {
   shortName: string
 }
 
+type ViewMode = 'bar' | 'table'
+
 export function Top10SectorFocusedChart({
   dateRange,
   refreshKey,
@@ -41,6 +44,7 @@ export function Top10SectorFocusedChart({
   const [data, setData] = useState<PartnerData[]>([])
   const [loading, setLoading] = useState(true)
   const [sectorName, setSectorName] = useState<string>('All Sectors')
+  const [viewMode, setViewMode] = useState<ViewMode>('bar')
 
   useEffect(() => {
     fetchData()
@@ -96,7 +100,7 @@ export function Top10SectorFocusedChart({
         style: 'currency',
         currency: 'USD',
         notation: 'compact',
-        maximumFractionDigits: 1
+        maximumFractionDigits: 0
       }).format(safeValue)
     } catch (error) {
       console.error('[Top10SectorFocusedChart] Error formatting currency:', error, value)
@@ -104,20 +108,8 @@ export function Top10SectorFocusedChart({
     }
   }
 
-  // Generate shades of teal for bars
-  const barColors = [
-    '#0d9488', // teal-600
-    '#14b8a6', // teal-500
-    '#2dd4bf', // teal-400
-    '#5eead4', // teal-300
-    '#99f6e4', // teal-200
-    '#ccfbf1', // teal-100
-    '#0d9488', // repeat
-    '#14b8a6',
-    '#2dd4bf',
-    '#5eead4',
-    '#94a3b8' // slate-400 for "Others"
-  ]
+  const BAR_COLOR = '#4C5568'
+  const OTHERS_COLOR = '#94a3b8'
 
   // Compact mode renders just the chart
   if (compact) {
@@ -134,7 +126,7 @@ export function Top10SectorFocusedChart({
     return (
       <div className="h-full w-full">
         <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={data} layout="horizontal" margin={{ top: 5, right: 20, left: 60, bottom: 5 }}>
+          <BarChart data={data} layout="vertical" margin={{ top: 5, right: 20, left: 60, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" horizontal={false} />
             <XAxis type="number" tickFormatter={formatCurrency} tick={{ fontSize: 10 }} />
             <YAxis type="category" dataKey="shortName" tick={{ fontSize: 9 }} width={55} />
@@ -148,9 +140,9 @@ export function Top10SectorFocusedChart({
               }}
               labelStyle={{ color: '#94a3b8' }}
             />
-            <Bar dataKey="totalValue" radius={[0, 4, 4, 0]}>
+            <Bar dataKey="totalValue" radius={[0, 4, 4, 0]} isAnimationActive={false}>
               {data.map((entry, index) => (
-                <Cell key={`cell-${index}`} fill={entry.orgId === 'others' ? '#94a3b8' : barColors[index % (barColors.length - 1)]} />
+                <Cell key={`cell-${index}`} fill={entry.orgId === 'others' ? OTHERS_COLOR : BAR_COLOR} />
               ))}
             </Bar>
           </BarChart>
@@ -180,51 +172,108 @@ export function Top10SectorFocusedChart({
   }
 
   return (
-    <ResponsiveContainer width="100%" height={400}>
-      <BarChart 
-        data={data}
-        layout="horizontal"
-        margin={{ top: 5, right: 30, left: 100, bottom: 5 }}
-      >
-        <CartesianGrid 
-          strokeDasharray="3 3" 
-          stroke="#e2e8f0" 
-          horizontal={false}
-        />
-        <XAxis 
-          type="number"
-          tickFormatter={formatCurrency}
-          tick={{ fill: '#64748b', fontSize: 12 }}
-          axisLine={{ stroke: '#cbd5e1' }}
-        />
-        <YAxis 
-          type="category"
-          dataKey="shortName"
-          tick={{ fill: '#64748b', fontSize: 12 }}
-          axisLine={{ stroke: '#cbd5e1' }}
-          width={90}
-        />
-        <Tooltip 
-          formatter={(value: number) => formatCurrency(value)}
-          contentStyle={{
-            backgroundColor: '#1e293b',
-            border: 'none',
-            borderRadius: '8px',
-            color: '#fff'
-          }}
-          labelStyle={{ color: '#94a3b8' }}
-          cursor={{ fill: 'rgba(148, 163, 184, 0.1)' }}
-        />
-        <Bar dataKey="totalValue" radius={[0, 4, 4, 0]}>
-          {data.map((entry, index) => (
-            <Cell 
-              key={`cell-${index}`} 
-              fill={entry.orgId === 'others' ? '#94a3b8' : barColors[index % (barColors.length - 1)]} 
+    <div className="space-y-4">
+      {/* View Mode Toggle */}
+      <div className="flex justify-end">
+        <div className="flex gap-1 border rounded-lg p-1 bg-white">
+          <Button
+            variant={viewMode === 'bar' ? 'default' : 'ghost'}
+            size="sm"
+            onClick={() => setViewMode('bar')}
+            className="h-8"
+            title="Bar Chart"
+          >
+            <BarChart3 className="h-4 w-4" />
+          </Button>
+          <Button
+            variant={viewMode === 'table' ? 'default' : 'ghost'}
+            size="sm"
+            onClick={() => setViewMode('table')}
+            className="h-8"
+            title="Table"
+          >
+            <TableIcon className="h-4 w-4" />
+          </Button>
+        </div>
+      </div>
+
+      {viewMode === 'bar' ? (
+        <ResponsiveContainer width="100%" height={400}>
+          <BarChart
+            data={data}
+            layout="vertical"
+            margin={{ top: 5, right: 30, left: 100, bottom: 5 }}
+          >
+            <CartesianGrid
+              strokeDasharray="3 3"
+              stroke="#e2e8f0"
+              horizontal={false}
             />
-          ))}
-        </Bar>
-      </BarChart>
-    </ResponsiveContainer>
+            <XAxis
+              type="number"
+              tickFormatter={formatCurrency}
+              tick={{ fill: '#64748b', fontSize: 12 }}
+              axisLine={{ stroke: '#cbd5e1' }}
+            />
+            <YAxis
+              type="category"
+              dataKey="shortName"
+              tick={{ fill: '#64748b', fontSize: 12 }}
+              axisLine={{ stroke: '#cbd5e1' }}
+              width={90}
+            />
+            <Tooltip
+              formatter={(value: number) => formatCurrency(value)}
+              contentStyle={{
+                backgroundColor: '#1e293b',
+                border: 'none',
+                borderRadius: '8px',
+                color: '#fff'
+              }}
+              labelStyle={{ color: '#94a3b8' }}
+              cursor={{ fill: 'rgba(148, 163, 184, 0.1)' }}
+            />
+            <Bar dataKey="totalValue" radius={[0, 4, 4, 0]} isAnimationActive={false}>
+              {data.map((entry, index) => (
+                <Cell
+                  key={`cell-${index}`}
+                  fill={entry.orgId === 'others' ? OTHERS_COLOR : BAR_COLOR}
+                />
+              ))}
+            </Bar>
+          </BarChart>
+        </ResponsiveContainer>
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-slate-200">
+                <th className="text-left py-3 px-4 font-medium text-slate-600">Organization</th>
+                <th className="text-right py-3 px-4 font-medium text-slate-600">Total Value</th>
+              </tr>
+            </thead>
+            <tbody>
+              {data.map((entry, index) => (
+                <tr key={entry.orgId} className={index % 2 === 0 ? 'bg-slate-50' : 'bg-white'}>
+                  <td className="py-3 px-4 text-slate-900">
+                    {entry.name}{entry.acronym ? ` (${entry.acronym})` : ''}
+                  </td>
+                  <td className="py-3 px-4 text-right text-slate-900 font-medium">
+                    {formatCurrency(entry.totalValue)}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      <p className="text-sm text-slate-600 leading-relaxed">
+        This chart shows the top development partners by financial value for activities in {sectorName}.
+        Use this to identify key funders in specific sectors and understand funding concentration patterns
+        to inform sector coordination and resource mobilization strategies.
+      </p>
+    </div>
   )
 }
 

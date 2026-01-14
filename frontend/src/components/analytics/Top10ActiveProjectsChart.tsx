@@ -12,7 +12,8 @@ import {
   Cell
 } from 'recharts'
 import { Skeleton } from '@/components/ui/skeleton'
-import { BarChart3, Activity } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { BarChart3, Activity, Table as TableIcon } from 'lucide-react'
 
 interface Top10ActiveProjectsChartProps {
   filters?: {
@@ -32,6 +33,24 @@ interface PartnerData {
   shortName: string
 }
 
+// Custom tooltip component for consistent styling
+const CustomTooltip = ({ active, payload }: any) => {
+  if (active && payload && payload.length) {
+    const data = payload[0].payload
+    return (
+      <div className="bg-slate-800 px-3 py-2 rounded-lg shadow-lg border border-slate-700">
+        <p className="text-white font-medium text-sm">{data.name}</p>
+        <p className="text-slate-300 text-sm mt-1">
+          {data.projectCount} active project{data.projectCount !== 1 ? 's' : ''}
+        </p>
+      </div>
+    )
+  }
+  return null
+}
+
+type ViewMode = 'bar' | 'table'
+
 export function Top10ActiveProjectsChart({
   filters,
   refreshKey,
@@ -40,6 +59,7 @@ export function Top10ActiveProjectsChart({
 }: Top10ActiveProjectsChartProps) {
   const [data, setData] = useState<PartnerData[]>([])
   const [loading, setLoading] = useState(true)
+  const [viewMode, setViewMode] = useState<ViewMode>('bar')
 
   useEffect(() => {
     fetchData()
@@ -48,11 +68,11 @@ export function Top10ActiveProjectsChart({
   const fetchData = async () => {
     try {
       setLoading(true)
-      
+
       const params = new URLSearchParams({
         limit: '10'
       })
-      
+
       if (filters?.country && filters.country !== 'all') {
         params.append('country', filters.country)
       }
@@ -69,7 +89,7 @@ export function Top10ActiveProjectsChart({
 
       const result = await response.json()
       console.log('[Top10ActiveProjectsChart] API response:', result)
-      
+
       const partners = (result.partners || []).map((p: any) => ({
         ...p,
         shortName: p.acronym || p.name.split(' ').slice(0, 2).join(' ')
@@ -86,20 +106,8 @@ export function Top10ActiveProjectsChart({
     }
   }
 
-  // Generate shades of green for bars
-  const barColors = [
-    '#15803d', // green-700
-    '#16a34a', // green-600
-    '#22c55e', // green-500
-    '#4ade80', // green-400
-    '#86efac', // green-300
-    '#bbf7d0', // green-200
-    '#15803d', // repeat
-    '#16a34a',
-    '#22c55e',
-    '#4ade80',
-    '#94a3b8' // slate-400 for "Others"
-  ]
+  const BAR_COLOR = '#4C5568'
+  const OTHERS_COLOR = '#94a3b8'
 
   // Compact mode renders just the chart
   if (compact) {
@@ -116,23 +124,14 @@ export function Top10ActiveProjectsChart({
     return (
       <div className="h-full w-full">
         <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={data} layout="horizontal" margin={{ top: 5, right: 20, left: 60, bottom: 5 }}>
+          <BarChart data={data} layout="vertical" margin={{ top: 5, right: 20, left: 60, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" horizontal={false} />
             <XAxis type="number" tick={{ fontSize: 10 }} />
             <YAxis type="category" dataKey="shortName" tick={{ fontSize: 9 }} width={55} />
-            <Tooltip
-              formatter={(value: number) => `${value} project${value !== 1 ? 's' : ''}`}
-              contentStyle={{
-                backgroundColor: '#1e293b',
-                border: 'none',
-                borderRadius: '8px',
-                color: '#fff'
-              }}
-              labelStyle={{ color: '#94a3b8' }}
-            />
-            <Bar dataKey="projectCount" radius={[0, 4, 4, 0]}>
+            <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(148, 163, 184, 0.1)' }} />
+            <Bar dataKey="projectCount" radius={[0, 4, 4, 0]} isAnimationActive={false}>
               {data.map((entry, index) => (
-                <Cell key={`cell-${index}`} fill={entry.orgId === 'others' ? '#94a3b8' : barColors[index % (barColors.length - 1)]} />
+                <Cell key={`cell-${index}`} fill={entry.orgId === 'others' ? OTHERS_COLOR : BAR_COLOR} />
               ))}
             </Bar>
           </BarChart>
@@ -162,50 +161,97 @@ export function Top10ActiveProjectsChart({
   }
 
   return (
-    <ResponsiveContainer width="100%" height={400}>
-      <BarChart 
-        data={data}
-        layout="horizontal"
-        margin={{ top: 5, right: 30, left: 100, bottom: 5 }}
-      >
-        <CartesianGrid 
-          strokeDasharray="3 3" 
-          stroke="#e2e8f0" 
-          horizontal={false}
-        />
-        <XAxis 
-          type="number"
-          tick={{ fill: '#64748b', fontSize: 12 }}
-          axisLine={{ stroke: '#cbd5e1' }}
-        />
-        <YAxis 
-          type="category"
-          dataKey="shortName"
-          tick={{ fill: '#64748b', fontSize: 12 }}
-          axisLine={{ stroke: '#cbd5e1' }}
-          width={90}
-        />
-        <Tooltip 
-          formatter={(value: number) => `${value} project${value !== 1 ? 's' : ''}`}
-          contentStyle={{
-            backgroundColor: '#1e293b',
-            border: 'none',
-            borderRadius: '8px',
-            color: '#fff'
-          }}
-          labelStyle={{ color: '#94a3b8' }}
-          cursor={{ fill: 'rgba(148, 163, 184, 0.1)' }}
-        />
-        <Bar dataKey="projectCount" radius={[0, 4, 4, 0]}>
-          {data.map((entry, index) => (
-            <Cell 
-              key={`cell-${index}`} 
-              fill={entry.orgId === 'others' ? '#94a3b8' : barColors[index % (barColors.length - 1)]} 
+    <div className="space-y-4">
+      {/* View Mode Toggle */}
+      <div className="flex justify-end">
+        <div className="flex gap-1 border rounded-lg p-1 bg-white">
+          <Button
+            variant={viewMode === 'bar' ? 'default' : 'ghost'}
+            size="sm"
+            onClick={() => setViewMode('bar')}
+            className="h-8"
+            title="Bar Chart"
+          >
+            <BarChart3 className="h-4 w-4" />
+          </Button>
+          <Button
+            variant={viewMode === 'table' ? 'default' : 'ghost'}
+            size="sm"
+            onClick={() => setViewMode('table')}
+            className="h-8"
+            title="Table"
+          >
+            <TableIcon className="h-4 w-4" />
+          </Button>
+        </div>
+      </div>
+
+      {viewMode === 'bar' ? (
+        <ResponsiveContainer width="100%" height={400}>
+          <BarChart
+            data={data}
+            layout="vertical"
+            margin={{ top: 5, right: 30, left: 100, bottom: 5 }}
+          >
+            <CartesianGrid
+              strokeDasharray="3 3"
+              stroke="#e2e8f0"
+              horizontal={false}
             />
-          ))}
-        </Bar>
-      </BarChart>
-    </ResponsiveContainer>
+            <XAxis
+              type="number"
+              tick={{ fill: '#64748b', fontSize: 12 }}
+              axisLine={{ stroke: '#cbd5e1' }}
+            />
+            <YAxis
+              type="category"
+              dataKey="shortName"
+              tick={{ fill: '#64748b', fontSize: 12 }}
+              axisLine={{ stroke: '#cbd5e1' }}
+              width={90}
+            />
+            <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(148, 163, 184, 0.1)' }} />
+            <Bar dataKey="projectCount" radius={[0, 4, 4, 0]} isAnimationActive={false}>
+              {data.map((entry, index) => (
+                <Cell
+                  key={`cell-${index}`}
+                  fill={entry.orgId === 'others' ? OTHERS_COLOR : BAR_COLOR}
+                />
+              ))}
+            </Bar>
+          </BarChart>
+        </ResponsiveContainer>
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-slate-200">
+                <th className="text-left py-3 px-4 font-medium text-slate-600">Organization</th>
+                <th className="text-right py-3 px-4 font-medium text-slate-600">Active Projects</th>
+              </tr>
+            </thead>
+            <tbody>
+              {data.map((entry, index) => (
+                <tr key={entry.orgId} className={index % 2 === 0 ? 'bg-slate-50' : 'bg-white'}>
+                  <td className="py-3 px-4 text-slate-900">
+                    {entry.name}{entry.acronym ? ` (${entry.acronym})` : ''}
+                  </td>
+                  <td className="py-3 px-4 text-right text-slate-900 font-medium">
+                    {entry.projectCount}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      <p className="text-sm text-slate-600 leading-relaxed">
+        This chart ranks development partners by the number of activities where they are listed as a funding or implementing organization.
+        Use this to identify the most active partners in your country's development landscape and to facilitate coordination
+        with key stakeholders who have significant operational presence.
+      </p>
+    </div>
   )
 }
 

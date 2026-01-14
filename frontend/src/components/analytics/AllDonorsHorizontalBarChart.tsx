@@ -13,7 +13,7 @@ import {
 import { Skeleton } from '@/components/ui/skeleton'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Button } from '@/components/ui/button'
-import { DollarSign, Wallet, Calendar, Download, FileImage, Table as TableIcon, AlertCircle, CalendarIcon, RotateCcw } from 'lucide-react'
+import { DollarSign, Wallet, Calendar, Download, FileImage, Table as TableIcon, AlertCircle, CalendarIcon, RotateCcw, Filter, Check, Search } from 'lucide-react'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { CustomYear, getCustomYearRange, getCustomYearLabel } from '@/types/custom-years'
 import {
@@ -72,6 +72,16 @@ const ORG_TYPE_COLORS: Record<string, string> = {
 
 type ViewMode = 'budgets' | 'planned' | 'commitments' | 'disbursements'
 type ChartViewMode = 'bar' | 'stacked' | 'table'
+type SectorAggregationLevel = 'group' | 'category' | 'sector'
+
+interface SectorHierarchyItem {
+  code: string
+  name: string
+  groupCode?: string
+  groupName?: string
+  categoryCode?: string
+  categoryName?: string
+}
 
 interface AllDonorsChartProps {
   dateRange?: {
@@ -110,6 +120,12 @@ export function AllDonorsHorizontalBarChart({ dateRange, refreshKey, onDataChang
   const [actualDataRange, setActualDataRange] = useState<{ minYear: number; maxYear: number } | null>(null)
   const [localDateRange, setLocalDateRange] = useState<{ from: Date; to: Date } | null>(null)
   const [hoveredDonorKey, setHoveredDonorKey] = useState<string | null>(null)
+
+  // Sector filter state
+  const [sectorAggregationLevel, setSectorAggregationLevel] = useState<SectorAggregationLevel>('group')
+  const [selectedSectors, setSelectedSectors] = useState<Set<string>>(new Set())
+  const [sectorData, setSectorData] = useState<SectorHierarchyItem[]>([])
+  const [sectorFilterSearch, setSectorFilterSearch] = useState('')
 
   // Calculate effective date range from selected years and local date range
   const effectiveDateRange = useMemo(() => {
@@ -204,6 +220,110 @@ export function AllDonorsHorizontalBarChart({ dateRange, refreshKey, onDataChang
     }
   }, [calendarType, selectedYears, customYears])
 
+  // Fetch sector hierarchy data for filtering
+  useEffect(() => {
+    const fetchSectorData = async () => {
+      try {
+        const response = await fetch('/api/analytics/disbursements-by-sector?dateFrom=2000-01-01T00:00:00.000Z&dateTo=2050-12-31T23:59:59.999Z')
+        if (response.ok) {
+          const result = await response.json()
+          const sectors = result.sectors || []
+          // Transform to hierarchy items
+          const items: SectorHierarchyItem[] = sectors.map((s: any) => ({
+            code: s.sectorCode,
+            name: s.sectorName,
+            groupCode: s.groupCode,
+            groupName: s.groupName,
+            categoryCode: s.categoryCode,
+            categoryName: s.categoryName
+          }))
+          setSectorData(items)
+        }
+      } catch (err) {
+        console.error('Failed to fetch sector data:', err)
+      }
+    }
+    fetchSectorData()
+  }, [])
+
+  // Aggregate sector data based on aggregation level
+  const aggregatedSectorData = useMemo(() => {
+    if (sectorAggregationLevel === 'sector') {
+      return sectorData.map(s => ({
+        code: s.code,
+        name: s.name,
+        groupCode: s.groupCode,
+        groupName: s.groupName
+      }))
+    } else if (sectorAggregationLevel === 'category') {
+      const categoryMap = new Map<string, { code: string; name: string; groupCode: string; groupName: string }>()
+      sectorData.forEach(s => {
+        const key = s.categoryCode || '998'
+        if (!categoryMap.has(key)) {
+          categoryMap.set(key, {
+            code: s.categoryCode || '998',
+            name: s.categoryName || 'Unallocated',
+            groupCode: s.groupCode || '998',
+            groupName: s.groupName || 'Other'
+          })
+        }
+      })
+      return Array.from(categoryMap.values())
+    } else {
+      // group level
+      const groupMap = new Map<string, { code: string; name: string; groupCode: string; groupName: string }>()
+      sectorData.forEach(s => {
+        const key = s.groupCode || '998'
+        if (!groupMap.has(key)) {
+          groupMap.set(key, {
+            code: s.groupCode || '998',
+            name: s.groupName || 'Other',
+            groupCode: s.groupCode || '998',
+            groupName: s.groupName || 'Other'
+          })
+        }
+      })
+      return Array.from(groupMap.values())
+    }
+  }, [sectorData, sectorAggregationLevel])
+
+  // Filter sectors based on search text
+  const filteredSectorItems = useMemo(() => {
+    if (!sectorFilterSearch.trim()) return aggregatedSectorData
+    const search = sectorFilterSearch.toLowerCase()
+    return aggregatedSectorData.filter(item =>
+      item.code.toLowerCase().includes(search) ||
+      item.name.toLowerCase().includes(search)
+    )
+  }, [aggregatedSectorData, sectorFilterSearch])
+
+  // Sector filter helper functions
+  const toggleSectorVisibility = (code: string) => {
+    setSelectedSectors(prev => {
+      const newSet = new Set(prev)
+      if (newSet.has(code)) {
+        newSet.delete(code)
+      } else {
+        newSet.add(code)
+      }
+      return newSet
+    })
+  }
+
+  const selectAllSectors = () => {
+    setSelectedSectors(new Set(aggregatedSectorData.map(item => item.code)))
+  }
+
+  const clearAllSectors = () => {
+    setSelectedSectors(new Set())
+  }
+
+  // Reset sector filter when aggregation level changes
+  useEffect(() => {
+    setSelectedSectors(new Set())
+    setSectorFilterSearch('')
+  }, [sectorAggregationLevel])
+
   // Handle year click - select start and end of range
   const handleYearClick = (year: number, shiftKey: boolean) => {
     if (shiftKey && selectedYears.length === 1) {
@@ -268,6 +388,9 @@ export function AllDonorsHorizontalBarChart({ dateRange, refreshKey, onDataChang
     setOrgTypeFilter('all')
     setViewMode('disbursements')
     setChartViewMode('bar')
+    setSectorAggregationLevel('group')
+    setSelectedSectors(new Set())
+    setSectorFilterSearch('')
     const calendarYear = customYears.find(cy =>
       cy.name.toLowerCase().includes('calendar') ||
       cy.name.toLowerCase().includes('gregorian')
@@ -280,11 +403,12 @@ export function AllDonorsHorizontalBarChart({ dateRange, refreshKey, onDataChang
   // Use date strings for dependency array stability
   const dateFromStr = effectiveDateRange.from.toISOString()
   const dateToStr = effectiveDateRange.to.toISOString()
+  const selectedSectorsStr = Array.from(selectedSectors).sort().join(',')
 
   useEffect(() => {
     fetchData()
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [dateFromStr, dateToStr, refreshKey, orgTypeFilter])
+  }, [dateFromStr, dateToStr, refreshKey, orgTypeFilter, selectedSectorsStr, sectorAggregationLevel])
 
   const fetchData = async () => {
     try {
@@ -296,6 +420,12 @@ export function AllDonorsHorizontalBarChart({ dateRange, refreshKey, onDataChang
         dateTo: effectiveDateRange.to.toISOString(),
         orgType: orgTypeFilter
       })
+
+      // Add sector filter if any sectors are selected
+      if (selectedSectors.size > 0) {
+        queryParams.set('sectorCodes', Array.from(selectedSectors).join(','))
+        queryParams.set('sectorLevel', sectorAggregationLevel)
+      }
 
       const response = await fetch(`/api/analytics/all-donors?${queryParams}`)
       const result = await response.json()
@@ -481,31 +611,21 @@ export function AllDonorsHorizontalBarChart({ dateRange, refreshKey, onDataChang
     if (active && payload && payload.length) {
       const data = payload[0].payload
 
-      // For regular bar view
-      const metrics = [
-        {
-          name: 'Total Budgets',
-          value: data.totalBudget,
-          color: '#334155'
-        },
-        {
-          name: 'Total Planned Disbursements',
-          value: data.totalPlannedDisbursement,
-          color: '#475569'
-        },
-        {
-          name: 'Total Commitments',
-          value: data.totalCommitment,
-          color: '#64748b'
-        },
-        {
-          name: 'Total Disbursements',
-          value: data.totalActualDisbursement,
-          color: '#94a3b8'
+      // Get the selected metric based on viewMode
+      const getSelectedMetric = () => {
+        switch (viewMode) {
+          case 'budgets':
+            return { name: 'Total Budgets', value: data.totalBudget, color: '#334155' }
+          case 'planned':
+            return { name: 'Planned Disbursements', value: data.totalPlannedDisbursement, color: '#475569' }
+          case 'commitments':
+            return { name: 'Total Commitments', value: data.totalCommitment, color: '#64748b' }
+          case 'disbursements':
+            return { name: 'Total Disbursements', value: data.totalActualDisbursement, color: '#94a3b8' }
         }
-      ].filter(m => m.value > 0)
+      }
 
-      if (metrics.length === 0) return null
+      const selectedMetric = getSelectedMetric()
 
       // Format org name with acronym
       const orgDisplay = data.acronym
@@ -525,35 +645,21 @@ export function AllDonorsHorizontalBarChart({ dateRange, refreshKey, onDataChang
               </div>
             )}
           </div>
-          <div className="p-2">
-            <table className="w-full text-sm">
-              <tbody>
-                {metrics.map((metric, index) => (
-                  <tr key={index} className="border-b border-slate-100 last:border-b-0">
-                    <td className="py-1.5 pr-4 flex items-center gap-2">
-                      <div
-                        className="w-3 h-3 rounded-sm flex-shrink-0"
-                        style={{ backgroundColor: metric.color }}
-                      />
-                      <span className="text-slate-700 font-medium">{metric.name}</span>
-                    </td>
-                    <td className="py-1.5 text-right font-semibold text-slate-900">
-                      {formatCurrencyAbbreviated(metric.value)}
-                    </td>
-                  </tr>
-                ))}
-                {showPercentage && (
-                  <tr className="border-t border-slate-200 mt-1">
-                    <td className="py-1.5 pr-4 text-slate-700 font-medium">
-                      % of Total
-                    </td>
-                    <td className="py-1.5 text-right font-semibold text-slate-900">
-                      {formatPercentage(data.value)}
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
+          <div className="p-3">
+            <div className="flex items-center justify-between gap-4">
+              <span className="text-slate-600 text-sm">{selectedMetric.name}</span>
+              <span className="text-lg font-bold text-slate-900">
+                {formatCurrencyAbbreviated(selectedMetric.value)}
+              </span>
+            </div>
+            {showPercentage && (
+              <div className="flex items-center justify-between gap-4 mt-1 pt-1 border-t border-slate-100">
+                <span className="text-slate-500 text-xs">% of Total</span>
+                <span className="text-sm font-medium text-slate-700">
+                  {formatPercentage(data.value)}
+                </span>
+              </div>
+            )}
           </div>
         </div>
       )
@@ -968,7 +1074,7 @@ export function AllDonorsHorizontalBarChart({ dateRange, refreshKey, onDataChang
           )}
         </div>
 
-        {/* Right Side - Org Type Filter, Metric Selector, View Mode and Export Controls */}
+        {/* Right Side - Org Type Filter, Sector Filter, Metric Selector, View Mode and Export Controls */}
         <div className="flex items-center gap-2">
           <Select value={orgTypeFilter} onValueChange={setOrgTypeFilter}>
             <SelectTrigger className="w-[200px]">
@@ -986,6 +1092,129 @@ export function AllDonorsHorizontalBarChart({ dateRange, refreshKey, onDataChang
               ))}
             </SelectContent>
           </Select>
+
+          {/* Sector Filter */}
+          <div className="flex gap-1 border rounded-lg p-1 bg-white">
+            {/* Sector Aggregation Level Toggle */}
+            <Button
+              variant={sectorAggregationLevel === 'group' ? 'default' : 'ghost'}
+              size="sm"
+              className="h-8 text-xs"
+              onClick={() => setSectorAggregationLevel('group')}
+            >
+              Category
+            </Button>
+            <Button
+              variant={sectorAggregationLevel === 'category' ? 'default' : 'ghost'}
+              size="sm"
+              className="h-8 text-xs"
+              onClick={() => setSectorAggregationLevel('category')}
+            >
+              Sector
+            </Button>
+            <Button
+              variant={sectorAggregationLevel === 'sector' ? 'default' : 'ghost'}
+              size="sm"
+              className="h-8 text-xs"
+              onClick={() => setSectorAggregationLevel('sector')}
+            >
+              Sub-sector
+            </Button>
+
+            {/* Sector Filter Dropdown */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 gap-1"
+                >
+                  <Filter className="h-4 w-4" />
+                  {selectedSectors.size > 0 && (
+                    <span className="ml-1 px-1.5 py-0.5 text-xs bg-primary text-primary-foreground rounded-full">
+                      {selectedSectors.size}
+                    </span>
+                  )}
+                  <svg className="h-4 w-4 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="p-3 w-[340px]">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-medium text-slate-700">
+                    Filter by {sectorAggregationLevel === 'group' ? 'Sector Category' : sectorAggregationLevel === 'category' ? 'Sector' : 'Sub-sector'}
+                  </span>
+                  <div className="flex gap-1">
+                    <button
+                      onClick={selectAllSectors}
+                      className="text-xs text-slate-500 hover:text-slate-700 px-2 py-0.5 hover:bg-slate-100 rounded"
+                    >
+                      All
+                    </button>
+                    <button
+                      onClick={clearAllSectors}
+                      className="text-xs text-slate-500 hover:text-slate-700 px-2 py-0.5 hover:bg-slate-100 rounded"
+                    >
+                      Clear
+                    </button>
+                  </div>
+                </div>
+
+                {/* Search box */}
+                <div className="relative mb-2">
+                  <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
+                  <input
+                    type="text"
+                    placeholder="Search by code or name..."
+                    value={sectorFilterSearch}
+                    onChange={(e) => setSectorFilterSearch(e.target.value)}
+                    className="w-full pl-7 pr-3 py-1.5 text-xs border rounded-md focus:outline-none focus:ring-1 focus:ring-primary"
+                  />
+                </div>
+
+                {/* Sector list */}
+                <div className="max-h-[320px] overflow-y-auto space-y-0.5 border-t pt-2">
+                  {filteredSectorItems.length === 0 ? (
+                    <div className="text-center text-xs text-slate-400 py-4">
+                      No matching items found
+                    </div>
+                  ) : (
+                    filteredSectorItems.map((item) => {
+                      const isSelected = selectedSectors.has(item.code)
+
+                      return (
+                        <button
+                          key={item.code}
+                          onClick={() => toggleSectorVisibility(item.code)}
+                          className="flex items-start gap-2 w-full py-1.5 px-1 text-left rounded hover:bg-slate-50"
+                        >
+                          <div className={`
+                            w-4 h-4 rounded border flex items-center justify-center flex-shrink-0 mt-0.5
+                            ${isSelected ? 'bg-primary border-primary' : 'border-slate-300'}
+                          `}>
+                            {isSelected && <Check className="h-3 w-3 text-white" />}
+                          </div>
+                          <span className="font-mono text-xs px-1.5 py-0.5 rounded flex-shrink-0 bg-slate-100 text-slate-600">
+                            {item.code}
+                          </span>
+                          <span className="text-sm text-slate-700 leading-tight">
+                            {item.name}
+                          </span>
+                        </button>
+                      )
+                    })
+                  )}
+                </div>
+
+                <p className="text-[10px] text-slate-400 mt-2 pt-2 border-t text-center">
+                  {selectedSectors.size} of {aggregatedSectorData.length} {sectorAggregationLevel === 'group' ? 'categories' : sectorAggregationLevel === 'category' ? 'sectors' : 'sub-sectors'} selected
+                  {selectedSectors.size === 0 && ' (showing all)'}
+                </p>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+
           <Select value={viewMode} onValueChange={(value: ViewMode) => setViewMode(value)}>
             <SelectTrigger className="w-[220px]">
               <SelectValue />

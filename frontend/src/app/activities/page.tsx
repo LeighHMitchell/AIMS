@@ -1068,6 +1068,25 @@ const router = useRouter();
     }
   };
 
+  const handleExportActivityXML = async (activityId: string) => {
+    toast.loading("Generating IATI XML...", { id: "export-xml" });
+    try {
+      const response = await fetch(`/api/activities/${activityId}/export-iati`);
+      if (!response.ok) throw new Error('Export failed');
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${activityId}.xml`;
+      a.click();
+      window.URL.revokeObjectURL(url);
+      toast.success("IATI XML exported successfully", { id: "export-xml" });
+    } catch (error) {
+      console.error("Error exporting activity to IATI XML:", error);
+      toast.error("Failed to export IATI XML", { id: "export-xml" });
+    }
+  };
+
   // Bulk selection handlers
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
@@ -2001,7 +2020,7 @@ const router = useRouter();
                   )}
                   {visibleColumns.includes('totalInterestRepayment') && (
                     <th className="h-12 px-4 py-3 text-right align-middle text-sm font-medium text-muted-foreground min-w-[120px]">
-                      Interest Repayment
+                      Interest Payment
                     </th>
                   )}
                   {visibleColumns.includes('totalLoanRepayment') && (
@@ -2034,9 +2053,9 @@ const router = useRouter();
                       Incoming Funds
                     </th>
                   )}
-                  {visibleColumns.includes('totalCommitmentCancellation') && (
+                  {visibleColumns.includes('totalIncomingPledge') && (
                     <th className="h-12 px-4 py-3 text-right align-middle text-sm font-medium text-muted-foreground min-w-[120px]">
-                      Commitment Cancellation
+                      Incoming Pledge
                     </th>
                   )}
                   
@@ -3774,7 +3793,7 @@ const router = useRouter();
                             canEdit={canUserEditActivity(user, activity)}
                             onToggleBookmark={() => toggleBookmark(activity.id)}
                             onEdit={() => router.push(`/activities/new?id=${activity.id}`)}
-                            onExportXML={() => toast.info("Export to IATI XML feature coming soon")}
+                            onExportXML={() => handleExportActivityXML(activity.id)}
                             onExportPDF={() => handleExportActivityPDF(activity.id)}
                             onExportExcel={() => handleExportActivityExcel(activity.id)}
                             onDelete={() => setDeleteActivityId(activity.id)}

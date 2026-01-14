@@ -4,15 +4,22 @@ import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react'
 import * as d3 from 'd3'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Button } from '@/components/ui/button'
-import { AlertCircle, Info } from 'lucide-react'
+import { AlertCircle, Info, Filter, Search, Check } from 'lucide-react'
 import {
   Tooltip as UITooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 import { getOrgTypeLabel } from '@/lib/org-type-mappings'
 import { useRouter } from 'next/navigation'
+// @ts-ignore
+import sectorGroupData from '@/data/SectorGroup.json'
 
 /**
  * Aid Ecosystem Solar System
@@ -113,6 +120,18 @@ interface EcosystemOrganization {
   ringTier: 'inner' | 'middle' | 'outer'
 }
 
+// Sector filtering types
+type AggregationLevel = 'group' | 'category' | 'sector'
+
+interface SectorItem {
+  code: string
+  name: string
+  groupCode?: string
+  groupName?: string
+  categoryCode?: string
+  categoryName?: string
+}
+
 interface AidEcosystemSolarSystemProps {
   dateRange?: { from: Date; to: Date }
   refreshKey?: number
@@ -147,6 +166,158 @@ export function AidEcosystemSolarSystem({
   const containerRef = useRef<HTMLDivElement>(null)
   const router = useRouter()
 
+  // Sector filtering state
+  const [aggregationLevel, setAggregationLevel] = useState<AggregationLevel>('group')
+  const [visibleSectors, setVisibleSectors] = useState<Set<string>>(new Set())
+  const [pendingSectors, setPendingSectors] = useState<Set<string>>(new Set()) // Working selection in dropdown
+  const [sectorFilterSearch, setSectorFilterSearch] = useState('')
+  const [isFilterOpen, setIsFilterOpen] = useState(false)
+
+  // Process sector data based on aggregation level
+  const aggregatedSectorData = useMemo(() => {
+    const rawData = sectorGroupData?.data || []
+
+    if (aggregationLevel === 'sector') {
+      // 5-digit subsector level - return unique codes
+      const seen = new Set<string>()
+      return rawData
+        .filter((item: any) => {
+          const code = item.code
+          if (!code || code.length !== 5 || seen.has(code)) return false
+          seen.add(code)
+          return true
+        })
+        .map((item: any) => ({
+          code: item.code,
+          name: item.name || `Sector ${item.code}`,
+          groupCode: item['codeforiati:group-code'],
+          groupName: item['codeforiati:group-name'],
+          categoryCode: item['codeforiati:category-code'],
+          categoryName: item['codeforiati:category-name']
+        }))
+        .sort((a: SectorItem, b: SectorItem) => a.code.localeCompare(b.code))
+    } else if (aggregationLevel === 'category') {
+      // 3-digit sector category level
+      const categoryMap = new Map<string, SectorItem>()
+      rawData.forEach((item: any) => {
+        const code = item['codeforiati:category-code']
+        const name = item['codeforiati:category-name']
+        if (code && !categoryMap.has(code)) {
+          categoryMap.set(code, {
+            code,
+            name: name || `Sector ${code}`,
+            groupCode: item['codeforiati:group-code'],
+            groupName: item['codeforiati:group-name']
+          })
+        }
+      })
+      return Array.from(categoryMap.values()).sort((a, b) => a.code.localeCompare(b.code))
+    } else {
+      // 'group' - sector category level (DAC 1-digit groups like 110, 120, etc.)
+      const groupMap = new Map<string, SectorItem>()
+      rawData.forEach((item: any) => {
+        const code = item['codeforiati:group-code']
+        const name = item['codeforiati:group-name']
+        if (code && !groupMap.has(code)) {
+          groupMap.set(code, {
+            code,
+            name: name || `Category ${code}`
+          })
+        }
+      })
+      return Array.from(groupMap.values()).sort((a, b) => a.code.localeCompare(b.code))
+    }
+  }, [aggregationLevel])
+
+  // Filter sectors by search term
+  const filteredSectors = useMemo(() => {
+    if (!sectorFilterSearch.trim()) return aggregatedSectorData
+    const search = sectorFilterSearch.toLowerCase()
+    return aggregatedSectorData.filter((s: SectorItem) =>
+      s.code.toLowerCase().includes(search) ||
+      s.name.toLowerCase().includes(search)
+    )
+  }, [aggregatedSectorData, sectorFilterSearch])
+
+  // Expand selected codes to 5-digit codes for API filtering
+  const expandSectorCodes = useCallback((codes: Set<string>): string[] => {
+    if (codes.size === 0) return []
+
+    const rawData = sectorGroupData?.data || []
+    const expandedCodes = new Set<string>()
+
+    codes.forEach(code => {
+      if (aggregationLevel === 'sector') {
+        // Already 5-digit, use as-is
+        expandedCodes.add(code)
+      } else if (aggregationLevel === 'category') {
+        // 3-digit: find all 5-digit codes under this category
+        rawData.forEach((item: any) => {
+          if (item['codeforiati:category-code'] === code && item.code?.length === 5) {
+            expandedCodes.add(item.code)
+          }
+        })
+      } else {
+        // group: find all 5-digit codes under this group
+        rawData.forEach((item: any) => {
+          if (item['codeforiati:group-code'] === code && item.code?.length === 5) {
+            expandedCodes.add(item.code)
+          }
+        })
+      }
+    })
+
+    return Array.from(expandedCodes)
+  }, [aggregationLevel])
+
+  // Toggle sector visibility in pending selection (not applied until dropdown closes)
+  const toggleSectorVisibility = (code: string) => {
+    setPendingSectors(prev => {
+      const newSet = new Set(prev)
+      if (newSet.has(code)) {
+        newSet.delete(code)
+      } else {
+        newSet.add(code)
+      }
+      return newSet
+    })
+  }
+
+  // Select all sectors (pending)
+  const selectAllSectors = () => {
+    setPendingSectors(new Set(aggregatedSectorData.map((s: SectorItem) => s.code)))
+  }
+
+  // Clear all sectors (pending)
+  const clearAllSectors = () => {
+    setPendingSectors(new Set())
+  }
+
+  // Select top N sectors (pending)
+  const selectTopNSectors = (n: number) => {
+    const topCodes = aggregatedSectorData.slice(0, n).map((s: SectorItem) => s.code)
+    setPendingSectors(new Set(topCodes))
+  }
+
+  // Handle dropdown open/close - apply pending selection when closed
+  const handleFilterOpenChange = (open: boolean) => {
+    if (open) {
+      // Opening: sync pending with current visible
+      setPendingSectors(new Set(visibleSectors))
+    } else {
+      // Closing: apply pending selection to trigger refresh
+      setVisibleSectors(new Set(pendingSectors))
+    }
+    setIsFilterOpen(open)
+  }
+
+  // Reset sector selection when aggregation level changes
+  useEffect(() => {
+    setVisibleSectors(new Set())
+    setPendingSectors(new Set())
+    setSectorFilterSearch('')
+  }, [aggregationLevel])
+
   // Fetch data from API
   const fetchData = useCallback(async () => {
     try {
@@ -156,8 +327,7 @@ export function AidEcosystemSolarSystem({
       const params = new URLSearchParams({
         flowType,
         includeHumanitarian: includeHumanitarian.toString(),
-        transactionType: '3', // Disbursements only
-        minValueUSD: '100000' // $100K threshold (lower for smaller datasets)
+        transactionType: '3' // Disbursements only
       })
 
       if (dateRange?.from) {
@@ -165,6 +335,14 @@ export function AidEcosystemSolarSystem({
       }
       if (dateRange?.to) {
         params.set('dateTo', dateRange.to.toISOString())
+      }
+
+      // Add sector filter if any sectors selected
+      if (visibleSectors.size > 0) {
+        const expandedCodes = expandSectorCodes(visibleSectors)
+        if (expandedCodes.length > 0) {
+          params.set('sectors', expandedCodes.join(','))
+        }
       }
 
       const response = await fetch(`/api/analytics/ecosystem?${params}`)
@@ -182,7 +360,7 @@ export function AidEcosystemSolarSystem({
     } finally {
       setLoading(false)
     }
-  }, [dateRange, flowType, includeHumanitarian, onDataChange])
+  }, [dateRange, flowType, includeHumanitarian, onDataChange, visibleSectors, expandSectorCodes])
 
   useEffect(() => {
     fetchData()
@@ -327,8 +505,8 @@ export function AidEcosystemSolarSystem({
     )
   }
 
-  // Render empty state
-  if (!chartData.nodes.length) {
+  // Render empty state (only when no filter is applied - otherwise show full UI with empty message)
+  if (!chartData.nodes.length && visibleSectors.size === 0 && !compact) {
     return (
       <div className="flex flex-col items-center justify-center h-full min-h-[300px] text-slate-500">
         <AlertCircle className="h-8 w-8 mb-2" />
@@ -407,8 +585,9 @@ export function AidEcosystemSolarSystem({
   // Full view
   return (
     <div className="space-y-4">
-      {/* Header with info */}
-      <div className="flex items-center justify-between">
+      {/* Header with info and sector filter */}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        {/* Ring legend */}
         <div className="flex items-center gap-3 text-xs" style={{ color: '#4c5568' }}>
           <div className="flex items-center gap-1.5">
             <div className="w-4 h-4 rounded-full" style={{ backgroundColor: 'rgba(220, 38, 37, 0.15)', border: '2px solid #dc2625' }} />
@@ -424,24 +603,162 @@ export function AidEcosystemSolarSystem({
           </div>
         </div>
 
-        <TooltipProvider>
-          <UITooltip>
-            <TooltipTrigger asChild>
-              <Button variant="ghost" size="sm" className="gap-1">
-                <Info className="h-4 w-4" />
-                <span className="text-xs">How to read</span>
+        {/* Sector Filter Controls */}
+        <div className="flex items-center gap-2">
+          {/* Aggregation Level Toggle */}
+          <div className="flex gap-1 border rounded-lg p-1 bg-white">
+            <Button
+              variant={aggregationLevel === 'group' ? 'default' : 'ghost'}
+              size="sm"
+              className="h-8"
+              onClick={() => setAggregationLevel('group')}
+            >
+              Sector Category
+            </Button>
+            <Button
+              variant={aggregationLevel === 'category' ? 'default' : 'ghost'}
+              size="sm"
+              className="h-8"
+              onClick={() => setAggregationLevel('category')}
+            >
+              Sector
+            </Button>
+            <Button
+              variant={aggregationLevel === 'sector' ? 'default' : 'ghost'}
+              size="sm"
+              className="h-8"
+              onClick={() => setAggregationLevel('sector')}
+            >
+              Sub-sector
+            </Button>
+          </div>
+
+          {/* Filter Dropdown */}
+          <DropdownMenu open={isFilterOpen} onOpenChange={handleFilterOpenChange}>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="sm" className="h-8 gap-1 border">
+                <Filter className="h-4 w-4" />
+                Filter
+                {(isFilterOpen ? pendingSectors.size : visibleSectors.size) > 0 && (
+                  <span className="ml-1 px-1.5 py-0.5 text-xs bg-primary text-primary-foreground rounded-full">
+                    {isFilterOpen ? pendingSectors.size : visibleSectors.size}
+                  </span>
+                )}
               </Button>
-            </TooltipTrigger>
-            <TooltipContent className="max-w-xs">
-              <p className="text-xs">
-                <strong>Rings:</strong> Organizations closer to center have higher transaction volumes<br />
-                <strong>Size:</strong> Node size represents total transaction value<br />
-                <strong>Color:</strong> Organization type<br />
-                <strong>Click:</strong> Navigate to organization profile
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="p-3 w-[340px]">
+              {/* Header with All/Clear */}
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-medium text-slate-700">
+                  Filter by {aggregationLevel === 'group' ? 'Sector Category' : aggregationLevel === 'category' ? 'Sector' : 'Sub-sector'}
+                </span>
+                <div className="flex gap-1">
+                  <button
+                    onClick={selectAllSectors}
+                    className="text-xs text-slate-500 hover:text-slate-700 px-2 py-0.5 hover:bg-slate-100 rounded"
+                  >
+                    All
+                  </button>
+                  <button
+                    onClick={clearAllSectors}
+                    className="text-xs text-slate-500 hover:text-slate-700 px-2 py-0.5 hover:bg-slate-100 rounded"
+                  >
+                    Clear
+                  </button>
+                </div>
+              </div>
+
+              {/* Search box */}
+              <div className="relative mb-2">
+                <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
+                <input
+                  type="text"
+                  placeholder="Search by code or name..."
+                  value={sectorFilterSearch}
+                  onChange={(e) => setSectorFilterSearch(e.target.value)}
+                  className="w-full pl-7 pr-3 py-1.5 text-xs border rounded-md focus:outline-none focus:ring-1 focus:ring-primary"
+                />
+              </div>
+
+              {/* Quick select buttons */}
+              <div className="flex gap-1 mb-2 flex-wrap">
+                <span className="text-[10px] text-slate-500 self-center mr-1">Quick:</span>
+                {[3, 5, 10].map(n => (
+                  <button
+                    key={n}
+                    onClick={() => selectTopNSectors(n)}
+                    className="text-[10px] px-2 py-0.5 bg-slate-100 hover:bg-slate-200 rounded text-slate-600"
+                  >
+                    Top {n}
+                  </button>
+                ))}
+              </div>
+
+              {/* Checkbox list */}
+              <div className="max-h-[320px] overflow-y-auto space-y-0.5 border-t pt-2">
+                {filteredSectors.length === 0 ? (
+                  <div className="text-center text-xs text-slate-400 py-4">
+                    No matching items found
+                  </div>
+                ) : (
+                  filteredSectors.map((item: SectorItem) => {
+                    const isSelected = pendingSectors.has(item.code)
+                    return (
+                      <button
+                        key={item.code}
+                        onClick={() => toggleSectorVisibility(item.code)}
+                        className="flex items-start gap-2 w-full py-1.5 px-1 text-left rounded hover:bg-slate-50"
+                      >
+                        <div className={`
+                          w-4 h-4 rounded border flex items-center justify-center flex-shrink-0 mt-0.5
+                          ${isSelected ? 'bg-primary border-primary' : 'border-slate-300'}
+                        `}>
+                          {isSelected && <Check className="h-3 w-3 text-white" />}
+                        </div>
+                        <span className="font-mono text-xs px-1.5 py-0.5 rounded flex-shrink-0 bg-slate-100 text-slate-600">
+                          {item.code}
+                        </span>
+                        <span className="text-sm text-slate-700 leading-tight">
+                          {item.name}
+                        </span>
+                      </button>
+                    )
+                  })
+                )}
+              </div>
+
+              {/* Footer summary */}
+              <p className="text-[10px] text-slate-400 mt-2 pt-2 border-t text-center">
+                {pendingSectors.size} of {aggregatedSectorData.length} {aggregationLevel === 'group' ? 'sector categories' : aggregationLevel === 'category' ? 'sectors' : 'sub-sectors'} selected
+                {pendingSectors.size === 0 && ' (showing all organizations)'}
               </p>
-            </TooltipContent>
-          </UITooltip>
-        </TooltipProvider>
+              <p className="text-[10px] text-slate-500 mt-1 text-center italic">
+                Close dropdown to apply filter
+              </p>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          {/* How to read tooltip */}
+          <TooltipProvider>
+            <UITooltip>
+              <TooltipTrigger asChild>
+                <Button variant="ghost" size="sm" className="gap-1">
+                  <Info className="h-4 w-4" />
+                  <span className="text-xs">How to read</span>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent className="max-w-xs">
+                <p className="text-xs">
+                  <strong>Rings:</strong> Organizations closer to center have higher transaction volumes<br />
+                  <strong>Size:</strong> Node size represents total transaction value<br />
+                  <strong>Color:</strong> Organization type<br />
+                  <strong>Click:</strong> Navigate to organization profile<br />
+                  <strong>Sector Filter:</strong> Filter organizations by sector involvement
+                </p>
+              </TooltipContent>
+            </UITooltip>
+          </TooltipProvider>
+        </div>
       </div>
 
       {/* Chart */}
@@ -450,6 +767,20 @@ export function AidEcosystemSolarSystem({
         className="rounded-lg p-4 relative"
         style={{ backgroundColor: '#ffffff', border: '1px solid #cfd0d5' }}
       >
+        {/* Empty state when sector filter returns no results */}
+        {data.length === 0 && visibleSectors.size > 0 && !loading && (
+          <div className="flex flex-col items-center justify-center py-16 text-center">
+            <AlertCircle className="h-12 w-12 text-slate-300 mb-4" />
+            <p className="text-slate-600 font-medium">No organizations found</p>
+            <p className="text-sm text-slate-400 mt-1 max-w-md">
+              No organizations have transactions in the selected {aggregationLevel === 'group' ? 'sector categories' : aggregationLevel === 'category' ? 'sectors' : 'sub-sectors'}.
+              Try selecting different sectors or clearing the filter.
+            </p>
+          </div>
+        )}
+
+        {/* Show chart when we have data or no filter applied */}
+        {(data.length > 0 || visibleSectors.size === 0) && (
         <svg
           ref={svgRef}
           viewBox={`0 0 ${width} ${height}`}
@@ -514,19 +845,6 @@ export function AidEcosystemSolarSystem({
             </g>
           ))}
 
-          {/* Center label */}
-          <text
-            x={chartData.centerX}
-            y={chartData.centerY}
-            textAnchor="middle"
-            dominantBaseline="middle"
-            fill="#4c5568"
-            fontSize="12"
-            fontWeight="500"
-          >
-            Financial Core
-          </text>
-
           {/* Nodes */}
           {chartData.nodes.map((node, i) => (
             <g key={i}>
@@ -557,6 +875,7 @@ export function AidEcosystemSolarSystem({
             </g>
           ))}
         </svg>
+        )}
 
         {/* Tooltip */}
         {hoveredOrg && (
@@ -617,14 +936,6 @@ export function AidEcosystemSolarSystem({
           ))}
         </div>
       </div>
-
-      {/* Methodology note */}
-      <p className="text-xs leading-relaxed" style={{ color: '#7b95a7' }}>
-        Organizations ranked by transaction volume and arranged by relative financial gravity.
-        Inner ring contains top 10% by disbursement value, middle ring next 30%, outer ring remaining
-        organizations. Node size reflects total transaction volume.
-        Only organizations with &gt;$100K in disbursements shown.
-      </p>
     </div>
   )
 }

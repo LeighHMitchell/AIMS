@@ -30,18 +30,20 @@ interface TransactionCalendarHeatmapProps {
 
 // Color scheme for transaction types
 const TRANSACTION_TYPE_COLORS: Record<string, string> = {
-  '1': '#7b95a7',   // Incoming Commitment - Cool Steel
+  '1': '#7b95a7',   // Incoming Funds - Cool Steel
   '2': '#4c5568',   // Outgoing Commitment - Blue Slate
+  // IATI Standard v2.03 transaction type colors
   '3': '#dc2625',   // Disbursement - Primary Scarlet
   '4': '#4c5568',   // Expenditure - Blue Slate
-  '11': '#dc2625',  // Incoming Funds - Primary Scarlet
-  '12': '#7b95a7',  // Credit Guarantee - Cool Steel
-  '13': '#cfd0d5',  // Commitment Cancellation - Pale Slate
-  '5': '#7b95a7',   // Interest Repayment - Cool Steel
+  '5': '#7b95a7',   // Interest Payment - Cool Steel
   '6': '#7b95a7',   // Loan Repayment - Cool Steel
   '7': '#4c5568',   // Reimbursement - Blue Slate
   '8': '#cfd0d5',   // Purchase of Equity - Pale Slate
   '9': '#cfd0d5',   // Sale of Equity - Pale Slate
+  '10': '#7b95a7',  // Credit Guarantee - Cool Steel
+  '11': '#dc2625',  // Incoming Commitment - Primary Scarlet
+  '12': '#7b95a7',  // Outgoing Pledge - Cool Steel
+  '13': '#cfd0d5',  // Incoming Pledge - Pale Slate
 }
 
 // Convert hex color to RGB

@@ -47,10 +47,10 @@ interface MapCodesModalProps {
   onComplete: (mappings: CodeMapping) => void;
 }
 
-// Valid system codes for each type
+// Valid system codes for each type (IATI Standard v2.03)
 const SYSTEM_CODES = {
   transaction_type: [
-    { value: '1', label: '1 - Incoming Commitment' },
+    { value: '1', label: '1 - Incoming Funds' },
     { value: '2', label: '2 - Outgoing Commitment' },
     { value: '3', label: '3 - Disbursement' },
     { value: '4', label: '4 - Expenditure' },
@@ -59,7 +59,10 @@ const SYSTEM_CODES = {
     { value: '7', label: '7 - Reimbursement' },
     { value: '8', label: '8 - Purchase of Equity' },
     { value: '9', label: '9 - Sale of Equity' },
-    { value: '11', label: '11 - Credit Guarantee' }
+    { value: '10', label: '10 - Credit Guarantee' },
+    { value: '11', label: '11 - Incoming Commitment' },
+    { value: '12', label: '12 - Outgoing Pledge' },
+    { value: '13', label: '13 - Incoming Pledge' }
   ],
   flow_type: [
     { value: '10', label: '10 - ODA' },

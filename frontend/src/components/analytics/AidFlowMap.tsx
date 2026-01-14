@@ -19,19 +19,19 @@ interface DateRange {
 
 type ViewMode = 'transaction' | 'activity'
 
-// Transaction type options for multi-select (all IATI transaction types)
+// Transaction type options for multi-select (IATI Standard v2.03)
 const TRANSACTION_TYPE_OPTIONS = [
-  { label: 'Incoming Commitment', value: '1' },
+  { label: 'Incoming Funds', value: '1' },
   { label: 'Outgoing Commitment', value: '2' },
   { label: 'Disbursement', value: '3' },
   { label: 'Expenditure', value: '4' },
-  { label: 'Interest Repayment', value: '5' },
+  { label: 'Interest Payment', value: '5' },
   { label: 'Loan Repayment', value: '6' },
   { label: 'Reimbursement', value: '7' },
   { label: 'Purchase of Equity', value: '8' },
   { label: 'Sale of Equity', value: '9' },
   { label: 'Credit Guarantee', value: '10' },
-  { label: 'Incoming Funds', value: '11' },
+  { label: 'Incoming Commitment', value: '11' },
   { label: 'Outgoing Pledge', value: '12' },
   { label: 'Incoming Pledge', value: '13' },
 ]

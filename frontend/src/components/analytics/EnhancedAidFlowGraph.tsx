@@ -44,19 +44,19 @@ interface EnhancedAidFlowGraphProps {
   searchQuery?: string
 }
 
-// Transaction type labels
+// Transaction type labels (IATI Standard v2.03)
 const TRANSACTION_TYPE_LABELS: Record<string, string> = {
-  '1': 'Incoming Commitment',
+  '1': 'Incoming Funds',
   '2': 'Outgoing Commitment',
   '3': 'Disbursement',
   '4': 'Expenditure',
-  '5': 'Interest Repayment',
+  '5': 'Interest Payment',
   '6': 'Loan Repayment',
   '7': 'Reimbursement',
   '8': 'Purchase of Equity',
   '9': 'Sale of Equity',
   '10': 'Credit Guarantee',
-  '11': 'Incoming Funds',
+  '11': 'Incoming Commitment',
   '12': 'Outgoing Pledge',
   '13': 'Incoming Pledge'
 }
@@ -289,11 +289,11 @@ export default function EnhancedAidFlowGraph({
     // Transaction type colors - based on custom palette
     // Palette: Primary Scarlet #dc2625, Pale Slate #cfd0d5, Blue Slate #4c5568, Cool Steel #7b95a7, Platinum #f1f4f8
     const transactionTypeColors: Record<string, string> = {
-      '1': '#7b95a7',  // Incoming Commitment - Cool Steel
+      '1': '#7b95a7',  // Incoming Funds - Cool Steel
       '2': '#4c5568',  // Outgoing Commitment - Blue Slate
       '3': '#dc2625',  // Disbursement - Primary Scarlet
       '4': '#4c5568',  // Expenditure - Blue Slate
-      '5': '#cfd0d5',  // Interest Repayment - Pale Slate
+      '5': '#cfd0d5',  // Interest Payment - Pale Slate
       '6': '#cfd0d5',  // Loan Repayment - Pale Slate
       '7': '#7b95a7',  // Reimbursement - Cool Steel
       '8': '#4c5568',  // Purchase of Equity - Blue Slate

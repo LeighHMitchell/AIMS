@@ -1566,8 +1566,22 @@ export default function ActivityDetailPage() {
                     <Download className="h-4 w-4 mr-2" />
                     Export as CSV
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => {
-                    toast.info("Export to IATI XML feature coming soon");
+                  <DropdownMenuItem onClick={async () => {
+                    try {
+                      toast.info("Generating IATI XML...");
+                      const response = await fetch(`/api/activities/${activity?.id}/export-iati`);
+                      if (!response.ok) throw new Error('Export failed');
+                      const blob = await response.blob();
+                      const url = window.URL.createObjectURL(blob);
+                      const a = document.createElement('a');
+                      a.href = url;
+                      a.download = `${activity?.iati_id || activity?.id}.xml`;
+                      a.click();
+                      window.URL.revokeObjectURL(url);
+                      toast.success("IATI XML exported successfully");
+                    } catch (error) {
+                      toast.error("Failed to export IATI XML");
+                    }
                   }}>
                     <FileCode className="h-4 w-4 mr-2" />
                     Export to IATI XML
@@ -3370,20 +3384,21 @@ export default function ActivityDetailPage() {
                                   variant="outline"
                                   size="sm"
                                   onClick={() => {
-                                    // Transaction type labels
+                                    // Transaction type labels (IATI Standard v2.03)
                                     const TRANSACTION_TYPE_LABELS: Record<string, string> = {
-                                      '1': 'Incoming Commitment',
+                                      '1': 'Incoming Funds',
                                       '2': 'Outgoing Commitment',
                                       '3': 'Disbursement',
                                       '4': 'Expenditure',
-                                      '5': 'Interest Repayment',
+                                      '5': 'Interest Payment',
                                       '6': 'Loan Repayment',
                                       '7': 'Reimbursement',
                                       '8': 'Purchase of Equity',
                                       '9': 'Sale of Equity',
-                                      '11': 'Credit Guarantee',
-                                      '12': 'Incoming Funds',
-                                      '13': 'Commitment Cancellation'
+                                      '10': 'Credit Guarantee',
+                                      '11': 'Incoming Commitment',
+                                      '12': 'Outgoing Pledge',
+                                      '13': 'Incoming Pledge'
                                     };
                                     
                                     // Get all unique transaction types

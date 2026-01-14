@@ -387,19 +387,20 @@ export async function GET(
 
 function getTransactionTypeLabel(type: string): string {
   const labels: Record<string, string> = {
-    '1': 'Incoming Pledge',
+    // IATI Standard v2.03 transaction types
+    '1': 'Incoming Funds',
     '2': 'Outgoing Commitment',
     '3': 'Disbursement',
     '4': 'Expenditure',
     '5': 'Interest Payment',
-    '6': 'Interest Repayment',
+    '6': 'Loan Repayment',
     '7': 'Reimbursement',
     '8': 'Purchase of Equity',
     '9': 'Sale of Equity',
     '10': 'Credit Guarantee',
     '11': 'Incoming Commitment',
-    '12': 'Incoming Funds',
-    '13': 'Outgoing Pledge'
+    '12': 'Outgoing Pledge',
+    '13': 'Incoming Pledge'
   };
   return labels[type] || `Type ${type}`;
 }

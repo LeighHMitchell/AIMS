@@ -500,7 +500,7 @@ export default function TransactionForm({
 
   // Get transaction type info for display
   const getTransactionTypeInfo = (type: TransactionType) => {
-    const incomingTypes = ['1', '12']; // Incoming Commitment, Incoming Funds
+    const incomingTypes = ['1', '11', '13']; // Incoming Funds, Incoming Commitment, Incoming Pledge
     const isIncoming = incomingTypes.includes(type);
     return {
       label: TRANSACTION_TYPE_LABELS[type],
@@ -512,15 +512,15 @@ export default function TransactionForm({
 
   const typeInfo = getTransactionTypeInfo(formData.transaction_type);
 
-  // Transaction type options for grouping
+  // Transaction type options for grouping (IATI Standard v2.03)
   const COMMONLY_USED_TRANSACTION_TYPES = [
     { code: '3', label: 'Disbursement' },
     { code: '2', label: 'Outgoing Commitment' },
     { code: '4', label: 'Expenditure' },
-    { code: '12', label: 'Incoming Funds' },
+    { code: '1', label: 'Incoming Funds' },
   ];
   const ALL_TRANSACTION_TYPES = [
-    { code: '1', label: 'Incoming Commitment' },
+    { code: '1', label: 'Incoming Funds' },
     { code: '2', label: 'Outgoing Commitment' },
     { code: '3', label: 'Disbursement' },
     { code: '4', label: 'Expenditure' },
@@ -530,17 +530,9 @@ export default function TransactionForm({
     { code: '8', label: 'Purchase of Equity' },
     { code: '9', label: 'Sale of Equity' },
     { code: '10', label: 'Credit Guarantee' },
-    { code: '11', label: 'Incoming Commitment Adjustment' },
-    { code: '12', label: 'Incoming Funds' },
-    { code: '13', label: 'Outgoing Commitment Adjustment' },
-    { code: '14', label: 'Disbursement Adjustment' },
-    { code: '15', label: 'Expenditure Adjustment' },
-    { code: '16', label: 'Interest Payment Adjustment' },
-    { code: '17', label: 'Loan Repayment Adjustment' },
-    { code: '18', label: 'Reimbursement Adjustment' },
-    { code: '19', label: 'Purchase of Equity Adjustment' },
-    { code: '20', label: 'Sale of Equity Adjustment' },
-    { code: '21', label: 'Credit Guarantee Adjustment' },
+    { code: '11', label: 'Incoming Commitment' },
+    { code: '12', label: 'Outgoing Pledge' },
+    { code: '13', label: 'Incoming Pledge' },
   ];
   const OTHER_TRANSACTION_TYPES = ALL_TRANSACTION_TYPES.filter(
     t => !COMMONLY_USED_TRANSACTION_TYPES.some(cu => cu.code === t.code)

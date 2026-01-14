@@ -419,27 +419,24 @@ export function EnhancedImageUpload({
         >
           <input {...getInputProps()} />
           {isProcessing ? (
-            <div className="flex flex-col items-center justify-center h-full">
+            <>
               <Upload className="h-8 w-8 text-gray-400 animate-pulse" />
               <p className="text-sm text-gray-600 mt-2">Uploading...</p>
-            </div>
+            </>
           ) : isDragActive ? (
-            <div className="flex flex-col items-center justify-center h-full">
+            <>
               <Upload className="h-8 w-8 text-primary" />
               <p className="text-sm text-primary mt-2">Drop image here</p>
-            </div>
+            </>
           ) : (
-            <div className="flex flex-col items-center justify-center h-full">
+            <>
               <ImageIcon className="h-8 w-8 text-gray-400" />
-              <p className="text-sm text-gray-600 mt-2">Drag & drop or click to upload</p>
-            </div>
+              <p className="text-sm text-gray-600 mt-2 text-center">Drag & drop or click to upload</p>
+              <p className="text-xs text-gray-400 mt-1 text-center">Recommended: {recommendedSize}</p>
+            </>
           )}
         </div>
       )}
-
-      <p className="text-xs text-gray-500 text-center">
-        Recommended size: {recommendedSize}
-      </p>
     </div>
   );
 }

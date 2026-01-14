@@ -14,7 +14,7 @@ type Option = {
   group: string;
 };
 
-// Group transaction types by category
+// Group transaction types by category (IATI Standard v2.03)
 const TRANSACTION_TYPE_GROUPS = [
   {
     label: "Filter Options",
@@ -23,25 +23,24 @@ const TRANSACTION_TYPE_GROUPS = [
     ]
   },
   {
-    label: "Commitments",
+    label: "Funds & Commitments",
     types: [
-      { code: '1', name: 'Incoming Commitment', acronym: 'IC' },
+      { code: '1', name: 'Incoming Funds', acronym: 'IF' },
       { code: '2', name: 'Outgoing Commitment', acronym: 'C' },
-      { code: '13', name: 'Commitment Cancellation', acronym: 'CC' }
+      { code: '11', name: 'Incoming Commitment', acronym: 'IC' }
     ]
   },
   {
-    label: "Disbursements & Expenditures", 
+    label: "Disbursements & Expenditures",
     types: [
       { code: '3', name: 'Disbursement', acronym: 'D' },
-      { code: '4', name: 'Expenditure', acronym: 'E' },
-      { code: '12', name: 'Incoming Funds', acronym: 'IF' }
+      { code: '4', name: 'Expenditure', acronym: 'E' }
     ]
   },
   {
     label: "Repayments & Returns",
     types: [
-      { code: '5', name: 'Interest Repayment', acronym: 'IR' },
+      { code: '5', name: 'Interest Payment', acronym: 'IP' },
       { code: '6', name: 'Loan Repayment', acronym: 'LR' },
       { code: '7', name: 'Reimbursement', acronym: 'R' }
     ]
@@ -49,9 +48,16 @@ const TRANSACTION_TYPE_GROUPS = [
   {
     label: "Equity & Guarantees",
     types: [
-      { code: '8', name: 'Purchase of Equity', acronym: 'QP' },
-      { code: '9', name: 'Sale of Equity', acronym: 'QS' },
-      { code: '11', name: 'Credit Guarantee', acronym: 'CG' }
+      { code: '8', name: 'Purchase of Equity', acronym: 'PE' },
+      { code: '9', name: 'Sale of Equity', acronym: 'SE' },
+      { code: '10', name: 'Credit Guarantee', acronym: 'CG' }
+    ]
+  },
+  {
+    label: "Pledges",
+    types: [
+      { code: '12', name: 'Outgoing Pledge', acronym: 'OP' },
+      { code: '13', name: 'Incoming Pledge', acronym: 'IP' }
     ]
   }
 ];

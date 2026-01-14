@@ -281,22 +281,24 @@ export async function POST(request: NextRequest) {
 
         // Import transactions (if provided)
         if (Array.isArray(transactions) && transactions.length > 0) {
-          // Map IATI transaction type codes
+          // Map IATI transaction type codes (IATI Standard v2.03)
           const iatiTypeToDbType: Record<string, string> = {
-            'Incoming Funds': '12',
-            'Incoming Commitment': '1',
+            'Incoming Funds': '1',
             'Outgoing Commitment': '2',
             'Disbursement': '3',
             'Expenditure': '4',
             'Interest Payment': '5',
-            'Interest Repayment': '5',
+            'Interest Repayment': '5', // Legacy alias
             'Loan Repayment': '6',
             'Reimbursement': '7',
             'Purchase of Equity': '8',
             'Sale of Equity': '9',
-            'Credit Guarantee': '11',
-            'Commitment Cancellation': '13',
-            '1': '1', '2': '2', '3': '3', '4': '4', '5': '5', '6': '6', '7': '7', '8': '8', '9': '9', '11': '11', '12': '12', '13': '13'
+            'Credit Guarantee': '10',
+            'Incoming Commitment': '11',
+            'Outgoing Pledge': '12',
+            'Incoming Pledge': '13',
+            'Commitment Cancellation': '13', // Legacy alias
+            '1': '1', '2': '2', '3': '3', '4': '4', '5': '5', '6': '6', '7': '7', '8': '8', '9': '9', '10': '10', '11': '11', '12': '12', '13': '13'
           };
 
           for (const transaction of transactions) {
@@ -840,23 +842,25 @@ export async function POST_LEGACY(request: NextRequest) {
         
         for (const transaction of activityTransactions) {
           try {
-            // Map IATI transaction type codes
+            // Map IATI transaction type codes (IATI Standard v2.03)
             // IATI uses numeric codes: 1-13
             const iatiTypeToDbType: Record<string, string> = {
               // Text mappings from XML
-              'Incoming Funds': '12',
-              'Incoming Commitment': '1',
+              'Incoming Funds': '1',
               'Outgoing Commitment': '2',
               'Disbursement': '3',
               'Expenditure': '4',
               'Interest Payment': '5',
-              'Interest Repayment': '5',
+              'Interest Repayment': '5', // Legacy alias
               'Loan Repayment': '6',
               'Reimbursement': '7',
               'Purchase of Equity': '8',
               'Sale of Equity': '9',
-              'Credit Guarantee': '11',
-              'Commitment Cancellation': '13',
+              'Credit Guarantee': '10',
+              'Incoming Commitment': '11',
+              'Outgoing Pledge': '12',
+              'Incoming Pledge': '13',
+              'Commitment Cancellation': '13', // Legacy alias
               // Numeric mappings
               '1': '1',
               '2': '2',
@@ -867,6 +871,7 @@ export async function POST_LEGACY(request: NextRequest) {
               '7': '7',
               '8': '8',
               '9': '9',
+              '10': '10',
               '11': '11',
               '12': '12',
               '13': '13'
@@ -1057,22 +1062,24 @@ export async function POST_LEGACY(request: NextRequest) {
         // Now import the orphan transactions
         for (const transaction of orphanTrans) {
           try {
-            // Map IATI transaction type codes
+            // Map IATI transaction type codes (IATI Standard v2.03)
             const iatiTypeToDbType: Record<string, string> = {
               // Text mappings from XML
-              'Incoming Funds': '12',
-              'Incoming Commitment': '1',
+              'Incoming Funds': '1',
               'Outgoing Commitment': '2',
               'Disbursement': '3',
               'Expenditure': '4',
               'Interest Payment': '5',
-              'Interest Repayment': '5',
+              'Interest Repayment': '5', // Legacy alias
               'Loan Repayment': '6',
               'Reimbursement': '7',
               'Purchase of Equity': '8',
               'Sale of Equity': '9',
-              'Credit Guarantee': '11',
-              'Commitment Cancellation': '13',
+              'Credit Guarantee': '10',
+              'Incoming Commitment': '11',
+              'Outgoing Pledge': '12',
+              'Incoming Pledge': '13',
+              'Commitment Cancellation': '13', // Legacy alias
               // Numeric mappings
               '1': '1',
               '2': '2',
@@ -1083,6 +1090,7 @@ export async function POST_LEGACY(request: NextRequest) {
               '7': '7',
               '8': '8',
               '9': '9',
+              '10': '10',
               '11': '11',
               '12': '12',
               '13': '13'

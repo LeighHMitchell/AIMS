@@ -469,17 +469,18 @@ export function HumanitarianChart({ dateRange, refreshKey, onDataChange, compact
           }}
           iconType="rect"
         />
-        <Bar 
-          dataKey="development" 
+        <Bar
+          dataKey="development"
           stackId="1"
           fill="#1E4D6B"
           name="Development"
         />
-        <Bar 
-          dataKey="humanitarian" 
+        <Bar
+          dataKey="humanitarian"
           stackId="1"
           fill="#DC2626"
           name="Humanitarian"
+          radius={[4, 4, 0, 0]}
         />
       </BarChart>
     </ResponsiveContainer>

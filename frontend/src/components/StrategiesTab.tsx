@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import { useUser } from '@/hooks/useUser';
 import StrategiesGanttChart from './StrategiesGanttChart';
+import { StrategyForm } from './StrategyForm';
 
 interface Strategy {
   id: string;
@@ -389,20 +390,18 @@ const StrategiesTab: React.FC<StrategiesTabProps> = ({
         </TabsContent>
       </Tabs>
 
-      {/* Strategy Form Dialog - Coming Soon */}
-      {showForm && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-lg max-w-md">
-            <h3 className="text-lg font-medium mb-4">Strategy Management</h3>
-            <p className="text-gray-600 mb-4">
-              Strategy creation and editing functionality will be available soon.
-            </p>
-            <Button onClick={() => setShowForm(false)}>
-              Close
-            </Button>
-          </div>
-        </div>
-      )}
+      {/* Strategy Form Dialog */}
+      <StrategyForm
+        open={showForm}
+        onOpenChange={(open) => {
+          setShowForm(open);
+          if (!open) setEditingStrategy(null);
+        }}
+        organizationId={organizationId}
+        userId={user?.id || ''}
+        strategy={editingStrategy}
+        onSuccess={fetchStrategies}
+      />
     </div>
   );
 };

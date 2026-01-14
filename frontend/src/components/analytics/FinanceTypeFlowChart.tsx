@@ -162,20 +162,21 @@ export function FinanceTypeFlowChart({
     }
   }, [localDateRange])
 
-  // Transaction type options
+  // Transaction type options (IATI Standard v2.03)
   const transactionTypes = [
-    { code: '1', name: 'Incoming Commitment' },
+    { code: '1', name: 'Incoming Funds' },
     { code: '2', name: 'Outgoing Commitment' },
     { code: '3', name: 'Disbursement' },
     { code: '4', name: 'Expenditure' },
-    { code: '5', name: 'Interest Repayment' },
+    { code: '5', name: 'Interest Payment' },
     { code: '6', name: 'Loan Repayment' },
     { code: '7', name: 'Reimbursement' },
     { code: '8', name: 'Purchase of Equity' },
     { code: '9', name: 'Sale of Equity' },
-    { code: '11', name: 'Credit Guarantee' },
-    { code: '12', name: 'Incoming Funds' },
-    { code: '13', name: 'Commitment Cancellation' }
+    { code: '10', name: 'Credit Guarantee' },
+    { code: '11', name: 'Incoming Commitment' },
+    { code: '12', name: 'Outgoing Pledge' },
+    { code: '13', name: 'Incoming Pledge' }
   ]
 
   // Fetch custom years on mount and set system default
@@ -787,6 +788,7 @@ export function FinanceTypeFlowChart({
                 return financeTypesToShow.map((financeType, index) => {
                   const color = generateFinanceTypeShades(blendedBaseColor, financeType.code, index, financeTypesToShow.length)
                   const uniqueKey = `${flowType}_${transactionType}_${financeType.code}`
+                  const isLastInStack = index === financeTypesToShow.length - 1
                   return (
                     <Bar
                       key={uniqueKey}
@@ -795,6 +797,7 @@ export function FinanceTypeFlowChart({
                       stackId={`${flowType}_${transactionType}`}
                       fill={color}
                       isAnimationActive={false}
+                      radius={isLastInStack ? [4, 4, 0, 0] : [0, 0, 0, 0]}
                     />
                   )
                 })
@@ -1199,6 +1202,7 @@ export function FinanceTypeFlowChart({
                       return financeTypesToShow.map((financeType, index) => {
                         const color = generateFinanceTypeShades(blendedBaseColor, financeType.code, index, financeTypesToShow.length)
                         const uniqueKey = `${flowType}_${transactionType}_${financeType.code}`
+                        const isLastInStack = index === financeTypesToShow.length - 1
                         return (
                           <Bar
                             key={uniqueKey}
@@ -1209,6 +1213,7 @@ export function FinanceTypeFlowChart({
                             isAnimationActive={true}
                             animationDuration={800}
                             animationEasing="ease-in-out"
+                            radius={isLastInStack ? [4, 4, 0, 0] : [0, 0, 0, 0]}
                           />
                         )
                       })

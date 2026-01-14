@@ -12,7 +12,8 @@ import {
   Cell
 } from 'recharts'
 import { Skeleton } from '@/components/ui/skeleton'
-import { BarChart3, CheckCircle2 } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { BarChart3, CheckCircle2, Table as TableIcon } from 'lucide-react'
 
 interface Top10GovernmentValidatedChartProps {
   dateRange: {
@@ -37,6 +38,8 @@ interface PartnerData {
   shortName: string
 }
 
+type ViewMode = 'bar' | 'table'
+
 export function Top10GovernmentValidatedChart({
   dateRange,
   filters,
@@ -46,6 +49,7 @@ export function Top10GovernmentValidatedChart({
 }: Top10GovernmentValidatedChartProps) {
   const [data, setData] = useState<PartnerData[]>([])
   const [loading, setLoading] = useState(true)
+  const [viewMode, setViewMode] = useState<ViewMode>('bar')
 
   useEffect(() => {
     fetchData()
@@ -107,7 +111,7 @@ export function Top10GovernmentValidatedChart({
         style: 'currency',
         currency: 'USD',
         notation: 'compact',
-        maximumFractionDigits: 1
+        maximumFractionDigits: 0
       }).format(safeValue)
     } catch (error) {
       console.error('[Top10GovernmentValidatedChart] Error formatting currency:', error, value)
@@ -115,20 +119,8 @@ export function Top10GovernmentValidatedChart({
     }
   }
 
-  // Generate shades of amber/gold for bars
-  const barColors = [
-    '#d97706', // amber-600
-    '#f59e0b', // amber-500
-    '#fbbf24', // amber-400
-    '#fcd34d', // amber-300
-    '#fde68a', // amber-200
-    '#fef3c7', // amber-100
-    '#d97706', // repeat
-    '#f59e0b',
-    '#fbbf24',
-    '#fcd34d',
-    '#94a3b8' // slate-400 for "Others"
-  ]
+  const BAR_COLOR = '#4C5568'
+  const OTHERS_COLOR = '#94a3b8'
 
   // Compact mode renders just the chart
   if (compact) {
@@ -145,7 +137,7 @@ export function Top10GovernmentValidatedChart({
     return (
       <div className="h-full w-full">
         <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={data} layout="horizontal" margin={{ top: 5, right: 20, left: 60, bottom: 5 }}>
+          <BarChart data={data} layout="vertical" margin={{ top: 5, right: 20, left: 60, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" horizontal={false} />
             <XAxis type="number" tickFormatter={formatCurrency} tick={{ fontSize: 10 }} />
             <YAxis type="category" dataKey="shortName" tick={{ fontSize: 9 }} width={55} />
@@ -167,9 +159,9 @@ export function Top10GovernmentValidatedChart({
               }}
               labelStyle={{ color: '#94a3b8' }}
             />
-            <Bar dataKey="totalValue" radius={[0, 4, 4, 0]}>
+            <Bar dataKey="totalValue" radius={[0, 4, 4, 0]} isAnimationActive={false}>
               {data.map((entry, index) => (
-                <Cell key={`cell-${index}`} fill={entry.orgId === 'others' ? '#94a3b8' : barColors[index % (barColors.length - 1)]} />
+                <Cell key={`cell-${index}`} fill={entry.orgId === 'others' ? OTHERS_COLOR : BAR_COLOR} />
               ))}
             </Bar>
           </BarChart>
@@ -199,59 +191,120 @@ export function Top10GovernmentValidatedChart({
   }
 
   return (
-    <ResponsiveContainer width="100%" height={400}>
-      <BarChart 
-        data={data}
-        layout="horizontal"
-        margin={{ top: 5, right: 30, left: 100, bottom: 5 }}
-      >
-        <CartesianGrid 
-          strokeDasharray="3 3" 
-          stroke="#e2e8f0" 
-          horizontal={false}
-        />
-        <XAxis 
-          type="number"
-          tickFormatter={formatCurrency}
-          tick={{ fill: '#64748b', fontSize: 12 }}
-          axisLine={{ stroke: '#cbd5e1' }}
-        />
-        <YAxis 
-          type="category"
-          dataKey="shortName"
-          tick={{ fill: '#64748b', fontSize: 12 }}
-          axisLine={{ stroke: '#cbd5e1' }}
-          width={90}
-        />
-        <Tooltip 
-          formatter={(value: number, name: string, props: any) => {
-            if (name === 'totalValue') {
-              return [
-                formatCurrency(value),
-                `Value (${props.payload.projectCount} project${props.payload.projectCount !== 1 ? 's' : ''})`
-              ]
-            }
-            return [value, name]
-          }}
-          contentStyle={{
-            backgroundColor: '#1e293b',
-            border: 'none',
-            borderRadius: '8px',
-            color: '#fff'
-          }}
-          labelStyle={{ color: '#94a3b8' }}
-          cursor={{ fill: 'rgba(148, 163, 184, 0.1)' }}
-        />
-        <Bar dataKey="totalValue" radius={[0, 4, 4, 0]}>
-          {data.map((entry, index) => (
-            <Cell 
-              key={`cell-${index}`} 
-              fill={entry.orgId === 'others' ? '#94a3b8' : barColors[index % (barColors.length - 1)]} 
+    <div className="space-y-4">
+      {/* View Mode Toggle */}
+      <div className="flex justify-end">
+        <div className="flex gap-1 border rounded-lg p-1 bg-white">
+          <Button
+            variant={viewMode === 'bar' ? 'default' : 'ghost'}
+            size="sm"
+            onClick={() => setViewMode('bar')}
+            className="h-8"
+            title="Bar Chart"
+          >
+            <BarChart3 className="h-4 w-4" />
+          </Button>
+          <Button
+            variant={viewMode === 'table' ? 'default' : 'ghost'}
+            size="sm"
+            onClick={() => setViewMode('table')}
+            className="h-8"
+            title="Table"
+          >
+            <TableIcon className="h-4 w-4" />
+          </Button>
+        </div>
+      </div>
+
+      {viewMode === 'bar' ? (
+        <ResponsiveContainer width="100%" height={400}>
+          <BarChart
+            data={data}
+            layout="vertical"
+            margin={{ top: 5, right: 30, left: 100, bottom: 5 }}
+          >
+            <CartesianGrid
+              strokeDasharray="3 3"
+              stroke="#e2e8f0"
+              horizontal={false}
             />
-          ))}
-        </Bar>
-      </BarChart>
-    </ResponsiveContainer>
+            <XAxis
+              type="number"
+              tickFormatter={formatCurrency}
+              tick={{ fill: '#64748b', fontSize: 12 }}
+              axisLine={{ stroke: '#cbd5e1' }}
+            />
+            <YAxis
+              type="category"
+              dataKey="shortName"
+              tick={{ fill: '#64748b', fontSize: 12 }}
+              axisLine={{ stroke: '#cbd5e1' }}
+              width={90}
+            />
+            <Tooltip
+              formatter={(value: number, name: string, props: any) => {
+                if (name === 'totalValue') {
+                  return [
+                    formatCurrency(value),
+                    `Value (${props.payload.projectCount} project${props.payload.projectCount !== 1 ? 's' : ''})`
+                  ]
+                }
+                return [value, name]
+              }}
+              contentStyle={{
+                backgroundColor: '#1e293b',
+                border: 'none',
+                borderRadius: '8px',
+                color: '#fff'
+              }}
+              labelStyle={{ color: '#94a3b8' }}
+              cursor={{ fill: 'rgba(148, 163, 184, 0.1)' }}
+            />
+            <Bar dataKey="totalValue" radius={[0, 4, 4, 0]} isAnimationActive={false}>
+              {data.map((entry, index) => (
+                <Cell
+                  key={`cell-${index}`}
+                  fill={entry.orgId === 'others' ? OTHERS_COLOR : BAR_COLOR}
+                />
+              ))}
+            </Bar>
+          </BarChart>
+        </ResponsiveContainer>
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-slate-200">
+                <th className="text-left py-3 px-4 font-medium text-slate-600">Organization</th>
+                <th className="text-right py-3 px-4 font-medium text-slate-600">Total Value</th>
+                <th className="text-right py-3 px-4 font-medium text-slate-600">Projects</th>
+              </tr>
+            </thead>
+            <tbody>
+              {data.map((entry, index) => (
+                <tr key={entry.orgId} className={index % 2 === 0 ? 'bg-slate-50' : 'bg-white'}>
+                  <td className="py-3 px-4 text-slate-900">
+                    {entry.name}{entry.acronym ? ` (${entry.acronym})` : ''}
+                  </td>
+                  <td className="py-3 px-4 text-right text-slate-900 font-medium">
+                    {formatCurrency(entry.totalValue)}
+                  </td>
+                  <td className="py-3 px-4 text-right text-slate-900">
+                    {entry.projectCount}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      <p className="text-sm text-slate-600 leading-relaxed">
+        This chart ranks development partners by the total value of projects that have been government-validated.
+        Use this to identify which partners have the strongest track record of completing the validation process
+        and to prioritize engagement with partners committed to transparency and government oversight.
+      </p>
+    </div>
   )
 }
 

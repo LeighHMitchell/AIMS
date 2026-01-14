@@ -22,16 +22,21 @@ export function getTransactionGroup(typeCode: number | string): TransactionGroup
 /**
  * Transaction type definitions for reference and tooltips
  */
+// IATI Standard v2.03 transaction type definitions
 export const TRANSACTION_TYPE_DEFINITIONS = {
+  1: 'Incoming Funds',
   2: 'Outgoing Commitment',
   3: 'Disbursement',
-  4: 'Expenditure', 
-  5: 'Interest Repayment',
+  4: 'Expenditure',
+  5: 'Interest Payment',
   6: 'Loan Repayment',
   7: 'Reimbursement',
   8: 'Purchase of Equity',
   9: 'Sale of Equity',
-  11: 'Credit Guarantee'
+  10: 'Credit Guarantee',
+  11: 'Incoming Commitment',
+  12: 'Outgoing Pledge',
+  13: 'Incoming Pledge'
 } as const
 
 /**
@@ -50,7 +55,7 @@ export const TRANSACTION_COLUMNS = {
   },
   returns: {
     label: 'Returns & Financial Instruments',
-    description: 'Interest Repayments (Type 5), Loan Repayments (Type 6), Equity transactions (Types 8, 9), and Credit Guarantees (Type 11)',
+    description: 'Interest Payments (Type 5), Loan Repayments (Type 6), Equity transactions (Types 8, 9), and Credit Guarantees (Type 10)',
     types: [5, 6, 8, 9, 11]
   }
 } as const

@@ -659,15 +659,24 @@ export function EditOrganizationModal({
               </p>
             </div>
             {isCreating && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setShowIatiImport(true)}
-                className="flex items-center gap-2"
-              >
-                <Globe className="h-4 w-4" />
-                Import from IATI
-              </Button>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled
+                      className="flex items-center gap-2 opacity-60"
+                    >
+                      <Globe className="h-4 w-4" />
+                      Import from IATI
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>IATI Registry import coming soon</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
             )}
           </div>
         </DialogHeader>

@@ -47,6 +47,7 @@ import {
   getDaysUntilDeadline,
 } from '@/types/task';
 import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
 
 interface TaskDetailModalProps {
   open: boolean;
@@ -73,6 +74,7 @@ export function TaskDetailModal({
   const [data, setData] = useState<TaskDetailData | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [attachmentError, setAttachmentError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('details');
 
   useEffect(() => {
@@ -81,6 +83,7 @@ export function TaskDetailModal({
     } else {
       setData(null);
       setActiveTab('details');
+      setAttachmentError(null);
     }
   }, [open, taskId]);
 
@@ -100,14 +103,18 @@ export function TaskDetailModal({
 
       // Fetch attachments
       let attachments: TaskAttachment[] = [];
+      setAttachmentError(null);
       try {
         const attachmentsResponse = await fetch(`/api/tasks/${taskId}/attachments?userId=${userId}`);
         if (attachmentsResponse.ok) {
           const attachmentsData = await attachmentsResponse.json();
           attachments = attachmentsData.data || [];
+        } else {
+          setAttachmentError('Unable to load attachments');
         }
       } catch (err) {
         console.error('Failed to fetch attachments:', err);
+        setAttachmentError('Unable to load attachments');
       }
 
       setData({
@@ -148,7 +155,13 @@ export function TaskDetailModal({
       );
       if (!response.ok) throw new Error('Download failed');
 
-      const blob = await response.blob();
+      const data = await response.json();
+      if (!data.success || !data.data?.download_url) {
+        throw new Error('Failed to get download URL');
+      }
+
+      const fileResponse = await fetch(data.data.download_url);
+      const blob = await fileResponse.blob();
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
@@ -159,6 +172,7 @@ export function TaskDetailModal({
       document.body.removeChild(a);
     } catch (err) {
       console.error('Download error:', err);
+      toast.error('Failed to download attachment. Please try again.');
     }
   };
 
@@ -413,7 +427,16 @@ export function TaskDetailModal({
 
                   {/* Attachments Tab */}
                   <TabsContent value="attachments" className="mt-0">
-                    {attachments.length === 0 ? (
+                    {attachmentError ? (
+                      <div className="text-center py-8">
+                        <Paperclip className="h-12 w-12 mx-auto mb-4 opacity-50 text-red-400" />
+                        <p className="text-red-500">{attachmentError}</p>
+                        <Button variant="outline" size="sm" className="mt-4" onClick={fetchTaskDetails}>
+                          <RefreshCw className="h-4 w-4 mr-2" />
+                          Retry
+                        </Button>
+                      </div>
+                    ) : attachments.length === 0 ? (
                       <div className="text-center py-8 text-muted-foreground">
                         <Paperclip className="h-12 w-12 mx-auto mb-4 opacity-50" />
                         <p>No attachments</p>

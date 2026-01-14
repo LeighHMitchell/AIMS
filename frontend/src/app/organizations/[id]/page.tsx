@@ -2650,10 +2650,12 @@ export default function OrganizationProfilePage() {
                                   <TableRow key={transaction.id}>
                                     <TableCell>{transaction.transaction_date ? formatDate(transaction.transaction_date) : '-'}</TableCell>
                                     <TableCell>
-                                      {transaction.transaction_type === '1' ? 'Incoming Commitment' :
+                                      {transaction.transaction_type === '1' ? 'Incoming Funds' :
                                        transaction.transaction_type === '2' ? 'Outgoing Commitment' :
                                        transaction.transaction_type === '3' ? 'Disbursement' :
                                        transaction.transaction_type === '4' ? 'Expenditure' :
+                                       transaction.transaction_type === '10' ? 'Credit Guarantee' :
+                                       transaction.transaction_type === '11' ? 'Incoming Commitment' :
                                        transaction.transaction_type}
                                     </TableCell>
                                     <TableCell className="max-w-md truncate">{transaction.description || '-'}</TableCell>
@@ -2761,17 +2763,18 @@ export default function OrganizationProfilePage() {
               </TabsContent>
 
               <TabsContent value="geography" className="p-6">
-                <Card className="border-slate-200">
-                  <CardHeader>
-                    <CardTitle className="text-slate-900">Geographic Footprint</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-center py-12">
-                      <MapPin className="h-12 w-12 text-slate-300 mx-auto mb-4" />
-                      <p className="text-slate-500">Geographic footprint feature coming soon</p>
-                    </div>
-                  </CardContent>
-                </Card>
+                <GeographicFootprint
+                  organization={{
+                    country: organization?.country,
+                    country_represented: organization?.country_represented,
+                    activities: activities.map(a => ({
+                      id: a.id,
+                      title: a.title,
+                      activity_status: a.activity_status || '',
+                      role: 'reporting'
+                    }))
+                  }}
+                />
               </TabsContent>
 
               <TabsContent value="contacts" className="p-6">

@@ -52,7 +52,7 @@ export async function GET(request: NextRequest) {
       const participatingOrgs = activity.activity_participating_organizations || [];
       participatingOrgs.forEach((po: any) => {
         if (!po.organization_id) return;
-        
+
         if (!orgProjectCounts.has(po.organization_id)) {
           orgProjectCounts.set(po.organization_id, new Set());
         }
@@ -60,9 +60,68 @@ export async function GET(request: NextRequest) {
       });
     });
 
+    console.log('[Top10ActiveProjects] Organizations with valid IDs:', orgProjectCounts.size);
+
+    // If no organizations found with valid IDs, try fetching participating orgs separately
+    if (orgProjectCounts.size === 0 && activities && activities.length > 0) {
+      console.log('[Top10ActiveProjects] Trying separate query for participating organizations');
+
+      const activityIds = activities.map((a: any) => a.id);
+      const { data: participatingOrgs, error: poError } = await supabase
+        .from('activity_participating_organizations')
+        .select('organization_id, activity_id')
+        .in('activity_id', activityIds)
+        .not('organization_id', 'is', null);
+
+      if (!poError && participatingOrgs) {
+        participatingOrgs.forEach((po: any) => {
+          if (!po.organization_id) return;
+
+          if (!orgProjectCounts.has(po.organization_id)) {
+            orgProjectCounts.set(po.organization_id, new Set());
+          }
+          orgProjectCounts.get(po.organization_id)!.add(po.activity_id);
+        });
+        console.log('[Top10ActiveProjects] Organizations found from separate query:', orgProjectCounts.size);
+      }
+    }
+
+    // If still no data, try with all published activities (broader fallback)
+    if (orgProjectCounts.size === 0) {
+      console.log('[Top10ActiveProjects] Trying broader query with all published activities');
+
+      // Query all published activities
+      const { data: allActivities } = await supabase
+        .from('activities')
+        .select('id')
+        .eq('publication_status', 'published');
+
+      if (allActivities && allActivities.length > 0) {
+        const allActivityIds = allActivities.map((a: any) => a.id);
+
+        const { data: allParticipatingOrgs } = await supabase
+          .from('activity_participating_organizations')
+          .select('organization_id, activity_id')
+          .in('activity_id', allActivityIds)
+          .not('organization_id', 'is', null);
+
+        if (allParticipatingOrgs) {
+          allParticipatingOrgs.forEach((po: any) => {
+            if (!po.organization_id) return;
+
+            if (!orgProjectCounts.has(po.organization_id)) {
+              orgProjectCounts.set(po.organization_id, new Set());
+            }
+            orgProjectCounts.get(po.organization_id)!.add(po.activity_id);
+          });
+          console.log('[Top10ActiveProjects] Organizations from all published activities:', orgProjectCounts.size);
+        }
+      }
+    }
+
     // Get organization names
     const orgIds = Array.from(orgProjectCounts.keys());
-    console.log('[Top10ActiveProjects] Organizations found:', orgIds.length);
+    console.log('[Top10ActiveProjects] Total organizations found:', orgIds.length);
     
     const { data: orgs } = await supabase
       .from('organizations')

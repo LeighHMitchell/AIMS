@@ -419,18 +419,19 @@ export function CumulativeFinancialOverview({
         const yearData = yearlyDataMap.get(year)!
         const type = transaction.transaction_type
 
+        // IATI Standard v2.03 transaction type codes
         if (type === '1') {
-          yearData.incomingCommitment += amount
-        } else if (type === '12') {
-          yearData.incomingFunds += amount
+          yearData.incomingFunds += amount        // Code 1 = Incoming Funds
         } else if (type === '2') {
-          yearData.outgoingCommitment += amount
-        } else if (type === '11') {
-          yearData.creditGuarantee += amount
+          yearData.outgoingCommitment += amount   // Code 2 = Outgoing Commitment
         } else if (type === '3') {
-          yearData.disbursements += amount
+          yearData.disbursements += amount        // Code 3 = Disbursement
         } else if (type === '4') {
-          yearData.expenditures += amount
+          yearData.expenditures += amount         // Code 4 = Expenditure
+        } else if (type === '10') {
+          yearData.creditGuarantee += amount      // Code 10 = Credit Guarantee
+        } else if (type === '11') {
+          yearData.incomingCommitment += amount   // Code 11 = Incoming Commitment
         }
       })
     })
@@ -727,16 +728,16 @@ export function CumulativeFinancialOverview({
   // Use the module-level currency formatter for tooltips
   const formatTooltipValue = formatCurrencyAbbreviated
 
-  // Map series names to transaction type codes
+  // Map series names to IATI Standard v2.03 transaction type codes
   const getTransactionTypeCode = (seriesName: string): string | null => {
     const mapping: Record<string, string | null> = {
-      'Incoming Commitments': '1',
-      'Incoming Funds': '12',
-      'Outgoing Commitments': '2',
-      'Commitments': '2', // Also handle the display name
-      'Credit Guarantee': '11',
-      'Disbursements': '3',
-      'Expenditures': '4',
+      'Incoming Funds': '1',           // IATI Code 1
+      'Outgoing Commitments': '2',     // IATI Code 2
+      'Commitments': '2',              // Also handle the display name
+      'Disbursements': '3',            // IATI Code 3
+      'Expenditures': '4',             // IATI Code 4
+      'Credit Guarantee': '10',        // IATI Code 10
+      'Incoming Commitments': '11',    // IATI Code 11
       // Planned Disbursements and Budgets are not transaction types
       'Planned Disbursements': null,
       'Budgets': null
@@ -1443,7 +1444,7 @@ export function CumulativeFinancialOverview({
                       return null
                     }}
                   />
-                  <Bar dataKey="value">
+                  <Bar dataKey="value" radius={[4, 4, 0, 0]}>
                     {Object.entries(totals).map(([key, value], index) => (
                       <Cell
                         key={`cell-${index}`}
@@ -1890,8 +1891,8 @@ export function CumulativeFinancialOverview({
         {/* Explanatory Text */}
         <p className="text-xs text-gray-500 mt-4">
           This chart provides a comprehensive view of financial flows over time, tracking all IATI transaction types including
-          Incoming Commitments (type 1), Incoming Funds (type 12), Outgoing Commitments (type 2), Credit Guarantees (type 11),
-          Disbursements (type 3), and Expenditures (type 4), alongside Planned Disbursements and Budgets.
+          Incoming Funds (type 1), Outgoing Commitments (type 2), Disbursements (type 3), Expenditures (type 4),
+          Credit Guarantees (type 10), and Incoming Commitments (type 11), alongside Planned Disbursements and Budgets.
           Toggle between <strong>Cumulative</strong> view to see running totals over time, or <strong>Periodic</strong> view
           to see year-by-year changes. The <strong>Proportional</strong> setting distributes multi-year budgets and planned
           disbursements across their time periods, while <strong>Period Start</strong> shows the full amount at the start date.

@@ -988,88 +988,35 @@ export default function AnalyticsDashboardPage() {
                 {/* Contains: Organizational Positioning Map, Aid Ecosystem Solar System */}
                 <TabsContent value="aid-ecosystem">
                   <div className="space-y-8">
-                    {/* Organizational Positioning Map */}
+                    {/* Aid Ecosystem Charts - Two Column Layout */}
                     <div>
-                      <h2 className="text-2xl font-bold text-gray-900 mb-2">Organizational Positioning Map</h2>
-                      <p className="text-gray-600 mb-4">
-                        Where do organizations sit between humanitarian and development work, and between funding and implementation?
-                      </p>
-                      <CompactChartCard
-                        title="Organizational Positioning Map"
-                        shortDescription="Organizations positioned by humanitarian/development focus and funder/implementer role"
-                        fullDescription="A 2D positioning map revealing organizational functional roles in the aid ecosystem. X-axis shows humanitarian vs development orientation based on transaction flags. Y-axis shows net funder vs implementer role based on provider/receiver transaction flows. Node size represents total transaction volume, color indicates organization type."
-                        compactHeight={350}
-                      >
-                        <OrganizationalPositioningMap
-                          dateRange={fiveYearRange}
-                          refreshKey={refreshKey}
-                        />
-                      </CompactChartCard>
-                      {/* Detailed description */}
-                      <div className="mt-4 p-4 bg-slate-50 rounded-lg border border-slate-200">
-                        <p className="text-sm text-slate-600 leading-relaxed">
-                          This chart shows where organisations sit in the aid ecosystem based on observed financial behaviour, rather than stated mandates or organisational labels. Each organisation is positioned using two dimensions derived from transaction data. The horizontal axis reflects whether an organisation's funding is directed primarily toward humanitarian activities such as emergency relief and disaster response, or toward development activities such as infrastructure, education, and long-term service delivery. The vertical axis reflects whether an organisation acts mainly as a net funder, providing resources to others, or as a net implementer, receiving funding to deliver programmes.
-                        </p>
-                        <p className="text-sm text-slate-600 leading-relaxed mt-3">
-                          Together, these axes form four quadrants that highlight different functional roles within the system, including humanitarian funders, development funders, humanitarian implementers, and development implementers. The size of each bubble represents the total volume of disbursement transactions associated with that organisation over the selected period. Positions are calculated from actual financial flows, using transaction-level data with activity-level fallback where needed, ensuring that organisational roles reflect how money moves in practice rather than how organisations self-identify.
-                        </p>
-                      </div>
-                    </div>
+                      <h2 className="text-2xl font-bold text-gray-900 mb-2">Aid Ecosystem Analysis</h2>
+                      <p className="text-gray-600 mb-4">Visualizing organizational roles and financial gravity in the aid system</p>
+                      <ChartGrid>
+                        <CompactChartCard
+                          title="Organizational Positioning Map"
+                          shortDescription="Organizations positioned by humanitarian/development focus and funder/implementer role"
+                          fullDescription="This chart shows where organisations sit in the aid ecosystem based on observed financial behaviour, rather than stated mandates or organisational labels. Each organisation is positioned using two dimensions derived from transaction data. The horizontal axis reflects whether an organisation's funding is directed primarily toward humanitarian activities such as emergency relief and disaster response, or toward development activities such as infrastructure, education, and long-term service delivery. The vertical axis reflects whether an organisation acts mainly as a net funder, providing resources to others, or as a net implementer, receiving funding to deliver programmes. Together, these axes form four quadrants that highlight different functional roles within the system, including humanitarian funders, development funders, humanitarian implementers, and development implementers. The size of each bubble represents the total volume of disbursement transactions associated with that organisation over the selected period. Positions are calculated from actual financial flows, using transaction-level data with activity-level fallback where needed, ensuring that organisational roles reflect how money moves in practice rather than how organisations self-identify. METHODOLOGY: X-axis (Humanitarian ↔ Development) is calculated from transaction humanitarian flags with activity-level fallback. Y-axis (Funder ↔ Implementer) shows net provider vs receiver transaction flows, normalized across all organizations. Data source is disbursement transactions only, reflecting realized behavior."
+                          compactHeight={350}
+                        >
+                          <OrganizationalPositioningMap
+                            dateRange={fiveYearRange}
+                            refreshKey={refreshKey}
+                          />
+                        </CompactChartCard>
 
-                    {/* Aid Ecosystem Solar System */}
-                    <div>
-                      <h2 className="text-2xl font-bold text-gray-900 mb-2">Aid Ecosystem Solar System</h2>
-                      <p className="text-gray-600 mb-4">
-                        Which organizations sit at the financial core of the system, and which operate at the periphery?
-                      </p>
-                      <CompactChartCard
-                        title="Aid Ecosystem Solar System"
-                        shortDescription="Organizations ranked by financial gravity and arranged in concentric rings"
-                        fullDescription="A radial visualization showing the relative financial gravity of organizations in the aid ecosystem. Inner ring contains top 10% by transaction volume, middle ring the next 30%, outer ring the remaining organizations. Node size reflects total transaction value on a logarithmic scale. Click any organization to view their profile."
-                        compactHeight={350}
-                      >
-                        <AidEcosystemSolarSystem
-                          dateRange={fiveYearRange}
-                          refreshKey={refreshKey}
-                        />
-                      </CompactChartCard>
-                      {/* Detailed description */}
-                      <div className="mt-4 p-4 bg-slate-50 rounded-lg border border-slate-200">
-                        <p className="text-sm text-slate-600 leading-relaxed">
-                          This chart visualises the relative financial gravity of organisations within the aid ecosystem by arranging them in concentric rings based on total disbursement volume. Organisations at the centre represent the largest financial actors in the system, while those further out operate at progressively smaller scales. The inner ring contains the top ten percent of organisations by disbursement value, the middle ring contains the next thirty percent, and the outer ring contains the remaining organisations above the minimum reporting threshold.
-                        </p>
-                        <p className="text-sm text-slate-600 leading-relaxed mt-3">
-                          Node size corresponds to the total value of funds flowing through each organisation, and colour indicates organisation type. By presenting the aid ecosystem in this radial form, the chart highlights how concentrated or distributed financial power is within the system, making it easy to see whether aid flows are dominated by a small number of large actors or spread across a wider range of organisations. Rankings are recalculated dynamically based on the selected time period and filters.
-                        </p>
-                      </div>
-                    </div>
-
-                    {/* Methodology Section */}
-                    <div className="bg-slate-50 rounded-lg p-6 border border-slate-200">
-                      <h3 className="text-lg font-semibold text-slate-800 mb-3">Methodology</h3>
-                      <div className="grid md:grid-cols-2 gap-6 text-sm text-slate-600">
-                        <div>
-                          <h4 className="font-medium text-slate-700 mb-2">Positioning Map Axes</h4>
-                          <ul className="space-y-1 list-disc list-inside">
-                            <li><strong>X-axis (Humanitarian ↔ Development):</strong> Calculated from transaction humanitarian flags with activity-level fallback</li>
-                            <li><strong>Y-axis (Funder ↔ Implementer):</strong> Net provider vs receiver transaction flows, normalized across all organizations</li>
-                            <li><strong>Data source:</strong> Disbursement transactions only (reflects realized behavior)</li>
-                          </ul>
-                        </div>
-                        <div>
-                          <h4 className="font-medium text-slate-700 mb-2">Solar System Rings</h4>
-                          <ul className="space-y-1 list-disc list-inside">
-                            <li><strong>Inner ring:</strong> Top 10% of organizations by total disbursement value</li>
-                            <li><strong>Middle ring:</strong> Next 30% (ranks 11-40%)</li>
-                            <li><strong>Outer ring:</strong> Remaining organizations (bottom 60%)</li>
-                            <li><strong>Threshold:</strong> Only organizations with &gt;$100K in transactions shown</li>
-                          </ul>
-                        </div>
-                      </div>
-                      <p className="text-xs text-slate-500 mt-4">
-                        These visualizations use explicit, explainable axes derived from transaction data rather than latent embeddings (e.g., node2vec, UMAP).
-                        This approach ensures full transparency and interpretability of organizational positioning.
-                      </p>
+                        <CompactChartCard
+                          title="Aid Ecosystem Solar System"
+                          shortDescription="Organizations ranked by financial gravity and arranged in concentric rings"
+                          fullDescription="This chart visualises the relative financial gravity of organisations within the aid ecosystem by arranging them in concentric rings based on total disbursement volume. Organisations at the centre represent the largest financial actors in the system, while those further out operate at progressively smaller scales. The inner ring contains the top ten percent of organisations by disbursement value, the middle ring contains the next thirty percent, and the outer ring contains the remaining organisations. Node size corresponds to the total value of funds flowing through each organisation, and colour indicates organisation type. By presenting the aid ecosystem in this radial form, the chart highlights how concentrated or distributed financial power is within the system, making it easy to see whether aid flows are dominated by a small number of large actors or spread across a wider range of organisations. Rankings are recalculated dynamically based on the selected time period and filters. METHODOLOGY: Inner ring contains the top 10% of organizations by total disbursement value. Middle ring contains the next 30% (ranks 11-40%). Outer ring contains the remaining organizations (bottom 60%)."
+                          compactHeight={350}
+                        >
+                          <AidEcosystemSolarSystem
+                            dateRange={fiveYearRange}
+                            refreshKey={refreshKey}
+                          />
+                        </CompactChartCard>
+                      </ChartGrid>
                     </div>
                   </div>
                 </TabsContent>

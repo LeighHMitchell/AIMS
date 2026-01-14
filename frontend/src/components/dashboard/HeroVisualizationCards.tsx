@@ -44,20 +44,21 @@ interface TransactionTrendPoint {
   types?: Record<string, number>; // transaction_type -> count
 }
 
-// Transaction type labels (from IATI standard)
+// Transaction type labels (IATI Standard v2.03)
 const TRANSACTION_TYPE_LABELS: Record<string, string> = {
-  '1': 'Incoming Commitment',
+  '1': 'Incoming Funds',
   '2': 'Outgoing Commitment',
   '3': 'Disbursement',
   '4': 'Expenditure',
-  '5': 'Interest Repayment',
+  '5': 'Interest Payment',
   '6': 'Loan Repayment',
   '7': 'Reimbursement',
   '8': 'Purchase of Equity',
   '9': 'Sale of Equity',
-  '11': 'Credit Guarantee',
-  '12': 'Incoming Funds',
-  '13': 'Commitment Cancellation',
+  '10': 'Credit Guarantee',
+  '11': 'Incoming Commitment',
+  '12': 'Outgoing Pledge',
+  '13': 'Incoming Pledge',
 };
 
 interface SectorBreakdown {

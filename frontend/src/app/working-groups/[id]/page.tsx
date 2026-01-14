@@ -109,7 +109,7 @@ export default function WorkingGroupProfilePage() {
       }
       
       setWorkingGroup(workingGroupData)
-      setEditedDescription(mockData.description || '')
+      setEditedDescription(data.description || '')
     } catch (error) {
       console.error('Error fetching working group:', error)
       toast.error('Failed to load working group details')
@@ -120,9 +120,19 @@ export default function WorkingGroupProfilePage() {
 
   const handleSaveDescription = async () => {
     if (!workingGroup) return
-    
+
     try {
-      // TODO: Implement API call to save description
+      const response = await fetch(`/api/working-groups/${workingGroup.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ description: editedDescription }),
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || 'Failed to update description')
+      }
+
       toast.success('Description updated successfully')
       setWorkingGroup({
         ...workingGroup,
@@ -130,7 +140,7 @@ export default function WorkingGroupProfilePage() {
       })
       setIsEditing(false)
     } catch (error) {
-      toast.error('Failed to update description')
+      toast.error(error instanceof Error ? error.message : 'Failed to update description')
     }
   }
 

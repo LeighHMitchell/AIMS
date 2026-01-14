@@ -350,20 +350,21 @@ export default function TransactionModal({
   const { user } = useUser();
   const isEditing = !!transaction;
   
-  // Fallback transaction types if IATI values fail to load
+  // Fallback transaction types if IATI values fail to load (IATI Standard v2.03)
   const fallbackTransactionTypes = [
-    { code: '1', name: 'Incoming Commitment' },
+    { code: '1', name: 'Incoming Funds' },
     { code: '2', name: 'Outgoing Commitment' },
     { code: '3', name: 'Disbursement' },
     { code: '4', name: 'Expenditure' },
-    { code: '5', name: 'Interest Repayment' },
+    { code: '5', name: 'Interest Payment' },
     { code: '6', name: 'Loan Repayment' },
     { code: '7', name: 'Reimbursement' },
     { code: '8', name: 'Purchase of Equity' },
     { code: '9', name: 'Sale of Equity' },
-    { code: '11', name: 'Credit Guarantee' },
-    { code: '12', name: 'Incoming Funds' },
-    { code: '13', name: 'Commitment Cancellation' }
+    { code: '10', name: 'Credit Guarantee' },
+    { code: '11', name: 'Incoming Commitment' },
+    { code: '12', name: 'Outgoing Pledge' },
+    { code: '13', name: 'Incoming Pledge' }
   ];
   
   // Fallback aid types

@@ -174,8 +174,8 @@ export const OrganizationTable: React.FC<OrganizationTableProps> = ({
   }
 
   return (
-    <div className="bg-white rounded-md shadow-sm border border-gray-200 overflow-hidden">
-      <div className="overflow-x-auto">
+    <div className="bg-white rounded-md shadow-sm border border-gray-200">
+      <div className="overflow-x-auto overflow-y-visible">
         <Table>
           <TableHeader>
             <TableRow>

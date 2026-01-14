@@ -24,34 +24,37 @@ interface ImportSummary {
   recommendations: string[];
 }
 
-// IATI Code Mappings
+// IATI Code Mappings (IATI Standard v2.03)
 const TRANSACTION_TYPE_MAP: Record<string, string> = {
-  '1': '1',   // Incoming Commitment
+  '1': '1',   // Incoming Funds
   '2': '2',   // Outgoing Commitment
   '3': '3',   // Disbursement
   '4': '4',   // Expenditure
-  '5': '5',   // Interest Repayment
+  '5': '5',   // Interest Payment
   '6': '6',   // Loan Repayment
   '7': '7',   // Reimbursement
   '8': '8',   // Purchase of Equity
   '9': '9',   // Sale of Equity
-  '11': '11', // Credit Guarantee
-  '12': '12', // Incoming Funds
-  '13': '13', // Commitment Cancellation
+  '10': '10', // Credit Guarantee
+  '11': '11', // Incoming Commitment
+  '12': '12', // Outgoing Pledge
+  '13': '13', // Incoming Pledge
   // Text mappings
-  'Incoming Funds': '12',
-  'Incoming Commitment': '1',
+  'Incoming Funds': '1',
   'Outgoing Commitment': '2',
   'Disbursement': '3',
   'Expenditure': '4',
   'Interest Payment': '5',
-  'Interest Repayment': '5',
+  'Interest Repayment': '5', // Legacy alias
   'Loan Repayment': '6',
   'Reimbursement': '7',
   'Purchase of Equity': '8',
   'Sale of Equity': '9',
-  'Credit Guarantee': '11',
-  'Commitment Cancellation': '13'
+  'Credit Guarantee': '10',
+  'Incoming Commitment': '11',
+  'Outgoing Pledge': '12',
+  'Incoming Pledge': '13',
+  'Commitment Cancellation': '13' // Legacy alias
 };
 
 const TIED_STATUS_MAP: Record<string, string> = {

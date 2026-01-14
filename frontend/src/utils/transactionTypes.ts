@@ -1,21 +1,26 @@
 import { TransactionType, TRANSACTION_TYPE_LABELS } from '@/types/transaction';
 
 /**
- * Legacy transaction type mapping for backward compatibility
+ * Legacy transaction type mapping for backward compatibility (IATI Standard v2.03)
  * Maps old single-letter codes to IATI numeric codes
  */
 const LEGACY_TYPE_MAPPING: Record<string, TransactionType> = {
   "C": "2",   // Commitment -> Outgoing Commitment
   "D": "3",   // Disbursement
   "E": "4",   // Expenditure
-  "IF": "12", // Incoming Funds
-  "IC": "1",  // Incoming Commitment
+  "IF": "1",  // Incoming Funds -> Incoming Funds (code 1)
+  "IC": "11", // Incoming Commitment -> Incoming Commitment (code 11)
+  "CG": "10", // Credit Guarantee
+  "OP": "12", // Outgoing Pledge
+  "IP": "13", // Incoming Pledge
   // Common variations
   "COMMITMENT": "2",
-  "DISBURSEMENT": "3", 
+  "DISBURSEMENT": "3",
   "EXPENDITURE": "4",
-  "INCOMING_FUNDS": "12",
-  "INCOMING_COMMITMENT": "1"
+  "INCOMING_FUNDS": "1",
+  "INCOMING_COMMITMENT": "11",
+  "OUTGOING_PLEDGE": "12",
+  "INCOMING_PLEDGE": "13"
 };
 
 /**
@@ -57,13 +62,13 @@ export function getTransactionTypeLabel(type: string | undefined | null): string
 }
 
 /**
- * Checks if a transaction type represents a commitment
+ * Checks if a transaction type represents a commitment (IATI codes 2 and 11)
  * @param type - Transaction type (any format)
  * @returns True if it's a commitment type
  */
 export function isCommitmentType(type: string | undefined | null): boolean {
   const normalizedType = normalizeTransactionType(type);
-  return normalizedType === '1' || normalizedType === '2';
+  return normalizedType === '2' || normalizedType === '11';
 }
 
 /**
@@ -87,13 +92,13 @@ export function isExpenditureType(type: string | undefined | null): boolean {
 }
 
 /**
- * Checks if a transaction type represents incoming funds
+ * Checks if a transaction type represents incoming funds (IATI code 1)
  * @param type - Transaction type (any format)
  * @returns True if it's an incoming funds type
  */
 export function isIncomingFundsType(type: string | undefined | null): boolean {
   const normalizedType = normalizeTransactionType(type);
-  return normalizedType === '12';
+  return normalizedType === '1';
 }
 
 /**
@@ -108,22 +113,23 @@ export function getTransactionTypeOptions() {
 }
 
 /**
- * Categorizes transaction types for financial calculations
+ * Categorizes transaction types for financial calculations (IATI Standard v2.03)
  * @param type - Transaction type (any format)
  * @returns Category: 'commitment', 'disbursement', 'expenditure', 'incoming', or 'other'
  */
 export function categorizeTransactionType(type: string | undefined | null): 'commitment' | 'disbursement' | 'expenditure' | 'incoming' | 'other' {
   const normalizedType = normalizeTransactionType(type);
-  
+
   switch (normalizedType) {
-    case '1':
-    case '2':
+    case '2':  // Outgoing Commitment
+    case '11': // Incoming Commitment
       return 'commitment';
-    case '3':
+    case '3':  // Disbursement
       return 'disbursement';
-    case '4':
+    case '4':  // Expenditure
       return 'expenditure';
-    case '12':
+    case '1':  // Incoming Funds
+    case '13': // Incoming Pledge
       return 'incoming';
     default:
       return 'other';

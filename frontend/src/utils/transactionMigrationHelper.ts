@@ -1,51 +1,56 @@
-// Migration helper for transitioning from old transaction types to IATI-compliant codes
+// Migration helper for transitioning from old transaction types to IATI-compliant codes (v2.03)
 
 import { TransactionType } from '@/types/transaction';
 
 // Map old letter codes to IATI numeric codes
 export const LEGACY_TRANSACTION_TYPE_MAP: Record<string, TransactionType> = {
-  'C': '2',  // Commitment -> Outgoing Commitment
-  'D': '3',  // Disbursement -> Disbursement  
-  'E': '4',  // Expenditure -> Expenditure
-  'IF': '12', // Incoming Funds -> Incoming Funds
-  'IR': '5',  // Interest Repayment -> Interest Repayment
+  'C': '2',   // Commitment -> Outgoing Commitment
+  'D': '3',   // Disbursement -> Disbursement
+  'E': '4',   // Expenditure -> Expenditure
+  'IF': '1',  // Incoming Funds -> Incoming Funds
+  'IR': '5',  // Interest Payment (legacy: Interest Repayment)
   'LR': '6',  // Loan Repayment -> Loan Repayment
-  'QP': '8',  // Purchase of Equity
-  'QS': '9',  // Sale of Equity
-  'CG': '11', // Credit Guarantee
+  'PE': '8',  // Purchase of Equity
+  'SE': '9',  // Sale of Equity
+  'CG': '10', // Credit Guarantee
   'R': '7',   // Reimbursement -> Reimbursement
+  'IC': '11', // Incoming Commitment
+  'OP': '12', // Outgoing Pledge
+  'IP': '13', // Incoming Pledge
 };
 
-// Reverse map for display purposes
+// Reverse map for display purposes (IATI Standard v2.03)
 export const TRANSACTION_ACRONYMS: Record<TransactionType, string> = {
-  '1': 'IC',   // Incoming Commitment
+  '1': 'IF',   // Incoming Funds
   '2': 'C',    // Outgoing Commitment
   '3': 'D',    // Disbursement
   '4': 'E',    // Expenditure
-  '5': 'IR',   // Interest Repayment
+  '5': 'IP',   // Interest Payment
   '6': 'LR',   // Loan Repayment
   '7': 'R',    // Reimbursement
-  '8': 'QP',   // Purchase of Equity
-  '9': 'QS',   // Sale of Equity
-  '11': 'CG',  // Credit Guarantee
-  '12': 'IF',  // Incoming Funds
-  '13': 'CC',  // Commitment Cancellation
+  '8': 'PE',   // Purchase of Equity
+  '9': 'SE',   // Sale of Equity
+  '10': 'CG',  // Credit Guarantee
+  '11': 'IC',  // Incoming Commitment
+  '12': 'OP',  // Outgoing Pledge
+  '13': 'IP',  // Incoming Pledge
 };
 
-// Old constants for backward compatibility
+// Transaction type labels (IATI Standard v2.03)
 export const TRANSACTION_TYPES = {
-  '1': 'Incoming Commitment',
+  '1': 'Incoming Funds',
   '2': 'Outgoing Commitment',
   '3': 'Disbursement',
   '4': 'Expenditure',
-  '5': 'Interest Repayment',
+  '5': 'Interest Payment',
   '6': 'Loan Repayment',
   '7': 'Reimbursement',
   '8': 'Purchase of Equity',
   '9': 'Sale of Equity',
-  '11': 'Credit Guarantee',
-  '12': 'Incoming Funds',
-  '13': 'Commitment Cancellation'
+  '10': 'Credit Guarantee',
+  '11': 'Incoming Commitment',
+  '12': 'Outgoing Pledge',
+  '13': 'Incoming Pledge'
 };
 
 export const TRANSACTION_STATUS = {

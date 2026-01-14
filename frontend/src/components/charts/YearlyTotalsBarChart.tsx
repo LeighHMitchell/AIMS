@@ -35,18 +35,20 @@ const CHART_COLORS = {
 
 // Transaction type configuration
 export const TRANSACTION_TYPE_CONFIG: Record<string, { label: string; color: string }> = {
-  '1': { label: 'Incoming Commitment', color: CHART_COLORS.blueSlate },
+  // IATI Standard v2.03 transaction types
+  '1': { label: 'Incoming Funds', color: CHART_COLORS.blueSlate },
   '2': { label: 'Outgoing Commitment', color: CHART_COLORS.coolSteel },
   '3': { label: 'Disbursement', color: CHART_COLORS.primaryScarlet },
   '4': { label: 'Expenditure', color: CHART_COLORS.paleSlate },
-  '5': { label: 'Interest Repayment', color: CHART_COLORS.blueSlate },
+  '5': { label: 'Interest Payment', color: CHART_COLORS.blueSlate },
   '6': { label: 'Loan Repayment', color: CHART_COLORS.coolSteel },
   '7': { label: 'Reimbursement', color: CHART_COLORS.primaryScarlet },
   '8': { label: 'Purchase of Equity', color: CHART_COLORS.blueSlate },
   '9': { label: 'Sale of Equity', color: CHART_COLORS.coolSteel },
-  '11': { label: 'Credit Guarantee', color: CHART_COLORS.paleSlate },
-  '12': { label: 'Incoming Funds', color: CHART_COLORS.blueSlate },
-  '13': { label: 'Commitment Cancellation', color: CHART_COLORS.primaryScarlet },
+  '10': { label: 'Credit Guarantee', color: CHART_COLORS.paleSlate },
+  '11': { label: 'Incoming Commitment', color: CHART_COLORS.blueSlate },
+  '12': { label: 'Outgoing Pledge', color: CHART_COLORS.coolSteel },
+  '13': { label: 'Incoming Pledge', color: CHART_COLORS.primaryScarlet },
 }
 
 // Single series data point (for budgets, planned disbursements)
