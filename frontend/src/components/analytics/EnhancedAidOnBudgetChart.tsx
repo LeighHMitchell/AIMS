@@ -23,6 +23,7 @@ import { Progress } from "@/components/ui/progress";
 import { AlertCircle, RefreshCw, TrendingUp, Wallet, PiggyBank, CircleDollarSign, HandCoins, HelpCircle, BarChart3, Table2, ChevronDown, ChevronRight, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { HelpTextTooltip } from "@/components/ui/help-text-tooltip";
+import { TableSkeleton } from "@/components/ui/skeleton-loader";
 import {
   Table,
   TableBody,
@@ -1164,10 +1165,7 @@ export function EnhancedAidOnBudgetChart({ refreshKey }: EnhancedAidOnBudgetChar
             {tableMode === "activities" && (
               <div className="border rounded-lg overflow-hidden">
                 {activitiesLoading ? (
-                  <div className="p-8 text-center">
-                    <RefreshCw className="h-6 w-6 animate-spin mx-auto mb-2 text-gray-400" />
-                    <p className="text-sm text-gray-500">Loading activities...</p>
-                  </div>
+                  <TableSkeleton rows={5} columns={7} />
                 ) : activitiesData?.activities && activitiesData.activities.length > 0 ? (
                   <>
                     <Table>

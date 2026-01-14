@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useMemo, useState } from 'react'
+import React, { useMemo, useState, useCallback } from 'react'
 import {
   ResponsiveContainer,
   BarChart,
@@ -14,13 +14,20 @@ import {
   Legend,
 } from 'recharts'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Button } from '@/components/ui/button'
-import { ChevronDown, ChevronUp, BarChart3, LineChart as LineChartIcon, Table2 } from 'lucide-react'
+import { ChevronDown, ChevronUp, BarChart3, LineChart as LineChartIcon, Table2, Maximize2, CalendarIcon } from 'lucide-react'
 import {
   ToggleGroup,
   ToggleGroupItem,
 } from "@/components/ui/toggle-group"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { CustomYear, crossesCalendarYear, getCustomYearLabel } from '@/types/custom-years'
 
 type ViewMode = 'bar' | 'line' | 'table'
 
@@ -81,6 +88,19 @@ interface YearlyTotalsBarChartProps {
   showViewModeToggle?: boolean
   // Optional additional controls to render in the header (e.g., CustomYearSelector)
   headerControls?: React.ReactNode
+  // Selected custom year for formatting X-axis labels (e.g., "AU FY 2024-25")
+  selectedYear?: CustomYear | null
+  // Year range filter controls
+  startYear?: number | null
+  endYear?: number | null
+  onStartYearChange?: (year: number | null) => void
+  onEndYearChange?: (year: number | null) => void
+  // Available year range for selectors (defaults to 2010 to current year + 5)
+  minYear?: number
+  maxYear?: number
+  // Actual data range (for "Data" button) - years that have data before filtering
+  dataMinYear?: number | null
+  dataMaxYear?: number | null
 }
 
 // Currency formatters matching CumulativeFinancialOverview
@@ -133,11 +153,37 @@ export function YearlyTotalsBarChart({
   defaultViewMode = 'bar',
   showViewModeToggle = true,
   headerControls,
+  selectedYear,
+  startYear,
+  endYear,
+  onStartYearChange,
+  onEndYearChange,
+  minYear = 2010,
+  maxYear = new Date().getFullYear() + 5,
+  dataMinYear,
+  dataMaxYear,
 }: YearlyTotalsBarChartProps) {
   // Collapsible state
   const [isCollapsed, setIsCollapsed] = useState(defaultCollapsed)
   // View mode state
   const [viewMode, setViewMode] = useState<ViewMode>(defaultViewMode)
+  // Expanded view state
+  const [isExpanded, setIsExpanded] = useState(false)
+
+  // Format year label based on selected custom year
+  const formatYearLabel = useCallback((year: number | string): string => {
+    const yearNum = typeof year === 'string' ? parseInt(year) : year
+    if (!selectedYear) {
+      return yearNum.toString()
+    }
+    const prefix = selectedYear.shortName || selectedYear.name
+    if (crossesCalendarYear(selectedYear)) {
+      // Spans two calendar years - show as "AU FY 2024-25"
+      return `${prefix} ${yearNum}-${String(yearNum + 1).slice(-2)}`
+    }
+    // Same calendar year - show as "CY 2024"
+    return `${prefix} ${yearNum}`
+  }, [selectedYear])
 
   // Determine which mode we're in
   const isMultiSeries = !!multiSeriesData && multiSeriesData.length > 0
@@ -189,7 +235,7 @@ export function YearlyTotalsBarChart({
       return (
         <div className="bg-white border border-slate-200 rounded-lg shadow-lg overflow-hidden">
           <div className="bg-slate-100 px-3 py-2 border-b border-slate-200">
-            <p className="font-semibold text-slate-900 text-sm">{label}</p>
+            <p className="font-semibold text-slate-900 text-sm">{formatYearLabel(label)}</p>
           </div>
           <div className="p-2">
             <table className="w-full text-sm">
@@ -232,7 +278,7 @@ export function YearlyTotalsBarChart({
     if (active && payload && payload.length && payload[0].value > 0) {
       return (
         <div className="bg-white border border-slate-200 rounded-lg shadow-lg px-3 py-2">
-          <p className="font-semibold text-slate-900 text-sm">{label}</p>
+          <p className="font-semibold text-slate-900 text-sm">{formatYearLabel(label)}</p>
           <p className="font-bold text-slate-900 text-lg">{formatTooltipValue(payload[0].value)}</p>
         </div>
       )
@@ -304,7 +350,7 @@ export function YearlyTotalsBarChart({
                 const rowTotal = activeTransactionTypes.reduce((sum, type) => sum + (Number(row[type]) || 0), 0)
                 return (
                   <tr key={row.year} className={idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/50'}>
-                    <td className="py-2.5 px-4 font-medium text-slate-900">{row.year}</td>
+                    <td className="py-2.5 px-4 font-medium text-slate-900">{formatYearLabel(row.year)}</td>
                     {activeTransactionTypes.map(type => (
                       <td key={type} className="text-right py-2.5 px-4 text-slate-700 font-mono text-xs">
                         {row[type] ? formatTooltipValue(Number(row[type])) : '—'}
@@ -350,7 +396,7 @@ export function YearlyTotalsBarChart({
           <tbody>
             {chartData.map((row, idx) => (
               <tr key={row.year} className={idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/50'}>
-                <td className="py-2.5 px-4 font-medium text-slate-900">{row.year}</td>
+                <td className="py-2.5 px-4 font-medium text-slate-900">{formatYearLabel(row.year)}</td>
                 <td className="text-right py-2.5 px-4 text-slate-700 font-mono text-xs">
                   {row.total ? formatTooltipValue(Number(row.total)) : '—'}
                 </td>
@@ -371,18 +417,22 @@ export function YearlyTotalsBarChart({
   }
 
   // Line chart component
-  const LineChartView = () => (
-    <ResponsiveContainer width="100%" height={height}>
+  const LineChartView = ({ expanded = false }: { expanded?: boolean }) => (
+    <ResponsiveContainer width="100%" height={expanded ? 500 : height}>
       <LineChart
         data={chartData}
-        margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
+        margin={{ top: 20, right: 30, left: 20, bottom: selectedYear ? 40 : 20 }}
       >
         <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e1" opacity={0.5} />
         <XAxis
           dataKey="year"
           stroke="#64748B"
-          fontSize={12}
+          fontSize={11}
           tickLine={false}
+          tickFormatter={formatYearLabel}
+          angle={selectedYear && crossesCalendarYear(selectedYear) ? -25 : 0}
+          textAnchor={selectedYear && crossesCalendarYear(selectedYear) ? "end" : "middle"}
+          height={selectedYear && crossesCalendarYear(selectedYear) ? 60 : 30}
         />
         <YAxis
           tickFormatter={formatCurrency}
@@ -428,18 +478,22 @@ export function YearlyTotalsBarChart({
   )
 
   // Bar chart component
-  const BarChartView = () => (
-    <ResponsiveContainer width="100%" height={height}>
+  const BarChartView = ({ expanded = false }: { expanded?: boolean }) => (
+    <ResponsiveContainer width="100%" height={expanded ? 500 : height}>
       <BarChart
         data={chartData}
-        margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
+        margin={{ top: 20, right: 30, left: 20, bottom: selectedYear ? 40 : 20 }}
       >
         <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e1" opacity={0.5} />
         <XAxis
           dataKey="year"
           stroke="#64748B"
-          fontSize={12}
+          fontSize={11}
           tickLine={false}
+          tickFormatter={formatYearLabel}
+          angle={selectedYear && crossesCalendarYear(selectedYear) ? -25 : 0}
+          textAnchor={selectedYear && crossesCalendarYear(selectedYear) ? "end" : "middle"}
+          height={selectedYear && crossesCalendarYear(selectedYear) ? 60 : 30}
         />
         <YAxis
           tickFormatter={formatCurrency}
@@ -513,6 +567,163 @@ export function YearlyTotalsBarChart({
     </ToggleGroup>
   )
 
+  // Generate year options (ascending order for grid display)
+  const yearOptions = useMemo(() => {
+    const years: number[] = []
+    for (let y = minYear; y <= maxYear; y++) {
+      years.push(y)
+    }
+    return years
+  }, [minYear, maxYear])
+
+  // Check if a year is between start and end (for highlighting)
+  const isYearInRange = useCallback((year: number) => {
+    if (!startYear || !endYear) return false
+    return year > Math.min(startYear, endYear) && year < Math.max(startYear, endYear)
+  }, [startYear, endYear])
+
+  // Handle year click for range selection
+  const handleYearClick = useCallback((year: number) => {
+    if (!startYear && !endYear) {
+      // No selection yet - set as start
+      onStartYearChange?.(year)
+      onEndYearChange?.(year)
+    } else if (startYear && endYear && startYear === endYear) {
+      // Single year selected - extend range
+      if (year < startYear) {
+        onStartYearChange?.(year)
+      } else if (year > endYear) {
+        onEndYearChange?.(year)
+      } else {
+        // Same year clicked - reset
+        onStartYearChange?.(year)
+        onEndYearChange?.(year)
+      }
+    } else if (startYear && endYear) {
+      // Range selected - start new selection
+      onStartYearChange?.(year)
+      onEndYearChange?.(year)
+    }
+  }, [startYear, endYear, onStartYearChange, onEndYearChange])
+
+  // Actual data range - prefer passed props, fallback to calculating from data
+  const actualDataRange = useMemo(() => {
+    // Use passed props if available
+    if (dataMinYear !== undefined && dataMaxYear !== undefined && dataMinYear !== null && dataMaxYear !== null) {
+      return { minYear: dataMinYear, maxYear: dataMaxYear }
+    }
+    // Fallback: calculate from current data (may be filtered)
+    const allYears: number[] = []
+    if (singleSeriesData) {
+      singleSeriesData.forEach(d => allYears.push(d.year))
+    }
+    if (multiSeriesData) {
+      multiSeriesData.forEach(d => allYears.push(d.year))
+    }
+    if (allYears.length === 0) return null
+    return {
+      minYear: Math.min(...allYears),
+      maxYear: Math.max(...allYears)
+    }
+  }, [dataMinYear, dataMaxYear, singleSeriesData, multiSeriesData])
+
+  // Select all years
+  const selectAllYears = useCallback(() => {
+    onStartYearChange?.(null)
+    onEndYearChange?.(null)
+  }, [onStartYearChange, onEndYearChange])
+
+  // Select only years with actual data
+  const selectDataRange = useCallback(() => {
+    if (actualDataRange) {
+      onStartYearChange?.(actualDataRange.minYear)
+      onEndYearChange?.(actualDataRange.maxYear)
+    }
+  }, [actualDataRange, onStartYearChange, onEndYearChange])
+
+  // Get formatted year label
+  const getYearDisplayLabel = useCallback((year: number) => {
+    if (selectedYear) {
+      return getCustomYearLabel(selectedYear, year)
+    }
+    return year.toString()
+  }, [selectedYear])
+
+  // Year range selector component
+  const YearRangeSelector = () => {
+    if (!onStartYearChange && !onEndYearChange) return null
+
+    const hasSelection = startYear !== null || endYear !== null
+    const displayLabel = !hasSelection
+      ? 'All Years'
+      : startYear === endYear
+        ? getYearDisplayLabel(startYear!)
+        : `${getYearDisplayLabel(startYear!)} – ${getYearDisplayLabel(endYear!)}`
+
+    return (
+      <div className="flex gap-1 border rounded-lg p-1 bg-white">
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="sm" className="h-8 gap-1 text-xs">
+              <CalendarIcon className="h-4 w-4" />
+              {displayLabel}
+              <svg className="h-4 w-4 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start" className="p-3 w-auto">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs font-medium text-slate-700">Select Year Range</span>
+              <div className="flex gap-1">
+                <button
+                  onClick={selectAllYears}
+                  className="text-xs text-slate-500 hover:text-slate-700 px-2 py-0.5 hover:bg-slate-100 rounded"
+                >
+                  All
+                </button>
+                <button
+                  onClick={selectDataRange}
+                  className="text-xs text-slate-500 hover:text-slate-700 px-2 py-0.5 hover:bg-slate-100 rounded"
+                >
+                  Data
+                </button>
+              </div>
+            </div>
+            <div className="grid grid-cols-3 gap-1">
+              {yearOptions.map((year) => {
+                const isStartOrEnd = hasSelection && (year === startYear || year === endYear)
+                const inRange = isYearInRange(year)
+
+                return (
+                  <button
+                    key={year}
+                    onClick={() => handleYearClick(year)}
+                    className={`
+                      px-2 py-1.5 text-xs font-medium rounded transition-colors whitespace-nowrap
+                      ${isStartOrEnd
+                        ? 'bg-primary text-primary-foreground'
+                        : inRange
+                          ? 'bg-primary/20 text-primary'
+                          : 'text-slate-600 hover:bg-slate-100'
+                      }
+                    `}
+                    title="Click to select start, then click another to select end"
+                  >
+                    {getYearDisplayLabel(year)}
+                  </button>
+                )
+              })}
+            </div>
+            <p className="text-[10px] text-slate-400 mt-2 text-center">
+              Click start year, then click end year
+            </p>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+    )
+  }
+
   if (loading) {
     return (
       <Card className="bg-white border-slate-200">
@@ -532,8 +743,18 @@ export function YearlyTotalsBarChart({
             </div>
           </div>
           <div className="flex items-center gap-2">
-            {headerControls}
+            {!isCollapsed && headerControls}
+            {!isCollapsed && <YearRangeSelector />}
             {showViewModeToggle && <ViewModeToggle />}
+            <Button
+              variant="ghost"
+              size="sm"
+              disabled
+              className="h-8 w-8 p-0"
+              title="Expand to full screen"
+            >
+              <Maximize2 className="h-4 w-4 text-slate-400" />
+            </Button>
           </div>
         </CardHeader>
         {!isCollapsed && (
@@ -548,43 +769,97 @@ export function YearlyTotalsBarChart({
   const hasData = chartData.length > 0
 
   return (
-    <Card className="bg-white border-slate-200">
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <div className="flex items-center gap-2">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setIsCollapsed(!isCollapsed)}
-            className="h-8 w-8 p-0"
-          >
-            {isCollapsed ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
-          </Button>
-          <div>
-            <CardTitle className="text-lg font-semibold text-slate-900">{title}</CardTitle>
-            {description && <CardDescription>{description}</CardDescription>}
-          </div>
-        </div>
-        <div className="flex items-center gap-2">
-          {headerControls}
-          {showViewModeToggle && hasData && <ViewModeToggle />}
-        </div>
-      </CardHeader>
-      {!isCollapsed && (
-        <CardContent>
-          {hasData ? (
-            <>
-              {viewMode === 'bar' && <BarChartView />}
-              {viewMode === 'line' && <LineChartView />}
-              {viewMode === 'table' && <TableView />}
-            </>
-          ) : (
-            <div className="flex items-center justify-center text-slate-400" style={{ height }}>
-              <p className="text-sm">No data available</p>
+    <>
+      <Card className="bg-white border-slate-200">
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setIsCollapsed(!isCollapsed)}
+              className="h-8 w-8 p-0"
+            >
+              {isCollapsed ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
+            </Button>
+            <div>
+              <CardTitle className="text-lg font-semibold text-slate-900">{title}</CardTitle>
+              {description && <CardDescription>{description}</CardDescription>}
             </div>
-          )}
-        </CardContent>
-      )}
-    </Card>
+          </div>
+          <div className="flex items-center gap-2">
+            {!isCollapsed && headerControls}
+            {!isCollapsed && <YearRangeSelector />}
+            {showViewModeToggle && hasData && <ViewModeToggle />}
+            {hasData && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setIsExpanded(true)}
+                className="h-8 w-8 p-0 hover:bg-slate-100"
+                title="Expand to full screen"
+              >
+                <Maximize2 className="h-4 w-4 text-slate-600" />
+              </Button>
+            )}
+          </div>
+        </CardHeader>
+        {!isCollapsed && (
+          <CardContent>
+            {hasData ? (
+              <>
+                {viewMode === 'bar' && <BarChartView />}
+                {viewMode === 'line' && <LineChartView />}
+                {viewMode === 'table' && <TableView />}
+              </>
+            ) : (
+              <div className="flex items-center justify-center text-slate-400" style={{ height }}>
+                <p className="text-sm">No data available</p>
+              </div>
+            )}
+          </CardContent>
+        )}
+      </Card>
+
+      {/* Expanded View Dialog */}
+      <Dialog open={isExpanded} onOpenChange={setIsExpanded}>
+        <DialogContent className="max-w-[1800px] w-[98vw] max-h-[95vh] overflow-y-auto">
+          <DialogHeader>
+            <div className="flex items-start justify-between">
+              <div className="flex-1 pr-8">
+                <DialogTitle className="text-2xl font-semibold text-slate-800">
+                  {title}
+                </DialogTitle>
+                {description && (
+                  <DialogDescription className="text-base mt-2">
+                    {description}
+                  </DialogDescription>
+                )}
+              </div>
+              <div className="flex items-center gap-3 flex-wrap">
+                {headerControls}
+                <YearRangeSelector />
+                {showViewModeToggle && <ViewModeToggle />}
+              </div>
+            </div>
+          </DialogHeader>
+
+          {/* Chart content */}
+          <div className="mt-6">
+            {hasData ? (
+              <>
+                {viewMode === 'bar' && <BarChartView expanded />}
+                {viewMode === 'line' && <LineChartView expanded />}
+                {viewMode === 'table' && <TableView />}
+              </>
+            ) : (
+              <div className="flex items-center justify-center text-slate-400 h-[500px]">
+                <p className="text-sm">No data available</p>
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
   )
 }
 

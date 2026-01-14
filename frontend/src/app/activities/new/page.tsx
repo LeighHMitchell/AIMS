@@ -48,6 +48,7 @@ import { findSimilarActivities, ActivityMatch } from "@/lib/activity-matching";
 import { getActivityPermissions, ActivityContributor } from "@/lib/activity-permissions";
 import { Partner } from "@/hooks/usePartners";
 import { AidEffectivenessForm } from "@/components/AidEffectivenessForm";
+import { LoadingText } from "@/components/ui/loading-text";
 import SDGAlignmentSection from "@/components/SDGAlignmentSection";
 import TagsSection from "@/components/TagsSection";
 import WorkingGroupsSection from "@/components/WorkingGroupsSection";
@@ -5563,7 +5564,7 @@ export default function NewActivityPage() {
         console.error('Activity Editor Error:', error, errorInfo);
       }}
     >
-      <Suspense fallback={<div className="flex items-center justify-center min-h-screen">Loading...</div>}>
+      <Suspense fallback={<div className="flex items-center justify-center min-h-screen"><LoadingText>Loading activity editor...</LoadingText></div>}>
         <NewActivityPageContent />
       </Suspense>
     </AsyncErrorBoundary>

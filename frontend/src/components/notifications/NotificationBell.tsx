@@ -10,11 +10,12 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Bell, Check, HelpCircle, MessageSquare, ExternalLink, Calendar, ClipboardList, AlertTriangle, CheckCircle2, ArrowRightLeft, Share2 } from 'lucide-react';
+import { Bell, Check, HelpCircle, MessageSquare, ExternalLink, Calendar, ClipboardList, AlertTriangle, CheckCircle2, ArrowRightLeft, Share2, UserPlus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
 import { formatDistanceToNow } from 'date-fns';
 import { motion, useReducedMotion, type Variants } from 'framer-motion';
+import { LoadingText } from '@/components/ui/loading-text';
 
 const ringVariants: Variants = {
   idle: { rotate: 0 },
@@ -182,30 +183,32 @@ export function NotificationBell({ userId, onOpen }: NotificationBellProps) {
   };
 
   const getNotificationIcon = (type: string) => {
+    const iconClass = "h-4 w-4 text-gray-500";
     switch (type) {
       case 'faq_question_answered':
-        return <HelpCircle className="h-4 w-4 text-gray-500" />;
+        return <HelpCircle className={iconClass} />;
       case 'faq_new_question':
-        return <MessageSquare className="h-4 w-4 text-gray-500" />;
+        return <MessageSquare className={iconClass} />;
       case 'calendar_event_pending':
-        return <Calendar className="h-4 w-4 text-gray-500" />;
+        return <Calendar className={iconClass} />;
       case 'activity_comment':
-        return <MessageSquare className="h-4 w-4 text-blue-500" />;
-      // Task notifications
+        return <MessageSquare className={iconClass} />;
       case 'task_assigned':
-        return <ClipboardList className="h-4 w-4 text-blue-500" />;
+        return <ClipboardList className={iconClass} />;
       case 'task_deadline_reminder':
-        return <AlertTriangle className="h-4 w-4 text-orange-500" />;
+        return <AlertTriangle className={iconClass} />;
       case 'task_completed':
-        return <CheckCircle2 className="h-4 w-4 text-green-500" />;
+        return <CheckCircle2 className={iconClass} />;
       case 'task_declined':
-        return <ClipboardList className="h-4 w-4 text-gray-500" />;
+        return <ClipboardList className={iconClass} />;
       case 'task_reassigned':
-        return <ArrowRightLeft className="h-4 w-4 text-purple-500" />;
+        return <ArrowRightLeft className={iconClass} />;
       case 'task_shared':
-        return <Share2 className="h-4 w-4 text-indigo-500" />;
+        return <Share2 className={iconClass} />;
+      case 'new_user_registered':
+        return <UserPlus className={iconClass} />;
       default:
-        return <Bell className="h-4 w-4 text-gray-500" />;
+        return <Bell className={iconClass} />;
     }
   };
 
@@ -256,7 +259,7 @@ export function NotificationBell({ userId, onOpen }: NotificationBellProps) {
 
         {loading ? (
           <div className="py-8 text-center text-sm text-gray-500">
-            Loading...
+            <LoadingText>Loading notifications...</LoadingText>
           </div>
         ) : notifications.length === 0 ? (
           <div className="py-8 text-center text-sm text-gray-500">

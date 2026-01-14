@@ -175,7 +175,7 @@ export const OrganizationTable: React.FC<OrganizationTableProps> = ({
 
   return (
     <div className="bg-white rounded-md shadow-sm border border-gray-200">
-      <div className="overflow-x-auto overflow-y-visible">
+      <div className="overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow>
@@ -285,7 +285,7 @@ export const OrganizationTable: React.FC<OrganizationTableProps> = ({
                                 <span className="flex-1">
                                   {org.name}
                                   {org.acronym && (
-                                    <span className="text-muted-foreground font-normal">
+                                    <span>
                                       {' '}({org.acronym})
                                     </span>
                                   )}

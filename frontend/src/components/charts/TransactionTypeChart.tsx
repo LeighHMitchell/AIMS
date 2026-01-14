@@ -12,9 +12,10 @@ import {
   YAxis,
   CartesianGrid,
 } from "recharts";
-import { Loader2, AlertCircle, BarChart3, PieChart as PieChartIcon } from "lucide-react";
+import { AlertCircle, BarChart3, PieChart as PieChartIcon } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { PieChartSkeleton, BarChartSkeleton } from "@/components/ui/skeleton-loader";
 
 interface TransactionTypeData {
   transactionType: string;
@@ -132,11 +133,7 @@ export const TransactionTypeChart: React.FC<TransactionTypeChartProps> = ({
   // Compact mode renders just the chart without filters
   if (compact) {
     if (loading) {
-      return (
-        <div className="h-full flex items-center justify-center">
-          <Loader2 className="h-6 w-6 animate-spin text-slate-400" />
-        </div>
-      );
+      return <PieChartSkeleton height="100%" />;
     }
     if (error || !data || data.length === 0) {
       return (
@@ -173,14 +170,7 @@ export const TransactionTypeChart: React.FC<TransactionTypeChartProps> = ({
   }
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center h-96">
-        <div className="flex items-center gap-2 text-muted-foreground">
-          <Loader2 className="h-6 w-6 animate-spin" />
-          <span>Loading transaction type data...</span>
-        </div>
-      </div>
-    );
+    return <PieChartSkeleton height="400px" />;
   }
 
   if (error) {

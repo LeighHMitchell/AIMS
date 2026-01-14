@@ -31,6 +31,7 @@ import {
   TooltipProps,
 } from 'recharts'
 import { Download, TrendingUp, LineChart as LineChartIcon, Table as TableIcon, CalendarIcon, Filter, Check, Search } from 'lucide-react'
+import { LoadingText } from '@/components/ui/loading-text'
 import html2canvas from 'html2canvas'
 
 // Color palette based on brand colors - distinct colors for data visualization
@@ -876,7 +877,7 @@ export function SectorDisbursementOverTime({
   if (compact) {
     // Show loading until: data loaded, custom years loaded, AND defaults initialized
     if ((loading && data.length === 0) || customYearsLoading || !hasInitialized) {
-      return <div className="h-full w-full flex items-center justify-center"><div className="text-muted-foreground">Loading...</div></div>
+      return <div className="h-full w-full flex items-center justify-center"><LoadingText>Loading...</LoadingText></div>
     }
     if (error) {
       return <div className="h-full w-full flex items-center justify-center text-red-500"><p className="text-sm">{error}</p></div>
@@ -929,7 +930,7 @@ export function SectorDisbursementOverTime({
   if (loading && data.length === 0) {
     return (
       <div className="h-80 flex items-center justify-center">
-        <div className="text-muted-foreground">Loading...</div>
+        <LoadingText>Loading disbursement data...</LoadingText>
       </div>
     )
   }

@@ -14,17 +14,12 @@ import {
   Label,
   Cell,
   Legend,
+  LabelList,
 } from 'recharts'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Info, AlertCircle } from 'lucide-react'
-import {
-  Tooltip as UITooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/components/ui/tooltip'
+import { AlertCircle } from 'lucide-react'
 import { getOrgTypeLabel } from '@/lib/org-type-mappings'
 
 /**
@@ -347,24 +342,6 @@ export function OrganizationalPositioningMap({
           <span className="text-sm text-slate-600">organizations</span>
         </div>
 
-        <TooltipProvider>
-          <UITooltip>
-            <TooltipTrigger asChild>
-              <Button variant="ghost" size="sm" className="gap-1">
-                <Info className="h-4 w-4" />
-                <span className="text-xs">How to read</span>
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent className="max-w-xs">
-              <p className="text-xs">
-                <strong>X-axis:</strong> Humanitarian (left) vs Development (right) focus<br />
-                <strong>Y-axis:</strong> Net Funder (top) vs Net Implementer (bottom)<br />
-                <strong>Size:</strong> Total transaction volume<br />
-                <strong>Color:</strong> Organization type
-              </p>
-            </TooltipContent>
-          </UITooltip>
-        </TooltipProvider>
       </div>
 
       {/* Chart */}
@@ -429,6 +406,29 @@ export function OrganizationalPositioningMap({
                   strokeWidth={entry.rank <= topNLabels ? 2 : 0}
                 />
               ))}
+              <LabelList
+                dataKey="displayName"
+                position="top"
+                offset={8}
+                style={{ fontSize: 10, fill: '#4c5568', fontWeight: 500 }}
+                content={(props: any) => {
+                  const { x, y, value, index } = props
+                  const entry = chartData[index]
+                  if (!entry || entry.rank > topNLabels) return null
+                  return (
+                    <text
+                      x={x}
+                      y={y - 8}
+                      textAnchor="middle"
+                      fill="#4c5568"
+                      fontSize={10}
+                      fontWeight={500}
+                    >
+                      {value}
+                    </text>
+                  )
+                }}
+              />
             </Scatter>
           </ScatterChart>
         </ResponsiveContainer>
@@ -466,13 +466,15 @@ export function OrganizationalPositioningMap({
         </div>
       </div>
 
-      {/* Methodology note */}
-      <p className="text-xs leading-relaxed" style={{ color: '#7b95a7' }}>
-        Organizations positioned using explicit transaction behaviour rather than latent embeddings.
-        X-axis calculated from humanitarian vs development transaction values. Y-axis calculated from
-        net provider vs receiver flows. Bubble size represents total disbursement volume.
-        Only organizations with &gt;$100K in transactions shown.
-      </p>
+      {/* Description */}
+      <div className="text-sm text-slate-600 leading-relaxed space-y-3">
+        <p>
+          This chart shows where organisations sit in the aid ecosystem based on observed financial behaviour, rather than stated mandates or organisational labels. Each organisation is positioned using two dimensions derived from transaction data. The horizontal axis reflects whether an organisation's funding is directed primarily toward humanitarian activities such as emergency relief and disaster response, or toward development activities such as infrastructure, education, and long-term service delivery. The vertical axis reflects whether an organisation acts mainly as a net funder, providing resources to others, or as a net implementer, receiving funding to deliver programmes. Together, these axes form four quadrants that highlight different functional roles within the system, including humanitarian funders, development funders, humanitarian implementers, and development implementers. The size of each bubble represents the total volume of disbursement transactions associated with that organisation over the selected period. Positions are calculated from actual financial flows, using transaction-level data with activity-level fallback where needed, ensuring that organisational roles reflect how money moves in practice rather than how organisations self-identify.
+        </p>
+        <p className="text-xs text-slate-500">
+          <strong>METHODOLOGY:</strong> X-axis (Humanitarian ↔ Development) is calculated from transaction humanitarian flags with activity-level fallback. Y-axis (Funder ↔ Implementer) shows net provider vs receiver transaction flows, normalized across all organizations. Data source is disbursement transactions only, reflecting realized behavior.
+        </p>
+      </div>
     </div>
   )
 }

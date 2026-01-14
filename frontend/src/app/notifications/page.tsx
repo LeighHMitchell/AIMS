@@ -32,7 +32,7 @@ export default function NotificationsPage() {
 
   return (
     <MainLayout>
-      <div className="max-w-4xl mx-auto">
+      <div className="w-full">
         <div className="mb-8">
           <div className="flex items-center gap-3">
             <Bell className="h-8 w-8 text-gray-700" />

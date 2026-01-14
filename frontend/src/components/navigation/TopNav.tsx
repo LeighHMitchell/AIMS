@@ -1,12 +1,12 @@
 "use client"
 
 import React, { useState } from "react"
-import { useRouter, usePathname } from "next/navigation"
+import { usePathname } from "next/navigation"
 import Link from "next/link"
 import { Menu } from "bloom-menu"
 import { Badge } from "@/components/ui/badge"
 import { UserAvatar } from "@/components/ui/user-avatar"
-import { LogOut, Briefcase, Settings, Shield, MessageSquare, Eye, HelpCircle, Share, Info } from "lucide-react"
+import { LogOut, Briefcase, Settings, Shield, MessageSquare, Eye, HelpCircle, Share, Info, Bell } from "lucide-react"
 import { toast } from "sonner"
 import { USER_ROLES } from "@/types/user"
 import { getRoleBadgeVariant, getRoleDisplayLabel } from "@/lib/role-badge-utils"
@@ -42,7 +42,6 @@ const itemClass = "flex items-center gap-2 rounded-md px-3 py-2 text-sm text-neu
 const dangerItemClass = "flex items-center gap-2 rounded-md px-3 py-2 text-sm text-red-500 hover:text-red-600 cursor-pointer transition-colors"
 
 export function TopNav({ user, onLogout }: TopNavProps) {
-  const router = useRouter();
   const pathname = usePathname();
   const [isFeedbackModalOpen, setIsFeedbackModalOpen] = useState(false);
   const [isAskQuestionModalOpen, setIsAskQuestionModalOpen] = useState(false);
@@ -160,15 +159,20 @@ export function TopNav({ user, onLogout }: TopNavProps) {
 
                   <div className="border-t border-neutral-100 my-1" />
 
-                  <Menu.Item className={itemClass} onSelect={() => router.push("/profile")}>
+                  <Link href="/profile" className={itemClass} onClick={() => setIsMenuOpen(false)}>
                     <Settings className="h-4 w-4" />
                     <span>My Profile</span>
-                  </Menu.Item>
+                  </Link>
 
-                  <Menu.Item className={itemClass} onSelect={() => router.push("/dashboard?tab=my-portfolio")}>
+                  <Link href="/dashboard?tab=my-portfolio" className={itemClass} onClick={() => setIsMenuOpen(false)}>
                     <Briefcase className="h-4 w-4" />
                     <span>My Portfolio</span>
-                  </Menu.Item>
+                  </Link>
+
+                  <Link href="/notifications" className={itemClass} onClick={() => setIsMenuOpen(false)}>
+                    <Bell className="h-4 w-4" />
+                    <span>Notifications</span>
+                  </Link>
 
                   <Menu.Item className={itemClass} onSelect={() => setIsAskQuestionModalOpen(true)}>
                     <HelpCircle className="h-4 w-4" />
@@ -183,19 +187,19 @@ export function TopNav({ user, onLogout }: TopNavProps) {
                   </Menu.Item>
 
                   {user.role === USER_ROLES.SUPER_USER && (
-                    <Menu.Item className={itemClass} onSelect={() => router.push("/admin?tab=feedback")}>
+                    <Link href="/admin?tab=feedback" className={itemClass} onClick={() => setIsMenuOpen(false)}>
                       <Eye className="h-4 w-4" />
                       <span>View Feedback</span>
-                    </Menu.Item>
+                    </Link>
                   )}
 
                   <div className="border-t border-neutral-100 my-1" />
 
                   {user.role === USER_ROLES.SUPER_USER && (
-                    <Menu.Item className={itemClass} onSelect={() => router.push("/admin")}>
+                    <Link href="/admin" className={itemClass} onClick={() => setIsMenuOpen(false)}>
                       <Shield className="h-4 w-4" />
                       <span>Admin</span>
-                    </Menu.Item>
+                    </Link>
                   )}
 
                   <div className="border-t border-neutral-100 my-1" />

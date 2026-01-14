@@ -27,6 +27,7 @@ import {
 } from '@/components/ui/table'
 import { useSectorAllocationMode, SectorAllocationMode } from '@/hooks/use-sector-allocation-mode'
 import { cn } from '@/lib/utils'
+import { LoadingText } from '@/components/ui/loading-text'
 
 interface SectorAllocationModeToggleProps {
   activityId: string
@@ -102,7 +103,7 @@ export function SectorAllocationModeToggle({
     return (
       <div className={cn("flex items-center gap-2", className)}>
         <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-        <span className="text-sm text-muted-foreground">Loading...</span>
+        <LoadingText className="text-sm">Loading...</LoadingText>
       </div>
     )
   }

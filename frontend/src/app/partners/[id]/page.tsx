@@ -36,6 +36,7 @@ import {
 } from "lucide-react";
 import { format } from "date-fns";
 import { LEGACY_TRANSACTION_TYPE_MAP } from "@/utils/transactionMigrationHelper";
+import { LoadingText } from "@/components/ui/loading-text";
 import {
   ResponsiveContainer,
   BarChart as RechartsBarChart,
@@ -254,7 +255,7 @@ export default function PartnerProfilePage() {
     return (
       <MainLayout>
         <div className="flex items-center justify-center min-h-screen">
-          <p className="text-slate-500">Loading...</p>
+          <LoadingText>Loading partner details...</LoadingText>
         </div>
       </MainLayout>
     );

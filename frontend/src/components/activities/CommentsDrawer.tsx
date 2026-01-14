@@ -27,6 +27,7 @@ import { useUser } from '@/hooks/useUser';
 import { toast } from 'sonner';
 import { formatDistanceToNow } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { LoadingText } from '@/components/ui/loading-text';
 
 interface CommentsDrawerProps {
   activityId: string;
@@ -784,7 +785,7 @@ export function CommentsDrawer({
             {loading && comments.length === 0 && (
               <div className="flex items-center justify-center py-12">
                 <RefreshCw className="h-5 w-5 animate-spin text-muted-foreground" />
-                <span className="ml-2 text-sm text-muted-foreground">Loading...</span>
+                <span className="ml-2"><LoadingText className="text-sm">Loading comments...</LoadingText></span>
               </div>
             )}
 

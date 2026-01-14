@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { DATA_COLORS, CHART_STRUCTURE_COLORS } from "@/lib/chart-colors";
-import { Loader2, AlertCircle, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
+import { AlertCircle, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
 import { toast } from "sonner";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { TableSkeleton } from "@/components/ui/skeleton-loader";
 
 interface AnalyticsFilters {
   donor: string;
@@ -148,14 +149,7 @@ export const ReportingOrgChart: React.FC<ReportingOrgChartProps> = ({
 
   // Loading state
   if (loading) {
-    return (
-      <div className="flex items-center justify-center h-96">
-        <div className="flex items-center gap-2 text-muted-foreground">
-          <Loader2 className="h-6 w-6 animate-spin" />
-          <span>Loading organization data...</span>
-        </div>
-      </div>
-    );
+    return <TableSkeleton rows={8} columns={5} />;
   }
 
   // Error state

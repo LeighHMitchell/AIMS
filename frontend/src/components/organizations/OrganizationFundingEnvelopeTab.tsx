@@ -151,20 +151,22 @@ export default function OrganizationFundingEnvelopeTab({
     return parseFloat(value.replace(/,/g, '')) || 0
   }
 
-  // Help icon component
+  // Help icon component - uses tabIndex={-1} to prevent focus-triggered tooltips
   const HelpIcon = ({ helpKey }: { helpKey: keyof typeof FIELD_HELP_TEXTS }) => (
-    <TooltipProvider>
-      <Tooltip delayDuration={300}>
-        <TooltipTrigger asChild>
-          <button type="button" className="ml-1 text-gray-400 hover:text-gray-600 focus:outline-none">
-            <HelpCircle className="h-4 w-4" />
-          </button>
-        </TooltipTrigger>
-        <TooltipContent side="top" className="max-w-sm text-xs leading-relaxed">
-          {FIELD_HELP_TEXTS[helpKey]}
-        </TooltipContent>
-      </Tooltip>
-    </TooltipProvider>
+    <Tooltip delayDuration={300}>
+      <TooltipTrigger asChild>
+        <button
+          type="button"
+          tabIndex={-1}
+          className="ml-1 text-gray-400 hover:text-gray-600 focus:outline-none"
+        >
+          <HelpCircle className="h-4 w-4" />
+        </button>
+      </TooltipTrigger>
+      <TooltipContent side="top" className="max-w-sm text-xs leading-relaxed">
+        {FIELD_HELP_TEXTS[helpKey]}
+      </TooltipContent>
+    </Tooltip>
   )
 
   // Open modal for add/edit
@@ -626,6 +628,7 @@ export default function OrganizationFundingEnvelopeTab({
       {/* Edit/Add Modal */}
       <Dialog open={showModal} onOpenChange={closeModal}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <TooltipProvider delayDuration={300}>
           <DialogHeader>
             <DialogTitle>
               {editingEnvelope?.id ? 'Edit Funding Envelope' : 'Add Funding Envelope'}
@@ -1093,6 +1096,7 @@ export default function OrganizationFundingEnvelopeTab({
               )}
             </Button>
           </DialogFooter>
+          </TooltipProvider>
         </DialogContent>
       </Dialog>
     </div>

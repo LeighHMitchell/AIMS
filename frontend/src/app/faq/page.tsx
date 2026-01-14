@@ -28,6 +28,7 @@ import { cn } from '@/lib/utils'
 import { useUser } from '@/hooks/useUser'
 import { HelpTextTooltip } from '@/components/ui/help-text-tooltip'
 import { USER_ROLES } from '@/types/user'
+import { LoadingText } from '@/components/ui/loading-text'
 import { toast } from 'sonner'
 
 interface FAQItem {
@@ -346,7 +347,7 @@ export default function FAQPage() {
                         Cancel
                       </Button>
                       <Button type="submit" disabled={submitting}>
-                        {submitting ? 'Saving...' : editingFAQ ? 'Update FAQ' : 'Create FAQ'}
+                        {submitting ? <LoadingText>Saving...</LoadingText> : editingFAQ ? 'Update FAQ' : 'Create FAQ'}
                       </Button>
                     </div>
                   </form>
@@ -651,7 +652,7 @@ export default function FAQPage() {
                   {submittingFollowUp ? (
                     <>
                       <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      Submitting...
+                      <LoadingText>Submitting...</LoadingText>
                     </>
                   ) : (
                     <>

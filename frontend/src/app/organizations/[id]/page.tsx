@@ -43,6 +43,7 @@ import {
   PencilLine,
   ChevronDown,
   ChevronUp,
+  ArrowUpDown,
   Twitter,
   Facebook,
   Linkedin,
@@ -70,6 +71,7 @@ import SectorSankeyVisualization from '@/components/charts/SectorSankeyVisualiza
 import { NativeLikesCounter } from '@/components/ui/native-likes-counter'
 import { useEntityLikes } from '@/hooks/use-entity-likes'
 import { useUser } from '@/hooks/useUser'
+import { useLoadingBar } from '@/hooks/useLoadingBar'
 import {
   Table,
   TableBody,
@@ -209,6 +211,8 @@ export default function OrganizationProfilePage() {
   const [error, setError] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState('activities')
   const [activitiesView, setActivitiesView] = useState<'card' | 'table'>('card')
+  const [activitiesSortColumn, setActivitiesSortColumn] = useState<'title' | 'status' | 'start' | 'end' | 'budget' | 'disbursed'>('title')
+  const [activitiesSortDirection, setActivitiesSortDirection] = useState<'asc' | 'desc'>('asc')
   const [hoveredPoint, setHoveredPoint] = useState<{year: number, count: number, totalValue: number, x: number, y: number} | null>(null)
   const [deleteActivityId, setDeleteActivityId] = useState<string | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
@@ -260,7 +264,18 @@ export default function OrganizationProfilePage() {
   const [organizationDocuments, setOrganizationDocuments] = useState<any[]>([])
   const [activityDocuments, setActivityDocuments] = useState<Array<{activityId: string, activityTitle: string, documents: any[]}>>([])
 
-  
+  // Global loading bar for top-of-screen progress indicator
+  const { startLoading, stopLoading } = useLoadingBar()
+
+  // Show/hide global loading bar based on loading state
+  useEffect(() => {
+    if (loading && !organization) {
+      startLoading()
+    } else {
+      stopLoading()
+    }
+  }, [loading, organization, startLoading, stopLoading])
+
   // AbortController ref for race condition prevention
   const abortControllerRef = useRef<AbortController | null>(null)
 
@@ -886,6 +901,17 @@ export default function OrganizationProfilePage() {
     return `${sign}$${value.toFixed(1)}`;
   }
 
+  // Format currency for Y-axis ticks (whole numbers): 50000000 -> $50m, 5000 -> $5k
+  const formatAxisTick = (value: number): string => {
+    if (value === null || value === undefined || isNaN(value)) return '$0';
+    const abs = Math.abs(value);
+    const sign = value < 0 ? '-' : '';
+    if (abs >= 1_000_000_000) return `${sign}$${Math.round(value / 1_000_000_000)}b`;
+    if (abs >= 1_000_000) return `${sign}$${Math.round(value / 1_000_000)}m`;
+    if (abs >= 1_000) return `${sign}$${Math.round(value / 1_000)}k`;
+    return `${sign}$${Math.round(value)}`;
+  }
+
   const calculateTotals = () => {
     // Defensive check to ensure transactions is defined
     const safeTransactions = transactions || [];
@@ -1433,192 +1459,87 @@ export default function OrganizationProfilePage() {
             </CardContent>
           </Card>
 
-          {/* Financial Summary Cards - Row 1 */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-            {/* Total Active Activities Card */}
-            <Card className="border-slate-200 bg-white">
-              <CardContent className="p-3">
-                <div className="flex items-start justify-between">
-                  <div className="space-y-2 w-full">
-                    <div>
-                      <p className="text-xs font-medium text-slate-600">Total Active Activities</p>
-                      <p className="text-lg font-bold text-slate-900">{totals.activeActivities}</p>
-                    </div>
-                    <div className="border-t border-slate-200 pt-2">
-                      <p className="text-xs text-slate-500">of {totals.totalActivities} total</p>
-                    </div>
-                  </div>
-                  <Activity className="h-6 w-6 text-slate-400 flex-shrink-0" />
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Total Portfolio Value Card */}
-            <Card className="border-slate-200 bg-white">
-              <CardContent className="p-3">
-                <div className="flex items-start justify-between">
-                  <div className="space-y-2 w-full">
-                    <div>
-                      <p className="text-xs font-medium text-slate-600">Total Portfolio Value</p>
-                      <p className="text-lg font-bold text-slate-900">
-                        {formatCurrency(totals.totalPortfolioValue || totals.totalBudget, organization.default_currency)}
-                      </p>
-                    </div>
-                    <div className="border-t border-slate-200 pt-2">
-                      <p className="text-xs text-slate-500">(commitments)</p>
-                    </div>
-                  </div>
-                  <DollarSign className="h-6 w-6 text-slate-400 flex-shrink-0" />
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Total Disbursed Card */}
-            <Card className="border-slate-200 bg-white">
-              <CardContent className="p-3">
-                <div className="flex items-start justify-between">
-                  <div className="space-y-2 w-full">
-                    <div>
-                      <p className="text-xs font-medium text-slate-600">Total Disbursed</p>
-                      <p className="text-lg font-bold text-slate-900">
-                        {formatCurrency(totals.totalDisbursements, organization.default_currency)}
-                      </p>
-                    </div>
-                  </div>
-                  <DollarSign className="h-6 w-6 text-slate-400 flex-shrink-0" />
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Total Expended Card */}
-            <Card className="border-slate-200 bg-white">
-              <CardContent className="p-3">
-                <div className="flex items-start justify-between">
-                  <div className="space-y-2 w-full">
-                    <div>
-                      <p className="text-xs font-medium text-slate-600">Total Expended</p>
-                      <p className="text-lg font-bold text-slate-900">
-                        {formatCurrency(totals.totalExpenditures, organization.default_currency)}
-                      </p>
-                    </div>
-                  </div>
-                  <DollarSign className="h-6 w-6 text-slate-400 flex-shrink-0" />
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Role-Aware KPI Cards - Row 2 */}
-          {roleMetrics && roleDistribution && (
-            roleMetrics.isFundingOrg ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-                <Card className="border-slate-200 bg-white">
-                  <CardContent className="p-3">
-                    <div className="flex items-start justify-between">
-                      <div className="space-y-2 w-full">
-                        <div>
-                          <p className="text-xs font-medium text-slate-600">Total Outbound Funding</p>
-                          <p className="text-lg font-bold text-slate-900">
-                            {formatCurrency(roleMetrics.totalOutboundFunding || 0, organization.default_currency)}
-                          </p>
-                        </div>
-                      </div>
-                      <DollarSign className="h-6 w-6 text-slate-400 flex-shrink-0" />
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card className="border-slate-200 bg-white">
-                  <CardContent className="p-3">
-                    <div className="flex items-start justify-between">
-                      <div className="space-y-2 w-full">
-                        <div>
-                          <p className="text-xs font-medium text-slate-600">Implementing Partners</p>
-                          <p className="text-lg font-bold text-slate-900">
-                            {roleMetrics.uniqueImplementingPartners || 0}
-                          </p>
-                        </div>
-                      </div>
-                      <Users className="h-6 w-6 text-slate-400 flex-shrink-0" />
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card className="border-slate-200 bg-white">
-                  <CardContent className="p-3">
-                    <div className="flex items-start justify-between">
-                      <div className="space-y-2 w-full">
-                        <div>
-                          <p className="text-xs font-medium text-slate-600">% Funds Disbursed</p>
-                          <p className="text-lg font-bold text-slate-900">
-                            {roleMetrics.disbursementVsCommitmentRate?.toFixed(1) || '0.0'}%
-                          </p>
-                        </div>
-                      </div>
-                      <TrendingUp className="h-6 w-6 text-slate-400 flex-shrink-0" />
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-                <Card className="border-slate-200 bg-white">
-                  <CardContent className="p-3">
-                    <div className="flex items-start justify-between">
-                      <div className="space-y-2 w-full">
-                        <div>
-                          <p className="text-xs font-medium text-slate-600">Total Inbound Funding</p>
-                          <p className="text-lg font-bold text-slate-900">
-                            {formatCurrency(roleMetrics.totalInboundFunding || 0, organization.default_currency)}
-                          </p>
-                        </div>
-                      </div>
-                      <DollarSign className="h-6 w-6 text-slate-400 flex-shrink-0" />
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card className="border-slate-200 bg-white">
-                  <CardContent className="p-3">
-                    <div className="flex items-start justify-between">
-                      <div className="space-y-2 w-full">
-                        <div>
-                          <p className="text-xs font-medium text-slate-600">Number of Donors</p>
-                          <p className="text-lg font-bold text-slate-900">
-                            {roleMetrics.uniqueDonors || 0}
-                          </p>
-                        </div>
-                      </div>
-                      <Users className="h-6 w-6 text-slate-400 flex-shrink-0" />
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card className="border-slate-200 bg-white">
-                  <CardContent className="p-3">
-                    <div className="flex items-start justify-between">
-                      <div className="space-y-2 w-full">
-                        <div>
-                          <p className="text-xs font-medium text-slate-600">Average Activity Size</p>
-                          <p className="text-lg font-bold text-slate-900">
-                            {formatCurrency(roleMetrics.averageActivitySize || 0, organization.default_currency)}
-                          </p>
-                        </div>
-                      </div>
-                      <TrendingUp className="h-6 w-6 text-slate-400 flex-shrink-0" />
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-            )
-          )}
-
-          {/* Organisation Health Card */}
-          {healthMetrics && (
-            <div className="mb-6">
-              <OrganisationHealthCard healthMetrics={healthMetrics} />
+          {/* Financial Summary Cards - Single Row */}
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-3 mb-6">
+            {/* Total Active Activities */}
+            <div className="bg-white border border-slate-200 rounded-lg p-3">
+              <p className="text-xs font-medium text-slate-600 truncate">Active Activities</p>
+              <p className="text-lg font-bold text-slate-900">{totals.activeActivities}</p>
+              <p className="text-xs text-slate-500">of {totals.totalActivities} total</p>
             </div>
-          )}
+
+            {/* Total Portfolio Value */}
+            <div className="bg-white border border-slate-200 rounded-lg p-3">
+              <p className="text-xs font-medium text-slate-600 truncate">Portfolio Value</p>
+              <p className="text-lg font-bold text-slate-900">
+                {formatCurrencyShort(totals.totalPortfolioValue || totals.totalBudget)}
+              </p>
+              <p className="text-xs text-slate-500">(commitments)</p>
+            </div>
+
+            {/* Total Disbursed */}
+            <div className="bg-white border border-slate-200 rounded-lg p-3">
+              <p className="text-xs font-medium text-slate-600 truncate">Total Disbursed</p>
+              <p className="text-lg font-bold text-slate-900">
+                {formatCurrencyShort(totals.totalDisbursements)}
+              </p>
+            </div>
+
+            {/* Total Expended */}
+            <div className="bg-white border border-slate-200 rounded-lg p-3">
+              <p className="text-xs font-medium text-slate-600 truncate">Total Expended</p>
+              <p className="text-lg font-bold text-slate-900">
+                {formatCurrencyShort(totals.totalExpenditures)}
+              </p>
+            </div>
+
+            {/* Role-specific metrics */}
+            {roleMetrics && roleDistribution && (
+              roleMetrics.isFundingOrg ? (
+                <>
+                  <div className="bg-white border border-slate-200 rounded-lg p-3">
+                    <p className="text-xs font-medium text-slate-600 truncate">Outbound Funding</p>
+                    <p className="text-lg font-bold text-slate-900">
+                      {formatCurrencyShort(roleMetrics.totalOutboundFunding || 0)}
+                    </p>
+                  </div>
+                  <div className="bg-white border border-slate-200 rounded-lg p-3">
+                    <p className="text-xs font-medium text-slate-600 truncate">Impl. Partners</p>
+                    <p className="text-lg font-bold text-slate-900">
+                      {roleMetrics.uniqueImplementingPartners || 0}
+                    </p>
+                  </div>
+                  <div className="bg-white border border-slate-200 rounded-lg p-3">
+                    <p className="text-xs font-medium text-slate-600 truncate">% Disbursed</p>
+                    <p className="text-lg font-bold text-slate-900">
+                      {roleMetrics.disbursementVsCommitmentRate?.toFixed(1) || '0.0'}%
+                    </p>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="bg-white border border-slate-200 rounded-lg p-3">
+                    <p className="text-xs font-medium text-slate-600 truncate">Inbound Funding</p>
+                    <p className="text-lg font-bold text-slate-900">
+                      {formatCurrencyShort(roleMetrics.totalInboundFunding || 0)}
+                    </p>
+                  </div>
+                  <div className="bg-white border border-slate-200 rounded-lg p-3">
+                    <p className="text-xs font-medium text-slate-600 truncate">Donors</p>
+                    <p className="text-lg font-bold text-slate-900">
+                      {roleMetrics.uniqueDonors || 0}
+                    </p>
+                  </div>
+                  <div className="bg-white border border-slate-200 rounded-lg p-3">
+                    <p className="text-xs font-medium text-slate-600 truncate">Avg. Activity</p>
+                    <p className="text-lg font-bold text-slate-900">
+                      {formatCurrencyShort(roleMetrics.averageActivitySize || 0)}
+                    </p>
+                  </div>
+                </>
+              )
+            )}
+          </div>
 
           {/* Charts Section - Row 2: Chart Cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
@@ -1854,7 +1775,7 @@ export default function OrganizationProfilePage() {
                           tick={{ fontSize: 10, fill: '#64748b' }}
                           axisLine={{ stroke: '#e5e7eb' }}
                           tickLine={false}
-                          tickFormatter={(value) => `$${(value / 1000).toFixed(1)}k`}
+                          tickFormatter={formatAxisTick}
                         />
                         <RechartsTooltip 
                           content={({ active, payload }) => {
@@ -2026,7 +1947,7 @@ export default function OrganizationProfilePage() {
                             tick={{ fontSize: 10, fill: '#64748b' }}
                             axisLine={{ stroke: '#e5e7eb' }}
                             tickLine={false}
-                            tickFormatter={(value) => `$${(value / 1000).toFixed(1)}k`}
+                            tickFormatter={formatAxisTick}
                           />
                           <RechartsTooltip 
                             content={({ active, payload }) => {
@@ -2227,6 +2148,9 @@ export default function OrganizationProfilePage() {
                 </TabsTrigger>
                 <TabsTrigger value="documents" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
                   Documents
+                </TabsTrigger>
+                <TabsTrigger value="data-health" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                  Data Health
                 </TabsTrigger>
               </TabsList>
 
@@ -2458,17 +2382,149 @@ export default function OrganizationProfilePage() {
                         <Table>
                           <TableHeader>
                             <TableRow>
-                              <TableHead>Title</TableHead>
-                              <TableHead>Status</TableHead>
-                              <TableHead>Start Date</TableHead>
-                              <TableHead>End Date</TableHead>
-                              <TableHead className="text-right">Total Budget</TableHead>
-                              <TableHead className="text-right">Disbursed</TableHead>
+                              <TableHead
+                                className="cursor-pointer hover:bg-slate-100"
+                                onClick={() => {
+                                  if (activitiesSortColumn === 'title') {
+                                    setActivitiesSortDirection(activitiesSortDirection === 'asc' ? 'desc' : 'asc')
+                                  } else {
+                                    setActivitiesSortColumn('title')
+                                    setActivitiesSortDirection('asc')
+                                  }
+                                }}
+                              >
+                                <div className="flex items-center gap-1">
+                                  Title
+                                  {activitiesSortColumn === 'title' && (
+                                    <span className="text-slate-400">{activitiesSortDirection === 'asc' ? '↑' : '↓'}</span>
+                                  )}
+                                </div>
+                              </TableHead>
+                              <TableHead
+                                className="cursor-pointer hover:bg-slate-100"
+                                onClick={() => {
+                                  if (activitiesSortColumn === 'status') {
+                                    setActivitiesSortDirection(activitiesSortDirection === 'asc' ? 'desc' : 'asc')
+                                  } else {
+                                    setActivitiesSortColumn('status')
+                                    setActivitiesSortDirection('asc')
+                                  }
+                                }}
+                              >
+                                <div className="flex items-center gap-1">
+                                  Status
+                                  {activitiesSortColumn === 'status' && (
+                                    <span className="text-slate-400">{activitiesSortDirection === 'asc' ? '↑' : '↓'}</span>
+                                  )}
+                                </div>
+                              </TableHead>
+                              <TableHead
+                                className="cursor-pointer hover:bg-slate-100"
+                                onClick={() => {
+                                  if (activitiesSortColumn === 'start') {
+                                    setActivitiesSortDirection(activitiesSortDirection === 'asc' ? 'desc' : 'asc')
+                                  } else {
+                                    setActivitiesSortColumn('start')
+                                    setActivitiesSortDirection('asc')
+                                  }
+                                }}
+                              >
+                                <div className="flex items-center gap-1">
+                                  Start Date
+                                  {activitiesSortColumn === 'start' && (
+                                    <span className="text-slate-400">{activitiesSortDirection === 'asc' ? '↑' : '↓'}</span>
+                                  )}
+                                </div>
+                              </TableHead>
+                              <TableHead
+                                className="cursor-pointer hover:bg-slate-100"
+                                onClick={() => {
+                                  if (activitiesSortColumn === 'end') {
+                                    setActivitiesSortDirection(activitiesSortDirection === 'asc' ? 'desc' : 'asc')
+                                  } else {
+                                    setActivitiesSortColumn('end')
+                                    setActivitiesSortDirection('asc')
+                                  }
+                                }}
+                              >
+                                <div className="flex items-center gap-1">
+                                  End Date
+                                  {activitiesSortColumn === 'end' && (
+                                    <span className="text-slate-400">{activitiesSortDirection === 'asc' ? '↑' : '↓'}</span>
+                                  )}
+                                </div>
+                              </TableHead>
+                              <TableHead
+                                className="text-right cursor-pointer hover:bg-slate-100"
+                                onClick={() => {
+                                  if (activitiesSortColumn === 'budget') {
+                                    setActivitiesSortDirection(activitiesSortDirection === 'asc' ? 'desc' : 'asc')
+                                  } else {
+                                    setActivitiesSortColumn('budget')
+                                    setActivitiesSortDirection('desc')
+                                  }
+                                }}
+                              >
+                                <div className="flex items-center justify-end gap-1">
+                                  Total Budget
+                                  {activitiesSortColumn === 'budget' && (
+                                    <span className="text-slate-400">{activitiesSortDirection === 'asc' ? '↑' : '↓'}</span>
+                                  )}
+                                </div>
+                              </TableHead>
+                              <TableHead
+                                className="text-right cursor-pointer hover:bg-slate-100"
+                                onClick={() => {
+                                  if (activitiesSortColumn === 'disbursed') {
+                                    setActivitiesSortDirection(activitiesSortDirection === 'asc' ? 'desc' : 'asc')
+                                  } else {
+                                    setActivitiesSortColumn('disbursed')
+                                    setActivitiesSortDirection('desc')
+                                  }
+                                }}
+                              >
+                                <div className="flex items-center justify-end gap-1">
+                                  Disbursed
+                                  {activitiesSortColumn === 'disbursed' && (
+                                    <span className="text-slate-400">{activitiesSortDirection === 'asc' ? '↑' : '↓'}</span>
+                                  )}
+                                </div>
+                              </TableHead>
                               <TableHead className="text-right">Actions</TableHead>
                             </TableRow>
                           </TableHeader>
                           <TableBody>
-                            {activities.map((activity) => (
+                            {[...activities].sort((a, b) => {
+                              const direction = activitiesSortDirection === 'asc' ? 1 : -1
+                              switch (activitiesSortColumn) {
+                                case 'title':
+                                  return direction * (a.title || '').localeCompare(b.title || '')
+                                case 'status':
+                                  return direction * (a.activity_status || '').localeCompare(b.activity_status || '')
+                                case 'start': {
+                                  const aDate = a.actual_start_date || a.planned_start_date || ''
+                                  const bDate = b.actual_start_date || b.planned_start_date || ''
+                                  return direction * aDate.localeCompare(bDate)
+                                }
+                                case 'end': {
+                                  const aDate = a.actual_end_date || a.planned_end_date || ''
+                                  const bDate = b.actual_end_date || b.planned_end_date || ''
+                                  return direction * aDate.localeCompare(bDate)
+                                }
+                                case 'budget': {
+                                  const aVal = a.totalPlannedBudgetUSD || a.total_budget || 0
+                                  const bVal = b.totalPlannedBudgetUSD || b.total_budget || 0
+                                  return direction * (aVal - bVal)
+                                }
+                                case 'disbursed': {
+                                  const aVal = a.total_disbursed || 0
+                                  const bVal = b.total_disbursed || 0
+                                  return direction * (aVal - bVal)
+                                }
+                                default:
+                                  return 0
+                              }
+                            }).map((activity) => (
                               <TableRow key={activity.id}>
                                 <TableCell className="font-medium">
                                   <div className="space-y-1">
@@ -2585,7 +2641,7 @@ export default function OrganizationProfilePage() {
                       currency={organization.default_currency || 'USD'}
                     />
                   )}
-                  
+
                   {/* Financial Transactions */}
                   <Card className="border-slate-200">
                     <CardHeader>
@@ -2878,6 +2934,21 @@ export default function OrganizationProfilePage() {
                     )}
                   </CardContent>
                 </Card>
+              </TabsContent>
+
+              <TabsContent value="data-health" className="p-6">
+                {healthMetrics ? (
+                  <OrganisationHealthCard healthMetrics={healthMetrics} />
+                ) : (
+                  <Card className="border-slate-200">
+                    <CardContent className="py-12">
+                      <div className="text-center text-slate-500">
+                        <AlertCircle className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                        <p>No health metrics available</p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
               </TabsContent>
             </Tabs>
           </Card>

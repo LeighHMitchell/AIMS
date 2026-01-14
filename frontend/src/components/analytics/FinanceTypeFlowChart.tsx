@@ -23,7 +23,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { AlertCircle, Download, BarChart3, LineChart as LineChartIcon, TrendingUp as TrendingUpIcon, Table as TableIcon, X, Image, CalendarIcon, RotateCcw } from 'lucide-react'
 import { MultiSelect } from '@/components/ui/multi-select'
 import { splitTransactionAcrossYears } from '@/utils/year-allocation'
-import { FLOW_TYPE_COLORS, TRANSACTION_TYPE_CHART_COLORS, BRAND_COLORS } from '@/components/analytics/sectors/sectorColorMap'
+import { TRANSACTION_TYPE_CHART_COLORS } from '@/components/analytics/sectors/sectorColorMap'
 import { CustomYear, getCustomYearRange, getCustomYearLabel } from '@/types/custom-years'
 import {
   DropdownMenu,
@@ -71,29 +71,9 @@ interface FinanceTypeFlowChartProps {
 type ViewMode = 'bar' | 'line' | 'area' | 'table'
 type TimeMode = 'periodic' | 'cumulative'
 
-// Use imported brand colors for flow types and transaction types
-// FLOW_TYPE_COLORS and TRANSACTION_TYPE_CHART_COLORS are imported from sectorColorMap
-
-// Local aliases for the imported colors (for backwards compatibility in this file)
-const FLOW_TYPE_BASE_COLORS = FLOW_TYPE_COLORS
+// Local alias for transaction type colors - each transaction type has a distinct color
+// Finance types within each transaction type are rendered as shades of that color
 const TRANSACTION_TYPE_COLORS_LOCAL = TRANSACTION_TYPE_CHART_COLORS
-
-// Function to blend two colors together
-const blendColors = (color1: string, color2: string, ratio: number = 0.5): string => {
-  const r1 = parseInt(color1.slice(1, 3), 16)
-  const g1 = parseInt(color1.slice(3, 5), 16)
-  const b1 = parseInt(color1.slice(5, 7), 16)
-
-  const r2 = parseInt(color2.slice(1, 3), 16)
-  const g2 = parseInt(color2.slice(3, 5), 16)
-  const b2 = parseInt(color2.slice(5, 7), 16)
-
-  const r = Math.round(r1 * ratio + r2 * (1 - ratio))
-  const g = Math.round(g1 * ratio + g2 * (1 - ratio))
-  const b = Math.round(b1 * ratio + b2 * (1 - ratio))
-
-  return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`
-}
 
 // Function to generate shades for finance types within a flow type
 const generateFinanceTypeShades = (baseColor: string, financeType: string, index: number, total: number): string => {
@@ -782,11 +762,10 @@ export function FinanceTypeFlowChart({
                 ? allFinanceTypes.filter(ft => selectedFinanceTypes.includes(ft.code)).slice(0, 5)
                 : allFinanceTypes.slice(0, 5)
               return selectedTransactionTypes.slice(0, 1).map((transactionType) => {
-                const flowTypeColor = FLOW_TYPE_BASE_COLORS[flowType] || BRAND_COLORS.paleSlate
-                const transactionTypeColor = TRANSACTION_TYPE_COLORS_LOCAL[transactionType] || BRAND_COLORS.paleSlate
-                const blendedBaseColor = blendColors(flowTypeColor, transactionTypeColor, 0.65)
+                // Use transaction type as the primary color - finance types are shades
+                const transactionTypeColor = TRANSACTION_TYPE_COLORS_LOCAL[transactionType] || '#64748b'
                 return financeTypesToShow.map((financeType, index) => {
-                  const color = generateFinanceTypeShades(blendedBaseColor, financeType.code, index, financeTypesToShow.length)
+                  const color = generateFinanceTypeShades(transactionTypeColor, financeType.code, index, financeTypesToShow.length)
                   const uniqueKey = `${flowType}_${transactionType}_${financeType.code}`
                   const isLastInStack = index === financeTypesToShow.length - 1
                   return (
@@ -1194,13 +1173,11 @@ export function FinanceTypeFlowChart({
 
                     return selectedTransactionTypes.map((transactionType, txIndex) => {
                       const txTypeName = transactionTypes.find(tt => tt.code === transactionType)?.name || transactionType
-                      // Blend flow type and transaction type colors for unique visual distinction
-                      const flowTypeColor = FLOW_TYPE_BASE_COLORS[flowType] || BRAND_COLORS.paleSlate
-                      const transactionTypeColor = TRANSACTION_TYPE_COLORS_LOCAL[transactionType] || BRAND_COLORS.paleSlate
-                      const blendedBaseColor = blendColors(flowTypeColor, transactionTypeColor, 0.65) // 65% flow type, 35% transaction type
+                      // Use transaction type as the primary color - finance types are shades
+                      const transactionTypeColor = TRANSACTION_TYPE_COLORS_LOCAL[transactionType] || '#64748b'
 
                       return financeTypesToShow.map((financeType, index) => {
-                        const color = generateFinanceTypeShades(blendedBaseColor, financeType.code, index, financeTypesToShow.length)
+                        const color = generateFinanceTypeShades(transactionTypeColor, financeType.code, index, financeTypesToShow.length)
                         const uniqueKey = `${flowType}_${transactionType}_${financeType.code}`
                         const isLastInStack = index === financeTypesToShow.length - 1
                         return (
@@ -1252,13 +1229,11 @@ export function FinanceTypeFlowChart({
 
                     return selectedTransactionTypes.map((transactionType, txIndex) => {
                       const txTypeName = transactionTypes.find(tt => tt.code === transactionType)?.name || transactionType
-                      // Blend flow type and transaction type colors for unique visual distinction
-                      const flowTypeColor = FLOW_TYPE_BASE_COLORS[flowType] || BRAND_COLORS.paleSlate
-                      const transactionTypeColor = TRANSACTION_TYPE_COLORS_LOCAL[transactionType] || BRAND_COLORS.paleSlate
-                      const blendedBaseColor = blendColors(flowTypeColor, transactionTypeColor, 0.65) // 65% flow type, 35% transaction type
+                      // Use transaction type as the primary color - finance types are shades
+                      const transactionTypeColor = TRANSACTION_TYPE_COLORS_LOCAL[transactionType] || '#64748b'
 
                       return financeTypesToShow.map((financeType, index) => {
-                        const color = generateFinanceTypeShades(blendedBaseColor, financeType.code, index, financeTypesToShow.length)
+                        const color = generateFinanceTypeShades(transactionTypeColor, financeType.code, index, financeTypesToShow.length)
                         const uniqueKey = `${flowType}_${transactionType}_${financeType.code}`
                         // Alternate stroke patterns and widths for better differentiation
                         const strokeWidth = 2.5 + (index % 3) * 0.5 // 2.5, 3, 3.5
@@ -1300,15 +1275,14 @@ export function FinanceTypeFlowChart({
                         : allFinanceTypes
                       
                       return selectedTransactionTypes.map((transactionType) => {
-                        const flowTypeColor = FLOW_TYPE_BASE_COLORS[flowType] || BRAND_COLORS.paleSlate
-                        const transactionTypeColor = TRANSACTION_TYPE_COLORS_LOCAL[transactionType] || BRAND_COLORS.paleSlate
-                        const blendedBaseColor = blendColors(flowTypeColor, transactionTypeColor, 0.65)
-                        
+                        // Use transaction type as the primary color - finance types are shades
+                        const transactionTypeColor = TRANSACTION_TYPE_COLORS_LOCAL[transactionType] || '#64748b'
+
                         return financeTypesToShow.map((financeType, index) => {
-                          const color = generateFinanceTypeShades(blendedBaseColor, financeType.code, index, financeTypesToShow.length)
+                          const color = generateFinanceTypeShades(transactionTypeColor, financeType.code, index, financeTypesToShow.length)
                           const uniqueKey = `${flowType}_${transactionType}_${financeType.code}`
                           const gradientId = `gradient${uniqueKey.replace(/[^a-zA-Z0-9]/g, '')}`
-                          
+
                           return (
                             <linearGradient key={gradientId} id={gradientId} x1="0" y1="0" x2="0" y2="1">
                               <stop offset="5%" stopColor={color} stopOpacity={0.8}/>
@@ -1339,12 +1313,11 @@ export function FinanceTypeFlowChart({
 
                     return selectedTransactionTypes.map((transactionType) => {
                       const txTypeName = transactionTypes.find(tt => tt.code === transactionType)?.name || transactionType
-                      const flowTypeColor = FLOW_TYPE_BASE_COLORS[flowType] || BRAND_COLORS.paleSlate
-                      const transactionTypeColor = TRANSACTION_TYPE_COLORS_LOCAL[transactionType] || BRAND_COLORS.paleSlate
-                      const blendedBaseColor = blendColors(flowTypeColor, transactionTypeColor, 0.65)
+                      // Use transaction type as the primary color - finance types are shades
+                      const transactionTypeColor = TRANSACTION_TYPE_COLORS_LOCAL[transactionType] || '#64748b'
 
                       return financeTypesToShow.map((financeType, index) => {
-                        const color = generateFinanceTypeShades(blendedBaseColor, financeType.code, index, financeTypesToShow.length)
+                        const color = generateFinanceTypeShades(transactionTypeColor, financeType.code, index, financeTypesToShow.length)
                         const uniqueKey = `${flowType}_${transactionType}_${financeType.code}`
                         const gradientId = `gradient${uniqueKey.replace(/[^a-zA-Z0-9]/g, '')}`
                         const strokeWidth = 2 + (index % 3) * 0.5

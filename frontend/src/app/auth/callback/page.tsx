@@ -6,12 +6,26 @@ import { supabase } from '@/lib/supabase';
 import { useUser } from '@/hooks/useUser';
 import { Loader2 } from 'lucide-react';
 
+// Determine the auth type from URL parameters
+type AuthType = 'oauth' | 'signup' | 'recovery' | 'magiclink' | 'unknown';
+
+function getAuthType(searchParams: URLSearchParams, hash: string): AuthType {
+  const type = searchParams.get('type');
+  if (type === 'signup' || type === 'email') return 'signup';
+  if (type === 'recovery') return 'recovery';
+  if (type === 'magiclink') return 'magiclink';
+  // OAuth typically has access_token in hash or no type parameter with code
+  if (hash.includes('access_token') || searchParams.get('code')) return 'oauth';
+  return 'unknown';
+}
+
 export default function AuthCallbackPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { setUser } = useUser();
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
   const [errorMessage, setErrorMessage] = useState('');
+  const [authType, setAuthType] = useState<AuthType>('unknown');
   const hasProcessed = useRef(false);
 
   useEffect(() => {
@@ -21,7 +35,11 @@ export default function AuthCallbackPage() {
 
     const handleAuthCallback = async () => {
       try {
-        console.log('[Auth Callback] Starting OAuth callback processing...');
+        const detectedAuthType = getAuthType(searchParams, window.location.hash);
+        setAuthType(detectedAuthType);
+
+        console.log('[Auth Callback] Starting auth callback processing...');
+        console.log('[Auth Callback] Detected auth type:', detectedAuthType);
         console.log('[Auth Callback] Current URL hash:', window.location.hash ? 'Present (tokens in hash)' : 'Empty');
         console.log('[Auth Callback] Search params:', Object.fromEntries(searchParams.entries()));
         
@@ -182,6 +200,33 @@ export default function AuthCallbackPage() {
   }, [searchParams, router, setUser]);
 
   if (status === 'error') {
+    // Customize error message based on auth type
+    const getErrorTitle = () => {
+      switch (authType) {
+        case 'signup':
+          return 'Email Verification Error';
+        case 'recovery':
+          return 'Password Reset Error';
+        case 'magiclink':
+          return 'Magic Link Error';
+        default:
+          return 'Authentication Error';
+      }
+    };
+
+    const getErrorDescription = () => {
+      switch (authType) {
+        case 'signup':
+          return 'There was a problem verifying your email address';
+        case 'recovery':
+          return 'There was a problem resetting your password';
+        case 'magiclink':
+          return 'There was a problem with your magic link';
+        default:
+          return 'There was a problem signing you in';
+      }
+    };
+
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
         <div className="bg-white rounded-lg shadow-lg p-8 max-w-md w-full text-center">
@@ -190,16 +235,24 @@ export default function AuthCallbackPage() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
             </svg>
           </div>
-          <h2 className="text-xl font-bold text-gray-900 mb-2">Authentication Error</h2>
-          <p className="text-gray-600 mb-2">There was a problem signing you in with Gmail</p>
+          <h2 className="text-xl font-bold text-gray-900 mb-2">{getErrorTitle()}</h2>
+          <p className="text-gray-600 mb-2">{getErrorDescription()}</p>
           <p className="text-sm text-gray-500 mb-6">{errorMessage}</p>
-          <button 
+          <button
             onClick={() => router.push('/login')}
             className="w-full bg-gray-900 text-white py-2 px-4 rounded-md hover:bg-black transition"
           >
-            Try Again
+            {authType === 'signup' ? 'Go to Sign In' : 'Try Again'}
           </button>
-          <button 
+          {authType === 'signup' && (
+            <button
+              onClick={() => router.push('/register')}
+              className="w-full mt-2 bg-gray-100 text-gray-700 py-2 px-4 rounded-md hover:bg-gray-200 transition"
+            >
+              Register Again
+            </button>
+          )}
+          <button
             onClick={() => router.push('/')}
             className="w-full mt-2 bg-gray-100 text-gray-700 py-2 px-4 rounded-md hover:bg-gray-200 transition"
           >

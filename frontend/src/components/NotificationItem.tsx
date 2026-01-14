@@ -13,6 +13,30 @@ interface NotificationItemProps {
   onMarkAsRead: (id: string) => void
 }
 
+// Parse pipe-separated key:value format into structured data
+function parseDescription(description: string): { isKeyValue: boolean; items: { key: string; value: string }[] } {
+  // Check if description follows "Key: Value | Key: Value" pattern
+  if (!description.includes(' | ') || !description.includes(': ')) {
+    return { isKeyValue: false, items: [] }
+  }
+
+  const parts = description.split(' | ')
+  const items: { key: string; value: string }[] = []
+
+  for (const part of parts) {
+    const colonIndex = part.indexOf(': ')
+    if (colonIndex > 0) {
+      items.push({
+        key: part.substring(0, colonIndex).trim(),
+        value: part.substring(colonIndex + 2).trim()
+      })
+    }
+  }
+
+  // Only treat as key-value if we successfully parsed at least 2 items
+  return { isKeyValue: items.length >= 2, items }
+}
+
 export function NotificationItem({ notification, onMarkAsRead }: NotificationItemProps) {
   const timeAgo = formatDistanceToNow(new Date(notification.timestamp), { addSuffix: true })
 
@@ -51,15 +75,43 @@ export function NotificationItem({ notification, onMarkAsRead }: NotificationIte
                 <h4 className="font-medium text-gray-900 mb-1">
                   {notification.title}
                 </h4>
-                <p className="text-sm text-gray-600 mb-2">
-                  {notification.description}
-                </p>
+                {(() => {
+                  const parsed = parseDescription(notification.description)
+                  if (parsed.isKeyValue) {
+                    return (
+                      <div className="text-sm text-gray-600 mb-2 space-y-1">
+                        {parsed.items.map((item, idx) => (
+                          <div key={idx} className="flex gap-2">
+                            <span className="text-gray-500 font-medium min-w-[120px]">{item.key}:</span>
+                            <span className="text-gray-700">{item.value}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )
+                  }
+                  return (
+                    <p className="text-sm text-gray-600 mb-2">
+                      {notification.description}
+                    </p>
+                  )
+                })()}
                 {notification.activityId && (
                   <Link
                     href={`/activities/${notification.activityId}`}
                     className="inline-flex items-center gap-1 text-sm text-blue-600 hover:text-blue-800 transition-colors"
                   >
                     View Activity
+                    <ExternalLink className="h-3 w-3" />
+                  </Link>
+                )}
+                {!notification.activityId && notification.link && (
+                  <Link
+                    href={notification.link}
+                    className="inline-flex items-center gap-1 text-sm text-blue-600 hover:text-blue-800 transition-colors"
+                  >
+                    {notification.link.includes('/tasks') ? 'View Task' :
+                     notification.link.includes('/admin') ? 'View in Admin' :
+                     'View Details'}
                     <ExternalLink className="h-3 w-3" />
                   </Link>
                 )}

@@ -21,19 +21,19 @@ import {
   Cell,
   ReferenceLine
 } from 'recharts'
-import { 
-  TrendingUp, 
-  BarChart3, 
-  LineChart as LineChartIcon, 
-  Table as TableIcon, 
+import {
+  TrendingUp,
+  BarChart3,
+  LineChart as LineChartIcon,
+  Table as TableIcon,
   Layers,
   Download,
   Building2,
-  Loader2,
   AlertCircle,
   Info,
   Maximize2
 } from 'lucide-react'
+import { BarChartSkeleton } from '@/components/ui/skeleton-loader'
 import { exportChartToJPG, downloadCSV, convertToCSV } from '@/lib/chart-export'
 import { toast } from 'sonner'
 import {
@@ -530,11 +530,8 @@ export function FundingOverTimeAnalytics() {
         </Card>
       ) : loading ? (
         <Card>
-          <CardContent className="py-12">
-            <div className="text-center">
-              <Loader2 className="h-8 w-8 mx-auto animate-spin" style={{ color: COLORS.primaryScarlet }} />
-              <p className="mt-4" style={{ color: COLORS.blueSlate }}>Loading funding data...</p>
-            </div>
+          <CardContent className="py-6">
+            <BarChartSkeleton height="300px" bars={8} />
           </CardContent>
         </Card>
       ) : chartData.length === 0 ? (

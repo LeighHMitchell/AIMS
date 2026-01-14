@@ -12,6 +12,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { HelpTextTooltip } from '@/components/ui/help-text-tooltip';
 import { toast } from 'sonner';
 import { useUser } from '@/hooks/useUser';
+import { LoadingText } from '@/components/ui/loading-text';
 
 // Enhanced Tag interface with metadata
 interface Tag {
@@ -276,7 +277,7 @@ export default function TagsSection({ activityId, tags, onChange }: TagsSectionP
                 <Command>
                   <CommandList>
                     {loading ? (
-                      <CommandEmpty>Loading...</CommandEmpty>
+                      <CommandEmpty><LoadingText>Loading tags...</LoadingText></CommandEmpty>
                     ) : (
                       <>
                         {availableTags.length > 0 ? (

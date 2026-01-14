@@ -4,13 +4,7 @@ import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react'
 import * as d3 from 'd3'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Button } from '@/components/ui/button'
-import { AlertCircle, Info, Filter, Search, Check } from 'lucide-react'
-import {
-  Tooltip as UITooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/components/ui/tooltip'
+import { AlertCircle, Filter, Search, Check } from 'lucide-react'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -738,26 +732,6 @@ export function AidEcosystemSolarSystem({
             </DropdownMenuContent>
           </DropdownMenu>
 
-          {/* How to read tooltip */}
-          <TooltipProvider>
-            <UITooltip>
-              <TooltipTrigger asChild>
-                <Button variant="ghost" size="sm" className="gap-1">
-                  <Info className="h-4 w-4" />
-                  <span className="text-xs">How to read</span>
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent className="max-w-xs">
-                <p className="text-xs">
-                  <strong>Rings:</strong> Organizations closer to center have higher transaction volumes<br />
-                  <strong>Size:</strong> Node size represents total transaction value<br />
-                  <strong>Color:</strong> Organization type<br />
-                  <strong>Click:</strong> Navigate to organization profile<br />
-                  <strong>Sector Filter:</strong> Filter organizations by sector involvement
-                </p>
-              </TooltipContent>
-            </UITooltip>
-          </TooltipProvider>
         </div>
       </div>
 
@@ -935,6 +909,16 @@ export function AidEcosystemSolarSystem({
             </div>
           ))}
         </div>
+      </div>
+
+      {/* Description */}
+      <div className="text-sm text-slate-600 leading-relaxed space-y-3">
+        <p>
+          This chart visualises the relative financial gravity of organisations within the aid ecosystem by arranging them in concentric rings based on total disbursement volume. Organisations at the centre represent the largest financial actors in the system, while those further out operate at progressively smaller scales. The inner ring contains the top ten percent of organisations by disbursement value, the middle ring contains the next thirty percent, and the outer ring contains the remaining organisations. Node size corresponds to the total value of funds flowing through each organisation, and colour indicates organisation type. By presenting the aid ecosystem in this radial form, the chart highlights how concentrated or distributed financial power is within the system, making it easy to see whether aid flows are dominated by a small number of large actors or spread across a wider range of organisations. Rankings are recalculated dynamically based on the selected time period and filters.
+        </p>
+        <p className="text-xs text-slate-500">
+          <strong>METHODOLOGY:</strong> Inner ring contains the top 10% of organizations by total disbursement value. Middle ring contains the next 30% (ranks 11-40%). Outer ring contains the remaining organizations (bottom 60%).
+        </p>
       </div>
     </div>
   )

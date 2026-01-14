@@ -242,20 +242,22 @@ export const FLOW_TYPE_COLORS: Record<string, string> = {
  * Transaction Type colors for Finance Type Flow Chart (IATI Standard v2.03)
  * Using brand palette for consistent visual identity
  */
+// Distinct transaction type colors - designed for maximum visual differentiation
+// Each transaction type gets a unique hue for easy identification in charts
 export const TRANSACTION_TYPE_CHART_COLORS: Record<string, string> = {
-  '1': BRAND_COLORS.coolSteel,           // Incoming Funds
-  '2': BRAND_COLORS.blueSlate,           // Outgoing Commitment
-  '3': BRAND_COLORS.primaryScarlet,      // Disbursement (highlight)
-  '4': PALETTE_VARIATIONS.warmAccent,    // Expenditure
-  '5': PALETTE_VARIATIONS.scarletDark,   // Interest Payment
-  '6': PALETTE_VARIATIONS.scarletLight,  // Loan Repayment
-  '7': PALETTE_VARIATIONS.coolSteelLight, // Reimbursement
-  '8': PALETTE_VARIATIONS.coolSteelDark, // Purchase of Equity
-  '9': PALETTE_VARIATIONS.blueSlateLight, // Sale of Equity
-  '10': PALETTE_VARIATIONS.blueSlateDark, // Credit Guarantee
-  '11': BRAND_COLORS.blueSlate,          // Incoming Commitment
-  '12': BRAND_COLORS.coolSteel,          // Outgoing Pledge
-  '13': PALETTE_VARIATIONS.neutralAccent  // Incoming Pledge
+  '1': '#2563eb',   // Incoming Funds - Blue
+  '2': '#7c3aed',   // Outgoing Commitment - Purple
+  '3': '#dc2626',   // Disbursement - Red (primary action)
+  '4': '#ea580c',   // Expenditure - Orange
+  '5': '#ca8a04',   // Interest Payment - Amber
+  '6': '#16a34a',   // Loan Repayment - Green
+  '7': '#0891b2',   // Reimbursement - Cyan
+  '8': '#6366f1',   // Purchase of Equity - Indigo
+  '9': '#db2777',   // Sale of Equity - Pink
+  '10': '#0d9488',  // Credit Guarantee - Teal
+  '11': '#4f46e5',  // Incoming Commitment - Violet
+  '12': '#059669',  // Outgoing Pledge - Emerald
+  '13': '#64748b'   // Incoming Pledge - Slate
 }
 
 

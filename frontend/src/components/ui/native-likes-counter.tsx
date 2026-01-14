@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils"
 import { AnimatePresence, motion } from "framer-motion"
 import { Heart, Loader2 } from "lucide-react"
 import { useState, useCallback, useRef } from "react"
+import { LoadingText } from "@/components/ui/loading-text"
 
 export interface LikeUser {
   id: string
@@ -279,7 +280,7 @@ export function NativeLikesCounter({
                     {isLoadingMore ? (
                       <>
                         <Loader2 className="w-3 h-3 animate-spin" />
-                        <span>Loading...</span>
+                        <LoadingText className="text-xs">Loading...</LoadingText>
                       </>
                     ) : (
                       <span>Load more {totalRemaining > 0 && `(${totalRemaining.toLocaleString()} more)`}</span>

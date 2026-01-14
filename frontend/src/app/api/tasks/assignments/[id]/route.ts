@@ -7,10 +7,23 @@ export const dynamic = 'force-dynamic';
 // PUT /api/tasks/assignments/[id] - Update assignment status, add note, or reassign
 export async function PUT(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: { id: string } | Promise<{ id: string }> }
 ) {
+  console.log('[Task Assignment API] PUT handler entered');
+
   try {
-    const { id } = await params;
+    // Handle both sync and async params (Next.js 14/15 compatibility)
+    console.log('[Task Assignment API] Resolving params...');
+    const resolvedParams = await Promise.resolve(params);
+    const id = resolvedParams?.id;
+    console.log('[Task Assignment API] Params resolved, id:', id);
+
+    if (!id) {
+      console.error('[Task Assignment API] Missing assignment ID in params');
+      return NextResponse.json({ error: 'Assignment ID is required' }, { status: 400 });
+    }
+
+    console.log('[Task Assignment API] Getting supabase admin...');
     const supabase = getSupabaseAdmin();
     if (!supabase) {
       return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
@@ -34,12 +47,11 @@ export async function PUT(
     console.log('[Task Assignment API] PUT assignment:', id, 'by user:', userId);
 
     // Fetch the current assignment
-    // Using explicit FK constraint name to avoid ambiguity
     const { data: assignment, error: fetchError } = await supabase
       .from('task_assignments')
       .select(`
         *,
-        task:tasks!task_assignments_task_id_fkey(id, created_by, title)
+        task:tasks(id, created_by, title)
       `)
       .eq('id', id)
       .single();
@@ -319,18 +331,27 @@ export async function PUT(
 
     return NextResponse.json({ error: 'No action specified' }, { status: 400 });
   } catch (error) {
-    console.error('[Task Assignment API] Unexpected error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    console.error('[Task Assignment API] PUT Unexpected error:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Internal server error';
+    return NextResponse.json({ error: errorMessage, details: String(error) }, { status: 500 });
   }
 }
 
 // GET /api/tasks/assignments/[id] - Get single assignment with history
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: { id: string } | Promise<{ id: string }> }
 ) {
   try {
-    const { id } = await params;
+    // Handle both sync and async params (Next.js 14/15 compatibility)
+    const resolvedParams = await Promise.resolve(params);
+    const id = resolvedParams?.id;
+
+    if (!id) {
+      console.error('[Task Assignment API] Missing assignment ID in params');
+      return NextResponse.json({ error: 'Assignment ID is required' }, { status: 400 });
+    }
+
     const supabase = getSupabaseAdmin();
     if (!supabase) {
       return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
@@ -394,7 +415,8 @@ export async function GET(
       history: history || [],
     });
   } catch (error) {
-    console.error('[Task Assignment API] Unexpected error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    console.error('[Task Assignment API] GET Unexpected error:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Internal server error';
+    return NextResponse.json({ error: errorMessage, details: String(error) }, { status: 500 });
   }
 }

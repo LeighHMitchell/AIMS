@@ -14,6 +14,7 @@ import { cn } from '@/lib/utils'
 import { format } from 'date-fns'
 import type { SearchResult, SearchResultType } from '@/types/search'
 import { normalizeSearchResults } from '@/lib/search-normalizer'
+import { LoadingText } from '@/components/ui/loading-text'
 
 // Result type ordering and labels
 const searchResultOrder: SearchResultType[] = [
@@ -307,7 +308,7 @@ function SearchPageContent() {
                         disabled={loading}
                         variant="outline"
                       >
-                        {loading ? 'Loading...' : 'Load More Results'}
+                        {loading ? <LoadingText>Loading...</LoadingText> : 'Load More Results'}
                       </Button>
                     </div>
                   )}

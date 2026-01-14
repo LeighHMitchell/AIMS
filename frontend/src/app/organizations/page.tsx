@@ -1629,20 +1629,7 @@ function OrganizationsPageContent() {
               <div className="h-10 bg-gray-200 rounded w-32 animate-pulse"></div>
             </div>
           </div>
-          
-          {/* Summary cards skeleton */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {[...Array(4)].map((_, i) => (
-              <Card key={i}>
-                <CardContent className="p-6">
-                  <div className="h-6 bg-gray-200 rounded w-24 animate-pulse mb-2"></div>
-                  <div className="h-8 bg-gray-200 rounded w-16 animate-pulse mb-1"></div>
-                  <div className="h-4 bg-gray-200 rounded w-20 animate-pulse"></div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-          
+
           {/* Grid skeleton */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {[...Array(6)].map((_, i) => (
@@ -1699,55 +1686,6 @@ function OrganizationsPageContent() {
             </TooltipProvider>
           </div>
         </div>
-
-        {/* Summary Cards */}
-        {summary && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Total Organizations</CardTitle>
-                <Building2 className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{summary.totalOrganizations}</div>
-                <p className="text-xs text-muted-foreground">Active organizations</p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Committed Funding</CardTitle>
-                <DollarSign className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{formatCurrency(summary.totalCommittedFunding)}</div>
-                <p className="text-xs text-muted-foreground">In implementation</p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Active Projects</CardTitle>
-                <Activity className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{summary.totalActiveProjects}</div>
-                <p className="text-xs text-muted-foreground">Ongoing activities</p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Custom Groups</CardTitle>
-                <Users className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{summary.totalCustomGroups}</div>
-                <p className="text-xs text-muted-foreground">Organization groups</p>
-              </CardContent>
-            </Card>
-          </div>
-        )}
 
         {/* Search and Results Info */}
         <div className="space-y-4">

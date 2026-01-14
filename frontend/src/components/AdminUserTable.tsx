@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/tooltip"
 import { User, ROLE_LABELS, USER_ROLES, Organization } from "@/types/user"
 import { getRoleBadgeVariant } from "@/lib/role-badge-utils"
-import { Search, UserPlus, Edit, Mail, Phone, Building2, Loader2, AlertCircle, Shield, Key, Lock, Check, X, Activity, ChevronsUpDown, ChevronLeft, ChevronRight, Users, RefreshCw } from "lucide-react"
+import { Search, UserPlus, Edit, Mail, Phone, Building2, Loader2, AlertCircle, Shield, Key, Lock, Check, X, Trash2, ChevronsUpDown, ChevronLeft, ChevronRight, Users, RefreshCw } from "lucide-react"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command"
 import { Label } from "@/components/ui/label"
@@ -32,7 +32,16 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { CreateUserModal } from "@/components/admin/CreateUserModal"
 import { EditUserModal } from "@/components/admin/EditUserModal"
 import { ResetPasswordModal } from "@/components/ResetPasswordModal"
-import { UserActivityPanel } from "@/components/admin/UserActivityPanel"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 
 type SortField = 'name' | 'organization' | 'role' | 'status' | 'lastLogin'
 type SortOrder = 'asc' | 'desc'
@@ -56,7 +65,8 @@ export function AdminUserTable() {
   const [isCreateUserModalOpen, setIsCreateUserModalOpen] = useState(false)
   const [editingUser, setEditingUser] = useState<ExtendedUser | null>(null)
   const [resetPasswordUser, setResetPasswordUser] = useState<ExtendedUser | null>(null)
-  const [activityPanelUser, setActivityPanelUser] = useState<ExtendedUser | null>(null)
+  const [deleteUserTarget, setDeleteUserTarget] = useState<ExtendedUser | null>(null)
+  const [isDeleting, setIsDeleting] = useState(false)
 
   // Sorting state - default to last login, most recent first
   const [sortField, setSortField] = useState<SortField>('lastLogin')
@@ -75,6 +85,7 @@ export function AdminUserTable() {
 
   const phoneInputRef = useRef<HTMLInputElement>(null)
   const emailInputRef = useRef<HTMLInputElement>(null)
+  const abortControllerRef = useRef<AbortController | null>(null)
 
   // Security check - only super users can access this
   const canAccess = currentUser?.role === USER_ROLES.SUPER_USER
@@ -82,9 +93,25 @@ export function AdminUserTable() {
   useEffect(() => {
     if (!canAccess) return
     fetchUsersAndOrganizations()
+
+    // Cleanup: abort any in-flight requests when component unmounts
+    return () => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort()
+      }
+    }
   }, [canAccess])
 
   const fetchUsersAndOrganizations = async () => {
+    // Abort any previous in-flight request
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort()
+    }
+
+    // Create new abort controller for this request
+    const abortController = new AbortController()
+    abortControllerRef.current = abortController
+
     setIsLoading(true)
     setError(null)
 
@@ -99,11 +126,22 @@ export function AdminUserTable() {
       }
 
       // Fetch users using the API endpoint that includes organization data
-      const response = await fetch('/api/users')
+      const response = await fetch('/api/users', { signal: abortController.signal })
+
+      // Check if this request was aborted
+      if (abortController.signal.aborted) {
+        return
+      }
+
       if (!response.ok) {
         throw new Error('Failed to fetch users')
       }
       const usersData = await response.json()
+
+      // Check again after parsing JSON (in case abort happened during parsing)
+      if (abortController.signal.aborted) {
+        return
+      }
 
       // Map the data to our User interface
       const mappedUsers: ExtendedUser[] = (usersData || []).map((user: any) => ({
@@ -147,8 +185,10 @@ export function AdminUserTable() {
 
       setUsers(mappedUsers)
       setFilteredUsers(mappedUsers)
+      setError(null) // Clear any previous error on successful fetch
+      setIsLoading(false) // Clear loading as soon as users are fetched
 
-      // Fetch organizations
+      // Fetch organizations (non-blocking for table display)
       const { data: orgsData, error: orgsError } = await supabase
         .from('organizations')
         .select('*')
@@ -172,13 +212,24 @@ export function AdminUserTable() {
 
       setOrganizations(mappedOrgs)
     } catch (error: any) {
+      // Ignore abort errors - they're expected when we cancel stale requests
+      if (error.name === 'AbortError') {
+        console.log('[AdminUserTable] Request aborted (superseded by newer request)')
+        return
+      }
       console.error('Error fetching data:', error)
-      setError(error.message || 'Failed to load users')
-      // Show empty state on error - no mock data fallback
-      setUsers([])
-      setFilteredUsers([])
+      // Only set error if this request wasn't aborted
+      if (!abortController.signal.aborted) {
+        setError(error.message || 'Failed to load users')
+        // Show empty state on error - no mock data fallback
+        setUsers([])
+        setFilteredUsers([])
+      }
     } finally {
-      setIsLoading(false)
+      // Only clear loading if this is still the current request
+      if (!abortController.signal.aborted) {
+        setIsLoading(false)
+      }
     }
   }
 
@@ -309,6 +360,37 @@ export function AdminUserTable() {
   const handlePasswordReset = () => {
     setResetPasswordUser(null)
     // No need to refresh data as password reset doesn't change user profile data
+  }
+
+  const handleUserDelete = async () => {
+    if (!deleteUserTarget) return
+
+    if (deleteUserTarget.id === currentUser?.id) {
+      toast.error("You cannot delete your own account")
+      setDeleteUserTarget(null)
+      return
+    }
+
+    setIsDeleting(true)
+    try {
+      const response = await fetch(`/api/users?id=${deleteUserTarget.id}`, {
+        method: 'DELETE',
+      })
+
+      if (response.ok) {
+        setUsers(prev => prev.filter(u => u.id !== deleteUserTarget.id))
+        toast.success("User deleted successfully")
+      } else {
+        const data = await response.json()
+        toast.error(data.error || "Failed to delete user")
+      }
+    } catch (error) {
+      console.error('Error deleting user:', error)
+      toast.error("Failed to delete user")
+    } finally {
+      setIsDeleting(false)
+      setDeleteUserTarget(null)
+    }
   }
 
   // Sorting handler
@@ -925,13 +1007,15 @@ export function AdminUserTable() {
                             <Button
                               variant="ghost"
                               size="sm"
-                              onClick={() => setActivityPanelUser(user)}
+                              onClick={() => setDeleteUserTarget(user)}
+                              disabled={user.id === currentUser?.id}
+                              className="text-red-600 hover:text-red-700 hover:bg-red-50"
                             >
-                              <Activity className="h-4 w-4" />
+                              <Trash2 className="h-4 w-4" />
                             </Button>
                           </TooltipTrigger>
                           <TooltipContent>
-                            <p>View activity</p>
+                            <p>{user.id === currentUser?.id ? "Cannot delete your own account" : "Delete user"}</p>
                           </TooltipContent>
                         </Tooltip>
                       </div>
@@ -1076,15 +1160,40 @@ export function AdminUserTable() {
         userEmail={resetPasswordUser?.email || ''}
       />
 
-      {/* User Activity Panel */}
-      <UserActivityPanel
-        userId={activityPanelUser?.id || null}
-        userName={activityPanelUser?.name || activityPanelUser?.firstName && activityPanelUser?.lastName 
-          ? `${activityPanelUser.firstName} ${activityPanelUser.lastName}` 
-          : 'User'}
-        isOpen={!!activityPanelUser}
-        onClose={() => setActivityPanelUser(null)}
-      />
+      {/* Delete User Confirmation Dialog */}
+      <AlertDialog open={!!deleteUserTarget} onOpenChange={(open) => !open && setDeleteUserTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete User Account</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete the account for{' '}
+              <span className="font-semibold">
+                {deleteUserTarget?.firstName && deleteUserTarget?.lastName
+                  ? `${deleteUserTarget.firstName} ${deleteUserTarget.lastName}`
+                  : deleteUserTarget?.name || deleteUserTarget?.email}
+              </span>
+              ? This action cannot be undone and will permanently remove the user and all associated data.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleUserDelete}
+              disabled={isDeleting}
+              className="bg-red-600 hover:bg-red-700 focus:ring-red-600"
+            >
+              {isDeleting ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                'Delete User'
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Card>
   )
 } 

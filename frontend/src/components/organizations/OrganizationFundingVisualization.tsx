@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useMemo, useState } from 'react'
+import React, { useMemo, useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -23,7 +23,8 @@ import {
   OrganizationFundingEnvelope,
   getTemporalCategory
 } from '@/types/organization-funding-envelope'
-import { TrendingUp, AlertCircle, BarChart3, LineChart as LineChartIcon, Table as TableIcon, Layers } from 'lucide-react'
+import { TrendingUp, AlertCircle, BarChart3, LineChart as LineChartIcon, Table as TableIcon, Layers, RefreshCw } from 'lucide-react'
+import { convertToUSD } from '@/lib/currency-conversion-api'
 
 // Color scheme
 const COLORS = {
@@ -41,12 +42,90 @@ interface OrganizationFundingVisualizationProps {
 
 type ChartViewType = 'line' | 'bar' | 'area' | 'table'
 
+// Helper to validate if amount_usd is reasonable (within 10x of original amount for non-USD)
+function isValidUSDConversion(amount: number, currency: string, amountUSD: number | null | undefined): boolean {
+  if (!amountUSD || amountUSD <= 0) return false
+  if (currency === 'USD') return Math.abs(amountUSD - amount) < 0.01 // Should be equal for USD
+  // For other currencies, USD amount should be within reasonable bounds (0.1x to 10x of original)
+  const ratio = amountUSD / amount
+  return ratio >= 0.1 && ratio <= 10
+}
+
 export default function OrganizationFundingVisualization({
   envelopes,
   organizationName
 }: OrganizationFundingVisualizationProps) {
   const currentYear = new Date().getFullYear()
   const [chartView, setChartView] = useState<ChartViewType>('line')
+  const [convertedAmounts, setConvertedAmounts] = useState<Map<string, number>>(new Map())
+  const [isConverting, setIsConverting] = useState(false)
+
+  // Convert envelopes that need USD conversion
+  useEffect(() => {
+    const convertEnvelopes = async () => {
+      const envelopesNeedingConversion = envelopes.filter(envelope => {
+        const hasValidUSD = isValidUSDConversion(
+          envelope.amount,
+          envelope.currency,
+          envelope.amount_usd
+        )
+        return !hasValidUSD && envelope.currency !== 'USD'
+      })
+
+      if (envelopesNeedingConversion.length === 0) return
+
+      setIsConverting(true)
+      const newConversions = new Map(convertedAmounts)
+
+      for (const envelope of envelopesNeedingConversion) {
+        if (!envelope.id) continue
+        try {
+          // Use value_date if available, otherwise Jan 1 of year_start
+          const conversionDate = envelope.value_date
+            ? new Date(envelope.value_date)
+            : new Date(envelope.year_start, 0, 1)
+
+          const result = await convertToUSD(
+            envelope.amount,
+            envelope.currency,
+            conversionDate
+          )
+
+          if (result.success && result.usd_amount) {
+            newConversions.set(envelope.id, result.usd_amount)
+          }
+        } catch (error) {
+          console.error(`Failed to convert envelope ${envelope.id}:`, error)
+        }
+      }
+
+      setConvertedAmounts(newConversions)
+      setIsConverting(false)
+    }
+
+    convertEnvelopes()
+  }, [envelopes])
+
+  // Get USD amount for an envelope (with validation and fallback to converted amount)
+  const getEnvelopeUSDAmount = (envelope: OrganizationFundingEnvelope): number => {
+    // If already USD, return amount directly
+    if (envelope.currency === 'USD') {
+      return envelope.amount || 0
+    }
+
+    // Check if stored amount_usd is valid
+    if (isValidUSDConversion(envelope.amount, envelope.currency, envelope.amount_usd)) {
+      return envelope.amount_usd!
+    }
+
+    // Use converted amount from API if available
+    if (envelope.id && convertedAmounts.has(envelope.id)) {
+      return convertedAmounts.get(envelope.id)!
+    }
+
+    // Fallback: return 0 if no valid conversion (don't mix currencies)
+    return 0
+  }
 
   // Categorize envelopes
   const categorized = useMemo(() => {
@@ -81,7 +160,7 @@ export default function OrganizationFundingVisualization({
 
     envelopes.forEach(envelope => {
       const endYear = envelope.year_end || envelope.year_start
-      const amount = envelope.amount_usd || envelope.amount || 0
+      const amount = getEnvelopeUSDAmount(envelope)
       const category = getTemporalCategory(envelope, currentYear)
 
       // For multi-year, distribute across years (simple approach: use start year)
@@ -115,19 +194,19 @@ export default function OrganizationFundingVisualization({
 
     return Array.from(yearMap.values())
       .sort((a, b) => a.year - b.year)
-  }, [envelopes, currentYear])
+  }, [envelopes, currentYear, convertedAmounts])
 
 
   // Format currency
   const formatCurrency = (value: number) => {
     if (value >= 1000000000) {
-      return `$${(value / 1000000000).toFixed(2)}B`
+      return `$${Math.round(value / 1000000000)}B`
     } else if (value >= 1000000) {
-      return `$${(value / 1000000).toFixed(1)}M`
+      return `$${Math.round(value / 1000000)}M`
     } else if (value >= 1000) {
-      return `$${(value / 1000).toFixed(1)}K`
+      return `$${Math.round(value / 1000)}K`
     }
-    return `$${value.toFixed(0)}`
+    return `$${Math.round(value)}`
   }
 
   const CustomTooltip = ({ active, payload, label }: any) => {
@@ -172,7 +251,7 @@ export default function OrganizationFundingVisualization({
           <CardContent>
             <div className="text-2xl font-bold" style={{ color: COLORS.primaryScarlet }}>
               {formatCurrency(
-                categorized.past.reduce((sum, e) => sum + (e.amount_usd || e.amount || 0), 0)
+                categorized.past.reduce((sum, e) => sum + getEnvelopeUSDAmount(e), 0)
               )}
             </div>
             <p className="text-xs mt-1" style={{ color: COLORS.blueSlate }}>
@@ -188,7 +267,7 @@ export default function OrganizationFundingVisualization({
           <CardContent>
             <div className="text-2xl font-bold" style={{ color: COLORS.coolSteel }}>
               {formatCurrency(
-                categorized.current.reduce((sum, e) => sum + (e.amount_usd || e.amount || 0), 0)
+                categorized.current.reduce((sum, e) => sum + getEnvelopeUSDAmount(e), 0)
               )}
             </div>
             <p className="text-xs mt-1" style={{ color: COLORS.blueSlate }}>
@@ -204,7 +283,7 @@ export default function OrganizationFundingVisualization({
           <CardContent>
             <div className="text-2xl font-bold" style={{ color: COLORS.blueSlate }}>
               {formatCurrency(
-                categorized.future.reduce((sum, e) => sum + (e.amount_usd || e.amount || 0), 0)
+                categorized.future.reduce((sum, e) => sum + getEnvelopeUSDAmount(e), 0)
               )}
             </div>
             <p className="text-xs mt-1" style={{ color: COLORS.blueSlate }}>
@@ -223,10 +302,10 @@ export default function OrganizationFundingVisualization({
                 <CardTitle className="flex items-center gap-2">
                   <TrendingUp className="h-5 w-5" style={{ color: COLORS.primaryScarlet }} />
                   Funding Over Time
+                  {isConverting && (
+                    <RefreshCw className="h-4 w-4 animate-spin" style={{ color: COLORS.coolSteel }} />
+                  )}
                 </CardTitle>
-                <p className="text-sm mt-1" style={{ color: COLORS.blueSlate }}>
-                  Indicative organisation-level funding by temporal category (not aggregated across organisations)
-                </p>
               </div>
               {/* Chart Type Toggle */}
               <div className="flex gap-1 border rounded-lg p-1" style={{ backgroundColor: COLORS.platinum }}>
@@ -324,6 +403,7 @@ export default function OrganizationFundingVisualization({
                         strokeWidth={3}
                         dot={{ r: 5, fill: COLORS.primaryScarlet }}
                         connectNulls={true}
+                        isAnimationActive={false}
                       />
                     )}
                     {/* Current segment - solid cool steel */}
@@ -437,6 +517,7 @@ export default function OrganizationFundingVisualization({
                         fillOpacity={0.6}
                         strokeWidth={2}
                         connectNulls={true}
+                        isAnimationActive={false}
                       />
                     )}
                     {/* Current segment - cool steel area */}

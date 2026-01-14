@@ -12,6 +12,7 @@ import { HelpTextTooltip } from "@/components/ui/help-text-tooltip"
 import { SearchableSelect } from "@/components/ui/searchable-select"
 import Flag from "react-world-flags"
 import { CustomYearsManagement } from "./CustomYearsManagement"
+import { LoadingText } from "@/components/ui/loading-text"
 
 // Get unique countries sorted alphabetically by name
 const sortedCountries = Array.from(new Map(countries.map(c => [c.code, c])).values())
@@ -192,7 +193,7 @@ export function SystemsSettings() {
             </CardHeader>
             <CardContent>
               <div className="flex items-center justify-center py-8 text-muted-foreground">
-                <p>Loading...</p>
+                <LoadingText>Loading settings...</LoadingText>
               </div>
             </CardContent>
           </Card>

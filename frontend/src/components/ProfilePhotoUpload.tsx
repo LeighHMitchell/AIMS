@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { Camera, Upload, X, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { LoadingText } from "@/components/ui/loading-text";
 
 interface ProfilePhotoUploadProps {
   currentPhoto?: string;
@@ -236,7 +237,7 @@ export function ProfilePhotoUpload({
               {isUploading ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Uploading...
+                  <LoadingText>Uploading...</LoadingText>
                 </>
               ) : (
                 <>

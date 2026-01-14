@@ -21,6 +21,7 @@ import {
   ResponsiveContainer,
 } from 'recharts'
 import { TrendingUp, TableIcon, AreaChartIcon } from 'lucide-react'
+import { LoadingText } from '@/components/ui/loading-text'
 
 interface YearData {
   year: number;
@@ -113,10 +114,10 @@ export function DisbursementsOverTimeChart({ data, loading = false }: Disburseme
       <Card>
         <CardHeader>
           <CardTitle>Disbursements Over Time by Sector</CardTitle>
-          <CardDescription>Loading data...</CardDescription>
+          <CardDescription><LoadingText>Loading data...</LoadingText></CardDescription>
         </CardHeader>
         <CardContent className="h-96 flex items-center justify-center">
-          <div className="text-muted-foreground">Loading...</div>
+          <LoadingText>Loading disbursements...</LoadingText>
         </CardContent>
       </Card>
     );

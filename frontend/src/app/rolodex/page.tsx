@@ -48,6 +48,7 @@ import {
 
 import { PersonCard } from '@/components/rolodex/PersonCard';
 import { useRolodexData } from '@/components/rolodex/useRolodexData';
+import { LoadingText } from '@/components/ui/loading-text';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useRouter } from 'next/navigation';
 
@@ -628,7 +629,7 @@ export default function RolodexPage() {
                 <div className="absolute inset-0 bg-white/75 flex items-center justify-center z-10">
                   <div className="flex items-center space-x-2 text-slate-600">
                     <RefreshCw className="h-5 w-5 animate-spin" />
-                    <span>Loading...</span>
+                    <LoadingText>Loading contacts...</LoadingText>
                   </div>
                 </div>
               </div>

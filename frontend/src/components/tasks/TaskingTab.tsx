@@ -25,6 +25,8 @@ import {
   List,
   Archive,
   BarChart3,
+  UserCheck,
+  ArrowRightLeft,
 } from 'lucide-react';
 import { TaskCard } from './TaskCard';
 import { TaskTable } from './TaskTable';
@@ -49,7 +51,16 @@ interface TaskingTabProps {
 }
 
 export function TaskingTab({ userId, canCreateTasks = false, canViewAnalytics = false }: TaskingTabProps) {
-  const [activeView, setActiveView] = useState<'assigned' | 'created' | 'analytics'>('assigned');
+  // Initialize activeView from localStorage if available
+  const [activeView, setActiveView] = useState<'assigned' | 'created' | 'analytics' | 'reassigned'>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('taskingTab_activeView');
+      if (saved && ['assigned', 'created', 'analytics', 'reassigned'].includes(saved)) {
+        return saved as 'assigned' | 'created' | 'analytics' | 'reassigned';
+      }
+    }
+    return 'assigned';
+  });
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [viewMode, setViewMode] = useState<'cards' | 'table'>('cards');
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -66,11 +77,14 @@ export function TaskingTab({ userId, canCreateTasks = false, canViewAnalytics = 
   const {
     tasks,
     assignedTasks,
+    reassignedTasks,
     loading,
     stats,
     assignedStats,
+    reassignedStats,
     fetchMyTasks,
     fetchAssignedTasks,
+    fetchReassignedTasks,
     createTask,
     updateTask,
     deleteTask,
@@ -85,6 +99,13 @@ export function TaskingTab({ userId, canCreateTasks = false, canViewAnalytics = 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Persist activeView to localStorage
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('taskingTab_activeView', activeView);
+    }
+  }, [activeView]);
+
   // Refetch when showArchived changes
   useEffect(() => {
     fetchAssignedTasks({ includeArchived: showArchived });
@@ -97,7 +118,8 @@ export function TaskingTab({ userId, canCreateTasks = false, canViewAnalytics = 
     console.log('[TaskingTab] updateStatus result:', result);
     if (result) {
       toast.success(`Task ${status === 'completed' ? 'completed' : status === 'in_progress' ? 'started' : 'updated'}`);
-      fetchAssignedTasks({ includeArchived: showArchived });
+      // Await the refetch to ensure UI updates with new status
+      await fetchAssignedTasks({ includeArchived: showArchived });
     } else {
       toast.error('Failed to update task status');
     }
@@ -155,7 +177,7 @@ export function TaskingTab({ userId, canCreateTasks = false, canViewAnalytics = 
     const result = await archiveTask(assignmentId);
     if (result) {
       toast.success('Task archived');
-      fetchAssignedTasks({ includeArchived: showArchived });
+      await fetchAssignedTasks({ includeArchived: showArchived });
     } else {
       toast.error('Failed to archive task');
     }
@@ -166,7 +188,7 @@ export function TaskingTab({ userId, canCreateTasks = false, canViewAnalytics = 
     const result = await unarchiveTask(assignmentId);
     if (result) {
       toast.success('Task unarchived');
-      fetchAssignedTasks({ includeArchived: showArchived });
+      await fetchAssignedTasks({ includeArchived: showArchived });
     } else {
       toast.error('Failed to unarchive task');
     }
@@ -225,7 +247,11 @@ export function TaskingTab({ userId, canCreateTasks = false, canViewAnalytics = 
     }
   }
 
-  const currentStats = activeView === 'assigned' ? assignedStats : stats;
+  const currentStats = activeView === 'assigned'
+    ? assignedStats
+    : activeView === 'reassigned'
+    ? reassignedStats
+    : stats;
 
   return (
     <div className="space-y-6">
@@ -236,7 +262,11 @@ export function TaskingTab({ userId, canCreateTasks = false, canViewAnalytics = 
           <p className="text-muted-foreground">
             {activeView === 'assigned'
               ? 'Tasks assigned to you'
-              : 'Tasks you have created'}
+              : activeView === 'reassigned'
+              ? 'Tasks you have reassigned to others'
+              : activeView === 'created'
+              ? 'Tasks you have created'
+              : 'Task analytics'}
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -324,7 +354,7 @@ export function TaskingTab({ userId, canCreateTasks = false, canViewAnalytics = 
       )}
 
       {/* View Tabs */}
-      <Tabs value={activeView} onValueChange={(v) => setActiveView(v as 'assigned' | 'created')}>
+      <Tabs value={activeView} onValueChange={(v) => setActiveView(v as 'assigned' | 'created' | 'analytics' | 'reassigned')}>
         <div className="flex items-center justify-between">
           <TabsList>
             <TabsTrigger value="assigned" className="gap-2">
@@ -333,6 +363,15 @@ export function TaskingTab({ userId, canCreateTasks = false, canViewAnalytics = 
               {assignedStats && assignedStats.pending + assignedStats.in_progress > 0 && (
                 <Badge variant="secondary" className="ml-1">
                   {assignedStats.pending + assignedStats.in_progress}
+                </Badge>
+              )}
+            </TabsTrigger>
+            <TabsTrigger value="reassigned" className="gap-2">
+              <ArrowRightLeft className="h-4 w-4" />
+              Reassigned
+              {reassignedStats && reassignedStats.total > 0 && (
+                <Badge variant="secondary" className="ml-1">
+                  {reassignedStats.total}
                 </Badge>
               )}
             </TabsTrigger>
@@ -397,8 +436,8 @@ export function TaskingTab({ userId, canCreateTasks = false, canViewAnalytics = 
               </SelectContent>
             </Select>
 
-            {/* View Mode Toggle - show for Assigned to Me and Created by Me tabs */}
-            {(activeView === 'assigned' || activeView === 'created') && (
+            {/* View Mode Toggle - show for Assigned to Me, Reassigned, and Created by Me tabs */}
+            {(activeView === 'assigned' || activeView === 'created' || activeView === 'reassigned') && (
               <div className="flex border rounded-lg">
                 <Button
                   variant={viewMode === 'cards' ? 'secondary' : 'ghost'}
@@ -469,6 +508,182 @@ export function TaskingTab({ userId, canCreateTasks = false, canViewAnalytics = 
           )}
         </TabsContent>
 
+        {/* Reassigned Tasks View */}
+        <TabsContent value="reassigned" className="mt-6">
+          {loading ? (
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              {[...Array(6)].map((_, i) => (
+                <Skeleton key={i} className="h-48" />
+              ))}
+            </div>
+          ) : reassignedTasks.length === 0 ? (
+            <Card>
+              <CardContent className="flex flex-col items-center justify-center py-12">
+                <ArrowRightLeft className="h-12 w-12 text-muted-foreground mb-4" />
+                <h3 className="text-lg font-medium">No reassigned tasks</h3>
+                <p className="text-muted-foreground text-center mt-1">
+                  Tasks you reassign to others will appear here so you can track their progress.
+                </p>
+              </CardContent>
+            </Card>
+          ) : viewMode === 'cards' ? (
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              {reassignedTasks.map((reassignment) => (
+                <Card key={reassignment.id} className="relative">
+                  <CardHeader className="pb-2">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex-1 min-w-0">
+                        <CardTitle className="text-base line-clamp-2">
+                          {reassignment.assignment.task?.title || 'Untitled Task'}
+                        </CardTitle>
+                        <CardDescription className="mt-1 line-clamp-2">
+                          {reassignment.assignment.task?.description}
+                        </CardDescription>
+                      </div>
+                      <Badge
+                        variant={
+                          reassignment.assignment.status === 'completed' ? 'default' :
+                          reassignment.assignment.status === 'in_progress' ? 'secondary' :
+                          reassignment.assignment.status === 'declined' ? 'destructive' :
+                          'outline'
+                        }
+                      >
+                        {reassignment.assignment.status.replace('_', ' ')}
+                      </Badge>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="pt-2">
+                    <div className="space-y-3">
+                      {/* Reassigned to */}
+                      <div className="flex items-center gap-2 text-sm">
+                        <UserCheck className="h-4 w-4 text-muted-foreground" />
+                        <span className="text-muted-foreground">Reassigned to:</span>
+                        <span className="font-medium">
+                          {reassignment.assignment.assignee?.first_name} {reassignment.assignment.assignee?.last_name}
+                        </span>
+                      </div>
+                      {/* Reassignment date */}
+                      <div className="flex items-center gap-2 text-sm">
+                        <Clock className="h-4 w-4 text-muted-foreground" />
+                        <span className="text-muted-foreground">Reassigned:</span>
+                        <span>
+                          {new Date(reassignment.created_at).toLocaleDateString()}
+                        </span>
+                      </div>
+                      {/* Deadline if exists */}
+                      {reassignment.assignment.task?.deadline && (
+                        <div className="flex items-center gap-2 text-sm">
+                          <AlertTriangle className={`h-4 w-4 ${reassignment.assignment.is_overdue ? 'text-red-500' : 'text-muted-foreground'}`} />
+                          <span className="text-muted-foreground">Deadline:</span>
+                          <span className={reassignment.assignment.is_overdue ? 'text-red-500 font-medium' : ''}>
+                            {new Date(reassignment.assignment.task.deadline).toLocaleDateString()}
+                            {reassignment.assignment.is_overdue && ' (Overdue)'}
+                          </span>
+                        </div>
+                      )}
+                      {/* Reassignment note */}
+                      {reassignment.note && (
+                        <div className="text-sm text-muted-foreground bg-muted/50 rounded p-2 mt-2">
+                          <span className="font-medium">Note:</span> {reassignment.note}
+                        </div>
+                      )}
+                    </div>
+                    {/* View Details Button */}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="w-full mt-4"
+                      onClick={() => {
+                        if (reassignment.assignment.task?.id) {
+                          setSelectedTaskId(reassignment.assignment.task.id);
+                          setSelectedAssignmentId(reassignment.assignment.id);
+                          setDetailModalOpen(true);
+                        }
+                      }}
+                    >
+                      View Details
+                    </Button>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            <Card>
+              <CardContent className="p-0">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b bg-muted/50">
+                      <th className="text-left p-3 font-medium">Task</th>
+                      <th className="text-left p-3 font-medium">Reassigned To</th>
+                      <th className="text-left p-3 font-medium">Status</th>
+                      <th className="text-left p-3 font-medium">Deadline</th>
+                      <th className="text-left p-3 font-medium">Reassigned On</th>
+                      <th className="text-left p-3 font-medium">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {reassignedTasks.map((reassignment) => (
+                      <tr key={reassignment.id} className="border-b hover:bg-muted/25">
+                        <td className="p-3">
+                          <div className="font-medium">{reassignment.assignment.task?.title || 'Untitled'}</div>
+                          {reassignment.assignment.task?.description && (
+                            <div className="text-sm text-muted-foreground line-clamp-1">
+                              {reassignment.assignment.task.description}
+                            </div>
+                          )}
+                        </td>
+                        <td className="p-3">
+                          {reassignment.assignment.assignee?.first_name} {reassignment.assignment.assignee?.last_name}
+                        </td>
+                        <td className="p-3">
+                          <Badge
+                            variant={
+                              reassignment.assignment.status === 'completed' ? 'default' :
+                              reassignment.assignment.status === 'in_progress' ? 'secondary' :
+                              reassignment.assignment.status === 'declined' ? 'destructive' :
+                              'outline'
+                            }
+                          >
+                            {reassignment.assignment.status.replace('_', ' ')}
+                          </Badge>
+                        </td>
+                        <td className="p-3">
+                          {reassignment.assignment.task?.deadline ? (
+                            <span className={reassignment.assignment.is_overdue ? 'text-red-500 font-medium' : ''}>
+                              {new Date(reassignment.assignment.task.deadline).toLocaleDateString()}
+                              {reassignment.assignment.is_overdue && ' (Overdue)'}
+                            </span>
+                          ) : (
+                            <span className="text-muted-foreground">-</span>
+                          )}
+                        </td>
+                        <td className="p-3 text-muted-foreground">
+                          {new Date(reassignment.created_at).toLocaleDateString()}
+                        </td>
+                        <td className="p-3">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              if (reassignment.assignment.task?.id) {
+                                setSelectedTaskId(reassignment.assignment.task.id);
+                                setSelectedAssignmentId(reassignment.assignment.id);
+                                setDetailModalOpen(true);
+                              }
+                            }}
+                          >
+                            View
+                          </Button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </CardContent>
+            </Card>
+          )}
+        </TabsContent>
+
         {/* Created Tasks View */}
         {canCreateTasks && (
           <TabsContent value="created" className="mt-6">
@@ -523,9 +738,13 @@ export function TaskingTab({ userId, canCreateTasks = false, canViewAnalytics = 
           assignment={selectedAssignment}
           userId={userId}
           onReassign={handleReassign}
-          onSuccess={() => {
+          onSuccess={async () => {
             toast.success('Task reassigned successfully');
-            fetchAssignedTasks({ includeArchived: showArchived });
+            // Refresh both the assigned tasks list and the reassigned tasks list
+            await Promise.all([
+              fetchAssignedTasks({ includeArchived: showArchived }),
+              fetchReassignedTasks(),
+            ]);
           }}
         />
       )}

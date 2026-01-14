@@ -166,16 +166,115 @@ export function ChartSkeleton({ height = "300px" }: { height?: string }) {
         <div className="relative" style={{ height }}>
           <div className="absolute inset-0 flex items-end justify-between gap-2 px-4">
             {[...Array(12)].map((_, i) => (
-              <Skeleton 
-                key={i} 
-                variant="rectangular" 
-                width="100%" 
-                height={`${Math.random() * 80 + 20}%`} 
+              <Skeleton
+                key={i}
+                variant="rectangular"
+                width="100%"
+                height={`${Math.random() * 80 + 20}%`}
                 className="opacity-30"
               />
             ))}
           </div>
         </div>
+      </div>
+    </div>
+  );
+}
+
+// Bar Chart Skeleton - mimics the layout of analytics bar charts
+export function BarChartSkeleton({ height = "384px", bars = 6, showLegend = true }: { height?: string; bars?: number; showLegend?: boolean }) {
+  // Generate consistent heights for the skeleton bars
+  const barHeights = [75, 55, 85, 45, 65, 90, 50, 70, 60, 80];
+
+  return (
+    <div className="w-full">
+      {/* Legend skeleton */}
+      {showLegend && (
+        <div className="flex items-center justify-center gap-6 mb-6 p-4 bg-gray-50 rounded-lg">
+          {[...Array(4)].map((_, i) => (
+            <div key={i} className="flex items-center gap-2">
+              <Skeleton variant="rectangular" width="16px" height="16px" />
+              <Skeleton variant="text" width="80px" height="14px" />
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Chart area skeleton */}
+      <div className="relative" style={{ height }}>
+        {/* Y-axis skeleton */}
+        <div className="absolute left-0 top-0 bottom-12 w-16 flex flex-col justify-between py-4">
+          {[...Array(5)].map((_, i) => (
+            <Skeleton key={i} variant="text" width="40px" height="12px" />
+          ))}
+        </div>
+
+        {/* Chart bars skeleton */}
+        <div className="absolute left-20 right-4 top-4 bottom-12 flex items-end justify-around gap-3">
+          {[...Array(bars)].map((_, i) => (
+            <div key={i} className="flex-1 flex items-end justify-center gap-1 h-full">
+              {/* Multiple bars per category to mimic grouped bar chart */}
+              <Skeleton
+                variant="rectangular"
+                width="20%"
+                height={`${barHeights[i % barHeights.length]}%`}
+                className="rounded-t"
+              />
+              <Skeleton
+                variant="rectangular"
+                width="20%"
+                height={`${barHeights[(i + 2) % barHeights.length]}%`}
+                className="rounded-t"
+              />
+              <Skeleton
+                variant="rectangular"
+                width="20%"
+                height={`${barHeights[(i + 4) % barHeights.length]}%`}
+                className="rounded-t"
+              />
+            </div>
+          ))}
+        </div>
+
+        {/* X-axis skeleton */}
+        <div className="absolute left-20 right-4 bottom-0 h-10 flex justify-around items-start pt-2">
+          {[...Array(bars)].map((_, i) => (
+            <Skeleton key={i} variant="text" width="60px" height="12px" />
+          ))}
+        </div>
+      </div>
+
+      {/* Footer info skeleton */}
+      <div className="mt-4 flex gap-4">
+        <Skeleton variant="text" width="200px" height="14px" />
+        <Skeleton variant="text" width="150px" height="14px" />
+      </div>
+    </div>
+  );
+}
+
+// Pie Chart Skeleton
+export function PieChartSkeleton({ height = "384px" }: { height?: string }) {
+  return (
+    <div className="w-full">
+      <div className="flex items-center justify-center" style={{ height }}>
+        <div className="relative">
+          {/* Outer ring */}
+          <Skeleton variant="circular" width="280px" height="280px" />
+          {/* Inner cutout for donut effect */}
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className="w-[140px] h-[140px] rounded-full bg-white" />
+          </div>
+        </div>
+      </div>
+      {/* Legend skeleton */}
+      <div className="flex flex-wrap justify-center gap-4 mt-4">
+        {[...Array(5)].map((_, i) => (
+          <div key={i} className="flex items-center gap-2">
+            <Skeleton variant="rectangular" width="12px" height="12px" />
+            <Skeleton variant="text" width="70px" height="12px" />
+          </div>
+        ))}
       </div>
     </div>
   );

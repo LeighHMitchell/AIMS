@@ -20,6 +20,7 @@ import {
   Cell
 } from 'recharts'
 import { BarChart3, TableIcon, ChevronDown, ChevronUp } from 'lucide-react'
+import { LoadingText } from '@/components/ui/loading-text'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
 
 interface YearData {
@@ -120,10 +121,10 @@ export function DisbursementsBySectorChart({ data, loading = false }: Disburseme
       <Card>
         <CardHeader>
           <CardTitle>Disbursements by Sector</CardTitle>
-          <CardDescription>Loading data...</CardDescription>
+          <CardDescription><LoadingText>Loading data...</LoadingText></CardDescription>
         </CardHeader>
         <CardContent className="h-96 flex items-center justify-center">
-          <div className="text-muted-foreground">Loading...</div>
+          <LoadingText>Loading sector data...</LoadingText>
         </CardContent>
       </Card>
     );

@@ -88,6 +88,35 @@ export default function TransactionsPage() {
   // Custom year selection for chart
   const { customYears, selectedId: selectedCustomYearId, setSelectedId: setSelectedCustomYearId, selectedYear, loading: customYearsLoading } = useCustomYears();
 
+  // Year range filter for chart
+  const [chartStartYear, setChartStartYear] = useState<number | null>(null);
+  const [chartEndYear, setChartEndYear] = useState<number | null>(null);
+
+  // Filter yearly summary data by year range
+  const filteredYearlySummary = useMemo(() => {
+    if (!yearlySummary) return [];
+    return yearlySummary.filter(item => {
+      if (chartStartYear && item.year < chartStartYear) return false;
+      if (chartEndYear && item.year > chartEndYear) return false;
+      return true;
+    });
+  }, [yearlySummary, chartStartYear, chartEndYear]);
+
+  // Calculate actual data year range (from unfiltered data)
+  const dataYearRange = useMemo(() => {
+    if (!yearlySummary || yearlySummary.length === 0) return { min: null, max: null };
+    const years = yearlySummary.map(d => d.year);
+    return { min: Math.min(...years), max: Math.max(...years) };
+  }, [yearlySummary]);
+
+  // Auto-select "Data" range when data first loads
+  useEffect(() => {
+    if (dataYearRange.min !== null && dataYearRange.max !== null && chartStartYear === null && chartEndYear === null) {
+      setChartStartYear(dataYearRange.min);
+      setChartEndYear(dataYearRange.max);
+    }
+  }, [dataYearRange.min, dataYearRange.max, chartStartYear, chartEndYear]);
+
   // Use the custom hook to fetch transactions (without sorting - we'll sort client-side)
   const { transactions, loading, error, refetch, deleteTransaction, addTransaction, acceptTransaction, rejectTransaction } = useTransactions({
     searchQuery,
@@ -817,8 +846,15 @@ export default function TransactionsPage() {
           title="Transaction Totals by Year"
           description="Yearly totals by transaction type (filtered)"
           loading={yearlySummaryLoading}
-          multiSeriesData={yearlySummary}
+          multiSeriesData={filteredYearlySummary}
           height={280}
+          selectedYear={selectedYear}
+          startYear={chartStartYear}
+          endYear={chartEndYear}
+          onStartYearChange={setChartStartYear}
+          onEndYearChange={setChartEndYear}
+          dataMinYear={dataYearRange.min}
+          dataMaxYear={dataYearRange.max}
           headerControls={
             <CustomYearSelector
               customYears={customYears}

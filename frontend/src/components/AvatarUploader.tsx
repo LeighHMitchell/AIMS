@@ -7,6 +7,7 @@ import { UserOrbAvatar } from "@/components/ui/user-orb-avatar"
 import { toast } from "sonner"
 import { supabase } from "@/lib/supabase"
 import { Alert, AlertDescription } from "@/components/ui/alert"
+import { LoadingText } from "@/components/ui/loading-text"
 
 interface AvatarUploaderProps {
   currentAvatar?: string
@@ -189,7 +190,7 @@ export function AvatarUploader({ currentAvatar, userName, userId, onUpload }: Av
                 {isUploading ? (
                   <>
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Uploading... {uploadProgress > 0 && `${uploadProgress}%`}
+                    <LoadingText>Uploading...</LoadingText> {uploadProgress > 0 && `${uploadProgress}%`}
                   </>
                 ) : (
                   <>

@@ -168,6 +168,17 @@ export default function LoginPage() {
           {/* Google Sign-In */}
           <GmailLogin redirectTo="/auth/callback?next=/activities" />
 
+          {/* Create Account Link */}
+          <div className="mt-6 text-center text-sm text-gray-600">
+            New to æther?{" "}
+            <Link
+              href="/register"
+              className="text-gray-900 hover:text-black font-medium underline"
+            >
+              Create an account
+            </Link>
+          </div>
+
           {/* Terms and Privacy Links */}
           <div className="mt-6 pt-4 border-t border-gray-200">
             <div className="flex justify-center gap-4 text-sm text-gray-600">

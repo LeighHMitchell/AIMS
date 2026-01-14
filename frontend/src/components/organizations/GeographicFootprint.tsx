@@ -104,38 +104,12 @@ export const GeographicFootprint: React.FC<GeographicFootprintProps> = ({
     };
   }, [organization]);
 
-  const getRoleColor = (role: string) => {
-    switch (role.toLowerCase()) {
-      case 'reporting':
-        return 'bg-purple-100 text-purple-800';
-      case 'funding':
-        return 'bg-green-100 text-green-800';
-      case 'implementing':
-        return 'bg-blue-100 text-blue-800';
-      case 'extending':
-        return 'bg-orange-100 text-orange-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
+  const getRoleColor = () => {
+    return 'bg-slate-100 text-slate-700 border-slate-200';
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status.toLowerCase()) {
-      case 'completed':
-      case 'completion':
-        return 'bg-green-100 text-green-800';
-      case 'implementation':
-      case 'active':
-        return 'bg-blue-100 text-blue-800';
-      case 'pipeline':
-      case 'planning':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'cancelled':
-      case 'suspended':
-        return 'bg-red-100 text-red-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
+  const getStatusColor = () => {
+    return 'bg-slate-100 text-slate-700 border-slate-200';
   };
 
   return (
@@ -153,20 +127,20 @@ export const GeographicFootprint: React.FC<GeographicFootprintProps> = ({
         <div className="space-y-6">
           {/* Summary Stats */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="text-center p-4 bg-blue-50 rounded-lg">
-              <Globe className="h-8 w-8 mx-auto mb-2 text-blue-600" />
-              <p className="text-2xl font-bold text-blue-900">{geographicData.totalCountries}</p>
-              <p className="text-sm text-blue-600">Countries</p>
+            <div className="text-center p-4 bg-slate-50 rounded-lg border border-slate-200">
+              <Globe className="h-6 w-6 mx-auto mb-2 text-slate-500" />
+              <p className="text-2xl font-bold text-slate-900">{geographicData.totalCountries}</p>
+              <p className="text-sm text-slate-600">Countries</p>
             </div>
-            <div className="text-center p-4 bg-green-50 rounded-lg">
-              <Activity className="h-8 w-8 mx-auto mb-2 text-green-600" />
-              <p className="text-2xl font-bold text-green-900">{geographicData.totalActivities}</p>
-              <p className="text-sm text-green-600">Total Activities</p>
+            <div className="text-center p-4 bg-slate-50 rounded-lg border border-slate-200">
+              <Activity className="h-6 w-6 mx-auto mb-2 text-slate-500" />
+              <p className="text-2xl font-bold text-slate-900">{geographicData.totalActivities}</p>
+              <p className="text-sm text-slate-600">Total Activities</p>
             </div>
-            <div className="text-center p-4 bg-purple-50 rounded-lg">
-              <Building2 className="h-8 w-8 mx-auto mb-2 text-purple-600" />
-              <p className="text-lg font-bold text-purple-900">{geographicData.primaryCountry}</p>
-              <p className="text-sm text-purple-600">Primary Country</p>
+            <div className="text-center p-4 bg-slate-50 rounded-lg border border-slate-200">
+              <Building2 className="h-6 w-6 mx-auto mb-2 text-slate-500" />
+              <p className="text-lg font-bold text-slate-900">{geographicData.primaryCountry}</p>
+              <p className="text-sm text-slate-600">Primary Country</p>
             </div>
           </div>
 

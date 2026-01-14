@@ -29,6 +29,7 @@ import {
   ReferenceLine,
 } from 'recharts'
 import { Download, CalendarIcon, RotateCcw } from 'lucide-react'
+import { LoadingText } from '@/components/ui/loading-text'
 import { format } from 'date-fns'
 import html2canvas from 'html2canvas'
 import { CustomYear, getCustomYearRange, getCustomYearLabel } from '@/types/custom-years'
@@ -646,7 +647,7 @@ export function PlannedActualDisbursementBySector({
   if (compact) {
     // Show loading if still loading OR if custom years haven't loaded yet
     if ((loading && sectors.length === 0) || customYearsLoading) {
-      return <div className="h-full flex items-center justify-center"><div className="text-muted-foreground">Loading...</div></div>
+      return <div className="h-full flex items-center justify-center"><LoadingText>Loading...</LoadingText></div>
     }
     if (error) {
       return <div className="h-full flex items-center justify-center text-red-500"><p className="text-sm">{error}</p></div>
@@ -715,7 +716,7 @@ export function PlannedActualDisbursementBySector({
           </CardTitle>
         </CardHeader>
         <CardContent className="h-80 flex items-center justify-center">
-          <div className="text-muted-foreground">Loading...</div>
+          <LoadingText>Loading disbursement data...</LoadingText>
         </CardContent>
       </Card>
     )

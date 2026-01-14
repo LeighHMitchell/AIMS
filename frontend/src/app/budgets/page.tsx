@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { MainLayout } from "@/components/layout/main-layout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,6 +21,7 @@ import { YearlyTotalsBarChart, SingleSeriesDataPoint } from "@/components/charts
 import { useLoadingBar } from "@/hooks/useLoadingBar";
 import { CustomYearSelector } from "@/components/ui/custom-year-selector";
 import { useCustomYears } from "@/hooks/useCustomYears";
+import { LoadingText } from "@/components/ui/loading-text";
 
 export default function BudgetsPage() {
   const router = useRouter();
@@ -72,6 +73,35 @@ export default function BudgetsPage() {
 
   // Custom year selection for chart
   const { customYears, selectedId: selectedCustomYearId, setSelectedId: setSelectedCustomYearId, selectedYear, loading: customYearsLoading } = useCustomYears();
+
+  // Year range filter for chart
+  const [chartStartYear, setChartStartYear] = useState<number | null>(null);
+  const [chartEndYear, setChartEndYear] = useState<number | null>(null);
+
+  // Filter yearly summary data by year range
+  const filteredYearlySummary = useMemo(() => {
+    if (!yearlySummary) return [];
+    return yearlySummary.filter(item => {
+      if (chartStartYear && item.year < chartStartYear) return false;
+      if (chartEndYear && item.year > chartEndYear) return false;
+      return true;
+    });
+  }, [yearlySummary, chartStartYear, chartEndYear]);
+
+  // Calculate actual data year range (from unfiltered data)
+  const dataYearRange = useMemo(() => {
+    if (!yearlySummary || yearlySummary.length === 0) return { min: null, max: null };
+    const years = yearlySummary.map(d => d.year);
+    return { min: Math.min(...years), max: Math.max(...years) };
+  }, [yearlySummary]);
+
+  // Auto-select "Data" range when data first loads
+  useEffect(() => {
+    if (dataYearRange.min !== null && dataYearRange.max !== null && chartStartYear === null && chartEndYear === null) {
+      setChartStartYear(dataYearRange.min);
+      setChartEndYear(dataYearRange.max);
+    }
+  }, [dataYearRange.min, dataYearRange.max, chartStartYear, chartEndYear]);
 
   // Use the custom hook to fetch budgets
   const { budgets, loading, error, refetch, deleteBudget, addBudget } = useBudgets({
@@ -488,10 +518,17 @@ export default function BudgetsPage() {
           title="Budget Totals by Year"
           description="Yearly budget totals in USD (filtered)"
           loading={yearlySummaryLoading}
-          singleSeriesData={yearlySummary}
+          singleSeriesData={filteredYearlySummary}
           singleSeriesColor="#4c5568"
           singleSeriesLabel="Budget"
           height={280}
+          selectedYear={selectedYear}
+          startYear={chartStartYear}
+          endYear={chartEndYear}
+          onStartYearChange={setChartStartYear}
+          onEndYearChange={setChartEndYear}
+          dataMinYear={dataYearRange.min}
+          dataMaxYear={dataYearRange.max}
           headerControls={
             <CustomYearSelector
               customYears={customYears}
@@ -506,7 +543,7 @@ export default function BudgetsPage() {
         {/* Budgets Table */}
         {loading && sortedBudgets.length === 0 && !searchQuery ? (
           <div className="bg-white rounded-md shadow-sm border border-gray-200 p-8 text-center">
-            <p className="text-slate-500">Loading...</p>
+            <LoadingText>Loading budgets...</LoadingText>
           </div>
         ) : error ? (
           <div className="bg-white rounded-md shadow-sm border border-gray-200 p-8 text-center">

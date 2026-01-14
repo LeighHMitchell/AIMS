@@ -6,6 +6,7 @@ import { Upload, X, Image as ImageIcon, Move, Check, ZoomIn } from 'lucide-react
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
+import { LoadingText } from '@/components/ui/loading-text';
 
 interface EnhancedImageUploadProps {
   value: string;
@@ -421,7 +422,7 @@ export function EnhancedImageUpload({
           {isProcessing ? (
             <>
               <Upload className="h-8 w-8 text-gray-400 animate-pulse" />
-              <p className="text-sm text-gray-600 mt-2">Uploading...</p>
+              <p className="text-sm text-gray-600 mt-2"><LoadingText>Uploading...</LoadingText></p>
             </>
           ) : isDragActive ? (
             <>

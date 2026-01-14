@@ -1,6 +1,15 @@
 "use client";
 
-import { Menu } from 'bloom-menu';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import {
   MoreVertical,
   Eye,
@@ -8,7 +17,6 @@ import {
   FileText,
   FileSpreadsheet,
   Trash2,
-  ChevronRight,
 } from 'lucide-react';
 
 interface OrganizationActionMenuProps {
@@ -19,9 +27,6 @@ interface OrganizationActionMenuProps {
   onExportExcel?: () => void;
   onDelete?: () => void;
 }
-
-const itemClass = "flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm text-neutral-700 dark:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-800 cursor-pointer transition-colors";
-const dangerItemClass = "flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 cursor-pointer transition-colors";
 
 export function OrganizationActionMenu({
   organizationId,
@@ -39,77 +44,66 @@ export function OrganizationActionMenu({
   }
 
   return (
-    <Menu.Root direction="bottom" anchor="end">
-      <Menu.Container
-        buttonSize={32}
-        menuWidth={200}
-        menuRadius={12}
-        className="bg-white dark:bg-neutral-900 shadow-lg ring-1 ring-black/5 dark:ring-white/10 relative z-[9999]"
-      >
-        <Menu.Trigger>
-          <div className="flex h-8 w-8 items-center justify-center rounded-md border border-input bg-background hover:bg-accent hover:text-accent-foreground transition-colors">
-            <MoreVertical className="h-4 w-4" />
-          </div>
-        </Menu.Trigger>
-        <Menu.Content className="p-1.5">
-          {onView && (
-            <Menu.Item className={itemClass} onSelect={onView}>
-              <Eye className="h-4 w-4" />
-              View
-            </Menu.Item>
-          )}
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button className="flex h-8 w-8 items-center justify-center rounded-md border border-input bg-background hover:bg-accent hover:text-accent-foreground transition-colors">
+          <MoreVertical className="h-4 w-4" />
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-48">
+        {onView && (
+          <DropdownMenuItem onClick={onView} className="cursor-pointer">
+            <Eye className="h-4 w-4 mr-2" />
+            View
+          </DropdownMenuItem>
+        )}
 
-          {onEdit && (
-            <Menu.Item className={itemClass} onSelect={onEdit}>
-              <PencilLine className="h-4 w-4" />
-              Edit
-            </Menu.Item>
-          )}
+        {onEdit && (
+          <DropdownMenuItem onClick={onEdit} className="cursor-pointer">
+            <PencilLine className="h-4 w-4 mr-2" />
+            Edit
+          </DropdownMenuItem>
+        )}
 
-          {hasExport && (
-            <>
-              <div className="my-1 h-px bg-neutral-200 dark:bg-neutral-700" />
-              <Menu.SubMenu id="export-submenu">
-                <Menu.SubMenuTrigger>
-                  {(isActive) => (
-                    <div className={`${itemClass} justify-between ${isActive ? 'bg-neutral-100 dark:bg-neutral-800' : ''}`}>
-                      <span className="flex items-center gap-2">
-                        <FileText className="h-4 w-4" />
-                        Export
-                      </span>
-                      <ChevronRight className="h-4 w-4 text-neutral-400" />
-                    </div>
-                  )}
-                </Menu.SubMenuTrigger>
-                <Menu.SubMenuContent className="bg-white dark:bg-neutral-900 shadow-lg ring-1 ring-black/5 dark:ring-white/10 rounded-xl p-1.5">
-                  {onExportPDF && (
-                    <Menu.Item className={itemClass} onSelect={onExportPDF}>
-                      <FileText className="h-4 w-4" />
-                      Export as PDF
-                    </Menu.Item>
-                  )}
-                  {onExportExcel && (
-                    <Menu.Item className={itemClass} onSelect={onExportExcel}>
-                      <FileSpreadsheet className="h-4 w-4" />
-                      Export as Excel
-                    </Menu.Item>
-                  )}
-                </Menu.SubMenuContent>
-              </Menu.SubMenu>
-            </>
-          )}
+        {hasExport && (
+          <>
+            <DropdownMenuSeparator />
+            <DropdownMenuSub>
+              <DropdownMenuSubTrigger className="cursor-pointer">
+                <FileText className="h-4 w-4 mr-2" />
+                Export
+              </DropdownMenuSubTrigger>
+              <DropdownMenuSubContent>
+                {onExportPDF && (
+                  <DropdownMenuItem onClick={onExportPDF} className="cursor-pointer">
+                    <FileText className="h-4 w-4 mr-2" />
+                    Export as PDF
+                  </DropdownMenuItem>
+                )}
+                {onExportExcel && (
+                  <DropdownMenuItem onClick={onExportExcel} className="cursor-pointer">
+                    <FileSpreadsheet className="h-4 w-4 mr-2" />
+                    Export as Excel
+                  </DropdownMenuItem>
+                )}
+              </DropdownMenuSubContent>
+            </DropdownMenuSub>
+          </>
+        )}
 
-          {onDelete && (
-            <>
-              <div className="my-1 h-px bg-neutral-200 dark:bg-neutral-700" />
-              <Menu.Item className={dangerItemClass} onSelect={onDelete}>
-                <Trash2 className="h-4 w-4" />
-                Delete
-              </Menu.Item>
-            </>
-          )}
-        </Menu.Content>
-      </Menu.Container>
-    </Menu.Root>
+        {onDelete && (
+          <>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              onClick={onDelete}
+              className="cursor-pointer text-red-600 focus:text-red-600 focus:bg-red-50"
+            >
+              <Trash2 className="h-4 w-4 mr-2" />
+              Delete
+            </DropdownMenuItem>
+          </>
+        )}
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }

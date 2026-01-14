@@ -70,6 +70,14 @@ export function useTaskAssignments({ userId }: UseTaskAssignmentsOptions): UseTa
         body: JSON.stringify(body),
       });
 
+      // Check content type to avoid JSON parse errors
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        const text = await response.text();
+        console.error('[useTaskAssignments] Non-JSON response:', response.status, text.substring(0, 500));
+        throw new Error(`Server error: ${response.status} - Non-JSON response`);
+      }
+
       const result = await response.json();
       console.log('[useTaskAssignments] PUT response:', response.status, result);
 

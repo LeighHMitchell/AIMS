@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { MapPin, Search, Map, Layers, Edit, Trash2, Plus, X } from 'lucide-react';
 import { toast } from 'sonner';
 import dynamic from 'next/dynamic';
+import { LoadingText } from '@/components/ui/loading-text';
 
 // Import gesture handling plugin and CSS
 // Note: Gesture handling CSS is not needed - the plugin works without it
@@ -845,7 +846,7 @@ export default function LocationSelector({
               <div className="absolute inset-0 bg-gray-100 rounded-lg flex items-center justify-center">
                 <div className="text-center">
                   <MapPin className="h-8 w-8 text-gray-400 mx-auto mb-2" />
-                  <p className="text-sm text-gray-600">Map components loading...</p>
+                  <p className="text-sm text-gray-600"><LoadingText>Map components loading...</LoadingText></p>
                 </div>
               </div>
             )}

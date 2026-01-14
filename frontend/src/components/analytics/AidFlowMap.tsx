@@ -6,7 +6,8 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { MultiSelect } from '@/components/ui/multi-select'
-import { Loader2, RefreshCw, Download, Network, ArrowLeftRight, Activity, Search } from 'lucide-react'
+import { RefreshCw, Download, Network, ArrowLeftRight, Activity, Search } from 'lucide-react'
+import { ChartSkeleton } from '@/components/ui/skeleton-loader'
 import { format, subMonths, startOfYear, endOfYear } from 'date-fns'
 import { cn } from '@/lib/utils'
 import EnhancedAidFlowGraph from './EnhancedAidFlowGraph'
@@ -383,9 +384,7 @@ export function AidFlowMap({ className, height = 300, initialDateRange }: AidFlo
       
       <CardContent>
         {loading && (
-          <div className="flex items-center justify-center h-[400px]">
-            <Loader2 className="h-8 w-8 animate-spin text-slate-400" />
-          </div>
+          <ChartSkeleton height="400px" />
         )}
         
         {error && (

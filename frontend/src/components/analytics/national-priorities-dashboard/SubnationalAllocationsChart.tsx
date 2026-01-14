@@ -44,9 +44,9 @@ import {
   Table as TableIcon,
   Maximize2,
   Download,
-  Loader2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { BarChartSkeleton } from "@/components/ui/skeleton-loader";
 import { toast } from "sonner";
 import { exportChartToCSV } from "@/lib/chart-export";
 import { RankedItem } from "@/types/national-priorities";
@@ -324,11 +324,7 @@ export function SubnationalAllocationsChart({ refreshKey = 0 }: SubnationalAlloc
     const chartHeight = expanded ? 400 : "100%";
 
     if (loading) {
-      return (
-        <div className="h-[280px] flex items-center justify-center">
-          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-        </div>
-      );
+      return <BarChartSkeleton height="280px" bars={5} showLegend={false} />;
     }
 
     if (!data || data.length === 0) {

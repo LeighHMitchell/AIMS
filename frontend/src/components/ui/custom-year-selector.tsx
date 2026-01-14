@@ -74,7 +74,7 @@ export function CustomYearSelector({
     >
       <SelectTrigger
         className={cn(
-          "w-[180px] h-8 text-xs",
+          "min-w-[200px] w-auto h-8 text-xs",
           className
         )}
       >

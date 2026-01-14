@@ -26,6 +26,7 @@ import {
 } from 'lucide-react';
 import { RolodexFilters } from '@/app/api/rolodex/route';
 import { COUNTRY_NAMES, getAllRoles, SOURCE_LABELS, getContactTypeCategories, CONTACT_TYPE_CATEGORIES, ROLE_CATEGORIES, getRolesByCategory } from './utils/roleLabels';
+import { LoadingText } from '@/components/ui/loading-text';
 
 interface FilterPanelProps {
   filters: RolodexFilters;
@@ -440,7 +441,7 @@ export function FilterPanel({
       {/* Results Count */}
       <div className="text-sm text-slate-500">
         {loading ? (
-          'Loading...'
+          <LoadingText>Loading...</LoadingText>
         ) : (
           `Showing ${totalCount} ${totalCount === 1 ? 'person' : 'people'}`
         )}

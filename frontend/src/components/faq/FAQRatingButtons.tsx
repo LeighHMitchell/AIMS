@@ -9,6 +9,7 @@ import { toast } from 'sonner';
 import { useUser } from '@/hooks/useUser';
 import { FAQRatingSummary, RatingType } from '@/types/faq-enhanced';
 import { cn } from '@/lib/utils';
+import { LoadingText } from '@/components/ui/loading-text';
 
 interface FAQRatingButtonsProps {
   faqId: string;
@@ -123,7 +124,7 @@ export function FAQRatingButtons({ faqId, ratingType, label }: FAQRatingButtonsP
     return (
       <div className="flex items-center gap-2 text-sm text-gray-400">
         <Loader2 className="h-4 w-4 animate-spin" />
-        Loading...
+        <LoadingText>Loading...</LoadingText>
       </div>
     );
   }

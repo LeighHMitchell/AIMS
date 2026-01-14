@@ -11,6 +11,26 @@ import type {
   AssignedTasksResponse,
 } from '@/types/task';
 
+// Type for reassigned task data
+interface ReassignedTask {
+  id: string;
+  task_assignment_id: string;
+  action: string;
+  performed_by: string;
+  previous_assignee_id: string;
+  new_assignee_id: string;
+  note: string | null;
+  created_at: string;
+  assignment: TaskAssignment;
+  new_assignee: {
+    id: string;
+    first_name: string;
+    last_name: string;
+    email: string;
+    avatar_url: string | null;
+  };
+}
+
 interface UseTasksOptions {
   userId: string;
 }
@@ -19,11 +39,13 @@ interface UseTasksReturn {
   // State
   tasks: Task[];
   assignedTasks: TaskAssignment[];
+  reassignedTasks: ReassignedTask[];
   selectedTask: Task | null;
   loading: boolean;
   error: string | null;
   stats: TaskSummaryStats | null;
   assignedStats: TaskSummaryStats | null;
+  reassignedStats: TaskSummaryStats | null;
 
   // Actions for tasks I created
   fetchMyTasks: (filters?: TaskFilters) => Promise<void>;
@@ -35,6 +57,9 @@ interface UseTasksReturn {
   // Actions for tasks assigned to me
   fetchAssignedTasks: (filters?: TaskFilters) => Promise<void>;
 
+  // Actions for tasks I've reassigned
+  fetchReassignedTasks: () => Promise<void>;
+
   // Utilities
   clearError: () => void;
   refreshAll: () => Promise<void>;
@@ -43,11 +68,13 @@ interface UseTasksReturn {
 export function useTasks({ userId }: UseTasksOptions): UseTasksReturn {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [assignedTasks, setAssignedTasks] = useState<TaskAssignment[]>([]);
+  const [reassignedTasks, setReassignedTasks] = useState<ReassignedTask[]>([]);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [stats, setStats] = useState<TaskSummaryStats | null>(null);
   const [assignedStats, setAssignedStats] = useState<TaskSummaryStats | null>(null);
+  const [reassignedStats, setReassignedStats] = useState<TaskSummaryStats | null>(null);
 
   const clearError = useCallback(() => setError(null), []);
 
@@ -117,6 +144,40 @@ export function useTasks({ userId }: UseTasksOptions): UseTasksReturn {
       const message = err instanceof Error ? err.message : 'Failed to fetch assigned tasks';
       setError(message);
       console.error('[useTasks] fetchAssignedTasks error:', err);
+    } finally {
+      setLoading(false);
+    }
+  }, [userId]);
+
+  // Fetch tasks I've reassigned to others
+  const fetchReassignedTasks = useCallback(async () => {
+    if (!userId) {
+      console.warn('[useTasks] fetchReassignedTasks: No userId provided');
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      const params = new URLSearchParams({ userId });
+
+      console.log('[useTasks] fetchReassignedTasks: Fetching for userId:', userId);
+      const response = await fetch(`/api/tasks/reassigned?${params}`);
+      const data = await response.json();
+      console.log('[useTasks] fetchReassignedTasks response:', data);
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to fetch reassigned tasks');
+      }
+
+      console.log('[useTasks] fetchReassignedTasks: Found', data.data?.length || 0, 'reassigned tasks');
+      setReassignedTasks(data.data || []);
+      if (data.stats) setReassignedStats(data.stats);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to fetch reassigned tasks';
+      setError(message);
+      console.error('[useTasks] fetchReassignedTasks error:', err);
     } finally {
       setLoading(false);
     }
@@ -271,23 +332,27 @@ export function useTasks({ userId }: UseTasksOptions): UseTasksReturn {
     await Promise.all([
       fetchMyTasks(),
       fetchAssignedTasks(),
+      fetchReassignedTasks(),
     ]);
-  }, [fetchMyTasks, fetchAssignedTasks]);
+  }, [fetchMyTasks, fetchAssignedTasks, fetchReassignedTasks]);
 
   return {
     tasks,
     assignedTasks,
+    reassignedTasks,
     selectedTask,
     loading,
     error,
     stats,
     assignedStats,
+    reassignedStats,
     fetchMyTasks,
     fetchTask,
     createTask,
     updateTask,
     deleteTask,
     fetchAssignedTasks,
+    fetchReassignedTasks,
     clearError,
     refreshAll,
   };

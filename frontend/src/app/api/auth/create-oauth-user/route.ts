@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase';
+import { notifySuperUsersOfNewRegistration } from '@/lib/notifications/user-registration-notifications';
 
 export const dynamic = 'force-dynamic';
 
@@ -232,6 +233,17 @@ export async function POST(request: NextRequest) {
 
     console.log('[OAuth User] SUCCESS - User created:', data.email);
     console.log('[OAuth User] Created user ID:', data.id);
+
+    // Notify super users of new registration (fire and forget - don't block OAuth flow)
+    notifySuperUsersOfNewRegistration({
+      userId: data.id,
+      email: data.email,
+      name: `${data.first_name || ''} ${data.last_name || ''}`.trim() || data.email,
+      registrationMethod: 'google',
+      registeredAt: now,
+    }).catch((err) => {
+      console.error('[OAuth User] Failed to send super user notification:', err);
+    });
 
     // Transform to match frontend expectations
     const transformedUser = {

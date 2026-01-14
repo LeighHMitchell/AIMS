@@ -16,6 +16,7 @@ import { toast } from 'sonner';
 import { LinkedActivityTitle } from '@/components/ui/linked-activity-title';
 import IatiLinkTab from './IatiLinkTab';
 import IatiImportTab from './IatiImportTab';
+import { LoadingText } from '@/components/ui/loading-text';
 import OrganizationsTab from './OrganizationsTab';
 import { ActivityScopeSearchableSelect } from '@/components/forms/ActivityScopeSearchableSelect';
 import { OtherIdentifierTypeSelect } from '@/components/forms/OtherIdentifierTypeSelect';
@@ -1322,7 +1323,7 @@ export default function EnhancedActivityEditor({ activityId, initialData = {} }:
                           {isUploading ? (
                             <>
                               <Clock className="h-4 w-4 mr-2 animate-spin" />
-                              Uploading...
+                              <LoadingText>Uploading...</LoadingText>
                             </>
                           ) : (
                             <>

@@ -12,10 +12,11 @@ import {
   YAxis,
   CartesianGrid,
 } from "recharts";
-import { Loader2, AlertCircle, BarChart3, PieChart as PieChartIcon, Table as TableIcon } from "lucide-react";
+import { AlertCircle, BarChart3, PieChart as PieChartIcon, Table as TableIcon } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { PieChartSkeleton } from "@/components/ui/skeleton-loader";
 import { getActivityStatusByCode } from "@/data/activity-status-types";
 import Link from "next/link";
 
@@ -169,11 +170,7 @@ export const ActivityStatusChart: React.FC<ActivityStatusChartProps> = ({
   // Compact mode renders just the chart without filters
   if (compact) {
     if (loading) {
-      return (
-        <div className="h-full flex items-center justify-center">
-          <Loader2 className="h-6 w-6 animate-spin text-slate-400" />
-        </div>
-      );
+      return <PieChartSkeleton height="100%" />;
     }
     if (error || !currentData || currentData.length === 0) {
       return (
@@ -210,14 +207,7 @@ export const ActivityStatusChart: React.FC<ActivityStatusChartProps> = ({
   }
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center h-96">
-        <div className="flex items-center gap-2 text-muted-foreground">
-          <Loader2 className="h-6 w-6 animate-spin" />
-          <span>Loading activity status data...</span>
-        </div>
-      </div>
-    );
+    return <PieChartSkeleton height="384px" />;
   }
 
   if (error) {

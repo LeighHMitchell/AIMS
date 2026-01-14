@@ -273,7 +273,16 @@ export default function Dashboard() {
             </div>
 
             {/* Dashboard Tabs */}
-            <Tabs defaultValue={defaultTab} className="w-full">
+            <Tabs
+              defaultValue={defaultTab}
+              className="w-full"
+              onValueChange={(value) => {
+                // Update URL to persist tab selection on refresh
+                const url = new URL(window.location.href);
+                url.searchParams.set('tab', value);
+                router.push(url.pathname + url.search, { scroll: false });
+              }}
+            >
               <TabsList className="p-1 h-auto bg-background gap-1 border mb-6">
                 <TabsTrigger 
                   value="overview" 
