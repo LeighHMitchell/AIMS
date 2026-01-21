@@ -12,6 +12,9 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
   try {
     const { id } = await params;
     const supabase = createClient(supabaseUrl, supabaseServiceKey)

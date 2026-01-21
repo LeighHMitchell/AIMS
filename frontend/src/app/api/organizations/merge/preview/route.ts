@@ -1,5 +1,5 @@
 import { NextResponse, NextRequest } from 'next/server';
-import { getSupabaseAdmin } from '@/lib/supabase';
+import { requireAuth } from '@/lib/auth';
 
 // Force dynamic rendering
 export const dynamic = 'force-dynamic';
@@ -56,16 +56,15 @@ export async function GET(request: NextRequest) {
   
   console.log('[AIMS] GET /api/organizations/merge/preview - Fetching preview for merge');
   
+  const { supabase, response: authResponse } = await requireAuth();
+  
+  if (authResponse) return authResponse;
+
+  
   try {
-    const supabase = getSupabaseAdmin();
+
     
-    if (!supabase) {
-      console.error('[AIMS] Supabase admin client not initialized');
-      return NextResponse.json(
-        { error: 'Database connection not initialized' },
-        { status: 500 }
-      );
-    }
+    
     
     // Validate request
     if (!sourceOrgId) {

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSupabaseAdmin } from '@/lib/supabase';
+import { requireAuth } from '@/lib/auth';
 import { convertTransactionToUSD, addUSDFieldsToTransaction } from '@/lib/transaction-usd-helper';
 import { resolveCurrency, resolveValueDate } from '@/lib/currency-helpers';
 import { getOrCreateOrganization } from '@/lib/organization-helpers';
@@ -11,6 +11,9 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
   try {
     const { id: activityId } = await params;
     
@@ -28,7 +31,7 @@ export async function GET(
     const includeLinked = searchParams.get('includeLinked') !== 'false'; // Default to true
     
     // Fetch activity defaults for inherited field calculations
-    const { data: activityData, error: activityError } = await getSupabaseAdmin()
+    const { data: activityData, error: activityError } = await supabase
       .from('activities')
       .select('default_finance_type, default_aid_type, default_flow_type, default_tied_status')
       .eq('id', activityId)
@@ -42,7 +45,7 @@ export async function GET(
     const activityDefaults = activityData || {};
     
     // Fetch own transactions
-    const { data: ownTransactions, error } = await getSupabaseAdmin()
+    const { data: ownTransactions, error } = await supabase
       .from('transactions')
       .select(`
         *,
@@ -95,7 +98,7 @@ export async function GET(
     if (includeLinked) {
       try {
         // Get linked activities (both directions)
-        const { data: relatedActivities, error: relatedError } = await getSupabaseAdmin()
+        const { data: relatedActivities, error: relatedError } = await supabase
           .from('related_activities')
           .select('linked_activity_id, source_activity_id')
           .or(`source_activity_id.eq.${activityId},linked_activity_id.eq.${activityId}`);
@@ -115,7 +118,7 @@ export async function GET(
 
           if (linkedActivityIds.size > 0) {
             // Fetch transactions from linked activities (including activity defaults for inheritance)
-            const { data: linkedTransactions, error: linkedError } = await getSupabaseAdmin()
+            const { data: linkedTransactions, error: linkedError } = await supabase
               .from('transactions')
               .select(`
                 *,
@@ -193,7 +196,7 @@ export async function GET(
 
     if (transactionIds.length > 0) {
       // Fetch sector lines
-      const { data: sectorLines } = await getSupabaseAdmin()
+      const { data: sectorLines } = await supabase
         .from('transaction_sector_lines')
         .select('transaction_id, sector_code, sector_vocabulary, sector_name, percentage')
         .in('transaction_id', transactionIds)
@@ -214,7 +217,7 @@ export async function GET(
       }
 
       // Fetch aid type lines
-      const { data: aidTypeLines } = await getSupabaseAdmin()
+      const { data: aidTypeLines } = await supabase
         .from('transaction_aid_type_lines')
         .select('transaction_id, aid_type_code, aid_type_vocabulary')
         .in('transaction_id', transactionIds)
@@ -274,6 +277,9 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
   try {
     const { id: activityId } = await params;
     const body = await request.json();
@@ -290,7 +296,7 @@ export async function POST(
     // Check/create provider organization if name is provided (ref is optional)
     let providerOrgId = body.provider_org_id || null;
     if (!providerOrgId && body.provider_org_name) {
-      providerOrgId = await getOrCreateOrganization(getSupabaseAdmin(), {
+      providerOrgId = await getOrCreateOrganization(supabase, {
         ref: body.provider_org_ref,
         name: body.provider_org_name,
         type: body.provider_org_type
@@ -300,7 +306,7 @@ export async function POST(
     // Check/create receiver organization if name is provided (ref is optional)
     let receiverOrgId = body.receiver_org_id || null;
     if (!receiverOrgId && body.receiver_org_name) {
-      receiverOrgId = await getOrCreateOrganization(getSupabaseAdmin(), {
+      receiverOrgId = await getOrCreateOrganization(supabase, {
         ref: body.receiver_org_ref,
         name: body.receiver_org_name,
         type: body.receiver_org_type
@@ -412,7 +418,7 @@ export async function POST(
     const transactionDataWithUSD = addUSDFieldsToTransaction(transactionData, usdResult);
     
     // Insert the transaction
-    const { data: insertedTransaction, error } = await getSupabaseAdmin()
+    const { data: insertedTransaction, error } = await supabase
       .from('transactions')
       .insert(transactionDataWithUSD)
       .select(`

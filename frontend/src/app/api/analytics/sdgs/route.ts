@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getSupabaseAdmin } from '@/lib/supabase'
+import { requireAuth } from '@/lib/auth';
 import { SDG_GOALS } from '@/data/sdg-targets'
 
 // Force dynamic rendering
@@ -30,6 +30,9 @@ interface SDGAnalyticsResponse {
 
 export async function GET(request: NextRequest) {
   try {
+    const { supabase, response: authResponse } = await requireAuth();
+    if (authResponse) return authResponse;
+
     const { searchParams } = new URL(request.url)
     const organizationId = searchParams.get('organizationId')
     const dateFrom = searchParams.get('dateFrom')
@@ -37,9 +40,6 @@ export async function GET(request: NextRequest) {
     const selectedSdgs = searchParams.get('selectedSdgs') // Comma-separated list of SDG IDs
     const metric = searchParams.get('metric') || 'activities' // 'activities', 'budget', 'planned'
     const dataType = searchParams.get('dataType') || 'coverage' // 'coverage', 'concentration', 'both'
-
-    const supabase = getSupabaseAdmin()
-
     if (!supabase) {
       return NextResponse.json(
         { success: false, error: 'Database connection not initialized' } as SDGAnalyticsResponse,

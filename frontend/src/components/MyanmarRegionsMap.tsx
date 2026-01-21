@@ -3,12 +3,31 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { MapPin, Download } from 'lucide-react'
+import { MapPin, Download, Maximize2 } from 'lucide-react'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog"
 import { HelpTextTooltip } from "@/components/ui/help-text-tooltip"
 import { toast } from "sonner"
 
+interface ActivityInfo {
+  id: string
+  title: string
+}
+
+interface RegionData {
+  percentage: number
+  value?: number
+  activityCount?: number
+  activities?: ActivityInfo[]
+}
+
 interface MyanmarRegionsMapProps {
-  breakdowns: Record<string, number>
+  breakdowns: Record<string, number | RegionData>
   onRegionClick?: (regionName: string) => void
 }
 
@@ -37,9 +56,11 @@ export default function MyanmarRegionsMap({
 }: MyanmarRegionsMapProps) {
   const [hoveredRegion, setHoveredRegion] = useState<string | null>(null)
   const [hoveredCentroid, setHoveredCentroid] = useState<{ x: number, y: number } | null>(null)
+  const [mousePosition, setMousePosition] = useState<{ x: number, y: number } | null>(null)
   const [geoData, setGeoData] = useState<GeoJSONData | null>(null)
   const [loading, setLoading] = useState(true)
   const [isExporting, setIsExporting] = useState(false)
+  const [isExpanded, setIsExpanded] = useState(false)
   const mapContainerRef = useRef<HTMLDivElement>(null)
 
   // Map GeoJSON names to full names used in the system
@@ -61,17 +82,37 @@ export default function MyanmarRegionsMap({
     'Yangon': 'Yangon Region'
   }), [])
 
-  // Function to get blue shade based on percentage (0-100)
-  const getBlueShade = (percentage: number): string => {
-    if (percentage === 0) return '#f0f9ff'  // blue-50
-    if (percentage <= 10) return '#dbeafe'  // blue-100
-    if (percentage <= 20) return '#bfdbfe'  // blue-200
-    if (percentage <= 30) return '#93c5fd'  // blue-300
-    if (percentage <= 40) return '#60a5fa'  // blue-400
-    if (percentage <= 50) return '#3b82f6'  // blue-500
-    if (percentage <= 60) return '#2563eb'  // blue-600
-    if (percentage <= 80) return '#1d4ed8'  // blue-700
-    return '#1e40af'  // blue-800 for >80%
+  // Function to get shade based on percentage (0-100)
+  // Uses brand color palette: Platinum → Pale Slate → Cool Steel → Blue Slate → Primary Scarlet
+  const getShade = (percentage: number): string => {
+    if (percentage === 0) return '#f1f4f8'  // Platinum (lightest)
+    if (percentage <= 5) return '#e8eaed'   // Between Platinum and Pale Slate
+    if (percentage <= 10) return '#cfd0d5'  // Pale Slate
+    if (percentage <= 20) return '#b3bcc5'  // Between Pale Slate and Cool Steel
+    if (percentage <= 30) return '#7b95a7'  // Cool Steel
+    if (percentage <= 50) return '#647a8c'  // Between Cool Steel and Blue Slate
+    if (percentage <= 70) return '#4c5568'  // Blue Slate
+    if (percentage <= 90) return '#3d4555'  // Darker Blue Slate
+    return '#dc2625'  // Primary Scarlet for >90%
+  }
+
+  // Format currency helper
+  const formatCurrency = (value: number): string => {
+    if (value >= 1_000_000_000) {
+      return `$${(value / 1_000_000_000).toFixed(1)}B`
+    } else if (value >= 1_000_000) {
+      return `$${(value / 1_000_000).toFixed(1)}M`
+    } else if (value >= 1_000) {
+      return `$${(value / 1_000).toFixed(0)}K`
+    }
+    return `$${value.toFixed(0)}`
+  }
+
+  // Get hovered region data
+  const getHoveredRegionData = () => {
+    if (!hoveredRegion) return null
+    const region = paths.find(p => p.fullName === hoveredRegion)
+    return region || null
   }
 
   // Load GeoJSON data
@@ -100,9 +141,17 @@ export default function MyanmarRegionsMap({
       const fullName = Object.prototype.hasOwnProperty.call(nameMapping, regionName)
         ? nameMapping[regionName as keyof typeof nameMapping]
         : regionName
-      const percentage = Object.prototype.hasOwnProperty.call(breakdowns, fullName) 
-        ? breakdowns[fullName as keyof typeof breakdowns] 
+
+      // Handle both number and RegionData types
+      const rawData = Object.prototype.hasOwnProperty.call(breakdowns, fullName)
+        ? breakdowns[fullName as keyof typeof breakdowns]
         : 0
+
+      const isRegionData = typeof rawData === 'object' && rawData !== null
+      const percentage = isRegionData ? (rawData as RegionData).percentage : (rawData as number)
+      const value = isRegionData ? (rawData as RegionData).value : undefined
+      const activityCount = isRegionData ? (rawData as RegionData).activityCount : undefined
+      const activities = isRegionData ? (rawData as RegionData).activities : undefined
 
       let pathData = ''
       const coords = feature.geometry.coordinates
@@ -114,7 +163,7 @@ export default function MyanmarRegionsMap({
             ring.forEach((point: number[], index: number) => {
               const x = point[0]
               const y = -point[1] // Flip Y coordinate for SVG
-              
+
               minX = Math.min(minX, x)
               minY = Math.min(minY, y)
               maxX = Math.max(maxX, x)
@@ -135,6 +184,9 @@ export default function MyanmarRegionsMap({
         regionName,
         fullName,
         percentage,
+        value,
+        activityCount,
+        activities,
         pathData,
         stateType: feature.properties.ST_RG
       }
@@ -236,19 +288,19 @@ export default function MyanmarRegionsMap({
             <HelpTextTooltip content="Click on regions to add them to the breakdown. Colors show allocation percentages." />
           </CardTitle>
           <Button
-            onClick={exportToJPEG}
-            disabled={isExporting || loading}
-            variant="outline"
+            variant="ghost"
             size="sm"
-            title={isExporting ? 'Exporting...' : 'Export JPEG'}
+            className="h-8 w-8 p-0"
+            onClick={() => setIsExpanded(true)}
+            title="Expand"
           >
-            <Download className="h-4 w-4" />
+            <Maximize2 className="h-4 w-4" />
           </Button>
         </div>
       </CardHeader>
       <CardContent className="p-4 flex-1">
 
-        <div ref={mapContainerRef} className="w-full h-full flex items-center justify-center">
+        <div ref={mapContainerRef} className="w-full h-full flex items-center justify-center relative">
             <svg 
               viewBox={viewBox}
               className="w-full h-full max-w-[600px] max-h-[700px]"
@@ -256,16 +308,155 @@ export default function MyanmarRegionsMap({
             >
               {/* Draw regions */}
               {paths.map(region => {
-                const fillColor = getBlueShade(region.percentage)
+                const fillColor = getShade(region.percentage)
                 const isHovered = hoveredRegion === region.fullName
                 const centroid = calculateCentroid(region.pathData)
-                
+
                 return (
                   <g key={region.fullName}>
                     <path
                       d={region.pathData}
                       fill={fillColor}
-                      stroke={isHovered ? "#1e40af" : "#64748b"}
+                      stroke={isHovered ? "#4C5568" : "#64748b"}
+                      strokeWidth={isHovered ? "0.08" : "0.04"}
+                      className="cursor-pointer transition-all"
+                      onClick={() => onRegionClick?.(region.fullName)}
+                      onMouseEnter={(e) => {
+                        setHoveredRegion(region.fullName)
+                        setHoveredCentroid(centroid)
+                        const rect = mapContainerRef.current?.getBoundingClientRect()
+                        if (rect) {
+                          setMousePosition({ x: e.clientX - rect.left, y: e.clientY - rect.top })
+                        }
+                      }}
+                      onMouseMove={(e) => {
+                        const rect = mapContainerRef.current?.getBoundingClientRect()
+                        if (rect) {
+                          setMousePosition({ x: e.clientX - rect.left, y: e.clientY - rect.top })
+                        }
+                      }}
+                      onMouseLeave={() => {
+                        setHoveredRegion(null)
+                        setHoveredCentroid(null)
+                        setMousePosition(null)
+                      }}
+                      style={{
+                        filter: isHovered ? 'brightness(0.95)' : undefined,
+                        transition: 'all 0.2s ease'
+                      }}
+                    >
+                      <title>{`${region.fullName}: ${region.percentage.toFixed(1)}%`}</title>
+                    </path>
+                  </g>
+                )
+              })}
+              
+
+            </svg>
+
+            {/* HTML Hover Tooltip */}
+            {hoveredRegion && mousePosition && (() => {
+              const regionData = getHoveredRegionData()
+              return (
+                <div
+                  className="absolute bg-white border border-slate-200 rounded-lg shadow-lg p-3 pointer-events-none z-50"
+                  style={{
+                    left: mousePosition.x + 15,
+                    top: mousePosition.y - 10,
+                    maxWidth: 280,
+                  }}
+                >
+                  <h4 className="font-semibold text-slate-900 text-sm mb-2">{hoveredRegion}</h4>
+                  <table className="w-full text-xs">
+                    <tbody>
+                      <tr className="border-b border-slate-100">
+                        <td className="py-1 text-slate-500">Allocation</td>
+                        <td className="py-1 text-right font-medium text-slate-900">
+                          {regionData?.percentage.toFixed(1) ?? '0'}%
+                        </td>
+                      </tr>
+                      {regionData?.value !== undefined && (
+                        <tr className="border-b border-slate-100">
+                          <td className="py-1 text-slate-500">Value</td>
+                          <td className="py-1 text-right font-medium text-slate-900">
+                            {formatCurrency(regionData.value)}
+                          </td>
+                        </tr>
+                      )}
+                      <tr className="border-b border-slate-100">
+                        <td className="py-1 text-slate-500">Activities</td>
+                        <td className="py-1 text-right font-medium text-slate-900">
+                          {regionData?.activityCount ?? 0}
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                  {regionData?.activities && regionData.activities.length > 0 && (
+                    <div className="mt-2 pt-2 border-t border-slate-200">
+                      <p className="text-xs font-medium text-slate-700 mb-1">Activities in this region:</p>
+                      <ul className="text-xs text-slate-600 space-y-1 max-h-32 overflow-y-auto">
+                        {regionData.activities.slice(0, 5).map((activity) => (
+                          <li key={activity.id} className="truncate" title={activity.title}>
+                            • {activity.title}
+                          </li>
+                        ))}
+                        {regionData.activities.length > 5 && (
+                          <li className="text-slate-400 italic">
+                            +{regionData.activities.length - 5} more...
+                          </li>
+                        )}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              )
+            })()}
+        </div>
+      </CardContent>
+
+      {/* Expanded Dialog View */}
+      <Dialog open={isExpanded} onOpenChange={setIsExpanded}>
+        <DialogContent className="max-w-4xl w-[90vw] max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <DialogTitle className="text-2xl font-bold">
+                  Subnational Allocation Map
+                </DialogTitle>
+                <DialogDescription className="text-base mt-1">
+                  Myanmar States & Regions allocation percentages
+                </DialogDescription>
+              </div>
+              <Button
+                onClick={exportToJPEG}
+                disabled={isExporting || loading}
+                variant="outline"
+                size="sm"
+                className="h-8 w-8 p-0"
+                title={isExporting ? 'Exporting...' : 'Export JPEG'}
+              >
+                <Download className="h-4 w-4" />
+              </Button>
+            </div>
+          </DialogHeader>
+
+          <div className="mt-4 flex items-center justify-center">
+            <svg
+              viewBox={viewBox}
+              className="w-full h-full max-w-[700px] max-h-[600px]"
+              style={{ backgroundColor: 'white' }}
+            >
+              {paths.map(region => {
+                const fillColor = getShade(region.percentage)
+                const isHovered = hoveredRegion === region.fullName
+                const centroid = calculateCentroid(region.pathData)
+
+                return (
+                  <g key={`expanded-${region.fullName}`}>
+                    <path
+                      d={region.pathData}
+                      fill={fillColor}
+                      stroke={isHovered ? "#4C5568" : "#64748b"}
                       strokeWidth={isHovered ? "0.08" : "0.04"}
                       className="cursor-pointer transition-all"
                       onClick={() => onRegionClick?.(region.fullName)}
@@ -287,38 +478,74 @@ export default function MyanmarRegionsMap({
                   </g>
                 )
               })}
-              
 
-              {/* Hover info box */}
-              {hoveredRegion && hoveredCentroid && (
-                <g transform={`translate(${hoveredCentroid.x - 2}, ${hoveredCentroid.y - 2})`} style={{ pointerEvents: 'none' }}>
-                  <rect
-                    x="0"
-                    y="0"
-                    width="4"
-                    height="1.2"
-                    fill="white"
-                    stroke="#cbd5e1"
-                    strokeWidth="0.02"
-                    rx="0.1"
-                    style={{ filter: 'drop-shadow(0 0.05px 0.1px rgba(0,0,0,0.1))' }}
-                  />
-                  <text x="0.2" y="0.5" style={{ fontSize: '0.35px', fontWeight: 'bold' }} fill="#1e293b">
-                    {hoveredRegion}
-                  </text>
-                  <text x="0.2" y="0.9" style={{ fontSize: '0.3px' }} fill="#64748b">
-                    Allocation: {(() => {
-                      const val = Object.prototype.hasOwnProperty.call(breakdowns, hoveredRegion) 
-                        ? breakdowns[hoveredRegion as keyof typeof breakdowns] 
-                        : 0
-                      return val.toFixed(1)
-                    })()}%
-                  </text>
-                </g>
-              )}
+              {/* Hover info box in expanded view */}
+              {hoveredRegion && hoveredCentroid && (() => {
+                const regionData = getHoveredRegionData()
+                const hasDetailedData = regionData?.value !== undefined
+                const boxHeight = hasDetailedData ? 2.4 : 1.2
+                const boxWidth = hasDetailedData ? 5 : 4
+
+                return (
+                  <g transform={`translate(${hoveredCentroid.x - boxWidth / 2}, ${hoveredCentroid.y - boxHeight / 2})`} style={{ pointerEvents: 'none' }}>
+                    <rect
+                      x="0"
+                      y="0"
+                      width={boxWidth}
+                      height={boxHeight}
+                      fill="white"
+                      stroke="#cbd5e1"
+                      strokeWidth="0.02"
+                      rx="0.1"
+                      style={{ filter: 'drop-shadow(0 0.05px 0.1px rgba(0,0,0,0.1))' }}
+                    />
+                    {/* Region name header */}
+                    <text x="0.2" y="0.45" style={{ fontSize: '0.35px', fontWeight: 'bold' }} fill="#1e293b">
+                      {hoveredRegion}
+                    </text>
+                    {/* Divider line */}
+                    <line x1="0.1" y1="0.65" x2={boxWidth - 0.1} y2="0.65" stroke="#e2e8f0" strokeWidth="0.015" />
+
+                    {hasDetailedData ? (
+                      <>
+                        {/* Allocation row */}
+                        <text x="0.2" y="1.0" style={{ fontSize: '0.28px' }} fill="#64748b">Allocation</text>
+                        <text x={boxWidth - 0.2} y="1.0" style={{ fontSize: '0.28px', fontWeight: 500 }} fill="#1e293b" textAnchor="end">
+                          {regionData?.percentage.toFixed(1)}%
+                        </text>
+
+                        {/* Value row */}
+                        <text x="0.2" y="1.45" style={{ fontSize: '0.28px' }} fill="#64748b">Value</text>
+                        <text x={boxWidth - 0.2} y="1.45" style={{ fontSize: '0.28px', fontWeight: 500 }} fill="#1e293b" textAnchor="end">
+                          {regionData?.value ? formatCurrency(regionData.value) : '-'}
+                        </text>
+
+                        {/* Activities row */}
+                        <text x="0.2" y="1.9" style={{ fontSize: '0.28px' }} fill="#64748b">Activities</text>
+                        <text x={boxWidth - 0.2} y="1.9" style={{ fontSize: '0.28px', fontWeight: 500 }} fill="#1e293b" textAnchor="end">
+                          {regionData?.activityCount ?? '-'}
+                        </text>
+                      </>
+                    ) : (
+                      <text x="0.2" y="0.95" style={{ fontSize: '0.3px' }} fill="#64748b">
+                        Allocation: {regionData?.percentage.toFixed(1) ?? '0'}%
+                      </text>
+                    )}
+                  </g>
+                )
+              })()}
             </svg>
-        </div>
-      </CardContent>
+          </div>
+
+          <p className="text-sm text-slate-600 mt-4">
+            This interactive map provides a geographic visualization of aid distribution across Myanmar.
+            Darker shading indicates higher allocation percentages, making it easy to identify regional
+            concentrations and gaps at a glance. Hover over regions to see exact percentages, helping
+            stakeholders understand spatial patterns in development assistance and inform decisions
+            about geographic targeting of future interventions.
+          </p>
+        </DialogContent>
+      </Dialog>
     </Card>
   )
 }

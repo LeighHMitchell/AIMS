@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getSupabaseAdmin } from "@/lib/supabase";
+import { requireAuth } from '@/lib/auth';
 import {
   inferBudgetLines,
   applyBudgetLinesToTransaction,
@@ -15,9 +15,10 @@ export async function GET(
   { params }: { params: Promise<{ transactionId: string }> }
 ) {
   try {
-    const { transactionId } = await params;
-    const supabase = getSupabaseAdmin();
+    const { supabase, response: authResponse } = await requireAuth();
+    if (authResponse) return authResponse;
 
+    const { transactionId } = await params;
     if (!supabase) {
       return NextResponse.json(
         { error: "Database connection not available" },
@@ -90,13 +91,13 @@ export async function POST(
   { params }: { params: Promise<{ transactionId: string }> }
 ) {
   try {
+    const { supabase, response: authResponse } = await requireAuth();
+    if (authResponse) return authResponse;
+
     const { transactionId } = await params;
     const { searchParams } = new URL(request.url);
     const preview = searchParams.get("preview") === "true";
     const force = searchParams.get("force") === "true";
-
-    const supabase = getSupabaseAdmin();
-
     if (!supabase) {
       return NextResponse.json(
         { error: "Database connection not available" },
@@ -196,12 +197,12 @@ export async function PUT(
   { params }: { params: Promise<{ transactionId: string }> }
 ) {
   try {
+    const { supabase, response: authResponse } = await requireAuth();
+    if (authResponse) return authResponse;
+
     const { transactionId } = await params;
     const body = await request.json();
     const { lineId, classificationField, classificationId, notes } = body;
-
-    const supabase = getSupabaseAdmin();
-
     if (!supabase) {
       return NextResponse.json(
         { error: "Database connection not available" },

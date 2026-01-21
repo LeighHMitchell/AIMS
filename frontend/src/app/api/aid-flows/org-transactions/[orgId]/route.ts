@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSupabaseAdmin } from '@/lib/supabase';
+import { requireAuth } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 
@@ -32,6 +32,9 @@ export async function GET(
   { params }: { params: Promise<{ orgId: string }> }
 ) {
   try {
+    const { supabase, response: authResponse } = await requireAuth();
+    if (authResponse) return authResponse;
+
     const { orgId } = params;
     const searchParams = request.nextUrl.searchParams;
     const startDate = searchParams.get('start');
@@ -43,9 +46,6 @@ export async function GET(
         { status: 400 }
       );
     }
-    
-    const supabase = getSupabaseAdmin();
-    
     if (!supabase) {
       return NextResponse.json(
         { error: 'Unable to connect to database' },

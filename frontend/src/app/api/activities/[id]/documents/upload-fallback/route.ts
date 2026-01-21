@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSupabaseAdmin } from '@/lib/supabase';
+import { requireAuth } from '@/lib/auth';
 import { generateThumbnail, supportsThumbnail } from '@/lib/thumbnail-generator';
 import { v4 as uuidv4 } from 'uuid';
 import { writeFile, mkdir, unlink } from 'fs/promises';
@@ -12,11 +12,12 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
   try {
     const { id } = await params;
     console.log('[Upload Fallback API] Starting upload for activity:', id);
-    
-    const supabase = getSupabaseAdmin();
     if (!supabase) {
       console.error('[Upload Fallback API] Failed to get Supabase admin client');
       return NextResponse.json({ error: 'Database connection failed' }, { status: 500 });

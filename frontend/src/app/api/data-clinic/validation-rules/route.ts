@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSupabaseAdmin } from '@/lib/supabase';
+import { requireAuth } from '@/lib/auth';
 import type { ValidationRulesResponse } from '@/types/validation-rules';
 
 export async function GET(request: NextRequest) {
-  const supabase = getSupabaseAdmin();
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
   const { searchParams } = new URL(request.url);
   const organizationId = searchParams.get('organization_id');
 
@@ -22,6 +24,9 @@ export async function GET(request: NextRequest) {
   }
 
   try {
+    const { supabase, response: authResponse } = await requireAuth();
+    if (authResponse) return authResponse;
+
     console.log('[Validation Rules] Fetching validation failures for org:', organizationId);
 
     // Get current date for comparisons

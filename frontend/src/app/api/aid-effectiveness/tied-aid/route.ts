@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getSupabaseAdmin } from '@/lib/supabase'
+import { requireAuth } from '@/lib/auth';
 
 interface TiedAidData {
   category: string
@@ -13,6 +13,13 @@ interface TiedAidData {
 }
 
 export async function GET(request: NextRequest) {
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
+  if (!supabase) {
+    return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
+  }
+
   try {
     const { searchParams } = new URL(request.url)
     const from = searchParams.get('from')
@@ -23,8 +30,8 @@ export async function GET(request: NextRequest) {
     const implementingPartner = searchParams.get('implementingPartner') || 'all'
     const groupBy = searchParams.get('groupBy') || 'overall'
 
-    const supabaseAdmin = getSupabaseAdmin()
-    
+    const supabaseAdmin = supabase
+
     if (!supabaseAdmin) {
       return NextResponse.json(
         { error: 'Database connection not initialized' },

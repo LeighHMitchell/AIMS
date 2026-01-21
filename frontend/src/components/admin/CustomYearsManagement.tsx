@@ -40,6 +40,8 @@ import {
 import {
   CustomYear,
   CustomYearInput,
+  YearSeparator,
+  SecondYearFormat,
   MONTHS,
   getDaysForMonth,
   formatMonthDay,
@@ -86,6 +88,8 @@ export function CustomYearsManagement() {
     endDay: 31,
     isActive: true,
     isDefault: false,
+    yearSeparator: "-",
+    secondYearFormat: "short",
   });
 
   // Fetch custom years
@@ -124,6 +128,8 @@ export function CustomYearsManagement() {
       endDay: 31,
       isActive: true,
       isDefault: false,
+      yearSeparator: "-",
+      secondYearFormat: "short",
     });
     setEditingYear(null);
   };
@@ -146,6 +152,8 @@ export function CustomYearsManagement() {
       endDay: year.endDay,
       isActive: year.isActive,
       isDefault: year.isDefault,
+      yearSeparator: year.yearSeparator || "-",
+      secondYearFormat: year.secondYearFormat || "short",
     });
     setDialogOpen(true);
   };
@@ -418,6 +426,50 @@ export function CustomYearsManagement() {
                 placeholder="e.g., AU FY"
                 maxLength={20}
               />
+              <p className="text-xs text-muted-foreground">
+                Add a trailing space if you want separation from the year (e.g., &quot;AU FY &quot; → &quot;AU FY 2026&quot;)
+              </p>
+            </div>
+
+            {/* Year Format Options */}
+            <div className="grid grid-cols-2 gap-3">
+              {/* Year Separator */}
+              <div className="space-y-2">
+                <Label htmlFor="yearSeparator">Year Separator</Label>
+                <Select
+                  value={formData.yearSeparator || "-"}
+                  onValueChange={(v) =>
+                    setFormData({ ...formData, yearSeparator: v as YearSeparator })
+                  }
+                >
+                  <SelectTrigger id="yearSeparator">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="-">Hyphen (-)</SelectItem>
+                    <SelectItem value="/">Slash (/)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Second Year Format */}
+              <div className="space-y-2">
+                <Label htmlFor="secondYearFormat">Second Year</Label>
+                <Select
+                  value={formData.secondYearFormat || "short"}
+                  onValueChange={(v) =>
+                    setFormData({ ...formData, secondYearFormat: v as SecondYearFormat })
+                  }
+                >
+                  <SelectTrigger id="secondYearFormat">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="short">Short (27)</SelectItem>
+                    <SelectItem value="full">Full (2027)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
 
             {/* Period Definition */}

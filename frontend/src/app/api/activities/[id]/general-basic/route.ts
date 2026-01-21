@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSupabaseAdmin } from '@/lib/supabase';
+import { requireAuth } from '@/lib/auth';
 import { invalidateActivityCache } from '@/lib/activity-cache';
 
 export const dynamic = 'force-dynamic';
@@ -13,6 +13,9 @@ export async function PATCH(
   console.log('[General Basic API] ============ PATCH /api/activities/[id]/general-basic ============');
   console.log('[General Basic API] Timestamp:', new Date().toISOString());
   try {
+    const { supabase, response: authResponse } = await requireAuth();
+    if (authResponse) return authResponse;
+
     const { id } = await params;
     console.log('[General Basic API] Activity ID:', id);
     if (!id) {
@@ -25,8 +28,6 @@ export async function PATCH(
     const body = await request.json();
     const { title, acronym } = body || {};
     console.log('[General Basic API] Request body:', { title, acronym });
-
-    const supabase = getSupabaseAdmin();
     if (!supabase) {
       console.error('[General Basic API] Supabase admin client not available');
       return NextResponse.json(

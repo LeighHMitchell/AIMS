@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSupabaseAdmin } from '@/lib/supabase';
+import { requireAuth } from '@/lib/auth';
 
 interface ImportSummary {
   results_created: number;
@@ -50,16 +50,17 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const supabase = getSupabaseAdmin();
-  
-  if (!supabase) {
-    console.error('[Results Import API] Supabase admin client not available');
-    return NextResponse.json({ 
-      error: 'Database not available' 
-    }, { status: 500 });
-  }
-
   try {
+    const { supabase, response: authResponse } = await requireAuth();
+    if (authResponse) return authResponse;
+
+    if (!supabase) {
+      console.error('[Results Import API] Supabase admin client not available');
+      return NextResponse.json({
+        error: 'Database not available'
+      }, { status: 500 });
+    }
+
     const { id: activityId } = await params;
     const body = await request.json();
     const { results, mode = 'create' } = body;

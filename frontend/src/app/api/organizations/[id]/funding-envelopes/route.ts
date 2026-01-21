@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSupabaseAdmin } from '@/lib/supabase';
+import { requireAuth } from '@/lib/auth';
 import { convertTransactionToUSD } from '@/lib/transaction-usd-helper';
 
 // Force dynamic rendering
@@ -71,8 +71,10 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
   try {
-    const supabase = getSupabaseAdmin();
     const { id: organizationId } = await params;
 
     if (!organizationId) {
@@ -109,8 +111,10 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
   try {
-    const supabase = getSupabaseAdmin();
     const { id: organizationId } = await params;
     const body = await request.json();
 
@@ -204,8 +208,10 @@ export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
   try {
-    const supabase = getSupabaseAdmin();
     const body = await request.json();
 
     if (!body.id) {
@@ -289,8 +295,10 @@ export async function PUT(
 
 // DELETE - Remove a funding envelope
 export async function DELETE(request: NextRequest) {
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
   try {
-    const supabase = getSupabaseAdmin();
     const { searchParams } = new URL(request.url);
     const envelopeId = searchParams.get('envelopeId');
 

@@ -92,6 +92,7 @@ interface SectorDisbursementOverTimeProps {
   dateRange: DateRange
   refreshKey?: number
   compact?: boolean
+  organizationId?: string
 }
 
 type DataMode = 'planned' | 'actual'
@@ -101,7 +102,8 @@ type AggregationLevel = 'group' | 'category' | 'sector'
 export function SectorDisbursementOverTime({
   dateRange: initialDateRange,
   refreshKey = 0,
-  compact = false
+  compact = false,
+  organizationId
 }: SectorDisbursementOverTimeProps) {
   const [dataMode, setDataMode] = useState<DataMode>('actual')
   const [viewMode, setViewMode] = useState<ViewMode>('area')
@@ -332,6 +334,9 @@ export function SectorDisbursementOverTime({
         const params = new URLSearchParams()
         params.append('dateFrom', '2000-01-01T00:00:00.000Z')
         params.append('dateTo', '2050-12-31T23:59:59.999Z')
+        if (organizationId) {
+          params.append('organizationId', organizationId)
+        }
 
         const response = await fetch(`/api/analytics/disbursements-by-sector?${params.toString()}`)
 
@@ -375,7 +380,7 @@ export function SectorDisbursementOverTime({
     }
 
     fetchData()
-  }, [refreshKey]) // Only refetch on refreshKey change, not on date range change
+  }, [refreshKey, organizationId]) // Only refetch on refreshKey or organizationId change, not on date range change
 
   // Aggregate data based on aggregation level (group, category, or sector)
   const aggregatedData = useMemo(() => {

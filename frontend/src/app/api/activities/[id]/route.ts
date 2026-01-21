@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSupabaseAdmin } from '@/lib/supabase';
+import { requireAuth } from '@/lib/auth';
 import { resolveCurrencySync, resolveValueDate } from '@/lib/currency-helpers';
 import { calculateModality } from '@/utils/modality-calculation';
 
@@ -19,6 +19,9 @@ export async function PATCH(
   { params }: { params: { id: string } | Promise<{ id: string }> }
 ) {
   try {
+    const { supabase, response: authResponse } = await requireAuth();
+    if (authResponse) return authResponse;
+
     // Handle both sync and async params (Next.js 14/15 compatibility)
     const resolvedParams = await Promise.resolve(params);
     const { id } = resolvedParams;
@@ -53,7 +56,7 @@ export async function PATCH(
       console.log(`[AIMS API] Processing reporting organization: ${reportingOrgName || reportingOrgRef}${reportingOrgRef ? ` (${reportingOrgRef})` : ' (no ref)'}, Type: ${reportingOrgType}`);
 
       // Build query - if we have a ref, search by ref/name, otherwise just by name
-      let query = getSupabaseAdmin()
+      let query = supabase
         .from('organizations')
         .select('id, name, iati_org_id, alias_refs, acronym');
 
@@ -180,7 +183,7 @@ export async function PATCH(
       console.log('[AIMS API] Updating basic activity fields:', JSON.stringify(activityFields, null, 2));
       console.log('[AIMS API] geography_level in activityFields:', activityFields.geography_level);
       
-      const { error: activityUpdateError } = await getSupabaseAdmin()
+      const { error: activityUpdateError } = await supabase
         .from('activities')
         .update(activityFields)
         .eq('id', id);
@@ -196,7 +199,7 @@ export async function PATCH(
     // Handle SDG mappings update
     if (body.sdgMappings !== undefined) {
       // First, delete existing SDG mappings
-      const { error: deleteError } = await getSupabaseAdmin()
+      const { error: deleteError } = await supabase
         .from('activity_sdg_mappings')
         .delete()
         .eq('activity_id', id);
@@ -220,7 +223,7 @@ export async function PATCH(
         
         console.log('[AIMS API] Inserting SDG mappings:', JSON.stringify(sdgMappingsData, null, 2));
         
-        const { error: insertError } = await getSupabaseAdmin()
+        const { error: insertError } = await supabase
           .from('activity_sdg_mappings')
           .insert(sdgMappingsData);
         
@@ -238,7 +241,7 @@ export async function PATCH(
       console.log('[AIMS API] Updating working groups for activity:', id);
       
       // First, delete existing working groups
-      const { error: deleteError } = await getSupabaseAdmin()
+      const { error: deleteError } = await supabase
         .from('activity_working_groups')
         .delete()
         .eq('activity_id', id);
@@ -252,7 +255,7 @@ export async function PATCH(
       if (body.workingGroups.length > 0) {
         // Fetch working group IDs from database
         const codes = body.workingGroups.map((wg: any) => wg.code);
-        const { data: dbWorkingGroups, error: wgFetchError } = await getSupabaseAdmin()
+        const { data: dbWorkingGroups, error: wgFetchError } = await supabase
           .from('working_groups')
           .select('id, code')
           .in('code', codes);
@@ -271,7 +274,7 @@ export async function PATCH(
 
           console.log('[AIMS API] Inserting working groups:', JSON.stringify(workingGroupsData, null, 2));
 
-          const { error: wgError } = await getSupabaseAdmin()
+          const { error: wgError } = await supabase
             .from('activity_working_groups')
             .insert(workingGroupsData);
             
@@ -291,7 +294,7 @@ export async function PATCH(
       console.log('[AIMS API] Imported participating orgs:', body.importedParticipatingOrgs);
       
       // First, delete existing participating organizations
-      const { error: deleteError } = await getSupabaseAdmin()
+      const { error: deleteError } = await supabase
         .from('activity_participating_organizations')
         .delete()
         .eq('activity_id', id);
@@ -307,7 +310,7 @@ export async function PATCH(
         const orgRefs = body.importedParticipatingOrgs.map((org: any) => org.ref).filter(Boolean);
         const orgNames = body.importedParticipatingOrgs.map((org: any) => org.name).filter(Boolean);
         
-        const { data: organizations, error: orgFetchError } = await getSupabaseAdmin()
+        const { data: organizations, error: orgFetchError } = await supabase
           .from('organizations')
           .select('id, iati_org_id, name')
           .in('iati_org_id', orgRefs);
@@ -357,7 +360,7 @@ export async function PATCH(
         if (participatingOrgsData.length > 0) {
           console.log('[AIMS API] Inserting participating organizations:', JSON.stringify(participatingOrgsData, null, 2));
           
-          const { error: insertError } = await getSupabaseAdmin()
+          const { error: insertError } = await supabase
             .from('activity_participating_organizations')
             .insert(participatingOrgsData);
           
@@ -439,7 +442,7 @@ export async function PATCH(
       }
       
       // Delete existing budgets for this activity (import replaces)
-      const { error: deleteError } = await getSupabaseAdmin()
+      const { error: deleteError } = await supabase
         .from('activity_budgets')
         .delete()
         .eq('activity_id', id);
@@ -478,7 +481,7 @@ export async function PATCH(
         
         console.log('[AIMS API] Inserting budgets:', JSON.stringify(budgetsToInsert, null, 2));
         
-        const { error: insertError } = await getSupabaseAdmin()
+        const { error: insertError } = await supabase
           .from('activity_budgets')
           .insert(budgetsToInsert);
         
@@ -554,7 +557,7 @@ export async function PATCH(
       }
       
       // Delete existing planned disbursements for this activity (import replaces)
-      const { error: deleteError } = await getSupabaseAdmin()
+      const { error: deleteError } = await supabase
         .from('planned_disbursements')
         .delete()
         .eq('activity_id', id);
@@ -576,7 +579,7 @@ export async function PATCH(
           if (orgData.ref) {
             console.log(`[Planned Disbursement] Searching for org by IATI ref: "${orgData.ref}"`);
             
-            const { data: orgsByRef } = await getSupabaseAdmin()
+            const { data: orgsByRef } = await supabase
               .from('organizations')
               .select('id, name, iati_org_id');
             
@@ -599,7 +602,7 @@ export async function PATCH(
           if (!organizationId && orgData.name) {
             console.log(`[Planned Disbursement] Searching for org by name: "${orgData.name}"`);
             
-            const { data: orgsByName } = await getSupabaseAdmin()
+            const { data: orgsByName } = await supabase
               .from('organizations')
               .select('id, name, acronym');
             
@@ -620,7 +623,7 @@ export async function PATCH(
           if (!organizationId) {
             console.log(`[Planned Disbursement] Creating new org: "${orgData.name}"`);
             
-            const { data: newOrg, error: createError } = await getSupabaseAdmin()
+            const { data: newOrg, error: createError } = await supabase
               .from('organizations')
               .insert({
                 name: orgData.name,
@@ -637,7 +640,7 @@ export async function PATCH(
               console.log(`[Planned Disbursement] Org creation failed (possibly duplicate), retrying search:`, createError.message);
               
               // Retry search by name
-              const { data: retryOrgs } = await getSupabaseAdmin()
+              const { data: retryOrgs } = await supabase
                 .from('organizations')
                 .select('id, name')
                 .ilike('name', orgData.name)
@@ -665,7 +668,7 @@ export async function PATCH(
           
           console.log(`[Planned Disbursement] Searching for activity by IATI ID: "${iatiId}"`);
           
-          const { data: activities } = await getSupabaseAdmin()
+          const { data: activities } = await supabase
             .from('activities')
             .select('id, iati_identifier, title_narrative')
             .eq('iati_identifier', iatiId)
@@ -746,7 +749,7 @@ export async function PATCH(
         
         console.log('[AIMS API] Inserting planned disbursements with linked organizations:', JSON.stringify(disbursementsToInsert, null, 2));
         
-        const { error: insertError } = await getSupabaseAdmin()
+        const { error: insertError } = await supabase
           .from('planned_disbursements')
           .insert(disbursementsToInsert);
         
@@ -820,7 +823,7 @@ export async function PATCH(
       }
       
       // Delete existing budget mappings for this activity (import replaces)
-      const { error: deleteError } = await getSupabaseAdmin()
+      const { error: deleteError } = await supabase
         .from('country_budget_items')
         .delete()
         .eq('activity_id', id);
@@ -833,7 +836,7 @@ export async function PATCH(
       // Insert new budget mappings
       for (const cbi of validCountryBudgetItems) {
         // Insert parent country_budget_items record
-        const { data: newCbi, error: cbiError } = await getSupabaseAdmin()
+        const { data: newCbi, error: cbiError } = await supabase
           .from('country_budget_items')
           .insert({
             activity_id: id,
@@ -860,7 +863,7 @@ export async function PATCH(
           
           console.log('[AIMS API] 📝 Inserting budget items:', budgetItemsToInsert);
           
-          const { error: itemsError } = await getSupabaseAdmin()
+          const { error: itemsError } = await supabase
             .from('budget_items')
             .insert(budgetItemsToInsert);
           
@@ -881,7 +884,7 @@ export async function PATCH(
       console.log('[AIMS API] Imported contacts count:', body.importedContacts.length);
       
       // Delete existing contacts for this activity (import replaces)
-      const { error: deleteError } = await getSupabaseAdmin()
+      const { error: deleteError } = await supabase
         .from('activity_contacts')
         .delete()
         .eq('activity_id', id);
@@ -955,7 +958,7 @@ export async function PATCH(
         
         console.log('[AIMS API] Inserting contacts:', JSON.stringify(contactsToInsert, null, 2));
         
-        const { error: insertError } = await getSupabaseAdmin()
+        const { error: insertError } = await supabase
           .from('activity_contacts')
           .insert(contactsToInsert);
         
@@ -970,7 +973,7 @@ export async function PATCH(
     
     // Update activity updated_at timestamp only if no basic fields were updated
     if (Object.keys(activityFields).length === 0) {
-      const { error: updateError } = await getSupabaseAdmin()
+      const { error: updateError } = await supabase
         .from('activities')
         .update({ updated_at: new Date().toISOString() })
         .eq('id', id);
@@ -1016,12 +1019,18 @@ export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } | Promise<{ id: string }> }
 ) {
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
   // Log immediately - should appear in terminal
   console.error('[AIMS API ERROR LOG] ===== ROUTE CALLED =====');
   console.log('[AIMS API] ===== GET /api/activities/[id] START =====');
   console.log('[AIMS API] Request URL:', request.url);
   
   try {
+    const { supabase, response: authResponse } = await requireAuth();
+    if (authResponse) return authResponse;
+
     // Handle both sync and async params (Next.js 14/15 compatibility)
     const resolvedParams = await Promise.resolve(params);
     console.log('[AIMS API] Full params object:', JSON.stringify(resolvedParams, null, 2));
@@ -1044,9 +1053,6 @@ export async function GET(
     }
     
     console.log('[AIMS API] GET /api/activities/[id] - Fetching activity:', id);
-    
-    const supabase = getSupabaseAdmin();
-    
     if (!supabase) {
       console.error('[AIMS API] Supabase client is null');
       return NextResponse.json(

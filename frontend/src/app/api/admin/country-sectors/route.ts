@@ -1,13 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getSupabaseAdmin } from "@/lib/supabase";
+import { requireAuth } from '@/lib/auth';
 
 /**
  * GET /api/admin/country-sectors
  * Get country sectors, optionally filtered by vocabulary
  */
 export async function GET(request: NextRequest) {
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
   try {
-    const supabase = getSupabaseAdmin();
 
     if (!supabase) {
       return NextResponse.json(
@@ -71,8 +73,10 @@ export async function GET(request: NextRequest) {
  * Create a new country sector
  */
 export async function POST(request: NextRequest) {
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
   try {
-    const supabase = getSupabaseAdmin();
 
     if (!supabase) {
       return NextResponse.json(
@@ -155,8 +159,10 @@ export async function POST(request: NextRequest) {
  * Update multiple sectors at once (for reordering)
  */
 export async function PUT(request: NextRequest) {
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
   try {
-    const supabase = getSupabaseAdmin();
 
     if (!supabase) {
       return NextResponse.json(

@@ -1,5 +1,5 @@
 import { NextResponse, NextRequest } from 'next/server';
-import { getSupabaseAdmin } from '@/lib/supabase';
+import { requireAuth } from '@/lib/auth';
 import { v4 as uuidv4 } from 'uuid';
 
 // Force dynamic rendering
@@ -18,20 +18,17 @@ export async function GET(request: NextRequest) {
   console.log('[AIMS] GET /api/activity-contributors - Starting request');
   
   try {
+    const { supabase, response: authResponse } = await requireAuth();
+    if (authResponse) return authResponse;
+
     // Check if getSupabaseAdmin is properly initialized
-    if (!getSupabaseAdmin()) {
-      console.error('[AIMS] getSupabaseAdmin() is not initialized');
-      return NextResponse.json(
-        { error: 'Database connection not initialized' },
-        { status: 500 }
-      );
-    }
+    
 
     // Get activityId from query params if provided
     const searchParams = request.nextUrl.searchParams;
     const activityId = searchParams.get('activityId');
 
-    let query = getSupabaseAdmin().from('activity_contributors').select('*');
+    let query = supabase.from('activity_contributors').select('*');
     
     // Filter by activity if activityId is provided
     if (activityId) {
@@ -74,6 +71,9 @@ export async function GET(request: NextRequest) {
 // POST /api/activity-contributors - Add a new contributor
 export async function POST(request: NextRequest) {
   try {
+    const { supabase, response: authResponse } = await requireAuth();
+    if (authResponse) return authResponse;
+
     const body = await request.json();
     
     console.log('[AIMS] POST /api/activity-contributors - Adding contributor');
@@ -86,9 +86,6 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
-    
-    const supabase = getSupabaseAdmin();
-    
     if (!supabase) {
       console.error('[AIMS] Supabase client is null');
       return NextResponse.json(
@@ -169,6 +166,9 @@ export async function POST(request: NextRequest) {
 // DELETE /api/activity-contributors - Remove a contributor
 export async function DELETE(request: NextRequest) {
   try {
+    const { supabase, response: authResponse } = await requireAuth();
+    if (authResponse) return authResponse;
+
     const url = new URL(request.url);
     const contributorId = url.searchParams.get('contributorId');
     
@@ -180,9 +180,6 @@ export async function DELETE(request: NextRequest) {
     }
     
     console.log('[AIMS] DELETE /api/activity-contributors - Removing contributor:', contributorId);
-    
-    const supabase = getSupabaseAdmin();
-    
     if (!supabase) {
       console.error('[AIMS] Supabase client is null');
       return NextResponse.json(

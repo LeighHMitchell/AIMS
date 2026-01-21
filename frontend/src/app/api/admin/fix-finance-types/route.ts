@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSupabaseAdmin } from '@/lib/supabase';
+import { requireAuth } from '@/lib/auth';
 
 /**
  * Admin API endpoint to fix empty string finance types
@@ -8,9 +8,10 @@ import { getSupabaseAdmin } from '@/lib/supabase';
 export async function POST(request: NextRequest) {
   try {
     console.log('[FINANCE-FIX] Starting comprehensive finance type fix...');
-    
-    const supabase = getSupabaseAdmin();
-    
+
+    const { supabase, response: authResponse } = await requireAuth();
+    if (authResponse) return authResponse;
+
     if (!supabase) {
       return NextResponse.json(
         { error: 'Unable to connect to database' },
@@ -129,8 +130,10 @@ export async function POST(request: NextRequest) {
 
 // GET endpoint to check status without making changes
 export async function GET(request: NextRequest) {
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
   try {
-    const supabase = getSupabaseAdmin();
     
     if (!supabase) {
       return NextResponse.json(

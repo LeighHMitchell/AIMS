@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSupabaseAdmin } from '@/lib/supabase';
+import { requireAuth } from '@/lib/auth';
 
 export async function GET(request: NextRequest) {
+  const { supabase, response } = await requireAuth();
+  if (response) return response;
+  
   try {
-    const supabase = getSupabaseAdmin();
-    
     if (!supabase) {
       return NextResponse.json(
         { error: 'Database not available' },

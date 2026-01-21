@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSupabaseAdmin } from '@/lib/supabase';
+import { requireAuth } from '@/lib/auth';
 
 interface ActivityMetadata {
   id: string;
@@ -64,6 +64,9 @@ export async function GET(
   { params }: { params: { id: string } | Promise<{ id: string }> }
 ) {
   try {
+    const { supabase, response: authResponse } = await requireAuth();
+    if (authResponse) return authResponse;
+
     // Handle both sync and async params (Next.js 14/15 compatibility)
     const resolvedParams = await Promise.resolve(params);
     const { id } = resolvedParams;
@@ -74,9 +77,6 @@ export async function GET(
         { status: 400 }
       );
     }
-
-    const supabase = getSupabaseAdmin();
-    
     if (!supabase) {
       return NextResponse.json(
         { error: 'Database not available' },

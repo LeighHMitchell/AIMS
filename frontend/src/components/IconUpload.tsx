@@ -3,6 +3,7 @@ import { useDropzone } from "react-dropzone";
 import { Upload, X, Image as ImageIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import imageCompression from "browser-image-compression";
 
 interface IconUploadProps {
   currentIcon?: string;
@@ -38,16 +39,26 @@ export const IconUpload: React.FC<IconUploadProps> = ({
         return;
       }
 
-      // Validate file size (max 2MB)
-      if (file.size > 2 * 1024 * 1024) {
-        toast.error("Image size should be less than 2MB");
+      // Validate file size (max 5MB before compression)
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error("Image size should be less than 5MB");
         return;
       }
 
       setUploading(true);
 
       try {
-        // Create preview
+        // Compress the image before converting to base64
+        const compressionOptions = {
+          maxSizeMB: 0.15, // Target ~150KB for icons
+          maxWidthOrHeight: 512, // Icons don't need to be larger than 512px
+          useWebWorker: true,
+        };
+
+        const compressedFile = await imageCompression(file, compressionOptions);
+        console.log(`Icon compressed: ${(file.size / 1024).toFixed(1)}KB → ${(compressedFile.size / 1024).toFixed(1)}KB`);
+
+        // Create preview from compressed file
         const reader = new FileReader();
         reader.onloadend = () => {
           const base64String = reader.result as string;
@@ -59,7 +70,7 @@ export const IconUpload: React.FC<IconUploadProps> = ({
             toast.success("The icon has been uploaded and will be saved after activity creation.");
           }
         };
-        reader.readAsDataURL(file);
+        reader.readAsDataURL(compressedFile);
       } catch (error) {
         console.error("Error uploading icon:", error);
         toast.error("Failed to upload icon");
@@ -143,7 +154,7 @@ export const IconUpload: React.FC<IconUploadProps> = ({
             {isDragActive ? "Drop the icon here" : "Drag & drop an icon here"}
           </p>
           <p className="text-xs mt-1">or click to select</p>
-          <p className="text-xs mt-2 text-gray-400 text-center">PNG, JPG, GIF up to 2MB (Recommended: 512x512px)</p>
+          <p className="text-xs mt-2 text-gray-400 text-center">PNG, JPG, GIF up to 5MB (auto-compressed)</p>
         </div>
       </div>
 

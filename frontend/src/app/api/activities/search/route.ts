@@ -1,18 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSupabaseAdmin } from '@/lib/supabase';
+import { requireAuth } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET(request: NextRequest) {
   try {
+    const { supabase, response: authResponse } = await requireAuth();
+    if (authResponse) return authResponse;
+
     const searchParams = request.nextUrl.searchParams;
     const search = searchParams.get('q') || searchParams.get('search') || '';
     const limit = parseInt(searchParams.get('limit') || '100', 10);
 
     console.log('[Activities Search API] Received search request:', { search, limit });
-
-    const supabase = getSupabaseAdmin();
-    
     if (!supabase) {
       console.error('[Activities Search] Supabase client is null');
       return NextResponse.json(

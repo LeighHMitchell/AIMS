@@ -1,20 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSupabaseAdmin } from '@/lib/supabase';
+import { requireAuth } from '@/lib/auth';
 
 // PATCH /api/activities/[id]/results/[resultId] - Update a result
 export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string; resultId: string }> }
 ) {
-  const supabase = getSupabaseAdmin();
-  
-  if (!supabase) {
-    console.error('[Results API] Supabase admin client not available');
-    return NextResponse.json({ error: 'Database not available' }, { status: 500 });
-  }
-
   try {
-    const { resultId } = params;
+    const { supabase, response: authResponse } = await requireAuth();
+    if (authResponse) return authResponse;
+
+    if (!supabase) {
+      console.error('[Results API] Supabase admin client not available');
+      return NextResponse.json({ error: 'Database not available' }, { status: 500 });
+    }
+
+    const { resultId } = await params;
     const body = await request.json();
 
     console.log(`[Results API] Updating result: ${resultId}`);
@@ -127,15 +128,16 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string; resultId: string }> }
 ) {
-  const supabase = getSupabaseAdmin();
-  
-  if (!supabase) {
-    console.error('[Results API] Supabase admin client not available');
-    return NextResponse.json({ error: 'Database not available' }, { status: 500 });
-  }
-
   try {
-    const { resultId } = params;
+    const { supabase, response: authResponse } = await requireAuth();
+    if (authResponse) return authResponse;
+
+    if (!supabase) {
+      console.error('[Results API] Supabase admin client not available');
+      return NextResponse.json({ error: 'Database not available' }, { status: 500 });
+    }
+
+    const { resultId } = await params;
 
     console.log(`[Results API] Deleting result: ${resultId}`);
 

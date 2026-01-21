@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSupabaseAdmin } from '@/lib/supabase';
+import { requireAuth } from '@/lib/auth';
 
 export async function OPTIONS() {
   const response = new NextResponse(null, { status: 200 });
@@ -13,6 +13,9 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
   try {
     const { id: orgId } = params;
     
@@ -25,16 +28,10 @@ export async function GET(
     
     console.log('[AIMS] GET /api/organizations/[id]/sectors - Fetching sectors for org:', orgId);
     
-    if (!getSupabaseAdmin()) {
-      console.error('[AIMS] getSupabaseAdmin() is not initialized');
-      return NextResponse.json(
-        { error: 'Database connection not initialized' },
-        { status: 500 }
-      );
-    }
+    
     
     // First, get all activities for this organization
-    const { data: activities, error: activitiesError } = await getSupabaseAdmin()
+    const { data: activities, error: activitiesError } = await supabase
       .from('activities')
       .select('id')
       .eq('reporting_org_id', orgId);
@@ -54,7 +51,7 @@ export async function GET(
     const activityIds = activities.map(a => a.id);
     
     // Fetch sectors for these activities
-    const { data: activitySectors, error: sectorsError } = await getSupabaseAdmin()
+    const { data: activitySectors, error: sectorsError } = await supabase
       .from('activity_sectors')
       .select('sector_code, sector_narrative, percentage, activity_id')
       .in('activity_id', activityIds);

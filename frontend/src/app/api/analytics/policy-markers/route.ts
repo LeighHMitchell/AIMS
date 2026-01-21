@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getSupabaseAdmin } from '@/lib/supabase'
+import { requireAuth } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic'
 
@@ -26,15 +26,19 @@ interface PolicyMarkerAnalyticsRow {
  * - Activities without budgets are excluded from value calculations but included in counts
  */
 export async function GET(request: NextRequest) {
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
+  if (!supabase) {
+    return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
+  }
+
   try {
     const { searchParams } = new URL(request.url)
-    
+
     // Optional filters
     const markerIds = searchParams.get('markerIds')?.split(',').filter(Boolean) || []
     const significanceLevels = searchParams.get('significanceLevels')?.split(',').map(Number).filter(n => !isNaN(n)) || [0, 1, 2]
-
-    const supabase = getSupabaseAdmin()
-
     // Step 1: Get all policy markers (for reference)
     const { data: allMarkers, error: markersError } = await supabase
       .from('policy_markers')

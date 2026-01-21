@@ -1,5 +1,5 @@
 import { NextResponse, NextRequest } from 'next/server';
-import { getSupabaseAdmin } from '@/lib/supabase';
+import { requireAuth } from '@/lib/auth';
 import { fetchSystemTotals, SystemTotals } from '@/lib/system-totals';
 import { calculateModality } from '@/utils/modality-calculation';
 
@@ -27,8 +27,13 @@ function isValidUUID(uuid: string): boolean {
 export async function GET(request: NextRequest) {
   const startTime = Date.now();
   
+  const { supabase, response: authResponse } = await requireAuth();
+  
+  if (authResponse) return authResponse;
+
+  
   try {
-    const supabase = getSupabaseAdmin();
+
     if (!supabase) {
       return NextResponse.json(
         { error: 'Database connection failed' },
@@ -587,8 +592,6 @@ export async function GET(request: NextRequest) {
       if (!summary.totalBudgetOriginal) {
         summary.totalBudgetOriginal = budgetOriginalMap.get(activity.id) || 0;
       }
-      
-      console.log(`[AIMS Optimized] Activity ${activity.id} summary:`, summary);
 
       return {
         ...activity,

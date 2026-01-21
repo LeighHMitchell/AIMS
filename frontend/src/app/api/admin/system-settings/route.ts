@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from "next/server"
-import { getSupabaseAdmin } from "@/lib/supabase"
+import { requireAuth } from '@/lib/auth';
 
 export async function GET() {
   try {
+    const { supabase, response: authResponse } = await requireAuth();
+    if (authResponse) return authResponse;
+
     console.log('[System Settings] GET request received')
-
-    const supabase = getSupabaseAdmin()
-
     if (!supabase) {
       console.error('[System Settings] Supabase admin client not available')
       return NextResponse.json(
@@ -67,6 +67,9 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
+    const { supabase, response: authResponse } = await requireAuth();
+    if (authResponse) return authResponse;
+
     console.log('[System Settings] POST request received')
 
     const body = await request.json()
@@ -80,9 +83,6 @@ export async function POST(request: NextRequest) {
     }
 
     console.log('[System Settings] Attempting to save settings:', { homeCountry, defaultLanguage, defaultCurrency })
-
-    const supabase = getSupabaseAdmin()
-
     if (!supabase) {
       console.error('[System Settings] Supabase admin client not available')
       return NextResponse.json(

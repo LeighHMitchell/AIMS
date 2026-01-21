@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSuggestionsForActivity, applyAutoMapping } from "@/lib/sector-budget-mapping-service";
-import { getSupabaseAdmin } from "@/lib/supabase";
+import { requireAuth } from '@/lib/auth';
 import { ClassificationType } from "@/types/aid-on-budget";
 
 /**
@@ -11,10 +11,11 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
   try {
     const { id: activityId } = await params;
-    const supabase = getSupabaseAdmin();
-
     // Get activity's sectors first (to show in response)
     const { data: sectors, error: sectorsError } = await supabase
       .from("activity_sectors")
@@ -209,6 +210,9 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
   try {
     const { id: activityId } = await params;
     const body = await request.json();

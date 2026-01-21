@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSupabaseAdmin } from '@/lib/supabase';
+import { requireAuth } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 
@@ -53,6 +53,9 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
   try {
     const { id } = await params;
 
@@ -62,9 +65,6 @@ export async function GET(
         { status: 400 }
       );
     }
-
-    const supabase = getSupabaseAdmin();
-
     // Fetch activity data
     const { data: activity, error: activityError } = await supabase
       .from('activities')

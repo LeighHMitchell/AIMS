@@ -1,12 +1,13 @@
 import { NextResponse } from 'next/server';
-import { getSupabaseAdmin } from '@/lib/supabase';
+import { requireAuth } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
   try {
-    const supabase = getSupabaseAdmin();
-    
+    const { supabase, response: authResponse } = await requireAuth();
+    if (authResponse) return authResponse;
+
     if (!supabase) {
       return NextResponse.json(
         { error: 'Unable to connect to database' },
@@ -67,8 +68,9 @@ export async function GET() {
 
 export async function POST() {
   try {
-    const supabase = getSupabaseAdmin();
-    
+    const { supabase, response: authResponse } = await requireAuth();
+    if (authResponse) return authResponse;
+
     if (!supabase) {
       return NextResponse.json(
         { error: 'Unable to connect to database' },

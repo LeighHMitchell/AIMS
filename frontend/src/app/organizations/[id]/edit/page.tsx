@@ -36,11 +36,11 @@ interface Organization {
   default_language?: string
   alias_refs?: string[]
   name_aliases?: string[]
-  social_twitter?: string
-  social_facebook?: string
-  social_linkedin?: string
-  social_instagram?: string
-  social_youtube?: string
+  twitter?: string
+  facebook?: string
+  linkedin?: string
+  instagram?: string
+  youtube?: string
   [key: string]: any
 }
 

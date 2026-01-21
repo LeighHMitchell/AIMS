@@ -1,11 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSupabaseAdmin } from '@/lib/supabase';
+import { requireAuth } from '@/lib/auth';
 
 /**
  * Contact search across activity_contacts table
  * GET /api/contacts/search?q=query&limit=10
  */
 export async function GET(request: NextRequest) {
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
+  if (!supabase) {
+    return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
+  }
+
   try {
     const { searchParams } = new URL(request.url);
     const query = searchParams.get('q')?.trim();
@@ -17,9 +24,6 @@ export async function GET(request: NextRequest) {
     }
 
     console.log('[Contacts Search API] Searching activity_contacts for:', query, 'limit:', limit);
-
-    const supabase = getSupabaseAdmin();
-
     // Search activity_contacts table with organization join
     const { data: contacts, error: contactsError } = await supabase
       .from('activity_contacts')

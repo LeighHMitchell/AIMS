@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getSupabaseAdmin } from '@/lib/supabase'
+import { requireAuth } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic'
 
@@ -32,12 +32,13 @@ export async function POST(
   { params }: { params: { id: string } | Promise<{ id: string }> }
 ) {
   try {
+    const { supabase, response: authResponse } = await requireAuth();
+    if (authResponse) return authResponse;
+
     const resolvedParams = await Promise.resolve(params)
     const organizationId = resolvedParams.id
     const body: ImportRequest = await request.json()
     const { fields, iati_data, selectedFields } = body
-
-    const supabase = getSupabaseAdmin()
     const updatedFields: string[] = []
     const errors: string[] = []
     const warnings: string[] = []

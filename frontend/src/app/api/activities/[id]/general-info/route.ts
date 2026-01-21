@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSupabaseAdmin } from '@/lib/supabase';
+import { requireAuth } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -8,6 +8,9 @@ export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
   try {
     const { id } = await params;
     const body = await request.json();
@@ -21,9 +24,6 @@ export async function PATCH(
     
     console.log('[AIMS API] PATCH /api/activities/[id]/general-info - Updating activity:', id);
     console.log('[AIMS API] Update data:', JSON.stringify(body, null, 2));
-    
-    const supabase = getSupabaseAdmin();
-    
     if (!supabase) {
       return NextResponse.json(
         { error: 'Database connection not configured' },

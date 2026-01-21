@@ -10,6 +10,7 @@ import { IATIDocumentManager } from './IATIDocumentManager'
 import IATIImportPreferences from './IATIImportPreferences'
 import IATIOrgImportTab from './IATIOrgImportTab'
 import OrganizationFundingEnvelopeTab from './OrganizationFundingEnvelopeTab'
+import OrganizationContactsTab from './OrganizationContactsTab'
 
 interface OrganizationEditorProps {
   organizationId?: string
@@ -155,6 +156,7 @@ export function OrganizationEditor({
     'general',
     'branding',
     'contact',
+    'contacts',
     'aliases',
     'merge',
     'funding-envelope',
@@ -177,7 +179,7 @@ export function OrganizationEditor({
   // Render section content
   const renderSectionContent = () => {
     const currentOrgId = organizationId || organization?.id
-    const needsOrg = ['funding-envelope', 'iati-import', 'budgets', 'documents', 'iati-prefs'].includes(activeSection)
+    const needsOrg = ['contacts', 'funding-envelope', 'iati-import', 'budgets', 'documents', 'iati-prefs'].includes(activeSection)
 
     if (needsOrg && !currentOrgId && !organizationCreated) {
       return (
@@ -213,6 +215,16 @@ export function OrganizationEditor({
     }
 
     switch (activeSection) {
+      case 'contacts':
+        return (
+          <div className="h-full overflow-y-auto p-6">
+            <OrganizationContactsTab
+              organizationId={currentOrgId}
+              organization={organization ? { name: organization.name, acronym: organization.acronym, logo: organization.logo } : undefined}
+            />
+          </div>
+        )
+
       case 'funding-envelope':
         return (
           <div className="h-full overflow-y-auto p-6">

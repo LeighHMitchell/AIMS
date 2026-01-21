@@ -26,7 +26,7 @@ export function CopyableIdentifier({ value, label }: CopyableIdentifierProps) {
   }
 
   return (
-    <div className="flex items-center gap-2">
+    <div className="group flex items-center gap-2">
       <code className="text-xs px-2 py-1 bg-slate-100 text-slate-700 rounded font-mono">
         {value}
       </code>
@@ -34,7 +34,7 @@ export function CopyableIdentifier({ value, label }: CopyableIdentifierProps) {
         variant="ghost"
         size="sm"
         onClick={handleCopy}
-        className="h-6 w-6 p-0 hover:bg-slate-100"
+        className={`h-6 w-6 p-0 hover:bg-slate-100 transition-opacity ${copied ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}
       >
         {copied ? (
           <Check className="h-3 w-3 text-green-600" />

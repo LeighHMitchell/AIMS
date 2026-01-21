@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AIMS Performance Report</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+      background: #0f172a;
+      color: #e2e8f0;
+      line-height: 1.6;
+      padding: 2rem;
+    }
+
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    h1 {
+      font-size: 2rem;
+      margin-bottom: 0.5rem;
+      color: #f1f5f9;
+    }
+
+    .timestamp {
+      color: #94a3b8;
+      margin-bottom: 2rem;
+    }
+
+    .summary-cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+      margin-bottom: 2rem;
+    }
+
+    .card {
+      background: #1e293b;
+      border-radius: 12px;
+      padding: 1.5rem;
+      border: 1px solid #334155;
+    }
+
+    .card-title {
+      color: #94a3b8;
+      font-size: 0.875rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .card-value {
+      font-size: 1.75rem;
+      font-weight: 600;
+      color: #f1f5f9;
+    }
+
+    .card-change {
+      font-size: 0.875rem;
+      margin-top: 0.25rem;
+    }
+
+    .improved { color: #22c55e; }
+    .regressed { color: #ef4444; }
+    .neutral { color: #94a3b8; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 2rem;
+    }
+
+    th, td {
+      padding: 1rem;
+      text-align: left;
+      border-bottom: 1px solid #334155;
+    }
+
+    th {
+      background: #1e293b;
+      color: #94a3b8;
+      font-weight: 500;
+      font-size: 0.875rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    tr:hover {
+      background: #1e293b;
+    }
+
+    .endpoint-name {
+      font-family: 'SF Mono', Monaco, monospace;
+      font-size: 0.875rem;
+      color: #38bdf8;
+    }
+
+    .params {
+      color: #94a3b8;
+      font-size: 0.75rem;
+    }
+
+    .metric {
+      font-family: 'SF Mono', Monaco, monospace;
+      font-size: 0.875rem;
+    }
+
+    .status-badge {
+      display: inline-block;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      margin-right: 0.5rem;
+    }
+
+    .change-badge {
+      display: inline-block;
+      padding: 0.25rem 0.5rem;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      font-weight: 500;
+    }
+
+    .chart-container {
+      background: #1e293b;
+      border-radius: 12px;
+      padding: 1.5rem;
+      border: 1px solid #334155;
+      margin-bottom: 2rem;
+    }
+
+    .chart-title {
+      font-size: 1.25rem;
+      margin-bottom: 1rem;
+      color: #f1f5f9;
+    }
+
+    .legend {
+      display: flex;
+      gap: 2rem;
+      margin-bottom: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.875rem;
+    }
+
+    .legend-color {
+      width: 16px;
+      height: 4px;
+      border-radius: 2px;
+    }
+
+    h2 {
+      font-size: 1.5rem;
+      margin: 2rem 0 1rem;
+      color: #f1f5f9;
+    }
+
+    .targets {
+      display: flex;
+      gap: 1.5rem;
+      margin-bottom: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .target {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.875rem;
+      color: #94a3b8;
+    }
+
+    .target-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+    }
+
+    .target-dot.green { background: #22c55e; }
+    .target-dot.yellow { background: #eab308; }
+    .target-dot.red { background: #ef4444; }
+
+    footer {
+      margin-top: 3rem;
+      padding-top: 2rem;
+      border-top: 1px solid #334155;
+      color: #64748b;
+      font-size: 0.875rem;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🚀 AIMS Performance Report</h1>
+    <p class="timestamp">Generated: 1/15/2026, 9:43:18 PM | Baseline: 1/15/2026, 1:18:12 PM</p>
+
+    <div class="summary-cards">
+      <div class="card">
+        <div class="card-title">Endpoints Tested</div>
+        <div class="card-value">13</div>
+      </div>
+      <div class="card">
+        <div class="card-title">Total Requests</div>
+        <div class="card-value">65</div>
+      </div>
+      <div class="card">
+        <div class="card-title">Avg Response Time</div>
+        <div class="card-value">846ms</div>
+        <div class="card-change regressed">
+          20.6% vs baseline
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">Slowest Endpoint</div>
+        <div class="card-value" style="font-size: 1rem; word-break: break-all;">/api/organizations</div>
+      </div>
+    </div>
+
+    <div class="targets">
+      <div class="target">
+        <span class="target-dot green"></span>
+        <span>&lt; 200ms (Good)</span>
+      </div>
+      <div class="target">
+        <span class="target-dot yellow"></span>
+        <span>200-500ms (Acceptable)</span>
+      </div>
+      <div class="target">
+        <span class="target-dot red"></span>
+        <span>&gt; 500ms (Needs Improvement)</span>
+      </div>
+    </div>
+
+    <h2>Endpoint Performance</h2>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Endpoint</th>
+          <th>Baseline Mean</th>
+          <th>Current Mean</th>
+          <th>P95</th>
+          <th>Change</th>
+        </tr>
+      </thead>
+      <tbody>
+        
+          <tr>
+            <td>
+              <span class="status-badge" style="background: #ef4444"></span>
+              <span class="endpoint-name">/api/organizations</span>
+              
+            </td>
+            <td class="metric">18ms</td>
+            <td class="metric">2.01s</td>
+            <td class="metric">2.19s</td>
+            <td>
+              
+                <span class="change-badge" style="background: #ef4444; color: #000;">
+                  +10869.5%
+                </span>
+              
+            </td>
+          </tr>
+        
+          <tr>
+            <td>
+              <span class="status-badge" style="background: #ef4444"></span>
+              <span class="endpoint-name">/api/activities-optimized</span>
+              <span class="params">?page=1&limit=20</span>
+            </td>
+            <td class="metric">1.23s</td>
+            <td class="metric">1.95s</td>
+            <td class="metric">2.57s</td>
+            <td>
+              
+                <span class="change-badge" style="background: #ef4444; color: #000;">
+                  +58.7%
+                </span>
+              
+            </td>
+          </tr>
+        
+          <tr>
+            <td>
+              <span class="status-badge" style="background: #ef4444"></span>
+              <span class="endpoint-name">/api/activities-list</span>
+              <span class="params">?page=1&limit=50</span>
+            </td>
+            <td class="metric">N/A</td>
+            <td class="metric">1.78s</td>
+            <td class="metric">5.98s</td>
+            <td>
+              <span class="neutral">—</span>
+            </td>
+          </tr>
+        
+          <tr>
+            <td>
+              <span class="status-badge" style="background: #ef4444"></span>
+              <span class="endpoint-name">/api/transactions</span>
+              <span class="params">?page=1&limit=20</span>
+            </td>
+            <td class="metric">743ms</td>
+            <td class="metric">1.71s</td>
+            <td class="metric">8.35s</td>
+            <td>
+              
+                <span class="change-badge" style="background: #ef4444; color: #000;">
+                  +129.7%
+                </span>
+              
+            </td>
+          </tr>
+        
+          <tr>
+            <td>
+              <span class="status-badge" style="background: #ef4444"></span>
+              <span class="endpoint-name">/api/activities-optimized</span>
+              <span class="params">?page=1&limit=50</span>
+            </td>
+            <td class="metric">1.18s</td>
+            <td class="metric">1.40s</td>
+            <td class="metric">2.04s</td>
+            <td>
+              
+                <span class="change-badge" style="background: #ef4444; color: #000;">
+                  +18.9%
+                </span>
+              
+            </td>
+          </tr>
+        
+          <tr>
+            <td>
+              <span class="status-badge" style="background: #ef4444"></span>
+              <span class="endpoint-name">/api/activities-list</span>
+              <span class="params">?page=1&limit=20</span>
+            </td>
+            <td class="metric">N/A</td>
+            <td class="metric">772ms</td>
+            <td class="metric">1.21s</td>
+            <td>
+              <span class="neutral">—</span>
+            </td>
+          </tr>
+        
+          <tr>
+            <td>
+              <span class="status-badge" style="background: #ef4444"></span>
+              <span class="endpoint-name">/api/transactions-list</span>
+              <span class="params">?page=1&limit=50</span>
+            </td>
+            <td class="metric">N/A</td>
+            <td class="metric">690ms</td>
+            <td class="metric">984ms</td>
+            <td>
+              <span class="neutral">—</span>
+            </td>
+          </tr>
+        
+          <tr>
+            <td>
+              <span class="status-badge" style="background: #eab308"></span>
+              <span class="endpoint-name">/api/transactions-list</span>
+              <span class="params">?page=1&limit=20</span>
+            </td>
+            <td class="metric">N/A</td>
+            <td class="metric">425ms</td>
+            <td class="metric">849ms</td>
+            <td>
+              <span class="neutral">—</span>
+            </td>
+          </tr>
+        
+          <tr>
+            <td>
+              <span class="status-badge" style="background: #22c55e"></span>
+              <span class="endpoint-name">/api/dashboard/actions-required</span>
+              
+            </td>
+            <td class="metric">22ms</td>
+            <td class="metric">114ms</td>
+            <td class="metric">295ms</td>
+            <td>
+              
+                <span class="change-badge" style="background: #ef4444; color: #000;">
+                  +408.9%
+                </span>
+              
+            </td>
+          </tr>
+        
+          <tr>
+            <td>
+              <span class="status-badge" style="background: #22c55e"></span>
+              <span class="endpoint-name">/api/transactions</span>
+              <span class="params">?page=1&limit=50</span>
+            </td>
+            <td class="metric">896ms</td>
+            <td class="metric">58ms</td>
+            <td class="metric">81ms</td>
+            <td>
+              
+                <span class="change-badge" style="background: #22c55e; color: #000;">
+                  -93.5%
+                </span>
+              
+            </td>
+          </tr>
+        
+          <tr>
+            <td>
+              <span class="status-badge" style="background: #22c55e"></span>
+              <span class="endpoint-name">/api/activities-optimized</span>
+              <span class="params">?page=1&limit=20&search=health</span>
+            </td>
+            <td class="metric">830ms</td>
+            <td class="metric">37ms</td>
+            <td class="metric">44ms</td>
+            <td>
+              
+                <span class="change-badge" style="background: #22c55e; color: #000;">
+                  -95.5%
+                </span>
+              
+            </td>
+          </tr>
+        
+          <tr>
+            <td>
+              <span class="status-badge" style="background: #22c55e"></span>
+              <span class="endpoint-name">/api/organizations-list</span>
+              <span class="params">?limit=100</span>
+            </td>
+            <td class="metric">N/A</td>
+            <td class="metric">33ms</td>
+            <td class="metric">35ms</td>
+            <td>
+              <span class="neutral">—</span>
+            </td>
+          </tr>
+        
+          <tr>
+            <td>
+              <span class="status-badge" style="background: #22c55e"></span>
+              <span class="endpoint-name">/api/organizations/bulk-stats</span>
+              <span class="params">?limit=100</span>
+            </td>
+            <td class="metric">N/A</td>
+            <td class="metric">32ms</td>
+            <td class="metric">33ms</td>
+            <td>
+              <span class="neutral">—</span>
+            </td>
+          </tr>
+        
+      </tbody>
+    </table>
+
+    <div class="chart-container">
+      <h3 class="chart-title">Response Time Distribution</h3>
+      <canvas id="barChart" height="300"></canvas>
+    </div>
+
+    
+    <div class="chart-container">
+      <h3 class="chart-title">Performance Trends Over Time</h3>
+      <canvas id="trendChart" height="400"></canvas>
+    </div>
+    
+
+    <footer>
+      <p>AIMS Performance Benchmarking Suite | Run <code>npm run benchmark</code> to generate new results</p>
+      <p>To set current results as baseline: <code>cp benchmark-results/latest.json benchmark-results/baseline.json</code></p>
+    </footer>
+  </div>
+
+  <script>
+    const chartData = {"/api/activities-optimized?page=1&limit=20":[{"timestamp":"2026-01-15T06:18:12.189Z","mean":1225.7823418},{"timestamp":"2026-01-15T06:28:32.828Z","mean":39.3233833000002},{"timestamp":"2026-01-15T06:34:04.322Z","mean":284.8099498000003},{"timestamp":"2026-01-15T14:23:18.392Z","mean":4768.4638752},{"timestamp":"2026-01-15T14:43:00.188Z","mean":1945.9015166000004}],"/api/activities-optimized?page=1&limit=50":[{"timestamp":"2026-01-15T06:18:12.189Z","mean":1177.9631333999994},{"timestamp":"2026-01-15T06:28:32.828Z","mean":32.0911458999999},{"timestamp":"2026-01-15T06:34:04.322Z","mean":118.62934979999991},{"timestamp":"2026-01-15T14:23:18.392Z","mean":2986.9220415999953},{"timestamp":"2026-01-15T14:43:00.188Z","mean":1400.2834831999978}],"/api/activities-optimized?page=1&limit=20&search=health":[{"timestamp":"2026-01-15T06:18:12.189Z","mean":830.4510166},{"timestamp":"2026-01-15T06:28:32.828Z","mean":32.33996249999982},{"timestamp":"2026-01-15T06:34:04.322Z","mean":123.05909179999871},{"timestamp":"2026-01-15T14:23:18.392Z","mean":6142.6621584},{"timestamp":"2026-01-15T14:43:00.188Z","mean":37.1551999999996}],"/api/organizations":[{"timestamp":"2026-01-15T06:18:12.189Z","mean":18.28575819999969},{"timestamp":"2026-01-15T06:28:32.828Z","mean":30827.592016799998},{"timestamp":"2026-01-15T06:34:04.322Z","mean":7015.4616915999995},{"timestamp":"2026-01-15T14:23:18.392Z","mean":12937.631374800001},{"timestamp":"2026-01-15T14:43:00.188Z","mean":2005.8538332000012}],"/api/transactions?page=1&limit=20":[{"timestamp":"2026-01-15T06:18:12.189Z","mean":742.9407251000005},{"timestamp":"2026-01-15T06:28:32.828Z","mean":5.302629299991532},{"timestamp":"2026-01-15T06:34:04.322Z","mean":790.9794499999946},{"timestamp":"2026-01-15T14:23:18.392Z","mean":2251.5012999999917},{"timestamp":"2026-01-15T14:43:00.188Z","mean":1706.8865667999955}],"/api/transactions?page=1&limit=50":[{"timestamp":"2026-01-15T06:18:12.189Z","mean":895.5337291999997},{"timestamp":"2026-01-15T06:28:32.828Z","mean":5.871024799987208},{"timestamp":"2026-01-15T06:34:04.322Z","mean":1086.4800665999996},{"timestamp":"2026-01-15T14:23:18.392Z","mean":4492.345141800004},{"timestamp":"2026-01-15T14:43:00.188Z","mean":57.82856680000259}],"/api/dashboard/actions-required":[{"timestamp":"2026-01-15T06:18:12.189Z","mean":22.342450100000132},{"timestamp":"2026-01-15T06:28:32.828Z","mean":0.7290835000050719},{"timestamp":"2026-01-15T06:34:04.322Z","mean":56.374816600000486},{"timestamp":"2026-01-15T14:23:18.392Z","mean":121.21032500000437},{"timestamp":"2026-01-15T14:43:00.188Z","mean":113.70355859999545}],"/api/activities-list?page=1&limit=20":[{"timestamp":"2026-01-15T06:28:32.828Z","mean":470.87554609999995},{"timestamp":"2026-01-15T06:34:04.322Z","mean":685.1856418000002},{"timestamp":"2026-01-15T14:23:18.392Z","mean":1428.6511250000003},{"timestamp":"2026-01-15T14:43:00.188Z","mean":771.8739416000001}],"/api/activities-list?page=1&limit=50":[{"timestamp":"2026-01-15T06:28:32.828Z","mean":449.5115207999999},{"timestamp":"2026-01-15T06:34:04.322Z","mean":877.8852999999999},{"timestamp":"2026-01-15T14:23:18.392Z","mean":1681.6743415999995},{"timestamp":"2026-01-15T14:43:00.188Z","mean":1781.115749999999}],"/api/transactions-list?page=1&limit=20":[{"timestamp":"2026-01-15T14:23:18.392Z","mean":462.7881915999809},{"timestamp":"2026-01-15T14:43:00.188Z","mean":424.9333664000005}],"/api/transactions-list?page=1&limit=50":[{"timestamp":"2026-01-15T14:23:18.392Z","mean":584.8049331999966},{"timestamp":"2026-01-15T14:43:00.188Z","mean":689.9262747999994}],"/api/organizations-list?limit=100":[{"timestamp":"2026-01-15T14:43:00.188Z","mean":32.95913299999811}],"/api/organizations/bulk-stats?limit=100":[{"timestamp":"2026-01-15T14:43:00.188Z","mean":31.56675840000098}]};
+    const comparisons = [{"endpoint":"/api/organizations","params":"","baselineMean":18.28575819999969,"latestMean":2005.8538332000012,"baselineP95":20.447333999996772,"latestP95":2194.2373329999973,"changePercent":10869.486806404533,"improved":false},{"endpoint":"/api/activities-optimized","params":"?page=1&limit=20","baselineMean":1225.7823418,"latestMean":1945.9015166000004,"baselineP95":1573.0819170000004,"latestP95":2570.006125,"changePercent":58.747719741380955,"improved":false},{"endpoint":"/api/activities-list","params":"?page=1&limit=50","baselineMean":null,"latestMean":1781.115749999999,"baselineP95":null,"latestP95":5978.576958,"changePercent":null,"improved":false},{"endpoint":"/api/transactions","params":"?page=1&limit=20","baselineMean":742.9407251000005,"latestMean":1706.8865667999955,"baselineP95":1077.252959000005,"latestP95":8348.806417,"changePercent":129.7473417640751,"improved":false},{"endpoint":"/api/activities-optimized","params":"?page=1&limit=50","baselineMean":1177.9631333999994,"latestMean":1400.2834831999978,"baselineP95":1402.9985419999975,"latestP95":2044.359832999995,"changePercent":18.873285886147116,"improved":false},{"endpoint":"/api/activities-list","params":"?page=1&limit=20","baselineMean":null,"latestMean":771.8739416000001,"baselineP95":null,"latestP95":1213.3395410000003,"changePercent":null,"improved":false},{"endpoint":"/api/transactions-list","params":"?page=1&limit=50","baselineMean":null,"latestMean":689.9262747999994,"baselineP95":null,"latestP95":984.0948329999956,"changePercent":null,"improved":false},{"endpoint":"/api/transactions-list","params":"?page=1&limit=20","baselineMean":null,"latestMean":424.9333664000005,"baselineP95":null,"latestP95":848.937582999999,"changePercent":null,"improved":false},{"endpoint":"/api/dashboard/actions-required","params":"","baselineMean":22.342450100000132,"latestMean":113.70355859999545,"baselineP95":24.515584000000672,"latestP95":294.76849999999104,"changePercent":408.9126666550987,"improved":false},{"endpoint":"/api/transactions","params":"?page=1&limit=50","baselineMean":895.5337291999997,"latestMean":57.82856680000259,"baselineP95":1212.5515840000007,"latestP95":81.01020800000697,"changePercent":-93.54255848613741,"improved":true},{"endpoint":"/api/activities-optimized","params":"?page=1&limit=20&search=health","baselineMean":830.4510166,"latestMean":37.1551999999996,"baselineP95":1258.9555830000027,"latestP95":44.18345799999952,"changePercent":-95.52590107576495,"improved":true},{"endpoint":"/api/organizations-list","params":"?limit=100","baselineMean":null,"latestMean":32.95913299999811,"baselineP95":null,"latestP95":35.38133299999754,"changePercent":null,"improved":false},{"endpoint":"/api/organizations/bulk-stats","params":"?limit=100","baselineMean":null,"latestMean":31.56675840000098,"baselineP95":null,"latestP95":33.27429100000154,"changePercent":null,"improved":false}];
+
+    // Bar chart for current results
+    const barCtx = document.getElementById('barChart').getContext('2d');
+    new Chart(barCtx, {
+      type: 'bar',
+      data: {
+        labels: comparisons.map(c => c.endpoint.replace('/api/', '') + (c.params ? c.params.substring(0, 20) : '')),
+        datasets: [
+          {
+            label: 'Baseline (Mean)',
+            data: comparisons.map(c => c.baselineMean),
+            backgroundColor: 'rgba(148, 163, 184, 0.5)',
+            borderColor: 'rgba(148, 163, 184, 1)',
+            borderWidth: 1
+          },
+          {
+            label: 'Current (Mean)',
+            data: comparisons.map(c => c.latestMean),
+            backgroundColor: comparisons.map(c => {
+              if (c.latestMean < 200) return 'rgba(34, 197, 94, 0.7)';
+              if (c.latestMean < 500) return 'rgba(234, 179, 8, 0.7)';
+              return 'rgba(239, 68, 68, 0.7)';
+            }),
+            borderColor: comparisons.map(c => {
+              if (c.latestMean < 200) return 'rgba(34, 197, 94, 1)';
+              if (c.latestMean < 500) return 'rgba(234, 179, 8, 1)';
+              return 'rgba(239, 68, 68, 1)';
+            }),
+            borderWidth: 1
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        scales: {
+          y: {
+            beginAtZero: true,
+            title: {
+              display: true,
+              text: 'Response Time (ms)',
+              color: '#94a3b8'
+            },
+            grid: {
+              color: '#334155'
+            },
+            ticks: {
+              color: '#94a3b8'
+            }
+          },
+          x: {
+            grid: {
+              color: '#334155'
+            },
+            ticks: {
+              color: '#94a3b8',
+              maxRotation: 45
+            }
+          }
+        },
+        plugins: {
+          legend: {
+            labels: {
+              color: '#94a3b8'
+            }
+          }
+        }
+      }
+    });
+
+    // Trend chart if we have multiple data points
+    
+    const trendCtx = document.getElementById('trendChart').getContext('2d');
+    const colors = [
+      '#38bdf8', '#a78bfa', '#f472b6', '#22c55e', '#fbbf24',
+      '#ef4444', '#06b6d4', '#8b5cf6', '#ec4899', '#10b981'
+    ];
+
+    const datasets = Object.entries(chartData).map(([key, values], i) => ({
+      label: key.replace('/api/', ''),
+      data: values.map(v => ({ x: new Date(v.timestamp), y: v.mean })),
+      borderColor: colors[i % colors.length],
+      backgroundColor: colors[i % colors.length] + '33',
+      fill: false,
+      tension: 0.1
+    }));
+
+    new Chart(trendCtx, {
+      type: 'line',
+      data: { datasets },
+      options: {
+        responsive: true,
+        scales: {
+          x: {
+            type: 'time',
+            time: {
+              unit: 'hour'
+            },
+            grid: {
+              color: '#334155'
+            },
+            ticks: {
+              color: '#94a3b8'
+            }
+          },
+          y: {
+            beginAtZero: true,
+            title: {
+              display: true,
+              text: 'Response Time (ms)',
+              color: '#94a3b8'
+            },
+            grid: {
+              color: '#334155'
+            },
+            ticks: {
+              color: '#94a3b8'
+            }
+          }
+        },
+        plugins: {
+          legend: {
+            labels: {
+              color: '#94a3b8'
+            }
+          }
+        }
+      }
+    });
+    
+  </script>
+</body>
+</html>

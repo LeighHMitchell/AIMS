@@ -1,5 +1,5 @@
 import { NextResponse, NextRequest } from 'next/server';
-import { getSupabaseAdmin } from '@/lib/supabase';
+import { requireAuth } from '@/lib/auth';
 
 // Mock user ID to database user ID mapping (same as comments)
 const USER_ID_MAP: Record<string, string> = {
@@ -18,6 +18,9 @@ function isValidUUID(uuid: string): boolean {
 // GET notifications for a user
 export async function GET(request: NextRequest) {
   try {
+    const { supabase, response: authResponse } = await requireAuth();
+    if (authResponse) return authResponse;
+
     const url = new URL(request.url);
     const userId = url.searchParams.get('userId');
     const unreadOnly = url.searchParams.get('unreadOnly') === 'true';
@@ -28,8 +31,6 @@ export async function GET(request: NextRequest) {
     }
     
     console.log('[AIMS Notifications API] GET request for user:', userId);
-    
-    const supabase = getSupabaseAdmin();
     if (!supabase) {
       console.error('[AIMS Notifications API] Supabase admin client is null');
       return NextResponse.json({ error: 'Database connection failed' }, { status: 500 });
@@ -75,6 +76,9 @@ export async function GET(request: NextRequest) {
 // PATCH to mark notifications as read
 export async function PATCH(request: NextRequest) {
   try {
+    const { supabase, response: authResponse } = await requireAuth();
+    if (authResponse) return authResponse;
+
     const body = await request.json();
     const { userId, notificationIds, markAllRead } = body;
     
@@ -83,8 +87,6 @@ export async function PATCH(request: NextRequest) {
     }
     
     console.log('[AIMS Notifications API] PATCH request for user:', userId);
-    
-    const supabase = getSupabaseAdmin();
     if (!supabase) {
       console.error('[AIMS Notifications API] Supabase admin client is null');
       return NextResponse.json({ error: 'Database connection failed' }, { status: 500 });

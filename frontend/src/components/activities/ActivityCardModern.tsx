@@ -184,7 +184,7 @@ const ActivityCardModern: React.FC<ActivityCardModernProps> = ({
               <h2 className="text-lg font-bold text-white mb-1 line-clamp-2 transition-colors">
                 {activity.title}
                 {activity.acronym && (
-                  <span className="font-medium ml-1" style={{ color: colors.paleSlate }}>({activity.acronym})</span>
+                  <span className="text-lg font-bold ml-1 text-white">({activity.acronym})</span>
                 )}
               </h2>
             </Link>
@@ -226,10 +226,9 @@ const ActivityCardModern: React.FC<ActivityCardModernProps> = ({
       )}
 
       {/* Ticket Details Section */}
-      <Link href={`/activities/${activity.id}`} className="block flex-1">
-        <div className="relative flex-1 p-5 flex flex-col" style={{ backgroundColor: 'white' }}>
-          <div className="flex-1">
-            <div className="grid grid-cols-2 gap-4 mt-2">
+      <div className="relative flex-1 p-5 flex flex-col select-text cursor-default" style={{ backgroundColor: 'white' }}>
+        <div className="flex-1">
+          <div className="grid grid-cols-2 gap-4 mt-2">
               {/* Start Date */}
               <div className="space-y-1">
                 <p className="text-[10px] uppercase tracking-wider" style={{ color: colors.coolSteel }}>
@@ -286,15 +285,15 @@ const ActivityCardModern: React.FC<ActivityCardModernProps> = ({
               <p className="text-[10px] uppercase tracking-wider" style={{ color: colors.coolSteel }}>
                 {idLabel}
               </p>
-              <p className="flex items-center gap-1">
-                <span className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded">{displayId}</span>
+              <p className="text-xs leading-relaxed">
+                <span className="font-mono bg-muted text-muted-foreground px-1 py-0.5 rounded-sm" style={{ boxDecorationBreak: 'clone', WebkitBoxDecorationBreak: 'clone' }}>{displayId}</span>
                 <button
                   onClick={(e) => {
                     e.preventDefault();
                     e.stopPropagation();
                     navigator.clipboard.writeText(displayId);
                   }}
-                  className="opacity-0 group-hover:opacity-100 transition-opacity"
+                  className="opacity-0 group-hover:opacity-100 transition-opacity inline-block ml-1 align-middle"
                   title="Copy ID"
                 >
                   <Copy className="w-3 h-3" style={{ color: colors.coolSteel }} />
@@ -311,7 +310,6 @@ const ActivityCardModern: React.FC<ActivityCardModernProps> = ({
             </div>
           </div>
         </div>
-      </Link>
     </motion.div>
   );
 };

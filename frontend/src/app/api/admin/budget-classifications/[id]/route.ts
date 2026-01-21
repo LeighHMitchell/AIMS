@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getSupabaseAdmin } from "@/lib/supabase";
+import { requireAuth } from '@/lib/auth';
 import {
   BudgetClassificationRow,
   toBudgetClassification,
@@ -16,9 +16,10 @@ interface RouteParams {
  */
 export async function GET(request: NextRequest, { params }: RouteParams) {
   try {
-    const { id } = await params;
-    const supabase = getSupabaseAdmin();
+    const { supabase, response: authResponse } = await requireAuth();
+    if (authResponse) return authResponse;
 
+    const { id } = await params;
     if (!supabase) {
       return NextResponse.json(
         { error: "Database connection not available" },
@@ -65,9 +66,10 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
  */
 export async function PUT(request: NextRequest, { params }: RouteParams) {
   try {
-    const { id } = await params;
-    const supabase = getSupabaseAdmin();
+    const { supabase, response: authResponse } = await requireAuth();
+    if (authResponse) return authResponse;
 
+    const { id } = await params;
     if (!supabase) {
       return NextResponse.json(
         { error: "Database connection not available" },
@@ -171,9 +173,10 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
  */
 export async function DELETE(request: NextRequest, { params }: RouteParams) {
   try {
-    const { id } = await params;
-    const supabase = getSupabaseAdmin();
+    const { supabase, response: authResponse } = await requireAuth();
+    if (authResponse) return authResponse;
 
+    const { id } = await params;
     if (!supabase) {
       return NextResponse.json(
         { error: "Database connection not available" },

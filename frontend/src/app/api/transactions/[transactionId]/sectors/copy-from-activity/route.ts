@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSupabaseAdmin } from '@/lib/supabase';
+import { requireAuth } from '@/lib/auth';
 import { CopyFromActivityRequest, TransactionSectorsResponse } from '@/types/transaction';
 
 // POST /api/transactions/[transactionId]/sectors/copy-from-activity
@@ -7,11 +7,16 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ transactionId: string }> }
 ) {
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
+  if (!supabase) {
+    return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
+  }
+
   try {
     const { transactionId } = await params;
     const body: CopyFromActivityRequest = await request.json();
-    const supabase = getSupabaseAdmin();
-    
     // Get transaction details
     const { data: transaction, error: transactionError } = await supabase
       .from('transactions')

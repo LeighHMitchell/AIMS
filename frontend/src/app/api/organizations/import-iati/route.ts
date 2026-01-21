@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSupabaseAdmin } from '@/lib/supabase';
+import { requireAuth } from '@/lib/auth';
 import { parseIATIOrganization, validateIATIOrganizationXML } from '@/lib/iati-organization-parser';
+import { SupabaseClient } from '@supabase/supabase-js';
 
 interface ImportIATIRequest {
   iatiId?: string;
@@ -21,6 +22,16 @@ interface ImportIATIResponse {
  * Import organization data from IATI ID, XML content, or URL
  */
 export async function POST(request: NextRequest): Promise<NextResponse<ImportIATIResponse>> {
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
+  if (!supabase) {
+    return NextResponse.json({
+      success: false,
+      error: 'Database connection failed'
+    }, { status: 500 });
+  }
+
   try {
     const body: ImportIATIRequest = await request.json();
     const { iatiId, xmlContent, source = 'registry', url } = body;
@@ -63,7 +74,6 @@ export async function POST(request: NextRequest): Promise<NextResponse<ImportIAT
     }
 
     // Check if organization already exists
-    const supabase = getSupabaseAdmin();
     const { data: existingOrg } = await supabase
       .from('organizations')
       .select('id, name, iati_org_id')
@@ -72,7 +82,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<ImportIAT
 
     if (existingOrg) {
       // Update existing organization
-      const updatedOrg = await updateExistingOrganization(existingOrg.id, organizationData);
+      const updatedOrg = await updateExistingOrganization(supabase, existingOrg.id, organizationData);
       return NextResponse.json({
         success: true,
         organization: updatedOrg,
@@ -81,7 +91,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<ImportIAT
       });
     } else {
       // Create new organization
-      const newOrg = await createNewOrganization(organizationData);
+      const newOrg = await createNewOrganization(supabase, organizationData);
       return NextResponse.json({
         success: true,
         organization: newOrg,
@@ -115,7 +125,6 @@ async function fetchIATIOrganizationFromRegistry(iatiId: string): Promise<string
           'Accept': 'application/xml, text/xml, */*',
           'User-Agent': 'AIMS-IATI-Importer/1.0'
         },
-        timeout: 30000
       });
 
       if (response.ok) {
@@ -156,7 +165,6 @@ async function fetchXMLFromURL(url: string): Promise<string> {
       'Accept': 'application/xml, text/xml, */*',
       'User-Agent': 'AIMS-IATI-Importer/1.0'
     },
-    timeout: 30000
   });
 
   if (!response.ok) {
@@ -169,9 +177,7 @@ async function fetchXMLFromURL(url: string): Promise<string> {
 /**
  * Create a new organization from IATI data
  */
-async function createNewOrganization(iatiData: any): Promise<any> {
-  const supabase = getSupabaseAdmin();
-
+async function createNewOrganization(supabase: SupabaseClient, iatiData: any): Promise<any> {
   // Prepare main organization data
   const orgData = {
     name: iatiData.name,
@@ -209,13 +215,13 @@ async function createNewOrganization(iatiData: any): Promise<any> {
   }
 
   // Insert budgets
-  await insertOrganizationBudgets(org.id, iatiData);
+  await insertOrganizationBudgets(supabase, org.id, iatiData);
 
   // Insert expenditures
-  await insertOrganizationExpenditures(org.id, iatiData);
+  await insertOrganizationExpenditures(supabase, org.id, iatiData);
 
   // Insert document links
-  await insertOrganizationDocumentLinks(org.id, iatiData);
+  await insertOrganizationDocumentLinks(supabase, org.id, iatiData);
 
   return org;
 }
@@ -223,9 +229,7 @@ async function createNewOrganization(iatiData: any): Promise<any> {
 /**
  * Update an existing organization with IATI data
  */
-async function updateExistingOrganization(orgId: string, iatiData: any): Promise<any> {
-  const supabase = getSupabaseAdmin();
-
+async function updateExistingOrganization(supabase: SupabaseClient, orgId: string, iatiData: any): Promise<any> {
   // Update main organization data
   const orgData = {
     name: iatiData.name,
@@ -267,9 +271,9 @@ async function updateExistingOrganization(orgId: string, iatiData: any): Promise
     await supabase.from('organization_names').insert(nameData);
   }
 
-  await insertOrganizationBudgets(orgId, iatiData);
-  await insertOrganizationExpenditures(orgId, iatiData);
-  await insertOrganizationDocumentLinks(orgId, iatiData);
+  await insertOrganizationBudgets(supabase, orgId, iatiData);
+  await insertOrganizationExpenditures(supabase, orgId, iatiData);
+  await insertOrganizationDocumentLinks(supabase, orgId, iatiData);
 
   return org;
 }
@@ -277,9 +281,7 @@ async function updateExistingOrganization(orgId: string, iatiData: any): Promise
 /**
  * Insert organization budgets and budget lines
  */
-async function insertOrganizationBudgets(orgId: string, iatiData: any): Promise<void> {
-  const supabase = getSupabaseAdmin();
-
+async function insertOrganizationBudgets(supabase: SupabaseClient, orgId: string, iatiData: any): Promise<void> {
   // Insert total budgets
   if (iatiData.totalBudgets && iatiData.totalBudgets.length > 0) {
     for (const budget of iatiData.totalBudgets) {
@@ -430,9 +432,7 @@ async function insertOrganizationBudgets(orgId: string, iatiData: any): Promise<
 /**
  * Insert organization expenditures and expense lines
  */
-async function insertOrganizationExpenditures(orgId: string, iatiData: any): Promise<void> {
-  const supabase = getSupabaseAdmin();
-
+async function insertOrganizationExpenditures(supabase: SupabaseClient, orgId: string, iatiData: any): Promise<void> {
   if (iatiData.totalExpenditures && iatiData.totalExpenditures.length > 0) {
     for (const expenditure of iatiData.totalExpenditures) {
       const { data: expenditureRecord } = await supabase
@@ -469,9 +469,7 @@ async function insertOrganizationExpenditures(orgId: string, iatiData: any): Pro
 /**
  * Insert organization document links with all related data
  */
-async function insertOrganizationDocumentLinks(orgId: string, iatiData: any): Promise<void> {
-  const supabase = getSupabaseAdmin();
-
+async function insertOrganizationDocumentLinks(supabase: SupabaseClient, orgId: string, iatiData: any): Promise<void> {
   if (iatiData.documentLinks && iatiData.documentLinks.length > 0) {
     for (const docLink of iatiData.documentLinks) {
       const { data: documentRecord } = await supabase

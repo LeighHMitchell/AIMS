@@ -1,5 +1,5 @@
 import { NextResponse, NextRequest } from 'next/server';
-import { getSupabaseAdmin } from '@/lib/supabase';
+import { requireAuth } from '@/lib/auth';
 
 // Enhanced comments API for organizations
 
@@ -60,11 +60,12 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
   try {
     const { id } = await params;
     console.log('[Org Comments API] GET request for organization:', id);
-    
-    const supabase = getSupabaseAdmin();
     if (!supabase) {
       console.error('[Org Comments API] Supabase admin client is null');
       return NextResponse.json({ error: 'Database connection failed' }, { status: 500 });
@@ -162,14 +163,15 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
   try {
     const { id } = await params;
     const body = await request.json();
     const { user, content, type, parentCommentId, contextSection, contextField } = body;
     
     console.log('[Org Comments API] POST request for organization:', id);
-    
-    const supabase = getSupabaseAdmin();
     if (!supabase) {
       console.error('[Org Comments API] Supabase admin client is null');
       return NextResponse.json({ error: 'Database connection failed' }, { status: 500 });
@@ -303,12 +305,13 @@ export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
   try {
     const { id } = await params;
     const body = await request.json();
     const { commentId, status, resolved } = body;
-    
-    const supabase = getSupabaseAdmin();
     if (!supabase) {
       return NextResponse.json({ error: 'Database connection failed' }, { status: 500 });
     }

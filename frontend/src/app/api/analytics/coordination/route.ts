@@ -1,5 +1,5 @@
 import { NextResponse, NextRequest } from 'next/server';
-import { getSupabaseAdmin } from '@/lib/supabase';
+import { requireAuth } from '@/lib/auth';
 import type {
   CoordinationView,
   CoordinationHierarchy,
@@ -58,18 +58,18 @@ function getCategoryName(code: string): string {
 }
 
 export async function GET(request: NextRequest) {
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
+  if (!supabase) {
+    return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
+  }
+
   try {
     const { searchParams } = new URL(request.url);
     const view = (searchParams.get('view') || 'sectors') as CoordinationView;
 
-    const supabaseAdmin = getSupabaseAdmin();
-
-    if (!supabaseAdmin) {
-      return NextResponse.json(
-        { success: false, error: 'Database connection not initialized' },
-        { status: 500 }
-      );
-    }
+    const supabaseAdmin = supabase;
 
     // Get activities (include all for now - can filter by publication_status if needed)
     const { data: publishedActivities, error: activitiesError } = await supabaseAdmin

@@ -24,6 +24,8 @@ export const COUNTRY_ISO_CODES: Record<string, string> = {
   'Nepal': 'NP',
   'Bhutan': 'BT',
   'United States': 'US',
+  'United States of America': 'US',
+  'United States of America (the)': 'US',
   'United Kingdom': 'GB',
   'Germany': 'DE',
   'France': 'FR',

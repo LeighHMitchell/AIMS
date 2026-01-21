@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getSupabaseAdmin } from '@/lib/supabase'
+import { requireAuth } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic'
 
@@ -33,6 +33,13 @@ interface MappingRecord {
  * Create a new alias mapping record
  */
 export async function POST(request: NextRequest): Promise<NextResponse> {
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
+  if (!supabase) {
+    return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
+  }
+
   try {
     const body: CreateMappingRequest = await request.json()
     const {
@@ -53,9 +60,6 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         { status: 400 }
       )
     }
-
-    const supabase = getSupabaseAdmin()
-
     // Insert mapping record
     const { data: mapping, error } = await supabase
       .from('organization_alias_mappings')
@@ -95,15 +99,19 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
  * Query params: org_id, session_id, limit, offset
  */
 export async function GET(request: NextRequest): Promise<NextResponse> {
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
+  if (!supabase) {
+    return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
+  }
+
   try {
     const { searchParams } = request.nextUrl
     const orgId = searchParams.get('org_id')
     const sessionId = searchParams.get('session_id')
     const limit = parseInt(searchParams.get('limit') || '50')
     const offset = parseInt(searchParams.get('offset') || '0')
-
-    const supabase = getSupabaseAdmin()
-
     let query = supabase
       .from('organization_alias_mappings')
       .select(`

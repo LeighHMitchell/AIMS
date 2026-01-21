@@ -1,11 +1,18 @@
 import { NextResponse } from 'next/server';
-import { getSupabaseAdmin } from '@/lib/supabase';
+import { requireAuth } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
+  if (!supabase) {
+    return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
+  }
+
   try {
-    const { data: transactions, error } = await getSupabaseAdmin()
+    const { data: transactions, error } = await supabase
       .from('transactions')
       .select('finance_type')
       .not('finance_type', 'is', null);

@@ -9,11 +9,27 @@ import {
   CartesianGrid,
   Tooltip,
   Legend,
-  ResponsiveContainer
+  ResponsiveContainer,
+  Label
 } from 'recharts'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 import { Skeleton } from '@/components/ui/skeleton'
-import { AlertCircle, Info } from 'lucide-react'
+import { AlertCircle, Calendar as CalendarIcon } from 'lucide-react'
+import { CustomYear, getCustomYearRange, getCustomYearLabel } from '@/types/custom-years'
+import { format } from 'date-fns'
+
+// Generate list of available years
+const AVAILABLE_YEARS = Array.from(
+  { length: new Date().getFullYear() - 2010 + 11 },
+  (_, i) => 2010 + i
+)
 
 interface SDGConcentrationChartProps {
   organizationId: string
@@ -34,7 +50,7 @@ interface ConcentrationData {
 
 export function SDGConcentrationChart({
   organizationId,
-  dateRange,
+  dateRange: initialDateRange,
   selectedSdgs,
   metric,
   refreshKey,
@@ -43,9 +59,111 @@ export function SDGConcentrationChart({
   const [data, setData] = useState<ConcentrationData[]>([])
   const [loading, setLoading] = useState(true)
 
+  // Calendar and year selector state
+  const [calendarType, setCalendarType] = useState<string>('')
+  const [selectedYears, setSelectedYears] = useState<number[]>([])
+  const [customYears, setCustomYears] = useState<CustomYear[]>([])
+  const [customYearsLoading, setCustomYearsLoading] = useState(true)
+  const [localDateRange, setLocalDateRange] = useState(initialDateRange)
+  const [actualDataRange, setActualDataRange] = useState<{ minYear: number; maxYear: number } | null>(null)
+
+  // Fetch custom years on mount
+  useEffect(() => {
+    const fetchCustomYears = async () => {
+      try {
+        const response = await fetch('/api/custom-years')
+        if (response.ok) {
+          const result = await response.json()
+          const years = result.data || []
+          setCustomYears(years)
+
+          // Set default calendar
+          let selectedCalendar: CustomYear | undefined
+          if (result.defaultId) {
+            selectedCalendar = years.find((cy: CustomYear) => cy.id === result.defaultId)
+          }
+          if (!selectedCalendar && years.length > 0) {
+            selectedCalendar = years[0]
+          }
+          if (selectedCalendar) {
+            setCalendarType(selectedCalendar.id)
+            // Default to last 5 years
+            const currentYear = new Date().getFullYear()
+            setSelectedYears([currentYear - 5, currentYear])
+          }
+        }
+      } catch (err) {
+        console.error('Failed to fetch custom years:', err)
+      } finally {
+        setCustomYearsLoading(false)
+      }
+    }
+    fetchCustomYears()
+  }, [])
+
+  // Update date range when calendar type or years change
+  useEffect(() => {
+    if (customYears.length > 0 && calendarType && selectedYears.length > 0) {
+      const customYear = customYears.find(cy => cy.id === calendarType)
+      if (customYear) {
+        const sortedYears = [...selectedYears].sort((a, b) => a - b)
+        const firstYearRange = getCustomYearRange(customYear, sortedYears[0])
+        const lastYearRange = getCustomYearRange(customYear, sortedYears[sortedYears.length - 1])
+        setLocalDateRange({
+          from: firstYearRange.start,
+          to: lastYearRange.end
+        })
+      }
+    }
+  }, [calendarType, selectedYears, customYears])
+
+  // Helper functions for year selection
+  const getYearLabel = (year: number): string => {
+    if (!calendarType || customYears.length === 0) return String(year)
+    const customYear = customYears.find(cy => cy.id === calendarType)
+    if (!customYear) return String(year)
+    return getCustomYearLabel(customYear, year)
+  }
+
+  const handleYearClick = (year: number, shiftKey: boolean) => {
+    if (shiftKey && selectedYears.length === 1) {
+      const start = Math.min(selectedYears[0], year)
+      const end = Math.max(selectedYears[0], year)
+      setSelectedYears([start, end])
+    } else if (selectedYears.length === 0) {
+      setSelectedYears([year])
+    } else if (selectedYears.length === 1) {
+      if (selectedYears[0] === year) {
+        setSelectedYears([])
+      } else {
+        const start = Math.min(selectedYears[0], year)
+        const end = Math.max(selectedYears[0], year)
+        setSelectedYears([start, end])
+      }
+    } else {
+      setSelectedYears([year])
+    }
+  }
+
+  const isYearInRange = (year: number): boolean => {
+    if (selectedYears.length < 2) return false
+    const [start, end] = [Math.min(...selectedYears), Math.max(...selectedYears)]
+    return year > start && year < end
+  }
+
+  const selectAllYears = () => {
+    setSelectedYears([AVAILABLE_YEARS[0], AVAILABLE_YEARS[AVAILABLE_YEARS.length - 1]])
+  }
+
+  const selectDataRange = () => {
+    if (actualDataRange) {
+      setSelectedYears([actualDataRange.minYear, actualDataRange.maxYear])
+    }
+  }
+
   useEffect(() => {
     fetchData()
-  }, [organizationId, dateRange, selectedSdgs, metric, refreshKey])
+  }, [organizationId, localDateRange, selectedSdgs, metric, refreshKey])
 
   const fetchData = async () => {
     try {
@@ -53,8 +171,8 @@ export function SDGConcentrationChart({
 
       const params = new URLSearchParams({
         organizationId: organizationId || 'all',
-        dateFrom: dateRange.from.toISOString().split('T')[0],
-        dateTo: dateRange.to.toISOString().split('T')[0],
+        dateFrom: localDateRange.from.toISOString().split('T')[0],
+        dateTo: localDateRange.to.toISOString().split('T')[0],
         selectedSdgs: selectedSdgs.length > 0 ? selectedSdgs.join(',') : 'all',
         metric,
         dataType: 'concentration'
@@ -65,6 +183,14 @@ export function SDGConcentrationChart({
 
       if (result.success && result.concentration) {
         setData(result.concentration)
+        // Calculate actual data range from years in the data
+        const years = [...new Set(result.concentration.map((d: ConcentrationData) => d.year))]
+        if (years.length > 0) {
+          setActualDataRange({
+            minYear: Math.min(...years),
+            maxYear: Math.max(...years)
+          })
+        }
       } else {
         console.error('Error fetching SDG concentration data:', result.error)
         setData([])
@@ -140,19 +266,20 @@ export function SDGConcentrationChart({
       .sort((a, b) => a.year - b.year)
   }, [data, metric])
 
+  // Brand palette colors
   const lineColors = {
-    '1 SDG': '#3B82F6',    // blue
-    '2 SDGs': '#10B981',    // green
-    '3 SDGs': '#F59E0B',    // amber
-    '4 SDGs': '#EF4444',    // red
-    '5+ SDGs': '#8B5CF6'    // purple
+    '1 SDG': '#4c5568',    // Blue Slate
+    '2 SDGs': '#7b95a7',   // Cool Steel
+    '3 SDGs': '#dc2625',   // Primary Scarlet
+    '4 SDGs': '#5f7f7a',   // Deep Teal
+    '5+ SDGs': '#c9a24d'   // Soft Ochre
   }
 
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
       return (
         <div className="bg-white border border-slate-200 rounded-lg shadow-lg p-3">
-          <p className="font-semibold text-slate-900 mb-2">Year: {label}</p>
+          <p className="font-semibold text-slate-900 mb-2">Year: {getYearLabel(label)}</p>
           <div className="space-y-1 text-sm">
             {payload.map((entry: any, index: number) => (
               <div key={index} className="flex justify-between gap-4">
@@ -189,30 +316,27 @@ export function SDGConcentrationChart({
         </div>
       )
     }
+    // Filter chartData to only show years with actual data in compact view
+    const compactChartData = chartData.filter(d => {
+      // Check if this year has any non-zero values
+      return d['1 SDG'] > 0 || d['2 SDGs'] > 0 || d['3 SDGs'] > 0 || d['4 SDGs'] > 0 || d['5+ SDGs'] > 0
+    })
+
     return (
       <div className="h-full w-full">
         <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={chartData} margin={{ top: 10, right: 20, left: 20, bottom: 20 }}>
+          <LineChart data={compactChartData} margin={{ top: 10, right: 20, left: 35, bottom: 20 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
-            <XAxis dataKey="year" fontSize={10} />
-            <YAxis fontSize={10} />
+            <XAxis dataKey="year" fontSize={9} tick={{ fill: '#64748b' }} tickFormatter={(year) => getYearLabel(year)} />
+            <YAxis fontSize={9} tick={{ fill: '#64748b' }} tickFormatter={(v) => v.toFixed(0)}>
+              <Label value="Activities" angle={-90} position="insideLeft" style={{ textAnchor: 'middle', fontSize: 9, fill: '#64748b' }} />
+            </YAxis>
             <Tooltip content={<CustomTooltip />} />
-            <Line
-              type="monotone"
-              dataKey="sdgCount"
-              name="SDGs Covered"
-              stroke="#dc2625"
-              strokeWidth={2}
-              dot={{ fill: '#dc2625', r: 3 }}
-            />
-            <Line
-              type="monotone"
-              dataKey="value"
-              name={metric === 'activities' ? 'Activities' : 'Value'}
-              stroke="#4c5568"
-              strokeWidth={2}
-              dot={{ fill: '#4c5568', r: 3 }}
-            />
+            <Line type="linear" dataKey="1 SDG" stroke={lineColors['1 SDG']} strokeWidth={2} dot={{ r: 2 }} />
+            <Line type="linear" dataKey="2 SDGs" stroke={lineColors['2 SDGs']} strokeWidth={2} dot={{ r: 2 }} />
+            <Line type="linear" dataKey="3 SDGs" stroke={lineColors['3 SDGs']} strokeWidth={2} dot={{ r: 2 }} />
+            <Line type="linear" dataKey="4 SDGs" stroke={lineColors['4 SDGs']} strokeWidth={2} dot={{ r: 2 }} />
+            <Line type="linear" dataKey="5+ SDGs" stroke={lineColors['5+ SDGs']} strokeWidth={2} dot={{ r: 2 }} />
           </LineChart>
         </ResponsiveContainer>
       </div>
@@ -258,19 +382,131 @@ export function SDGConcentrationChart({
   }
 
   return (
-    <Card>
-      <CardHeader>
+    <Card className="border-0 bg-white shadow-none">
+      <CardHeader className="pb-2">
         <CardTitle>SDG Concentration Over Time</CardTitle>
-        <CardDescription>
-          {getMetricLabel()} grouped by number of SDGs mapped to each activity. An activity is considered active in a year if the year falls between its planned or actual start and end dates.
+        <CardDescription className="mt-1">
+          {getMetricLabel()} grouped by number of SDGs mapped to each activity
         </CardDescription>
       </CardHeader>
       <CardContent>
+        {/* Calendar & Year Selectors */}
+        {customYears.length > 0 && (
+          <div className="flex items-start gap-2 mb-4 pb-3 border-b border-slate-100">
+            {/* Calendar Type Selector */}
+            <div className="flex gap-1 border rounded-lg p-1 bg-white">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="sm" className="h-8 gap-1">
+                    {customYears.find(cy => cy.id === calendarType)?.name || 'Select calendar'}
+                    <svg className="h-4 w-4 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start">
+                  {customYears.map(cy => (
+                    <DropdownMenuItem
+                      key={cy.id}
+                      className={calendarType === cy.id ? 'bg-slate-100 font-medium' : ''}
+                      onClick={() => setCalendarType(cy.id)}
+                    >
+                      {cy.name}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+
+            {/* Year Range Selector */}
+            <div className="flex flex-col gap-1">
+              <div className="flex gap-1 border rounded-lg p-1 bg-white">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="sm" className="h-8 gap-1">
+                      <CalendarIcon className="h-4 w-4" />
+                      {selectedYears.length === 0
+                        ? 'Select years'
+                        : selectedYears.length === 1
+                          ? getYearLabel(selectedYears[0])
+                          : `${getYearLabel(Math.min(...selectedYears))} - ${getYearLabel(Math.max(...selectedYears))}`}
+                      <svg className="h-4 w-4 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="start" className="p-3 w-auto">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-xs font-medium text-slate-700">Select Year Range</span>
+                      <button
+                        onClick={selectAllYears}
+                        className="text-xs text-slate-500 hover:text-slate-700 px-2 py-0.5 hover:bg-slate-100 rounded"
+                      >
+                        All
+                      </button>
+                      <button
+                        onClick={selectDataRange}
+                        className="text-xs text-slate-500 hover:text-slate-700 px-2 py-0.5 hover:bg-slate-100 rounded"
+                        title={actualDataRange ? `Select only years with data: ${getYearLabel(actualDataRange.minYear)} - ${getYearLabel(actualDataRange.maxYear)}` : 'Select years with data'}
+                      >
+                        Data
+                      </button>
+                    </div>
+                    <div className="grid grid-cols-3 gap-1">
+                      {AVAILABLE_YEARS.map((year) => {
+                        const isStartOrEnd = selectedYears.length > 0 &&
+                          (year === Math.min(...selectedYears) || year === Math.max(...selectedYears))
+                        const inRange = isYearInRange(year)
+
+                        return (
+                          <button
+                            key={year}
+                            onClick={(e) => handleYearClick(year, e.shiftKey)}
+                            className={`
+                              px-2 py-1.5 text-xs font-medium rounded transition-colors whitespace-nowrap
+                              ${isStartOrEnd
+                                ? 'bg-primary text-primary-foreground'
+                                : inRange
+                                  ? 'bg-primary/20 text-primary'
+                                  : 'text-slate-600 hover:bg-slate-100'
+                              }
+                            `}
+                          >
+                            {getYearLabel(year)}
+                          </button>
+                        )
+                      })}
+                    </div>
+                    <p className="text-[10px] text-slate-400 mt-2 text-center">
+                      Click start year, then click end year
+                    </p>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+              {/* Date Range Indicator */}
+              {localDateRange?.from && localDateRange?.to && (
+                <span className="text-xs text-slate-500 text-center">
+                  {format(localDateRange.from, 'MMM d, yyyy')} – {format(localDateRange.to, 'MMM d, yyyy')}
+                </span>
+              )}
+            </div>
+          </div>
+        )}
+
         <ResponsiveContainer width="100%" height={400}>
-          <LineChart data={chartData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+          <LineChart
+            data={chartData.filter(d => {
+              if (selectedYears.length === 0) return true
+              const minYear = Math.min(...selectedYears)
+              const maxYear = Math.max(...selectedYears)
+              return d.year >= minYear && d.year <= maxYear
+            })}
+            margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+          >
             <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" vertical={false} />
             <XAxis
               dataKey="year"
+              tickFormatter={(year) => getYearLabel(year)}
               tick={{ fill: '#64748b', fontSize: 12 }}
               axisLine={{ stroke: '#cbd5e1' }}
             />
@@ -278,14 +514,16 @@ export function SDGConcentrationChart({
               tickFormatter={metric === 'activities' ? (v) => v.toFixed(0) : formatCurrency}
               tick={{ fill: '#64748b', fontSize: 12 }}
               axisLine={{ stroke: '#cbd5e1' }}
-            />
+            >
+              <Label value={getMetricLabel()} angle={-90} position="insideLeft" style={{ textAnchor: 'middle', fontSize: 11, fill: '#64748b' }} />
+            </YAxis>
             <Tooltip content={<CustomTooltip />} />
             <Legend
               wrapperStyle={{ paddingTop: '20px' }}
               iconType="line"
             />
             <Line
-              type="monotone"
+              type="linear"
               dataKey="1 SDG"
               stroke={lineColors['1 SDG']}
               strokeWidth={2}
@@ -293,7 +531,7 @@ export function SDGConcentrationChart({
               activeDot={{ r: 6 }}
             />
             <Line
-              type="monotone"
+              type="linear"
               dataKey="2 SDGs"
               stroke={lineColors['2 SDGs']}
               strokeWidth={2}
@@ -301,7 +539,7 @@ export function SDGConcentrationChart({
               activeDot={{ r: 6 }}
             />
             <Line
-              type="monotone"
+              type="linear"
               dataKey="3 SDGs"
               stroke={lineColors['3 SDGs']}
               strokeWidth={2}
@@ -309,7 +547,7 @@ export function SDGConcentrationChart({
               activeDot={{ r: 6 }}
             />
             <Line
-              type="monotone"
+              type="linear"
               dataKey="4 SDGs"
               stroke={lineColors['4 SDGs']}
               strokeWidth={2}
@@ -317,7 +555,7 @@ export function SDGConcentrationChart({
               activeDot={{ r: 6 }}
             />
             <Line
-              type="monotone"
+              type="linear"
               dataKey="5+ SDGs"
               stroke={lineColors['5+ SDGs']}
               strokeWidth={2}
@@ -326,20 +564,18 @@ export function SDGConcentrationChart({
             />
           </LineChart>
         </ResponsiveContainer>
-        
-        {/* Explanatory Note */}
-        <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-          <div className="flex items-start gap-2">
-            <Info className="h-4 w-4 text-blue-600 mt-0.5 flex-shrink-0" />
-            <div className="text-sm text-blue-900">
-              <p className="font-medium mb-1">Interpretation Note</p>
-              <p>
-                Activities mapped to many SDGs may indicate broad or unfocused design. This is an analytical signal, not a judgement of effectiveness. 
-                Higher concentration (fewer SDGs per activity) may suggest more focused strategic alignment, while dispersion (more SDGs per activity) 
-                may reflect integrated or cross-cutting approaches.
-              </p>
-            </div>
-          </div>
+
+        {/* Explanatory paragraph */}
+        <div className="mt-6">
+          <p className="text-sm text-slate-500 leading-relaxed">
+            This chart tracks how many SDGs are typically assigned to each activity over time, helping assess the
+            organization&apos;s approach to SDG alignment. Activities mapped to just one or two SDGs suggest targeted,
+            focused interventions, while those mapped to five or more SDGs may indicate cross-cutting programs or
+            potentially unfocused design. Neither approach is inherently better—the optimal strategy depends on the
+            organization&apos;s mandate and context. Use this visualization to understand whether aid programming is
+            becoming more specialized or more integrated over time, and to inform strategic discussions about how
+            broadly or narrowly to align future activities with global development goals.
+          </p>
         </div>
       </CardContent>
     </Card>

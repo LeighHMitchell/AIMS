@@ -1,10 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSupabaseAdmin } from '@/lib/supabase';
+import { requireAuth } from '@/lib/auth';
 import { ActivityLogger } from '@/lib/activity-logger';
 
 export async function POST(request: NextRequest) {
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
+  if (!supabase) {
+    return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
+  }
+
   console.log('[AIMS] POST /api/activities/bulk-import - Starting bulk import');
-  
+
   try {
     const { activities } = await request.json();
     
@@ -56,7 +63,7 @@ export async function POST(request: NextRequest) {
         delete activityData.tags;
 
         // Insert the activity
-        const { data: insertedActivity, error } = await getSupabaseAdmin()
+        const { data: insertedActivity, error } = await supabase
           .from('activities')
           .insert(activityData)
           .select()
@@ -83,7 +90,7 @@ export async function POST(request: NextRequest) {
             code: sector.code || null
           }));
 
-                      const { error: sectorError } = await getSupabaseAdmin()
+                      const { error: sectorError } = await supabase
             .from('activity_sectors')
             .insert(sectorData);
 
@@ -96,7 +103,7 @@ export async function POST(request: NextRequest) {
         if (tags.length > 0 && insertedActivity) {
           // First, ensure tags exist in the tags table
           for (const tagName of tags) {
-            const { data: existingTag } = await getSupabaseAdmin()
+            const { data: existingTag } = await supabase
               .from('tags')
               .select('id')
               .eq('name', tagName)
@@ -104,7 +111,7 @@ export async function POST(request: NextRequest) {
 
             if (!existingTag) {
               // Create the tag
-              const { data: newTag } = await getSupabaseAdmin()
+              const { data: newTag } = await supabase
                 .from('tags')
                 .insert({ name: tagName, vocabulary: '99' }) // 99 for user-defined
                 .select()
@@ -112,13 +119,13 @@ export async function POST(request: NextRequest) {
 
               if (newTag) {
                 // Link tag to activity
-                await getSupabaseAdmin()
+                await supabase
                   .from('activity_tags')
                   .insert({ activityId: insertedActivity.id, tagId: newTag.id });
               }
             } else {
               // Link existing tag to activity
-              await getSupabaseAdmin()
+              await supabase
                 .from('activity_tags')
                 .insert({ activityId: insertedActivity.id, tagId: existingTag.id });
             }

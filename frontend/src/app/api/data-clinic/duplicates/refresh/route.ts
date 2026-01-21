@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSupabaseAdmin } from '@/lib/supabase';
+import { requireAuth } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 
@@ -111,16 +111,17 @@ interface DetectedDuplicate {
  *   - entity_type: 'activity' | 'organization' | 'all' (default: 'all')
  */
 export async function POST(request: NextRequest) {
-  const supabase = getSupabaseAdmin();
-
-  if (!supabase) {
-    return NextResponse.json(
-      { error: 'Database not configured' },
-      { status: 503 }
-    );
-  }
-
   try {
+    const { supabase, response: authResponse } = await requireAuth();
+    if (authResponse) return authResponse;
+
+    if (!supabase) {
+      return NextResponse.json(
+        { error: 'Database not configured' },
+        { status: 503 }
+      );
+    }
+
     const searchParams = request.nextUrl.searchParams;
     const entityType = searchParams.get('entity_type') || 'all';
 

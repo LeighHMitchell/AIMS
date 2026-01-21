@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSupabaseAdmin } from '@/lib/supabase';
+import { requireAuth } from '@/lib/auth';
 import sectorGroupData from '@/data/SectorGroup.json';
 
 // Build sector hierarchy lookup map for O(1) access
@@ -33,8 +33,10 @@ function getSectorHierarchy(sectorCode: string): SectorHierarchy {
 }
 
 export async function GET(request: NextRequest) {
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
   try {
-    const supabase = getSupabaseAdmin();
     const searchParams = request.nextUrl.searchParams;
 
     // Get filter parameters
@@ -43,6 +45,7 @@ export async function GET(request: NextRequest) {
     const country = searchParams.get('country');
     const donor = searchParams.get('donor');
     const sector = searchParams.get('sector');
+    const organizationId = searchParams.get('organizationId');
 
     // Fetch all activities with their sectors
     let activitiesQuery = supabase
@@ -55,6 +58,13 @@ export async function GET(request: NextRequest) {
           percentage
         )
       `);
+
+    // Filter by organization if provided (where org is reporting org)
+    if (organizationId) {
+      activitiesQuery = activitiesQuery
+        .eq('reporting_org_id', organizationId)
+        .eq('publication_status', 'published');
+    }
 
     const { data: activities, error: activitiesError } = await activitiesQuery;
 

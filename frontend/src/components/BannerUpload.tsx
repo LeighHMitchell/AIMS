@@ -3,6 +3,7 @@ import { useDropzone } from "react-dropzone";
 import { Upload, X, Image as ImageIcon, Move, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import imageCompression from "browser-image-compression";
 
 interface BannerUploadProps {
   currentBanner?: string;
@@ -47,16 +48,26 @@ export const BannerUpload: React.FC<BannerUploadProps> = ({
         return;
       }
 
-      // Validate file size (max 5MB)
-      if (file.size > 5 * 1024 * 1024) {
-        toast.error("Image size should be less than 5MB");
+      // Validate file size (max 10MB before compression)
+      if (file.size > 10 * 1024 * 1024) {
+        toast.error("Image size should be less than 10MB");
         return;
       }
 
       setUploading(true);
 
       try {
-        // Create preview
+        // Compress the image before converting to base64
+        const compressionOptions = {
+          maxSizeMB: 0.3, // Target ~300KB for banners
+          maxWidthOrHeight: 1920, // Good quality for banner display
+          useWebWorker: true,
+        };
+
+        const compressedFile = await imageCompression(file, compressionOptions);
+        console.log(`Banner compressed: ${(file.size / 1024).toFixed(1)}KB → ${(compressedFile.size / 1024).toFixed(1)}KB`);
+
+        // Create preview from compressed file
         const reader = new FileReader();
         reader.onloadend = () => {
           const base64String = reader.result as string;
@@ -69,7 +80,7 @@ export const BannerUpload: React.FC<BannerUploadProps> = ({
             toast.success("Banner uploaded. You can reposition it before saving.");
           }
         };
-        reader.readAsDataURL(file);
+        reader.readAsDataURL(compressedFile);
       } catch (error) {
         console.error("Error uploading banner:", error);
         toast.error("Failed to upload banner");
@@ -297,7 +308,7 @@ export const BannerUpload: React.FC<BannerUploadProps> = ({
             {isDragActive ? "Drop the image here" : "Drag & drop a banner image here"}
           </p>
           <p className="text-xs mt-1">or click to select</p>
-          <p className="text-xs mt-2 text-gray-400">PNG, JPG, GIF up to 5MB</p>
+          <p className="text-xs mt-2 text-gray-400">PNG, JPG, GIF up to 10MB (auto-compressed)</p>
         </div>
       </div>
     </div>

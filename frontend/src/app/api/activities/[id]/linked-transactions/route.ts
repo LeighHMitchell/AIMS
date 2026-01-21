@@ -1,5 +1,5 @@
 import { NextResponse, NextRequest } from 'next/server';
-import { getSupabaseAdmin } from '@/lib/supabase';
+import { requireAuth } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 
@@ -61,6 +61,9 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
   try {
     const { id: activityId } = await params;
     
@@ -73,7 +76,7 @@ export async function GET(
     console.log(`[AIMS] Pagination: page ${page}, limit ${limit}, offset ${offset}`);
     
     // First, get all linked activities (both directions)
-    const { data: relatedActivities, error: relatedError } = await getSupabaseAdmin()
+    const { data: relatedActivities, error: relatedError } = await supabase
       .from('related_activities')
       .select('linked_activity_id, source_activity_id')
       .or(`source_activity_id.eq.${activityId},linked_activity_id.eq.${activityId}`);
@@ -105,14 +108,14 @@ export async function GET(
     }
     
     // Fetch count of total transactions
-    const { count: totalCount } = await getSupabaseAdmin()
+    const { count: totalCount } = await supabase
       .from('transactions')
       .select('*', { count: 'exact', head: true })
       .in('activity_id', Array.from(linkedActivityIds))
       .neq('activity_id', activityId);
     
     // Fetch transactions from all linked activities (excluding current activity) with pagination
-    const { data: transactions, error: transError } = await getSupabaseAdmin()
+    const { data: transactions, error: transError } = await supabase
       .from('transactions')
       .select(`
         uuid,
@@ -158,7 +161,7 @@ export async function GET(
     
     let organizations: Record<string, any> = {};
     if (orgIds.size > 0) {
-      const { data: orgs } = await getSupabaseAdmin()
+      const { data: orgs } = await supabase
         .from('organizations')
         .select('id, name, iati_id, type, acronym')
         .in('id', Array.from(orgIds));

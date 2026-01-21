@@ -83,7 +83,8 @@ export function useTransactions(params: TransactionFilter = {}) {
         queryParams.append("includeLinked", params.includeLinked.toString());
       }
 
-      const response = await fetch(`/api/transactions?${queryParams.toString()}`);
+      // Use slim endpoint for better performance (90% smaller payload)
+      const response = await fetch(`/api/transactions-list?${queryParams.toString()}`);
       
       if (!response.ok) {
         throw new Error(`Failed to fetch transactions: ${response.status}`);

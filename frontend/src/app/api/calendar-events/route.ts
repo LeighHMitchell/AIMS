@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getSupabaseAdmin } from '@/lib/supabase'
+import { requireAuth } from '@/lib/auth';
 import { notifyAdminsOfNewEvent } from '@/lib/calendar-notifications'
 
 interface DatabaseEvent {
@@ -20,7 +20,9 @@ interface DatabaseEvent {
 
 export async function GET(request: NextRequest) {
   try {
-    const supabase = getSupabaseAdmin()
+    const { supabase, response: authResponse } = await requireAuth();
+    if (authResponse) return authResponse;
+
     if (!supabase) {
       console.error('Supabase admin client not available')
       return NextResponse.json({ events: [], message: 'Database not configured' })
@@ -71,7 +73,9 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const supabase = getSupabaseAdmin()
+    const { supabase, response: authResponse } = await requireAuth();
+    if (authResponse) return authResponse;
+
     if (!supabase) {
       console.error('Supabase admin client not available')
       return NextResponse.json({ error: 'Database not configured' }, { status: 500 })

@@ -70,7 +70,8 @@ export default function OrganizationEditorNavigation({
     {
       title: "Contact",
       sections: [
-        { id: "contact", label: "Contact & Social" },
+        { id: "contact", label: "Social & Web" },
+        { id: "contacts", label: "People" },
         { id: "aliases", label: "Aliases" },
         { id: "merge", label: "Merge" }
       ]

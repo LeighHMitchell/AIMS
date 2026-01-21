@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getSupabaseAdmin } from '@/lib/supabase'
+import { requireAuth } from '@/lib/auth';
 import { SectorTimeSeriesResponse, SectorTimeSeriesData } from '@/types/sector-analytics'
 
 // Force dynamic rendering
@@ -19,6 +19,9 @@ export const dynamic = 'force-dynamic'
  */
 export async function GET(request: NextRequest) {
   try {
+    const { supabase, response: authResponse } = await requireAuth();
+    if (authResponse) return authResponse;
+
     const { searchParams } = new URL(request.url)
     const dataType = searchParams.get('dataType') || 'actual'
     const groupByLevel = (searchParams.get('groupByLevel') || '5') as '1' | '3' | '5'
@@ -26,9 +29,6 @@ export async function GET(request: NextRequest) {
     const yearFrom = searchParams.get('yearFrom')
     const yearTo = searchParams.get('yearTo')
     const sectorsFilter = searchParams.get('sectors')?.split(',').filter(Boolean) || []
-
-    const supabase = getSupabaseAdmin()
-
     if (!supabase) {
       return NextResponse.json(
         { success: false, error: 'Database connection not initialized' } as SectorTimeSeriesResponse,

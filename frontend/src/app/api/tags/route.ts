@@ -1,13 +1,20 @@
 import { NextResponse, NextRequest } from 'next/server';
-import { getSupabaseAdmin } from '@/lib/supabase';
+import { requireAuth } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET(request: NextRequest) {
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
+  if (!supabase) {
+    return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
+  }
+
   try {
     const searchQuery = request.nextUrl.searchParams.get('q');
-    
-    let query = getSupabaseAdmin()
+
+    let query = supabase
       .from('tags')
       .select('*');
     
@@ -52,11 +59,18 @@ function isValidUrl(urlString: string): boolean {
 }
 
 export async function POST(request: NextRequest) {
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
+  if (!supabase) {
+    return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
+  }
+
   try {
     const { name, created_by, vocabulary, code: providedCode, vocabulary_uri } = await request.json();
-    
+
     // === INPUT VALIDATION ===
-    
+
     if (!name || !name.trim()) {
       return NextResponse.json(
         { error: 'Tag name is required' },
@@ -112,7 +126,7 @@ export async function POST(request: NextRequest) {
     // Use separate queries to avoid SQL injection
     
     // First, check for exact match on name + vocabulary
-    const { data: exactMatch, error: exactError } = await getSupabaseAdmin()
+    const { data: exactMatch, error: exactError } = await supabase
       .from('tags')
       .select('*')
       .eq('name', normalizedName)
@@ -133,7 +147,7 @@ export async function POST(request: NextRequest) {
                          exactMatch.vocabulary_uri !== vocabulary_uri;
       
       if (needsUpdate) {
-        const { data: updatedTag, error: updateError } = await getSupabaseAdmin()
+        const { data: updatedTag, error: updateError } = await supabase
           .from('tags')
           .update({ 
             code, 
@@ -158,7 +172,7 @@ export async function POST(request: NextRequest) {
     
     // Check if code exists with different name (potential conflict)
     if (code) {
-      const { data: codeConflict } = await getSupabaseAdmin()
+      const { data: codeConflict } = await supabase
         .from('tags')
         .select('*')
         .eq('code', code)
@@ -194,7 +208,7 @@ export async function POST(request: NextRequest) {
     // First attempt: try with created_by if provided
     if (created_by) {
       try {
-        const { data: newTag, error: createError } = await getSupabaseAdmin()
+        const { data: newTag, error: createError } = await supabase
           .from('tags')
           .insert([{ ...baseTagData, created_by }])
           .select()
@@ -210,7 +224,7 @@ export async function POST(request: NextRequest) {
         } else {
           // If it's a race condition (duplicate), try fetching again
           if (createError.code === '23505') {
-            const { data: raceTag } = await getSupabaseAdmin()
+            const { data: raceTag } = await supabase
               .from('tags')
               .select('*')
               .eq('name', normalizedName)
@@ -229,7 +243,7 @@ export async function POST(request: NextRequest) {
     }
     
     // Fallback: create tag without created_by field
-    const { data: newTag, error: createError } = await getSupabaseAdmin()
+    const { data: newTag, error: createError } = await supabase
       .from('tags')
       .insert([baseTagData])
       .select()
@@ -238,7 +252,7 @@ export async function POST(request: NextRequest) {
     if (createError) {
       // Handle race condition - tag was created between our check and insert
       if (createError.code === '23505') {
-        const { data: raceTag } = await getSupabaseAdmin()
+        const { data: raceTag } = await supabase
           .from('tags')
           .select('*')
           .eq('name', normalizedName)

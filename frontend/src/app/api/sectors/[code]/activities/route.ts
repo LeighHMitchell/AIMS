@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getSupabaseAdmin } from '@/lib/supabase'
+import { requireAuth } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic'
 
@@ -7,8 +7,15 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ code: string }> }
 ) {
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
+  if (!supabase) {
+    return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
+  }
+
   console.log('[AIMS API] GET /api/sectors/[code]/activities - Starting request')
-  
+
   try {
     const { code } = await params;
 
@@ -37,10 +44,9 @@ export async function GET(
     console.error('[AIMS API] Sector activities fetch failed:', error)
     console.error('[AIMS API] Error details:', error)
     return NextResponse.json(
-      { 
+      {
         error: 'Failed to fetch sector activities',
-        details: error instanceof Error ? error.message : 'Unknown error',
-        sectorCode: code
+        details: error instanceof Error ? error.message : 'Unknown error'
       },
       { status: 500 }
     )

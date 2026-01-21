@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
+import { createBrowserClient } from '@supabase/ssr'
 
 // Environment variables with validation
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
@@ -58,14 +59,18 @@ function createAdminClient() {
   }
 }
 
-// Client-side Supabase client (uses anon key)
-export const supabase = (supabaseUrl && supabaseAnonKey && isValidUrl(supabaseUrl)) 
-  ? createClient(supabaseUrl, supabaseAnonKey, {
-      auth: {
-        persistSession: true,
-        autoRefreshToken: true,
-      }
-    })
+// Client-side Supabase client (uses anon key with cookie-based auth)
+// Uses createBrowserClient from @supabase/ssr to store sessions in cookies,
+// which can be read by server-side requireAuth() using createServerClient
+export const supabase = (supabaseUrl && supabaseAnonKey && isValidUrl(supabaseUrl))
+  ? (typeof window !== 'undefined'
+      ? createBrowserClient(supabaseUrl, supabaseAnonKey)
+      : createClient(supabaseUrl, supabaseAnonKey, {
+          auth: {
+            persistSession: false,
+            autoRefreshToken: false,
+          }
+        }))
   : null as any
 
 // Import local database as fallback

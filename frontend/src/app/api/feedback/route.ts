@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSupabaseAdmin } from '@/lib/supabase';
+import { requireAuth } from '@/lib/auth';
 import { FEEDBACK_TYPES } from '@/data/feedback-types';
 
 // Mock user ID to database user ID mapping (using actual existing user IDs)
@@ -21,6 +21,9 @@ function isValidUUID(uuid: string): boolean {
 // GET - Retrieve feedback (for admin users)
 export async function GET(request: NextRequest) {
   try {
+    const { supabase, response: authResponse } = await requireAuth();
+    if (authResponse) return authResponse;
+
     const url = new URL(request.url);
     const userId = url.searchParams.get('userId');
     const status = url.searchParams.get('status') || undefined;
@@ -36,8 +39,6 @@ export async function GET(request: NextRequest) {
     }
 
     console.log('[AIMS Feedback API] GET request for user:', userId);
-
-    const supabase = getSupabaseAdmin();
     if (!supabase) {
       console.error('[AIMS Feedback API] Supabase admin client is null');
       return NextResponse.json({ error: 'Database connection failed' }, { status: 500 });
@@ -254,6 +255,9 @@ export async function GET(request: NextRequest) {
 // POST - Submit new feedback
 export async function POST(request: NextRequest) {
   try {
+    const { supabase, response: authResponse } = await requireAuth();
+    if (authResponse) return authResponse;
+
     const body = await request.json();
     const { userId, category, feature, subject, message, priority, attachment_url, attachment_filename, attachment_type, attachment_size } = body;
 
@@ -277,8 +281,6 @@ export async function POST(request: NextRequest) {
     }
 
     console.log('[AIMS Feedback API] POST request for user:', userId);
-
-    const supabase = getSupabaseAdmin();
     if (!supabase) {
       console.error('[AIMS Feedback API] Supabase admin client is null');
       return NextResponse.json({ error: 'Database connection failed' }, { status: 500 });
@@ -470,6 +472,9 @@ export async function POST(request: NextRequest) {
 // PUT - Update feedback (for admin users)
 export async function PUT(request: NextRequest) {
   try {
+    const { supabase, response: authResponse } = await requireAuth();
+    if (authResponse) return authResponse;
+
     const body = await request.json();
     const { userId, id, status, priority, feature, admin_notes, assigned_to } = body;
 
@@ -482,8 +487,6 @@ export async function PUT(request: NextRequest) {
     }
 
     console.log('[AIMS Feedback API] PUT request for user:', userId);
-
-    const supabase = getSupabaseAdmin();
     if (!supabase) {
       console.error('[AIMS Feedback API] Supabase admin client is null');
       return NextResponse.json({ error: 'Database connection failed' }, { status: 500 });
@@ -593,6 +596,9 @@ export async function PUT(request: NextRequest) {
 // DELETE - Delete feedback (for admin users)
 export async function DELETE(request: NextRequest) {
   try {
+    const { supabase, response: authResponse } = await requireAuth();
+    if (authResponse) return authResponse;
+
     const body = await request.json();
     const { userId, id } = body;
 
@@ -605,8 +611,6 @@ export async function DELETE(request: NextRequest) {
     }
 
     console.log('[AIMS Feedback API] DELETE request for user:', userId, 'feedback:', id);
-
-    const supabase = getSupabaseAdmin();
     if (!supabase) {
       console.error('[AIMS Feedback API] Supabase admin client is null');
       return NextResponse.json({ error: 'Database connection failed' }, { status: 500 });

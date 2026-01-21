@@ -1,13 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSupabaseAdmin } from '@/lib/supabase';
+import { requireAuth } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 
 export async function POST(request: NextRequest) {
   try {
+    const { supabase, response: authResponse } = await requireAuth();
+    if (authResponse) return authResponse;
+
     console.log('[Upload API] Starting document upload...');
-    
-    const supabase = getSupabaseAdmin();
     if (!supabase) {
       console.error('[Upload API] Database connection failed');
       return NextResponse.json({ error: 'Database connection failed' }, { status: 500 });

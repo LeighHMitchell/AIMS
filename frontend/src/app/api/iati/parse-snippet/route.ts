@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { XMLParser } from 'fast-xml-parser';
-import { getSupabaseAdmin } from '@/lib/supabase';
+import { requireAuth } from '@/lib/auth';
 
 // Force dynamic rendering - critical for production
 export const dynamic = 'force-dynamic';
@@ -71,6 +71,13 @@ function extractNarrative(element: any): string {
 }
 
 export async function POST(request: NextRequest) {
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
+  if (!supabase) {
+    return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
+  }
+
   try {
     const { xmlContent } = await request.json();
 
@@ -101,8 +108,6 @@ export async function POST(request: NextRequest) {
     console.log('[Snippet Parser] Wrapped content length:', wrappedContent.length);
 
     // Initialize Supabase client
-    const supabase = getSupabaseAdmin();
-
     // Parse XML
     const parser = new XMLParser({
       ignoreAttributes: false,

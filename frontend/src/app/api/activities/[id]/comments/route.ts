@@ -1,5 +1,5 @@
 import { NextResponse, NextRequest } from 'next/server';
-import { getSupabaseAdmin } from '@/lib/supabase';
+import { requireAuth } from '@/lib/auth';
 
 // Enhanced comments API with full schema support
 // This provides complete commenting functionality with all features
@@ -151,11 +151,12 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
   try {
     const { id } = await params;
     console.log('[AIMS Comments API] GET request for activity:', id);
-    
-    const supabase = getSupabaseAdmin();
     if (!supabase) {
       console.error('[AIMS Comments API] Supabase admin client is null');
       return NextResponse.json({ error: 'Database connection failed' }, { status: 500 });
@@ -255,6 +256,9 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
   try {
     const { id } = await params;
     const body = await request.json();
@@ -263,8 +267,6 @@ export async function POST(
     console.log('[AIMS Comments API] POST request for activity:', id);
     console.log('[AIMS Comments API] User:', user);
     console.log('[AIMS Comments API] Content:', content);
-    
-    const supabase = getSupabaseAdmin();
     if (!supabase) {
       console.error('[AIMS Comments API] Supabase admin client is null');
       return NextResponse.json({ error: 'Database connection failed' }, { status: 500 });
@@ -447,14 +449,15 @@ export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
   try {
     const { id } = await params;
     const body = await request.json();
     const { user, commentId, action, resolutionNote } = body;
     
     console.log(`[AIMS Comments API] Comment ${commentId} action: ${action} by ${user.name}`);
-    
-    const supabase = getSupabaseAdmin();
     if (!supabase) {
       console.error('[AIMS Comments API] Supabase admin client is null');
       return NextResponse.json({ error: 'Database connection failed' }, { status: 500 });
@@ -554,6 +557,9 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
   try {
     const { id } = await params;
     const body = await request.json();
@@ -568,8 +574,6 @@ export async function DELETE(
     if (!user || !user.id) {
       return NextResponse.json({ error: 'User authentication required' }, { status: 401 });
     }
-    
-    const supabase = getSupabaseAdmin();
     if (!supabase) {
       console.error('[AIMS Comments API] Supabase admin client is null');
       return NextResponse.json({ error: 'Database connection failed' }, { status: 500 });

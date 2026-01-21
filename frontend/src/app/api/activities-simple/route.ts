@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSupabaseAdmin } from '@/lib/supabase';
+import { requireAuth } from '@/lib/auth';
 import { calculateModality } from '@/utils/modality-calculation';
 
 export const dynamic = 'force-dynamic';
@@ -7,13 +7,13 @@ export const revalidate = 0;
 
 export async function GET(request: NextRequest) {
   try {
+    const { supabase, response: authResponse } = await requireAuth();
+    if (authResponse) return authResponse;
+
     const searchParams = request.nextUrl.searchParams;
     const page = parseInt(searchParams.get('page') || '1');
     const limit = Math.min(parseInt(searchParams.get('limit') || '20'), 100); // Smaller default, cap at 100
     const offset = (page - 1) * limit;
-
-    const supabase = getSupabaseAdmin();
-    
     if (!supabase) {
       return NextResponse.json(
         { error: 'Unable to connect to database' },

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getSupabaseAdmin } from '@/lib/supabase'
+import { requireAuth } from '@/lib/auth';
 import { fixedCurrencyConverter } from '@/lib/currency-converter-fixed'
 
 export const dynamic = 'force-dynamic'
@@ -9,6 +9,9 @@ export async function GET(
   { params }: { params: { id: string } | Promise<{ id: string }> }
 ) {
   try {
+    const { supabase, response: authResponse } = await requireAuth();
+    if (authResponse) return authResponse;
+
     // Handle both sync and async params (Next.js 14/15 compatibility)
     const resolvedParams = await Promise.resolve(params)
     const activityId = resolvedParams.id
@@ -23,8 +26,6 @@ export async function GET(
     console.log('[Fund Flow] Params resolved:', JSON.stringify(resolvedParams))
     console.log('========================================')
     console.log('\n')
-    const supabase = getSupabaseAdmin()
-
     if (!supabase) {
       return NextResponse.json(
         { error: 'Database connection not initialized' },

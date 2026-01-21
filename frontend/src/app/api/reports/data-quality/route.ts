@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { getSupabaseAdmin } from '@/lib/supabase'
+import { requireAuth } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic'
 
@@ -16,9 +16,14 @@ const REQUIRED_FIELDS = [
 ]
 
 export async function GET() {
-  try {
-    const supabase = getSupabaseAdmin()
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
 
+  if (!supabase) {
+    return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
+  }
+
+  try {
     // Fetch all activities with relevant fields
     const { data: activities, error: activitiesError } = await supabase
       .from('activities')

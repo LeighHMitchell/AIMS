@@ -1,16 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSupabaseAdmin } from '@/lib/supabase';
+import { requireAuth } from '@/lib/auth';
 import { applyAutoMapping } from '@/lib/sector-budget-mapping-service';
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
   try {
     const { id: activityId } = await params;
     
     // Fetch existing sector allocations for this activity
-    const { data: sectors, error } = await getSupabaseAdmin()
+    const { data: sectors, error } = await supabase
       .from('activity_sectors')
       .select('*')
       .eq('activity_id', activityId)
@@ -32,6 +35,9 @@ export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
   try {
     const { id: activityId } = await params;
     const { sectors } = await request.json();
@@ -47,7 +53,7 @@ export async function PUT(
 
     // Start a transaction to update sectors
     // First, delete existing sectors for this activity
-    const { error: deleteError } = await getSupabaseAdmin()
+    const { error: deleteError } = await supabase
       .from('activity_sectors')
       .delete()
       .eq('activity_id', activityId);
@@ -67,7 +73,7 @@ export async function PUT(
       percentage: s.percentage
     }));
 
-    const { data: insertedSectors, error: insertError } = await getSupabaseAdmin()
+    const { data: insertedSectors, error: insertError } = await supabase
       .from('activity_sectors')
       .insert(sectorsToInsert)
       .select();
@@ -78,7 +84,7 @@ export async function PUT(
     }
 
     // Update activity updated_at timestamp
-    const { error: updateError } = await getSupabaseAdmin()
+    const { error: updateError } = await supabase
       .from('activities')
       .update({ updated_at: new Date().toISOString() })
       .eq('id', activityId);
@@ -92,7 +98,6 @@ export async function PUT(
     let autoMappingResult = null;
     try {
       // Get user ID from auth header if available, otherwise use a system user ID
-      const supabase = getSupabaseAdmin();
       const userId = 'system'; // Auto-mapping triggered by sector change
 
       autoMappingResult = await applyAutoMapping(activityId, userId, {
@@ -128,6 +133,9 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
   try {
     const { id: activityId } = await params;
     const { sectors, replace = false } = await request.json();
@@ -148,7 +156,7 @@ export async function POST(
 
     // If replace is true, delete existing sectors first
     if (replace) {
-      const { error: deleteError } = await getSupabaseAdmin()
+      const { error: deleteError } = await supabase
         .from('activity_sectors')
         .delete()
         .eq('activity_id', activityId);
@@ -179,7 +187,7 @@ export async function POST(
     console.log('[Sectors API] Prepared sectors for insertion:', sectorsToInsert);
 
     // Insert new sectors
-    const { data: insertedSectors, error: insertError } = await getSupabaseAdmin()
+    const { data: insertedSectors, error: insertError } = await supabase
       .from('activity_sectors')
       .insert(sectorsToInsert)
       .select();
@@ -190,7 +198,7 @@ export async function POST(
     }
 
     // Update activity updated_at timestamp
-    const { error: updateError } = await getSupabaseAdmin()
+    const { error: updateError } = await supabase
       .from('activities')
       .update({ updated_at: new Date().toISOString() })
       .eq('id', activityId);

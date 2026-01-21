@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSupabaseAdmin } from '@/lib/supabase';
+import { requireAuth } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 
@@ -15,8 +15,9 @@ interface UserActivityStats {
 }
 
 export async function GET(request: NextRequest) {
-  const supabase = getSupabaseAdmin();
-  
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
   if (!supabase) {
     return NextResponse.json(
       { error: 'Database connection not available' },
@@ -32,6 +33,9 @@ export async function GET(request: NextRequest) {
   const offset = parseInt(searchParams.get('offset') || '0');
 
   try {
+    const { supabase, response: authResponse } = await requireAuth();
+    if (authResponse) return authResponse;
+
     if (type === 'summary') {
       // Get activity summary for all users or specific user
       let query = supabase

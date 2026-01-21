@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { getSupabaseAdmin } from '@/lib/supabase'
+import { requireAuth } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic'
 
@@ -22,7 +22,8 @@ interface TransparencyScore {
 
 export async function GET() {
   try {
-    const supabase = getSupabaseAdmin()
+    const { supabase, response: authResponse } = await requireAuth();
+    if (authResponse) return authResponse;
 
     // Check if Supabase is configured and RPC is available
     if (!supabase || typeof supabase.rpc !== 'function') {

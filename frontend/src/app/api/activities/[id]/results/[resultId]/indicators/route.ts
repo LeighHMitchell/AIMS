@@ -1,23 +1,24 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSupabaseAdmin } from '@/lib/supabase';
+import { requireAuth } from '@/lib/auth';
 
 // GET /api/activities/[id]/results/[resultId]/indicators - Fetch indicators for a result
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string; resultId: string }> }
 ) {
-  const supabase = getSupabaseAdmin();
-  
-  if (!supabase) {
-    console.error('[Indicators API] Supabase admin client not available');
-    return NextResponse.json({ 
-      error: 'Database not available',
-      indicators: []
-    }, { status: 500 });
-  }
-
   try {
-    const { resultId } = params;
+    const { supabase, response: authResponse } = await requireAuth();
+    if (authResponse) return authResponse;
+
+    if (!supabase) {
+      console.error('[Indicators API] Supabase admin client not available');
+      return NextResponse.json({
+        error: 'Database not available',
+        indicators: []
+      }, { status: 500 });
+    }
+
+    const { resultId } = await params;
     console.log(`[Indicators API] Fetching indicators for result: ${resultId}`);
 
     const { data: indicators, error } = await supabase
@@ -65,15 +66,16 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string; resultId: string }> }
 ) {
-  const supabase = getSupabaseAdmin();
-  
-  if (!supabase) {
-    console.error('[Indicators API] Supabase admin client not available');
-    return NextResponse.json({ error: 'Database not available' }, { status: 500 });
-  }
-
   try {
-    const { resultId } = params;
+    const { supabase, response: authResponse } = await requireAuth();
+    if (authResponse) return authResponse;
+
+    if (!supabase) {
+      console.error('[Indicators API] Supabase admin client not available');
+      return NextResponse.json({ error: 'Database not available' }, { status: 500 });
+    }
+
+    const { resultId } = await params;
     const body = await request.json();
 
     console.log(`[Indicators API] Creating indicator for result: ${resultId}`);

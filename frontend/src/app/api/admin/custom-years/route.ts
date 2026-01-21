@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getSupabaseAdmin } from "@/lib/supabase";
+import { requireAuth } from '@/lib/auth';
 import { CustomYearRow, toCustomYear } from "@/types/custom-years";
 
 /**
@@ -7,8 +7,10 @@ import { CustomYearRow, toCustomYear } from "@/types/custom-years";
  * List all custom years ordered by display_order
  */
 export async function GET(request: NextRequest) {
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
   try {
-    const supabase = getSupabaseAdmin();
 
     if (!supabase) {
       return NextResponse.json(
@@ -61,8 +63,10 @@ export async function GET(request: NextRequest) {
  * Create a new custom year
  */
 export async function POST(request: NextRequest) {
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
   try {
-    const supabase = getSupabaseAdmin();
 
     if (!supabase) {
       return NextResponse.json(
@@ -82,6 +86,8 @@ export async function POST(request: NextRequest) {
       isActive = true,
       isDefault = false,
       displayOrder = 0,
+      yearSeparator = "-",
+      secondYearFormat = "short",
     } = body;
 
     // Validation
@@ -125,7 +131,7 @@ export async function POST(request: NextRequest) {
       .from("custom_years")
       .insert({
         name: name.trim(),
-        short_name: shortName?.trim() || null,
+        short_name: shortName || null,
         start_month: startMonth,
         start_day: startDay,
         end_month: endMonth,
@@ -133,6 +139,8 @@ export async function POST(request: NextRequest) {
         is_active: isActive,
         is_default: isDefault,
         display_order: displayOrder,
+        year_separator: yearSeparator,
+        second_year_format: secondYearFormat,
       })
       .select()
       .single();

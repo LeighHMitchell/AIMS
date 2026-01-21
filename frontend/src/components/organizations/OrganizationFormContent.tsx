@@ -79,7 +79,10 @@ const ALL_COUNTRY_AND_REGION_CODES = [
   ...getAllInstitutionalGroupNames(),
   'Myanmar', 'Burma', 'Rwanda',
   // Legacy support for old "Global or Regional" value
-  'Global or Regional'
+  'Global or Regional',
+  // Legacy support for country name variations
+  'United States',
+  'United Kingdom'
 ]
 
 // Default organization types
@@ -214,11 +217,11 @@ export interface Organization {
   default_language?: string
   alias_refs?: string[]
   name_aliases?: string[]
-  social_twitter?: string
-  social_facebook?: string
-  social_linkedin?: string
-  social_instagram?: string
-  social_youtube?: string
+  twitter?: string
+  facebook?: string
+  linkedin?: string
+  instagram?: string
+  youtube?: string
   [key: string]: any
 }
 
@@ -343,11 +346,11 @@ export function OrganizationFormContent({
         alias_refs: organization.alias_refs || [],
         name_aliases: organization.name_aliases || [],
         // Social media fields
-        social_twitter: organization.social_twitter || '',
-        social_facebook: organization.social_facebook || '',
-        social_linkedin: organization.social_linkedin || '',
-        social_instagram: organization.social_instagram || '',
-        social_youtube: organization.social_youtube || '',
+        twitter: organization.twitter || '',
+        facebook: organization.facebook || '',
+        linkedin: organization.linkedin || '',
+        instagram: organization.instagram || '',
+        youtube: organization.youtube || '',
         // IATI fields
         reporting_org_ref: organization.reporting_org_ref || '',
         reporting_org_type: organization.reporting_org_type || '',
@@ -378,11 +381,11 @@ export function OrganizationFormContent({
         name_aliases: [],
         address: '',
         // Social media fields
-        social_twitter: '',
-        social_facebook: '',
-        social_linkedin: '',
-        social_instagram: '',
-        social_youtube: '',
+        twitter: '',
+        facebook: '',
+        linkedin: '',
+        instagram: '',
+        youtube: '',
         // IATI fields
         reporting_org_ref: '',
         reporting_org_type: '',
@@ -639,7 +642,7 @@ export function OrganizationFormContent({
         <TabsList className="grid w-full grid-cols-7">
           <TabsTrigger value="basic">General</TabsTrigger>
           <TabsTrigger value="branding">Branding</TabsTrigger>
-          <TabsTrigger value="contact">Contact & Social</TabsTrigger>
+          <TabsTrigger value="contact">Social & Web</TabsTrigger>
           <TabsTrigger value="aliases">Aliases</TabsTrigger>
           <TabsTrigger value="budgets">IATI Budgets</TabsTrigger>
           <TabsTrigger value="documents">IATI Documents</TabsTrigger>
@@ -734,6 +737,7 @@ export function OrganizationFormContent({
                     onClick={(e) => e.stopPropagation()}
                     onKeyDown={(e) => e.stopPropagation()}
                     className="h-8"
+                    autoFocus
                   />
                 </div>
 
@@ -1070,7 +1074,7 @@ export function OrganizationFormContent({
         </div>
       </TabsContent>
 
-      {/* Contact & Social Media Tab */}
+      {/* Social & Web Tab */}
       <TabsContent value="contact" className="h-full overflow-y-auto px-2 mt-4 space-y-6">
         {/* Contact Information Section */}
         <div className="space-y-4">
@@ -1142,66 +1146,66 @@ export function OrganizationFormContent({
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="social_twitter" className="text-sm font-medium flex items-center gap-2">
+              <Label htmlFor="twitter" className="text-sm font-medium flex items-center gap-2">
                 <Twitter className="h-4 w-4 text-gray-500" />
                 Twitter / X
               </Label>
               <Input
-                id="social_twitter"
-                value={formData.social_twitter || ''}
-                onChange={(e) => handleInputChange('social_twitter', e.target.value)}
+                id="twitter"
+                value={formData.twitter || ''}
+                onChange={(e) => handleInputChange('twitter', e.target.value)}
                 placeholder="https://twitter.com/yourorg or @yourorg"
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="social_facebook" className="text-sm font-medium flex items-center gap-2">
+              <Label htmlFor="facebook" className="text-sm font-medium flex items-center gap-2">
                 <Facebook className="h-4 w-4 text-gray-500" />
                 Facebook
               </Label>
               <Input
-                id="social_facebook"
-                value={formData.social_facebook || ''}
-                onChange={(e) => handleInputChange('social_facebook', e.target.value)}
+                id="facebook"
+                value={formData.facebook || ''}
+                onChange={(e) => handleInputChange('facebook', e.target.value)}
                 placeholder="https://facebook.com/yourorg"
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="social_linkedin" className="text-sm font-medium flex items-center gap-2">
+              <Label htmlFor="linkedin" className="text-sm font-medium flex items-center gap-2">
                 <Linkedin className="h-4 w-4 text-gray-500" />
                 LinkedIn
               </Label>
               <Input
-                id="social_linkedin"
-                value={formData.social_linkedin || ''}
-                onChange={(e) => handleInputChange('social_linkedin', e.target.value)}
+                id="linkedin"
+                value={formData.linkedin || ''}
+                onChange={(e) => handleInputChange('linkedin', e.target.value)}
                 placeholder="https://linkedin.com/company/yourorg"
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="social_instagram" className="text-sm font-medium flex items-center gap-2">
+              <Label htmlFor="instagram" className="text-sm font-medium flex items-center gap-2">
                 <Instagram className="h-4 w-4 text-gray-500" />
                 Instagram
               </Label>
               <Input
-                id="social_instagram"
-                value={formData.social_instagram || ''}
-                onChange={(e) => handleInputChange('social_instagram', e.target.value)}
+                id="instagram"
+                value={formData.instagram || ''}
+                onChange={(e) => handleInputChange('instagram', e.target.value)}
                 placeholder="https://instagram.com/yourorg or @yourorg"
               />
             </div>
 
             <div className="space-y-2 md:col-span-2">
-              <Label htmlFor="social_youtube" className="text-sm font-medium flex items-center gap-2">
+              <Label htmlFor="youtube" className="text-sm font-medium flex items-center gap-2">
                 <Youtube className="h-4 w-4 text-gray-500" />
                 YouTube
               </Label>
               <Input
-                id="social_youtube"
-                value={formData.social_youtube || ''}
-                onChange={(e) => handleInputChange('social_youtube', e.target.value)}
+                id="youtube"
+                value={formData.youtube || ''}
+                onChange={(e) => handleInputChange('youtube', e.target.value)}
                 placeholder="https://youtube.com/@yourorg"
               />
             </div>

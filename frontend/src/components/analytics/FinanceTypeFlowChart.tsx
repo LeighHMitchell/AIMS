@@ -66,6 +66,7 @@ interface FinanceTypeFlowChartProps {
   refreshKey?: number
   onDataChange?: (data: any[]) => void
   compact?: boolean
+  organizationId?: string
 }
 
 type ViewMode = 'bar' | 'line' | 'area' | 'table'
@@ -107,7 +108,8 @@ export function FinanceTypeFlowChart({
   dateRange,
   refreshKey,
   onDataChange,
-  compact = false
+  compact = false,
+  organizationId
 }: FinanceTypeFlowChartProps) {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -201,6 +203,9 @@ export function FinanceTypeFlowChart({
           dateFrom: '2000-01-01',
           dateTo: '2050-12-31'
         })
+        if (organizationId) {
+          params.set('organizationId', organizationId)
+        }
         const response = await fetch(`/api/analytics/finance-type-flow-data?${params}`)
         if (response.ok) {
           const result = await response.json()
@@ -231,7 +236,7 @@ export function FinanceTypeFlowChart({
       }
     }
     fetchActualDataRange()
-  }, [])
+  }, [organizationId])
 
   // Update date range when calendar type or years change
   useEffect(() => {
@@ -342,6 +347,9 @@ export function FinanceTypeFlowChart({
           dateFrom: effectiveDateRange.from.toISOString(),
           dateTo: effectiveDateRange.to.toISOString()
         })
+        if (organizationId) {
+          params.set('organizationId', organizationId)
+        }
 
         // Fetch all data from consolidated API (flow types, finance types, and transactions)
         const response = await fetch(`/api/analytics/finance-type-flow-data?${params}`)
@@ -420,7 +428,7 @@ export function FinanceTypeFlowChart({
     }
 
     fetchData()
-  }, [effectiveDateRange, refreshKey]) // Removed selectedTransactionTypes - filter client-side instead
+  }, [effectiveDateRange, refreshKey, organizationId]) // Removed selectedTransactionTypes - filter client-side instead
 
   // Aggregate data - restructured to show flow types on X-axis
   const chartData = useMemo(() => {
@@ -455,7 +463,7 @@ export function FinanceTypeFlowChart({
     for (let year = minYear; year <= maxYear; year++) {
       const point: any = {
         year,
-        label: `${year}`, // Show only year on X-axis
+        label: getYearLabel(year), // Show custom year label on X-axis (e.g., "CY 2025")
       }
 
       // For each flow type and transaction type, add all finance type data
@@ -499,7 +507,7 @@ export function FinanceTypeFlowChart({
     }
 
     return dataPoints
-  }, [rawData, selectedFlowTypes, selectedFinanceTypes, selectedTransactionTypes, allFinanceTypes, timeMode])
+  }, [rawData, selectedFlowTypes, selectedFinanceTypes, selectedTransactionTypes, allFinanceTypes, timeMode, customYears, calendarType])
 
   // Notify parent component of data change in useEffect to avoid render-time state updates
   useEffect(() => {
@@ -749,11 +757,12 @@ export function FinanceTypeFlowChart({
             <XAxis
               dataKey="label"
               stroke="#64748B"
-              fontSize={10}
+              fontSize={11}
               angle={0}
               textAnchor="middle"
               height={30}
-              interval={0}
+              interval={Math.max(0, Math.floor(chartData.length / 10))}
+              tick={{ fill: '#64748B' }}
             />
             <YAxis tickFormatter={formatCurrency} stroke="#64748B" fontSize={10} />
             <Tooltip content={<CustomTooltip />} />
@@ -857,9 +866,9 @@ export function FinanceTypeFlowChart({
     <Card className="bg-white border-slate-200">
       <CardHeader className="pb-2">
         {/* Controls Row */}
-        <div className="flex items-start justify-between gap-2">
-          {/* Calendar & Year Selectors - Left Side */}
-          <div className="flex items-start gap-2">
+        <div className="flex flex-wrap items-start gap-2">
+          {/* Calendar & Year Selectors */}
+          <div className="flex items-start gap-2 flex-shrink-0">
             {customYears.length > 0 && (
               <>
                 {/* Calendar Type Selector */}
@@ -965,10 +974,10 @@ export function FinanceTypeFlowChart({
               )}
             </div>
 
-            {/* All Other Controls - Right Side */}
-            <div className="flex items-center gap-2">
+            {/* All Other Controls */}
+            <div className="flex flex-wrap items-center gap-2">
               {/* Flow Type Multi-Select */}
-              <div className="w-[200px]">
+              <div className="w-[180px]">
                 <MultiSelect
                   options={allFlowTypes.map(ft => ({
                     label: `${ft.code} - ${ft.name}`,
@@ -993,7 +1002,7 @@ export function FinanceTypeFlowChart({
               </div>
 
               {/* Finance Type Multi-Select */}
-              <div className="w-[220px]">
+              <div className="w-[180px]">
                 <MultiSelect
                   options={allFinanceTypes.map(ft => ({
                     label: `${ft.code} - ${ft.name}`,
@@ -1018,7 +1027,7 @@ export function FinanceTypeFlowChart({
               </div>
 
               {/* Transaction Type Multi-Select */}
-              <div className="w-[200px]">
+              <div className="w-[180px]">
                 <MultiSelect
                   options={transactionTypes.map(tt => ({
                     label: `${tt.code} - ${tt.name}`,

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSupabaseAdmin } from '@/lib/supabase';
+import { requireAuth } from '@/lib/auth';
 import {
   TransactionSectorLine,
   TransactionSectorValidation,
@@ -10,11 +10,9 @@ import {
 import { inferAndApplyBudgetLines } from '@/lib/transaction-budget-inference';
 
 // Helper function to trigger budget line inference after sector changes
-async function triggerBudgetLineInference(transactionId: string) {
+async function triggerBudgetLineInference(transactionId: string, supabase: any) {
   try {
     console.log('[Sectors API] Triggering budget line inference for transaction:', transactionId);
-    const supabase = getSupabaseAdmin();
-
     // Fetch transaction with its data
     const { data: transaction, error: txnError } = await supabase
       .from('transactions')
@@ -177,10 +175,15 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ transactionId: string }> }
 ) {
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
+  if (!supabase) {
+    return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
+  }
+
   try {
     const { transactionId } = await params;
-    const supabase = getSupabaseAdmin();
-    
     // First, get the transaction to validate access and get transaction details
     const { data: transaction, error: transactionError } = await supabase
       .from('transactions')
@@ -245,11 +248,16 @@ export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ transactionId: string }> }
 ) {
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
+  if (!supabase) {
+    return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
+  }
+
   try {
     const { transactionId } = await params;
     const body: UpdateTransactionSectorsRequest = await request.json();
-    const supabase = getSupabaseAdmin();
-    
     // Get transaction details
     const { data: transaction, error: transactionError } = await supabase
       .from('transactions')
@@ -360,7 +368,7 @@ export async function PUT(
     };
 
     // Trigger budget line inference (runs in background, doesn't block response)
-    triggerBudgetLineInference(transactionId).catch(err =>
+    triggerBudgetLineInference(transactionId, supabase).catch(err =>
       console.error('[Sectors API] Background budget inference failed:', err)
     );
 
@@ -383,10 +391,15 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ transactionId: string }> }
 ) {
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
+  if (!supabase) {
+    return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
+  }
+
   try {
     const { transactionId } = await params;
-    const supabase = getSupabaseAdmin();
-    
     // Verify transaction exists
     const { data: transaction, error: transactionError } = await supabase
       .from('transactions')
@@ -417,7 +430,7 @@ export async function DELETE(
 
     // Trigger budget line inference (runs in background, doesn't block response)
     // This will update budget lines now that sectors are cleared
-    triggerBudgetLineInference(transactionId).catch(err =>
+    triggerBudgetLineInference(transactionId, supabase).catch(err =>
       console.error('[Sectors API] Background budget inference failed:', err)
     );
 

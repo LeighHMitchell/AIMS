@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getSupabaseAdmin } from '@/lib/supabase'
+import { requireAuth } from '@/lib/auth';
 
 export interface SectorModeResponse {
   success: boolean
@@ -21,11 +21,12 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
   try {
     const { id } = await params;
     const activityId = id
-    const supabase = getSupabaseAdmin()
-
     if (!supabase) {
       return NextResponse.json(
         { success: false, error: 'Database connection not initialized' },
@@ -124,6 +125,9 @@ export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
   try {
     const { id } = await params;
     const activityId = id
@@ -136,9 +140,6 @@ export async function PUT(
         { status: 400 }
       )
     }
-
-    const supabase = getSupabaseAdmin()
-
     if (!supabase) {
       return NextResponse.json(
         { success: false, error: 'Database connection not initialized' },

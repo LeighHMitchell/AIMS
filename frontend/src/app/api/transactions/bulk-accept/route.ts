@@ -1,9 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSupabaseAdmin } from '@/lib/supabase';
+import { requireAuth } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 
 export async function POST(request: NextRequest) {
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
+  if (!supabase) {
+    return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
+  }
+
   try {
     const body = await request.json();
     const { transactionIds, acceptingActivityId, acceptingUserId } = body;
@@ -31,7 +38,7 @@ export async function POST(request: NextRequest) {
     for (const transactionId of transactionIds) {
       try {
         // Get the original linked transaction
-        const { data: originalTransaction, error: fetchError } = await getSupabaseAdmin()
+        const { data: originalTransaction, error: fetchError } = await supabase
           .from('transactions')
           .select('*')
           .eq('uuid', transactionId)
@@ -43,7 +50,7 @@ export async function POST(request: NextRequest) {
         }
 
         // Check if this transaction is already accepted
-        const { data: existingAccepted, error: checkError } = await getSupabaseAdmin()
+        const { data: existingAccepted, error: checkError } = await supabase
           .from('transactions')
           .select('uuid')
           .eq('linked_from_transaction_uuid', transactionId)
@@ -76,7 +83,7 @@ export async function POST(request: NextRequest) {
           updated_at: new Date().toISOString()
         };
 
-        const { data: acceptedTransaction, error: insertError } = await getSupabaseAdmin()
+        const { data: acceptedTransaction, error: insertError } = await supabase
           .from('transactions')
           .insert([acceptedTransactionData])
           .select()
@@ -88,7 +95,7 @@ export async function POST(request: NextRequest) {
         }
 
         // Update the original transaction to mark it as accepted
-        const { error: updateError } = await getSupabaseAdmin()
+        const { error: updateError } = await supabase
           .from('transactions')
           .update({
             acceptance_status: 'accepted',

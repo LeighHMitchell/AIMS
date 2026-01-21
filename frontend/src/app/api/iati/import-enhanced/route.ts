@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSupabaseAdmin } from '@/lib/supabase';
+import { requireAuth } from '@/lib/auth';
 import { convertTransactionToUSD, addUSDFieldsToTransaction } from '@/lib/transaction-usd-helper';
 import { getOrCreateOrganization } from '@/lib/organization-helpers';
 
@@ -25,6 +25,13 @@ interface ImportData {
 }
 
 export async function POST(request: NextRequest) {
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
+  if (!supabase) {
+    return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
+  }
+
   try {
     const startTime = Date.now();
 
@@ -34,7 +41,7 @@ export async function POST(request: NextRequest) {
     // Load org preferences if org is provided
     let orgPrefs: any | null = null;
     if (organizationId) {
-      const { data: org } = await getSupabaseAdmin()
+      const { data: org } = await supabase
         .from('organizations')
         .select('iati_import_preferences')
         .eq('id', organizationId)
@@ -88,7 +95,7 @@ export async function POST(request: NextRequest) {
         });
 
         // Check if activity exists
-        const { data: existingActivity } = await getSupabaseAdmin()
+        const { data: existingActivity } = await supabase
           .from('activities')
           .select('id')
           .eq('iati_id', iatiId)
@@ -96,7 +103,7 @@ export async function POST(request: NextRequest) {
 
         if (existingActivity) {
           // Update existing activity
-          const { error } = await getSupabaseAdmin()
+          const { error } = await supabase
             .from('activities')
             .update({
               ...(isAllowed('iati-activity/title') && activity.title ? { title: activity.title } : {}),
@@ -115,7 +122,7 @@ export async function POST(request: NextRequest) {
           results.activityIdMap[iatiId] = existingActivity.id;
         } else {
           // Create new activity
-          const { data: newActivity, error } = await getSupabaseAdmin()
+          const { data: newActivity, error } = await supabase
             .from('activities')
             .insert({
               iati_id: iatiId,
@@ -176,7 +183,7 @@ export async function POST(request: NextRequest) {
             loanTermsData.channel_code = financingTerms.channel_code;
           }
           
-          const { error: loanTermsError } = await getSupabaseAdmin()
+          const { error: loanTermsError } = await supabase
             .from('activity_financing_terms')
             .upsert(loanTermsData, {
               onConflict: 'activity_id'
@@ -190,7 +197,7 @@ export async function POST(request: NextRequest) {
         // Insert loan status entries
         if (financingTerms.loanStatuses && financingTerms.loanStatuses.length > 0) {
           for (const loanStatus of financingTerms.loanStatuses) {
-            const { error: loanStatusError } = await getSupabaseAdmin()
+            const { error: loanStatusError } = await supabase
               .from('activity_loan_status')
               .upsert({
                 activity_id: activityDbId,
@@ -222,7 +229,7 @@ export async function POST(request: NextRequest) {
         if (action === 'create_new') {
           // Create minimal activity
           try {
-            const { data: newActivity, error } = await getSupabaseAdmin()
+            const { data: newActivity, error } = await supabase
               .from('activities')
               .insert({
                 iati_id: iatiId,
@@ -372,7 +379,7 @@ export async function POST(request: NextRequest) {
           const providerOrgType = transaction.provider_org_type || transaction.providerOrgType;
           
           if (providerOrgRef || providerOrgName) {
-            providerOrgId = await getOrCreateOrganization(getSupabaseAdmin(), {
+            providerOrgId = await getOrCreateOrganization(supabase, {
               ref: providerOrgRef,
               name: providerOrgName,
               type: providerOrgType
@@ -386,7 +393,7 @@ export async function POST(request: NextRequest) {
           const receiverOrgType = transaction.receiver_org_type || transaction.receiverOrgType;
           
           if (receiverOrgRef || receiverOrgName) {
-            receiverOrgId = await getOrCreateOrganization(getSupabaseAdmin(), {
+            receiverOrgId = await getOrCreateOrganization(supabase, {
               ref: receiverOrgRef,
               name: receiverOrgName,
               type: receiverOrgType
@@ -420,7 +427,7 @@ export async function POST(request: NextRequest) {
         // Only fetch activity defaults if any of the fields are missing
         if (!financeType || !flowType || !aidType || !tiedStatus) {
           // Fetch activity's default values
-          const { data: activityData } = await getSupabaseAdmin()
+          const { data: activityData } = await supabase
             .from('activities')
             .select('default_finance_type, default_flow_type, default_aid_type, default_tied_status')
             .eq('id', activityId)
@@ -506,7 +513,7 @@ export async function POST(request: NextRequest) {
         const transactionDataWithUSD = addUSDFieldsToTransaction(transactionData, usdResult);
 
         // Insert transaction directly into the table
-        const { data: insertedTransaction, error } = await getSupabaseAdmin()
+        const { data: insertedTransaction, error } = await supabase
           .from('transactions')
           .insert(transactionDataWithUSD)
           .select()

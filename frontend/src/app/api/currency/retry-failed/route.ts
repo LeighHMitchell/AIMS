@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSupabaseAdmin } from '@/lib/supabase';
+import { requireAuth } from '@/lib/auth';
 import { fixedCurrencyConverter } from '@/lib/currency-converter-fixed';
 
 export const dynamic = 'force-dynamic';
@@ -25,8 +25,10 @@ interface RetryResult {
  * 2. Scheduled via cron job (hourly)
  */
 export async function POST(request: NextRequest) {
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
   try {
-    const supabase = getSupabaseAdmin();
     const results: RetryResult[] = [];
     let totalProcessed = 0;
     let totalConverted = 0;
@@ -323,8 +325,10 @@ export async function POST(request: NextRequest) {
  * GET endpoint to check the status of pending conversions
  */
 export async function GET(request: NextRequest) {
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
   try {
-    const supabase = getSupabaseAdmin();
 
     // Count pending conversions in each table
     const [txCount, budgetCount, disbCount] = await Promise.all([

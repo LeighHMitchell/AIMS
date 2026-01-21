@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getSupabaseAdmin } from '@/lib/supabase'
+import { requireAuth } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic'
 
@@ -24,16 +24,20 @@ interface PolicyMarkerTimeSeriesRow {
  * - yearTo: end year filter
  */
 export async function GET(request: NextRequest) {
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
+  if (!supabase) {
+    return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
+  }
+
   try {
     const { searchParams } = new URL(request.url)
-    
+
     const markerIds = searchParams.get('markerIds')?.split(',').filter(Boolean) || []
     const significanceLevels = searchParams.get('significanceLevels')?.split(',').map(Number).filter(n => !isNaN(n)) || [1, 2]
     const yearFrom = searchParams.get('yearFrom')
     const yearTo = searchParams.get('yearTo')
-
-    const supabase = getSupabaseAdmin()
-
     // Step 1: Get all policy markers
     const { data: allMarkers, error: markersError } = await supabase
       .from('policy_markers')

@@ -1,9 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSupabaseAdmin } from '@/lib/supabase';
+import { requireAuth } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 
 export async function POST(request: NextRequest) {
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
+  if (!supabase) {
+    return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
+  }
+
   try {
     const body = await request.json();
     const { transactionIds, rejectingUserId, rejectionReason } = body;
@@ -24,7 +31,7 @@ export async function POST(request: NextRequest) {
     for (const transactionId of transactionIds) {
       try {
         // Get the original linked transaction to verify it exists
-        const { data: originalTransaction, error: fetchError } = await getSupabaseAdmin()
+        const { data: originalTransaction, error: fetchError } = await supabase
           .from('transactions')
           .select('uuid, activity_id, acceptance_status')
           .eq('uuid', transactionId)
@@ -47,7 +54,7 @@ export async function POST(request: NextRequest) {
         }
 
         // Update the transaction to mark it as rejected
-        const { data: rejectedTransaction, error: updateError } = await getSupabaseAdmin()
+        const { data: rejectedTransaction, error: updateError } = await supabase
           .from('transactions')
           .update({
             acceptance_status: 'rejected',

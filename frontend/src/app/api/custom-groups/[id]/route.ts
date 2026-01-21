@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSupabaseAdmin } from '@/lib/supabase';
+import { requireAuth } from '@/lib/auth';
 
 export async function OPTIONS() {
   return new NextResponse(null, {
@@ -18,12 +18,19 @@ export async function GET(
 ) {
   console.log('[API] GET /api/custom-groups/[id] - Starting request');
 
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
+  if (!supabase) {
+    return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
+  }
+
   try {
     // Handle both sync and async params (Next.js 14/15 compatibility)
     const resolvedParams = await Promise.resolve(params);
     const { id } = resolvedParams;
 
-    const { data, error } = await getSupabaseAdmin()
+    const { data, error } = await supabase
       .from('custom_groups_with_stats')
       .select('*')
       .eq('id', id)
@@ -62,6 +69,13 @@ export async function PUT(
 ) {
   console.log('[API] PUT /api/custom-groups/[id] - Starting request');
 
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
+  if (!supabase) {
+    return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
+  }
+
   try {
     // Handle both sync and async params (Next.js 14/15 compatibility)
     const resolvedParams = await Promise.resolve(params);
@@ -70,7 +84,7 @@ export async function PUT(
     const body = await request.json();
 
     // Update the custom group
-    const { data, error } = await getSupabaseAdmin()
+    const { data, error } = await supabase
       .from('custom_groups')
       .update({
         name: body.name,
@@ -121,7 +135,7 @@ export async function PUT(
     // Update organization memberships if provided
     if (body.organization_ids && Array.isArray(body.organization_ids)) {
       // First, remove all existing memberships
-      await getSupabaseAdmin()
+      await supabase
         .from('custom_group_memberships')
         .delete()
         .eq('group_id', id);
@@ -133,7 +147,7 @@ export async function PUT(
           organization_id: orgId
         }));
         
-        const { error: membershipError } = await getSupabaseAdmin()
+        const { error: membershipError } = await supabase
           .from('custom_group_memberships')
           .insert(memberships);
         
@@ -161,12 +175,19 @@ export async function DELETE(
 ) {
   console.log('[API] DELETE /api/custom-groups/[id] - Starting request');
 
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
+  if (!supabase) {
+    return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
+  }
+
   try {
     // Handle both sync and async params (Next.js 14/15 compatibility)
     const resolvedParams = await Promise.resolve(params);
     const { id } = resolvedParams;
 
-    const { error } = await getSupabaseAdmin()
+    const { error } = await supabase
       .from('custom_groups')
       .delete()
       .eq('id', id);

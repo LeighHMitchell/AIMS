@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSupabaseAdmin } from '@/lib/supabase';
+import { requireAuth } from '@/lib/auth';
 import {
   getSuggestionsForActivity,
   applyAutoMapping,
@@ -17,11 +17,17 @@ interface RouteParams {
  * Does NOT apply mappings - just returns suggestions for preview
  */
 export async function GET(request: NextRequest, { params }: RouteParams) {
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
+  if (!supabase) {
+    return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
+  }
+
   try {
     const { id: activityId } = await params;
 
     // Verify the activity exists
-    const supabase = getSupabaseAdmin();
     const { data: activity, error: activityError } = await supabase
       .from('activities')
       .select('id, title')
@@ -63,10 +69,15 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
  * }
  */
 export async function POST(request: NextRequest, { params }: RouteParams) {
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
+  if (!supabase) {
+    return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
+  }
+
   try {
     const { id: activityId } = await params;
-    const supabase = getSupabaseAdmin();
-
     // Verify the activity exists
     const { data: activity, error: activityError } = await supabase
       .from('activities')
@@ -143,10 +154,15 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
  * Remove all auto-mapped budget items (keeps manual ones)
  */
 export async function DELETE(request: NextRequest, { params }: RouteParams) {
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
+  if (!supabase) {
+    return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
+  }
+
   try {
     const { id: activityId } = await params;
-    const supabase = getSupabaseAdmin();
-
     // Find country_budget_items for vocabulary "4"
     const { data: cbi } = await supabase
       .from('country_budget_items')

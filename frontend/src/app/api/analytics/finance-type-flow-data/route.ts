@@ -65,19 +65,46 @@ export async function GET(request: NextRequest) {
   try {
     const supabase = createClient(supabaseUrl, supabaseServiceKey)
     const { searchParams } = new URL(request.url)
-    
+
     const dateFrom = searchParams.get('dateFrom')
     const dateTo = searchParams.get('dateTo')
-    
+    const organizationId = searchParams.get('organizationId')
+
     // Check cache first
-    const cacheKey = `finance-type-flow:${dateFrom}:${dateTo}`
+    const cacheKey = `finance-type-flow:${dateFrom}:${dateTo}:${organizationId || 'all'}`
     const cached = getCached(cacheKey)
     if (cached) {
       console.log('[FinanceTypeFlowData API] Returning cached data')
       return NextResponse.json(cached)
     }
 
-    console.log('[FinanceTypeFlowData API] Fetching data with params:', { dateFrom, dateTo })
+    console.log('[FinanceTypeFlowData API] Fetching data with params:', { dateFrom, dateTo, organizationId })
+
+    // If organizationId provided, get activity IDs where org is reporting org
+    let activityIds: string[] | null = null
+    if (organizationId) {
+      const { data: orgActivities, error: orgError } = await supabase
+        .from('activities')
+        .select('id')
+        .eq('reporting_org_id', organizationId)
+        .eq('publication_status', 'published')
+
+      if (orgError) {
+        console.error('[FinanceTypeFlowData API] Error fetching org activities:', orgError)
+        return NextResponse.json({ error: 'Failed to fetch organization activities' }, { status: 500 })
+      }
+
+      activityIds = (orgActivities || []).map(a => a.id)
+
+      if (activityIds.length === 0) {
+        return NextResponse.json({
+          transactions: [],
+          flowTypes: [],
+          financeTypes: [],
+          totalCount: 0
+        })
+      }
+    }
 
     // Build transactions query with activity defaults join
     let query = supabase
@@ -98,6 +125,11 @@ export async function GET(request: NextRequest) {
       `)
       .eq('status', 'actual')
       .order('transaction_date', { ascending: true })
+
+    // Filter by organization's activities if provided
+    if (activityIds) {
+      query = query.in('activity_id', activityIds)
+    }
 
     // Apply date range filter
     if (dateFrom) {

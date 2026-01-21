@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSupabaseAdmin } from '@/lib/supabase';
+import { requireAuth } from '@/lib/auth';
 import { extractIatiMeta, IatiParseError } from '@/lib/iati/parseMeta';
 import { iatiAnalytics } from '@/lib/analytics';
 import { convertTransactionToUSD, addUSDFieldsToTransaction } from '@/lib/transaction-usd-helper';
@@ -85,6 +85,13 @@ function getErrorMessage(error: unknown): string {
 }
 
 export async function POST(request: NextRequest) {
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
+  if (!supabase) {
+    return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
+  }
+
   try {
     const contentType = request.headers.get('content-type') || '';
 
@@ -145,7 +152,7 @@ export async function POST(request: NextRequest) {
                 };
                 if (dbType) updateData.type = dbType;
 
-                const { data: updateResult, error } = await getSupabaseAdmin()
+                const { data: updateResult, error } = await supabase
                   .from('organizations')
                   .update(updateData)
                   .eq('id', (org as any).existingId)
@@ -164,7 +171,7 @@ export async function POST(request: NextRequest) {
                   iati_org_id: (org as any).ref,
                   acronym: (org as any).acronym
                 };
-                const { error } = await getSupabaseAdmin()
+                const { error } = await supabase
                   .from('organizations')
                   .insert(insertData)
                   .select()
@@ -180,7 +187,7 @@ export async function POST(request: NextRequest) {
         }
 
         // Fetch orgs to map for activities and transactions
-        const { data: allOrgs } = await getSupabaseAdmin()
+        const { data: allOrgs } = await supabase
           .from('organizations')
           .select('id, iati_org_id, name');
         const orgMap = new Map((allOrgs || []).map((o: any) => [o.iati_org_id || o.name, o.id]));
@@ -188,7 +195,7 @@ export async function POST(request: NextRequest) {
         // Load org import preferences (if provided) and build helpers
         let orgPrefs: any | null = null;
         if (organizationId) {
-          const { data: org } = await getSupabaseAdmin()
+          const { data: org } = await supabase
             .from('organizations')
             .select('iati_import_preferences')
             .eq('id', organizationId)
@@ -224,7 +231,7 @@ export async function POST(request: NextRequest) {
 
               let activityId: string;
               if ((activity as any).matched && (activity as any).existingId) {
-                const { data: updateResult, error } = await getSupabaseAdmin()
+                const { data: updateResult, error } = await supabase
                   .from('activities')
                   .update({
                     // Do not overwrite existing data on update per preference (2b)
@@ -248,7 +255,7 @@ export async function POST(request: NextRequest) {
               } else {
                 activityData.publication_status = 'draft';
                 activityData.submission_status = 'not_submitted';
-                const { data: newActivity, error } = await getSupabaseAdmin()
+                const { data: newActivity, error } = await supabase
                   .from('activities')
                   .insert(activityData)
                   .select()
@@ -263,7 +270,7 @@ export async function POST(request: NextRequest) {
               for (const participatingOrg of (activity as any).participatingOrgs || []) {
                 const orgId = orgMap.get(participatingOrg.ref) || orgMap.get(participatingOrg.name);
                 if (orgId && orgId !== partnerId) {
-                  await getSupabaseAdmin()
+                  await supabase
                     .from('activity_contributors')
                     .upsert({
                       activity_id: activityId,
@@ -308,7 +315,7 @@ export async function POST(request: NextRequest) {
               // Resolve activity id
               let activityId = activityIdMap.get((transaction as any).activityRef);
               if (!activityId) {
-                const { data: existingActivity } = await getSupabaseAdmin()
+                const { data: existingActivity } = await supabase
                   .from('activities')
                   .select('id')
                   .eq('iati_id', (transaction as any).activityRef)
@@ -327,7 +334,7 @@ export async function POST(request: NextRequest) {
                   planned_start_date: (transaction as any).date || new Date().toISOString().split('T')[0],
                   planned_end_date: new Date().toISOString().split('T')[0]
                 };
-                const { data: newActivity, error } = await getSupabaseAdmin()
+                const { data: newActivity, error } = await supabase
                   .from('activities')
                   .insert(minimalActivity)
                   .select()
@@ -344,7 +351,7 @@ export async function POST(request: NextRequest) {
               // Fetch activity default_currency for proper currency resolution
               let activityDefaultCurrency: string | null = null;
               try {
-                const { data: activityData } = await getSupabaseAdmin()
+                const { data: activityData } = await supabase
                   .from('activities')
                   .select('default_currency')
                   .eq('id', activityId)
@@ -419,7 +426,7 @@ export async function POST(request: NextRequest) {
               // Add USD fields to transaction data and insert directly (replacing RPC call)
               const transactionDataWithUSD = addUSDFieldsToTransaction(transactionData, usdResult);
               
-              const { error } = await getSupabaseAdmin()
+              const { error } = await supabase
                 .from('transactions')
                 .insert(transactionDataWithUSD);
               if (error) throw error;
@@ -494,7 +501,6 @@ export async function POST(request: NextRequest) {
     }
 
     // Get user's publisher references
-    const supabase = getSupabaseAdmin();
     const { data: userData, error: userError } = await supabase
       .from('user_profiles')
       .select('publisher_refs, org_name')
@@ -675,7 +681,7 @@ export async function POST_LEGACY(request: NextRequest) {
             updateData.type = dbType;
           }
 
-          const { data: updateResult, error } = await getSupabaseAdmin()
+          const { data: updateResult, error } = await supabase
             .from('organizations')
             .update(updateData)
             .eq('id', org.existingId)
@@ -700,7 +706,7 @@ export async function POST_LEGACY(request: NextRequest) {
             acronym: org.acronym
           };
 
-          const { data: newOrg, error } = await getSupabaseAdmin()
+          const { data: newOrg, error } = await supabase
             .from('organizations')
             .insert(insertData)
             .select()
@@ -718,7 +724,7 @@ export async function POST_LEGACY(request: NextRequest) {
     }
 
     // Get organization mapping for activities
-    const { data: allOrgs } = await getSupabaseAdmin()
+    const { data: allOrgs } = await supabase
       .from('organizations')
       .select('id, iati_org_id, name');
     
@@ -760,7 +766,7 @@ export async function POST_LEGACY(request: NextRequest) {
           // Update existing activity
           console.log(`[IATI Import] Updating activity ${activity.existingId}: ${activity.title}`);
           
-          const { data: updateResult, error } = await getSupabaseAdmin()
+          const { data: updateResult, error } = await supabase
             .from('activities')
             .update(activityData)
             .eq('id', activity.existingId)
@@ -781,7 +787,7 @@ export async function POST_LEGACY(request: NextRequest) {
           activityData.publication_status = 'draft';
           activityData.submission_status = 'not_submitted';
           
-          const { data: newActivity, error } = await getSupabaseAdmin()
+          const { data: newActivity, error } = await supabase
             .from('activities')
             .insert(activityData)
             .select()
@@ -797,7 +803,7 @@ export async function POST_LEGACY(request: NextRequest) {
         for (const participatingOrg of activity.participatingOrgs) {
           const orgId = orgMap.get(participatingOrg.ref) || orgMap.get(participatingOrg.name);
           if (orgId && orgId !== partnerId) {
-            const { error } = await getSupabaseAdmin()
+            const { error } = await supabase
               .from('activity_contributors')
               .upsert({
                 activity_id: activityId,
@@ -938,7 +944,7 @@ export async function POST_LEGACY(request: NextRequest) {
             }
             
             // Use RPC function to bypass schema cache
-            const { data: insertResult, error } = await getSupabaseAdmin()
+            const { data: insertResult, error } = await supabase
               .rpc('insert_iati_transaction', {
                 p_activity_id: transactionData.activity_id,
                 p_transaction_type: transactionData.transaction_type,
@@ -1014,7 +1020,7 @@ export async function POST_LEGACY(request: NextRequest) {
         console.log(`[IATI Import] Creating minimal activity for ${activityRef} with ${orphanTrans.length} transactions`);
         
         // Check if activity already exists in database
-        const { data: existingActivity } = await getSupabaseAdmin()
+        const { data: existingActivity } = await supabase
           .from('activities')
           .select('id')
           .eq('iati_id', activityRef)
@@ -1042,7 +1048,7 @@ export async function POST_LEGACY(request: NextRequest) {
             planned_end_date: new Date().toISOString().split('T')[0]
           };
           
-          const { data: newActivity, error } = await getSupabaseAdmin()
+          const { data: newActivity, error } = await supabase
             .from('activities')
             .insert(minimalActivity)
             .select()
@@ -1151,7 +1157,7 @@ export async function POST_LEGACY(request: NextRequest) {
             console.log(`[IATI Import] Inserting orphan transaction:`, transactionData);
             
             // Use RPC function to bypass schema cache
-            const { data: insertResult, error } = await getSupabaseAdmin()
+            const { data: insertResult, error } = await supabase
               .rpc('insert_iati_transaction', {
                 p_activity_id: transactionData.activity_id,
                 p_transaction_type: transactionData.transaction_type,
@@ -1195,23 +1201,23 @@ export async function POST_LEGACY(request: NextRequest) {
     const verificationResults: any = {};
     
     try {
-      const { count: orgCount } = await getSupabaseAdmin()
+      const { count: orgCount } = await supabase
         .from('organizations')
         .select('*', { count: 'exact', head: true });
       verificationResults.totalOrganizations = orgCount;
       
-      const { count: actCount } = await getSupabaseAdmin()
+      const { count: actCount } = await supabase
         .from('activities')
         .select('*', { count: 'exact', head: true });
       verificationResults.totalActivities = actCount;
       
-      const { count: transCount } = await getSupabaseAdmin()
+      const { count: transCount } = await supabase
         .from('transactions')
         .select('*', { count: 'exact', head: true });
       verificationResults.totalTransactions = transCount;
       
       // Get transaction counts by type
-      const { data: transactionsByType } = await getSupabaseAdmin()
+      const { data: transactionsByType } = await supabase
         .from('transactions')
         .select('id, activity_id, transaction_type, provider_org, receiver_org, value, currency, transaction_date, description, created_at, updated_at, status, aid_type, tied_status, flow_type')
         .order('created_at', { ascending: false })
@@ -1223,7 +1229,7 @@ export async function POST_LEGACY(request: NextRequest) {
       
       // Verify a sample of recently created transactions
       if (results.transactionsCreated > 0) {
-        const { data: recentTransactions } = await getSupabaseAdmin()
+        const { data: recentTransactions } = await supabase
           .from('transactions')
           .select('id, transaction_type, value, currency, activity_id, created_at')
           .order('created_at', { ascending: false })

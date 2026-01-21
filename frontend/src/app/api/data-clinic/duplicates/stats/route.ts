@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSupabaseAdmin } from '@/lib/supabase';
+import { requireAuth } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 
@@ -10,16 +10,17 @@ export const dynamic = 'force-dynamic';
  * Returns counts by entity type, detection type, and confidence level.
  */
 export async function GET(request: NextRequest) {
-  const supabase = getSupabaseAdmin();
-
-  if (!supabase) {
-    return NextResponse.json(
-      { error: 'Database not configured' },
-      { status: 503 }
-    );
-  }
-
   try {
+    const { supabase, response: authResponse } = await requireAuth();
+    if (authResponse) return authResponse;
+
+    if (!supabase) {
+      return NextResponse.json(
+        { error: 'Database not configured' },
+        { status: 503 }
+      );
+    }
+
     // Get dismissed pairs to exclude from counts
     const { data: dismissals, error: dismissalsError } = await supabase
       .from('duplicate_dismissals')

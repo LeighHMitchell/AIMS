@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSupabaseAdmin } from '@/lib/supabase';
+import { requireAuth } from '@/lib/auth';
 import { TransactionType } from '@/types/transaction';
 import { createClient } from '@/lib/supabase-simple';
 import { fixedCurrencyConverter } from '@/lib/currency-converter-fixed';
@@ -19,7 +19,7 @@ async function fetchAllLinkedTransactions(activityIds: string[]) {
   
   try {
     // Get all linked activities (both directions)
-    const { data: relatedActivities, error: relatedError } = await getSupabaseAdmin()
+    const { data: relatedActivities, error: relatedError } = await supabase
       .from('related_activities')
       .select('linked_activity_id, source_activity_id')
       .or(activityIds.map(id => `source_activity_id.eq.${id},linked_activity_id.eq.${id}`).join(','));
@@ -55,7 +55,7 @@ async function fetchAllLinkedTransactions(activityIds: string[]) {
     if (allLinkedActivityIds.size === 0) return [];
 
     // Fetch transactions from all linked activities
-    const { data: linkedTransactions, error: transError } = await getSupabaseAdmin()
+    const { data: linkedTransactions, error: transError } = await supabase
       .from('transactions')
       .select(`
         *,
@@ -119,6 +119,9 @@ async function fetchAllLinkedTransactions(activityIds: string[]) {
 
 export async function GET(request: Request) {
   try {
+    const { supabase, response: authResponse } = await requireAuth();
+    if (authResponse) return authResponse;
+
     const { searchParams } = new URL(request.url);
     
     // Pagination params
@@ -150,7 +153,7 @@ export async function GET(request: Request) {
     // Find activity IDs matching the search term (for activity title search)
     let matchingActivityIds: string[] = [];
     if (search) {
-      const { data: matchingActivities, error: activitySearchError } = await getSupabaseAdmin()
+      const { data: matchingActivities, error: activitySearchError } = await supabase
         .from('activities')
         .select('id')
         .ilike('title_narrative', `%${search}%`);
@@ -164,7 +167,7 @@ export async function GET(request: Request) {
     }
     
     // Build the query
-    let query = getSupabaseAdmin()
+    let query = supabase
       .from('transactions')
       .select(`
         *,
@@ -350,7 +353,7 @@ export async function GET(request: Request) {
 
     if (transactionIds.length > 0) {
       // Fetch sector lines
-      const { data: sectorLines } = await getSupabaseAdmin()
+      const { data: sectorLines } = await supabase
         .from('transaction_sector_lines')
         .select('transaction_id, sector_code, sector_vocabulary, sector_name, percentage')
         .in('transaction_id', transactionIds)
@@ -371,7 +374,7 @@ export async function GET(request: Request) {
       }
 
       // Fetch aid type lines
-      const { data: aidTypeLines } = await getSupabaseAdmin()
+      const { data: aidTypeLines } = await supabase
         .from('transaction_aid_type_lines')
         .select('transaction_id, aid_type_code, aid_type_vocabulary')
         .in('transaction_id', transactionIds)
@@ -526,7 +529,7 @@ async function performCurrencyConversion(
       console.log('[Transactions API] Transaction is already in USD, updating USD fields...');
       
       // Update USD fields for USD transactions to ensure USD Value field is populated
-      const { error: updateError } = await getSupabaseAdmin()
+      const { error: updateError } = await supabase
         .from('transactions')
         .update({
           value_usd: value,
@@ -549,7 +552,7 @@ async function performCurrencyConversion(
     if (isManual && manualRate && manualValueUsd != null) {
       console.log('[Transactions API] Using manual exchange rate:', manualRate);
       
-      const { error: updateError } = await getSupabaseAdmin()
+      const { error: updateError } = await supabase
         .from('transactions')
         .update({
           value_usd: manualValueUsd,
@@ -582,7 +585,7 @@ async function performCurrencyConversion(
       console.log('[Transactions API] Currency conversion failed, marking as unconvertible:', result.error);
       
       // Mark as unconvertible
-      const { error: updateError } = await getSupabaseAdmin()
+      const { error: updateError } = await supabase
         .from('transactions')
         .update({
           usd_convertible: false,
@@ -599,7 +602,7 @@ async function performCurrencyConversion(
 
     // Update transaction with USD values
     console.log('[Transactions API] Currency conversion successful, updating transaction with USD values...');
-    const { error: updateError } = await getSupabaseAdmin()
+    const { error: updateError } = await supabase
       .from('transactions')
       .update({
         value_usd: result.usd_amount,
@@ -630,8 +633,6 @@ async function performCurrencyConversion(
 async function performBudgetLineInference(transactionId: string) {
   try {
     console.log('[Transactions API] Starting budget line inference for transaction:', transactionId);
-    const supabase = getSupabaseAdmin();
-
     // Fetch transaction with its data
     const { data: transaction, error: txnError } = await supabase
       .from('transactions')
@@ -692,6 +693,9 @@ async function performBudgetLineInference(transactionId: string) {
 
 export async function POST(request: NextRequest) {
   try {
+    const { supabase, response: authResponse } = await requireAuth();
+    if (authResponse) return authResponse;
+
     const body = await request.json();
     console.log('[Transactions API] POST request received:', body);
 
@@ -823,7 +827,7 @@ export async function POST(request: NextRequest) {
 
     console.log('[Transactions API] Inserting transaction:', transactionData);
 
-    const { data, error } = await getSupabaseAdmin()
+    const { data, error } = await supabase
       .from('transactions')
       .insert([transactionData])
       .select()
@@ -887,7 +891,7 @@ export async function POST(request: NextRequest) {
           };
         });
 
-        const { error: sectorError } = await getSupabaseAdmin()
+        const { error: sectorError } = await supabase
           .from('transaction_sector_lines')
           .insert(sectorLinesToInsert);
 
@@ -917,7 +921,7 @@ export async function POST(request: NextRequest) {
           sort_order: idx
         }));
 
-        const { error: aidTypeError } = await getSupabaseAdmin()
+        const { error: aidTypeError } = await supabase
           .from('transaction_aid_type_lines')
           .insert(aidTypeLinesToInsert);
 
@@ -961,6 +965,9 @@ export async function POST(request: NextRequest) {
 
 export async function PUT(request: NextRequest) {
   try {
+    const { supabase, response: authResponse } = await requireAuth();
+    if (authResponse) return authResponse;
+
     const body = await request.json();
     console.log('[Transactions API] PUT request received:', body);
 
@@ -993,7 +1000,7 @@ export async function PUT(request: NextRequest) {
     let transactionReference = body.transaction_reference?.trim() || '';
     
     // Get the current transaction to check for reference changes and inherited flags
-    const { data: currentTransaction, error: fetchError } = await getSupabaseAdmin()
+    const { data: currentTransaction, error: fetchError } = await supabase
       .from('transactions')
       .select('transaction_reference, activity_id, finance_type, finance_type_inherited, flow_type, aid_type, tied_status')
       .eq('uuid', transactionId)
@@ -1015,7 +1022,7 @@ export async function PUT(request: NextRequest) {
       // If it's the same, we don't need to validate uniqueness
       if (transactionReference !== currentTransaction?.transaction_reference) {
         // Check if the new reference conflicts with another transaction in the same activity
-        const { data: conflictingTransaction, error: conflictError } = await getSupabaseAdmin()
+        const { data: conflictingTransaction, error: conflictError } = await supabase
           .from('transactions')
           .select('uuid')
           .eq('transaction_reference', transactionReference)
@@ -1124,7 +1131,7 @@ export async function PUT(request: NextRequest) {
 
     console.log('[Transactions API] Updating transaction:', transactionId, cleanedData);
 
-    const { data, error } = await getSupabaseAdmin()
+    const { data, error } = await supabase
       .from('transactions')
       .update(cleanedData)
       .eq('uuid', transactionId)
@@ -1170,7 +1177,7 @@ export async function PUT(request: NextRequest) {
     if (body.sectors !== undefined) {
       try {
         // First, delete existing sector lines
-        await getSupabaseAdmin()
+        await supabase
           .from('transaction_sector_lines')
           .delete()
           .eq('transaction_id', transactionId);
@@ -1193,7 +1200,7 @@ export async function PUT(request: NextRequest) {
             };
           });
 
-          const { error: sectorError } = await getSupabaseAdmin()
+          const { error: sectorError } = await supabase
             .from('transaction_sector_lines')
             .insert(sectorLinesToInsert);
 
@@ -1218,7 +1225,7 @@ export async function PUT(request: NextRequest) {
     if (body.aid_types !== undefined) {
       try {
         // First, delete existing aid_type lines
-        await getSupabaseAdmin()
+        await supabase
           .from('transaction_aid_type_lines')
           .delete()
           .eq('transaction_id', transactionId);
@@ -1232,7 +1239,7 @@ export async function PUT(request: NextRequest) {
             sort_order: idx
           }));
 
-          const { error: aidTypeError } = await getSupabaseAdmin()
+          const { error: aidTypeError } = await supabase
             .from('transaction_aid_type_lines')
             .insert(aidTypeLinesToInsert);
 
@@ -1284,6 +1291,9 @@ export async function PUT(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   try {
+    const { supabase, response: authResponse } = await requireAuth();
+    if (authResponse) return authResponse;
+
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id') || searchParams.get('uuid'); // Support both for compatibility
     
@@ -1322,7 +1332,7 @@ export async function DELETE(request: NextRequest) {
       }
       
       // Perform bulk deletion
-      const { error, count } = await getSupabaseAdmin()
+      const { error, count } = await supabase
         .from('transactions')
         .delete()
         .in('uuid', uuids);
@@ -1364,7 +1374,7 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
-    const { error } = await getSupabaseAdmin()
+    const { error } = await supabase
       .from('transactions')
       .delete()
       .eq('uuid', id);

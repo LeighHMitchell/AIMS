@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getSupabaseAdmin } from "@/lib/supabase";
+import { requireAuth } from '@/lib/auth';
 import { CustomYearRow, toCustomYear } from "@/types/custom-years";
 
 // Disable caching to ensure fresh data
@@ -12,8 +12,10 @@ export const revalidate = 0;
  * Returns all active custom years with the system default identified
  */
 export async function GET(request: NextRequest) {
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
   try {
-    const supabase = getSupabaseAdmin();
 
     if (!supabase) {
       return NextResponse.json(

@@ -1,13 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSupabaseAdmin } from '@/lib/supabase';
+import { requireAuth } from '@/lib/auth';
 import type { CreateTemplateRequest, TaskPriority, TaskType, TargetScope } from '@/types/task';
 
 export const dynamic = 'force-dynamic';
 
 // GET /api/tasks/templates - List templates
 export async function GET(request: NextRequest) {
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
   try {
-    const supabase = getSupabaseAdmin();
     if (!supabase) {
       return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
     }
@@ -106,8 +108,10 @@ export async function GET(request: NextRequest) {
 
 // POST /api/tasks/templates - Create template
 export async function POST(request: NextRequest) {
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
   try {
-    const supabase = getSupabaseAdmin();
     if (!supabase) {
       return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
     }

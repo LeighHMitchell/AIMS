@@ -1,18 +1,19 @@
 "use client"
 
-import React, { useState, useEffect, useRef } from 'react'
+import React, { useState, useEffect, useRef, useMemo } from 'react'
 import { useParams, useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { MainLayout } from '@/components/layout/main-layout'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { BarChart, Bar, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer, Cell, PieChart as RechartsPieChart, Pie, Legend } from 'recharts'
-import { 
-  Building2, 
-  ArrowLeft, 
-  Globe, 
-  MapPin, 
+import { BarChart, Bar, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer, Cell, PieChart as RechartsPieChart, Pie, Legend, AreaChart, Area } from 'recharts'
+import {
+  Building2,
+  ArrowLeft,
+  Globe,
+  MapPin,
   Calendar,
   DollarSign,
   FileText,
@@ -35,6 +36,7 @@ import {
   Mail,
   Phone,
   LayoutGrid,
+  List,
   Table as TableIcon,
   User,
   MoreVertical,
@@ -43,14 +45,19 @@ import {
   PencilLine,
   ChevronDown,
   ChevronUp,
+  ChevronLeft,
+  ChevronRight,
   ArrowUpDown,
   Twitter,
   Facebook,
   Linkedin,
   Instagram,
-  Youtube
+  Youtube,
+  AreaChart as AreaChartIcon
 } from 'lucide-react'
 import Flag from 'react-world-flags'
+import { DocumentThumbnail } from '@/components/ui/document-thumbnail'
+import { UserAvatar } from '@/components/ui/user-avatar'
 import {
   Tooltip,
   TooltipContent,
@@ -64,10 +71,23 @@ import { PartnershipNetwork } from '@/components/organizations/PartnershipNetwor
 import { OrganisationHealthCard } from '@/components/organizations/OrganisationHealthCard'
 import { CopyableIdentifier } from '@/components/organizations/CopyableIdentifier'
 import { SectorAllocationChart } from '@/components/organizations/SectorAllocationChart'
-import { OrganizationAnalytics } from '@/components/organizations/analytics/OrganizationAnalytics'
-import { OrganizationFundingAnalytics } from '@/components/organizations/analytics/OrganizationFundingAnalytics'
+import { OrganizationBudgetsTab } from '@/components/organizations/OrganizationBudgetsTab'
+import { OrganizationPlannedDisbursementsTab } from '@/components/organizations/OrganizationPlannedDisbursementsTab'
+import { OrganizationTransactionsTab } from '@/components/organizations/OrganizationTransactionsTab'
+import { OrganizationSpendTrajectoryChart } from '@/components/organizations/OrganizationSpendTrajectoryChart'
+import { TransactionActivityCalendar } from '@/components/analytics/TransactionActivityCalendar'
+import { SDGCoverageChart } from '@/components/analytics/sdgs/SDGCoverageChart'
+import { SDGConcentrationChart } from '@/components/analytics/sdgs/SDGConcentrationChart'
+import { FinanceTypeFlowChart } from '@/components/analytics/FinanceTypeFlowChart'
+import { CumulativeFinancialOverview } from '@/components/analytics/CumulativeFinancialOverview'
+import { SectorDisbursementOverTime } from '@/components/analytics/SectorDisbursementOverTime'
+import { SubnationalAllocationsChart } from '@/components/analytics/national-priorities-dashboard/SubnationalAllocationsChart'
+import MyanmarRegionsMap from '@/components/MyanmarRegionsMap'
+import { AidPredictabilityChart } from '@/components/analytics/national-priorities-dashboard/AidPredictabilityChart'
+import { ExpandableChartCard } from '@/components/analytics/ExpandableChartCard'
 import SectorSunburstVisualization from '@/components/charts/SectorSunburstVisualization'
 import SectorSankeyVisualization from '@/components/charts/SectorSankeyVisualization'
+import ActivityCardModern from '@/components/activities/ActivityCardModern'
 import { NativeLikesCounter } from '@/components/ui/native-likes-counter'
 import { useEntityLikes } from '@/hooks/use-entity-likes'
 import { useUser } from '@/hooks/useUser'
@@ -81,6 +101,14 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { Skeleton } from '@/components/ui/skeleton'
+import { Label } from '@/components/ui/label'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -164,6 +192,8 @@ interface Transaction {
   description?: string
   provider_org_name?: string
   receiver_org_name?: string
+  activity_id?: string
+  activity_title?: string
 }
 
 // Finance type labels mapping (defined at module level for reuse)
@@ -211,6 +241,10 @@ export default function OrganizationProfilePage() {
   const [error, setError] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState('activities')
   const [activitiesView, setActivitiesView] = useState<'card' | 'table'>('card')
+  const [hiddenRoles, setHiddenRoles] = useState<Set<number>>(new Set())
+  const [pivotRowDimension, setPivotRowDimension] = useState<'organization' | 'orgType' | 'country' | 'role'>('organization')
+  const [pivotColumnDimension, setPivotColumnDimension] = useState<'role' | 'orgType' | 'country'>('role')
+  const [pivotValueMetric, setPivotValueMetric] = useState<'activities' | 'organizations'>('activities')
   const [activitiesSortColumn, setActivitiesSortColumn] = useState<'title' | 'status' | 'start' | 'end' | 'budget' | 'disbursed'>('title')
   const [activitiesSortDirection, setActivitiesSortDirection] = useState<'asc' | 'desc'>('asc')
   const [hoveredPoint, setHoveredPoint] = useState<{year: number, count: number, totalValue: number, x: number, y: number} | null>(null)
@@ -227,11 +261,12 @@ export default function OrganizationProfilePage() {
   const [modalityCompositionByValue, setModalityCompositionByValue] = useState<Array<{ name: string; value: number; color: string }>>([])
   const [timelineView, setTimelineView] = useState<'chart' | 'table'>('chart')
   const [budgetView, setBudgetView] = useState<'chart' | 'table'>('chart')
+  const [budgetChartType, setBudgetChartType] = useState<'area' | 'bar'>('area')
   const [budgetVsActualsView, setBudgetVsActualsView] = useState<'chart' | 'table'>('chart')
-  const [budgetVsActualsMetric, setBudgetVsActualsMetric] = useState<'commitments' | 'disbursements' | 'expenditure'>('commitments')
-  const [budgetVsActualsGrouping, setBudgetVsActualsGrouping] = useState<'year' | 'activity'>('year')
+  const [budgetVsActualsChartType, setBudgetVsActualsChartType] = useState<'bar' | 'area'>('bar')
   const [modalityView, setModalityView] = useState<'chart' | 'table'>('chart')
   const [modalityViewMode, setModalityViewMode] = useState<'value' | 'count'>('value')
+  const [contactsView, setContactsView] = useState<'card' | 'table'>('card')
   const [temporalMetadata, setTemporalMetadata] = useState<{
     firstActivityDate: string | null
     mostRecentTransaction: string | null
@@ -261,8 +296,27 @@ export default function OrganizationProfilePage() {
   } | null>(null)
   const [partnerOrganizations, setPartnerOrganizations] = useState<any[]>([])
   const [activitiesWithPartnerData, setActivitiesWithPartnerData] = useState<any[]>([])
+  const [subnationalMapData, setSubnationalMapData] = useState<Record<string, { percentage: number; value: number; activityCount: number; activities: Array<{ id: string; title: string }> }>>({})
   const [organizationDocuments, setOrganizationDocuments] = useState<any[]>([])
   const [activityDocuments, setActivityDocuments] = useState<Array<{activityId: string, activityTitle: string, documents: any[]}>>([])
+  const [documentsViewMode, setDocumentsViewMode] = useState<'card' | 'table'>('card')
+  const [organizationContacts, setOrganizationContacts] = useState<Array<{
+    id: string
+    type: string
+    title?: string
+    firstName: string
+    lastName: string
+    jobTitle?: string
+    department?: string
+    email?: string
+    phone?: string
+    phoneNumber?: string
+    countryCode?: string
+    website?: string
+    mailingAddress?: string
+    profilePhoto?: string
+    isPrimary?: boolean
+  }>>([])
 
   // Global loading bar for top-of-screen progress indicator
   const { startLoading, stopLoading } = useLoadingBar()
@@ -385,9 +439,30 @@ export default function OrganizationProfilePage() {
           console.warn('Failed to fetch health metrics:', healthErr)
         }
 
-        // Fetch organization documents (if any)
-        // Note: Organizations may not have a documents field, so we'll check for it
-        
+        // Fetch organization documents from the new organization_documents table
+        try {
+          const orgDocsResponse = await fetch(`/api/organizations/${params.id}/documents`, {
+            signal: abortControllerRef.current.signal
+          })
+          if (orgDocsResponse.ok) {
+            const orgDocs = await orgDocsResponse.json()
+            // Transform documents to match UI expectations
+            const transformedDocs = (orgDocs || []).map((doc: any) => ({
+              id: doc.id,
+              title: doc.titles?.[0]?.narrative || 'Untitled Document',
+              url: doc.url,
+              description: doc.descriptions?.[0]?.narrative || '',
+              format: doc.format,
+              document_date: doc.document_date,
+              categories: doc.categories || [],
+              languages: doc.languages || ['en'],
+            }))
+            setOrganizationDocuments(transformedDocs)
+          }
+        } catch (orgDocsErr) {
+          console.warn('Failed to fetch organization documents:', orgDocsErr)
+        }
+
         // Fetch activities with budget data
         try {
           const activitiesResponse = await fetch(`/api/activities?organization_id=${params.id}`, {
@@ -396,36 +471,59 @@ export default function OrganizationProfilePage() {
           if (activitiesResponse.ok) {
             const activitiesData = await activitiesResponse.json()
             
-            // Fetch budgets for each activity to calculate totalPlannedBudgetUSD
+            // Fetch budgets and transactions for each activity
             const activitiesWithBudgets = await Promise.all(
               (activitiesData || []).map(async (activity: Activity) => {
+                let totalPlannedBudgetUSD = 0
+                let totalDisbursed = 0
+
+                // Fetch budgets
                 try {
                   const budgetResponse = await fetch(`/api/activities/${activity.id}/budgets`, {
                     signal: abortControllerRef.current?.signal
                   })
-                  
+
                   if (budgetResponse.ok) {
                     const budgets = await budgetResponse.json()
                     // Sum all budget USD values
-                    const totalPlannedBudgetUSD = budgets.reduce((sum: number, budget: any) => {
+                    totalPlannedBudgetUSD = budgets.reduce((sum: number, budget: any) => {
                       // Use usd_value if available, otherwise use value if currency is USD
                       const usdValue = budget.usd_value || (budget.currency === 'USD' ? budget.value : 0)
                       return sum + (usdValue || 0)
                     }, 0)
-                    
-                    return {
-                      ...activity,
-                      totalPlannedBudgetUSD
-                    }
                   }
                 } catch (budgetErr) {
                   console.warn(`Failed to fetch budgets for activity ${activity.id}:`, budgetErr)
                 }
-                
-                return activity
+
+                // Fetch transactions to calculate disbursements (exclude linked to show only org's reported data)
+                try {
+                  const transactionsResponse = await fetch(`/api/activities/${activity.id}/transactions?includeLinked=false`, {
+                    signal: abortControllerRef.current?.signal
+                  })
+
+                  if (transactionsResponse.ok) {
+                    const transactions = await transactionsResponse.json()
+                    // Sum disbursement transactions (type 3 = Disbursement)
+                    totalDisbursed = (transactions || [])
+                      .filter((t: any) => t.transaction_type === '3' || t.transaction_type === 3)
+                      .reduce((sum: number, t: any) => {
+                        const value = t.usd_value || t.value || 0
+                        return sum + value
+                      }, 0)
+                  }
+                } catch (transErr) {
+                  console.warn(`Failed to fetch transactions for activity ${activity.id}:`, transErr)
+                }
+
+                return {
+                  ...activity,
+                  totalPlannedBudgetUSD,
+                  total_disbursed: totalDisbursed
+                }
               })
             )
-            
+
             setActivities(activitiesWithBudgets)
             
             // Calculate finance type composition from all activities (by count)
@@ -528,13 +626,26 @@ export default function OrganizationProfilePage() {
                     )
                     if (participatingOrgsResponse.ok) {
                       const participatingOrgs = await participatingOrgsResponse.json()
-                      
+
                       // Group by role type
                       const extendingPartners: Array<{ orgId: string; name: string }> = []
                       const implementingPartners: Array<{ orgId: string; name: string }> = []
                       const governmentPartners: Array<{ orgId: string; name: string }> = []
                       const fundingPartners: Array<{ orgId: string; name: string }> = []
-                      
+
+                      // Also build participatingOrgs array for Partnerships tab
+                      const participatingOrgsFormatted: Array<{
+                        org_id: string;
+                        role: string;
+                        narrative: string;
+                        acronym?: string;
+                        logo?: string;
+                        org_type?: string;
+                        country?: string;
+                        iati_org_id?: string;
+                        org_name?: string;
+                      }> = []
+
                       participatingOrgs.forEach((po: any) => {
                         if (po.organization_id && po.organization_id !== params.id) {
                           partnerOrgIds.add(po.organization_id)
@@ -542,14 +653,34 @@ export default function OrganizationProfilePage() {
                             orgId: po.organization_id,
                             name: po.organization?.name || po.narrative || 'Unknown'
                           }
-                          
+
                           if (po.role_type === 'extending') extendingPartners.push(partnerData)
                           else if (po.role_type === 'implementing') implementingPartners.push(partnerData)
                           else if (po.role_type === 'government') governmentPartners.push(partnerData)
                           else if (po.role_type === 'funding') fundingPartners.push(partnerData)
+
+                          // Map role_type to IATI role code for Partnerships tab
+                          const roleCode =
+                            po.role_type === 'funding' ? '1' :
+                            po.role_type === 'accountable' ? '2' :
+                            po.role_type === 'extending' ? '3' :
+                            po.role_type === 'implementing' ? '4' :
+                            po.iati_role_code?.toString() || '4'
+
+                          participatingOrgsFormatted.push({
+                            org_id: po.organization_id,
+                            role: roleCode,
+                            narrative: po.narrative || po.organization?.name || 'Unknown',
+                            acronym: po.organization?.acronym,
+                            logo: po.organization?.logo,
+                            org_type: po.organization?.org_type,
+                            country: po.organization?.country,
+                            iati_org_id: po.organization?.iati_org_id,
+                            org_name: po.organization?.name,
+                          })
                         }
                       })
-                      
+
                       return {
                         id: activity.id,
                         title: activity.title || activity.title_narrative || 'Untitled',
@@ -557,7 +688,8 @@ export default function OrganizationProfilePage() {
                         extendingPartners,
                         implementingPartners,
                         governmentPartners,
-                        fundingPartners
+                        fundingPartners,
+                        participatingOrgs: participatingOrgsFormatted
                       }
                     }
                   } catch (err) {
@@ -572,7 +704,8 @@ export default function OrganizationProfilePage() {
                     extendingPartners: [],
                     implementingPartners: [],
                     governmentPartners: [],
-                    fundingPartners: []
+                    fundingPartners: [],
+                    participatingOrgs: []
                   }
                 })
               )
@@ -603,33 +736,33 @@ export default function OrganizationProfilePage() {
               console.warn('Failed to fetch partner organizations:', partnerErr)
             }
             
-            // Calculate budgets by year from published activities
+            // Calculate budgets by year from published activities where org is reporting org
             const budgetsByYearMap = new Map<number, number>()
-            
+
             for (const activity of activitiesWithBudgets) {
               // Only include budgets from published activities
               if (activity.publication_status !== 'published') continue
-              
+
               try {
                 const budgetResponse = await fetch(`/api/activities/${activity.id}/budgets`, {
                   signal: abortControllerRef.current?.signal
                 })
-                
+
                 if (budgetResponse.ok) {
                   const budgets = await budgetResponse.json()
-                  
+
                   for (const budget of budgets) {
                     if (!budget.value || !budget.currency) continue
-                    
+
                     // Extract year from period_start
                     let year = new Date().getFullYear()
                     if (budget.period_start) {
                       year = new Date(budget.period_start).getFullYear()
                     }
-                    
+
                     // Use usd_value if available, otherwise use value if currency is USD
                     const usdValue = budget.usd_value || (budget.currency === 'USD' ? budget.value : 0)
-                    
+
                     if (usdValue) {
                       const currentAmount = budgetsByYearMap.get(year) || 0
                       budgetsByYearMap.set(year, currentAmount + usdValue)
@@ -640,12 +773,12 @@ export default function OrganizationProfilePage() {
                 console.warn(`Failed to fetch budgets for year calculation for activity ${activity.id}:`, budgetErr)
               }
             }
-            
+
             // Convert map to array and sort by year
             const budgetsByYearArray = Array.from(budgetsByYearMap.entries())
               .map(([year, amount]) => ({ year, amount }))
               .sort((a, b) => a.year - b.year)
-            
+
             setBudgetsByYear(budgetsByYearArray)
             
             // Fetch and aggregate sector allocations for all published activities
@@ -769,77 +902,132 @@ export default function OrganizationProfilePage() {
             
             console.log(`[OrgProfile] Planned disbursements by year:`, plannedDisbursementsArray)
             setPlannedDisbursementsByYear(plannedDisbursementsArray)
-            
-            // Fetch transactions from all activities
-            const allTransactions = []
-            const disbursementsByYearMap = new Map<number, { disbursements: number; expenditures: number }>()
-            
-            console.log(`[OrgProfile] Fetching transactions for ${activitiesWithBudgets.length} activities`)
-            
-            for (const activity of activitiesWithBudgets) {
+
             try {
-              const txnResponse = await fetch(`/api/activities/${activity.id}/transactions`, {
-                signal: abortControllerRef.current?.signal
-              })
-              
-              if (txnResponse.ok) {
-                const activityTransactions = await txnResponse.json()
-                console.log(`[OrgProfile] Activity ${activity.id} has ${activityTransactions.length} transactions`)
-                allTransactions.push(...activityTransactions)
-                
-                // Aggregate disbursements and expenditures by year
-                for (const txn of activityTransactions) {
-                  if (!txn.transaction_date || !txn.value) continue
-                  
-                  const year = new Date(txn.transaction_date).getFullYear()
-                  
-                  if (!disbursementsByYearMap.has(year)) {
-                    disbursementsByYearMap.set(year, { disbursements: 0, expenditures: 0 })
+              // Fetch transactions from all activities
+              const allTransactions: any[] = []
+              const disbursementsByYearMap = new Map<number, { disbursements: number; expenditures: number }>()
+
+              console.log(`[OrgProfile] Fetching transactions for ${activitiesWithBudgets.length} activities`)
+
+              for (const activity of activitiesWithBudgets) {
+                try {
+                  // Exclude linked transactions to show only org's directly reported data
+                  const txnResponse = await fetch(`/api/activities/${activity.id}/transactions?includeLinked=false`, {
+                    signal: abortControllerRef.current?.signal
+                  })
+
+                  if (txnResponse.ok) {
+                    const activityTransactions = await txnResponse.json()
+                    console.log(`[OrgProfile] Activity ${activity.id} has ${activityTransactions.length} transactions`)
+                    // Add activity info to each transaction
+                    const transactionsWithActivity = activityTransactions.map((txn: any) => ({
+                      ...txn,
+                      activity_id: activity.id,
+                      activity_title: activity.title || activity.title_narrative
+                    }))
+                    allTransactions.push(...transactionsWithActivity)
+
+                    // Aggregate disbursements and expenditures by year
+                    for (const txn of activityTransactions) {
+                      if (!txn.transaction_date || !txn.value) continue
+
+                      const year = new Date(txn.transaction_date).getFullYear()
+
+                      if (!disbursementsByYearMap.has(year)) {
+                        disbursementsByYearMap.set(year, { disbursements: 0, expenditures: 0 })
+                      }
+
+                      const yearData = disbursementsByYearMap.get(year)!
+
+                      // Type 3 = Disbursement, Type 4 = Expenditure
+                      // Use value_usd for consistency, fallback to value if USD or 0
+                      const usdValue = txn.value_usd || (txn.currency === 'USD' ? txn.value : 0)
+                      if (txn.transaction_type === '3') {
+                        console.log(`[OrgProfile] Found disbursement: Year ${year}, Amount USD ${usdValue}`)
+                        yearData.disbursements += usdValue
+                      } else if (txn.transaction_type === '4') {
+                        console.log(`[OrgProfile] Found expenditure: Year ${year}, Amount USD ${usdValue}`)
+                        yearData.expenditures += usdValue
+                      }
+                    }
                   }
-                  
-                  const yearData = disbursementsByYearMap.get(year)!
-                  
-                  // Type 3 = Disbursement, Type 4 = Expenditure
-                  if (txn.transaction_type === '3') {
-                    console.log(`[OrgProfile] Found disbursement: Year ${year}, Amount ${txn.value}`)
-                    yearData.disbursements += txn.value
-                  } else if (txn.transaction_type === '4') {
-                    console.log(`[OrgProfile] Found expenditure: Year ${year}, Amount ${txn.value}`)
-                    yearData.expenditures += txn.value
+                } catch (txnErr) {
+                  if (txnErr instanceof Error && txnErr.name === 'AbortError') {
+                    console.log('[OrgProfile] Transactions request aborted')
+                    return
                   }
+                  console.warn(`Failed to fetch transactions for activity ${activity.id}:`, txnErr)
                 }
               }
-            } catch (txnErr) {
-              if (txnErr instanceof Error && txnErr.name === 'AbortError') {
+
+              console.log(`[OrgProfile] Total transactions fetched: ${allTransactions.length}`)
+              console.log(`[OrgProfile] Disbursements by year:`, Array.from(disbursementsByYearMap.entries()))
+
+              setTransactions(allTransactions)
+
+              // Convert to array and sort by year
+              const disbursementsArray = Array.from(disbursementsByYearMap.entries())
+                .map(([year, data]) => ({
+                  year,
+                  disbursements: data.disbursements,
+                  expenditures: data.expenditures
+                }))
+                .sort((a, b) => a.year - b.year)
+
+              setDisbursementsByYear(disbursementsArray)
+            } catch (err) {
+              if (err instanceof Error && err.name === 'AbortError') {
                 console.log('[OrgProfile] Transactions request aborted')
                 return
               }
-              console.warn(`Failed to fetch transactions for activity ${activity.id}:`, txnErr)
+              console.warn('Failed to fetch transactions:', err)
             }
+
+            // Fetch subnational allocation data for map
+            try {
+              const subnationalResponse = await fetch(`/api/analytics/dashboard?measure=disbursements&organizationId=${params.id}`, {
+                signal: abortControllerRef.current?.signal
+              })
+              if (subnationalResponse.ok) {
+                const subnationalResult = await subnationalResponse.json()
+                if (subnationalResult.success && subnationalResult.data?.topDistricts) {
+                  const grandTotal = subnationalResult.data.grandTotal || 0
+                  const breakdowns: Record<string, { percentage: number; value: number; activityCount: number }> = {}
+                  subnationalResult.data.topDistricts.forEach((district: { name: string; value: number; activityCount?: number }) => {
+                    breakdowns[district.name] = {
+                      percentage: grandTotal > 0 ? (district.value / grandTotal) * 100 : 0,
+                      value: district.value,
+                      activityCount: district.activityCount || 0
+                    }
+                  })
+                  setSubnationalMapData(breakdowns)
+                }
+              }
+            } catch (err) {
+              console.warn('Failed to fetch subnational map data:', err)
+            }
+
           }
-          
-          console.log(`[OrgProfile] Total transactions fetched: ${allTransactions.length}`)
-          console.log(`[OrgProfile] Disbursements by year:`, Array.from(disbursementsByYearMap.entries()))
-          
-          setTransactions(allTransactions)
-          
-          // Convert to array and sort by year
-          const disbursementsArray = Array.from(disbursementsByYearMap.entries())
-            .map(([year, data]) => ({
-              year,
-              disbursements: data.disbursements,
-              expenditures: data.expenditures
-            }))
-            .sort((a, b) => a.year - b.year)
-          
-          setDisbursementsByYear(disbursementsArray)
-        }
-        } catch (err) {
-          if (err instanceof Error && err.name === 'AbortError') {
+        } catch (activitiesErr) {
+          if (activitiesErr instanceof Error && activitiesErr.name === 'AbortError') {
             console.log('[OrgProfile] Activities request aborted')
             return
           }
-          console.warn('Failed to fetch activities:', err)
+          console.warn('Failed to fetch activities:', activitiesErr)
+        }
+
+        // Fetch organization contacts
+        try {
+          const contactsResponse = await fetch(`/api/organizations/${params.id}/contacts`, {
+            signal: abortControllerRef.current.signal
+          })
+          if (contactsResponse.ok) {
+            const contactsData = await contactsResponse.json()
+            setOrganizationContacts(contactsData || [])
+          }
+        } catch (contactsErr) {
+          console.warn('Failed to fetch organization contacts:', contactsErr)
         }
 
       } catch (err) {
@@ -936,14 +1124,14 @@ export default function OrganizationProfilePage() {
     // Calculate actual disbursements (type '3')
     const totalDisbursements = safeTransactions
       .filter(txn => txn.transaction_type === '3')
-      .reduce((sum, txn) => sum + txn.value, 0)
-    
+      .reduce((sum, txn) => sum + (txn.value_usd || (txn.currency === 'USD' ? txn.value : 0)), 0)
+
     // Calculate actual expenditures (type '4')
     const totalExpenditures = safeTransactions
       .filter(txn => txn.transaction_type === '4')
-      .reduce((sum, txn) => sum + txn.value, 0)
-    
-    const totalTransactions = safeTransactions.reduce((sum, txn) => sum + txn.value, 0)
+      .reduce((sum, txn) => sum + (txn.value_usd || (txn.currency === 'USD' ? txn.value : 0)), 0)
+
+    const totalTransactions = safeTransactions.reduce((sum, txn) => sum + (txn.value_usd || (txn.currency === 'USD' ? txn.value : 0)), 0)
     
     return {
       totalBudget,
@@ -1063,6 +1251,55 @@ export default function OrganizationProfilePage() {
 
   const totals = calculateTotals()
 
+  // Calculate year-over-year comparison stats
+  const yoyStats = (() => {
+    const currentYear = new Date().getFullYear()
+
+    // Commitments (from budgetsByYear)
+    const currentYearCommitments = budgetsByYear.find(b => b.year === currentYear)?.amount || 0
+    const totalLastYearCommitments = budgetsByYear
+      .filter(b => b.year < currentYear)
+      .reduce((sum, b) => sum + b.amount, 0)
+    const commitmentChange = (totals.totalPortfolioValue || 0) - totalLastYearCommitments
+
+    // Disbursements (from disbursementsByYear)
+    const currentYearDisbursements = disbursementsByYear.find(d => d.year === currentYear)?.disbursements || 0
+    const totalLastYearDisbursements = disbursementsByYear
+      .filter(d => d.year < currentYear)
+      .reduce((sum, d) => sum + d.disbursements, 0)
+    const disbursementChange = totals.totalDisbursements - totalLastYearDisbursements
+
+    // Expenditures (from disbursementsByYear)
+    const currentYearExpenditures = disbursementsByYear.find(d => d.year === currentYear)?.expenditures || 0
+    const totalLastYearExpenditures = disbursementsByYear
+      .filter(d => d.year < currentYear)
+      .reduce((sum, d) => sum + d.expenditures, 0)
+    const expenditureChange = totals.totalExpenditures - totalLastYearExpenditures
+
+    // % Disbursed change
+    const currentDisbursedPercent = totals.totalPortfolioValue > 0
+      ? (totals.totalDisbursements / totals.totalPortfolioValue) * 100
+      : 0
+    const lastYearDisbursedPercent = totalLastYearCommitments > 0
+      ? (totalLastYearDisbursements / totalLastYearCommitments) * 100
+      : 0
+    const disbursedPercentChange = currentDisbursedPercent - lastYearDisbursedPercent
+
+    // Activities count
+    const activitiesCount = activities?.length || 0
+
+    return {
+      currentYearCommitments,
+      commitmentChange,
+      currentYearDisbursements,
+      disbursementChange,
+      currentYearExpenditures,
+      expenditureChange,
+      disbursedPercentChange,
+      activitiesCount,
+    }
+  })()
+
   // Type guard - organization is guaranteed to be non-null here due to earlier checks
   if (!organization) return null
 
@@ -1139,18 +1376,17 @@ export default function OrganizationProfilePage() {
                 onLoadMore={loadMoreLikes}
                 hasMore={hasMoreLikes}
               />
-              <Button
-                className="bg-slate-600 hover:bg-slate-700"
-                onClick={() => router.push(`/organizations/${id}/edit`)}
-              >
-                <Edit className="h-4 w-4 mr-2" />
-                Edit Organization
-              </Button>
+              <Link href={`/organizations/${id}/edit`}>
+                <Button className="bg-slate-600 hover:bg-slate-700">
+                  <Edit className="h-4 w-4 mr-2" />
+                  Edit Organization
+                </Button>
+              </Link>
             </div>
           </div>
 
           {/* Organization Header Card */}
-          <Card className="mb-6 border-0 shadow-sm overflow-hidden">
+          <Card className="mb-6 border-0 shadow-none overflow-hidden">
             {/* Banner Image */}
             {organization.banner && (
               <div className="w-full h-48 overflow-hidden">
@@ -1166,36 +1402,41 @@ export default function OrganizationProfilePage() {
               <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
                 {/* Logo and Organization Info - Columns 1-3 */}
                 <div className="lg:col-span-3">
-                  <div className="flex items-start gap-4">
-                {/* Logo */}
-                {organization.logo && (
-                  <div className="flex-shrink-0">
-                    <img 
-                      src={organization.logo} 
-                      alt={`${organization.name} logo`}
-                      className="w-20 h-20 rounded-lg object-cover border border-slate-200"
-                    />
-                  </div>
-                )}
+                  <div className="flex items-start justify-start gap-4">
+                    {/* Logo */}
+                    {organization.logo && (
+                      <div className="flex-shrink-0">
+                        <img
+                          src={organization.logo}
+                          alt={`${organization.name} logo`}
+                          className="w-20 h-20 rounded-lg object-cover"
+                        />
+                      </div>
+                    )}
 
-                {/* Organization Info */}
-                <div className="flex-1">
+                    {/* Organization Info */}
+                    <div className="flex-1">
                       <h1 className="text-3xl font-bold text-slate-900 mb-2">
                         {organization.name}
                         {organization.acronym && <span className="text-3xl font-bold text-slate-900"> ({organization.acronym})</span>}
                       </h1>
-                      
-                      {/* Aggregation Helper Text */}
-                      {activities.length > 0 && (
-                        <p className="text-sm text-slate-500 mb-3">
-                          This page aggregates data across {activities.length} activities where this organisation participates
-                        </p>
-                      )}
-                      
-                      <div className="flex flex-col gap-2 mb-3">
+
+                      {/* Badges Row */}
+                      <div className="flex flex-col gap-2 mb-3 pt-3 border-t border-slate-200">
                         <div className="flex flex-wrap items-center gap-2">
                           {organization.iati_org_id && (
                             <CopyableIdentifier value={organization.iati_org_id} />
+                          )}
+                          {organization.country && (
+                            <Badge variant="outline" className="border-slate-300 text-slate-700 flex items-center gap-1.5">
+                              {getCountryCode(organization.country) && (
+                                <Flag
+                                  code={getCountryCode(organization.country)!}
+                                  style={{ width: '16px', height: '12px' }}
+                                />
+                              )}
+                              <span className="text-xs">{organization.country}</span>
+                            </Badge>
                           )}
                           <Badge className={getTypeColor(organization.organisation_type)}>
                             {organization.organisation_type}
@@ -1210,25 +1451,70 @@ export default function OrganizationProfilePage() {
                               {organization.secondary_reporter ? 'Secondary reporter' : 'Primary publisher'}
                             </Badge>
                           )}
-                          {organization.default_currency && (
-                            <Badge variant="outline" className="border-blue-300 bg-blue-50 text-blue-700">
-                              {organization.default_currency}
-                            </Badge>
-                          )}
-                        {organization.country && (
-                            <Badge variant="outline" className="border-slate-300 text-slate-700 flex flex-col items-center gap-0.5">
-                            {getCountryCode(organization.country) && (
-                              <Flag 
-                                code={getCountryCode(organization.country)!} 
-                                  style={{ width: '16px', height: '12px' }} 
-                              />
-                            )}
-                              <span className="text-xs">{organization.country}</span>
-                            </Badge>
-                        )}
                         </div>
+                        <div className="border-b border-slate-200 mt-2"></div>
                       </div>
-                      
+
+                      {/* Activity Stats Bar */}
+                      {activities.length > 0 && (
+                        <div className="mb-3">
+                        <div className="flex flex-wrap gap-x-6 gap-y-1 text-sm">
+                          {(() => {
+                            // Calculate first activity date (earliest start date)
+                            const firstActivityDate = activities
+                              .map(a => a.actual_start_date || a.planned_start_date)
+                              .filter(Boolean)
+                              .sort()[0];
+
+                            // Calculate most recent transaction date
+                            const allTransactionDates = activities
+                              .flatMap(a => (a.transactions || []).map(t => t.transaction_date))
+                              .filter(Boolean)
+                              .sort()
+                              .reverse();
+                            const mostRecentTransactionDate = allTransactionDates[0];
+
+                            // Calculate last data update (most recent updated_at)
+                            const lastDataUpdate = activities
+                              .map(a => a.updated_at)
+                              .filter(Boolean)
+                              .sort()
+                              .reverse()[0];
+
+                            return (
+                              <>
+                                {firstActivityDate && (
+                                  <div>
+                                    <span className="text-slate-500">First activity:</span>{' '}
+                                    <span className="text-slate-900 font-medium">{formatDate(firstActivityDate)}</span>
+                                  </div>
+                                )}
+                                {mostRecentTransactionDate && (
+                                  <div>
+                                    <span className="text-slate-500">Most recent transaction:</span>{' '}
+                                    <span className="text-slate-900 font-medium">{formatDate(mostRecentTransactionDate)}</span>
+                                  </div>
+                                )}
+                                {lastDataUpdate && (
+                                  <div>
+                                    <span className="text-slate-500">Last data update:</span>{' '}
+                                    <span className="text-slate-900 font-medium">{formatDate(lastDataUpdate)}</span>
+                                  </div>
+                                )}
+                                {organization.default_currency && (
+                                  <div>
+                                    <span className="text-slate-500">Default currency:</span>{' '}
+                                    <span className="text-slate-900 font-medium">{organization.default_currency}</span>
+                                  </div>
+                                )}
+                              </>
+                            );
+                          })()}
+                        </div>
+                        <div className="border-b border-slate-200 mt-3"></div>
+                        </div>
+                      )}
+
                       {organization.description && (
                         <div className="mt-3">
                           <p className="text-slate-600 leading-relaxed whitespace-pre-wrap">
@@ -1299,240 +1585,253 @@ export default function OrganizationProfilePage() {
                     </div>
                   </div>
 
-                {/* Temporal Metadata Sub-Card - Column 4 */}
-                <div className="lg:col-span-1">
-                  <div className="bg-white">
-                    <div className="space-y-3">
-                      {temporalMetadata?.firstActivityDate && (
-                        <div className="flex items-center gap-2 text-xs text-slate-600 whitespace-nowrap">
-                          <Calendar className="h-3 w-3 text-slate-400 flex-shrink-0" />
-                          <span className="text-slate-500">First activity:</span>
-                          <span className="font-medium text-slate-900">{formatDate(temporalMetadata.firstActivityDate)}</span>
-                        </div>
-                      )}
-                      {temporalMetadata?.mostRecentTransaction && (
-                        <div className="flex items-center gap-2 text-xs text-slate-600 whitespace-nowrap">
-                          <Calendar className="h-3 w-3 text-slate-400 flex-shrink-0" />
-                          <span className="text-slate-500">Most recent transaction:</span>
-                          <span className="font-medium text-slate-900">{formatDate(temporalMetadata.mostRecentTransaction)}</span>
-                        </div>
-                      )}
-                      {temporalMetadata?.lastDataUpdate && (
-                        <div className="flex items-center gap-2 text-xs text-slate-600 whitespace-nowrap">
-                          <Calendar className="h-3 w-3 text-slate-400 flex-shrink-0" />
-                          <span className="text-slate-500">Last data update:</span>
-                          <span className="font-medium text-slate-900">{formatDate(temporalMetadata.lastDataUpdate)}</span>
-                        </div>
-                      )}
-                      {temporalMetadata?.defaultCurrency && (
-                        <div className="flex items-center gap-2 text-xs text-slate-600 whitespace-nowrap">
-                          <DollarSign className="h-3 w-3 text-slate-400 flex-shrink-0" />
-                          <span className="text-slate-500">Default currency:</span>
-                          <span className="font-medium text-slate-900">{temporalMetadata.defaultCurrency}</span>
-                        </div>
-                      )}
-                      
-                      {/* Collapsible Contact Information */}
-                      {(organization.website || organization.email || organization.phone || organization.address || 
-                        organization.twitter || organization.facebook || organization.linkedin || organization.instagram || organization.youtube) && (
-                        <div className="pt-3 border-t border-slate-200">
-                          <button
-                            onClick={() => setShowContactInfo(!showContactInfo)}
-                            className="flex items-center justify-between w-full text-xs font-medium text-slate-600 hover:text-slate-900 transition-colors mb-2"
-                          >
-                            <span>Contact Information</span>
-                            {showContactInfo ? (
-                              <ChevronUp className="h-3 w-3" />
-                            ) : (
-                              <ChevronDown className="h-3 w-3" />
+                {/* Contact & Metadata Card - Column 4 */}
+                <div className="lg:col-span-1 self-start">
+                  <Card className="border-slate-200 bg-white">
+                    <CardContent className="p-4">
+                      <div className="space-y-3">
+                      {/* Contact Information - Always Visible */}
+                      {(organization.website || organization.email || organization.phone || organization.address) && (
+                        <>
+                          <p className="text-xs font-semibold text-slate-900">Contact</p>
+                          <div className="space-y-2">
+                            {organization.website && (
+                              <a
+                                href={organization.website}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex items-center gap-2 text-xs text-slate-600 hover:text-slate-900 transition-colors"
+                              >
+                                <Globe className="h-3 w-3 flex-shrink-0" />
+                                <span className="truncate">Website</span>
+                                <ExternalLink className="h-3 w-3 flex-shrink-0" />
+                              </a>
                             )}
-                          </button>
-                          {showContactInfo && (
-                            <div className="space-y-2">
-                              {organization.website && (
-                                <a 
-                                  href={organization.website} 
-                                  target="_blank" 
-                                  rel="noopener noreferrer"
-                                  className="flex items-center gap-2 text-xs text-slate-600 hover:text-slate-900 transition-colors"
-                                >
-                                  <Globe className="h-3 w-3 flex-shrink-0" />
-                                  <span className="truncate">Website</span>
-                                  <ExternalLink className="h-3 w-3 flex-shrink-0" />
-                                </a>
-                              )}
-                              {organization.email && (
-                                <a 
-                                  href={`mailto:${organization.email}`}
-                                  className="flex items-start gap-2 text-xs text-slate-600 hover:text-slate-900 transition-colors"
-                                >
-                                  <Mail className="h-3 w-3 flex-shrink-0 mt-0.5" />
-                                  <span className="break-all">{organization.email}</span>
-                                </a>
-                              )}
-                              {organization.phone && (
-                                <a 
-                                  href={`tel:${organization.phone}`}
-                                  className="flex items-center gap-2 text-xs text-slate-600 hover:text-slate-900 transition-colors"
-                                >
-                                  <Phone className="h-3 w-3 flex-shrink-0" />
-                                  <span>{organization.phone}</span>
-                                </a>
-                              )}
-                              {organization.address && (
-                                <div className="flex items-start gap-2 text-xs text-slate-600">
-                                  <MapPin className="h-3 w-3 flex-shrink-0 mt-0.5" />
-                                  <span>{organization.address}</span>
-                                </div>
-                              )}
-                              
-                              {/* Social Media Links */}
-                              {(organization.twitter || organization.facebook || organization.linkedin || organization.instagram || organization.youtube) && (
-                                <div className="pt-2 border-t border-slate-100">
-                                  <div className="flex flex-wrap gap-2">
-                                    {organization.twitter && (
-                                      <a
-                                        href={organization.twitter.startsWith('http') ? organization.twitter : `https://twitter.com/${organization.twitter}`}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="flex items-center justify-center w-6 h-6 rounded-full bg-slate-100 text-slate-600 hover:bg-slate-900 hover:text-white transition-colors"
-                                        title="Twitter/X"
-                                      >
-                                        <Twitter className="h-3 w-3" />
-                                      </a>
-                                    )}
-                                    {organization.facebook && (
-                                      <a
-                                        href={organization.facebook.startsWith('http') ? organization.facebook : `https://facebook.com/${organization.facebook}`}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="flex items-center justify-center w-6 h-6 rounded-full bg-slate-100 text-slate-600 hover:bg-blue-600 hover:text-white transition-colors"
-                                        title="Facebook"
-                                      >
-                                        <Facebook className="h-3 w-3" />
-                                      </a>
-                                    )}
-                                    {organization.linkedin && (
-                                      <a
-                                        href={organization.linkedin.startsWith('http') ? organization.linkedin : `https://linkedin.com/company/${organization.linkedin}`}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="flex items-center justify-center w-6 h-6 rounded-full bg-slate-100 text-slate-600 hover:bg-blue-700 hover:text-white transition-colors"
-                                        title="LinkedIn"
-                                      >
-                                        <Linkedin className="h-3 w-3" />
-                                      </a>
-                                    )}
-                                    {organization.instagram && (
-                                      <a
-                                        href={organization.instagram.startsWith('http') ? organization.instagram : `https://instagram.com/${organization.instagram}`}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="flex items-center justify-center w-6 h-6 rounded-full bg-slate-100 text-slate-600 hover:bg-gradient-to-br hover:from-purple-600 hover:to-pink-600 hover:text-white transition-colors"
-                                        title="Instagram"
-                                      >
-                                        <Instagram className="h-3 w-3" />
-                                      </a>
-                                    )}
-                                    {organization.youtube && (
-                                      <a
-                                        href={organization.youtube.startsWith('http') ? organization.youtube : `https://youtube.com/${organization.youtube}`}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="flex items-center justify-center w-6 h-6 rounded-full bg-slate-100 text-slate-600 hover:bg-red-600 hover:text-white transition-colors"
-                                        title="YouTube"
-                                      >
-                                        <Youtube className="h-3 w-3" />
-                                      </a>
-                                    )}
-                                  </div>
-                                </div>
-                              )}
-                            </div>
-                          )}
+                            {organization.email && (
+                              <a
+                                href={`mailto:${organization.email}`}
+                                className="flex items-start gap-2 text-xs text-slate-600 hover:text-slate-900 transition-colors"
+                              >
+                                <Mail className="h-3 w-3 flex-shrink-0 mt-0.5" />
+                                <span className="break-all">{organization.email}</span>
+                              </a>
+                            )}
+                            {organization.phone && (
+                              <a
+                                href={`tel:${organization.phone}`}
+                                className="flex items-center gap-2 text-xs text-slate-600 hover:text-slate-900 transition-colors"
+                              >
+                                <Phone className="h-3 w-3 flex-shrink-0" />
+                                <span>{organization.phone}</span>
+                              </a>
+                            )}
+                            {organization.address && (
+                              <div className="flex items-start gap-2 text-xs text-slate-600">
+                                <MapPin className="h-3 w-3 flex-shrink-0 mt-0.5" />
+                                <span>{organization.address}</span>
+                              </div>
+                            )}
+                          </div>
+                        </>
+                      )}
+
+                      {/* Social Media Links */}
+                      {(organization.twitter || organization.facebook || organization.linkedin || organization.instagram || organization.youtube) && (
+                        <div className="pt-3 border-t border-slate-200">
+                          <div className="flex flex-wrap gap-2">
+                            {organization.twitter && (
+                              <a
+                                href={organization.twitter.startsWith('http') ? organization.twitter : `https://twitter.com/${organization.twitter}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex items-center justify-center w-10 h-10 rounded-md bg-transparent border border-border text-slate-500 hover:bg-slate-900 hover:text-white hover:border-slate-900 transition-colors"
+                                title="X"
+                              >
+                                <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
+                                  <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+                                </svg>
+                              </a>
+                            )}
+                            {organization.facebook && (
+                              <a
+                                href={organization.facebook.startsWith('http') ? organization.facebook : `https://facebook.com/${organization.facebook}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex items-center justify-center w-10 h-10 rounded-md bg-transparent border border-border text-slate-500 hover:bg-blue-600 hover:text-white hover:border-blue-600 transition-colors"
+                                title="Facebook"
+                              >
+                                <Facebook className="h-4 w-4" />
+                              </a>
+                            )}
+                            {organization.linkedin && (
+                              <a
+                                href={organization.linkedin.startsWith('http') ? organization.linkedin : `https://linkedin.com/company/${organization.linkedin}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex items-center justify-center w-10 h-10 rounded-md bg-transparent border border-border text-slate-500 hover:bg-blue-700 hover:text-white hover:border-blue-700 transition-colors"
+                                title="LinkedIn"
+                              >
+                                <Linkedin className="h-4 w-4" />
+                              </a>
+                            )}
+                            {organization.instagram && (
+                              <a
+                                href={organization.instagram.startsWith('http') ? organization.instagram : `https://instagram.com/${organization.instagram}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex items-center justify-center w-10 h-10 rounded-md bg-transparent border border-border text-slate-500 hover:bg-gradient-to-br hover:from-purple-600 hover:to-pink-600 hover:text-white hover:border-purple-600 transition-colors"
+                                title="Instagram"
+                              >
+                                <Instagram className="h-4 w-4" />
+                              </a>
+                            )}
+                            {organization.youtube && (
+                              <a
+                                href={organization.youtube.startsWith('http') ? organization.youtube : `https://youtube.com/${organization.youtube}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex items-center justify-center w-10 h-10 rounded-md bg-transparent border border-border text-slate-500 hover:bg-red-600 hover:text-white hover:border-red-600 transition-colors"
+                                title="YouTube"
+                              >
+                                <Youtube className="h-4 w-4" />
+                              </a>
+                            )}
+                          </div>
                         </div>
                       )}
-                    </div>
-                  </div>
+
+                      </div>
+                    </CardContent>
+                  </Card>
                 </div>
               </div>
             </CardContent>
           </Card>
 
           {/* Financial Summary Cards - Single Row */}
-          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-3 mb-6">
-            {/* Total Active Activities */}
-            <div className="bg-white border border-slate-200 rounded-lg p-3">
-              <p className="text-xs font-medium text-slate-600 truncate">Active Activities</p>
-              <p className="text-lg font-bold text-slate-900">{totals.activeActivities}</p>
-              <p className="text-xs text-slate-500">of {totals.totalActivities} total</p>
+          <div className="flex flex-wrap lg:flex-nowrap gap-4 mb-8">
+            {/* Activities */}
+            <div className="flex-1 min-w-0 bg-white border border-slate-200 rounded-lg p-3">
+              <p className="text-xs font-medium text-slate-600 truncate">Activities</p>
+              <p className="text-2xl font-bold text-slate-900">{totals.activeActivities} <span className="text-sm font-normal text-slate-500">Active</span></p>
+              <div className="text-xs text-slate-500">
+                <p>{totals.pipelineActivities || 0} Pipeline/Identification</p>
+                <p>{totals.closedActivities || 0} Closed/Suspended</p>
+              </div>
             </div>
 
-            {/* Total Portfolio Value */}
-            <div className="bg-white border border-slate-200 rounded-lg p-3">
-              <p className="text-xs font-medium text-slate-600 truncate">Portfolio Value</p>
-              <p className="text-lg font-bold text-slate-900">
+            {/* Total Committed */}
+            <div className="flex-1 min-w-0 bg-white border border-slate-200 rounded-lg py-2 px-3">
+              <p className="text-xs font-medium text-slate-600 truncate">Total Committed</p>
+              <p className="text-3xl font-bold text-slate-900">
                 {formatCurrencyShort(totals.totalPortfolioValue || totals.totalBudget)}
               </p>
-              <p className="text-xs text-slate-500">(commitments)</p>
+              <div className="text-xs text-slate-500">
+                <p className="flex items-center gap-1">
+                  {yoyStats.commitmentChange >= 0 ? (
+                    <svg className="w-2.5 h-2.5" style={{ color: '#4C5568' }} fill="currentColor" viewBox="0 0 10 10"><polygon points="5,0 10,10 0,10" /></svg>
+                  ) : (
+                    <svg className="w-2.5 h-2.5" style={{ color: '#DC2625' }} fill="currentColor" viewBox="0 0 10 10"><polygon points="0,0 10,0 5,10" /></svg>
+                  )}
+                  <span>{yoyStats.commitmentChange >= 0 ? '+' : ''}{formatCurrencyShort(yoyStats.commitmentChange)} vs last year</span>
+                </p>
+                <p>{formatCurrencyShort(yoyStats.currentYearCommitments)} committed this year</p>
+              </div>
             </div>
 
             {/* Total Disbursed */}
-            <div className="bg-white border border-slate-200 rounded-lg p-3">
+            <div className="flex-1 min-w-0 bg-white border border-slate-200 rounded-lg py-2 px-3">
               <p className="text-xs font-medium text-slate-600 truncate">Total Disbursed</p>
-              <p className="text-lg font-bold text-slate-900">
+              <p className="text-3xl font-bold text-slate-900">
                 {formatCurrencyShort(totals.totalDisbursements)}
               </p>
+              <div className="text-xs text-slate-500">
+                <p className="flex items-center gap-1">
+                  {yoyStats.disbursementChange >= 0 ? (
+                    <svg className="w-2.5 h-2.5" style={{ color: '#4C5568' }} fill="currentColor" viewBox="0 0 10 10"><polygon points="5,0 10,10 0,10" /></svg>
+                  ) : (
+                    <svg className="w-2.5 h-2.5" style={{ color: '#DC2625' }} fill="currentColor" viewBox="0 0 10 10"><polygon points="0,0 10,0 5,10" /></svg>
+                  )}
+                  <span>{yoyStats.disbursementChange >= 0 ? '+' : ''}{formatCurrencyShort(yoyStats.disbursementChange)} vs last year</span>
+                </p>
+                <p>{formatCurrencyShort(yoyStats.currentYearDisbursements)} disbursed this year</p>
+              </div>
+            </div>
+
+            {/* % Disbursed - calculated from totals */}
+            <div className="flex-1 min-w-0 bg-white border border-slate-200 rounded-lg py-2 px-3">
+              <p className="text-xs font-medium text-slate-600 truncate">% Disbursed</p>
+              <p className="text-3xl font-bold text-slate-900">
+                {(() => {
+                  const committed = totals.totalPortfolioValue || totals.totalBudget || 0
+                  const disbursed = totals.totalDisbursements || 0
+                  if (committed === 0) return '0.0'
+                  return ((disbursed / committed) * 100).toFixed(1)
+                })()}%
+              </p>
+              <div className="text-xs text-slate-500">
+                <p className="flex items-center gap-1">
+                  {yoyStats.disbursedPercentChange >= 0 ? (
+                    <svg className="w-2.5 h-2.5" style={{ color: '#4C5568' }} fill="currentColor" viewBox="0 0 10 10"><polygon points="5,0 10,10 0,10" /></svg>
+                  ) : (
+                    <svg className="w-2.5 h-2.5" style={{ color: '#DC2625' }} fill="currentColor" viewBox="0 0 10 10"><polygon points="0,0 10,0 5,10" /></svg>
+                  )}
+                  <span>{yoyStats.disbursedPercentChange >= 0 ? '+' : ''}{yoyStats.disbursedPercentChange.toFixed(1)}pp vs last year</span>
+                </p>
+                <p>{totals.totalDisbursements > 0 ? ((totals.totalExpenditures / totals.totalDisbursements) * 100).toFixed(0) : 0}% disbursement ratio</p>
+              </div>
             </div>
 
             {/* Total Expended */}
-            <div className="bg-white border border-slate-200 rounded-lg p-3">
+            <div className="flex-1 min-w-0 bg-white border border-slate-200 rounded-lg py-2 px-3">
               <p className="text-xs font-medium text-slate-600 truncate">Total Expended</p>
-              <p className="text-lg font-bold text-slate-900">
+              <p className="text-3xl font-bold text-slate-900">
                 {formatCurrencyShort(totals.totalExpenditures)}
               </p>
+              <div className="text-xs text-slate-500">
+                <p className="flex items-center gap-1">
+                  {yoyStats.expenditureChange >= 0 ? (
+                    <svg className="w-2.5 h-2.5" style={{ color: '#4C5568' }} fill="currentColor" viewBox="0 0 10 10"><polygon points="5,0 10,10 0,10" /></svg>
+                  ) : (
+                    <svg className="w-2.5 h-2.5" style={{ color: '#DC2625' }} fill="currentColor" viewBox="0 0 10 10"><polygon points="0,0 10,0 5,10" /></svg>
+                  )}
+                  <span>{yoyStats.expenditureChange >= 0 ? '+' : ''}{formatCurrencyShort(yoyStats.expenditureChange)} vs last year</span>
+                </p>
+                <p>{formatCurrencyShort(yoyStats.currentYearExpenditures)} expended this year</p>
+              </div>
             </div>
 
             {/* Role-specific metrics */}
             {roleMetrics && roleDistribution && (
               roleMetrics.isFundingOrg ? (
                 <>
-                  <div className="bg-white border border-slate-200 rounded-lg p-3">
-                    <p className="text-xs font-medium text-slate-600 truncate">Outbound Funding</p>
-                    <p className="text-lg font-bold text-slate-900">
-                      {formatCurrencyShort(roleMetrics.totalOutboundFunding || 0)}
-                    </p>
-                  </div>
-                  <div className="bg-white border border-slate-200 rounded-lg p-3">
-                    <p className="text-xs font-medium text-slate-600 truncate">Impl. Partners</p>
-                    <p className="text-lg font-bold text-slate-900">
+                  <div className="flex-1 min-w-0 bg-white border border-slate-200 rounded-lg py-2 px-3">
+                    <p className="text-xs font-medium text-slate-600 truncate">Implementing Partners</p>
+                    <p className="text-3xl font-bold text-slate-900">
                       {roleMetrics.uniqueImplementingPartners || 0}
                     </p>
-                  </div>
-                  <div className="bg-white border border-slate-200 rounded-lg p-3">
-                    <p className="text-xs font-medium text-slate-600 truncate">% Disbursed</p>
-                    <p className="text-lg font-bold text-slate-900">
-                      {roleMetrics.disbursementVsCommitmentRate?.toFixed(1) || '0.0'}%
-                    </p>
+                    <div className="text-xs text-slate-500">
+                      <p>Across {yoyStats.activitiesCount} activities</p>
+                    </div>
                   </div>
                 </>
               ) : (
                 <>
-                  <div className="bg-white border border-slate-200 rounded-lg p-3">
+                  <div className="flex-1 min-w-0 bg-white border border-slate-200 rounded-lg py-2 px-3">
                     <p className="text-xs font-medium text-slate-600 truncate">Inbound Funding</p>
-                    <p className="text-lg font-bold text-slate-900">
+                    <p className="text-3xl font-bold text-slate-900">
                       {formatCurrencyShort(roleMetrics.totalInboundFunding || 0)}
                     </p>
                   </div>
-                  <div className="bg-white border border-slate-200 rounded-lg p-3">
+                  <div className="flex-1 min-w-0 bg-white border border-slate-200 rounded-lg py-2 px-3">
                     <p className="text-xs font-medium text-slate-600 truncate">Donors</p>
-                    <p className="text-lg font-bold text-slate-900">
+                    <p className="text-3xl font-bold text-slate-900">
                       {roleMetrics.uniqueDonors || 0}
                     </p>
                   </div>
-                  <div className="bg-white border border-slate-200 rounded-lg p-3">
+                  <div className="flex-1 min-w-0 bg-white border border-slate-200 rounded-lg py-2 px-3">
                     <p className="text-xs font-medium text-slate-600 truncate">Avg. Activity</p>
-                    <p className="text-lg font-bold text-slate-900">
+                    <p className="text-3xl font-bold text-slate-900">
                       {formatCurrencyShort(roleMetrics.averageActivitySize || 0)}
                     </p>
                   </div>
@@ -1582,7 +1881,7 @@ export default function OrganizationProfilePage() {
                     
                   if (timelineView === 'table') {
                     return (
-                      <div className="h-24 overflow-auto">
+                      <div className="h-36 overflow-auto">
                         <table className="w-full text-xs">
                           <thead>
                             <tr className="border-b border-slate-200">
@@ -1604,9 +1903,9 @@ export default function OrganizationProfilePage() {
                       </div>
                     )
                   }
-                  
+
                   return (
-                    <div className="h-24 relative group">
+                    <div className="h-36 relative group">
                         <svg className="w-full h-full" viewBox="0 0 300 100">
                           {/* Grid lines */}
                           {[0, 1, 2, 3, 4].map(i => (
@@ -1621,19 +1920,35 @@ export default function OrganizationProfilePage() {
                             />
                           ))}
                           
-                          {/* Line chart */}
-                          <polyline
-                            fill="none"
-                            stroke="#475569"
-                            strokeWidth="2"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            points={years.map((year, index) => {
-                              const x = (index / (years.length - 1)) * 280 + 10
-                              const y = 90 - (projectsByYear[year].count / maxCount) * 70
-                              return `${x},${y}`
-                            }).join(' ')}
-                          />
+                          {/* Straight line chart */}
+                          {(() => {
+                            const points = years.map((year, index) => ({
+                              x: years.length === 1 ? 150 : (index / (years.length - 1)) * 280 + 10,
+                              y: 90 - (projectsByYear[year].count / maxCount) * 70
+                            }));
+
+                            if (points.length < 2) {
+                              return points.length === 1 ? (
+                                <circle cx={points[0].x} cy={points[0].y} r="4" fill="#475569" />
+                              ) : null;
+                            }
+
+                            // Create straight line path
+                            const path = points.map((point, index) =>
+                              index === 0 ? `M ${point.x} ${point.y}` : `L ${point.x} ${point.y}`
+                            ).join(' ');
+
+                            return (
+                              <path
+                                d={path}
+                                fill="none"
+                                stroke="#475569"
+                                strokeWidth="2"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                              />
+                            );
+                          })()}
                           
                           {/* Data points with hover areas */}
                           {years.map((year, index) => {
@@ -1687,16 +2002,27 @@ export default function OrganizationProfilePage() {
 
                         {hoveredPoint && (
                           <div
-                            className="absolute bg-white border border-gray-200 rounded shadow-lg px-3 py-2 pointer-events-none z-10"
+                            className="absolute bg-white border border-gray-200 rounded shadow-lg overflow-hidden pointer-events-none z-10"
                             style={{
                               left: `${(hoveredPoint.x / 300) * 100}%`,
                               top: `${(hoveredPoint.y / 100) * 100 - 30}%`,
                               transform: 'translateX(-50%)'
                             }}
                           >
-                            <div className="text-xs font-semibold text-slate-900 mb-1">{hoveredPoint.year}</div>
-                            <div className="text-xs text-slate-600">Active activities: {hoveredPoint.count}</div>
-                            <div className="text-xs text-slate-600">Total value: {formatCurrencyShort(hoveredPoint.totalValue)}</div>
+                            <table className="text-xs w-full border-collapse">
+                              <thead>
+                                <tr className="bg-slate-50 border-b border-slate-200">
+                                  <th className="text-left px-3 py-2 text-slate-600 font-semibold">{hoveredPoint.year}</th>
+                                  <th className="text-right px-3 py-2 text-slate-600 font-semibold">Value</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                <tr>
+                                  <td className="px-3 py-1.5 text-slate-700">Active Activities</td>
+                                  <td className="px-3 py-1.5 text-right font-medium text-slate-900">{hoveredPoint.count}</td>
+                                </tr>
+                              </tbody>
+                            </table>
                           </div>
                         )}
                     </div>
@@ -1710,6 +2036,17 @@ export default function OrganizationProfilePage() {
               <CardHeader className="pb-2 pt-3 px-3 flex flex-row items-center justify-between">
                 <CardTitle className="text-xs font-semibold text-slate-900">Budget by Year</CardTitle>
                 <div className="flex gap-1">
+                  {budgetView === 'chart' && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setBudgetChartType(budgetChartType === 'area' ? 'bar' : 'area')}
+                      className="h-6 w-6 p-0"
+                      title={budgetChartType === 'area' ? 'Switch to Bar' : 'Switch to Area'}
+                    >
+                      {budgetChartType === 'area' ? <BarChart3 className="h-3 w-3" /> : <TrendingUp className="h-3 w-3" />}
+                    </Button>
+                  )}
                   <Button
                     variant="ghost"
                     size="sm"
@@ -1737,7 +2074,7 @@ export default function OrganizationProfilePage() {
               <CardContent className="p-3 pt-0">
                 {budgetsByYear.length > 0 ? (
                     budgetView === 'table' ? (
-                    <div className="h-24 overflow-auto">
+                    <div className="h-36 overflow-auto">
                       <table className="w-full text-xs">
                         <thead>
                           <tr className="border-b border-slate-200">
@@ -1762,40 +2099,107 @@ export default function OrganizationProfilePage() {
                       </table>
                     </div>
                   ) : (
-                  <div className="h-24 -mx-2">
+                  <div className="h-36 -mx-2">
                     <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={budgetsByYear} margin={{ top: 0, right: 5, left: 0, bottom: 5 }}>
-                        <XAxis 
-                          dataKey="year" 
-                          tick={{ fontSize: 10, fill: '#64748b' }}
-                          axisLine={{ stroke: '#e5e7eb' }}
-                          tickLine={false}
-                        />
-                        <YAxis 
-                          tick={{ fontSize: 10, fill: '#64748b' }}
-                          axisLine={{ stroke: '#e5e7eb' }}
-                          tickLine={false}
-                          tickFormatter={formatAxisTick}
-                        />
-                        <RechartsTooltip 
-                          content={({ active, payload }) => {
-                            if (active && payload && payload.length) {
-                              return (
-                                <div className="bg-white p-2 border border-gray-200 rounded shadow-lg">
-                                  <p className="text-sm font-semibold">{payload[0].payload.year}</p>
-                                  <p className="text-sm text-gray-600">{formatCurrencyShort(payload[0].value as number)}</p>
-                                </div>
-                              );
-                            }
-                            return null;
-                          }}
-                        />
-                        <Bar dataKey="amount" radius={[4, 4, 0, 0]}>
-                          {budgetsByYear.map((entry, index) => (
-                            <Cell key={`cell-${index}`} fill="#475569" />
-                          ))}
-                        </Bar>
-                      </BarChart>
+                      {budgetChartType === 'area' ? (
+                        <AreaChart data={budgetsByYear} margin={{ top: 0, right: 5, left: 0, bottom: 5 }}>
+                          <defs>
+                            <linearGradient id="budgetGradient" x1="0" y1="0" x2="0" y2="1">
+                              <stop offset="5%" stopColor="#475569" stopOpacity={0.3}/>
+                              <stop offset="95%" stopColor="#475569" stopOpacity={0}/>
+                            </linearGradient>
+                          </defs>
+                          <XAxis
+                            dataKey="year"
+                            tick={{ fontSize: 10, fill: '#64748b' }}
+                            axisLine={{ stroke: '#e5e7eb' }}
+                            tickLine={false}
+                          />
+                          <YAxis
+                            tick={{ fontSize: 10, fill: '#64748b' }}
+                            axisLine={{ stroke: '#e5e7eb' }}
+                            tickLine={false}
+                            tickFormatter={formatAxisTick}
+                          />
+                          <RechartsTooltip
+                            content={({ active, payload }) => {
+                              if (active && payload && payload.length) {
+                                return (
+                                  <div className="bg-white border border-gray-200 rounded shadow-lg overflow-hidden">
+                                    <table className="text-xs w-full border-collapse">
+                                      <thead>
+                                        <tr className="bg-slate-50 border-b border-slate-200">
+                                          <th className="text-left px-3 py-2 text-slate-600 font-semibold">{payload[0].payload.year}</th>
+                                          <th className="text-right px-3 py-2 text-slate-600 font-semibold">Budget</th>
+                                        </tr>
+                                      </thead>
+                                      <tbody>
+                                        <tr>
+                                          <td className="px-3 py-1.5 text-slate-700">Amount</td>
+                                          <td className="px-3 py-1.5 text-right font-medium text-slate-900">{formatCurrencyShort(payload[0].value as number)}</td>
+                                        </tr>
+                                      </tbody>
+                                    </table>
+                                  </div>
+                                );
+                              }
+                              return null;
+                            }}
+                          />
+                          <Area
+                            type="monotone"
+                            dataKey="amount"
+                            stroke="#475569"
+                            strokeWidth={2}
+                            fill="url(#budgetGradient)"
+                          />
+                        </AreaChart>
+                      ) : (
+                        <BarChart data={budgetsByYear} margin={{ top: 0, right: 5, left: 0, bottom: 5 }}>
+                          <XAxis
+                            dataKey="year"
+                            tick={{ fontSize: 10, fill: '#64748b' }}
+                            axisLine={{ stroke: '#e5e7eb' }}
+                            tickLine={false}
+                          />
+                          <YAxis
+                            tick={{ fontSize: 10, fill: '#64748b' }}
+                            axisLine={{ stroke: '#e5e7eb' }}
+                            tickLine={false}
+                            tickFormatter={formatAxisTick}
+                          />
+                          <RechartsTooltip
+                            content={({ active, payload }) => {
+                              if (active && payload && payload.length) {
+                                return (
+                                  <div className="bg-white border border-gray-200 rounded shadow-lg overflow-hidden">
+                                    <table className="text-xs w-full border-collapse">
+                                      <thead>
+                                        <tr className="bg-slate-50 border-b border-slate-200">
+                                          <th className="text-left px-3 py-2 text-slate-600 font-semibold">{payload[0].payload.year}</th>
+                                          <th className="text-right px-3 py-2 text-slate-600 font-semibold">Budget</th>
+                                        </tr>
+                                      </thead>
+                                      <tbody>
+                                        <tr>
+                                          <td className="px-3 py-1.5 text-slate-700">Amount</td>
+                                          <td className="px-3 py-1.5 text-right font-medium text-slate-900">{formatCurrencyShort(payload[0].value as number)}</td>
+                                        </tr>
+                                      </tbody>
+                                    </table>
+                                  </div>
+                                );
+                              }
+                              return null;
+                            }}
+                          />
+                          <Bar dataKey="amount" radius={[4, 4, 0, 0]}>
+                            {budgetsByYear.map((entry, index) => (
+                              <Cell key={`cell-${index}`} fill="#475569" />
+                            ))}
+                          </Bar>
+                        </BarChart>
+                      )}
                     </ResponsiveContainer>
                   </div>
                   )
@@ -1813,6 +2217,15 @@ export default function OrganizationProfilePage() {
                 <div className="flex items-center justify-between mb-2">
                   <CardTitle className="text-xs font-semibold text-slate-900">Budget vs Actuals</CardTitle>
                   <div className="flex gap-1">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setBudgetVsActualsChartType(budgetVsActualsChartType === 'bar' ? 'area' : 'bar')}
+                    className="h-6 w-6 p-0"
+                    title={budgetVsActualsChartType === 'bar' ? 'Switch to Area Chart' : 'Switch to Bar Chart'}
+                  >
+                    {budgetVsActualsChartType === 'bar' ? <AreaChartIcon className="h-3 w-3" /> : <BarChart3 className="h-3 w-3" />}
+                  </Button>
                   <Button
                     variant="ghost"
                     size="sm"
@@ -1843,33 +2256,6 @@ export default function OrganizationProfilePage() {
                   </Button>
                   </div>
                 </div>
-                {/* Metric Toggle Buttons */}
-                <div className="flex gap-1 mt-2">
-                  <Button
-                    variant={budgetVsActualsMetric === 'commitments' ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => setBudgetVsActualsMetric('commitments')}
-                    className={`h-6 text-xs ${budgetVsActualsMetric === 'commitments' ? 'bg-slate-900 text-white' : ''}`}
-                  >
-                    Commitments
-                  </Button>
-                  <Button
-                    variant={budgetVsActualsMetric === 'disbursements' ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => setBudgetVsActualsMetric('disbursements')}
-                    className={`h-6 text-xs ${budgetVsActualsMetric === 'disbursements' ? 'bg-slate-900 text-white' : ''}`}
-                  >
-                    Disbursements
-                  </Button>
-                  <Button
-                    variant={budgetVsActualsMetric === 'expenditure' ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => setBudgetVsActualsMetric('expenditure')}
-                    className={`h-6 text-xs ${budgetVsActualsMetric === 'expenditure' ? 'bg-slate-900 text-white' : ''}`}
-                  >
-                    Expenditure
-                  </Button>
-                </div>
               </CardHeader>
               <CardContent className="p-3 pt-0">
                 {(() => {
@@ -1899,12 +2285,12 @@ export default function OrganizationProfilePage() {
                   
                   return chartData.length > 0 ? (
                     budgetVsActualsView === 'table' ? (
-                      <div className="h-24 overflow-auto">
+                      <div className="h-36 overflow-auto">
                         <table className="w-full text-xs">
                           <thead>
                             <tr className="border-b border-slate-200">
                               <th className="text-left py-1 text-slate-600 font-medium">Year</th>
-                              <th className="text-right py-1 text-slate-600 font-medium">Planned</th>
+                              <th className="text-right py-1 text-slate-600 font-medium">Planned Disbursements</th>
                               <th className="text-right py-1 text-slate-600 font-medium">Disbursements</th>
                               <th className="text-right py-1 text-slate-600 font-medium">Expenditures</th>
                             </tr>
@@ -1934,42 +2320,143 @@ export default function OrganizationProfilePage() {
                         </table>
                       </div>
                     ) :
-                    <div className="h-24 -mx-2">
+                    <div className="h-36 -mx-2">
                       <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={chartData} margin={{ top: 0, right: 5, left: 0, bottom: 5 }} barCategoryGap="5%" barGap={0}>
-                          <XAxis 
-                            dataKey="year" 
-                            tick={{ fontSize: 10, fill: '#64748b' }}
-                            axisLine={{ stroke: '#e5e7eb' }}
-                            tickLine={false}
-                          />
-                          <YAxis 
-                            tick={{ fontSize: 10, fill: '#64748b' }}
-                            axisLine={{ stroke: '#e5e7eb' }}
-                            tickLine={false}
-                            tickFormatter={formatAxisTick}
-                          />
-                          <RechartsTooltip 
-                            content={({ active, payload }) => {
-                              if (active && payload && payload.length) {
-                                return (
-                                  <div className="bg-white p-2 border border-gray-200 rounded shadow-lg">
-                                    <p className="text-sm font-semibold mb-1">{payload[0].payload.year}</p>
-                                    <div className="space-y-1 text-xs">
-                                      <p className="text-slate-700">Planned Disbursements: {formatCurrencyShort(payload[0].payload.plannedDisbursements)}</p>
-                                      <p className="text-slate-700">Disbursements: {formatCurrencyShort(payload[0].payload.disbursements)}</p>
-                                      <p className="text-slate-700">Expenditures: {formatCurrencyShort(payload[0].payload.expenditures)}</p>
+                        {budgetVsActualsChartType === 'bar' ? (
+                          <BarChart data={chartData} margin={{ top: 0, right: 5, left: 0, bottom: 5 }} barCategoryGap="20%" barGap={0}>
+                            <XAxis
+                              dataKey="year"
+                              tick={{ fontSize: 10, fill: '#64748b' }}
+                              axisLine={{ stroke: '#e5e7eb' }}
+                              tickLine={false}
+                            />
+                            <YAxis
+                              tick={{ fontSize: 10, fill: '#64748b' }}
+                              axisLine={{ stroke: '#e5e7eb' }}
+                              tickLine={false}
+                              tickFormatter={formatAxisTick}
+                            />
+                            <RechartsTooltip
+                              content={({ active, payload }) => {
+                                if (active && payload && payload.length) {
+                                  return (
+                                    <div className="bg-white border border-gray-200 rounded shadow-lg overflow-hidden">
+                                      <table className="text-xs w-full border-collapse">
+                                        <thead>
+                                          <tr className="bg-slate-50 border-b border-slate-200">
+                                            <th className="text-left px-3 py-2 text-slate-600 font-semibold">{payload[0].payload.year}</th>
+                                            <th className="text-right px-3 py-2 text-slate-600 font-semibold">Value</th>
+                                          </tr>
+                                        </thead>
+                                        <tbody>
+                                          <tr className="border-b border-slate-100">
+                                            <td className="px-3 py-1.5 text-slate-700 flex items-center gap-1.5">
+                                              <span className="w-2 h-2 rounded-sm" style={{ backgroundColor: '#DC2625' }}></span>
+                                              Planned Disbursements
+                                            </td>
+                                            <td className="px-3 py-1.5 text-right font-medium text-slate-900">{formatCurrencyShort(payload[0].payload.plannedDisbursements)}</td>
+                                          </tr>
+                                          <tr className="border-b border-slate-100">
+                                            <td className="px-3 py-1.5 text-slate-700 flex items-center gap-1.5">
+                                              <span className="w-2 h-2 rounded-sm" style={{ backgroundColor: '#7B95A7' }}></span>
+                                              Disbursements
+                                            </td>
+                                            <td className="px-3 py-1.5 text-right font-medium text-slate-900">{formatCurrencyShort(payload[0].payload.disbursements)}</td>
+                                          </tr>
+                                          <tr>
+                                            <td className="px-3 py-1.5 text-slate-700 flex items-center gap-1.5">
+                                              <span className="w-2 h-2 rounded-sm" style={{ backgroundColor: '#CFD0D5' }}></span>
+                                              Expenditures
+                                            </td>
+                                            <td className="px-3 py-1.5 text-right font-medium text-slate-900">{formatCurrencyShort(payload[0].payload.expenditures)}</td>
+                                          </tr>
+                                        </tbody>
+                                      </table>
                                     </div>
-                                  </div>
-                                );
-                              }
-                              return null;
-                            }}
-                          />
-                          <Bar dataKey="plannedDisbursements" fill="#94a3b8" name="Planned Disbursements" radius={[4, 4, 0, 0]} />
-                          <Bar dataKey="disbursements" stackId="actuals" fill="#1e40af" name="Disbursements" radius={[0, 0, 0, 0]} />
-                          <Bar dataKey="expenditures" stackId="actuals" fill="#0f172a" name="Expenditures" radius={[4, 4, 0, 0]} />
-                        </BarChart>
+                                  );
+                                }
+                                return null;
+                              }}
+                            />
+                            <Bar dataKey="plannedDisbursements" fill="#DC2625" name="Planned Disbursements" radius={[2, 2, 0, 0]} />
+                            <Bar dataKey="disbursements" fill="#7B95A7" name="Disbursements" radius={[2, 2, 0, 0]} />
+                            <Bar dataKey="expenditures" fill="#CFD0D5" name="Expenditures" radius={[2, 2, 0, 0]} />
+                          </BarChart>
+                        ) : (
+                          <AreaChart data={chartData} margin={{ top: 0, right: 5, left: 0, bottom: 5 }}>
+                            <defs>
+                              <linearGradient id="plannedGradient" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="5%" stopColor="#DC2625" stopOpacity={0.3}/>
+                                <stop offset="95%" stopColor="#DC2625" stopOpacity={0}/>
+                              </linearGradient>
+                              <linearGradient id="disbursementsGradient" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="5%" stopColor="#7B95A7" stopOpacity={0.3}/>
+                                <stop offset="95%" stopColor="#7B95A7" stopOpacity={0}/>
+                              </linearGradient>
+                              <linearGradient id="expendituresGradient" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="5%" stopColor="#CFD0D5" stopOpacity={0.3}/>
+                                <stop offset="95%" stopColor="#CFD0D5" stopOpacity={0}/>
+                              </linearGradient>
+                            </defs>
+                            <XAxis
+                              dataKey="year"
+                              tick={{ fontSize: 10, fill: '#64748b' }}
+                              axisLine={{ stroke: '#e5e7eb' }}
+                              tickLine={false}
+                            />
+                            <YAxis
+                              tick={{ fontSize: 10, fill: '#64748b' }}
+                              axisLine={{ stroke: '#e5e7eb' }}
+                              tickLine={false}
+                              tickFormatter={formatAxisTick}
+                            />
+                            <RechartsTooltip
+                              content={({ active, payload }) => {
+                                if (active && payload && payload.length) {
+                                  return (
+                                    <div className="bg-white border border-gray-200 rounded shadow-lg overflow-hidden">
+                                      <table className="text-xs w-full border-collapse">
+                                        <thead>
+                                          <tr className="bg-slate-50 border-b border-slate-200">
+                                            <th className="text-left px-3 py-2 text-slate-600 font-semibold">{payload[0].payload.year}</th>
+                                            <th className="text-right px-3 py-2 text-slate-600 font-semibold">Value</th>
+                                          </tr>
+                                        </thead>
+                                        <tbody>
+                                          <tr className="border-b border-slate-100">
+                                            <td className="px-3 py-1.5 text-slate-700 flex items-center gap-1.5">
+                                              <span className="w-2 h-2 rounded-sm" style={{ backgroundColor: '#DC2625' }}></span>
+                                              Planned Disbursements
+                                            </td>
+                                            <td className="px-3 py-1.5 text-right font-medium text-slate-900">{formatCurrencyShort(payload[0].payload.plannedDisbursements)}</td>
+                                          </tr>
+                                          <tr className="border-b border-slate-100">
+                                            <td className="px-3 py-1.5 text-slate-700 flex items-center gap-1.5">
+                                              <span className="w-2 h-2 rounded-sm" style={{ backgroundColor: '#7B95A7' }}></span>
+                                              Disbursements
+                                            </td>
+                                            <td className="px-3 py-1.5 text-right font-medium text-slate-900">{formatCurrencyShort(payload[0].payload.disbursements)}</td>
+                                          </tr>
+                                          <tr>
+                                            <td className="px-3 py-1.5 text-slate-700 flex items-center gap-1.5">
+                                              <span className="w-2 h-2 rounded-sm" style={{ backgroundColor: '#CFD0D5' }}></span>
+                                              Expenditures
+                                            </td>
+                                            <td className="px-3 py-1.5 text-right font-medium text-slate-900">{formatCurrencyShort(payload[0].payload.expenditures)}</td>
+                                          </tr>
+                                        </tbody>
+                                      </table>
+                                    </div>
+                                  );
+                                }
+                                return null;
+                              }}
+                            />
+                            <Area type="monotone" dataKey="plannedDisbursements" stroke="#DC2625" strokeWidth={2} fill="url(#plannedGradient)" />
+                            <Area type="monotone" dataKey="disbursements" stroke="#7B95A7" strokeWidth={2} fill="url(#disbursementsGradient)" />
+                            <Area type="monotone" dataKey="expenditures" stroke="#CFD0D5" strokeWidth={2} fill="url(#expendituresGradient)" />
+                          </AreaChart>
+                        )}
                       </ResponsiveContainer>
                     </div>
                   ) : (
@@ -1993,7 +2480,7 @@ export default function OrganizationProfilePage() {
                     onClick={() => setModalityView(modalityView === 'chart' ? 'table' : 'chart')}
                     className="h-6 w-6 p-0"
                   >
-                    {modalityView === 'chart' ? <TableIcon className="h-3 w-3" /> : <PieChart className="h-3 w-3" />}
+                    {modalityView === 'chart' ? <TableIcon className="h-3 w-3" /> : <BarChart3 className="h-3 w-3" />}
                   </Button>
                   <Button
                     variant="ghost"
@@ -2002,39 +2489,16 @@ export default function OrganizationProfilePage() {
                       const total = modalityComposition.reduce((sum, item) => sum + item.value, 0)
                       const data = modalityComposition.map(item => ({
                         finance_type: item.name,
-                        [modalityViewMode === 'value' ? 'value' : 'activities']: item.value,
+                        value: item.value,
                         percentage: ((item.value / total) * 100).toFixed(1)
                       }))
-                      exportToCSV(data, 'aid-modality-composition.csv', [
-                        'Finance_Type', 
-                        modalityViewMode === 'value' ? 'Value' : 'Activities', 
-                        'Percentage'
-                      ])
+                      exportToCSV(data, 'aid-modality-composition.csv', ['Finance_Type', 'Value', 'Percentage'])
                     }}
                     className="h-6 w-6 p-0"
                   >
                     <Download className="h-3 w-3" />
                   </Button>
                   </div>
-                </div>
-                {/* View Mode Toggle */}
-                <div className="flex gap-1 mt-2">
-                  <Button
-                    variant={modalityViewMode === 'value' ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => setModalityViewMode('value')}
-                    className={`h-6 text-xs ${modalityViewMode === 'value' ? 'bg-slate-900 text-white' : ''}`}
-                  >
-                    By Value
-                  </Button>
-                  <Button
-                    variant={modalityViewMode === 'count' ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => setModalityViewMode('count')}
-                    className={`h-6 text-xs ${modalityViewMode === 'count' ? 'bg-slate-900 text-white' : ''}`}
-                  >
-                    By Number of Activities
-                  </Button>
                 </div>
               </CardHeader>
               <CardContent className="p-3 pt-0">
@@ -2045,9 +2509,7 @@ export default function OrganizationProfilePage() {
                         <thead>
                           <tr className="border-b border-slate-200">
                             <th className="text-left py-1 text-slate-600 font-medium">Finance Type</th>
-                            <th className="text-right py-1 text-slate-600 font-medium">
-                              {modalityViewMode === 'value' ? 'Value' : 'Activities'}
-                            </th>
+                            <th className="text-right py-1 text-slate-600 font-medium">Value</th>
                             <th className="text-right py-1 text-slate-600 font-medium">%</th>
                           </tr>
                         </thead>
@@ -2062,7 +2524,7 @@ export default function OrganizationProfilePage() {
                                   <span>{item.name}</span>
                                 </td>
                                 <td className="text-right py-1 text-slate-900 font-medium">
-                                  {modalityViewMode === 'value' ? formatCurrencyShort(item.value) : item.value}
+                                  {formatCurrencyShort(item.value)}
                                 </td>
                                 <td className="text-right py-1 text-slate-700">{percentage}%</td>
                               </tr>
@@ -2070,47 +2532,78 @@ export default function OrganizationProfilePage() {
                           })}
                         </tbody>
                       </table>
-                </div>
+                    </div>
                   ) : (
-                  <div className="h-24 flex items-center justify-center">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <RechartsPieChart>
-                        <Pie
-                          data={modalityComposition}
-                          cx="50%"
-                          cy="50%"
-                          innerRadius={35}
-                          outerRadius={70}
-                          paddingAngle={2}
-                          dataKey="value"
-                        >
-                          {modalityComposition.map((entry, index) => (
-                            <Cell key={`cell-${index}`} fill={entry.color} />
-                          ))}
-                        </Pie>
-                        <RechartsTooltip 
-                          content={({ active, payload }) => {
-                            if (active && payload && payload.length) {
-                              const data = payload[0].payload
-                              const total = modalityComposition.reduce((sum, item) => sum + item.value, 0)
-                              const percentage = ((data.value / total) * 100).toFixed(1)
-                              return (
-                                <div className="bg-white p-2 border border-gray-200 rounded shadow-lg">
-                                  <p className="text-sm font-semibold">{data.name}</p>
-                                  <p className="text-xs text-slate-600">
-                                    {modalityViewMode === 'value' 
-                                      ? `${formatCurrencyShort(data.value)} (${percentage}%)`
-                                      : `${data.value} activities (${percentage}%)`}
-                                  </p>
+                    <div className="h-24">
+                      {/* Single horizontal stacked bar */}
+                      {(() => {
+                        const totalValue = modalityCompositionByValue.reduce((sum, item) => sum + item.value, 0)
+                        const totalCount = modalityCompositionByCount.reduce((sum, item) => sum + item.value, 0)
+                        return (
+                          <div className="h-full flex flex-col justify-center pt-16">
+                            <div className="relative h-8 w-full rounded-md flex" style={{ overflow: 'visible' }}>
+                              {modalityCompositionByValue.map((item, index) => {
+                                const percentage = (item.value / totalValue) * 100
+                                const countItem = modalityCompositionByCount.find(c => c.name === item.name)
+                                const projectCount = countItem?.value || 0
+                                const isFirst = index === 0
+                                const isLast = index === modalityCompositionByValue.length - 1
+                                return (
+                                  <div
+                                    key={item.name}
+                                    className="h-full relative group cursor-pointer"
+                                    style={{
+                                      width: `${percentage}%`,
+                                      backgroundColor: item.color,
+                                      borderTopLeftRadius: isFirst ? '0.375rem' : 0,
+                                      borderBottomLeftRadius: isFirst ? '0.375rem' : 0,
+                                      borderTopRightRadius: isLast ? '0.375rem' : 0,
+                                      borderBottomRightRadius: isLast ? '0.375rem' : 0,
+                                    }}
+                                  >
+                                    {/* Hover tooltip */}
+                                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
+                                      <div className="bg-white border border-gray-200 rounded shadow-lg overflow-hidden whitespace-nowrap">
+                                        <table className="text-xs border-collapse">
+                                          <thead>
+                                            <tr className="bg-slate-50 border-b border-slate-200">
+                                              <th colSpan={2} className="text-left px-3 py-2 text-slate-600 font-semibold">{item.name}</th>
+                                            </tr>
+                                          </thead>
+                                          <tbody>
+                                            <tr className="border-b border-slate-100">
+                                              <td className="px-3 py-1.5 text-slate-700">Value</td>
+                                              <td className="px-3 py-1.5 text-right font-medium text-slate-900">{formatCurrencyShort(item.value)}</td>
+                                            </tr>
+                                            <tr className="border-b border-slate-100">
+                                              <td className="px-3 py-1.5 text-slate-700">Share</td>
+                                              <td className="px-3 py-1.5 text-right font-medium text-slate-900">{percentage.toFixed(1)}%</td>
+                                            </tr>
+                                            <tr>
+                                              <td className="px-3 py-1.5 text-slate-700">Projects</td>
+                                              <td className="px-3 py-1.5 text-right font-medium text-slate-900">{projectCount}</td>
+                                            </tr>
+                                          </tbody>
+                                        </table>
+                                      </div>
+                                    </div>
+                                  </div>
+                                )
+                              })}
+                            </div>
+                            {/* Legend */}
+                            <div className="flex flex-wrap gap-2 mt-2">
+                              {modalityCompositionByValue.map((item) => (
+                                <div key={item.name} className="flex items-center gap-1 text-xs">
+                                  <div className="w-2 h-2 rounded-sm" style={{ backgroundColor: item.color }} />
+                                  <span className="text-slate-600 truncate">{item.name}</span>
                                 </div>
-                              )
-                            }
-                            return null
-                          }}
-                        />
-                      </RechartsPieChart>
-                    </ResponsiveContainer>
-                  </div>
+                              ))}
+                            </div>
+                          </div>
+                        )
+                      })()}
+                    </div>
                   )
                 ) : (
                   <div className="h-24 flex items-center justify-center text-slate-400 text-xs">
@@ -2122,20 +2615,29 @@ export default function OrganizationProfilePage() {
           </div>
 
           {/* Main Content Tabs */}
-          <Card className="border-slate-200">
+          <Card className="border-0 shadow-none">
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <TabsList className="p-1 h-auto bg-background gap-1 border mb-6 flex flex-wrap">
+              <TabsList className="p-1 h-auto bg-background gap-1 border mb-6 flex flex-wrap justify-center">
                 <TabsTrigger value="activities" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
                   Activities
                 </TabsTrigger>
-                <TabsTrigger value="financial-analytics" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-                  Financial Analytics
+                <TabsTrigger value="budgets" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                  Budgets
                 </TabsTrigger>
-                <TabsTrigger value="organisation-funding" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-                  Organisation Funding
+                <TabsTrigger value="planned-disbursements" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                  Planned Disbursements
+                </TabsTrigger>
+                <TabsTrigger value="transactions" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                  Transactions
+                </TabsTrigger>
+                <TabsTrigger value="financial-analytics" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                  Portfolio Analytics
                 </TabsTrigger>
                 <TabsTrigger value="sectors" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
                   Sectors
+                </TabsTrigger>
+                <TabsTrigger value="sdgs" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                  SDGs
                 </TabsTrigger>
                 <TabsTrigger value="partnerships" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
                   Partnerships
@@ -2149,35 +2651,61 @@ export default function OrganizationProfilePage() {
                 <TabsTrigger value="documents" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
                   Documents
                 </TabsTrigger>
-                <TabsTrigger value="data-health" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-                  Data Health
-                </TabsTrigger>
               </TabsList>
 
 
               <TabsContent value="activities" className="p-6">
-                  <Card className="border-slate-200">
+                  <Card className="border-0 shadow-none">
                     <CardHeader>
                     <div className="flex items-center justify-between">
                       <CardTitle className="text-slate-900">Activities Portfolio</CardTitle>
-                      <div className="flex gap-2">
+                      <div className="flex items-center gap-3">
+                        <div className="flex">
+                          <Button
+                            variant={activitiesView === 'card' ? 'default' : 'outline'}
+                            size="sm"
+                            onClick={() => setActivitiesView('card')}
+                            className="rounded-r-none"
+                          >
+                            <LayoutGrid className="h-4 w-4 mr-1" />
+                            Card
+                          </Button>
+                          <Button
+                            variant={activitiesView === 'table' ? 'default' : 'outline'}
+                            size="sm"
+                            onClick={() => setActivitiesView('table')}
+                            className="rounded-l-none"
+                          >
+                            <TableIcon className="h-4 w-4 mr-1" />
+                            Table
+                          </Button>
+                        </div>
                         <Button
-                          variant={activitiesView === 'card' ? 'default' : 'outline'}
-                          size="sm"
-                          onClick={() => setActivitiesView('card')}
-                          className={activitiesView === 'card' ? 'bg-slate-900' : ''}
+                          variant="outline"
+                          size="icon"
+                          className="h-8 w-8"
+                          title="Export CSV"
+                          onClick={() => {
+                            const data = activities
+                              .filter(activity => activity.title && activity.title.trim() !== '')
+                              .map(activity => ({
+                                title: activity.title || '',
+                                acronym: activity.acronym || '',
+                                iati_identifier: activity.iati_identifier || '',
+                                activity_status: activity.activity_status || '',
+                                planned_start_date: activity.planned_start_date || '',
+                                planned_end_date: activity.planned_end_date || '',
+                                actual_start_date: activity.actual_start_date || '',
+                                actual_end_date: activity.actual_end_date || '',
+                                total_budget: activity.totalPlannedBudgetUSD || activity.total_budget || 0,
+                                total_disbursed: activity.total_disbursed || 0,
+                              }))
+                            exportToCSV(data, `${organization?.acronym || organization?.name || 'organization'}-activities.csv`, [
+                              'Title', 'Acronym', 'IATI_Identifier', 'Activity_Status', 'Planned_Start_Date', 'Planned_End_Date', 'Actual_Start_Date', 'Actual_End_Date', 'Total_Budget', 'Total_Disbursed'
+                            ])
+                          }}
                         >
-                          <LayoutGrid className="h-4 w-4 mr-2" />
-                          Card
-                        </Button>
-                        <Button
-                          variant={activitiesView === 'table' ? 'default' : 'outline'}
-                          size="sm"
-                          onClick={() => setActivitiesView('table')}
-                          className={activitiesView === 'table' ? 'bg-slate-900' : ''}
-                        >
-                          <TableIcon className="h-4 w-4 mr-2" />
-                          Table
+                          <Download className="h-4 w-4" />
                         </Button>
                       </div>
                     </div>
@@ -2185,7 +2713,7 @@ export default function OrganizationProfilePage() {
                   <CardContent>
                     {activities.length > 0 ? (
                       activitiesView === 'card' ? (
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                           {activities
                             .filter(activity => activity.title && activity.title.trim() !== '')
                             .sort((a, b) => {
@@ -2195,195 +2723,34 @@ export default function OrganizationProfilePage() {
                               return bDate - aDate
                             })
                             .map((activity) => (
-                            <Card key={activity.id} className="border-slate-200 hover:shadow-md transition-shadow">
-                              <CardContent className="p-4">
-                                <div className="space-y-3">
-                                  <div className="flex items-start justify-between">
-                                    <div className="flex-1">
-                                      <h3 className="font-medium text-slate-900 text-sm leading-tight">{activity.title}</h3>
-                                      {activity.acronym && (
-                                        <p className="text-xs text-slate-600 mt-1 font-mono">{activity.acronym}</p>
-                                      )}
-                                      
-                                      {/* Activity ID and IATI ID under title */}
-                                      {(activity.id || activity.iati_identifier) && (
-                                        <div className="text-xs text-slate-500 mt-1 line-clamp-1">
-                                          {activity.id}
-                                          {activity.id && activity.iati_identifier && '  •  '}
-                                          {activity.iati_identifier && (
-                                            <span className="text-slate-400">{activity.iati_identifier}</span>
-                                          )}
-                                        </div>
-                                      )}
-                                      
-                                      {/* Status with number and label */}
-                                      <div className="mt-2">
-                                        <div className="flex items-center gap-1.5">
-                                          <code className="inline-block text-xs bg-slate-200 px-1.5 py-0.5 rounded font-mono text-slate-800 font-bold">
-                                            {activity.activity_status}
-                                          </code>
-                                          <span className="text-xs text-slate-700 font-medium">
-                                            {getActivityStatusLabel(activity.activity_status)}
-                                          </span>
-                                        </div>
-                                      </div>
-                                    </div>
-                                    <DropdownMenu>
-                                      <DropdownMenuTrigger asChild>
-                                        <Button 
-                                          variant="outline" 
-                                          size="icon" 
-                                          className="h-8 w-8"
-                                          onClick={(e) => e.stopPropagation()}
-                                        >
-                                          <MoreVertical className="h-4 w-4" />
-                                        </Button>
-                                      </DropdownMenuTrigger>
-                                      <DropdownMenuContent align="end">
-                                        <DropdownMenuItem 
-                                          onClick={(e) => {
-                                            e.stopPropagation()
-                                            router.push(`/activities/${activity.id}`)
-                                          }}
-                                        >
-                                          <ExternalLink className="mr-2 h-4 w-4" />
-                                          View
-                                        </DropdownMenuItem>
-                                        <DropdownMenuItem 
-                                          onClick={(e) => {
-                                            e.stopPropagation()
-                                            handleEditActivity(activity.id)
-                                          }}
-                                        >
-                                          <Edit2 className="mr-2 h-4 w-4" />
-                                          Edit
-                                        </DropdownMenuItem>
-                                        <DropdownMenuSeparator />
-                                        <DropdownMenuItem 
-                                          onClick={(e) => {
-                                            e.stopPropagation()
-                                            setDeleteActivityId(activity.id)
-                                          }}
-                                          className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                                        >
-                                          <Trash2 className="mr-2 h-4 w-4" />
-                                          Delete
-                                        </DropdownMenuItem>
-                                      </DropdownMenuContent>
-                                    </DropdownMenu>
-                                  </div>
-                                  
-                                  {activity.description && (
-                                    <p className="text-xs text-slate-600 line-clamp-2">{activity.description}</p>
-                                  )}
-                                  
-                                  <div className="space-y-2 text-xs border-t border-slate-100 pt-2">
-                                    
-                                    {/* Dates - More prominent with labels based on status */}
-                                    <div className="grid grid-cols-2 gap-2">
-                                      <div>
-                                        <TooltipProvider>
-                                          <Tooltip>
-                                            <TooltipTrigger asChild>
-                                              <p className="text-slate-500 font-medium flex items-center gap-1">
-                                                {activity.activity_status === '1' ? 'Planned Start' : 'Start Date'}
-                                                <span className="inline-flex items-center justify-center w-3 h-3 rounded-full bg-slate-300 text-slate-600 text-[8px] cursor-help">?</span>
-                                              </p>
-                                            </TooltipTrigger>
-                                            <TooltipContent className="max-w-xs">
-                                              <p className="text-xs">
-                                                {activity.activity_status === '1' 
-                                                  ? 'Shows planned start date for pipeline activities'
-                                                  : 'Shows actual start date when available, otherwise falls back to planned start date'}
-                                              </p>
-                                            </TooltipContent>
-                                          </Tooltip>
-                                        </TooltipProvider>
-                                        <p className="text-slate-900">
-                                          {(() => {
-                                            const date = activity.activity_status === '1' 
-                                              ? activity.planned_start_date 
-                                              : (activity.actual_start_date || activity.planned_start_date);
-                                            return date ? new Date(date).toLocaleDateString() : '-';
-                                          })()}
-                                        </p>
-                                      </div>
-                                      <div>
-                                        <TooltipProvider>
-                                          <Tooltip>
-                                            <TooltipTrigger asChild>
-                                              <p className="text-slate-500 font-medium flex items-center gap-1">
-                                                {activity.activity_status === '1' ? 'Planned End' : 'End Date'}
-                                                <span className="inline-flex items-center justify-center w-3 h-3 rounded-full bg-slate-300 text-slate-600 text-[8px] cursor-help">?</span>
-                                              </p>
-                                            </TooltipTrigger>
-                                            <TooltipContent className="max-w-xs">
-                                              <p className="text-xs">
-                                                {activity.activity_status === '1' 
-                                                  ? 'Shows planned end date for pipeline activities'
-                                                  : 'Shows actual end date when available, otherwise falls back to planned end date'}
-                                              </p>
-                                            </TooltipContent>
-                                          </Tooltip>
-                                        </TooltipProvider>
-                                        <p className="text-slate-900">
-                                          {(() => {
-                                            const date = activity.activity_status === '1' 
-                                              ? activity.planned_end_date 
-                                              : (activity.actual_end_date || activity.planned_end_date);
-                                            return date ? new Date(date).toLocaleDateString() : '-';
-                                          })()}
-                                        </p>
-                                      </div>
-                                    </div>
-                                    
-                                    {/* Budget Information */}
-                                    <div className="space-y-1 pt-1 border-t border-slate-100">
-                                      {activity.totalPlannedBudgetUSD ? (
-                                        <div>
-                                          <p className="text-slate-500 font-medium">Total Budget</p>
-                                          <p className="text-slate-900 font-semibold">
-                                            {formatCurrency(activity.totalPlannedBudgetUSD, 'USD')}
-                                          </p>
-                                        </div>
-                                      ) : activity.total_budget ? (
-                                        <div>
-                                          <p className="text-slate-500 font-medium">Total Budget</p>
-                                          <p className="text-slate-900 font-semibold">
-                                            {formatCurrency(activity.total_budget, activity.currency)}
-                                          </p>
-                                        </div>
-                                      ) : null}
-                                      
-                                      {activity.total_disbursed && (
-                                        <div>
-                                          <p className="text-slate-500 font-medium">Disbursed</p>
-                                          <p className="text-slate-900">
-                                            {formatCurrency(activity.total_disbursed, activity.currency)}
-                                          </p>
-                                        </div>
-                                      )}
-                                    </div>
-                                    
-                                    {/* Default Modality */}
-                                    {activity.default_modality && (
-                                      <div className="pt-1 border-t border-slate-100">
-                                        <p className="text-slate-500 font-medium">Modality</p>
-                                        <p className="text-slate-900">{activity.default_modality}</p>
-                                      </div>
-                                    )}
-                                  </div>
-                                </div>
-                              </CardContent>
-                            </Card>
-                          ))}
+                              <ActivityCardModern
+                                key={activity.id}
+                                activity={{
+                                  id: activity.id,
+                                  title: activity.title,
+                                  iati_id: activity.iati_identifier,
+                                  description: activity.description,
+                                  acronym: activity.acronym,
+                                  activity_status: activity.activity_status,
+                                  planned_start_date: activity.planned_start_date,
+                                  planned_end_date: activity.planned_end_date,
+                                  updated_at: activity.updated_at,
+                                  banner: activity.banner,
+                                  icon: activity.icon,
+                                  totalBudget: activity.totalPlannedBudgetUSD || activity.total_budget,
+                                  totalDisbursed: activity.total_disbursed,
+                                }}
+                                onEdit={handleEditActivity}
+                                onDelete={(id) => setDeleteActivityId(id)}
+                              />
+                            ))}
                         </div>
                       ) : (
                         <Table>
                           <TableHeader>
                             <TableRow>
                               <TableHead
-                                className="cursor-pointer hover:bg-slate-100"
+                                className="cursor-pointer hover:bg-slate-100 w-[45%]"
                                 onClick={() => {
                                   if (activitiesSortColumn === 'title') {
                                     setActivitiesSortDirection(activitiesSortDirection === 'asc' ? 'desc' : 'asc')
@@ -2529,58 +2896,70 @@ export default function OrganizationProfilePage() {
                                 <TableCell className="font-medium">
                                   <div className="space-y-1">
                                     <div>
-                                      {activity.title}
+                                      <Link
+                                        href={`/activities/${activity.id}`}
+                                        className="hover:text-blue-600 transition-colors"
+                                      >
+                                        {activity.title}
+                                      </Link>
                                       {activity.acronym && (
-                                        <span className="text-slate-500 text-xs ml-2">({activity.acronym})</span>
+                                        <span className="font-medium ml-1">({activity.acronym})</span>
+                                      )}
+                                      {activity.iati_identifier && (
+                                        <span className="text-xs font-mono bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded ml-2 inline-flex items-center gap-1">
+                                          {activity.iati_identifier}
+                                          <button
+                                            onClick={(e) => {
+                                              e.preventDefault();
+                                              e.stopPropagation();
+                                              navigator.clipboard.writeText(activity.iati_identifier);
+                                            }}
+                                            className="hover:text-slate-900 transition-colors"
+                                            title="Copy ID"
+                                          >
+                                            <Copy className="w-3 h-3" />
+                                          </button>
+                                        </span>
                                       )}
                                     </div>
-                                    {/* Activity ID and IATI ID under title */}
-                                    {(activity.id || activity.iati_identifier) && (
-                                      <div className="text-xs text-slate-500 line-clamp-1">
-                                        {activity.id}
-                                        {activity.id && activity.iati_identifier && '  •  '}
-                                        {activity.iati_identifier && (
-                                          <span className="text-slate-400">{activity.iati_identifier}</span>
-                                        )}
-                                      </div>
+                                    {/* Activity description */}
+                                    {activity.description && (
+                                      <p className="text-xs text-slate-500 line-clamp-4 mt-1">
+                                        {activity.description}
+                                      </p>
                                     )}
                                   </div>
                                 </TableCell>
                                 <TableCell>
-                                  <div className="flex items-center gap-1.5">
-                                    <code className="inline-block text-xs bg-slate-200 px-1.5 py-0.5 rounded font-mono text-slate-800 font-bold">
-                                      {activity.activity_status}
-                                    </code>
-                                    <span className="text-xs text-slate-700">
-                                      {getActivityStatusLabel(activity.activity_status)}
-                                    </span>
-                                  </div>
+                                  <span className="text-sm text-slate-700">
+                                    {getActivityStatusLabel(activity.activity_status)}
+                                  </span>
                                 </TableCell>
                                 <TableCell>
                                   {(() => {
-                                    const date = activity.activity_status === '1' 
-                                      ? activity.planned_start_date 
+                                    const date = activity.activity_status === '1'
+                                      ? activity.planned_start_date
                                       : (activity.actual_start_date || activity.planned_start_date);
-                                    return date ? new Date(date).toLocaleDateString() : '-';
+                                    return date ? new Date(date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '-';
                                   })()}
                                 </TableCell>
                                 <TableCell>
                                   {(() => {
-                                    const date = activity.activity_status === '1' 
-                                      ? activity.planned_end_date 
+                                    const date = activity.activity_status === '1'
+                                      ? activity.planned_end_date
                                       : (activity.actual_end_date || activity.planned_end_date);
-                                    return date ? new Date(date).toLocaleDateString() : '-';
+                                    return date ? new Date(date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '-';
                                   })()}
                                 </TableCell>
                                 <TableCell className="text-right font-medium">
-                                  {activity.totalPlannedBudgetUSD 
-                                    ? formatCurrency(activity.totalPlannedBudgetUSD, 'USD')
-                                    : activity.total_budget 
-                                    ? formatCurrency(activity.total_budget, activity.currency) 
+                                  {activity.totalPlannedBudgetUSD
+                                    ? formatCurrencyShort(activity.totalPlannedBudgetUSD)
+                                    : activity.total_budget
+                                    ? formatCurrencyShort(activity.total_budget)
                                     : '-'}
                                 </TableCell>
                                 <TableCell className="text-right">
-                                  {activity.total_disbursed ? formatCurrency(activity.total_disbursed, activity.currency) : '-'}
+                                  {activity.total_disbursed ? formatCurrencyShort(activity.total_disbursed) : '-'}
                                 </TableCell>
                                 <TableCell className="text-right">
                                   <DropdownMenu>
@@ -2632,136 +3011,115 @@ export default function OrganizationProfilePage() {
                   </Card>
               </TabsContent>
 
-              <TabsContent value="financial-analytics" className="p-6">
-                <div className="space-y-6">
-                  {/* Organization Analytics Component */}
-                  {params?.id && (
-                    <OrganizationAnalytics
-                      organizationId={params.id as string}
-                      currency={organization.default_currency || 'USD'}
-                    />
-                  )}
-
-                  {/* Financial Transactions */}
-                  <Card className="border-slate-200">
-                    <CardHeader>
-                      <CardTitle className="text-slate-900">Financial Transactions</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      {(transactions || []).length > 0 ? (
-                        <div className="space-y-4">
-                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                            <div className="p-4 border border-slate-200 rounded-lg">
-                              <p className="text-sm font-medium text-slate-600">Total Commitments</p>
-                              <p className="text-2xl font-bold text-slate-900">
-                                {formatCurrency(
-                                  (transactions || []).filter(t => ['1', '2'].includes(t.transaction_type)).reduce((sum, t) => sum + t.value, 0),
-                                  organization?.default_currency || 'USD'
-                                )}
-                              </p>
-                              <p className="text-xs text-slate-500">
-                                {(transactions || []).filter(t => ['1', '2'].includes(t.transaction_type)).length} transactions
-                              </p>
-                            </div>
-                            <div className="p-4 border border-slate-200 rounded-lg">
-                              <p className="text-sm font-medium text-slate-600">Total Disbursements</p>
-                              <p className="text-2xl font-bold text-slate-900">
-                                {formatCurrency(
-                                  (transactions || []).filter(t => t.transaction_type === '3').reduce((sum, t) => sum + t.value, 0),
-                                  organization?.default_currency || 'USD'
-                                )}
-                              </p>
-                              <p className="text-xs text-slate-500">
-                                {(transactions || []).filter(t => t.transaction_type === '3').length} transactions
-                              </p>
-                            </div>
-                            <div className="p-4 border border-slate-200 rounded-lg">
-                              <p className="text-sm font-medium text-slate-600">Total Expenditures</p>
-                              <p className="text-2xl font-bold text-slate-900">
-                                {formatCurrency(
-                                  (transactions || []).filter(t => t.transaction_type === '4').reduce((sum, t) => sum + t.value, 0),
-                                  organization?.default_currency || 'USD'
-                                )}
-                              </p>
-                              <p className="text-xs text-slate-500">
-                                {(transactions || []).filter(t => t.transaction_type === '4').length} transactions
-                              </p>
-                            </div>
-                          </div>
-                          
-                          {/* Transaction Table */}
-                          <div className="rounded-md border overflow-x-auto">
-                            <Table>
-                              <TableHeader>
-                                <TableRow>
-                                  <TableHead>Date</TableHead>
-                                  <TableHead>Type</TableHead>
-                                  <TableHead>Description</TableHead>
-                                  <TableHead className="text-right">Amount</TableHead>
-                                  <TableHead>Currency</TableHead>
-                                </TableRow>
-                              </TableHeader>
-                              <TableBody>
-                                {transactions.slice(0, 50).map((transaction) => (
-                                  <TableRow key={transaction.id}>
-                                    <TableCell>{transaction.transaction_date ? formatDate(transaction.transaction_date) : '-'}</TableCell>
-                                    <TableCell>
-                                      {transaction.transaction_type === '1' ? 'Incoming Funds' :
-                                       transaction.transaction_type === '2' ? 'Outgoing Commitment' :
-                                       transaction.transaction_type === '3' ? 'Disbursement' :
-                                       transaction.transaction_type === '4' ? 'Expenditure' :
-                                       transaction.transaction_type === '10' ? 'Credit Guarantee' :
-                                       transaction.transaction_type === '11' ? 'Incoming Commitment' :
-                                       transaction.transaction_type}
-                                    </TableCell>
-                                    <TableCell className="max-w-md truncate">{transaction.description || '-'}</TableCell>
-                                    <TableCell className="text-right">{formatCurrency(transaction.value || 0, transaction.currency || 'USD')}</TableCell>
-                                    <TableCell>{transaction.currency || '-'}</TableCell>
-                                  </TableRow>
-                                ))}
-                              </TableBody>
-                            </Table>
-                          </div>
-                          {transactions.length > 50 && (
-                            <p className="text-sm text-slate-500 text-center">Showing first 50 transactions</p>
-                          )}
-                          <div className="text-center py-4">
-                            <Button 
-                              variant="outline" 
-                              onClick={() => params?.id && router.push(`/transactions?org_id=${params.id}`)}
-                            >
-                              View All Transactions
-                            </Button>
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="text-center py-12">
-                          <CreditCard className="h-12 w-12 text-slate-300 mx-auto mb-4" />
-                          <p className="text-slate-500">No transactions found</p>
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
-                </div>
-              </TabsContent>
-
-              <TabsContent value="organisation-funding" className="p-6">
+              <TabsContent value="budgets" className="p-6">
                 {params?.id && (
-                  <OrganizationFundingAnalytics
+                  <OrganizationBudgetsTab
                     organizationId={params.id as string}
-                    organizationName={organization?.name}
+                    defaultCurrency={organization?.default_currency || 'USD'}
                   />
                 )}
               </TabsContent>
 
+              <TabsContent value="planned-disbursements" className="p-6">
+                {params?.id && (
+                  <OrganizationPlannedDisbursementsTab
+                    organizationId={params.id as string}
+                    defaultCurrency={organization?.default_currency || 'USD'}
+                  />
+                )}
+              </TabsContent>
+
+              <TabsContent value="transactions" className="p-6">
+                <div className="space-y-6">
+                  {/* Transaction Activity Calendar at the top */}
+                  <TransactionActivityCalendar filters={{ donor: params?.id as string }} />
+
+                  {/* Transactions Table */}
+                  {params?.id && (
+                    <OrganizationTransactionsTab
+                      organizationId={params.id as string}
+                      defaultCurrency={organization?.default_currency || 'USD'}
+                    />
+                  )}
+                </div>
+              </TabsContent>
+
+              <TabsContent value="financial-analytics" className="p-6">
+                <div className="space-y-6">
+                  {/* Analytics Charts - 2 per row */}
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    {/* Portfolio Spend Trajectory Chart */}
+                    {params?.id && (
+                      <ExpandableChartCard
+                        title="Portfolio Spend Trajectory"
+                        description="Track cumulative spending against total budget over time. Use to monitor burn rate and forecast budget utilization."
+                        expandedChildren={
+                          <OrganizationSpendTrajectoryChart
+                            organizationId={params.id as string}
+                            organizationName={organization?.name}
+                          />
+                        }
+                      >
+                        <OrganizationSpendTrajectoryChart
+                          organizationId={params.id as string}
+                          organizationName={organization?.name}
+                          compact
+                        />
+                      </ExpandableChartCard>
+                    )}
+
+                    <ExpandableChartCard
+                      title="Cumulative Financial Overview"
+                      description="Compare disbursements, commitments, and planned spending trends. Identify gaps between planned and actual financial flows."
+                      expandedChildren={<CumulativeFinancialOverview organizationId={params.id as string} />}
+                    >
+                      <CumulativeFinancialOverview compact organizationId={params.id as string} />
+                    </ExpandableChartCard>
+
+                    <ExpandableChartCard
+                      title="Financial Flows by Finance Type"
+                      description="Analyze financial flows by ODA type and finance instrument. Filter by flow type, finance type, and transaction type."
+                      expandedChildren={<FinanceTypeFlowChart organizationId={params.id as string} />}
+                    >
+                      <FinanceTypeFlowChart compact organizationId={params.id as string} />
+                    </ExpandableChartCard>
+
+                    {/* Aid Predictability has its own expand functionality */}
+                    <AidPredictabilityChart organizationId={params.id as string} />
+
+                  </div>
+                </div>
+              </TabsContent>
+
               <TabsContent value="sectors" className="p-6">
-                <Card className="border-slate-200">
-                  <CardHeader>
-                    <CardTitle className="text-slate-900">Sector Distribution</CardTitle>
-                    <p className="text-sm text-slate-600 mt-2">
-                      Aggregated sector allocations across all activities ({sectorAllocations.length} unique sectors)
-                    </p>
-                  </CardHeader>
+                <div className="space-y-6">
+                  {/* Sector Financial Trends Chart */}
+                  <Card className="border-slate-200">
+                    <CardHeader>
+                      <CardTitle className="text-slate-900">Sector Financial Trends</CardTitle>
+                      <p className="text-sm text-slate-600 mt-2">
+                        Disbursements by sector over time
+                      </p>
+                    </CardHeader>
+                    <CardContent>
+                      <SectorDisbursementOverTime
+                        dateRange={{
+                          from: new Date(new Date().getFullYear() - 5, 0, 1),
+                          to: new Date()
+                        }}
+                        organizationId={params.id as string}
+                      />
+                    </CardContent>
+                  </Card>
+
+                  {/* Sector Distribution Visualization */}
+                  <Card className="border-slate-200">
+                    <CardHeader>
+                      <CardTitle className="text-slate-900">Sector Distribution</CardTitle>
+                      <p className="text-sm text-slate-600 mt-2">
+                        Aggregated sector allocations across all activities ({sectorAllocations.length} unique sectors)
+                      </p>
+                    </CardHeader>
                   <CardContent>
                     {sectorAllocations.length > 0 ? (
                       <Tabs value={sectorVisualizationTab} onValueChange={(value) => setSectorVisualizationTab(value as 'sankey' | 'sunburst')}>
@@ -2794,55 +3152,972 @@ export default function OrganizationProfilePage() {
                     )}
                   </CardContent>
                 </Card>
+                </div>
               </TabsContent>
 
-              <TabsContent value="partnerships" className="p-6">
-                {params?.id && activitiesWithPartnerData.length > 0 ? (
-                  <PartnershipNetwork
-                    organizationId={params.id as string}
-                    activities={activitiesWithPartnerData}
-                    allOrganizations={partnerOrganizations}
-                  />
-                ) : (
+              <TabsContent value="sdgs" className="p-6">
+                <div className="space-y-6">
                   <Card className="border-slate-200">
                     <CardHeader>
-                      <CardTitle className="text-slate-900">Partnership Network</CardTitle>
+                      <CardTitle className="text-slate-900">Sustainable Development Goals</CardTitle>
+                      <p className="text-sm text-slate-600 mt-2">
+                        SDG coverage and concentration across organization activities
+                      </p>
                     </CardHeader>
                     <CardContent>
-                      <div className="text-center py-12">
-                        <Users className="h-12 w-12 text-slate-300 mx-auto mb-4" />
-                        <p className="text-slate-500">No partnership data available</p>
+                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <ExpandableChartCard
+                          title="SDG Coverage"
+                          description="Activity distribution across Sustainable Development Goals"
+                          height={400}
+                          expandedChildren={
+                            <SDGCoverageChart
+                              organizationId={params.id as string}
+                              dateRange={{ from: new Date(new Date().getFullYear() - 10, 0, 1), to: new Date() }}
+                              selectedSdgs={[]}
+                              metric="activities"
+                              refreshKey={0}
+                            />
+                          }
+                        >
+                          <SDGCoverageChart
+                            organizationId={params.id as string}
+                            dateRange={{ from: new Date(new Date().getFullYear() - 10, 0, 1), to: new Date() }}
+                            selectedSdgs={[]}
+                            metric="activities"
+                            refreshKey={0}
+                            compact
+                          />
+                        </ExpandableChartCard>
+
+                        <ExpandableChartCard
+                          title="SDG Concentration"
+                          description="Activities grouped by number of SDGs mapped"
+                          height={400}
+                          expandedChildren={
+                            <SDGConcentrationChart
+                              organizationId={params.id as string}
+                              dateRange={{ from: new Date(new Date().getFullYear() - 10, 0, 1), to: new Date() }}
+                              selectedSdgs={[]}
+                              metric="activities"
+                              refreshKey={0}
+                            />
+                          }
+                        >
+                          <SDGConcentrationChart
+                            organizationId={params.id as string}
+                            dateRange={{ from: new Date(new Date().getFullYear() - 10, 0, 1), to: new Date() }}
+                            selectedSdgs={[]}
+                            metric="activities"
+                            refreshKey={0}
+                            compact
+                          />
+                        </ExpandableChartCard>
                       </div>
                     </CardContent>
                   </Card>
-                )}
+                </div>
+              </TabsContent>
+
+              <TabsContent value="partnerships" className="p-6">
+                {(() => {
+                  // Aggregate partner data across all activities
+                  const partnerMap = new Map<string, {
+                    organization: any;
+                    relationshipTypes: Set<string>;
+                    collaborationCount: number;
+                  }>();
+
+                  for (const activity of activitiesWithPartnerData) {
+                    if (!activity.participatingOrgs) continue;
+                    for (const org of activity.participatingOrgs) {
+                      if (!org.org_id || org.org_id === params?.id) continue;
+
+                      const roleLabel =
+                        org.role === '1' ? 'Funding' :
+                        org.role === '2' ? 'Accountable' :
+                        org.role === '3' ? 'Extending' :
+                        org.role === '4' ? 'Implementing' : 'Partner';
+
+                      if (partnerMap.has(org.org_id)) {
+                        const existing = partnerMap.get(org.org_id)!;
+                        existing.relationshipTypes.add(roleLabel);
+                        existing.collaborationCount += 1;
+                      } else {
+                        partnerMap.set(org.org_id, {
+                          organization: {
+                            id: org.org_id,
+                            name: org.narrative || org.org_name || 'Unknown',
+                            acronym: org.acronym,
+                            logo: org.logo,
+                            org_type: org.org_type,
+                            country: org.country,
+                            iati_org_id: org.iati_org_id,
+                          },
+                          relationshipTypes: new Set([roleLabel]),
+                          collaborationCount: 1,
+                        });
+                      }
+                    }
+                  }
+
+                  const partnerships = Array.from(partnerMap.values())
+                    .sort((a, b) => b.collaborationCount - a.collaborationCount);
+
+                  const totalPartners = partnerships.length;
+                  const totalCollaborations = partnerships.reduce((sum, p) => sum + p.collaborationCount, 0);
+
+                  const getRoleBadgeColor = (role: string) => {
+                    const colors: Record<string, string> = {
+                      'Funding': 'bg-yellow-100 text-yellow-800 border-yellow-300',
+                      'Accountable': 'bg-purple-100 text-purple-800 border-purple-300',
+                      'Extending': 'bg-blue-100 text-blue-800 border-blue-300',
+                      'Implementing': 'bg-green-100 text-green-800 border-green-300',
+                    };
+                    return colors[role] || 'bg-gray-100 text-gray-800 border-gray-300';
+                  };
+
+                  return (
+                    <div className="space-y-6">
+                      {/* Partner Organizations Pivot Table */}
+                      {partnerships.length > 0 ? (
+                        <>
+                        <Card className="border-slate-200">
+                          <CardHeader>
+                            <CardTitle className="text-slate-900 flex items-center gap-2">
+                              <Users className="h-5 w-5" />
+                              Partnership Analysis
+                            </CardTitle>
+                            <p className="text-sm text-slate-500">
+                              Interactive pivot table showing partnership patterns across {activitiesWithPartnerData.length} activities
+                            </p>
+                          </CardHeader>
+                          <CardContent className="p-6 pt-0">
+                            {/* Pivot Controls */}
+                            <div className="flex items-end gap-4 flex-wrap mb-4">
+                              <div className="space-y-2">
+                                <Label htmlFor="pivotRows" className="text-xs text-muted-foreground">Rows</Label>
+                                <Select value={pivotRowDimension} onValueChange={(v) => setPivotRowDimension(v as any)}>
+                                  <SelectTrigger id="pivotRows" className="min-w-[180px]">
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="organization">Organization</SelectItem>
+                                    <SelectItem value="orgType">Organization Type</SelectItem>
+                                    <SelectItem value="country">Country</SelectItem>
+                                    <SelectItem value="role">Role</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                              <div className="space-y-2">
+                                <Label htmlFor="pivotColumns" className="text-xs text-muted-foreground">Columns</Label>
+                                <Select value={pivotColumnDimension} onValueChange={(v) => setPivotColumnDimension(v as any)}>
+                                  <SelectTrigger id="pivotColumns" className="min-w-[180px]">
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="role">Role</SelectItem>
+                                    <SelectItem value="orgType">Organization Type</SelectItem>
+                                    <SelectItem value="country">Country</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                              <div className="space-y-2">
+                                <Label htmlFor="pivotValues" className="text-xs text-muted-foreground">Values</Label>
+                                <Select value={pivotValueMetric} onValueChange={(v) => setPivotValueMetric(v as any)}>
+                                  <SelectTrigger id="pivotValues" className="min-w-[180px]">
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="activities">Activity Count</SelectItem>
+                                    <SelectItem value="organizations">Organization Count</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                            </div>
+
+                            {/* Pivot Table */}
+                            {(() => {
+                              // Build raw data for pivot from activities
+                              const rawData: Array<{
+                                orgId: string;
+                                orgName: string;
+                                orgAcronym: string;
+                                orgType: string;
+                                country: string;
+                                role: string;
+                                activityId: string;
+                              }> = [];
+
+                              for (const activity of activitiesWithPartnerData) {
+                                if (!activity.participatingOrgs) continue;
+                                for (const org of activity.participatingOrgs) {
+                                  if (!org.org_id || org.org_id === params?.id) continue;
+                                  const roleLabel =
+                                    org.role === '1' ? 'Funding' :
+                                    org.role === '2' ? 'Accountable' :
+                                    org.role === '3' ? 'Extending' :
+                                    org.role === '4' ? 'Implementing' : 'Partner';
+
+                                  rawData.push({
+                                    orgId: org.org_id,
+                                    orgName: org.narrative || org.org_name || 'Unknown',
+                                    orgAcronym: org.acronym || '',
+                                    orgType: org.org_type || 'Unknown',
+                                    country: org.country || 'Unknown',
+                                    role: roleLabel,
+                                    activityId: activity.id,
+                                  });
+                                }
+                              }
+
+                              // Get unique column values
+                              const getColumnValues = () => {
+                                const values = new Set<string>();
+                                rawData.forEach(d => {
+                                  if (pivotColumnDimension === 'role') values.add(d.role);
+                                  else if (pivotColumnDimension === 'orgType') values.add(d.orgType);
+                                  else if (pivotColumnDimension === 'country') values.add(d.country);
+                                });
+                                return Array.from(values).sort();
+                              };
+
+                              // Get unique row values with their display info
+                              const getRowValues = () => {
+                                const rowMap = new Map<string, { key: string; label: string; orgId?: string }>();
+                                rawData.forEach(d => {
+                                  if (pivotRowDimension === 'organization') {
+                                    if (!rowMap.has(d.orgId)) {
+                                      // Include acronym in label if available and different from name
+                                      const label = d.orgAcronym && d.orgAcronym !== d.orgName
+                                        ? `${d.orgName} (${d.orgAcronym})`
+                                        : d.orgName;
+                                      rowMap.set(d.orgId, { key: d.orgId, label, orgId: d.orgId });
+                                    }
+                                  } else if (pivotRowDimension === 'orgType') {
+                                    if (!rowMap.has(d.orgType)) {
+                                      rowMap.set(d.orgType, { key: d.orgType, label: d.orgType });
+                                    }
+                                  } else if (pivotRowDimension === 'country') {
+                                    if (!rowMap.has(d.country)) {
+                                      rowMap.set(d.country, { key: d.country, label: d.country });
+                                    }
+                                  } else if (pivotRowDimension === 'role') {
+                                    if (!rowMap.has(d.role)) {
+                                      rowMap.set(d.role, { key: d.role, label: d.role });
+                                    }
+                                  }
+                                });
+                                return Array.from(rowMap.values()).sort((a, b) => a.label.localeCompare(b.label));
+                              };
+
+                              // Calculate pivot cell value
+                              const getCellValue = (rowKey: string, colValue: string) => {
+                                const filtered = rawData.filter(d => {
+                                  const rowMatch =
+                                    pivotRowDimension === 'organization' ? d.orgId === rowKey :
+                                    pivotRowDimension === 'orgType' ? d.orgType === rowKey :
+                                    pivotRowDimension === 'country' ? d.country === rowKey :
+                                    d.role === rowKey;
+
+                                  const colMatch =
+                                    pivotColumnDimension === 'role' ? d.role === colValue :
+                                    pivotColumnDimension === 'orgType' ? d.orgType === colValue :
+                                    d.country === colValue;
+
+                                  return rowMatch && colMatch;
+                                });
+
+                                if (pivotValueMetric === 'activities') {
+                                  return new Set(filtered.map(d => d.activityId)).size;
+                                } else {
+                                  return new Set(filtered.map(d => d.orgId)).size;
+                                }
+                              };
+
+                              // Get row total
+                              const getRowTotal = (rowKey: string) => {
+                                const filtered = rawData.filter(d => {
+                                  return pivotRowDimension === 'organization' ? d.orgId === rowKey :
+                                    pivotRowDimension === 'orgType' ? d.orgType === rowKey :
+                                    pivotRowDimension === 'country' ? d.country === rowKey :
+                                    d.role === rowKey;
+                                });
+
+                                if (pivotValueMetric === 'activities') {
+                                  return new Set(filtered.map(d => d.activityId)).size;
+                                } else {
+                                  return new Set(filtered.map(d => d.orgId)).size;
+                                }
+                              };
+
+                              // Get column total
+                              const getColumnTotal = (colValue: string) => {
+                                const filtered = rawData.filter(d => {
+                                  return pivotColumnDimension === 'role' ? d.role === colValue :
+                                    pivotColumnDimension === 'orgType' ? d.orgType === colValue :
+                                    d.country === colValue;
+                                });
+
+                                if (pivotValueMetric === 'activities') {
+                                  return new Set(filtered.map(d => d.activityId)).size;
+                                } else {
+                                  return new Set(filtered.map(d => d.orgId)).size;
+                                }
+                              };
+
+                              // Get grand total
+                              const getGrandTotal = () => {
+                                if (pivotValueMetric === 'activities') {
+                                  return new Set(rawData.map(d => d.activityId)).size;
+                                } else {
+                                  return new Set(rawData.map(d => d.orgId)).size;
+                                }
+                              };
+
+                              const columnValues = getColumnValues();
+                              const rowValues = getRowValues();
+                              const maxValue = Math.max(
+                                ...rowValues.flatMap(row =>
+                                  columnValues.map(col => getCellValue(row.key, col))
+                                ),
+                                1
+                              );
+
+                              // All data cells are white
+                              const getCellColor = (value: number) => {
+                                return 'bg-white';
+                              };
+
+                              const columnLabel = pivotColumnDimension === 'role' ? 'Role' :
+                                pivotColumnDimension === 'orgType' ? 'Organization Type' : 'Country';
+
+                              return (
+                                <div className="rounded-md border overflow-x-auto">
+                                  <Table>
+                                    <TableHeader className="bg-white border-b-2 border-slate-300">
+                                      <TableRow>
+                                        <TableHead className="text-sm font-medium text-foreground/90 py-3 px-4 whitespace-nowrap sticky left-0 bg-white z-10">
+                                          {pivotRowDimension === 'organization' ? 'Organization' :
+                                           pivotRowDimension === 'orgType' ? 'Organization Type' :
+                                           pivotRowDimension === 'country' ? 'Country' : 'Role'}
+                                        </TableHead>
+                                        {columnValues.map(col => (
+                                          <TableHead key={col} className="text-sm font-medium text-foreground/90 py-3 px-4 text-center whitespace-nowrap min-w-[100px]">
+                                            {col}
+                                          </TableHead>
+                                        ))}
+                                        <TableHead className="text-sm font-bold text-foreground py-3 px-4 text-center whitespace-nowrap bg-[#f1f4f8] min-w-[80px] border-l-2 border-slate-300">
+                                          Total
+                                        </TableHead>
+                                      </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                      {rowValues.map((row) => (
+                                        <TableRow key={row.key} className="border-b border-border/40 hover:bg-muted/30 transition-colors">
+                                          <TableCell className="py-3 px-4 font-medium text-slate-900 sticky left-0 bg-white z-10">
+                                            {row.orgId ? (
+                                              <Link
+                                                href={`/organizations/${row.orgId}`}
+                                                className="hover:text-blue-600 transition-colors"
+                                              >
+                                                {row.label}
+                                              </Link>
+                                            ) : (
+                                              row.label
+                                            )}
+                                          </TableCell>
+                                          {columnValues.map(col => {
+                                            const value = getCellValue(row.key, col);
+                                            return (
+                                              <TableCell
+                                                key={col}
+                                                className={`py-3 px-4 text-center ${getCellColor(value)}`}
+                                              >
+                                                {value > 0 ? (
+                                                  <span className="font-medium text-slate-900">{value}</span>
+                                                ) : (
+                                                  <span className="text-slate-300">—</span>
+                                                )}
+                                              </TableCell>
+                                            );
+                                          })}
+                                          <TableCell className="py-3 px-4 text-center font-bold bg-[#f1f4f8] text-slate-900 border-l-2 border-slate-300">
+                                            {getRowTotal(row.key)}
+                                          </TableCell>
+                                        </TableRow>
+                                      ))}
+                                      {/* Column totals row */}
+                                      <TableRow className="bg-[#f1f4f8] font-bold border-t-2 border-slate-300">
+                                        <TableCell className="py-3 px-4 font-bold text-slate-900 sticky left-0 bg-[#f1f4f8] z-10">
+                                          Total
+                                        </TableCell>
+                                        {columnValues.map(col => (
+                                          <TableCell key={col} className="py-3 px-4 text-center font-bold text-slate-900 bg-[#f1f4f8]">
+                                            {getColumnTotal(col)}
+                                          </TableCell>
+                                        ))}
+                                        <TableCell className="py-3 px-4 text-center font-bold text-slate-900 bg-[#f1f4f8] border-l-2 border-slate-300">
+                                          {getGrandTotal()}
+                                        </TableCell>
+                                      </TableRow>
+                                    </TableBody>
+                                  </Table>
+                                </div>
+                              );
+                            })()}
+                          </CardContent>
+                        </Card>
+
+                        {/* Organizational Network Graph */}
+                        <Card className="border-slate-200">
+                          <CardHeader>
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <CardTitle className="text-slate-900 flex items-center gap-2">
+                                  <Building2 className="h-5 w-5" />
+                                  Organizational Network
+                                </CardTitle>
+                                <p className="text-sm text-slate-500 mt-1">
+                                  Interactive network showing organizational relationships and roles across all activities
+                                </p>
+                              </div>
+                            </div>
+                          </CardHeader>
+                          <CardContent>
+                            {/* Legend */}
+                            <div className="flex flex-wrap gap-4 mb-6 p-4 bg-white rounded-lg border border-slate-100">
+                              {[
+                                { roleCode: 0, color: 'bg-[#4c5568]', label: 'This Organization' },
+                                { roleCode: 1, color: 'bg-[#dc2625]', label: 'Funding' },
+                                { roleCode: 2, color: 'bg-[#7b95a7]', label: 'Accountable' },
+                                { roleCode: 3, color: 'bg-[#cfd0d5]', label: 'Extending' },
+                                { roleCode: 4, color: 'bg-[#4c5568]', label: 'Implementing' },
+                              ].map(({ roleCode, color, label }) => {
+                                const isHidden = hiddenRoles.has(roleCode);
+                                return (
+                                  <div
+                                    key={roleCode}
+                                    className={`flex items-center gap-2 cursor-pointer px-3 py-1.5 rounded-md transition-all ${
+                                      isHidden ? 'opacity-40 hover:opacity-60' : 'hover:bg-slate-50'
+                                    }`}
+                                    onClick={() => {
+                                      const newHiddenRoles = new Set(hiddenRoles);
+                                      if (isHidden) {
+                                        newHiddenRoles.delete(roleCode);
+                                      } else {
+                                        newHiddenRoles.add(roleCode);
+                                      }
+                                      setHiddenRoles(newHiddenRoles);
+                                    }}
+                                  >
+                                    <div className={`w-4 h-4 rounded-full ${color} ${isHidden ? 'opacity-50' : ''}`}></div>
+                                    <span className={`text-sm font-medium text-slate-700 ${isHidden ? 'line-through' : ''}`}>
+                                      {label}
+                                    </span>
+                                  </div>
+                                );
+                              })}
+                            </div>
+
+                            {/* Network Graph Canvas */}
+                            <div className="relative w-full h-[500px] bg-white rounded-lg border border-slate-200 overflow-hidden">
+                              {(() => {
+                                // Build nodes from partnerships
+                                const nodes: any[] = [];
+                                const roleColors: Record<number, string> = {
+                                  0: '#4c5568', // This org - Blue Slate
+                                  1: '#dc2625', // Funding - Primary Scarlet
+                                  2: '#7b95a7', // Accountable - Cool Steel
+                                  3: '#cfd0d5', // Extending - Pale Slate
+                                  4: '#4c5568', // Implementing - Blue Slate
+                                };
+
+                                const roleCodeMap: Record<string, number> = {
+                                  'Funding': 1,
+                                  'Accountable': 2,
+                                  'Extending': 3,
+                                  'Implementing': 4,
+                                };
+
+                                // Add current organization as central node
+                                if (!hiddenRoles.has(0)) {
+                                  const orgDisplayName = organization?.acronym && organization?.acronym !== organization?.name
+                                    ? `${organization?.name} (${organization?.acronym})`
+                                    : organization?.name || 'This Org';
+                                  nodes.push({
+                                    id: params?.id || 'main',
+                                    name: orgDisplayName,
+                                    fullName: organization?.name || 'This Organization',
+                                    role: 'This Organization',
+                                    roleCode: 0,
+                                    color: roleColors[0],
+                                    size: 55,
+                                    logo: organization?.logo,
+                                  });
+                                }
+
+                                // Add partner nodes
+                                partnerships.forEach((partnership, index) => {
+                                  const primaryRole = Array.from(partnership.relationshipTypes)[0];
+                                  const roleCode = roleCodeMap[primaryRole] || 4;
+
+                                  if (!hiddenRoles.has(roleCode)) {
+                                    const partnerDisplayName = partnership.organization.acronym && partnership.organization.acronym !== partnership.organization.name
+                                      ? `${partnership.organization.name} (${partnership.organization.acronym})`
+                                      : partnership.organization.name || 'Partner';
+                                    nodes.push({
+                                      id: partnership.organization.id,
+                                      name: partnerDisplayName,
+                                      fullName: partnership.organization.name,
+                                      role: primaryRole,
+                                      roleCode,
+                                      color: roleColors[roleCode],
+                                      size: 35 + Math.min(partnership.collaborationCount * 3, 15),
+                                      logo: partnership.organization.logo,
+                                      collaborations: partnership.collaborationCount,
+                                    });
+                                  }
+                                });
+
+                                // Calculate positions
+                                const width = 800;
+                                const height = 500;
+                                const centerX = width / 2;
+                                const centerY = height / 2;
+
+                                const centralNode = nodes.find(n => n.roleCode === 0);
+                                if (centralNode) {
+                                  centralNode.x = centerX;
+                                  centralNode.y = centerY;
+                                }
+
+                                // Position other nodes in a circle around center, grouped by role
+                                const otherNodes = nodes.filter(n => n.roleCode !== 0);
+                                const radius = 180;
+
+                                otherNodes.forEach((node, i) => {
+                                  const angle = (2 * Math.PI * i) / otherNodes.length - Math.PI / 2;
+                                  node.x = centerX + radius * Math.cos(angle);
+                                  node.y = centerY + radius * Math.sin(angle);
+                                });
+
+                                // Create edges from central node to all partners
+                                const edges: any[] = [];
+                                if (centralNode) {
+                                  nodes.forEach(node => {
+                                    if (node.id !== centralNode.id) {
+                                      edges.push({
+                                        source: centralNode.id,
+                                        target: node.id,
+                                        type: node.roleCode === 2 ? 'oversight' : 'flow',
+                                      });
+                                    }
+                                  });
+                                }
+
+                                return (
+                                  <svg className="w-full h-full" viewBox={`0 0 ${width} ${height}`}>
+                                    {/* Define clip paths for circular logos */}
+                                    <defs>
+                                      {nodes.map((node) => (
+                                        <clipPath key={`clip-${node.id}`} id={`clip-org-${node.id}`}>
+                                          <circle cx={node.x} cy={node.y} r={node.size / 2} />
+                                        </clipPath>
+                                      ))}
+                                    </defs>
+
+                                    {/* Draw edges */}
+                                    <g>
+                                      {edges.map((edge, i) => {
+                                        const source = nodes.find(n => n.id === edge.source);
+                                        const target = nodes.find(n => n.id === edge.target);
+                                        if (!source || !target) return null;
+
+                                        const isOversight = edge.type === 'oversight';
+
+                                        return (
+                                          <line
+                                            key={i}
+                                            x1={source.x}
+                                            y1={source.y}
+                                            x2={target.x}
+                                            y2={target.y}
+                                            stroke={isOversight ? '#7b95a7' : '#cfd0d5'}
+                                            strokeWidth={isOversight ? '1.5' : '2'}
+                                            strokeDasharray={isOversight ? '4,4' : '0'}
+                                            opacity="0.4"
+                                          />
+                                        );
+                                      })}
+                                    </g>
+
+                                    {/* Draw nodes */}
+                                    <g>
+                                      {nodes.map((node) => (
+                                        <g key={node.id} className="cursor-pointer">
+                                          {/* Node circle background */}
+                                          {!node.logo && (
+                                            <circle
+                                              cx={node.x}
+                                              cy={node.y}
+                                              r={node.size / 2}
+                                              fill={node.color}
+                                              stroke="white"
+                                              strokeWidth="3"
+                                            />
+                                          )}
+
+                                          {/* Org logo if available */}
+                                          {node.logo && (
+                                            <>
+                                              <image
+                                                x={node.x - node.size / 2}
+                                                y={node.y - node.size / 2}
+                                                width={node.size}
+                                                height={node.size}
+                                                href={node.logo}
+                                                clipPath={`url(#clip-org-${node.id})`}
+                                                preserveAspectRatio="xMidYMid slice"
+                                              />
+                                              <circle
+                                                cx={node.x}
+                                                cy={node.y}
+                                                r={node.size / 2}
+                                                fill="none"
+                                                stroke="white"
+                                                strokeWidth="3"
+                                              />
+                                            </>
+                                          )}
+
+                                          {/* Node label */}
+                                          <foreignObject
+                                            x={node.x - 75}
+                                            y={node.y + node.size / 2 + 3}
+                                            width="150"
+                                            height="60"
+                                          >
+                                            <div
+                                              style={{
+                                                display: 'flex',
+                                                flexDirection: 'column',
+                                                alignItems: 'center',
+                                                textAlign: 'center',
+                                              }}
+                                            >
+                                              <div
+                                                style={{
+                                                  fontSize: '9px',
+                                                  fontWeight: '600',
+                                                  color: '#0f172a',
+                                                  lineHeight: '1.3',
+                                                  maxHeight: '42px',
+                                                  overflow: 'hidden',
+                                                  wordWrap: 'break-word',
+                                                }}
+                                              >
+                                                {node.name}
+                                              </div>
+                                              <div
+                                                style={{
+                                                  fontSize: '8px',
+                                                  color: '#64748b',
+                                                  marginTop: '1px',
+                                                }}
+                                              >
+                                                {node.role}
+                                                {node.collaborations && ` (${node.collaborations})`}
+                                              </div>
+                                            </div>
+                                          </foreignObject>
+
+                                          <title>{node.fullName} ({node.role})</title>
+                                        </g>
+                                      ))}
+                                    </g>
+                                  </svg>
+                                );
+                              })()}
+                            </div>
+                          </CardContent>
+                        </Card>
+                        </>
+                      ) : (
+                        <Card className="border-slate-200">
+                          <CardHeader>
+                            <CardTitle className="text-slate-900">Partnership Network</CardTitle>
+                          </CardHeader>
+                          <CardContent>
+                            <div className="text-center py-12">
+                              <Users className="h-12 w-12 text-slate-300 mx-auto mb-4" />
+                              <p className="text-slate-500">No partnership data available</p>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      )}
+                    </div>
+                  );
+                })()}
               </TabsContent>
 
               <TabsContent value="geography" className="p-6">
-                <GeographicFootprint
-                  organization={{
-                    country: organization?.country,
-                    country_represented: organization?.country_represented,
-                    activities: activities.map(a => ({
-                      id: a.id,
-                      title: a.title,
-                      activity_status: a.activity_status || '',
-                      role: 'reporting'
-                    }))
-                  }}
-                />
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {/* Subnational Allocations Chart */}
+                  <SubnationalAllocationsChart organizationId={params.id as string} />
+
+                  {/* Myanmar Regions Map */}
+                  <MyanmarRegionsMap breakdowns={subnationalMapData} />
+                </div>
               </TabsContent>
 
               <TabsContent value="contacts" className="p-6">
                 <Card className="border-slate-200">
-                  <CardHeader>
+                  <CardHeader className="flex flex-row items-center justify-between">
                     <CardTitle className="text-slate-900">Organization Contacts</CardTitle>
+                    {organizationContacts.length > 0 && (
+                      <div className="flex items-center gap-1 bg-slate-100 rounded-lg p-1">
+                        <button
+                          onClick={() => setContactsView('card')}
+                          className={`p-2 rounded-md transition-colors ${
+                            contactsView === 'card'
+                              ? 'bg-white shadow-sm text-slate-900'
+                              : 'text-slate-500 hover:text-slate-700'
+                          }`}
+                          title="Card view"
+                        >
+                          <LayoutGrid className="h-4 w-4" />
+                        </button>
+                        <button
+                          onClick={() => setContactsView('table')}
+                          className={`p-2 rounded-md transition-colors ${
+                            contactsView === 'table'
+                              ? 'bg-white shadow-sm text-slate-900'
+                              : 'text-slate-500 hover:text-slate-700'
+                          }`}
+                          title="Table view"
+                        >
+                          <TableIcon className="h-4 w-4" />
+                        </button>
+                      </div>
+                    )}
                   </CardHeader>
                   <CardContent>
-                    <div className="text-center py-12">
-                      <Users className="h-12 w-12 text-slate-300 mx-auto mb-4" />
-                      <p className="text-slate-500">No contacts available</p>
-                    </div>
+                    {organizationContacts.length === 0 ? (
+                      <div className="text-center py-12">
+                        <Users className="h-12 w-12 text-slate-300 mx-auto mb-4" />
+                        <p className="text-slate-500">No contacts available</p>
+                      </div>
+                    ) : contactsView === 'card' ? (
+                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                        {organizationContacts.map((contact) => {
+                          const fullName = `${contact.title ? contact.title + ' ' : ''}${contact.firstName} ${contact.lastName}`.trim()
+                          const jobLine = [contact.jobTitle, contact.department].filter(Boolean).join(' • ')
+                          const typeLabels: Record<string, string> = {
+                            '1': 'General Enquiries',
+                            '2': 'Project Management',
+                            '3': 'Financial Management',
+                            '4': 'Communications'
+                          }
+
+                          return (
+                            <div
+                              key={contact.id}
+                              className="relative border border-slate-200 rounded-2xl p-6 hover:shadow-lg transition-all duration-200 bg-white"
+                            >
+                              {contact.isPrimary && (
+                                <div className="absolute top-4 left-4">
+                                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                    Primary Contact
+                                  </span>
+                                </div>
+                              )}
+
+                              <div className={`flex items-start gap-4 ${contact.isPrimary ? 'mt-6' : ''}`}>
+                                <UserAvatar
+                                  src={contact.profilePhoto}
+                                  seed={contact.email || contact.linkedUserId || fullName}
+                                  name={fullName}
+                                  size={64}
+                                />
+
+                                <div className="flex-1 min-w-0 space-y-1">
+                                  <h3 className="text-lg font-semibold text-slate-900 leading-tight break-words">
+                                    {fullName}
+                                  </h3>
+                                  {jobLine && (
+                                    <p className="text-sm text-slate-600 break-words">{jobLine}</p>
+                                  )}
+                                  {organization && (
+                                    <div className="flex items-center gap-2 mt-1">
+                                      {organization.logo ? (
+                                        <img
+                                          src={organization.logo}
+                                          alt={organization.name}
+                                          className="w-5 h-5 object-contain rounded"
+                                        />
+                                      ) : (
+                                        <div className="w-5 h-5 bg-slate-200 rounded flex items-center justify-center">
+                                          <span className="text-[10px] font-medium text-slate-500">
+                                            {organization.acronym?.charAt(0) || organization.name?.charAt(0)}
+                                          </span>
+                                        </div>
+                                      )}
+                                      <span className="text-sm text-slate-500">
+                                        {organization.name}
+                                        {organization.acronym && ` (${organization.acronym})`}
+                                      </span>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+
+                              <div className="mt-4 space-y-2">
+                                {contact.email && (
+                                  <div className="flex items-center space-x-2">
+                                    <Mail className="h-4 w-4 text-slate-400 flex-shrink-0" />
+                                    <a
+                                      href={`mailto:${contact.email}`}
+                                      className="text-sm text-slate-700 hover:text-blue-600 transition-colors truncate"
+                                    >
+                                      {contact.email}
+                                    </a>
+                                  </div>
+                                )}
+
+                                {(contact.phone || contact.phoneNumber) && (
+                                  <div className="flex items-center space-x-2">
+                                    <Phone className="h-4 w-4 text-slate-400 flex-shrink-0" />
+                                    <span className="text-sm text-slate-700">
+                                      {contact.countryCode ? `${contact.countryCode} ` : ''}{contact.phoneNumber || contact.phone}
+                                    </span>
+                                  </div>
+                                )}
+
+                                {contact.website && (
+                                  <div className="flex items-center space-x-2">
+                                    <Globe className="h-4 w-4 text-slate-400 flex-shrink-0" />
+                                    <a
+                                      href={contact.website}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="text-sm text-slate-700 hover:text-blue-600 transition-colors truncate"
+                                    >
+                                      {contact.website.replace(/^https?:\/\//, '')}
+                                    </a>
+                                  </div>
+                                )}
+                              </div>
+
+                              <div className="mt-4">
+                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-700">
+                                  {typeLabels[contact.type] || 'Contact'}
+                                </span>
+                              </div>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    ) : (
+                      <div className="overflow-x-auto">
+                        <table className="w-full">
+                          <thead>
+                            <tr className="border-b border-slate-200">
+                              <th className="text-left py-3 px-4 text-sm font-medium text-slate-600">Contact</th>
+                              <th className="text-left py-3 px-4 text-sm font-medium text-slate-600">Role</th>
+                              <th className="text-left py-3 px-4 text-sm font-medium text-slate-600">Organization</th>
+                              <th className="text-left py-3 px-4 text-sm font-medium text-slate-600">Email</th>
+                              <th className="text-left py-3 px-4 text-sm font-medium text-slate-600">Phone</th>
+                              <th className="text-left py-3 px-4 text-sm font-medium text-slate-600">Type</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {organizationContacts.map((contact) => {
+                              const fullName = `${contact.title ? contact.title + ' ' : ''}${contact.firstName} ${contact.lastName}`.trim()
+                              const jobLine = [contact.jobTitle, contact.department].filter(Boolean).join(' • ')
+                              const typeLabels: Record<string, string> = {
+                                '1': 'General Enquiries',
+                                '2': 'Project Management',
+                                '3': 'Financial Management',
+                                '4': 'Communications'
+                              }
+
+                              return (
+                                <tr key={contact.id} className="border-b border-slate-100 hover:bg-slate-50">
+                                  <td className="py-3 px-4">
+                                    <div className="flex items-center gap-3">
+                                      <UserAvatar
+                                        src={contact.profilePhoto}
+                                        seed={contact.email || contact.linkedUserId || fullName}
+                                        name={fullName}
+                                        size="md"
+                                      />
+                                      <div>
+                                        <p className="text-sm font-medium text-slate-900">{fullName}</p>
+                                        {contact.isPrimary && (
+                                          <span className="text-xs text-blue-600">Primary Contact</span>
+                                        )}
+                                      </div>
+                                    </div>
+                                  </td>
+                                  <td className="py-3 px-4">
+                                    <p className="text-sm text-slate-700">{jobLine || '—'}</p>
+                                  </td>
+                                  <td className="py-3 px-4">
+                                    {organization ? (
+                                      <div className="flex items-center gap-2">
+                                        {organization.logo ? (
+                                          <img
+                                            src={organization.logo}
+                                            alt={organization.name}
+                                            className="w-5 h-5 object-contain rounded"
+                                          />
+                                        ) : (
+                                          <div className="w-5 h-5 bg-slate-200 rounded flex items-center justify-center">
+                                            <span className="text-[10px] font-medium text-slate-500">
+                                              {organization.acronym?.charAt(0) || organization.name?.charAt(0)}
+                                            </span>
+                                          </div>
+                                        )}
+                                        <span className="text-sm text-slate-600">
+                                          {organization.acronym || organization.name}
+                                        </span>
+                                      </div>
+                                    ) : (
+                                      <span className="text-sm text-slate-400">—</span>
+                                    )}
+                                  </td>
+                                  <td className="py-3 px-4">
+                                    {contact.email ? (
+                                      <a
+                                        href={`mailto:${contact.email}`}
+                                        className="text-sm text-slate-700 hover:text-blue-600"
+                                      >
+                                        {contact.email}
+                                      </a>
+                                    ) : (
+                                      <span className="text-sm text-slate-400">—</span>
+                                    )}
+                                  </td>
+                                  <td className="py-3 px-4">
+                                    <span className="text-sm text-slate-700">
+                                      {contact.phone || contact.phoneNumber
+                                        ? `${contact.countryCode ? contact.countryCode + ' ' : ''}${contact.phoneNumber || contact.phone}`
+                                        : '—'}
+                                    </span>
+                                  </td>
+                                  <td className="py-3 px-4">
+                                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-700">
+                                      {typeLabels[contact.type] || 'Contact'}
+                                    </span>
+                                  </td>
+                                </tr>
+                              )
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               </TabsContent>
@@ -2850,82 +4125,241 @@ export default function OrganizationProfilePage() {
               <TabsContent value="documents" className="p-6">
                 <Card className="border-slate-200">
                   <CardHeader>
-                    <CardTitle className="text-slate-900">Documents</CardTitle>
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="text-slate-900">Documents</CardTitle>
+                      {(organizationDocuments.length > 0 || activityDocuments.length > 0) && (
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm text-slate-500">
+                            {organizationDocuments.length + activityDocuments.reduce((sum, a) => sum + a.documents.length, 0)} document{(organizationDocuments.length + activityDocuments.reduce((sum, a) => sum + a.documents.length, 0)) !== 1 ? 's' : ''}
+                          </span>
+                          <div className="flex border rounded-md">
+                            <button
+                              onClick={() => setDocumentsViewMode('card')}
+                              className={`px-3 py-1.5 text-sm ${documentsViewMode === 'card' ? 'bg-slate-900 text-white' : 'bg-white text-slate-600 hover:bg-slate-50'} rounded-l-md transition-colors`}
+                            >
+                              <LayoutGrid className="h-4 w-4" />
+                            </button>
+                            <button
+                              onClick={() => setDocumentsViewMode('table')}
+                              className={`px-3 py-1.5 text-sm ${documentsViewMode === 'table' ? 'bg-slate-900 text-white' : 'bg-white text-slate-600 hover:bg-slate-50'} rounded-r-md transition-colors`}
+                            >
+                              <List className="h-4 w-4" />
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   </CardHeader>
                   <CardContent>
                     {(organizationDocuments.length > 0 || activityDocuments.length > 0) ? (
-                      <div className="space-y-6">
-                        {/* Organization Documents */}
-                        {organizationDocuments.length > 0 && (
-                          <div>
-                            <h3 className="text-sm font-semibold text-slate-900 mb-3">Organisation Documents</h3>
-                            <div className="space-y-2">
-                              {organizationDocuments.map((doc, index) => (
-                                <div key={index} className="p-3 border border-slate-200 rounded-lg">
-                                  <div className="flex items-center justify-between">
-                                    <div className="flex items-center gap-2">
-                                      <FileText className="h-4 w-4 text-slate-600" />
-                                      <span className="text-sm font-medium text-slate-900">
+                      documentsViewMode === 'card' ? (
+                        <div className="space-y-6">
+                          {/* Organization Documents - Card View */}
+                          {organizationDocuments.length > 0 && (
+                            <div>
+                              <h3 className="text-sm font-semibold text-slate-900 mb-3">Organisation Documents</h3>
+                              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                {organizationDocuments.map((doc, index) => (
+                                  <div key={doc.id || index} className="border border-slate-200 rounded-lg hover:border-slate-300 hover:shadow-sm transition-all overflow-hidden">
+                                    {/* Document Thumbnail */}
+                                    <a
+                                      href={doc.url}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="block"
+                                    >
+                                      <DocumentThumbnail
+                                        url={doc.url}
+                                        format={doc.format}
+                                        title={doc.title}
+                                        width={300}
+                                        height={160}
+                                        className="w-full cursor-pointer hover:opacity-90 transition-opacity"
+                                      />
+                                    </a>
+                                    {/* Document Info */}
+                                    <div className="p-4">
+                                      <div className="flex items-start justify-between mb-2">
+                                        <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-200">Organisation</Badge>
+                                        {doc.url && (
+                                          <a
+                                            href={doc.url}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="p-1.5 rounded-md hover:bg-slate-100 text-slate-600 hover:text-blue-600 transition-colors"
+                                          >
+                                            <ExternalLink className="h-4 w-4" />
+                                          </a>
+                                        )}
+                                      </div>
+                                      <h4 className="text-sm font-medium text-slate-900 line-clamp-2 mb-1">
                                         {doc.title || doc.filename || 'Untitled Document'}
-                                      </span>
-                                      <Badge variant="outline" className="text-xs">Organisation Document</Badge>
+                                      </h4>
+                                      {doc.description && (
+                                        <p className="text-xs text-slate-500 line-clamp-2 mb-2">{doc.description}</p>
+                                      )}
+                                      <div className="flex items-center gap-2 flex-wrap">
+                                        {doc.format && (
+                                          <Badge variant="secondary" className="text-xs">{doc.format}</Badge>
+                                        )}
+                                        {doc.document_date && (
+                                          <span className="text-xs text-slate-400">{doc.document_date}</span>
+                                        )}
+                                      </div>
                                     </div>
-                                    {doc.url && (
-                                      <a 
-                                        href={doc.url} 
-                                        target="_blank" 
-                                        rel="noopener noreferrer"
-                                        className="text-sm text-blue-600 hover:text-blue-800"
-                                      >
-                                        <ExternalLink className="h-4 w-4" />
-                                      </a>
-                                    )}
                                   </div>
-                                  {doc.description && (
-                                    <p className="text-xs text-slate-600 mt-1">{doc.description}</p>
-                                  )}
-                                </div>
-                              ))}
+                                ))}
+                              </div>
                             </div>
-                          </div>
-                        )}
+                          )}
 
-                        {/* Activity Documents */}
-                        {activityDocuments.map((activityDoc) => (
-                          <div key={activityDoc.activityId}>
-                            <h3 className="text-sm font-semibold text-slate-900 mb-3">
-                              From Activity: {activityDoc.activityTitle}
-                            </h3>
-                            <div className="space-y-2">
-                              {activityDoc.documents.map((doc: any, index: number) => (
-                                <div key={index} className="p-3 border border-slate-200 rounded-lg">
-                                  <div className="flex items-center justify-between">
-                                    <div className="flex items-center gap-2">
-                                      <FileText className="h-4 w-4 text-slate-600" />
-                                      <span className="text-sm font-medium text-slate-900">
+                          {/* Activity Documents - Card View */}
+                          {activityDocuments.map((activityDoc) => (
+                            <div key={activityDoc.activityId}>
+                              <h3 className="text-sm font-semibold text-slate-900 mb-3">
+                                From Activity: {activityDoc.activityTitle}
+                              </h3>
+                              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                {activityDoc.documents.map((doc: any, index: number) => (
+                                  <div key={doc.id || index} className="border border-slate-200 rounded-lg hover:border-slate-300 hover:shadow-sm transition-all overflow-hidden">
+                                    {/* Document Thumbnail */}
+                                    <a
+                                      href={doc.url}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="block"
+                                    >
+                                      <DocumentThumbnail
+                                        url={doc.url}
+                                        format={doc.format}
+                                        title={doc.title || doc.filename}
+                                        width={300}
+                                        height={160}
+                                        className="w-full cursor-pointer hover:opacity-90 transition-opacity"
+                                      />
+                                    </a>
+                                    {/* Document Info */}
+                                    <div className="p-4">
+                                      <div className="flex items-start justify-between mb-2">
+                                        <Badge variant="outline" className="text-xs">Activity</Badge>
+                                        {doc.url && (
+                                          <a
+                                            href={doc.url}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="p-1.5 rounded-md hover:bg-slate-100 text-slate-600 hover:text-blue-600 transition-colors"
+                                          >
+                                            <ExternalLink className="h-4 w-4" />
+                                          </a>
+                                        )}
+                                      </div>
+                                      <h4 className="text-sm font-medium text-slate-900 line-clamp-2 mb-1">
                                         {doc.title || doc.filename || 'Untitled Document'}
-                                      </span>
+                                      </h4>
+                                      {doc.description && (
+                                        <p className="text-xs text-slate-500 line-clamp-2">{doc.description}</p>
+                                      )}
                                     </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        /* Table View */
+                        <div className="overflow-x-auto">
+                          <table className="w-full">
+                            <thead>
+                              <tr className="border-b border-slate-200">
+                                <th className="text-left py-3 px-4 text-xs font-semibold text-slate-600 uppercase tracking-wider">Document</th>
+                                <th className="text-left py-3 px-4 text-xs font-semibold text-slate-600 uppercase tracking-wider">Type</th>
+                                <th className="text-left py-3 px-4 text-xs font-semibold text-slate-600 uppercase tracking-wider">Source</th>
+                                <th className="text-left py-3 px-4 text-xs font-semibold text-slate-600 uppercase tracking-wider">Format</th>
+                                <th className="text-left py-3 px-4 text-xs font-semibold text-slate-600 uppercase tracking-wider">Date</th>
+                                <th className="text-right py-3 px-4 text-xs font-semibold text-slate-600 uppercase tracking-wider">Link</th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-slate-100">
+                              {/* Organization Documents - Table View */}
+                              {organizationDocuments.map((doc, index) => (
+                                <tr key={`org-${doc.id || index}`} className="hover:bg-slate-50">
+                                  <td className="py-3 px-4">
+                                    <div className="flex items-center gap-2">
+                                      <FileText className="h-4 w-4 text-blue-600 flex-shrink-0" />
+                                      <div>
+                                        <div className="text-sm font-medium text-slate-900">{doc.title || 'Untitled Document'}</div>
+                                        {doc.description && (
+                                          <div className="text-xs text-slate-500 truncate max-w-xs">{doc.description}</div>
+                                        )}
+                                      </div>
+                                    </div>
+                                  </td>
+                                  <td className="py-3 px-4">
+                                    <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-200">Organisation</Badge>
+                                  </td>
+                                  <td className="py-3 px-4 text-sm text-slate-600">-</td>
+                                  <td className="py-3 px-4">
+                                    {doc.format && <Badge variant="secondary" className="text-xs">{doc.format}</Badge>}
+                                  </td>
+                                  <td className="py-3 px-4 text-sm text-slate-500">{doc.document_date || '-'}</td>
+                                  <td className="py-3 px-4 text-right">
                                     {doc.url && (
-                                      <a 
-                                        href={doc.url} 
-                                        target="_blank" 
+                                      <a
+                                        href={doc.url}
+                                        target="_blank"
                                         rel="noopener noreferrer"
-                                        className="text-sm text-blue-600 hover:text-blue-800"
+                                        className="inline-flex items-center gap-1 text-sm text-blue-600 hover:text-blue-800"
                                       >
-                                        <ExternalLink className="h-4 w-4" />
+                                        Open <ExternalLink className="h-3 w-3" />
                                       </a>
                                     )}
-                                  </div>
-                                  {doc.description && (
-                                    <p className="text-xs text-slate-600 mt-1">{doc.description}</p>
-                                  )}
-                                </div>
+                                  </td>
+                                </tr>
                               ))}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
+
+                              {/* Activity Documents - Table View */}
+                              {activityDocuments.flatMap((activityDoc) =>
+                                activityDoc.documents.map((doc: any, index: number) => (
+                                  <tr key={`activity-${activityDoc.activityId}-${doc.id || index}`} className="hover:bg-slate-50">
+                                    <td className="py-3 px-4">
+                                      <div className="flex items-center gap-2">
+                                        <FileText className="h-4 w-4 text-slate-600 flex-shrink-0" />
+                                        <div>
+                                          <div className="text-sm font-medium text-slate-900">{doc.title || doc.filename || 'Untitled Document'}</div>
+                                          {doc.description && (
+                                            <div className="text-xs text-slate-500 truncate max-w-xs">{doc.description}</div>
+                                          )}
+                                        </div>
+                                      </div>
+                                    </td>
+                                    <td className="py-3 px-4">
+                                      <Badge variant="outline" className="text-xs">Activity</Badge>
+                                    </td>
+                                    <td className="py-3 px-4 text-sm text-slate-600 truncate max-w-xs">{activityDoc.activityTitle}</td>
+                                    <td className="py-3 px-4">
+                                      {doc.format && <Badge variant="secondary" className="text-xs">{doc.format}</Badge>}
+                                    </td>
+                                    <td className="py-3 px-4 text-sm text-slate-500">{doc.document_date || '-'}</td>
+                                    <td className="py-3 px-4 text-right">
+                                      {doc.url && (
+                                        <a
+                                          href={doc.url}
+                                          target="_blank"
+                                          rel="noopener noreferrer"
+                                          className="inline-flex items-center gap-1 text-sm text-blue-600 hover:text-blue-800"
+                                        >
+                                          Open <ExternalLink className="h-3 w-3" />
+                                        </a>
+                                      )}
+                                    </td>
+                                  </tr>
+                                ))
+                              )}
+                            </tbody>
+                          </table>
+                        </div>
+                      )
                     ) : (
                       <div className="text-center py-12">
                         <FileText className="h-12 w-12 text-slate-300 mx-auto mb-4" />
@@ -2934,21 +4368,6 @@ export default function OrganizationProfilePage() {
                     )}
                   </CardContent>
                 </Card>
-              </TabsContent>
-
-              <TabsContent value="data-health" className="p-6">
-                {healthMetrics ? (
-                  <OrganisationHealthCard healthMetrics={healthMetrics} />
-                ) : (
-                  <Card className="border-slate-200">
-                    <CardContent className="py-12">
-                      <div className="text-center text-slate-500">
-                        <AlertCircle className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                        <p>No health metrics available</p>
-                      </div>
-                    </CardContent>
-                  </Card>
-                )}
               </TabsContent>
             </Tabs>
           </Card>

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSupabaseAdmin } from '@/lib/supabase';
+import { requireAuth } from '@/lib/auth';
 import { getRelationshipTypeName } from '@/data/iati-relationship-types';
 
 export async function GET(
@@ -7,16 +7,18 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id: activityId } = await params;
-  const supabase = getSupabaseAdmin();
-
-  if (!supabase) {
-    return NextResponse.json(
-      { error: 'Database not configured' },
-      { status: 503 }
-    );
-  }
 
   try {
+    const { supabase, response: authResponse } = await requireAuth();
+    if (authResponse) return authResponse;
+
+    if (!supabase) {
+      return NextResponse.json(
+        { error: 'Database not configured' },
+        { status: 503 }
+      );
+    }
+
     const relatedActivities: any[] = [];
 
     // 1. Fetch linked activities (from activity_relationships table)
@@ -269,16 +271,18 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id: activityId } = await params;
-  const supabase = getSupabaseAdmin();
-
-  if (!supabase) {
-    return NextResponse.json(
-      { error: 'Database not configured' },
-      { status: 503 }
-    );
-  }
 
   try {
+    const { supabase, response: authResponse } = await requireAuth();
+    if (authResponse) return authResponse;
+
+    if (!supabase) {
+      return NextResponse.json(
+        { error: 'Database not configured' },
+        { status: 503 }
+      );
+    }
+
     const body = await request.json();
     const {
       related_activity_id,
@@ -349,16 +353,18 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id: activityId } = await params;
-  const supabase = getSupabaseAdmin();
-
-  if (!supabase) {
-    return NextResponse.json(
-      { error: 'Database not configured' },
-      { status: 503 }
-    );
-  }
 
   try {
+    const { supabase, response: authResponse } = await requireAuth();
+    if (authResponse) return authResponse;
+
+    if (!supabase) {
+      return NextResponse.json(
+        { error: 'Database not configured' },
+        { status: 503 }
+      );
+    }
+
     const { searchParams } = new URL(request.url);
     const relationshipId = searchParams.get('relationship_id');
 

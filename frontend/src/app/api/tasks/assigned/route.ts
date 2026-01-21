@@ -1,13 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSupabaseAdmin } from '@/lib/supabase';
+import { requireAuth } from '@/lib/auth';
 import type { TaskStatus, TaskPriority } from '@/types/task';
 
 export const dynamic = 'force-dynamic';
 
 // GET /api/tasks/assigned - Tasks assigned to current user
 export async function GET(request: NextRequest) {
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
   try {
-    const supabase = getSupabaseAdmin();
     if (!supabase) {
       return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
     }
@@ -113,9 +115,13 @@ export async function GET(request: NextRequest) {
       .order('created_at', { ascending: false })
       .range(offset, offset + limit - 1);
 
-    // Filter by archived status (default to hiding archived)
+    // Filter by archived status
+    // When includeArchived=false (default): show only non-archived tasks
+    // When includeArchived=true: show only archived tasks (for the Archived view)
     if (!includeArchived) {
       query = query.or('archived.is.null,archived.eq.false');
+    } else {
+      query = query.eq('archived', true);
     }
 
     // Filter by status

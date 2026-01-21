@@ -1,8 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSupabaseAdmin } from '@/lib/supabase';
+import { requireAuth } from '@/lib/auth';
 import { iatiAnalytics } from '@/lib/analytics';
 
 export async function POST(request: NextRequest) {
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
+  if (!supabase) {
+    return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
+  }
+
   try {
     const { meta, userId } = await request.json();
 
@@ -12,9 +19,6 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
-
-    const supabase = getSupabaseAdmin();
-
     // Create reference activity using only existing database columns
     const activityData = {
       iati_identifier: meta.iatiId,

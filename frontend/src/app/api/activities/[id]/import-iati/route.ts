@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSupabaseAdmin } from '@/lib/supabase';
+import { requireAuth } from '@/lib/auth';
 import { fixedCurrencyConverter } from '@/lib/currency-converter-fixed';
 import { getOrCreateOrganization } from '@/lib/organization-helpers';
 import { validatePolicyMarkerSignificance } from '@/lib/policy-marker-validation';
@@ -100,6 +100,13 @@ export async function POST(
   request: NextRequest,
   { params }: { params: { id: string } | Promise<{ id: string }> }
 ) {
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
+  if (!supabase) {
+    return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
+  }
+
   console.log('[IATI Import] 🚀 POST handler called');
   try {
     // Handle both sync and async params (Next.js 14/15 compatibility)
@@ -140,9 +147,6 @@ export async function POST(
     console.log('[IATI Import] Fields to import:', Object.keys(fields).filter(k => fields[k]));
     console.log('[IATI Import] Related activities flag:', fields.related_activities);
     console.log('[IATI Import] Related activities data present:', !!iati_data.relatedActivities);
-    
-    const supabase = getSupabaseAdmin();
-    
     // Fetch current activity data
     const { data: currentActivity, error: fetchError } = await supabase
       .from('activities')
@@ -2633,7 +2637,7 @@ export async function POST(
     // Try to log the error
     if (activityId) {
       try {
-        await getSupabaseAdmin()
+        await supabase
           .from('iati_import_logs')
           .insert({
             import_source: 'iati_search',

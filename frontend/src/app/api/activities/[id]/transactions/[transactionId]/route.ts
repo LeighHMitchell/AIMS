@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSupabaseAdmin } from '@/lib/supabase';
+import { requireAuth } from '@/lib/auth';
 import { cleanTransactionFields, cleanBooleanValue } from '@/lib/transaction-field-cleaner';
 import { convertTransactionToUSD, addUSDFieldsToTransaction } from '@/lib/transaction-usd-helper';
 
@@ -7,6 +7,13 @@ export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string; transactionId: string }> }
 ) {
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
+  if (!supabase) {
+    return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
+  }
+
   try {
     const { transactionId } = await params;
     const body = await request.json();
@@ -22,7 +29,7 @@ export async function PUT(
     if (!transactionReference) {
       // For updates, we need to keep the existing reference if it's empty
       // Get the current transaction to preserve its reference
-      const { data: currentTransaction, error: fetchError } = await getSupabaseAdmin()
+      const { data: currentTransaction, error: fetchError } = await supabase
         .from('transactions')
         .select('transaction_reference')
         .eq('uuid', transactionId)
@@ -89,7 +96,7 @@ export async function PUT(
     // - If value changed, mark as explicit (user confirmed)
     if ('finance_type' in body) {
       // Fetch current transaction to check if value changed
-      const { data: currentTx } = await getSupabaseAdmin()
+      const { data: currentTx } = await supabase
         .from('transactions')
         .select('finance_type, finance_type_inherited')
         .eq('uuid', transactionId)
@@ -119,7 +126,7 @@ export async function PUT(
     }
 
     // Update the transaction
-    const { data: updatedTransaction, error } = await getSupabaseAdmin()
+    const { data: updatedTransaction, error } = await supabase
       .from('transactions')
       .update(updateData)
       .eq('uuid', transactionId)
@@ -173,6 +180,13 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string; transactionId: string }> }
 ) {
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
+  if (!supabase) {
+    return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
+  }
+
   try {
     const { transactionId } = await params;
     if (!transactionId || transactionId === 'undefined') {
@@ -183,7 +197,7 @@ export async function DELETE(
     }
 
     // Delete the transaction using the correct primary key column
-    const { error } = await getSupabaseAdmin()
+    const { error } = await supabase
       .from('transactions')
       .delete()
       .eq('uuid', transactionId);

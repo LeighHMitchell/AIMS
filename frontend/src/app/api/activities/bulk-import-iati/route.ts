@@ -4,7 +4,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getSupabaseAdmin } from '@/lib/supabase';
+import { requireAuth } from '@/lib/auth';
 import { IATIXMLParser } from '@/lib/xml-parser';
 
 interface BulkImportRequest {
@@ -22,6 +22,13 @@ interface BulkImportResponse {
 }
 
 export async function POST(request: NextRequest): Promise<NextResponse<BulkImportResponse>> {
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
+  if (!supabase) {
+    return NextResponse.json({ error: 'Database not configured' } as any, { status: 500 });
+  }
+
   try {
     console.log('[Bulk IATI Import] Starting bulk import');
     
@@ -46,9 +53,6 @@ export async function POST(request: NextRequest): Promise<NextResponse<BulkImpor
       activityIds: [],
       errors: []
     };
-
-    const supabase = getSupabaseAdmin();
-
     // Parse XML
     let parser: IATIXMLParser;
     try {

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSupabaseAdmin } from '@/lib/supabase';
+import { requireAuth } from '@/lib/auth';
 
 // Force dynamic rendering to ensure environment variables are always loaded
 export const dynamic = 'force-dynamic';
@@ -13,8 +13,10 @@ export const runtime = 'nodejs'; // Use Node.js runtime for better body parsing
 export async function GET(request: NextRequest) {
   console.log('[AIMS] GET /api/users - Starting request (Supabase)');
   
+  const { supabase, response } = await requireAuth();
+  if (response) return response;
+  
   try {
-    const supabase = getSupabaseAdmin();
     if (!supabase) {
       return NextResponse.json(
         { error: 'Supabase is not configured' },
@@ -114,8 +116,10 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   console.log('[AIMS] POST /api/users - Starting request (Supabase)');
   
+  const { supabase, response } = await requireAuth();
+  if (response) return response;
+  
   try {
-    const supabase = getSupabaseAdmin();
     if (!supabase) {
       return NextResponse.json(
         { error: 'Supabase is not configured' },
@@ -207,8 +211,10 @@ export async function POST(request: NextRequest) {
 export async function PUT(request: NextRequest) {
   console.log('[AIMS] PUT /api/users - Starting request (Supabase)');
   
+  const { supabase, response } = await requireAuth();
+  if (response) return response;
+  
   try {
-    const supabase = getSupabaseAdmin();
     if (!supabase) {
       return NextResponse.json(
         { error: 'Supabase is not configured' },
@@ -373,8 +379,10 @@ export async function PUT(request: NextRequest) {
 export async function DELETE(request: NextRequest) {
   console.log('[AIMS] DELETE /api/users - Starting request (Supabase)');
   
+  const { supabase, response } = await requireAuth();
+  if (response) return response;
+  
   try {
-    const supabase = getSupabaseAdmin();
     if (!supabase) {
       return NextResponse.json(
         { error: 'Supabase is not configured' },
@@ -391,8 +399,20 @@ export async function DELETE(request: NextRequest) {
         { status: 400 }
       );
     }
-    
-    // Delete from users table first
+
+    // First, clean up activity_logs to avoid FK constraint violation
+    // Set user_id to null for any activity logs created by this user
+    const { error: activityLogsError } = await supabase
+      .from('activity_logs')
+      .update({ user_id: null })
+      .eq('user_id', id);
+
+    if (activityLogsError) {
+      console.error('[AIMS] Error cleaning up activity_logs:', activityLogsError);
+      // Continue anyway - the table might not exist or have no records
+    }
+
+    // Delete from users table
     const { error: profileError } = await supabase
       .from('users')
       .delete()

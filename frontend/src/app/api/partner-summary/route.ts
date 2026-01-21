@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSupabaseAdmin } from '@/lib/supabase';
+import { requireAuth } from '@/lib/auth';
 
 // Force dynamic rendering
 export const dynamic = 'force-dynamic';
@@ -148,11 +148,14 @@ const isUuid = (id: string | null): boolean => {
 // GET /api/partner-summary
 export async function GET(request: NextRequest) {
   try {
+    const { supabase, response: authResponse } = await requireAuth();
+    if (authResponse) return authResponse;
+
     console.log('[AIMS] GET /api/partner-summary - Starting request');
     
     // Check if getSupabaseAdmin is properly initialized
-    if (!getSupabaseAdmin()) {
-      console.error('[AIMS] getSupabaseAdmin() is not initialized');
+    if (!supabase) {
+      console.error('[AIMS] supabase is not initialized');
       return NextResponse.json(
         { error: 'Database connection not available' },
         { status: 500 }
@@ -168,7 +171,7 @@ export async function GET(request: NextRequest) {
     console.log('[AIMS] Fetching data from database...');
     
     // Fetch all organizations including full_name
-    const { data: organizations, error: orgError } = await getSupabaseAdmin()
+    const { data: organizations, error: orgError } = await supabase
       .from('organizations')
       .select('id, name, acronym, full_name, type, organisation_type, website, email, country, created_at, updated_at');
 
@@ -181,7 +184,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Fetch organization types from database
-    const { data: organizationTypes, error: typesError } = await getSupabaseAdmin()
+    const { data: organizationTypes, error: typesError } = await supabase
       .from('organization_types')
       .select('id, code, label, description, category')
       .eq('is_active', true)
@@ -192,7 +195,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Fetch organization groups and their members from database
-    const { data: organizationGroups, error: groupsError } = await getSupabaseAdmin()
+    const { data: organizationGroups, error: groupsError } = await supabase
       .from('organization_groups')
       .select(`
         id, name, description, created_by, created_at, updated_at,
@@ -208,7 +211,7 @@ export async function GET(request: NextRequest) {
     let transactionError: any = null;
     
     // Query the transactions table with correct field names
-    const { data: transactionData, error: transactionFetchError } = await getSupabaseAdmin()
+    const { data: transactionData, error: transactionFetchError } = await supabase
       .from('transactions')
       .select('provider_org, receiver_org, value, transaction_date, transaction_type, activity_id, organization_id');
 
@@ -262,7 +265,7 @@ export async function GET(request: NextRequest) {
     console.log('[AIMS] Filtered transactions for', financialMode, ':', filteredTransactions.length);
 
     // Fetch activities for additional project metadata
-    const { data: activities, error: activitiesError } = await getSupabaseAdmin()
+    const { data: activities, error: activitiesError } = await supabase
       .from('activities')
       .select('id, title_narrative, activity_status, implementing_org, planned_start_date, planned_end_date');
 

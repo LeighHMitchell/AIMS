@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSupabaseAdmin } from '@/lib/supabase';
+import { requireAuth } from '@/lib/auth';
 
 // GET /api/results/[id]/references - Fetch all references for a result
 export async function GET(
@@ -7,14 +7,15 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
-  const supabase = getSupabaseAdmin();
-  
-  if (!supabase) {
-    return NextResponse.json({ error: 'Database not available' }, { status: 500 });
-  }
 
   try {
-    const { id } = await params;
+    const { supabase, response: authResponse } = await requireAuth();
+    if (authResponse) return authResponse;
+
+    if (!supabase) {
+      return NextResponse.json({ error: 'Database not available' }, { status: 500 });
+    }
+
     const { data, error } = await supabase
       .from('result_references')
       .select('*')
@@ -29,8 +30,8 @@ export async function GET(
     return NextResponse.json({ references: data || [] });
   } catch (error) {
     console.error('[Result References API] Unexpected error:', error);
-    return NextResponse.json({ 
-      error: error instanceof Error ? error.message : 'Unknown error' 
+    return NextResponse.json({
+      error: error instanceof Error ? error.message : 'Unknown error'
     }, { status: 500 });
   }
 }
@@ -41,20 +42,21 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
-  const supabase = getSupabaseAdmin();
-  
-  if (!supabase) {
-    return NextResponse.json({ error: 'Database not available' }, { status: 500 });
-  }
 
   try {
-    const { id } = await params;
+    const { supabase, response: authResponse } = await requireAuth();
+    if (authResponse) return authResponse;
+
+    if (!supabase) {
+      return NextResponse.json({ error: 'Database not available' }, { status: 500 });
+    }
+
     const body = await request.json();
 
     // Validate required fields
     if (!body.vocabulary || !body.code) {
-      return NextResponse.json({ 
-        error: 'Vocabulary and code are required' 
+      return NextResponse.json({
+        error: 'Vocabulary and code are required'
       }, { status: 400 });
     }
 
@@ -79,8 +81,8 @@ export async function POST(
     return NextResponse.json({ reference: data }, { status: 201 });
   } catch (error) {
     console.error('[Result References API] Unexpected error:', error);
-    return NextResponse.json({ 
-      error: error instanceof Error ? error.message : 'Unknown error' 
+    return NextResponse.json({
+      error: error instanceof Error ? error.message : 'Unknown error'
     }, { status: 500 });
   }
 }
@@ -91,20 +93,21 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
-  const supabase = getSupabaseAdmin();
-  
-  if (!supabase) {
-    return NextResponse.json({ error: 'Database not available' }, { status: 500 });
-  }
 
   try {
-    const { id } = await params;
+    const { supabase, response: authResponse } = await requireAuth();
+    if (authResponse) return authResponse;
+
+    if (!supabase) {
+      return NextResponse.json({ error: 'Database not available' }, { status: 500 });
+    }
+
     const { searchParams } = new URL(request.url);
     const referenceId = searchParams.get('referenceId');
 
     if (!referenceId) {
-      return NextResponse.json({ 
-        error: 'Reference ID is required' 
+      return NextResponse.json({
+        error: 'Reference ID is required'
       }, { status: 400 });
     }
 
@@ -122,9 +125,8 @@ export async function DELETE(
     return NextResponse.json({ success: true }, { status: 200 });
   } catch (error) {
     console.error('[Result References API] Unexpected error:', error);
-    return NextResponse.json({ 
-      error: error instanceof Error ? error.message : 'Unknown error' 
+    return NextResponse.json({
+      error: error instanceof Error ? error.message : 'Unknown error'
     }, { status: 500 });
   }
 }
-

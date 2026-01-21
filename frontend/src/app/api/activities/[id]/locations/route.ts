@@ -1,11 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSupabaseAdmin } from '@/lib/supabase';
+import { requireAuth } from '@/lib/auth';
 import { locationFormSchema, type LocationFormSchema } from '@/lib/schemas/location';
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
   try {
     const { id: activityId } = await params;
 
@@ -16,7 +19,7 @@ export async function GET(
       );
     }
 
-    const { data: locations, error } = await getSupabaseAdmin()
+    const { data: locations, error } = await supabase
       .from('activity_locations')
       .select('*')
       .eq('activity_id', activityId)
@@ -97,6 +100,9 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
   try {
     const { id: activityId } = await params;
     const body = await request.json();
@@ -189,7 +195,7 @@ export async function POST(
     console.log('[Locations API] Final insert data:', insertData);
     console.log('[Locations API] Country code in insert data:', insertData.country_code);
 
-    const { data: newLocation, error } = await getSupabaseAdmin()
+    const { data: newLocation, error } = await supabase
       .from('activity_locations')
       .insert(insertData)
       .select()
@@ -221,6 +227,9 @@ export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
   try {
     const { id: activityId } = await params;
     const body = await request.json();
@@ -268,7 +277,7 @@ export async function PUT(
     }
 
 
-    const { error: deleteError } = await getSupabaseAdmin()
+    const { error: deleteError } = await supabase
       .from('activity_locations')
       .delete()
       .eq('activity_id', activityId);
@@ -343,7 +352,7 @@ export async function PUT(
     });
 
     if (locationsToInsert.length > 0) {
-      const { error: insertError } = await getSupabaseAdmin()
+      const { error: insertError } = await supabase
         .from('activity_locations')
         .insert(locationsToInsert);
 
@@ -375,6 +384,9 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
   try {
     const { id: activityId } = await params;
 
@@ -385,7 +397,7 @@ export async function DELETE(
       );
     }
 
-    const { error } = await getSupabaseAdmin()
+    const { error } = await supabase
       .from('activity_locations')
       .delete()
       .eq('activity_id', activityId);

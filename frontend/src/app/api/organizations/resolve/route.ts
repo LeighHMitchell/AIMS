@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getSupabaseAdmin } from '@/lib/supabase'
+import { requireAuth } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic'
 
@@ -33,6 +33,13 @@ interface ResolveResponse {
  * 4. Fuzzy match by name_aliases array using pg_trgm
  */
 export async function POST(request: NextRequest): Promise<NextResponse<ResolveResponse>> {
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
+  if (!supabase) {
+    return NextResponse.json({ error: 'Database not configured' } as any, { status: 500 });
+  }
+
   try {
     const body: ResolveRequest = await request.json()
     const { ref, narrative } = body
@@ -42,9 +49,6 @@ export async function POST(request: NextRequest): Promise<NextResponse<ResolveRe
         matched: false
       })
     }
-
-    const supabase = getSupabaseAdmin()
-
     // Step 1: Try direct match by iati_org_id
     if (ref) {
       const { data: directMatch } = await supabase

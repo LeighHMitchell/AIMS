@@ -61,16 +61,20 @@ const CHART_COLORS = {
 
 function formatCurrency(value: number): string {
   if (value >= 1_000_000_000) {
-    return `$${(value / 1_000_000_000).toFixed(1)}B`;
+    return `$${Math.round(value / 1_000_000_000)}B`;
   } else if (value >= 1_000_000) {
-    return `$${(value / 1_000_000).toFixed(1)}M`;
+    return `$${Math.round(value / 1_000_000)}M`;
   } else if (value >= 1_000) {
-    return `$${(value / 1_000).toFixed(1)}K`;
+    return `$${Math.round(value / 1_000)}K`;
   }
-  return `$${value.toFixed(0)}`;
+  return `$${Math.round(value)}`;
 }
 
-export function AidPredictabilityChart() {
+interface AidPredictabilityChartProps {
+  organizationId?: string;
+}
+
+export function AidPredictabilityChart({ organizationId }: AidPredictabilityChartProps) {
   const [data, setData] = useState<AidPredictabilityPoint[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -96,6 +100,9 @@ export function AidPredictabilityChart() {
       if (selectedCustomYearId) {
         params.set("customYearId", selectedCustomYearId);
       }
+      if (organizationId) {
+        params.set("organizationId", organizationId);
+      }
 
       const url = `/api/analytics/aid-predictability${params.toString() ? `?${params.toString()}` : ""}`;
       const response = await fetch(url);
@@ -112,7 +119,7 @@ export function AidPredictabilityChart() {
     } finally {
       setLoading(false);
     }
-  }, [selectedCustomYearId]);
+  }, [selectedCustomYearId, organizationId]);
 
   useEffect(() => {
     fetchData();
@@ -162,7 +169,7 @@ export function AidPredictabilityChart() {
   };
 
   const renderBarChart = (expanded: boolean = false) => (
-    <div className={expanded ? "h-[500px]" : "h-[280px]"}>
+    <div className={expanded ? "h-[500px]" : "h-[320px]"}>
       <ResponsiveContainer width="100%" height="100%">
         <BarChart
           data={data}
@@ -211,7 +218,7 @@ export function AidPredictabilityChart() {
   );
 
   const renderLineChart = (expanded: boolean = false) => (
-    <div className={expanded ? "h-[500px]" : "h-[280px]"}>
+    <div className={expanded ? "h-[500px]" : "h-[320px]"}>
       <ResponsiveContainer width="100%" height="100%">
         <LineChart
           data={data}
@@ -264,7 +271,7 @@ export function AidPredictabilityChart() {
   );
 
   const renderAreaChart = (expanded: boolean = false) => (
-    <div className={expanded ? "h-[500px]" : "h-[280px]"}>
+    <div className={expanded ? "h-[500px]" : "h-[320px]"}>
       <ResponsiveContainer width="100%" height="100%">
         <AreaChart
           data={data}
@@ -325,7 +332,7 @@ export function AidPredictabilityChart() {
   );
 
   const renderTable = (expanded: boolean = false) => (
-    <div className={cn("overflow-auto", expanded ? "max-h-[500px]" : "max-h-[280px]")}>
+    <div className={cn("overflow-auto", expanded ? "max-h-[500px]" : "max-h-[320px]")}>
       <Table>
         <TableHeader>
           <TableRow>
@@ -359,7 +366,7 @@ export function AidPredictabilityChart() {
 
   const renderContent = (expanded: boolean = false) => {
     if (loading) {
-      return <Skeleton className={expanded ? "h-[500px] w-full" : "h-[280px] w-full"} />;
+      return <Skeleton className={expanded ? "h-[500px] w-full" : "h-[320px] w-full"} />;
     }
 
     if (error) {
@@ -373,7 +380,7 @@ export function AidPredictabilityChart() {
 
     if (!data || data.length === 0) {
       return (
-        <div className={cn("flex items-center justify-center text-muted-foreground", expanded ? "h-[500px]" : "h-[280px]")}>
+        <div className={cn("flex items-center justify-center text-muted-foreground", expanded ? "h-[500px]" : "h-[320px]")}>
           No predictability data available
         </div>
       );
@@ -395,24 +402,22 @@ export function AidPredictabilityChart() {
   };
 
   const renderControls = (expanded: boolean = false) => (
-    <div className="flex items-center justify-between gap-2 mt-2 pt-2 border-t">
-      {/* Left side - Custom Year Selector (only in expanded view) */}
-      <div className="flex items-center gap-2">
-        {expanded && (
-          <CustomYearSelector
-            customYears={customYears}
-            selectedId={selectedCustomYearId}
-            onSelect={setSelectedCustomYearId}
-            loading={customYearsLoading}
-            placeholder="Year type"
-          />
-        )}
-      </div>
+    <div className={cn("flex items-center justify-end gap-2", expanded && "mt-2 pt-2 border-t")}>
+      {/* Custom Year Selector (only in expanded view) */}
+      {expanded && (
+        <CustomYearSelector
+          customYears={customYears}
+          selectedId={selectedCustomYearId}
+          onSelect={setSelectedCustomYearId}
+          loading={customYearsLoading}
+          placeholder="Year type"
+        />
+      )}
 
-      {/* Right side - Chart controls */}
+      {/* Chart controls */}
       <div className="flex items-center gap-1">
-        {/* Chart type toggles - only show when in chart view */}
-        {(!expanded || viewMode === "chart") && (
+        {/* Chart type toggles - only show in expanded view when in chart mode */}
+        {expanded && viewMode === "chart" && (
           <div className="flex items-center border rounded-md">
             <Button
               variant={chartType === "bar" ? "default" : "ghost"}
@@ -468,19 +473,6 @@ export function AidPredictabilityChart() {
           </div>
         )}
 
-        {/* Expand button - only in compact view */}
-        {!expanded && (
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-8 w-8 p-0"
-            onClick={() => setIsExpanded(true)}
-            title="Expand"
-          >
-            <Maximize2 className="h-4 w-4" />
-          </Button>
-        )}
-
         {/* Export button - only in expanded view */}
         {expanded && (
           <Button
@@ -502,16 +494,28 @@ export function AidPredictabilityChart() {
       {/* Compact Card View */}
       <Card className="bg-white border-slate-200 h-full flex flex-col">
         <CardHeader className="pb-1 pt-4 px-4">
-          <CardTitle className="text-sm font-bold text-slate-700 uppercase tracking-wide">
-            Aid Predictability
-          </CardTitle>
-          <p className="text-xs text-muted-foreground mt-0.5">
-            Planned vs Actual Disbursements by Year
-          </p>
+          <div className="flex items-start justify-between">
+            <div className="flex-1">
+              <CardTitle className="text-base font-semibold">
+                Aid Predictability
+              </CardTitle>
+              <p className="text-xs text-muted-foreground mt-1">
+                Compare planned vs actual disbursements by year. Assess funding predictability to identify gaps between commitments and delivery for better resource planning.
+              </p>
+            </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8"
+              onClick={() => setIsExpanded(true)}
+              title="Expand chart"
+            >
+              <Maximize2 className="h-4 w-4" />
+            </Button>
+          </div>
         </CardHeader>
         <CardContent className="pt-0 px-4 pb-3 flex-1 flex flex-col">
           {renderContent(false)}
-          {renderControls(false)}
         </CardContent>
       </Card>
 

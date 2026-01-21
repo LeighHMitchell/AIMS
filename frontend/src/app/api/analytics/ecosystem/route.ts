@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getSupabaseAdmin } from '@/lib/supabase'
+import { requireAuth } from '@/lib/auth';
 
 /**
  * Aid Ecosystem Analytics API
@@ -44,8 +44,15 @@ interface EcosystemOrganization {
 }
 
 export async function GET(request: NextRequest) {
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
+  if (!supabase) {
+    return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
+  }
+
   try {
-    const supabaseAdmin = getSupabaseAdmin()
+    const supabaseAdmin = supabase
     const { searchParams } = new URL(request.url)
 
     // Parse filter parameters

@@ -1,5 +1,5 @@
 import { NextResponse, NextRequest } from 'next/server';
-import { getSupabaseAdmin } from '@/lib/supabase';
+import { requireAuth } from '@/lib/auth';
 
 export interface ActivityLog {
   id: string;
@@ -30,18 +30,16 @@ export async function OPTIONS() {
 }
 
 export async function POST(request: Request) {
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
+  if (!supabase) {
+    return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
+  }
+
   try {
-    // Check if getSupabaseAdmin is properly initialized
-    if (!getSupabaseAdmin()) {
-      console.error('[AIMS] getSupabaseAdmin() is not initialized');
-      return NextResponse.json(
-        { error: 'Database connection not initialized' },
-        { status: 500 }
-      );
-    }
-    
     const body = await request.json();
-    
+
     // Create new log entry
     const logData = {
       action: body.actionType || body.action, // Support both field names
@@ -57,7 +55,7 @@ export async function POST(request: Request) {
       },
     };
 
-    const { data: newLog, error } = await getSupabaseAdmin()
+    const { data: newLog, error } = await supabase
       .from('activity_logs')
       .insert([logData])
       .select()
@@ -97,14 +95,21 @@ export async function POST(request: Request) {
 }
 
 export async function GET(request: NextRequest) {
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
+  if (!supabase) {
+    return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
+  }
+
   try {
     const searchParams = request.nextUrl.searchParams;
     const userRole = searchParams.get('userRole');
     const userId = searchParams.get('userId');
     const limit = parseInt(searchParams.get('limit') || '50');
-    
+
     // Build query
-    let query = getSupabaseAdmin()
+    let query = supabase
       .from('activity_logs')
       .select('*')
       .order('created_at', { ascending: false })

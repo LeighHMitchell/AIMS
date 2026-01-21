@@ -1,13 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSupabaseAdmin } from '@/lib/supabase';
+import { requireAuth } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 
 export async function POST(request: NextRequest) {
   console.log('[AIMS] POST /api/users/delete-account - Starting request');
   
+  const { supabase, response } = await requireAuth();
+  if (response) return response;
+  
   try {
-    const supabase = getSupabaseAdmin();
     if (!supabase) {
       return NextResponse.json(
         { error: 'Supabase is not configured' },
@@ -100,7 +102,20 @@ export async function POST(request: NextRequest) {
       console.log('[AIMS] Cleared focal point assignments');
     }
 
-    // Step 3: Delete from public.users table
+    // Step 3: Clean up activity_logs to avoid FK constraint violation
+    const { error: activityLogsError } = await supabase
+      .from('activity_logs')
+      .update({ user_id: null })
+      .eq('user_id', userId);
+
+    if (activityLogsError) {
+      console.error('[AIMS] Error cleaning up activity_logs:', activityLogsError);
+      // Continue with deletion - this is not critical
+    } else {
+      console.log('[AIMS] Cleaned up activity_logs');
+    }
+
+    // Step 4: Delete from public.users table
     // This will cascade delete:
     // - activity_bookmarks (ON DELETE CASCADE)
     // - user_notifications (ON DELETE CASCADE)
@@ -122,7 +137,7 @@ export async function POST(request: NextRequest) {
 
     console.log('[AIMS] Deleted user from public.users');
 
-    // Step 4: Delete from auth.users
+    // Step 5: Delete from auth.users
     const { error: authDeleteError } = await supabase.auth.admin.deleteUser(userId);
 
     if (authDeleteError) {

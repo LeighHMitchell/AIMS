@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSupabaseAdmin } from '@/lib/supabase';
+import { requireAuth } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 
@@ -149,18 +149,16 @@ const deriveCategory = (orgTypeCode: string, country: string): string => {
 
 // GET /api/partners/summary
 export async function GET(request: NextRequest) {
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
+  if (!supabase) {
+    return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
+  }
+
   try {
     console.log('[AIMS] GET /api/partners/summary - Starting request');
-    
-    // Check if getSupabaseAdmin is properly initialized
-    if (!getSupabaseAdmin()) {
-      console.error('[AIMS] getSupabaseAdmin() is not initialized');
-      return NextResponse.json(
-        { error: 'Database connection not initialized' },
-        { status: 500 }
-      );
-    }
-    
+
     // Get search parameters
     const { searchParams } = new URL(request.url);
     const groupBy = searchParams.get('groupBy') || 'type'; // 'type', 'custom', or 'country'
@@ -170,7 +168,7 @@ export async function GET(request: NextRequest) {
 
     // Fetch all organizations from Supabase Organizations table
     console.log('[AIMS] Fetching organizations from Supabase...');
-    const { data: organizations, error: orgError } = await getSupabaseAdmin()
+    const { data: organizations, error: orgError } = await supabase
       .from('organizations')
       .select('*')
       .order('name');
@@ -200,7 +198,7 @@ export async function GET(request: NextRequest) {
 
     // Fetch all activities for counting active projects
     console.log('[AIMS] Fetching activities...');
-    const { data: activities, error: activitiesError } = await getSupabaseAdmin()
+    const { data: activities, error: activitiesError } = await supabase
       .from('activities')
       .select('id, activity_status, reporting_org_id, created_by_org_name, created_by_org_acronym')
       .in('activity_status', ['2', '3']); // 2=Implementation, 3=Finalisation
@@ -252,7 +250,7 @@ export async function GET(request: NextRequest) {
     
     // Fetch all transactions for financial calculations
     console.log('[AIMS] Fetching transactions with type codes:', transactionTypeCodes);
-    const { data: transactions, error: transactionsError } = await getSupabaseAdmin()
+    const { data: transactions, error: transactionsError } = await supabase
       .from('transactions')
       .select('activity_id, provider_org_id, receiver_org_id, provider_org_name, receiver_org_name, value, transaction_date, value_usd, transaction_type')
       .in('transaction_type', transactionTypeCodes);
@@ -460,7 +458,7 @@ export async function GET(request: NextRequest) {
       
       try {
         // Fetch custom groups
-        const { data: customGroups, error: customGroupsError } = await getSupabaseAdmin()
+        const { data: customGroups, error: customGroupsError } = await supabase
           .from('custom_groups')
           .select('*')
           .order('name');
@@ -472,7 +470,7 @@ export async function GET(request: NextRequest) {
           console.log('[AIMS] Found custom groups:', customGroups?.length || 0);
 
           // Fetch memberships for all custom groups
-          const { data: memberships, error: membershipsError } = await getSupabaseAdmin()
+          const { data: memberships, error: membershipsError } = await supabase
             .from('custom_group_memberships')
             .select('group_id, organization_id');
 
@@ -590,7 +588,7 @@ export async function GET(request: NextRequest) {
     // Always fetch custom groups count regardless of groupBy parameter
     let customGroupsCount = 0;
     try {
-      const { data: customGroups, error: customGroupsError } = await getSupabaseAdmin()
+      const { data: customGroups, error: customGroupsError } = await supabase
         .from('custom_groups')
         .select('id');
       

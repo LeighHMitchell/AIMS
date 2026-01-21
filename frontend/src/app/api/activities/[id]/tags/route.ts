@@ -1,10 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSupabaseAdmin } from '@/lib/supabase';
+import { requireAuth } from '@/lib/auth';
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
   try {
     const { id: activityId } = await params;
 
@@ -14,9 +17,6 @@ export async function GET(
         { status: 400 }
       );
     }
-
-    const supabase = getSupabaseAdmin();
-
     // Fetch all tags for this activity with full IATI metadata
     const { data, error } = await supabase
       .from('activity_tags')
@@ -69,6 +69,9 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
   try {
     const { id: activityId } = await params;
     const { tag_id } = await request.json();
@@ -79,9 +82,6 @@ export async function POST(
         { status: 400 }
       );
     }
-
-    const supabase = getSupabaseAdmin();
-
     // Check if the relationship already exists
     const { data: existing } = await supabase
       .from('activity_tags')

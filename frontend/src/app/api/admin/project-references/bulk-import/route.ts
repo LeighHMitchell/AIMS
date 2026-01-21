@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getSupabaseAdmin } from "@/lib/supabase";
+import { requireAuth } from '@/lib/auth';
 import {
   ReferenceType,
   ProjectReferenceBulkImportResult,
@@ -27,8 +27,10 @@ interface ImportRow {
  * - is_primary (optional): 'true' or 'false'
  */
 export async function POST(request: NextRequest) {
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
   try {
-    const supabase = getSupabaseAdmin();
 
     if (!supabase) {
       return NextResponse.json(

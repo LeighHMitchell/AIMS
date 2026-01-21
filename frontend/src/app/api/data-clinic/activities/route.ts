@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSupabaseAdmin } from '@/lib/supabase';
+import { requireAuth } from '@/lib/auth';
 
 interface Activity {
   id: string;
@@ -23,7 +23,13 @@ interface Activity {
 }
 
 export async function GET(request: NextRequest) {
-  const supabase = getSupabaseAdmin();
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
+  if (!supabase) {
+    return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
+  }
+
   const { searchParams } = new URL(request.url);
   const missingFields = searchParams.get('missing_fields') === 'true';
 

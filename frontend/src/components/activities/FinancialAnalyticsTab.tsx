@@ -2397,7 +2397,7 @@ export default function FinancialAnalyticsTab({
   }
 
   return (
-    <div className="space-y-6">
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
       {/* Cumulative Overview Chart - All Transaction Types, Planned Disbursements, and Budgets */}
       <Card className="border-slate-200">
         <CardHeader>

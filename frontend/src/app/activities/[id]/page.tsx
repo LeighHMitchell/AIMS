@@ -118,7 +118,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton"
 import { BudgetsSkeleton, PlannedDisbursementsSkeleton, TransactionsSkeleton } from "@/components/activities/TabSkeletons"
 import { v4 as uuidv4 } from 'uuid'
-import { BarChart as RechartsBarChart, Bar, XAxis, YAxis, Tooltip as RechartsTooltip2, ResponsiveContainer, Cell, PieChart as RechartsPieChart, Pie, Legend } from 'recharts'
+import { BarChart as RechartsBarChart, Bar, XAxis, YAxis, Tooltip as RechartsTooltip2, ResponsiveContainer, Cell, PieChart as RechartsPieChart, Pie, Legend, AreaChart, Area } from 'recharts'
 import { ChevronDown, ChevronUp, ChevronRight, BarChart3 as BarChart3Icon, GitBranch, Printer, FileImage } from 'lucide-react'
 import SectorSankeyVisualization from '@/components/charts/SectorSankeyVisualization'
 import FinanceTypeDonut from '@/components/charts/FinanceTypeDonut'
@@ -1845,7 +1845,7 @@ export default function ActivityDetailPage() {
                     {/* Activity Info */}
                     <div className="flex-1">
                       <h1 className="text-3xl font-bold text-slate-900 mb-3 group">
-                        {activity.title}{activity.acronym && <span className="text-lg text-slate-500"> ({activity.acronym})</span>}{' '}
+                        {activity.title}{activity.acronym && <span> ({activity.acronym})</span>}{' '}
                         <button
                           onClick={() => copyToClipboard(activity.title || '', 'activityTitle')}
                           className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:text-slate-700 inline-flex items-center align-middle"
@@ -1861,7 +1861,7 @@ export default function ActivityDetailPage() {
                       
                       <div className="space-y-3">
                         {/* First Row: Activity ID, IATI ID and Status Badges */}
-                        <div className="flex flex-wrap items-center gap-3 pb-3 border-b border-slate-200">
+                        <div className="flex flex-wrap items-center gap-3 py-3 border-y border-slate-200">
                           {activity.partnerId && (
                             <div className="flex items-center gap-1 group">
                               <code className="text-xs px-2 py-1 bg-slate-100 text-slate-700 rounded font-mono">
@@ -2246,10 +2246,10 @@ export default function ActivityDetailPage() {
                             {/* Logo/Icon */}
                             {reportingOrg.logo && (
                               <div className="flex-shrink-0">
-                                <img 
-                                  src={reportingOrg.logo} 
+                                <img
+                                  src={reportingOrg.logo}
                                   alt={`${reportingOrg.name} logo`}
-                                  className="w-10 h-10 rounded object-cover"
+                                  className="w-10 h-10 rounded object-cover bg-white"
                                 />
                               </div>
                             )}
@@ -2297,10 +2297,10 @@ export default function ActivityDetailPage() {
                                   {/* Logo/Icon */}
                                   {org.organization?.logo && (
                                     <div className="flex-shrink-0">
-                                      <img 
-                                        src={org.organization.logo} 
+                                      <img
+                                        src={org.organization.logo}
                                         alt={`${org.organization.name} logo`}
-                                        className="w-10 h-10 rounded object-cover"
+                                        className="w-10 h-10 rounded object-cover bg-white"
                                       />
                                     </div>
                                   )}
@@ -2731,9 +2731,15 @@ export default function ActivityDetailPage() {
                   return (
                     <div className="flex-1 min-h-24 -mx-2">
                       <ResponsiveContainer width="100%" height="100%">
-                        <RechartsBarChart data={budgetData} margin={{ top: 0, right: 5, left: 0, bottom: 5 }}>
-                          <XAxis 
-                            dataKey="year" 
+                        <AreaChart data={budgetData} margin={{ top: 0, right: 5, left: 0, bottom: 5 }}>
+                          <defs>
+                            <linearGradient id="budgetGradient" x1="0" y1="0" x2="0" y2="1">
+                              <stop offset="5%" stopColor="#4c5568" stopOpacity={0.3}/>
+                              <stop offset="95%" stopColor="#4c5568" stopOpacity={0.05}/>
+                            </linearGradient>
+                          </defs>
+                          <XAxis
+                            dataKey="year"
                             tick={{ fontSize: 10, fill: '#64748b' }}
                             axisLine={{ stroke: '#e5e7eb' }}
                             tickLine={false}
@@ -2743,7 +2749,7 @@ export default function ActivityDetailPage() {
                             axisLine={{ stroke: '#e5e7eb' }}
                             tickLine={false}
                             tickFormatter={(value) => {
-                              const formatted = (value / 1000000).toFixed(2);
+                              const formatted = Math.round(value / 1000000);
                               return `$${formatted}M`;
                             }}
                           />
@@ -2773,19 +2779,17 @@ export default function ActivityDetailPage() {
                               return null
                             }}
                           />
-                          <Bar 
-                            dataKey="amount" 
-                            radius={[4, 4, 0, 0]}
+                          <Area
+                            type="monotone"
+                            dataKey="amount"
+                            stroke="#4c5568"
+                            strokeWidth={2}
+                            fill="url(#budgetGradient)"
                             isAnimationActive={true}
                             animationDuration={600}
                             animationEasing="ease-in-out"
-                            key="budget-bar-proportional"
-                          >
-                            {budgetData.map((entry, index) => (
-                              <Cell key={`cell-${index}`} fill="#4c5568" />
-                            ))}
-                          </Bar>
-                        </RechartsBarChart>
+                          />
+                        </AreaChart>
                       </ResponsiveContainer>
                     </div>
                   )
@@ -2997,7 +3001,7 @@ export default function ActivityDetailPage() {
                             axisLine={{ stroke: '#e5e7eb' }}
                             tickLine={false}
                             tickFormatter={(value) => {
-                              const formatted = (value / 1000000).toFixed(2);
+                              const formatted = Math.round(value / 1000000);
                               return `$${formatted}M`;
                             }}
                           />
@@ -3037,30 +3041,30 @@ export default function ActivityDetailPage() {
                               return null
                             }}
                           />
-                          <Bar 
-                            dataKey="plannedDisbursements" 
-                            fill="#cfd0d5" 
-                            name="Planned" 
-                            radius={[4, 4, 4, 4]}
+                          <Bar
+                            dataKey="plannedDisbursements"
+                            fill="#cfd0d5"
+                            name="Planned"
+                            radius={[4, 4, 0, 0]}
                             isAnimationActive={true}
                             animationDuration={600}
                             animationEasing="ease-in-out"
                             key="planned-proportional"
                           />
-                          <Bar 
-                            dataKey="disbursements" 
-                            fill="#7b95a7" 
-                            name="Disbursements" 
-                            radius={[4, 4, 4, 4]}
+                          <Bar
+                            dataKey="disbursements"
+                            fill="#7b95a7"
+                            name="Disbursements"
+                            radius={[4, 4, 0, 0]}
                             isAnimationActive={true}
                             animationDuration={600}
                             animationEasing="ease-in-out"
                           />
-                          <Bar 
-                            dataKey="expenditures" 
-                            fill="#dc2625" 
-                            name="Expenditures" 
-                            radius={[4, 4, 4, 4]}
+                          <Bar
+                            dataKey="expenditures"
+                            fill="#dc2625"
+                            name="Expenditures"
+                            radius={[4, 4, 0, 0]}
                             isAnimationActive={true}
                             animationDuration={600}
                             animationEasing="ease-in-out"
@@ -3709,7 +3713,7 @@ export default function ActivityDetailPage() {
                                         <img
                                           src={reportingOrg.logo}
                                           alt={reportingOrg.name || 'Organization logo'}
-                                          className="w-10 h-10 rounded object-cover"
+                                          className="w-10 h-10 rounded object-cover bg-white"
                                           onError={(e) => {
                                             (e.target as HTMLImageElement).style.display = 'none';
                                           }}
@@ -3844,7 +3848,7 @@ export default function ActivityDetailPage() {
                                     <img
                                       src={org.organization.logo}
                                             alt={org.organization.name || 'Organization logo'}
-                                            className="w-10 h-10 rounded object-cover"
+                                            className="w-10 h-10 rounded object-cover bg-white"
                                             onError={(e) => {
                                               (e.target as HTMLImageElement).style.display = 'none';
                                             }}

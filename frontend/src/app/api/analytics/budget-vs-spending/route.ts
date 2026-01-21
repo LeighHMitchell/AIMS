@@ -1,5 +1,5 @@
 import { NextResponse, NextRequest } from 'next/server';
-import { getSupabaseAdmin } from '@/lib/supabase';
+import { requireAuth } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 
@@ -12,6 +12,13 @@ interface ChartDataPoint {
 }
 
 export async function GET(request: NextRequest) {
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
+  if (!supabase) {
+    return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
+  }
+
   try {
     const { searchParams } = new URL(request.url);
     const donor = searchParams.get('donor') || 'all';
@@ -21,14 +28,7 @@ export async function GET(request: NextRequest) {
     const timePeriod = searchParams.get('timePeriod') || 'year';
     const isExport = searchParams.get('export') === 'true';
 
-    const supabaseAdmin = getSupabaseAdmin();
-    
-    if (!supabaseAdmin) {
-      return NextResponse.json(
-        { error: 'Database connection not initialized' },
-        { status: 500 }
-      );
-    }
+    const supabaseAdmin = supabase;
 
     // Build the base query for activities with transactions
     let activitiesQuery = supabaseAdmin

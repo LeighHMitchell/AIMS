@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSupabaseAdmin } from '@/lib/supabase';
+import { requireAuth } from '@/lib/auth';
 import { getRelationshipTypeName } from '@/data/iati-relationship-types';
 
 export const dynamic = 'force-dynamic';
@@ -28,12 +28,12 @@ interface ActivityLink {
 
 export async function GET(request: NextRequest) {
   try {
+    const { supabase, response: authResponse } = await requireAuth();
+    if (authResponse) return authResponse;
+
     const searchParams = request.nextUrl.searchParams;
     const startDate = searchParams.get('start');
     const endDate = searchParams.get('end');
-    
-    const supabase = getSupabaseAdmin();
-    
     if (!supabase) {
       return NextResponse.json(
         { error: 'Unable to connect to database' },

@@ -168,16 +168,14 @@ function TimelineView({
           <div className="sticky top-0 bg-white/95 backdrop-blur font-semibold text-slate-700 py-2 px-3 border-b border-slate-200 rounded-t-lg">
             {format(parseISO(monthKey + '-01'), 'MMMM yyyy')}
             <span className="ml-2 text-sm font-normal text-slate-500">
-              ({days.length} day{days.length !== 1 ? 's' : ''}, {days.reduce((sum, d) => sum + d.count, 0)} transactions)
+              {days.length} day{days.length !== 1 ? 's' : ''} · {days.reduce((sum, d) => sum + d.count, 0)} transaction{days.reduce((sum, d) => sum + d.count, 0) !== 1 ? 's' : ''}
             </span>
           </div>
           <div className="divide-y divide-slate-100">
-            {days.map(day => {
-              const totalValue = day.value
-              return (
+            {days.map(day => (
                 <div
                   key={day.date.toISOString()}
-                  className="w-full px-3 py-3 flex items-center justify-between hover:bg-slate-50 transition-colors text-left cursor-pointer"
+                  className="w-full px-3 py-3 flex items-center hover:bg-slate-50 transition-colors text-left cursor-pointer"
                   onMouseEnter={(e) => onHoverDay(day, e)}
                   onMouseLeave={onLeaveDay}
                 >
@@ -199,12 +197,8 @@ function TimelineView({
                       {day.count} transaction{day.count !== 1 ? 's' : ''}
                     </span>
                   </div>
-                  <div className="text-sm font-semibold text-slate-900">
-                    ${formatCurrencyAbbreviated(totalValue)}
-                  </div>
                 </div>
-              )
-            })}
+            ))}
           </div>
         </div>
       ))}
@@ -538,26 +532,41 @@ export function TransactionCalendarHeatmap({ transactions, stats }: TransactionC
 
   // Set default selected year when data changes or year type changes
   useMemo(() => {
-    if (availableYears.length > 0 && (selectedYear === null || !availableYears.includes(selectedYear))) {
-      setSelectedYear(availableYears[0])
+    if (availableYears.length > 0 && selectedYear === null) {
+      // Default to "All" (-1) to show all transactions
+      setSelectedYear(-1)
     }
   }, [availableYears, selectedYear])
 
-  // Get display range for the selected year
+  // Get display range for the selected year (or all data if selectedYear is -1)
   const displayRange = useMemo(() => {
+    if (selectedYear === -1 && processedData.length > 0) {
+      // Show all data - find min and max dates
+      const dates = processedData.map(d => d.date.getTime())
+      const minDate = new Date(Math.min(...dates))
+      const maxDate = new Date(Math.max(...dates))
+      // Extend to full year boundaries for cleaner display
+      return {
+        start: new Date(minDate.getFullYear(), 0, 1),
+        end: new Date(maxDate.getFullYear(), 11, 31)
+      }
+    }
     if (selectedYear === null) {
       const now = new Date()
       return getYearRange(now.getFullYear(), yearType)
     }
     return getYearRange(selectedYear, yearType)
-  }, [selectedYear, yearType])
+  }, [selectedYear, yearType, processedData])
 
-  // Filter data by selected year range
+  // Filter data by selected year range (or show all if selectedYear is -1)
   const filteredData = useMemo(() => {
+    if (selectedYear === -1) {
+      return processedData
+    }
     return processedData.filter((day) =>
       isWithinInterval(day.date, { start: displayRange.start, end: displayRange.end })
     )
-  }, [processedData, displayRange])
+  }, [processedData, displayRange, selectedYear])
 
   // Generate calendar grid
   const calendarGrid = useMemo(() => {
@@ -817,18 +826,13 @@ export function TransactionCalendarHeatmap({ transactions, stats }: TransactionC
               // Build type breakdown HTML
               const typeBreakdown = Object.entries(d.data.typeBreakdown)
                 .sort((a, b) => b[1].value - a[1].value)
-                .map(([type, breakdown]) => {
+                .map(([type]) => {
                   const typeLabel = TRANSACTION_TYPE_LABELS[type as keyof typeof TRANSACTION_TYPE_LABELS] || type
                   const typeColor = TRANSACTION_TYPE_COLORS[type] || '#64748B'
                   return `
-                    <div style="display: flex; align-items: center; justify-content: space-between; font-size: 12px; margin-bottom: 6px;">
-                      <div style="display: flex; align-items: center; gap: 8px;">
-                        <div style="width: 12px; height: 12px; background-color: ${typeColor}; border-radius: 2px; flex-shrink: 0;"></div>
-                        <span style="color: #475569;">${typeLabel}</span>
-                      </div>
-                      <div style="color: #0f172a; font-weight: 500; margin-left: 8px;">
-                        ${breakdown.count} • $${formatCurrencyAbbreviated(breakdown.value)}
-                      </div>
+                    <div style="display: flex; align-items: center; font-size: 12px; margin-bottom: 6px;">
+                      <div style="width: 12px; height: 12px; background-color: ${typeColor}; border-radius: 2px; flex-shrink: 0; margin-right: 8px;"></div>
+                      <span style="color: #475569;">${typeLabel}</span>
                     </div>
                   `
                 }).join('')
@@ -947,95 +951,6 @@ export function TransactionCalendarHeatmap({ transactions, stats }: TransactionC
               <BarChart3 className="h-4 w-4" />
             </Button>
           </div>
-
-          {/* Year Type Toggle */}
-          <div className="flex gap-1 border rounded-lg p-1 bg-white">
-            <Button
-              variant={yearType === 'calendar' ? 'default' : 'ghost'}
-              size="sm"
-              onClick={() => setYearType('calendar')}
-              className={cn(
-                'h-7 px-3 text-xs',
-                yearType === 'calendar'
-                  ? 'bg-slate-900 text-white hover:bg-slate-800'
-                  : ''
-              )}
-            >
-              Calendar Year
-            </Button>
-            <Button
-              variant={yearType === 'financial' ? 'default' : 'ghost'}
-              size="sm"
-              onClick={() => setYearType('financial')}
-              className={cn(
-                'h-7 px-3 text-xs',
-                yearType === 'financial'
-                  ? 'bg-slate-900 text-white hover:bg-slate-800'
-                  : ''
-              )}
-            >
-              Financial Year
-            </Button>
-          </div>
-
-          {/* Year Selector */}
-          {availableYears.length > 0 && (
-            <div className="flex gap-1 border rounded-lg p-1 bg-white">
-              {availableYears.slice(0, 5).map((year) => (
-                <Button
-                  key={year}
-                  variant={selectedYear === year ? 'default' : 'ghost'}
-                  size="sm"
-                  onClick={() => setSelectedYear(year)}
-                  className={cn(
-                    'h-7 px-3 text-xs',
-                    selectedYear === year
-                      ? 'bg-slate-900 text-white hover:bg-slate-800'
-                      : ''
-                  )}
-                >
-                  {getYearLabel(year)}
-                </Button>
-              ))}
-            </div>
-          )}
-
-          {/* Intensity Toggle (for heatmap and monthly) */}
-          {(viewMode === 'heatmap' || viewMode === 'monthly') && (
-            <div className="flex items-center gap-2">
-              <span className="text-sm font-medium text-slate-600">
-                {viewMode === 'heatmap' ? 'Intensity:' : 'Show:'}
-              </span>
-              <div className="flex gap-1">
-                <Button
-                  variant={intensityMode === 'count' ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setIntensityMode('count')}
-                  className={cn(
-                    'h-7 px-3 text-xs',
-                    intensityMode === 'count'
-                      ? 'bg-slate-900 text-white hover:bg-slate-800'
-                      : 'bg-white text-slate-600 border-slate-300 hover:bg-slate-50'
-                  )}
-                >
-                  Count
-                </Button>
-                <Button
-                  variant={intensityMode === 'value' ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setIntensityMode('value')}
-                  className={cn(
-                    'h-7 px-3 text-xs',
-                    intensityMode === 'value'
-                      ? 'bg-slate-900 text-white hover:bg-slate-800'
-                      : 'bg-white text-slate-600 border-slate-300 hover:bg-slate-50'
-                  )}
-                >
-                  Value
-                </Button>
-              </div>
-            </div>
-          )}
         </div>
       </div>
 
@@ -1049,35 +964,6 @@ export function TransactionCalendarHeatmap({ transactions, stats }: TransactionC
 
           {/* Legend */}
           <div className="flex flex-col gap-3">
-            <div className="flex items-center gap-4 text-xs">
-              <span className="text-slate-600">Less</span>
-              <div className="flex gap-1">
-                {[0, 0.25, 0.5, 0.75, 1.0].map((intensity) => {
-                  const color = intensity === 0 ? '#f1f5f9' : getDayColor(
-                    {
-                      date: new Date(),
-                      transactions: [],
-                      count: 1,
-                      value: 1000,
-                      typeBreakdown: { '3': { count: 1, value: 1000 } },
-                    },
-                    intensity
-                  )
-                  return (
-                    <div
-                      key={intensity}
-                      className="w-3 h-3 rounded-sm"
-                      style={{ 
-                        backgroundColor: color,
-                        border: intensity === 0 ? '1px solid #e2e8f0' : '1px solid rgba(0,0,0,0.1)'
-                      }}
-                    />
-                  )
-                })}
-              </div>
-              <span className="text-slate-600">More</span>
-            </div>
-
             <div className="flex flex-wrap items-center gap-4 text-xs">
               <span className="text-slate-600 font-medium">Transaction types:</span>
               {Object.entries(TRANSACTION_TYPE_COLORS)
@@ -1190,27 +1076,6 @@ export function TransactionCalendarHeatmap({ transactions, stats }: TransactionC
         </div>
       )}
 
-      {/* Hero Cards at Bottom */}
-      {stats && (
-        <div className="grid grid-cols-4 gap-4 pt-4 border-t border-slate-200">
-          <div className="bg-white border border-slate-200 rounded-lg p-4 text-center">
-            <div className="text-2xl font-bold text-slate-900">{stats.totalTransactions.toLocaleString()}</div>
-            <div className="text-xs text-slate-500 mt-1">Total Transactions</div>
-          </div>
-          <div className="bg-white border border-slate-200 rounded-lg p-4 text-center">
-            <div className="text-2xl font-bold text-slate-900">${formatCurrencyAbbreviated(stats.totalValue)}</div>
-            <div className="text-xs text-slate-500 mt-1">Total Value</div>
-          </div>
-          <div className="bg-white border border-slate-200 rounded-lg p-4 text-center">
-            <div className="text-2xl font-bold text-slate-900">{stats.activeDays.toLocaleString()}</div>
-            <div className="text-xs text-slate-500 mt-1">Active Days</div>
-          </div>
-          <div className="bg-white border border-slate-200 rounded-lg p-4 text-center">
-            <div className="text-2xl font-bold text-slate-900">{stats.avgPerDay.toFixed(1)}</div>
-            <div className="text-xs text-slate-500 mt-1">Avg/Day</div>
-          </div>
-        </div>
-      )}
     </div>
   )
 }

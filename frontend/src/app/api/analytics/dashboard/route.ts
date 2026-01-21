@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSupabaseAdmin } from '@/lib/supabase';
+import { requireAuth } from '@/lib/auth';
 import { MeasureType, DashboardData, RankedItem, FundingByType } from '@/types/national-priorities';
 
 /**
@@ -7,15 +7,50 @@ import { MeasureType, DashboardData, RankedItem, FundingByType } from '@/types/n
  * Returns all summary data for the Dashboard
  */
 export async function GET(request: NextRequest) {
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
   try {
-    const supabase = getSupabaseAdmin();
     const searchParams = request.nextUrl.searchParams;
-    
+
     // Parse parameters
     const measure = (searchParams.get('measure') || 'disbursements') as MeasureType;
     const dateFrom = searchParams.get('dateFrom');
     const dateTo = searchParams.get('dateTo');
     const topN = parseInt(searchParams.get('topN') || '5');
+    const organizationId = searchParams.get('organizationId');
+
+    // If organizationId provided, get activity IDs where org is reporting org
+    let orgActivityIds: string[] | null = null;
+    if (organizationId) {
+      const { data: orgActivities, error: orgError } = await supabase
+        .from('activities')
+        .select('id')
+        .eq('reporting_org_id', organizationId)
+        .eq('publication_status', 'published');
+
+      if (orgError) {
+        console.error('[Dashboard API] Error fetching org activities:', orgError);
+        return NextResponse.json({ success: false, error: 'Failed to fetch organization activities' }, { status: 500 });
+      }
+
+      orgActivityIds = (orgActivities || []).map(a => a.id);
+
+      if (orgActivityIds.length === 0) {
+        // No activities for this org - return empty data
+        return NextResponse.json({
+          success: true,
+          data: {
+            topDonorAgencies: [],
+            topDonorGroups: [],
+            topSectors: [],
+            subnationalAllocations: [],
+            fundingByType: [],
+            grandTotal: 0,
+          }
+        });
+      }
+    }
     
     // Determine transaction type based on measure (for transaction-based measures)
     // 2=Commitment, 3=Disbursement
@@ -45,7 +80,7 @@ export async function GET(request: NextRequest) {
     {
       // Query activities with transactions - filter transactions in JS for reliability
       // Use explicit FK relationship to avoid ambiguity
-      const { data: agencies, error: agencyError } = await supabase
+      let agenciesQuery = supabase
         .from('activities')
         .select(`
           id,
@@ -54,6 +89,13 @@ export async function GET(request: NextRequest) {
           transactions!transactions_activity_id_fkey1 (value, value_usd, transaction_type, transaction_date, status)
         `)
         .not('reporting_org_id', 'is', null);
+
+      // Filter by organization's activities if provided
+      if (orgActivityIds) {
+        agenciesQuery = agenciesQuery.in('id', orgActivityIds);
+      }
+
+      const { data: agencies, error: agencyError } = await agenciesQuery;
 
       const agencyMap = new Map<string, { name: string; country: string; value: number; activityIds: Set<string> }>();
       
@@ -140,7 +182,7 @@ export async function GET(request: NextRequest) {
     // TOP SECTORS (DAC 3-digit categories)
     // ============================================
     // Use explicit FK relationship to avoid ambiguity
-    const { data: sectorData } = await supabase
+    let sectorQuery = supabase
       .from('activity_sectors')
       .select(`
         sector_code,
@@ -152,6 +194,13 @@ export async function GET(request: NextRequest) {
           transactions!transactions_activity_id_fkey1 (value, value_usd, transaction_type, transaction_date, status)
         )
       `);
+
+    // Filter by organization's activities if provided
+    if (orgActivityIds) {
+      sectorQuery = sectorQuery.in('activity_id', orgActivityIds);
+    }
+
+    const { data: sectorData } = await sectorQuery;
 
     const sectorMap = new Map<string, { name: string; value: number; activityIds: Set<string> }>();
     
@@ -232,7 +281,7 @@ export async function GET(request: NextRequest) {
 
     if (useTransactions) {
       // Get subnational breakdowns with activity transactions
-      const { data: subnationalData, error: subnationalError } = await supabase
+      let subnationalQuery = supabase
         .from('subnational_breakdowns')
         .select(`
           region_name,
@@ -243,6 +292,13 @@ export async function GET(request: NextRequest) {
             transactions!transactions_activity_id_fkey1 (value, value_usd, transaction_type, transaction_date, status)
           )
         `);
+
+      // Filter by organization's activities if provided
+      if (orgActivityIds) {
+        subnationalQuery = subnationalQuery.in('activity_id', orgActivityIds);
+      }
+
+      const { data: subnationalData, error: subnationalError } = await subnationalQuery;
 
       if (subnationalError) {
         console.error('[Dashboard API] Error fetching subnational data:', subnationalError);
@@ -288,7 +344,7 @@ export async function GET(request: NextRequest) {
       });
     } else if (useBudgets) {
       // Get subnational breakdowns with activity budgets
-      const { data: subnationalData, error: subnationalError } = await supabase
+      let budgetSubnationalQuery = supabase
         .from('subnational_breakdowns')
         .select(`
           region_name,
@@ -299,6 +355,12 @@ export async function GET(request: NextRequest) {
             activity_budgets (value, usd_value, period_start, period_end)
           )
         `);
+
+      if (orgActivityIds) {
+        budgetSubnationalQuery = budgetSubnationalQuery.in('activity_id', orgActivityIds);
+      }
+
+      const { data: subnationalData, error: subnationalError } = await budgetSubnationalQuery;
 
       if (subnationalError) {
         console.error('[Dashboard API] Error fetching subnational budget data:', subnationalError);
@@ -339,7 +401,7 @@ export async function GET(request: NextRequest) {
       });
     } else if (usePlannedDisbursements) {
       // Get subnational breakdowns with planned disbursements
-      const { data: subnationalData, error: subnationalError } = await supabase
+      let pdSubnationalQuery = supabase
         .from('subnational_breakdowns')
         .select(`
           region_name,
@@ -350,6 +412,12 @@ export async function GET(request: NextRequest) {
             planned_disbursements (amount, usd_amount, period_start, period_end)
           )
         `);
+
+      if (orgActivityIds) {
+        pdSubnationalQuery = pdSubnationalQuery.in('activity_id', orgActivityIds);
+      }
+
+      const { data: subnationalData, error: subnationalError } = await pdSubnationalQuery;
 
       if (subnationalError) {
         console.error('[Dashboard API] Error fetching subnational planned disbursement data:', subnationalError);

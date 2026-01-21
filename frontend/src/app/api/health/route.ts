@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase';
 
+// Health check endpoint - intentionally public for monitoring
 export async function GET() {
   const checks = {
     timestamp: new Date().toISOString(),
@@ -25,55 +26,55 @@ export async function GET() {
   };
 
   try {
-    // Test database connection
     const supabase = getSupabaseAdmin();
+    
+    // Test database connection
     if (!supabase) {
       checks.database.error = 'Supabase admin client not initialized';
       checks.status = 'error';
       return NextResponse.json(checks, { status: 500 });
     }
 
+    // Simple connection test
+    const { error: connError } = await supabase.from('activities').select('id').limit(1);
+    if (connError) {
+      checks.database.error = connError.message;
+      checks.status = 'error';
+      return NextResponse.json(checks, { status: 500 });
+    }
+    
+    checks.database.connected = true;
+
     // Check each table
-    for (const tableName of Object.keys(checks.tables)) {
+    const tables = ['activities', 'transactions', 'activity_sectors', 'activity_contacts', 'organizations', 'users'] as const;
+    
+    for (const table of tables) {
       try {
         const { count, error } = await supabase
-          .from(tableName)
+          .from(table)
           .select('*', { count: 'exact', head: true });
         
         if (error) {
-          checks.tables[tableName as keyof typeof checks.tables].error = error.message;
+          checks.tables[table].error = error.message;
         } else {
-          checks.tables[tableName as keyof typeof checks.tables].exists = true;
-          checks.tables[tableName as keyof typeof checks.tables].count = count || 0;
+          checks.tables[table].exists = true;
+          checks.tables[table].count = count || 0;
         }
       } catch (e) {
-        checks.tables[tableName as keyof typeof checks.tables].error = 
-          e instanceof Error ? e.message : 'Unknown error';
+        checks.tables[table].error = e instanceof Error ? e.message : 'Unknown error';
       }
-    }
-
-    // Check RLS status
-    try {
-      const { data: rlsData } = await supabase.rpc('check_rls_enabled', {
-        table_names: ['activities', 'transactions']
-      }).select();
-      
-      if (rlsData) {
-        checks.database.connected = true;
-      }
-    } catch (e) {
-      // RPC might not exist, but if we got here, DB is connected
-      checks.database.connected = true;
     }
 
     // Determine overall status
-    const hasErrors = Object.values(checks.tables).some(t => t.error !== null);
-    checks.status = hasErrors ? 'degraded' : 'healthy';
+    const allTablesOk = Object.values(checks.tables).every(t => t.exists && !t.error);
+    checks.status = checks.database.connected && allTablesOk ? 'healthy' : 'degraded';
 
-    return NextResponse.json(checks);
+    return NextResponse.json(checks, { 
+      status: checks.status === 'healthy' ? 200 : 503 
+    });
   } catch (error) {
-    checks.status = 'error';
     checks.database.error = error instanceof Error ? error.message : 'Unknown error';
+    checks.status = 'error';
     return NextResponse.json(checks, { status: 500 });
   }
-} 
+}

@@ -9,12 +9,12 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  Cell
+  Cell,
+  Label
 } from 'recharts'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
-import { BarChart3, Layout, AlertCircle } from 'lucide-react'
+import { AlertCircle } from 'lucide-react'
 import { SDG_GOALS } from '@/data/sdg-targets'
 
 interface SDGCoverageChartProps {
@@ -34,8 +34,6 @@ interface CoverageData {
   totalPlannedDisbursements: number
 }
 
-type ChartOrientation = 'vertical' | 'horizontal'
-
 export function SDGCoverageChart({
   organizationId,
   dateRange,
@@ -46,7 +44,6 @@ export function SDGCoverageChart({
 }: SDGCoverageChartProps) {
   const [data, setData] = useState<CoverageData[]>([])
   const [loading, setLoading] = useState(true)
-  const [orientation, setOrientation] = useState<ChartOrientation>('vertical')
 
   useEffect(() => {
     fetchData()
@@ -123,11 +120,12 @@ export function SDGCoverageChart({
     if (active && payload && payload.length) {
       const data = payload[0].payload
       const goal = SDG_GOALS.find(g => g.id === data.sdgGoal)
-      
+
       return (
         <div className="bg-white border border-slate-200 rounded-lg shadow-lg p-3">
           <p className="font-semibold text-slate-900 mb-2">
-            SDG {data.sdgGoal} – {goal?.name || data.sdgName}
+            <span className="font-mono text-xs bg-slate-100 px-1.5 py-0.5 rounded">SDG {data.sdgGoal}</span>
+            <span className="ml-2">{goal?.name || data.sdgName}</span>
           </p>
           <div className="space-y-1 text-sm">
             <div className="flex justify-between gap-4">
@@ -152,6 +150,130 @@ export function SDGCoverageChart({
     return null
   }
 
+  // Custom Y-axis tick with SDG code and label - wraps long names
+  const CustomYAxisTick = ({ x, y, payload }: any) => {
+    const goal = SDG_GOALS.find(g => g.id === payload.value)
+    const goalName = goal?.name || ''
+
+    // Check if we need to wrap
+    const maxLength = 25
+    const needsWrap = goalName.length > maxLength
+
+    let line1 = goalName
+    let line2 = ''
+
+    if (needsWrap) {
+      const words = goalName.split(' ')
+      let currentLine = ''
+      for (const word of words) {
+        if ((currentLine + ' ' + word).trim().length <= maxLength) {
+          currentLine = (currentLine + ' ' + word).trim()
+        } else {
+          if (!line2) {
+            line1 = currentLine
+            currentLine = word
+          } else {
+            currentLine = currentLine + ' ' + word
+          }
+        }
+      }
+      line2 = currentLine
+    }
+
+    // Calculate badge width based on SDG number
+    const badgeText = `SDG ${payload.value}`
+    const badgeWidth = badgeText.length * 6 + 8
+    const labelWidth = line1.length * 6
+
+    return (
+      <g transform={`translate(${x},${y})`}>
+        {/* Gray background for SDG code */}
+        <rect
+          x={-5 - labelWidth - 6 - badgeWidth}
+          y={needsWrap ? -10 : -4}
+          width={badgeWidth}
+          height={16}
+          rx={3}
+          fill="#f1f5f9"
+        />
+        <text x={-5 - labelWidth - 6 - badgeWidth + 4} y={needsWrap ? 2 : 8} textAnchor="start" fontSize={9} fontFamily="monospace" fill="#475569">
+          {badgeText}
+        </text>
+        {/* Label text */}
+        <text x={-5} y={needsWrap ? -2 : 4} textAnchor="end" fontSize={10} fill="#64748b">
+          {line1}
+        </text>
+        {needsWrap && (
+          <text x={-5} y={10} textAnchor="end" fontSize={10} fill="#64748b">
+            {line2}
+          </text>
+        )}
+      </g>
+    )
+  }
+
+  // Custom Y-axis tick for compact mode - wraps long names
+  const CompactYAxisTick = ({ x, y, payload }: any) => {
+    const goal = SDG_GOALS.find(g => g.id === payload.value)
+    const goalName = goal?.name || ''
+
+    // Check if we need to wrap
+    const maxLength = 18
+    const needsWrap = goalName.length > maxLength
+
+    let line1 = goalName
+    let line2 = ''
+
+    if (needsWrap) {
+      const words = goalName.split(' ')
+      let currentLine = ''
+      for (const word of words) {
+        if ((currentLine + ' ' + word).trim().length <= maxLength) {
+          currentLine = (currentLine + ' ' + word).trim()
+        } else {
+          if (!line2) {
+            line1 = currentLine
+            currentLine = word
+          } else {
+            currentLine = currentLine + ' ' + word
+          }
+        }
+      }
+      line2 = currentLine
+    }
+
+    // Calculate badge width based on SDG number
+    const badgeText = `SDG ${payload.value}`
+    const badgeWidth = badgeText.length * 4.5 + 6
+    const labelWidth = line1.length * 4.5
+
+    return (
+      <g transform={`translate(${x},${y})`}>
+        {/* Gray background for SDG code */}
+        <rect
+          x={-5 - labelWidth - 4 - badgeWidth}
+          y={needsWrap ? -9 : -5}
+          width={badgeWidth}
+          height={14}
+          rx={2}
+          fill="#f1f5f9"
+        />
+        <text x={-5 - labelWidth - 4 - badgeWidth + 3} y={needsWrap ? 1 : 5} textAnchor="start" fontSize={7} fontFamily="monospace" fill="#475569">
+          {badgeText}
+        </text>
+        {/* Label text */}
+        <text x={-5} y={needsWrap ? -2 : 3} textAnchor="end" fontSize={8} fill="#64748b">
+          {line1}
+        </text>
+        {needsWrap && (
+          <text x={-5} y={8} textAnchor="end" fontSize={8} fill="#64748b">
+            {line2}
+          </text>
+        )}
+      </g>
+    )
+  }
+
   // Compact mode renders just the chart without Card wrapper and filters
   if (compact) {
     if (loading) {
@@ -168,26 +290,37 @@ export function SDGCoverageChart({
       <div className="h-full w-full">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart
-            data={chartData.slice(0, 10)}
+            data={chartData.slice(0, 8)}
             layout="vertical"
-            margin={{ top: 5, right: 20, left: 50, bottom: 5 }}
+            margin={{ top: 5, right: 10, left: 5, bottom: 25 }}
           >
             <CartesianGrid strokeDasharray="3 3" horizontal vertical={false} />
-            <XAxis type="number" fontSize={10} />
+            <XAxis
+              type="number"
+              fontSize={9}
+              tick={{ fill: '#64748b' }}
+              tickFormatter={(v) => metric === 'activities' ? v.toFixed(1) : formatCurrency(v)}
+              domain={[0, 'auto']}
+            >
+              <Label value={getMetricLabel()} position="bottom" offset={5} fontSize={9} fill="#64748b" />
+            </XAxis>
             <YAxis
               type="category"
-              dataKey="goal"
-              tick={{ fontSize: 9 }}
-              width={45}
+              dataKey="sdgGoal"
+              tick={<CompactYAxisTick />}
+              width={120}
+              axisLine={false}
+              tickLine={false}
             />
             <Tooltip content={<CustomTooltip />} />
             <Bar
               dataKey="value"
               radius={[0, 4, 4, 0]}
             >
-              {chartData.slice(0, 10).map((entry, index) => (
-                <Cell key={`cell-${index}`} fill={entry.color} />
-              ))}
+              {chartData.slice(0, 8).map((entry, index) => {
+                const goal = SDG_GOALS.find(g => g.id === entry.sdgGoal)
+                return <Cell key={`cell-${index}`} fill={goal?.color || '#64748b'} />
+              })}
             </Bar>
           </BarChart>
         </ResponsiveContainer>
@@ -230,99 +363,62 @@ export function SDGCoverageChart({
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <div>
-            <CardTitle>SDG Coverage by Activities</CardTitle>
-            <CardDescription>
-              {getMetricLabel()} mapped to each SDG. Values are equally split when activities map to multiple SDGs.
-            </CardDescription>
-          </div>
-          <div className="flex gap-2">
-            <Button
-              variant={orientation === 'vertical' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setOrientation('vertical')}
-            >
-              <Layout className="h-4 w-4 mr-2" />
-              Vertical
-            </Button>
-            <Button
-              variant={orientation === 'horizontal' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setOrientation('horizontal')}
-            >
-              <BarChart3 className="h-4 w-4 mr-2" />
-              Horizontal
-            </Button>
-          </div>
-        </div>
+    <Card className="border-0 bg-white shadow-none">
+      <CardHeader className="pb-2">
+        <CardTitle>SDG Coverage</CardTitle>
+        <CardDescription className="mt-1">
+          Activity distribution across Sustainable Development Goals
+        </CardDescription>
       </CardHeader>
       <CardContent>
-        <ResponsiveContainer width="100%" height={400}>
-          {orientation === 'vertical' ? (
-            <BarChart data={chartData} margin={{ top: 5, right: 30, left: 20, bottom: 60 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" vertical={false} />
-              <XAxis
-                dataKey="label"
-                tick={{ fill: '#64748b', fontSize: 12 }}
-                axisLine={{ stroke: '#cbd5e1' }}
-                angle={-45}
-                textAnchor="end"
-                height={80}
-              />
-              <YAxis
-                tickFormatter={metric === 'activities' ? (v) => v.toFixed(0) : formatCurrency}
-                tick={{ fill: '#64748b', fontSize: 12 }}
-                axisLine={{ stroke: '#cbd5e1' }}
-              />
-              <Tooltip content={<CustomTooltip />} />
-              <Bar dataKey="value" radius={[4, 4, 0, 0]}>
-                {chartData.map((entry, index) => {
-                  const goal = SDG_GOALS.find(g => g.id === entry.sdgGoal)
-                  return (
-                    <Cell key={`cell-${index}`} fill={goal?.color || '#64748b'} />
-                  )
-                })}
-              </Bar>
-            </BarChart>
-          ) : (
-            <BarChart
-              data={chartData}
-              layout="vertical"
-              margin={{ top: 5, right: 30, left: 80, bottom: 5 }}
+        <ResponsiveContainer width="100%" height={550}>
+          <BarChart
+            data={chartData}
+            layout="vertical"
+            margin={{ top: 5, right: 20, left: 10, bottom: 30 }}
+          >
+            <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" horizontal={false} />
+            <XAxis
+              type="number"
+              tickFormatter={metric === 'activities' ? (v) => v.toFixed(1) : formatCurrency}
+              tick={{ fill: '#64748b', fontSize: 12 }}
+              axisLine={{ stroke: '#cbd5e1' }}
+              orientation="bottom"
+              domain={[0, 'auto']}
             >
-              <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" horizontal={false} />
-              <XAxis
-                type="number"
-                tickFormatter={metric === 'activities' ? (v) => v.toFixed(0) : formatCurrency}
-                tick={{ fill: '#64748b', fontSize: 12 }}
-                axisLine={{ stroke: '#cbd5e1' }}
-              />
-              <YAxis
-                type="category"
-                dataKey="sdgGoal"
-                tickFormatter={(value) => {
-                  const goal = SDG_GOALS.find(g => g.id === value)
-                  return `SDG ${value} – ${goal?.name || ''}`
-                }}
-                tick={{ fill: '#64748b', fontSize: 11 }}
-                axisLine={{ stroke: '#cbd5e1' }}
-                width={180}
-              />
-              <Tooltip content={<CustomTooltip />} />
-              <Bar dataKey="value" radius={[0, 4, 4, 0]}>
-                {chartData.map((entry, index) => {
-                  const goal = SDG_GOALS.find(g => g.id === entry.sdgGoal)
-                  return (
-                    <Cell key={`cell-${index}`} fill={goal?.color || '#64748b'} />
-                  )
-                })}
-              </Bar>
-            </BarChart>
-          )}
+              <Label value={getMetricLabel()} position="bottom" offset={10} fontSize={11} fill="#64748b" />
+            </XAxis>
+            <YAxis
+              type="category"
+              dataKey="sdgGoal"
+              tick={<CustomYAxisTick />}
+              axisLine={false}
+              tickLine={false}
+              width={275}
+            />
+            <Tooltip content={<CustomTooltip />} />
+            <Bar dataKey="value" radius={[0, 4, 4, 0]}>
+              {chartData.map((entry, index) => {
+                const goal = SDG_GOALS.find(g => g.id === entry.sdgGoal)
+                return (
+                  <Cell key={`cell-${index}`} fill={goal?.color || '#64748b'} />
+                )
+              })}
+            </Bar>
+          </BarChart>
         </ResponsiveContainer>
+
+        {/* Explanatory paragraph */}
+        <div className="mt-6">
+          <p className="text-sm text-slate-500 leading-relaxed">
+            This chart shows how the organization&apos;s aid activities align with the 17 UN Sustainable Development Goals.
+            Each bar represents the number of activities (or financial value) mapped to that SDG. When an activity addresses
+            multiple SDGs, its value is split equally across those goals to avoid double-counting. Use this visualization to
+            identify the organization&apos;s priority development areas, spot potential gaps in SDG coverage, and understand
+            how aid flows are distributed across global development objectives. Higher bars indicate stronger focus areas,
+            while absent or low bars may represent opportunities for expanded programming.
+          </p>
+        </div>
       </CardContent>
     </Card>
   )

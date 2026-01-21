@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getSupabaseAdmin } from '@/lib/supabase'
+import { requireAuth } from '@/lib/auth';
 
 export async function GET(request: NextRequest) {
   try {
-    const supabase = getSupabaseAdmin()
-    
+    const { supabase, response: authResponse } = await requireAuth();
+    if (authResponse) return authResponse;
+
     if (!supabase || typeof supabase.rpc !== 'function') {
       return NextResponse.json({
         data: [],

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSupabaseAdmin } from '@/lib/supabase';
+import { requireAuth } from '@/lib/auth';
 
 export interface RolodexPerson {
   id: string;
@@ -60,8 +60,18 @@ export async function OPTIONS() {
 
 export async function GET(request: NextRequest) {
   try {
+    const { supabase, response: authResponse } = await requireAuth();
+    if (authResponse) return authResponse;
+
+    if (!supabase) {
+      return NextResponse.json(
+        { error: 'Supabase is not configured' },
+        { status: 500 }
+      );
+    }
+
     const { searchParams } = new URL(request.url);
-    
+
     // Parse filters from query parameters - handle empty strings as undefined
     const filters: RolodexFilters = {
       search: searchParams.get('search') || undefined,
@@ -89,14 +99,6 @@ export async function GET(request: NextRequest) {
 
     // Calculate offset for pagination
     const offset = ((filters.page || 1) - 1) * (filters.limit || 24);
-
-    const supabase = getSupabaseAdmin();
-    if (!supabase) {
-      return NextResponse.json(
-        { error: 'Supabase is not configured' },
-        { status: 500 }
-      );
-    }
 
     // Start with a direct approach - get users and activity contacts separately
     console.log('[AIMS Rolodex] Using direct table queries...');
@@ -392,8 +394,10 @@ export async function GET(request: NextRequest) {
 }
 
 export async function PUT(request: NextRequest) {
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
   try {
-    const supabase = getSupabaseAdmin();
     if (!supabase) {
       return NextResponse.json(
         { error: 'Supabase is not configured' },
@@ -490,8 +494,10 @@ export async function PUT(request: NextRequest) {
 }
 
 export async function DELETE(request: NextRequest) {
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
   try {
-    const supabase = getSupabaseAdmin();
     if (!supabase) {
       return NextResponse.json(
         { error: 'Supabase is not configured' },

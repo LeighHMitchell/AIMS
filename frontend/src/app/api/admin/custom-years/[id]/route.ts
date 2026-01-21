@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getSupabaseAdmin } from "@/lib/supabase";
+import { requireAuth } from '@/lib/auth';
 import { CustomYearRow, toCustomYear } from "@/types/custom-years";
 
 interface RouteParams {
@@ -12,9 +12,10 @@ interface RouteParams {
  */
 export async function GET(request: NextRequest, { params }: RouteParams) {
   try {
-    const { id } = await params;
-    const supabase = getSupabaseAdmin();
+    const { supabase, response: authResponse } = await requireAuth();
+    if (authResponse) return authResponse;
 
+    const { id } = await params;
     if (!supabase) {
       return NextResponse.json(
         { error: "Database connection not available" },
@@ -61,9 +62,10 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
  */
 export async function PUT(request: NextRequest, { params }: RouteParams) {
   try {
-    const { id } = await params;
-    const supabase = getSupabaseAdmin();
+    const { supabase, response: authResponse } = await requireAuth();
+    if (authResponse) return authResponse;
 
+    const { id } = await params;
     if (!supabase) {
       return NextResponse.json(
         { error: "Database connection not available" },
@@ -82,6 +84,8 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
       isActive,
       isDefault,
       displayOrder,
+      yearSeparator,
+      secondYearFormat,
     } = body;
 
     // Build update object with only provided fields
@@ -98,7 +102,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     }
 
     if (shortName !== undefined) {
-      updateData.short_name = shortName?.trim() || null;
+      updateData.short_name = shortName || null;
     }
 
     if (startMonth !== undefined) {
@@ -147,6 +151,26 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
 
     if (displayOrder !== undefined) {
       updateData.display_order = displayOrder;
+    }
+
+    if (yearSeparator !== undefined) {
+      if (yearSeparator !== "-" && yearSeparator !== "/") {
+        return NextResponse.json(
+          { error: "Year separator must be either '-' or '/'" },
+          { status: 400 }
+        );
+      }
+      updateData.year_separator = yearSeparator;
+    }
+
+    if (secondYearFormat !== undefined) {
+      if (secondYearFormat !== "short" && secondYearFormat !== "full") {
+        return NextResponse.json(
+          { error: "Second year format must be either 'short' or 'full'" },
+          { status: 400 }
+        );
+      }
+      updateData.second_year_format = secondYearFormat;
     }
 
     // Handle default setting - must unset others first
@@ -215,9 +239,10 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
  */
 export async function DELETE(request: NextRequest, { params }: RouteParams) {
   try {
-    const { id } = await params;
-    const supabase = getSupabaseAdmin();
+    const { supabase, response: authResponse } = await requireAuth();
+    if (authResponse) return authResponse;
 
+    const { id } = await params;
     if (!supabase) {
       return NextResponse.json(
         { error: "Database connection not available" },

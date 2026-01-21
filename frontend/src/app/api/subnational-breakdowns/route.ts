@@ -1,9 +1,15 @@
-import { getSupabaseAdmin } from '@/lib/supabase'
+import { requireAuth } from '@/lib/auth';
 import { NextRequest, NextResponse } from 'next/server'
 
 export async function GET(request: NextRequest) {
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
+  if (!supabase) {
+    return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
+  }
+
   try {
-    const supabase = getSupabaseAdmin()
     const searchParams = request.nextUrl.searchParams
     const orgFilter = searchParams.get('organization')
     const statusFilter = searchParams.get('status')

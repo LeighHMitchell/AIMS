@@ -1433,7 +1433,7 @@ export default function SectorSankeyVisualization({
     <div ref={containerRef} className={`w-full ${className}`}>
       {/* Controls - only shown if showControls is true */}
       {showControls && (
-        <div className="flex flex-wrap items-center justify-between gap-3 mb-4 pb-4 border-b">
+        <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
           <div className="flex flex-wrap items-center gap-4">
             {/* View Mode Tabs */}
             <Tabs value={viewMode} onValueChange={(value) => setViewMode(value as ViewMode)} className="w-auto">

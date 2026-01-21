@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSupabaseAdmin } from '@/lib/supabase';
+import { requireAuth } from '@/lib/auth';
 import { locationFormSchema, type LocationFormSchema } from '@/lib/schemas/location';
 
 // GET - Fetch a single location
@@ -7,6 +7,9 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
   try {
     const { id } = await params;
     const locationId = id;
@@ -19,7 +22,7 @@ export async function GET(
     }
 
     // Fetch location from database
-    const { data: location, error } = await getSupabaseAdmin()
+    const { data: location, error } = await supabase
       .from('activity_locations')
       .select('*')
       .eq('id', locationId)
@@ -105,6 +108,9 @@ export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
   try {
     const { id } = await params;
     const locationId = id;
@@ -140,7 +146,7 @@ export async function PATCH(
     console.log('[Location API] ✅ Validation passed, location data:', locationData);
 
     // Check if location exists
-    const { data: existingLocation } = await getSupabaseAdmin()
+    const { data: existingLocation } = await supabase
       .from('activity_locations')
       .select('activity_id')
       .eq('id', locationId)
@@ -214,7 +220,7 @@ export async function PATCH(
 
     // Update location
     console.log('[Location API] 🔄 Updating location with data:', updateData);
-    const { data: updatedLocation, error } = await getSupabaseAdmin()
+    const { data: updatedLocation, error } = await supabase
       .from('activity_locations')
       .update(updateData)
       .eq('id', locationId)
@@ -249,6 +255,9 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
   try {
     const { id } = await params;
     const locationId = id;
@@ -261,7 +270,7 @@ export async function DELETE(
     }
 
     // Delete location
-    const { error } = await getSupabaseAdmin()
+    const { error } = await supabase
       .from('activity_locations')
       .delete()
       .eq('id', locationId);

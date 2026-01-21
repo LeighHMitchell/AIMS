@@ -3,6 +3,12 @@
  * Define custom fiscal/financial year periods (e.g., Australian Fiscal Year: July 1 - June 30)
  */
 
+// Year separator type
+export type YearSeparator = '-' | '/';
+
+// Second year format type
+export type SecondYearFormat = 'short' | 'full';
+
 // Database row type (snake_case)
 export interface CustomYearRow {
   id: string;
@@ -15,6 +21,8 @@ export interface CustomYearRow {
   is_active: boolean;
   is_default: boolean;
   display_order: number;
+  year_separator: YearSeparator;
+  second_year_format: SecondYearFormat;
   created_at: string;
   updated_at: string;
   created_by: string | null;
@@ -32,6 +40,8 @@ export interface CustomYear {
   isActive: boolean;
   isDefault: boolean;
   displayOrder: number;
+  yearSeparator: YearSeparator;
+  secondYearFormat: SecondYearFormat;
   createdAt: string;
   updatedAt: string;
   createdBy: string | null;
@@ -48,6 +58,8 @@ export interface CustomYearInput {
   isActive?: boolean;
   isDefault?: boolean;
   displayOrder?: number;
+  yearSeparator?: YearSeparator;
+  secondYearFormat?: SecondYearFormat;
 }
 
 // Month information for date pickers
@@ -89,6 +101,8 @@ export function toCustomYear(row: CustomYearRow): CustomYear {
     isActive: row.is_active,
     isDefault: row.is_default,
     displayOrder: row.display_order,
+    yearSeparator: row.year_separator || '-',
+    secondYearFormat: row.second_year_format || 'short',
     createdAt: row.created_at,
     updatedAt: row.updated_at,
     createdBy: row.created_by,
@@ -150,20 +164,26 @@ export function getCustomYearRange(
  * Get the fiscal year label with span format when crossing calendar boundary
  * @param customYear The custom year definition
  * @param year The starting calendar year
- * @returns Label like "AU FY 2024-25" for cross-year or "CY 2024" for same-year
+ * @returns Label like "AU FY2024-25" or "AU FY2024/2025" for cross-year, or "CY 2024" for same-year
+ * Note: No automatic space is added between prefix and year - include trailing space in shortName if desired
  */
 export function getCustomYearLabel(
   customYear: CustomYear | CustomYearInput,
   year: number
 ): string {
   const prefix = (customYear as CustomYear).shortName || customYear.name;
+  const separator = (customYear as CustomYear).yearSeparator || customYear.yearSeparator || '-';
+  const secondYearFormat = (customYear as CustomYear).secondYearFormat || customYear.secondYearFormat || 'short';
 
   if (crossesCalendarYear(customYear)) {
-    // Spans two calendar years - show as "2024-25"
-    return `${prefix} ${year}-${String(year + 1).slice(-2)}`;
+    // Spans two calendar years - format second year based on setting
+    const secondYear = secondYearFormat === 'full'
+      ? String(year + 1)
+      : String(year + 1).slice(-2);
+    return `${prefix}${year}${separator}${secondYear}`;
   }
   // Same calendar year - show as "2024"
-  return `${prefix} ${year}`;
+  return `${prefix}${year}`;
 }
 
 /**

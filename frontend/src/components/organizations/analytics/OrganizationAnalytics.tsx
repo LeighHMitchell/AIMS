@@ -134,18 +134,6 @@ export function OrganizationAnalytics({
 
   return (
     <div className="space-y-6 p-6">
-      {/* Summary Metrics */}
-      <div>
-        <h2 className="text-xl font-semibold text-slate-900 mb-4">
-          Summary Metrics (2025)
-        </h2>
-        <SummaryMetricsCards
-          currentYear={data.summaryMetrics.currentYear}
-          previousYear={data.summaryMetrics.previousYear}
-          currency={currency}
-        />
-      </div>
-
       {/* Interactive Map Tab */}
       <div>
         <h2 className="text-xl font-semibold text-slate-900 mb-4">

@@ -1,10 +1,11 @@
 "use client"
 
 import React, { useState, useEffect } from 'react'
-import { Card, CardContent } from '@/components/ui/card'
+import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { AlertCircle } from 'lucide-react'
 import OrganizationFundingVisualization from '../OrganizationFundingVisualization'
+import { OrganizationSpendTrajectoryChart } from '../OrganizationSpendTrajectoryChart'
 import { OrganizationFundingEnvelope } from '@/types/organization-funding-envelope'
 
 interface OrganizationFundingAnalyticsProps {
@@ -78,7 +79,13 @@ export function OrganizationFundingAnalytics({
 
   return (
     <div className="space-y-6">
-      {/* Visualizations */}
+      {/* Portfolio Spend Trajectory */}
+      <OrganizationSpendTrajectoryChart
+        organizationId={organizationId}
+        organizationName={organizationName}
+      />
+
+      {/* Funding Envelope Visualizations */}
       <OrganizationFundingVisualization
         envelopes={envelopes}
         organizationName={organizationName}

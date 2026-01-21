@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSupabaseAdmin } from '@/lib/supabase';
+import { requireAuth } from '@/lib/auth';
 import { findParentGroup, INSTITUTIONAL_GROUPS } from '@/data/location-groups';
 
 export const dynamic = 'force-dynamic';
@@ -47,8 +47,10 @@ function mapToParentGroup(countryRepresented: string): string {
  * Returns top donor groups aggregated by country_represented field
  */
 export async function GET(request: NextRequest) {
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
   try {
-    const supabase = getSupabaseAdmin();
     
     if (!supabase) {
       return NextResponse.json(

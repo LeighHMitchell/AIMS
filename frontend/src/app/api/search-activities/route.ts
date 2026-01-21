@@ -1,5 +1,5 @@
 import { NextResponse, NextRequest } from 'next/server';
-import { getSupabaseAdmin } from '@/lib/supabase';
+import { requireAuth } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -16,6 +16,13 @@ function cleanSearchQuery(query: string): string {
 }
 
 export async function GET(request: NextRequest) {
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
+  if (!supabase) {
+    return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
+  }
+
   try {
     // Get search parameter from query string
     const searchQuery = request.nextUrl.searchParams.get('q');
@@ -29,7 +36,7 @@ export async function GET(request: NextRequest) {
     console.log('[AIMS] Searching activities with query:', cleanQuery);
     
     // Build the query for live search - return minimal fields for performance
-    let query = getSupabaseAdmin()
+    let query = supabase
       .from('activities')
       .select(`
         id,

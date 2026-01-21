@@ -1,17 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSupabaseAdmin } from '@/lib/supabase';
+import { requireAuth } from '@/lib/auth';
 import { getOrCreateOrganization } from '@/lib/organization-helpers';
 import { fixedCurrencyConverter } from '@/lib/currency-converter-fixed';
 
 export async function POST(request: NextRequest) {
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
+  if (!supabase) {
+    return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
+  }
+
   try {
-    const supabaseAdmin = getSupabaseAdmin();
-    if (!supabaseAdmin) {
-      return NextResponse.json(
-        { error: 'Database connection not available' },
-        { status: 500 }
-      );
-    }
+    const supabaseAdmin = supabase;
 
     const disbursementData = await request.json();
     
@@ -126,14 +127,15 @@ export async function POST(request: NextRequest) {
 }
 
 export async function PUT(request: NextRequest) {
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
+  if (!supabase) {
+    return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
+  }
+
   try {
-    const supabaseAdmin = getSupabaseAdmin();
-    if (!supabaseAdmin) {
-      return NextResponse.json(
-        { error: 'Database connection not available' },
-        { status: 500 }
-      );
-    }
+    const supabaseAdmin = supabase;
 
     const { id, ...updateData } = await request.json();
     
@@ -272,14 +274,15 @@ export async function PUT(request: NextRequest) {
 }
 
 export async function DELETE(request: NextRequest) {
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
+  if (!supabase) {
+    return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
+  }
+
   try {
-    const supabaseAdmin = getSupabaseAdmin();
-    if (!supabaseAdmin) {
-      return NextResponse.json(
-        { error: 'Database connection not available' },
-        { status: 500 }
-      );
-    }
+    const supabaseAdmin = supabase;
 
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');

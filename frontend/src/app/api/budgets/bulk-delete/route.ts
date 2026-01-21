@@ -1,11 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSupabaseAdmin } from '@/lib/supabase';
+import { requireAuth } from '@/lib/auth';
 
 export async function DELETE(request: NextRequest) {
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
+  if (!supabase) {
+    return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
+  }
+
   try {
     const body = await request.json();
     const { ids } = body;
-    
+
     if (!ids || !Array.isArray(ids)) {
       return NextResponse.json(
         { error: 'Budget IDs array is required' },
@@ -35,7 +42,7 @@ export async function DELETE(request: NextRequest) {
     }
     
     // Perform bulk deletion
-    const { error, count } = await getSupabaseAdmin()
+    const { error, count } = await supabase
       .from('activity_budgets')
       .delete()
       .in('id', ids);

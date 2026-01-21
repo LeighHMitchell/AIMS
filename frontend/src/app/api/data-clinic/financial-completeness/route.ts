@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSupabaseAdmin } from '@/lib/supabase';
+import { requireAuth } from '@/lib/auth';
 
 interface FinancialCompletenessActivity {
   id: string;
@@ -16,9 +16,15 @@ interface FinancialCompletenessActivity {
 }
 
 export async function GET(request: NextRequest) {
-  const supabase = getSupabaseAdmin();
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
+  if (!supabase) {
+    return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
+  }
+
   const { searchParams } = new URL(request.url);
-  
+
   // Optional filters
   const reportingOrgId = searchParams.get('reporting_org_id');
   const activityIdsParam = searchParams.get('activity_ids');

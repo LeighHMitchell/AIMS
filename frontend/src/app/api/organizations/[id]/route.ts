@@ -1,5 +1,5 @@
 import { NextResponse, NextRequest } from 'next/server';
-import { getSupabaseAdmin } from '@/lib/supabase';
+import { requireAuth } from '@/lib/auth';
 
 // Force dynamic rendering
 export const dynamic = 'force-dynamic';
@@ -17,19 +17,22 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+  
   try {
     const { id } = await params;
     console.log('[AIMS] GET /api/organizations/[id] - Starting request for ID:', id);
-    // Check if getSupabaseAdmin() is properly initialized
-    if (!getSupabaseAdmin()) {
-      console.error('[AIMS] getSupabaseAdmin() is not initialized');
+    
+    if (!supabase) {
+      console.error('[AIMS] Supabase client is not initialized');
       return NextResponse.json(
         { error: 'Database connection not initialized' },
         { status: 500 }
       );
     }
     
-    const { data: organization, error } = await getSupabaseAdmin()
+    const { data: organization, error } = await supabase
       .from('organizations')
       .select('*')
       .eq('id', id)
@@ -52,12 +55,12 @@ export async function GET(
     }
     
     // Calculate total activities reported by this organization
-    const { data: activities, error: activitiesError } = await getSupabaseAdmin()
+    const { data: activities, error: activitiesError } = await supabase
       .from('activities')
       .select('id')
       .eq('reporting_org_id', id);
     
-    const { data: contributions, error: contributionsError } = await getSupabaseAdmin()
+    const { data: contributions, error: contributionsError } = await supabase
       .from('activity_contributors')
       .select('activity_id')
       .eq('organization_id', id)
@@ -74,7 +77,7 @@ export async function GET(
       const contributionActivityIds = new Set(contributions.map((c: any) => c.activity_id));
       
       // Check which of these activities exist (regardless of status)
-      const { data: contributedActivities } = await getSupabaseAdmin()
+      const { data: contributedActivities } = await supabase
         .from('activities')
         .select('id')
         .in('id', Array.from(contributionActivityIds));
@@ -90,6 +93,8 @@ export async function GET(
       // Ensure we use the correct organisation_type field for frontend compatibility
       organisation_type: organization.organisation_type || organization.type,
       active_project_count: totalActivitiesCount,
+      // Map country back to country_represented for frontend form compatibility
+      country_represented: organization.country,
       // Add default values for IATI fields if not present
       default_currency: organization.default_currency || 'USD',
       default_language: organization.default_language || 'en',
@@ -100,6 +105,8 @@ export async function GET(
     };
     
     console.log('[AIMS] Found organization:', organization.name);
+    console.log('[AIMS] DB country:', organization.country);
+    console.log('[AIMS] Returning country_represented:', enhancedOrganization.country_represented);
     console.log('[AIMS] DB default_currency:', organization.default_currency);
     console.log('[AIMS] Returning default_currency:', enhancedOrganization.default_currency);
     
@@ -124,10 +131,20 @@ export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+  
   try {
     const { id } = await params;
     console.log('[AIMS] PUT /api/organizations/[id] - Updating organization:', id);
     const body = await request.json();
+    
+    if (!supabase) {
+      return NextResponse.json(
+        { error: 'Database connection not initialized' },
+        { status: 500 }
+      );
+    }
     
     // Remove computed fields before updating
     const { active_project_count, ...updates } = body;
@@ -144,7 +161,7 @@ export async function PUT(
         
         // Validate: ensure no alias is another org's canonical IATI ID
         if (updates.alias_refs.length > 0) {
-          const { data: conflictOrgs } = await getSupabaseAdmin()
+          const { data: conflictOrgs } = await supabase
             .from('organizations')
             .select('id, iati_org_id, name')
             .in('iati_org_id', updates.alias_refs)
@@ -215,7 +232,9 @@ export async function PUT(
     
     // Map frontend field names to database column names
     if ('country_represented' in updates) {
+      console.log('[AIMS] Received country_represented:', updates.country_represented);
       updates.country = updates.country_represented;
+      console.log('[AIMS] Saving to country column:', updates.country);
       delete updates.country_represented;
     }
     
@@ -225,7 +244,7 @@ export async function PUT(
       updates.organisation_type = updates.organisation_type;
     }
     
-    const { data, error } = await getSupabaseAdmin()
+    const { data, error } = await supabase
       .from('organizations')
       .update(updates)
       .eq('id', id)
@@ -236,10 +255,18 @@ export async function PUT(
       console.error('[AIMS] Error updating organization:', error);
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
-    
+
     console.log('[AIMS] Updated organization:', data.name);
-    
-    const response = NextResponse.json(data);
+    console.log('[AIMS] Stored country in DB:', data.country);
+
+    // Enhance response with frontend field mappings
+    const enhancedData = {
+      ...data,
+      country_represented: data.country,
+      organisation_type: data.organisation_type || data.type
+    };
+
+    const response = NextResponse.json(enhancedData);
     
     // Add CORS headers
     response.headers.set('Access-Control-Allow-Origin', '*');
@@ -260,11 +287,22 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+  
   try {
     const { id } = await params;
     console.log('[AIMS] DELETE /api/organizations/[id] - Deleting organization:', id);
+    
+    if (!supabase) {
+      return NextResponse.json(
+        { error: 'Database connection not initialized' },
+        { status: 500 }
+      );
+    }
+    
     // Check if organization has dependencies
-    const { data: users } = await getSupabaseAdmin()
+    const { data: users } = await supabase
       .from('users')
       .select('id')
       .eq('organization_id', id)
@@ -278,7 +316,7 @@ export async function DELETE(
     }
     
     // Check for activities
-    const { data: activities } = await getSupabaseAdmin()
+    const { data: activities } = await supabase
       .from('activities')
       .select('id')
       .eq('created_by_org', id)
@@ -291,7 +329,7 @@ export async function DELETE(
       );
     }
     
-    const { error } = await getSupabaseAdmin()
+    const { error } = await supabase
       .from('organizations')
       .delete()
       .eq('id', id);
@@ -318,4 +356,4 @@ export async function DELETE(
       { status: 500 }
     );
   }
-} 
+}

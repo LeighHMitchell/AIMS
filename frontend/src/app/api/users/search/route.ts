@@ -1,11 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSupabaseAdmin } from '@/lib/supabase';
+import { requireAuth } from '@/lib/auth';
 
 /**
  * Search users by name or email
  * GET /api/users/search?q=query
  */
 export async function GET(request: NextRequest) {
+  const { supabase, response } = await requireAuth();
+  if (response) return response;
+  
   try {
     const { searchParams } = new URL(request.url);
     const query = searchParams.get('q')?.trim();
@@ -16,8 +19,6 @@ export async function GET(request: NextRequest) {
     }
 
     console.log('[User Search API] Searching for:', query);
-
-    const supabase = getSupabaseAdmin();
 
     // Search users by first_name, last_name, or email
     // Use explicit relationship name to avoid ambiguity with multiple foreign keys

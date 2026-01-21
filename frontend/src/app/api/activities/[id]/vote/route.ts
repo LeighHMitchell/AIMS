@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getSupabaseAdmin } from '@/lib/supabase'
+import { requireAuth } from '@/lib/auth';
 
 interface RouteParams {
   params: Promise<{ id: string }>
@@ -11,9 +11,10 @@ interface RouteParams {
  */
 export async function GET(request: NextRequest, { params }: RouteParams) {
   try {
-    const { id: activityId } = await params
-    const supabase = getSupabaseAdmin()
+    const { supabase, response: authResponse } = await requireAuth();
+    if (authResponse) return authResponse;
 
+    const { id: activityId } = await params
     if (!supabase) {
       return NextResponse.json({ error: 'Database connection failed' }, { status: 500 })
     }
@@ -71,9 +72,10 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
  */
 export async function POST(request: NextRequest, { params }: RouteParams) {
   try {
-    const { id: activityId } = await params
-    const supabase = getSupabaseAdmin()
+    const { supabase, response: authResponse } = await requireAuth();
+    if (authResponse) return authResponse;
 
+    const { id: activityId } = await params
     if (!supabase) {
       return NextResponse.json({ error: 'Database connection failed' }, { status: 500 })
     }

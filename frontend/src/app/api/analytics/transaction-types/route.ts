@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getSupabaseAdmin } from '@/lib/supabase';
+import { requireAuth } from '@/lib/auth';
 import { TRANSACTION_TYPE_LABELS } from '@/types/transaction';
 
 export const dynamic = 'force-dynamic';
@@ -14,17 +14,15 @@ interface TransactionTypeData {
 }
 
 export async function GET() {
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
+  if (!supabase) {
+    return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
+  }
+
   try {
-    const supabaseAdmin = getSupabaseAdmin();
-
-    
-
-    if (!supabaseAdmin) {
-      return NextResponse.json(
-        { error: 'Database connection not initialized' },
-        { status: 500 }
-      );
-    }
+    const supabaseAdmin = supabase;
 
     // Get all transactions with their types and values
     const { data: transactions, error } = await supabaseAdmin

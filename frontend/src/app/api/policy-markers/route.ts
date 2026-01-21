@@ -1,15 +1,22 @@
 import { NextResponse } from 'next/server';
-import { getSupabaseAdmin } from '@/lib/supabase';
+import { requireAuth } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET(request: Request) {
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
+  if (!supabase) {
+    return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
+  }
+
   try {
     const { searchParams } = new URL(request.url);
     const activityId = searchParams.get('activity_id');
 
     // Base query for all active markers
-    let query = getSupabaseAdmin()
+    let query = supabase
       .from('policy_markers')
       .select('*')
       .eq('is_active', true);
@@ -17,7 +24,7 @@ export async function GET(request: Request) {
     // If activity_id is provided, include both standard markers and custom markers linked to that activity
     if (activityId) {
       // Get all standard IATI markers (needed for XML import matching)
-      const { data: standardMarkers, error: standardError } = await getSupabaseAdmin()
+      const { data: standardMarkers, error: standardError } = await supabase
         .from('policy_markers')
         .select('*')
         .eq('is_active', true)
@@ -25,7 +32,7 @@ export async function GET(request: Request) {
         .order('display_order', { ascending: true });
 
       // Get custom markers linked to this specific activity
-      const { data: linkedCustomMarkers, error: customError } = await getSupabaseAdmin()
+      const { data: linkedCustomMarkers, error: customError } = await supabase
         .from('activity_policy_markers')
         .select(`
           policy_markers!activity_policy_markers_policy_marker_uuid_fkey (*)
@@ -82,6 +89,13 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
+  if (!supabase) {
+    return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
+  }
+
   try {
     const body = await request.json();
 
@@ -117,7 +131,7 @@ export async function POST(request: Request) {
 
     // Check if marker already exists (for custom markers with same code and vocabulary_uri)
     if (isCustomMarker && markerCode) {
-      const { data: existingMarker } = await getSupabaseAdmin()
+      const { data: existingMarker } = await supabase
         .from('policy_markers')
         .select('*')
         .eq('code', markerCode)
@@ -148,7 +162,7 @@ export async function POST(request: Request) {
 
     console.log('[Policy Markers API] Creating marker:', JSON.stringify(markerData, null, 2));
 
-    const { data: newMarker, error } = await getSupabaseAdmin()
+    const { data: newMarker, error } = await supabase
       .from('policy_markers')
       .insert(markerData)
       .select()
@@ -180,6 +194,13 @@ export async function POST(request: Request) {
   }
 }
 export async function PUT(request: Request) {
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
+  if (!supabase) {
+    return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
+  }
+
   try {
     const body = await request.json();
     const markerId = body.id;
@@ -200,7 +221,7 @@ export async function PUT(request: Request) {
     }
 
     // First check if marker exists and get its code to determine if it's custom
-    const { data: existingMarker, error: fetchError } = await getSupabaseAdmin()
+    const { data: existingMarker, error: fetchError } = await supabase
       .from('policy_markers')
       .select('code')
       .eq('id', markerId)
@@ -215,7 +236,7 @@ export async function PUT(request: Request) {
     }
 
     // Only allow editing of custom markers (non-IATI standard)
-    const { data: fullMarker } = await getSupabaseAdmin()
+    const { data: fullMarker } = await supabase
       .from('policy_markers')
       .select('*')
       .eq('id', markerId)
@@ -257,7 +278,7 @@ export async function PUT(request: Request) {
       }
     }
 
-    const { data: updatedMarker, error } = await getSupabaseAdmin()
+    const { data: updatedMarker, error } = await supabase
       .from('policy_markers')
       .update(updatedData)
       .eq('id', markerId)
@@ -283,6 +304,13 @@ export async function PUT(request: Request) {
 }
 
 export async function DELETE(request: Request) {
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
+  if (!supabase) {
+    return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
+  }
+
   try {
     const { searchParams } = new URL(request.url);
     const markerId = searchParams.get('id');
@@ -295,7 +323,7 @@ export async function DELETE(request: Request) {
     }
 
     // First check if marker exists and get its code to determine if it's custom
-    const { data: marker, error: fetchError } = await getSupabaseAdmin()
+    const { data: marker, error: fetchError } = await supabase
       .from('policy_markers')
       .select('code')
       .eq('id', markerId)
@@ -310,7 +338,7 @@ export async function DELETE(request: Request) {
     }
 
     // Check if this is a standard IATI marker
-    const { data: fullMarker } = await getSupabaseAdmin()
+    const { data: fullMarker } = await supabase
       .from('policy_markers')
       .select('*')
       .eq('id', markerId)
@@ -333,7 +361,7 @@ export async function DELETE(request: Request) {
     }
 
     // Delete the marker
-    const { error } = await getSupabaseAdmin()
+    const { error } = await supabase
       .from('policy_markers')
       .delete()
       .eq('id', markerId);

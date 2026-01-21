@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSupabaseAdmin } from '@/lib/supabase';
+import { requireAuth } from '@/lib/auth';
 import type {
   TaskAnalyticsResponse,
   TaskAnalyticsSummary,
@@ -20,11 +20,15 @@ export const dynamic = 'force-dynamic';
  * Retrieve task analytics and metrics
  */
 export async function GET(request: NextRequest) {
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
+  if (!supabase) {
+    return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
+  }
+
   try {
-    const admin = getSupabaseAdmin();
-    if (!admin) {
-      return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
-    }
+    const admin = supabase;
 
     // Parse query params
     const { searchParams } = new URL(request.url);

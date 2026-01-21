@@ -3,12 +3,14 @@
 import React, { useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { 
+import {
   Globe,
   MapPin,
   Building2,
   Activity
 } from "lucide-react";
+import Flag from 'react-world-flags';
+import { getCountryCode } from '@/lib/country-utils';
 
 interface ActivityData {
   id: string;
@@ -139,7 +141,15 @@ export const GeographicFootprint: React.FC<GeographicFootprintProps> = ({
             </div>
             <div className="text-center p-4 bg-slate-50 rounded-lg border border-slate-200">
               <Building2 className="h-6 w-6 mx-auto mb-2 text-slate-500" />
-              <p className="text-lg font-bold text-slate-900">{geographicData.primaryCountry}</p>
+              <div className="flex items-center justify-center gap-2">
+                {getCountryCode(geographicData.primaryCountry) && (
+                  <Flag
+                    code={getCountryCode(geographicData.primaryCountry)!}
+                    style={{ width: '20px', height: '15px' }}
+                  />
+                )}
+                <p className="text-lg font-bold text-slate-900">{geographicData.primaryCountry}</p>
+              </div>
               <p className="text-sm text-slate-600">Primary Country</p>
             </div>
           </div>
@@ -153,7 +163,12 @@ export const GeographicFootprint: React.FC<GeographicFootprintProps> = ({
                   <div key={countryData.country} className="border border-gray-200 rounded-lg p-4">
                     <div className="flex items-start justify-between mb-3">
                       <div className="flex items-center gap-2">
-                        <MapPin className="h-4 w-4 text-gray-500" />
+                        {getCountryCode(countryData.country) && (
+                          <Flag
+                            code={getCountryCode(countryData.country)!}
+                            style={{ width: '20px', height: '15px' }}
+                          />
+                        )}
                         <h5 className="font-medium text-gray-900">{countryData.country}</h5>
                         {index === 0 && countryData.country === geographicData.primaryCountry && (
                           <Badge variant="outline" className="text-xs">

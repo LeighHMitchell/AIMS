@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSupabaseAdmin } from '@/lib/supabase';
+import { requireAuth } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -14,6 +14,9 @@ export async function GET(
   { params }: { params: { id: string } | Promise<{ id: string }> }
 ) {
   try {
+    const { supabase, response: authResponse } = await requireAuth();
+    if (authResponse) return authResponse;
+
     // Handle both sync and async params (Next.js 14/15 compatibility)
     const resolvedParams = await Promise.resolve(params);
     const { id } = resolvedParams;
@@ -29,9 +32,6 @@ export async function GET(
     
     // Add a small delay to ensure database consistency after writes
     await new Promise(resolve => setTimeout(resolve, 300));
-    
-    const supabase = getSupabaseAdmin();
-    
     if (!supabase) {
       console.error('[AIMS API] Supabase client is null');
       return NextResponse.json(

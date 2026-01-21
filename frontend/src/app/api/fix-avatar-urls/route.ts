@@ -1,24 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSupabaseAdmin } from '@/lib/supabase';
+import { requireAuth } from '@/lib/auth';
 
 export async function POST(request: NextRequest) {
   try {
-    // Optional: Add authentication check here to ensure only admins can run this
-    // For now, we'll use a simple secret key check
-    const { searchParams } = new URL(request.url);
-    const secret = searchParams.get('secret');
-    
-    // You should set this secret in your environment variables
-    const ADMIN_SECRET = process.env.ADMIN_SECRET || 'fix-avatars-2024';
-    
-    if (secret !== ADMIN_SECRET) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
+    const { supabase, response: authResponse } = await requireAuth();
+    if (authResponse) return authResponse;
 
-    const supabase = getSupabaseAdmin();
     if (!supabase) {
       return NextResponse.json(
         { error: 'Failed to initialize Supabase client' },
@@ -106,8 +93,10 @@ export async function POST(request: NextRequest) {
 
 // GET method to check status
 export async function GET(request: NextRequest) {
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
   try {
-    const supabase = getSupabaseAdmin();
     if (!supabase) {
       return NextResponse.json(
         { error: 'Failed to initialize Supabase client' },

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSupabaseAdmin } from '@/lib/supabase';
+import { requireAuth } from '@/lib/auth';
 
 export async function OPTIONS() {
   return new NextResponse(null, {
@@ -16,11 +16,18 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
+  if (!supabase) {
+    return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
+  }
+
   console.log('[API] GET /api/working-groups/[id] - Starting request');
-  
+
   try {
     const { id } = await params;
-    const { data, error } = await getSupabaseAdmin()
+    const { data, error } = await supabase
       .from('working_groups')
       .select('*')
       .eq('id', id)
@@ -88,13 +95,20 @@ export async function PUT(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
+  if (!supabase) {
+    return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
+  }
+
   console.log('[API] PUT /api/working-groups/[id] - Starting request');
-  
+
   try {
     const { id } = await params;
     const body = await request.json();
-    
-    const { data, error } = await getSupabaseAdmin()
+
+    const { data, error } = await supabase
       .from('working_groups')
       .update({
         label: body.label,
@@ -139,11 +153,18 @@ export async function DELETE(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
+  if (!supabase) {
+    return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
+  }
+
   console.log('[API] DELETE /api/working-groups/[id] - Starting request');
-  
+
   try {
     const { id } = await params;
-    const { error } = await getSupabaseAdmin()
+    const { error } = await supabase
       .from('working_groups')
       .delete()
       .eq('id', id);

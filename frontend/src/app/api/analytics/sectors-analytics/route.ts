@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getSupabaseAdmin } from '@/lib/supabase'
+import { requireAuth } from '@/lib/auth';
 import { SectorMetrics, SectorAnalyticsResponse } from '@/types/sector-analytics'
 
 // Force dynamic rendering to allow request.url access
@@ -7,14 +7,14 @@ export const dynamic = 'force-dynamic'
 
 export async function GET(request: NextRequest) {
   try {
+    const { supabase, response: authResponse } = await requireAuth();
+    if (authResponse) return authResponse;
+
     const { searchParams } = new URL(request.url)
     const year = searchParams.get('year')
     const organizationId = searchParams.get('organizationId')
     const groupByLevel = searchParams.get('groupByLevel') || '5' // Default to 5-digit
     const publicationStatus = searchParams.get('publicationStatus') || 'all' // Default to all activities
-    
-    const supabase = getSupabaseAdmin()
-    
     if (!supabase) {
       return NextResponse.json(
         { success: false, error: 'Database connection not initialized' } as SectorAnalyticsResponse,

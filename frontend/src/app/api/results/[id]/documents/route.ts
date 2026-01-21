@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSupabaseAdmin } from '@/lib/supabase';
+import { requireAuth } from '@/lib/auth';
 
 // GET /api/results/[id]/documents - Fetch all document links for a result
 export async function GET(
@@ -7,14 +7,15 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
-  const supabase = getSupabaseAdmin();
-  
-  if (!supabase) {
-    return NextResponse.json({ error: 'Database not available' }, { status: 500 });
-  }
 
   try {
-    const { id } = await params;
+    const { supabase, response: authResponse } = await requireAuth();
+    if (authResponse) return authResponse;
+
+    if (!supabase) {
+      return NextResponse.json({ error: 'Database not available' }, { status: 500 });
+    }
+
     const { data, error } = await supabase
       .from('result_document_links')
       .select('*')
@@ -29,8 +30,8 @@ export async function GET(
     return NextResponse.json({ documents: data || [] });
   } catch (error) {
     console.error('[Result Documents API] Unexpected error:', error);
-    return NextResponse.json({ 
-      error: error instanceof Error ? error.message : 'Unknown error' 
+    return NextResponse.json({
+      error: error instanceof Error ? error.message : 'Unknown error'
     }, { status: 500 });
   }
 }
@@ -41,29 +42,30 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
-  const supabase = getSupabaseAdmin();
-  
-  if (!supabase) {
-    return NextResponse.json({ error: 'Database not available' }, { status: 500 });
-  }
 
   try {
-    const { id } = await params;
+    const { supabase, response: authResponse } = await requireAuth();
+    if (authResponse) return authResponse;
+
+    if (!supabase) {
+      return NextResponse.json({ error: 'Database not available' }, { status: 500 });
+    }
+
     const body = await request.json();
 
     // Validate required fields
     if (!body.url || !body.title) {
-      return NextResponse.json({ 
-        error: 'URL and title are required' 
+      return NextResponse.json({
+        error: 'URL and title are required'
       }, { status: 400 });
     }
 
     // Ensure title is JSONB
-    const title = typeof body.title === 'string' 
-      ? { en: body.title } 
+    const title = typeof body.title === 'string'
+      ? { en: body.title }
       : body.title;
 
-    const description = body.description 
+    const description = body.description
       ? (typeof body.description === 'string' ? { en: body.description } : body.description)
       : null;
 
@@ -92,8 +94,8 @@ export async function POST(
     return NextResponse.json({ document: data }, { status: 201 });
   } catch (error) {
     console.error('[Result Documents API] Unexpected error:', error);
-    return NextResponse.json({ 
-      error: error instanceof Error ? error.message : 'Unknown error' 
+    return NextResponse.json({
+      error: error instanceof Error ? error.message : 'Unknown error'
     }, { status: 500 });
   }
 }
@@ -104,20 +106,21 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
-  const supabase = getSupabaseAdmin();
-  
-  if (!supabase) {
-    return NextResponse.json({ error: 'Database not available' }, { status: 500 });
-  }
 
   try {
-    const { id } = await params;
+    const { supabase, response: authResponse } = await requireAuth();
+    if (authResponse) return authResponse;
+
+    if (!supabase) {
+      return NextResponse.json({ error: 'Database not available' }, { status: 500 });
+    }
+
     const body = await request.json();
     const { documentId, ...updateData } = body;
 
     if (!documentId) {
-      return NextResponse.json({ 
-        error: 'Document ID is required' 
+      return NextResponse.json({
+        error: 'Document ID is required'
       }, { status: 400 });
     }
 
@@ -145,8 +148,8 @@ export async function PUT(
     return NextResponse.json({ document: data });
   } catch (error) {
     console.error('[Result Documents API] Unexpected error:', error);
-    return NextResponse.json({ 
-      error: error instanceof Error ? error.message : 'Unknown error' 
+    return NextResponse.json({
+      error: error instanceof Error ? error.message : 'Unknown error'
     }, { status: 500 });
   }
 }
@@ -157,20 +160,21 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
-  const supabase = getSupabaseAdmin();
-  
-  if (!supabase) {
-    return NextResponse.json({ error: 'Database not available' }, { status: 500 });
-  }
 
   try {
-    const { id } = await params;
+    const { supabase, response: authResponse } = await requireAuth();
+    if (authResponse) return authResponse;
+
+    if (!supabase) {
+      return NextResponse.json({ error: 'Database not available' }, { status: 500 });
+    }
+
     const { searchParams } = new URL(request.url);
     const documentId = searchParams.get('documentId');
 
     if (!documentId) {
-      return NextResponse.json({ 
-        error: 'Document ID is required' 
+      return NextResponse.json({
+        error: 'Document ID is required'
       }, { status: 400 });
     }
 
@@ -188,9 +192,8 @@ export async function DELETE(
     return NextResponse.json({ success: true }, { status: 200 });
   } catch (error) {
     console.error('[Result Documents API] Unexpected error:', error);
-    return NextResponse.json({ 
-      error: error instanceof Error ? error.message : 'Unknown error' 
+    return NextResponse.json({
+      error: error instanceof Error ? error.message : 'Unknown error'
     }, { status: 500 });
   }
 }
-

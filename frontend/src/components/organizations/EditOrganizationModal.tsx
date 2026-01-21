@@ -714,7 +714,7 @@ export function EditOrganizationModal({
           <TabsList className="grid w-full grid-cols-7 flex-shrink-0">
             <TabsTrigger value="basic">General</TabsTrigger>
             <TabsTrigger value="branding">Branding</TabsTrigger>
-            <TabsTrigger value="contact">Contact & Social</TabsTrigger>
+            <TabsTrigger value="contact">Social & Web</TabsTrigger>
             <TabsTrigger value="aliases">Aliases</TabsTrigger>
             <TabsTrigger value="budgets">IATI Budgets</TabsTrigger>
             <TabsTrigger value="documents">IATI Documents</TabsTrigger>
@@ -1231,7 +1231,7 @@ export function EditOrganizationModal({
             </div>
           </TabsContent>
 
-          {/* Contact & Social Media Tab */}
+          {/* Social & Web Tab */}
           <TabsContent value="contact" className="h-full overflow-y-auto px-2 mt-4 space-y-6">
             {/* Contact Information Section */}
             <div className="space-y-4">

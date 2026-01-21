@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSupabaseAdmin } from '@/lib/supabase';
+import { requireAuth } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 
@@ -15,9 +15,6 @@ export async function GET(
     if (!activityId) {
       return NextResponse.json({ error: 'Activity ID is required' }, { status: 400 });
     }
-
-    const supabase = getSupabaseAdmin();
-
     // Query government inputs directly with RLS
     const { data: governmentInputs, error } = await supabase
       .from('government_inputs')
@@ -105,9 +102,6 @@ export async function POST(
     if (!activityId) {
       return NextResponse.json({ error: 'Activity ID is required' }, { status: 400 });
     }
-
-    const supabase = getSupabaseAdmin();
-
     // Verify the activity exists and user has access
     const { data: activity, error: activityError } = await supabase
       .from('activities')
@@ -228,15 +222,15 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
   try {
     const { id: activityId } = await params;
     
     if (!activityId) {
       return NextResponse.json({ error: 'Activity ID is required' }, { status: 400 });
     }
-
-    const supabase = getSupabaseAdmin();
-
     const { error } = await supabase
       .from('government_inputs')
       .delete()

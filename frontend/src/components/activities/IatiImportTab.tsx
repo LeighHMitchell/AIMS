@@ -8340,21 +8340,19 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
               // NOTE: This MUST come BEFORE 'Budget ' check since "Country Budget Mapping" contains "Budget"
               // Collect country budget items data for import
               if (!updateData.importedCountryBudgetItems) updateData.importedCountryBudgetItems = [];
-              // Field name is "Country Budget Mapping N" - extract N from index 3
-              const cbiIndex = parseInt(field.fieldName.split(' ')[3]) - 1;
-              if (parsedActivity?.countryBudgetItems && parsedActivity.countryBudgetItems[cbiIndex]) {
-                const budgetMapping = parsedActivity.countryBudgetItems[cbiIndex];
-                updateData.importedCountryBudgetItems.push(budgetMapping);
-                console.log(`[IATI Import] ✅ Adding country budget mapping ${cbiIndex + 1} for import:`, {
-                  vocabulary: budgetMapping.vocabulary,
-                  budgetItemsCount: budgetMapping.budgetItems?.length || 0,
-                  budgetMapping
+              // Use field.itemData directly - it contains the vocabulary and budget_items array
+              // populated during field creation (lines 4909-4915)
+              if (field.itemData) {
+                updateData.importedCountryBudgetItems.push(field.itemData);
+                console.log(`[IATI Import] ✅ Adding country budget mapping for import:`, {
+                  vocabulary: field.itemData.vocabulary,
+                  budgetItemsCount: field.itemData.budget_items?.length || 0,
+                  itemData: field.itemData
                 });
               } else {
-                console.error(`[IATI Import] ❌ Country budget mapping ${cbiIndex + 1} not found in parsed activity!`, {
-                  cbiIndex,
-                  availableCount: parsedActivity?.countryBudgetItems?.length || 0,
-                  parsedActivity: parsedActivity?.countryBudgetItems
+                console.error(`[IATI Import] ❌ Country budget mapping field has no itemData!`, {
+                  fieldName: field.fieldName,
+                  field
                 });
               }
               console.log(`[IATI Import] Total country budget mappings queued: ${updateData.importedCountryBudgetItems?.length || 0}`);
@@ -8734,12 +8732,31 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
         const result = await response.json();
         console.log('[IATI Import] Import as reporting org result:', result);
 
+        // Check if the API returned a new/different activity ID (happens when re-importing)
+        const returnedActivityId = result.createdId || result.id || (result.count > 0 && result.importedActivities?.[0]?.id);
+
         // If activityId was provided, we're updating an existing activity
         if (activityId) {
+          // Check if the activity was replaced (deleted and recreated with new ID)
+          if (returnedActivityId && returnedActivityId !== activityId) {
+            console.log('[IATI Import] Activity was replaced! Old ID:', activityId, 'New ID:', returnedActivityId);
+            // Invalidate old cache
+            await invalidateActivityCache(activityId);
+            // Update effective activity ID to the new one
+            effectiveActivityId = returnedActivityId;
+            toast.success('Activity re-imported successfully!', {
+              description: 'Redirecting to updated activity...',
+              duration: 3000,
+            });
+            // Redirect to the new activity
+            window.location.href = `/activities/${returnedActivityId}/edit?section=xml-import`;
+            return;
+          }
+
           // Invalidate cache and dispatch event
           await invalidateActivityCache(activityId);
-          window.dispatchEvent(new CustomEvent('activity-updated', { 
-            detail: { activityId } 
+          window.dispatchEvent(new CustomEvent('activity-updated', {
+            detail: { activityId }
           }));
           toast.success('Reporting organisation updated!', {
             description: 'Processing additional fields...',
@@ -9538,34 +9555,51 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
       // Handle country budget items import if any
       if (updateData.importedCountryBudgetItems && updateData.importedCountryBudgetItems.length > 0) {
         console.log('[IATI Import] Processing country budget items import...');
-        
-        setImportStatus({ 
-          stage: 'importing', 
+
+        setImportStatus({
+          stage: 'importing',
           progress: 89,
           message: 'Importing country budget items...'
         });
 
         try {
+          // Consolidate budget items by vocabulary
+          // Each field.itemData has ONE budget item, but the DB requires ONE record per vocabulary
+          // with ALL budget items for that vocabulary grouped together
+          const consolidatedByVocabulary = new Map<string, any[]>();
+
+          for (const cbi of updateData.importedCountryBudgetItems) {
+            const vocabulary = cbi.vocabulary;
+            const budgetItemsArray = cbi.budget_items || cbi.budgetItems || [];
+
+            if (!consolidatedByVocabulary.has(vocabulary)) {
+              consolidatedByVocabulary.set(vocabulary, []);
+            }
+
+            // Add all budget items from this field to the vocabulary's collection
+            for (const item of budgetItemsArray) {
+              consolidatedByVocabulary.get(vocabulary)!.push({
+                code: item.code,
+                percentage: item.percentage,
+                description: item.description || null
+              });
+            }
+          }
+
+          console.log(`[IATI Import] Consolidated ${updateData.importedCountryBudgetItems.length} items into ${consolidatedByVocabulary.size} vocabulary group(s)`);
+
           let successCount = 0;
           let errorCount = 0;
 
-          for (const cbi of updateData.importedCountryBudgetItems) {
+          // POST one request per vocabulary with all its budget items
+          for (const [vocabulary, budgetItems] of consolidatedByVocabulary) {
             try {
-              // Transform from parsed format to API format
-              // Parsed: { vocabulary, budgetItems: [{code, percentage, description}] }
-              // API expects: { vocabulary, budget_items: [{code, percentage, description}] }
-              // Note: description is stored as JSONB in DB, so keep object format if present
               const cbiData = {
-                vocabulary: cbi.vocabulary,
-                budget_items: (cbi.budgetItems || []).map((item: any) => ({
-                  code: item.code,
-                  percentage: item.percentage,
-                  // Keep JSONB structure if already an object, API will handle conversion
-                  description: item.description || null
-                }))
+                vocabulary: vocabulary,
+                budget_items: budgetItems
               };
 
-              console.log('[IATI Import] Posting country budget item:', cbiData);
+              console.log('[IATI Import] Posting consolidated country budget items:', cbiData);
 
               const response = await fetchWithTimeout(`/api/activities/${effectiveActivityId}/country-budget-items`, {
                 method: 'POST',
@@ -9575,26 +9609,27 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
 
               if (response.ok) {
                 successCount++;
-                console.log(`[IATI Import] ✅ Country budget item imported: vocabulary=${cbi.vocabulary}`);
+                console.log(`[IATI Import] ✅ Country budget items imported: vocabulary=${vocabulary}, ${budgetItems.length} item(s)`);
               } else {
                 errorCount++;
                 const errorText = await response.text();
-                console.error('[IATI Import] Country budget item import failed:', errorText);
+                console.error('[IATI Import] Country budget items import failed:', errorText);
               }
             } catch (cbiError) {
-              console.error('[IATI Import] Error importing country budget item:', cbiError);
+              console.error('[IATI Import] Error importing country budget items:', cbiError);
               errorCount++;
             }
           }
 
           if (successCount > 0) {
+            const totalItems = Array.from(consolidatedByVocabulary.values()).reduce((sum, items) => sum + items.length, 0);
             toast.success(`Country budget items imported successfully`, {
-              description: `${successCount} item(s) added${errorCount > 0 ? ` (${errorCount} failed)` : ''}`
+              description: `${totalItems} item(s) across ${successCount} vocabulary group(s)${errorCount > 0 ? ` (${errorCount} failed)` : ''}`
             });
             invalidateActivityCache(effectiveActivityId);
           } else if (errorCount > 0) {
             toast.error('Failed to import country budget items', {
-              description: `All ${errorCount} item(s) failed to import`
+              description: `All ${errorCount} vocabulary group(s) failed to import`
             });
           }
         } catch (cbiError) {

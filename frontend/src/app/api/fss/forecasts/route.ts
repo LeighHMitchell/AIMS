@@ -1,11 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSupabaseAdmin } from '@/lib/supabase';
+import { requireAuth } from '@/lib/auth';
 import { fixedCurrencyConverter } from '@/lib/currency-converter-fixed';
 
 // POST - Create a new forecast
 export async function POST(request: NextRequest) {
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
   try {
-    const supabase = getSupabaseAdmin();
     const body = await request.json();
 
     console.log('[Forecasts API] POST request:', body);
@@ -88,8 +90,10 @@ export async function POST(request: NextRequest) {
 
 // PUT - Update an existing forecast
 export async function PUT(request: NextRequest) {
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
   try {
-    const supabase = getSupabaseAdmin();
     const body = await request.json();
 
     console.log('[Forecasts API] PUT request:', body);
@@ -169,8 +173,10 @@ export async function PUT(request: NextRequest) {
 
 // DELETE - Remove a forecast
 export async function DELETE(request: NextRequest) {
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
   try {
-    const supabase = getSupabaseAdmin();
     const { searchParams } = new URL(request.url);
     const forecastId = searchParams.get('id');
 

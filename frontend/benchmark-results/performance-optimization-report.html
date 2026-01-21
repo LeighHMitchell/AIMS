@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AIMS Performance Optimization Report</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+      color: #e2e8f0;
+      min-height: 100vh;
+      padding: 2rem;
+    }
+    .container { max-width: 1200px; margin: 0 auto; }
+
+    h1 {
+      font-size: 2.5rem;
+      margin-bottom: 0.5rem;
+      background: linear-gradient(90deg, #38bdf8, #a78bfa);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .subtitle { color: #94a3b8; margin-bottom: 2rem; font-size: 1.1rem; }
+
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1.5rem;
+      margin-bottom: 3rem;
+    }
+
+    .card {
+      background: rgba(30, 41, 59, 0.8);
+      border-radius: 16px;
+      padding: 1.5rem;
+      border: 1px solid rgba(148, 163, 184, 0.1);
+      backdrop-filter: blur(10px);
+    }
+
+    .card-header {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 1rem;
+    }
+
+    .card-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+    }
+
+    .card-icon.green { background: rgba(34, 197, 94, 0.2); }
+    .card-icon.blue { background: rgba(56, 189, 248, 0.2); }
+    .card-icon.purple { background: rgba(167, 139, 250, 0.2); }
+    .card-icon.yellow { background: rgba(234, 179, 8, 0.2); }
+
+    .card-title { font-size: 0.9rem; color: #94a3b8; }
+    .card-value {
+      font-size: 2.5rem;
+      font-weight: 700;
+      color: #f1f5f9;
+      line-height: 1;
+    }
+    .card-change {
+      display: inline-block;
+      padding: 0.25rem 0.75rem;
+      border-radius: 9999px;
+      font-size: 0.875rem;
+      font-weight: 500;
+      margin-top: 0.5rem;
+    }
+    .card-change.positive { background: rgba(34, 197, 94, 0.2); color: #22c55e; }
+    .card-change.negative { background: rgba(239, 68, 68, 0.2); color: #ef4444; }
+
+    h2 {
+      font-size: 1.5rem;
+      margin: 2rem 0 1rem;
+      color: #f1f5f9;
+    }
+
+    .comparison-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 2rem;
+    }
+
+    .comparison-table th,
+    .comparison-table td {
+      padding: 1rem;
+      text-align: left;
+      border-bottom: 1px solid rgba(148, 163, 184, 0.1);
+    }
+
+    .comparison-table th {
+      background: rgba(15, 23, 42, 0.5);
+      color: #94a3b8;
+      font-weight: 500;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .comparison-table tbody tr:hover {
+      background: rgba(56, 189, 248, 0.05);
+    }
+
+    .endpoint-name {
+      font-family: 'SF Mono', Monaco, monospace;
+      font-size: 0.875rem;
+      color: #38bdf8;
+    }
+
+    .metric {
+      font-family: 'SF Mono', Monaco, monospace;
+      font-size: 0.875rem;
+    }
+
+    .improvement {
+      display: inline-block;
+      padding: 0.25rem 0.5rem;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+
+    .improvement.excellent { background: #22c55e; color: #000; }
+    .improvement.good { background: #86efac; color: #000; }
+    .improvement.moderate { background: #fde047; color: #000; }
+    .improvement.none { background: #64748b; color: #fff; }
+
+    .chart-container {
+      background: rgba(30, 41, 59, 0.8);
+      border-radius: 16px;
+      padding: 1.5rem;
+      border: 1px solid rgba(148, 163, 184, 0.1);
+      margin-bottom: 2rem;
+    }
+
+    .chart-title {
+      font-size: 1.25rem;
+      margin-bottom: 1rem;
+      color: #f1f5f9;
+    }
+
+    .recommendations {
+      background: rgba(30, 41, 59, 0.8);
+      border-radius: 16px;
+      padding: 1.5rem;
+      border: 1px solid rgba(148, 163, 184, 0.1);
+      margin-bottom: 2rem;
+    }
+
+    .recommendation-item {
+      display: flex;
+      gap: 1rem;
+      padding: 1rem 0;
+      border-bottom: 1px solid rgba(148, 163, 184, 0.1);
+    }
+
+    .recommendation-item:last-child { border-bottom: none; }
+
+    .rec-priority {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.75rem;
+      font-weight: 600;
+      flex-shrink: 0;
+    }
+
+    .rec-priority.high { background: #ef4444; color: #fff; }
+    .rec-priority.medium { background: #eab308; color: #000; }
+    .rec-priority.low { background: #22c55e; color: #000; }
+
+    .rec-content h4 { color: #f1f5f9; margin-bottom: 0.25rem; }
+    .rec-content p { color: #94a3b8; font-size: 0.875rem; }
+
+    .code-block {
+      background: #0f172a;
+      border-radius: 8px;
+      padding: 1rem;
+      margin-top: 0.5rem;
+      font-family: 'SF Mono', Monaco, monospace;
+      font-size: 0.8rem;
+      color: #38bdf8;
+      overflow-x: auto;
+    }
+
+    footer {
+      text-align: center;
+      padding: 2rem;
+      color: #64748b;
+      font-size: 0.875rem;
+    }
+
+    .legend {
+      display: flex;
+      gap: 1.5rem;
+      margin: 1rem 0;
+      flex-wrap: wrap;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.875rem;
+      color: #94a3b8;
+    }
+
+    .legend-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 3px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🚀 Performance Optimization Report</h1>
+    <p class="subtitle">AIMS Application - Optimization Results | Generated: January 15, 2026</p>
+
+    <div class="summary-grid">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-icon green">📉</div>
+          <div>
+            <div class="card-title">Payload Reduction</div>
+          </div>
+        </div>
+        <div class="card-value">99.5%</div>
+        <div class="card-change positive">3.1MB → 14KB</div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-icon blue">⚡</div>
+          <div>
+            <div class="card-title">Response Time Improvement</div>
+          </div>
+        </div>
+        <div class="card-value">63-85%</div>
+        <div class="card-change positive">Faster endpoints</div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-icon purple">🔧</div>
+          <div>
+            <div class="card-title">New Optimized Endpoints</div>
+          </div>
+        </div>
+        <div class="card-value">2</div>
+        <div class="card-change positive">activities-list, transactions-list</div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-icon yellow">📊</div>
+          <div>
+            <div class="card-title">Fields Reduced</div>
+          </div>
+        </div>
+        <div class="card-value">73%</div>
+        <div class="card-change positive">86 → 22 fields</div>
+      </div>
+    </div>
+
+    <h2>📊 Before vs After Comparison</h2>
+
+    <table class="comparison-table">
+      <thead>
+        <tr>
+          <th>Endpoint</th>
+          <th>Baseline Size</th>
+          <th>Optimized Size</th>
+          <th>Baseline Time</th>
+          <th>Optimized Time</th>
+          <th>Improvement</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>
+            <span class="endpoint-name">/api/activities</span><br>
+            <small style="color: #64748b;">List view (20 items)</small>
+          </td>
+          <td class="metric" style="color: #ef4444;">3,131 KB</td>
+          <td class="metric" style="color: #22c55e;">14.4 KB</td>
+          <td class="metric" style="color: #ef4444;">1,226 ms</td>
+          <td class="metric" style="color: #22c55e;">474 ms</td>
+          <td><span class="improvement excellent">↓99.5% size</span></td>
+        </tr>
+        <tr>
+          <td>
+            <span class="endpoint-name">/api/transactions</span><br>
+            <small style="color: #64748b;">List view (20 items)</small>
+          </td>
+          <td class="metric" style="color: #ef4444;">1,480 KB</td>
+          <td class="metric" style="color: #22c55e;">9.5 KB</td>
+          <td class="metric" style="color: #ef4444;">2,252 ms</td>
+          <td class="metric" style="color: #22c55e;">463 ms</td>
+          <td><span class="improvement excellent">↓99.4% size</span></td>
+        </tr>
+        <tr>
+          <td>
+            <span class="endpoint-name">/api/transactions</span><br>
+            <small style="color: #64748b;">List view (50 items)</small>
+          </td>
+          <td class="metric" style="color: #ef4444;">5,516 KB</td>
+          <td class="metric" style="color: #22c55e;">23.5 KB</td>
+          <td class="metric" style="color: #ef4444;">4,492 ms</td>
+          <td class="metric" style="color: #22c55e;">585 ms</td>
+          <td><span class="improvement excellent">↓99.6% size</span></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="chart-container">
+      <h3 class="chart-title">Response Size Comparison</h3>
+      <div class="legend">
+        <div class="legend-item">
+          <div class="legend-dot" style="background: #ef4444;"></div>
+          <span>Original Endpoint</span>
+        </div>
+        <div class="legend-item">
+          <div class="legend-dot" style="background: #22c55e;"></div>
+          <span>Optimized Endpoint</span>
+        </div>
+      </div>
+      <canvas id="sizeChart" height="200"></canvas>
+    </div>
+
+    <div class="chart-container">
+      <h3 class="chart-title">Response Time Comparison (ms)</h3>
+      <canvas id="timeChart" height="200"></canvas>
+    </div>
+
+    <h2>🎯 Optimizations Applied</h2>
+
+    <div class="recommendations">
+      <div class="recommendation-item">
+        <div class="rec-priority high">1</div>
+        <div class="rec-content">
+          <h4>Created Slim List Endpoints</h4>
+          <p>New endpoints that return only essential fields for list views, reducing payload by 99%+</p>
+          <div class="code-block">
+GET /api/activities-list - 22 fields vs 86 fields<br>
+GET /api/transactions-list - 13 fields vs 73 fields
+          </div>
+        </div>
+      </div>
+
+      <div class="recommendation-item">
+        <div class="rec-priority high">2</div>
+        <div class="rec-content">
+          <h4>Removed Hot-Path Logging</h4>
+          <p>Removed per-activity console.log statements from transform loops that were executing 20-50 times per request</p>
+          <div class="code-block">
+// REMOVED: console.log(`Activity ${activity.id} summary:`, summary);
+          </div>
+        </div>
+      </div>
+
+      <div class="recommendation-item">
+        <div class="rec-priority medium">3</div>
+        <div class="rec-content">
+          <h4>Added Performance Benchmarking Suite</h4>
+          <p>Created comprehensive benchmarking tools for ongoing performance monitoring</p>
+          <div class="code-block">
+npm run benchmark      # Run benchmarks<br>
+npm run perf:report    # Generate HTML report
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <h2>🔮 Recommended Next Steps</h2>
+
+    <div class="recommendations">
+      <div class="recommendation-item">
+        <div class="rec-priority high">!</div>
+        <div class="rec-content">
+          <h4>Fix Organizations Endpoint</h4>
+          <p>The /api/organizations endpoint is returning 14MB and taking 7-13 seconds. This needs urgent optimization using the same slim endpoint pattern.</p>
+        </div>
+      </div>
+
+      <div class="recommendation-item">
+        <div class="rec-priority medium">!</div>
+        <div class="rec-content">
+          <h4>Update Frontend to Use Slim Endpoints</h4>
+          <p>Modify the React hooks (useOptimizedActivities, etc.) to use the new slim endpoints for list views, lazy-loading detailed data only when needed.</p>
+        </div>
+      </div>
+
+      <div class="recommendation-item">
+        <div class="rec-priority low">!</div>
+        <div class="rec-content">
+          <h4>Add Database Indexes</h4>
+          <p>Add composite indexes for common query patterns to further reduce database query time.</p>
+        </div>
+      </div>
+    </div>
+
+    <footer>
+      <p>AIMS Performance Optimization Suite | Run <code>npm run benchmark</code> to regenerate</p>
+      <p style="margin-top: 0.5rem;">Generated by Claude Code Performance Lab</p>
+    </footer>
+  </div>
+
+  <script>
+    // Response Size Chart
+    const sizeCtx = document.getElementById('sizeChart').getContext('2d');
+    new Chart(sizeCtx, {
+      type: 'bar',
+      data: {
+        labels: ['Activities (20)', 'Transactions (20)', 'Transactions (50)'],
+        datasets: [
+          {
+            label: 'Original (KB)',
+            data: [3131, 1480, 5516],
+            backgroundColor: 'rgba(239, 68, 68, 0.7)',
+            borderColor: 'rgba(239, 68, 68, 1)',
+            borderWidth: 1
+          },
+          {
+            label: 'Optimized (KB)',
+            data: [14.4, 9.5, 23.5],
+            backgroundColor: 'rgba(34, 197, 94, 0.7)',
+            borderColor: 'rgba(34, 197, 94, 1)',
+            borderWidth: 1
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        scales: {
+          y: {
+            beginAtZero: true,
+            type: 'logarithmic',
+            title: { display: true, text: 'Size (KB) - Log Scale', color: '#94a3b8' },
+            grid: { color: '#334155' },
+            ticks: { color: '#94a3b8' }
+          },
+          x: {
+            grid: { color: '#334155' },
+            ticks: { color: '#94a3b8' }
+          }
+        },
+        plugins: {
+          legend: { labels: { color: '#94a3b8' } }
+        }
+      }
+    });
+
+    // Response Time Chart
+    const timeCtx = document.getElementById('timeChart').getContext('2d');
+    new Chart(timeCtx, {
+      type: 'bar',
+      data: {
+        labels: ['Activities (20)', 'Transactions (20)', 'Transactions (50)'],
+        datasets: [
+          {
+            label: 'Original (ms)',
+            data: [1226, 2252, 4492],
+            backgroundColor: 'rgba(239, 68, 68, 0.7)',
+            borderColor: 'rgba(239, 68, 68, 1)',
+            borderWidth: 1
+          },
+          {
+            label: 'Optimized (ms)',
+            data: [474, 463, 585],
+            backgroundColor: 'rgba(34, 197, 94, 0.7)',
+            borderColor: 'rgba(34, 197, 94, 1)',
+            borderWidth: 1
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        scales: {
+          y: {
+            beginAtZero: true,
+            title: { display: true, text: 'Response Time (ms)', color: '#94a3b8' },
+            grid: { color: '#334155' },
+            ticks: { color: '#94a3b8' }
+          },
+          x: {
+            grid: { color: '#334155' },
+            ticks: { color: '#94a3b8' }
+          }
+        },
+        plugins: {
+          legend: { labels: { color: '#94a3b8' } }
+        }
+      }
+    });
+  </script>
+</body>
+</html>

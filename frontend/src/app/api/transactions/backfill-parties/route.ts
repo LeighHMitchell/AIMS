@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSupabaseAdmin } from '@/lib/supabase';
+import { requireAuth } from '@/lib/auth';
 import { inferTransactionParties, ParticipatingOrg, ReportingOrg } from '@/lib/iati/inference';
 
 /**
@@ -47,9 +47,6 @@ export async function POST(request: NextRequest) {
     const limit = Math.min(body.limit || 1000, 5000); // Cap at 5000
     
     console.log(`[Backfill Parties] Options: dryRun=${dryRun}, activityId=${activityId || 'all'}, limit=${limit}`);
-    
-    const supabase = getSupabaseAdmin();
-    
     // 1. Fetch transactions missing provider or receiver org_id
     let query = supabase
       .from('transactions')
@@ -338,8 +335,10 @@ export async function POST(request: NextRequest) {
  * Returns statistics about transactions that could be backfilled
  */
 export async function GET(request: NextRequest) {
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
   try {
-    const supabase = getSupabaseAdmin();
     const { searchParams } = new URL(request.url);
     const activityId = searchParams.get('activityId');
     

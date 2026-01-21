@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { requireAuth } from '@/lib/auth';
 import { getSupabaseAdmin } from '@/lib/supabase';
 import { unstable_cache } from 'next/cache';
 
@@ -6,24 +7,30 @@ import { unstable_cache } from 'next/cache';
 export const dynamic = 'force-dynamic';
 
 // Cache the summary calculations for 60 seconds
+// Note: This uses the admin client for caching at module level
+// The handler still requires authentication before returning data
 const getCachedSummary = unstable_cache(
   async () => {
     console.log('[AIMS] Summary Cache MISS - Fetching fresh summary from database');
+    const supabase = getSupabaseAdmin();
+    if (!supabase) {
+      throw new Error('Database not available');
+    }
 
     // Fetch all data in parallel for better performance
     const [organizationsResult, activitiesResult, transactionsResult, groupsResult] = await Promise.all([
-      getSupabaseAdmin()
+      supabase
         .from('organizations')
         .select('id, updated_at'),
-      getSupabaseAdmin()
+      supabase
         .from('activities')
         .select('id')
         .in('activity_status', ['2', '3']),
-      getSupabaseAdmin()
+      supabase
         .from('transactions')
         .select('value')
         .eq('transaction_type', '2'),
-      getSupabaseAdmin()
+      supabase
         .from('custom_groups')
         .select('id')
     ]);
@@ -54,16 +61,11 @@ export async function OPTIONS() {
 export async function GET(request: NextRequest) {
   console.log('[AIMS] GET /api/organizations/summary - Starting request');
 
-  try {
-    // Check if getSupabaseAdmin is properly initialized
-    if (!getSupabaseAdmin()) {
-      console.error('[AIMS] getSupabaseAdmin() is not initialized');
-      return NextResponse.json(
-        { error: 'Database connection not initialized' },
-        { status: 500 }
-      );
-    }
+  // Require authentication
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
 
+  try {
     // Check if cache should be bypassed
     const { searchParams } = new URL(request.url);
     const bustCache = searchParams.has('_');
@@ -73,14 +75,14 @@ export async function GET(request: NextRequest) {
     let transactions: any[] | null = null;
     let groups: any[] | null = null;
 
-    if (bustCache) {
+    if (bustCache && supabase) {
       console.log('[AIMS] Summary Cache BUST - Fetching fresh data');
       // Fetch directly without cache when busting
       const [orgsResult, activitiesResult, transactionsResult, groupsResult] = await Promise.all([
-        getSupabaseAdmin().from('organizations').select('id, updated_at'),
-        getSupabaseAdmin().from('activities').select('id').in('activity_status', ['2', '3']),
-        getSupabaseAdmin().from('transactions').select('value').eq('transaction_type', '2'),
-        getSupabaseAdmin().from('custom_groups').select('id')
+        supabase.from('organizations').select('id, updated_at'),
+        supabase.from('activities').select('id').in('activity_status', ['2', '3']),
+        supabase.from('transactions').select('value').eq('transaction_type', '2'),
+        supabase.from('custom_groups').select('id')
       ]);
       organizations = orgsResult.data;
       activities = activitiesResult.data;
@@ -135,4 +137,4 @@ export async function GET(request: NextRequest) {
       { status: 500 }
     );
   }
-} 
+}

@@ -27,7 +27,7 @@ async function getSystemHomeCountry(supabaseAdmin: any): Promise<string> {
 }
 
 // Create Supabase admin client
-function getSupabaseAdmin() {
+function supabase {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
@@ -54,10 +54,16 @@ export async function OPTIONS() {
 }
 
 // GET /api/partners/[id]
-export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
   try {
     const { id } = await params;
-    const supabaseAdmin = getSupabaseAdmin();
+    const supabaseAdmin = supabase;
     const homeCountry = await getSystemHomeCountry(supabaseAdmin);
 
     console.log('[AIMS] GET /api/partners/[id] - Fetching:', id);
@@ -174,10 +180,16 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 }
 
 // PUT /api/partners/[id]
-export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function PUT(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
   try {
     const { id } = await params;
-    const supabaseAdmin = getSupabaseAdmin();
+    const supabaseAdmin = supabase;
     const homeCountry = await getSystemHomeCountry(supabaseAdmin);
     const body = await request.json();
     const { user, ...updates } = body;  // Extract user separately so it's not included in updates
@@ -194,7 +206,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       console.log('[AIMS] Attempting Supabase update...');
       
       // Create Supabase client
-      const supabaseAdmin = getSupabaseAdmin();
+      const supabaseAdmin = supabase;
 
       // Map partner fields to organization fields
       const organizationUpdates = {
@@ -357,7 +369,13 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 }
 
 // DELETE /api/partners/[id]
-export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
   try {
     const { id } = await params;
 
@@ -368,7 +386,7 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
     }
 
     // Create Supabase client
-    const supabaseAdmin = getSupabaseAdmin();
+    const supabaseAdmin = supabase;
 
     // First, get the organization details for logging
     const { data: organization, error: fetchError } = await supabaseAdmin

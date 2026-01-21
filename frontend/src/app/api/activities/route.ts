@@ -1,5 +1,5 @@
 import { NextResponse, NextRequest } from 'next/server';
-import { getSupabaseAdmin } from '@/lib/supabase';
+import { requireAuth } from '@/lib/auth';
 import { ActivityLogger } from '@/lib/activity-logger';
 import { upsertActivitySectors, validateSectorAllocation } from '@/lib/activity-sectors-helper';
 import { v4 as uuidv4 } from 'uuid';
@@ -50,6 +50,9 @@ export async function OPTIONS() {
 
 export async function POST(request: Request) {
   try {
+    const { supabase, response: authResponse } = await requireAuth();
+    if (authResponse) return authResponse;
+
     // Check content length to prevent large payloads
     const contentLength = request.headers.get('content-length');
     if (contentLength && parseInt(contentLength) > 10 * 1024 * 1024) { // 10MB limit for base64 images
@@ -79,8 +82,8 @@ export async function POST(request: Request) {
     console.log('[AIMS API] Partner ID type:', typeof body.partnerId);
     console.log('[AIMS API] Is partial save:', !!body._isPartialSave);
     
-    // Validate required fields
-    if (!body.title?.trim()) {
+    // Validate required fields (allow empty title for IATI imports - data will come from import)
+    if (!body.title?.trim() && body.created_via !== 'import') {
       return NextResponse.json(
         { error: 'Activity title is required' },
         { status: 400 }
@@ -94,7 +97,7 @@ export async function POST(request: Request) {
       console.log('[AIMS API] New publication status:', body.publicationStatus);
       
       // Fetch existing activity
-      const { data: existingActivity, error: fetchError } = await getSupabaseAdmin()
+      const { data: existingActivity, error: fetchError } = await supabase
         .from('activities')
         .select('*')
         .eq('id', body.id)
@@ -170,7 +173,7 @@ export async function POST(request: Request) {
 
       // Update activity
       console.log('[AIMS API] Attempting to update activity with data:', JSON.stringify(updateData, null, 2));
-      const { data: updatedActivity, error: updateError } = await getSupabaseAdmin()
+      const { data: updatedActivity, error: updateError } = await supabase
         .from('activities')
         .update(updateData)
         .eq('id', body.id)
@@ -283,7 +286,7 @@ export async function POST(request: Request) {
         console.log(`[AIMS] Processing ${body.transactions.length} transactions for activity ${body.id}`);
         
         // Get existing transactions
-        const { data: existingTransactions } = await getSupabaseAdmin()
+        const { data: existingTransactions } = await supabase
           .from('transactions')
           .select('uuid')
           .eq('activity_id', body.id);
@@ -296,7 +299,7 @@ export async function POST(request: Request) {
         
         // Delete removed transactions
         if (toDelete.length > 0) {
-          await getSupabaseAdmin()
+          await supabase
             .from('transactions')
             .delete()
             .in('uuid', toDelete);
@@ -416,7 +419,7 @@ export async function POST(request: Request) {
           }
 
           if (validTransactions.length > 0) {
-            const { data: upsertedData, error: upsertError } = await getSupabaseAdmin()
+            const { data: upsertedData, error: upsertError } = await supabase
               .from('transactions')
               .upsert(validTransactions, {
                 onConflict: 'uuid',
@@ -463,7 +466,7 @@ export async function POST(request: Request) {
       // Handle SDG mappings
       if (body.sdgMappings) {
         // Delete existing SDG mappings
-        await getSupabaseAdmin()
+        await supabase
           .from('activity_sdg_mappings')
           .delete()
           .eq('activity_id', body.id);
@@ -478,7 +481,7 @@ export async function POST(request: Request) {
             notes: mapping.notes || null
           }));
 
-          await getSupabaseAdmin()
+          await supabase
             .from('activity_sdg_mappings')
             .insert(sdgMappingsData);
         }
@@ -489,7 +492,7 @@ export async function POST(request: Request) {
         console.log('[AIMS API] Updating tags for activity:', body.id);
         
         // Delete existing activity tags
-        await getSupabaseAdmin()
+        await supabase
           .from('activity_tags')
           .delete()
           .eq('activity_id', body.id);
@@ -506,7 +509,7 @@ export async function POST(request: Request) {
               console.log('[AIMS API] Creating local tag:', tag.name);
               try {
                 // Check if tag already exists by name
-                const { data: existingTag } = await getSupabaseAdmin()
+                const { data: existingTag } = await supabase
                   .from('tags')
                   .select('id')
                   .eq('name', tag.name.toLowerCase().trim())
@@ -516,7 +519,7 @@ export async function POST(request: Request) {
                   tagId = existingTag.id;
                 } else {
                   // Create new tag
-                  const { data: newTag, error: createTagError } = await getSupabaseAdmin()
+                  const { data: newTag, error: createTagError } = await supabase
                     .from('tags')
                     .insert([{ name: tag.name.toLowerCase().trim() }])
                     .select('id')
@@ -542,7 +545,7 @@ export async function POST(request: Request) {
           }
 
           if (processedTags.length > 0) {
-            const { error: tagsError } = await getSupabaseAdmin()
+            const { error: tagsError } = await supabase
               .from('activity_tags')
               .insert(processedTags);
               
@@ -560,7 +563,7 @@ export async function POST(request: Request) {
         console.log('[AIMS API] Updating working groups for activity:', body.id);
         
         // Delete existing activity working groups
-        await getSupabaseAdmin()
+        await supabase
           .from('activity_working_groups')
           .delete()
           .eq('activity_id', body.id);
@@ -569,7 +572,7 @@ export async function POST(request: Request) {
         if (body.workingGroups.length > 0) {
           // Fetch working group IDs from database
           const codes = body.workingGroups.map((wg: any) => wg.code);
-          const { data: dbWorkingGroups, error: wgFetchError } = await getSupabaseAdmin()
+          const { data: dbWorkingGroups, error: wgFetchError } = await supabase
             .from('working_groups')
             .select('id, code')
             .in('code', codes);
@@ -583,7 +586,7 @@ export async function POST(request: Request) {
               vocabulary: '99' // IATI custom vocabulary
             }));
 
-            const { error: wgError } = await getSupabaseAdmin()
+            const { error: wgError } = await supabase
               .from('activity_working_groups')
               .insert(workingGroupsData);
               
@@ -600,7 +603,7 @@ export async function POST(request: Request) {
       if (body.policyMarkers !== undefined) {
         console.log('[AIMS API] Updating policy markers for activity:', body.id);
         // Delete existing activity policy markers
-        await getSupabaseAdmin()
+        await supabase
           .from('activity_policy_markers')
           .delete()
           .eq('activity_id', body.id);
@@ -614,7 +617,7 @@ export async function POST(request: Request) {
             rationale: marker.rationale || null
           }));
 
-          const { error: policyMarkersError } = await getSupabaseAdmin()
+          const { error: policyMarkersError } = await supabase
             .from('activity_policy_markers')
             .insert(policyMarkersData);
             
@@ -630,7 +633,7 @@ export async function POST(request: Request) {
       if (body.locations !== undefined) {
         console.log('[AIMS API] Updating locations for activity:', body.id);
         // Delete existing locations
-        await getSupabaseAdmin()
+        await supabase
           .from('activity_locations')
           .delete()
           .eq('activity_id', body.id);
@@ -667,7 +670,7 @@ export async function POST(request: Request) {
         
         // Insert new locations
         if (locationsToInsert.length > 0) {
-          const { error: locationsError } = await getSupabaseAdmin()
+          const { error: locationsError } = await supabase
             .from('activity_locations')
             .insert(locationsToInsert);
             
@@ -683,7 +686,7 @@ export async function POST(request: Request) {
       if (body.contacts !== undefined) {
         console.log('[AIMS API] Updating contacts for activity:', body.id);
         // Delete existing contacts
-        await getSupabaseAdmin()
+        await supabase
           .from('activity_contacts')
           .delete()
           .eq('activity_id', body.id);
@@ -738,7 +741,7 @@ export async function POST(request: Request) {
           console.log('[AIMS API] Attempting to insert', contactsData.length, 'contacts');
           console.log('[AIMS API] Contact data sample:', JSON.stringify(contactsData[0], null, 2));
           
-          const { data: insertedContacts, error: contactsError } = await getSupabaseAdmin()
+          const { data: insertedContacts, error: contactsError } = await supabase
             .from('activity_contacts')
             .insert(contactsData)
             .select();
@@ -778,13 +781,13 @@ export async function POST(request: Request) {
         if (existingActivity.publication_status !== updatedActivity.publication_status) {
           if (updatedActivity.publication_status === 'published') {
             // Update all draft transactions to actual
-            await getSupabaseAdmin().rpc('update_transactions_on_publish', {
+            await supabase.rpc('update_transactions_on_publish', {
               p_activity_id: body.id
             });
             await ActivityLogger.activityPublished(updatedActivity, body.user);
           } else if (existingActivity.publication_status === 'published') {
             // Optionally update transactions when unpublishing
-            await getSupabaseAdmin().rpc('update_transactions_on_unpublish', {
+            await supabase.rpc('update_transactions_on_unpublish', {
               p_activity_id: body.id
             });
             await ActivityLogger.activityUnpublished(updatedActivity, body.user);
@@ -796,20 +799,20 @@ export async function POST(request: Request) {
       console.log('[AIMS] Updated Partner ID:', updatedActivity.partner_id);
       
       // Fetch updated SDG mappings
-      const { data: sdgMappings } = await getSupabaseAdmin()
+      const { data: sdgMappings } = await supabase
         .from('activity_sdg_mappings')
         .select('*')
         .eq('activity_id', body.id);
       
       // Fetch updated transactions
-      const { data: transactions } = await getSupabaseAdmin()
+      const { data: transactions } = await supabase
         .from('transactions')
         .select('*')
         .eq('activity_id', body.id)
         .order('transaction_date', { ascending: false });
       
       // Fetch updated sectors
-      const { data: sectors, error: sectorsError } = await getSupabaseAdmin()
+      const { data: sectors, error: sectorsError } = await supabase
         .from('activity_sectors')
         .select('id, activity_id, sector_code, sector_name, percentage, level, category_code, category_name, type, created_at, updated_at')
         .eq('activity_id', body.id);
@@ -822,7 +825,7 @@ export async function POST(request: Request) {
       }
       
       // Fetch updated contacts
-      const { data: contacts, error: contactsFetchError } = await getSupabaseAdmin()
+      const { data: contacts, error: contactsFetchError } = await supabase
         .from('activity_contacts')
         .select('*')
         .eq('activity_id', body.id);
@@ -832,13 +835,13 @@ export async function POST(request: Request) {
       }
       
       // Fetch updated locations
-      const { data: locations } = await getSupabaseAdmin()
+      const { data: locations } = await supabase
         .from('activity_locations')
         .select('*')
         .eq('activity_id', body.id);
       
       // Fetch updated tags
-      const { data: activityTags } = await getSupabaseAdmin()
+      const { data: activityTags } = await supabase
         .from('activity_tags')
         .select(`
           tag_id,
@@ -847,7 +850,7 @@ export async function POST(request: Request) {
         .eq('activity_id', body.id);
 
       // Fetch updated working groups
-      const { data: activityWorkingGroups } = await getSupabaseAdmin()
+      const { data: activityWorkingGroups } = await supabase
         .from('activity_working_groups')
         .select(`
           working_group_id,
@@ -857,7 +860,7 @@ export async function POST(request: Request) {
         .eq('activity_id', body.id);
 
       // Fetch updated policy markers
-      const { data: activityPolicyMarkers } = await getSupabaseAdmin()
+      const { data: activityPolicyMarkers } = await supabase
         .from('activity_policy_markers')
         .select('*')
         .eq('activity_id', body.id);
@@ -1000,7 +1003,7 @@ export async function POST(request: Request) {
 
       if (body.user?.id) {
         console.log('[AIMS API] Fetching user organization data for user:', body.user.id);
-        const { data: userData, error: userError } = await getSupabaseAdmin()
+        const { data: userData, error: userError } = await supabase
           .from('users')
           .select(`
             id,
@@ -1042,7 +1045,7 @@ export async function POST(request: Request) {
           } else if (userData.organization_id) {
             console.log('[AIMS API] No organization join data found, fetching organization directly');
             // Fetch organization details directly
-            const { data: orgData, error: orgError } = await getSupabaseAdmin()
+            const { data: orgData, error: orgError } = await supabase
               .from('organizations')
               .select('id, name, acronym')
               .eq('id', userData.organization_id)
@@ -1124,7 +1127,8 @@ export async function POST(request: Request) {
         created_by_org_name: userOrgData.created_by_org_name,
         created_by_org_acronym: userOrgData.created_by_org_acronym,
         collaboration_type: body.collaborationType,
-        activity_scope: normalizeScope(body.activityScope),
+        // For IATI imports, allow null values - data will come from import
+        activity_scope: body.created_via === 'import' && body.activity_scope === null ? null : normalizeScope(body.activityScope),
         language: body.language,
         activity_status: body.activityStatus || null,
         publication_status: body.publicationStatus || 'draft',
@@ -1132,7 +1136,8 @@ export async function POST(request: Request) {
         banner: body.banner,
         icon: body.icon,
         reporting_org_id: userOrgData.reporting_org_id,
-        hierarchy: body.hierarchy || 1,
+        // For IATI imports, allow null hierarchy - data will come from import
+        hierarchy: body.created_via === 'import' && body.hierarchy === null ? null : (body.hierarchy || 1),
         linked_data_uri: body.linkedDataUri || null,
         planned_start_date: cleanDateValue(body.plannedStartDate),
         planned_end_date: cleanDateValue(body.plannedEndDate),
@@ -1165,7 +1170,7 @@ export async function POST(request: Request) {
     });
     console.log('[AIMS API] Attempting to create new activity with data:', JSON.stringify(insertData, null, 2));
     console.log('[AIMS API] Acronym in insertData:', insertData.acronym);
-    const { data: newActivity, error: insertError } = await getSupabaseAdmin()
+    const { data: newActivity, error: insertError } = await supabase
       .from('activities')
       .insert([insertData])
       .select()
@@ -1354,7 +1359,7 @@ export async function POST(request: Request) {
       }
 
       if (validTransactions.length > 0) {
-        const { data: insertedData, error: insertError } = await getSupabaseAdmin()
+        const { data: insertedData, error: insertError } = await supabase
           .from('transactions')
           .insert(validTransactions)
           .select();
@@ -1396,7 +1401,7 @@ export async function POST(request: Request) {
         notes: mapping.notes || null
       }));
 
-      await getSupabaseAdmin()
+      await supabase
         .from('activity_sdg_mappings')
         .insert(sdgMappingsData);
     }
@@ -1413,7 +1418,7 @@ export async function POST(request: Request) {
           console.log('[AIMS API] Creating local tag:', tag.name);
           try {
             // Check if tag already exists by name
-            const { data: existingTag } = await getSupabaseAdmin()
+            const { data: existingTag } = await supabase
               .from('tags')
               .select('id')
               .eq('name', tag.name.toLowerCase().trim())
@@ -1423,7 +1428,7 @@ export async function POST(request: Request) {
               tagId = existingTag.id;
             } else {
               // Create new tag
-              const { data: newTag, error: createTagError } = await getSupabaseAdmin()
+              const { data: newTag, error: createTagError } = await supabase
                 .from('tags')
                 .insert([{ name: tag.name.toLowerCase().trim() }])
                 .select('id')
@@ -1449,7 +1454,7 @@ export async function POST(request: Request) {
       }
 
       if (processedTags.length > 0) {
-        const { error: tagsError } = await getSupabaseAdmin()
+        const { error: tagsError } = await supabase
           .from('activity_tags')
           .insert(processedTags);
           
@@ -1469,7 +1474,7 @@ export async function POST(request: Request) {
       const codes = body.workingGroups.map((wg: any) => wg.code);
       console.log('[AIMS API] Looking up working groups with codes:', codes);
       
-      const { data: dbWorkingGroups, error: wgFetchError } = await getSupabaseAdmin()
+      const { data: dbWorkingGroups, error: wgFetchError } = await supabase
         .from('working_groups')
         .select('id, code')
         .in('code', codes);
@@ -1496,7 +1501,7 @@ export async function POST(request: Request) {
               is_active: true
             }));
 
-          const { data: newWorkingGroups, error: createError } = await getSupabaseAdmin()
+          const { data: newWorkingGroups, error: createError } = await supabase
             .from('working_groups')
             .insert(workingGroupsToCreate)
             .select('id, code');
@@ -1520,7 +1525,7 @@ export async function POST(request: Request) {
             vocabulary: '99' // IATI custom vocabulary
           }));
 
-          const { error: wgError } = await getSupabaseAdmin()
+          const { error: wgError } = await supabase
             .from('activity_working_groups')
             .insert(workingGroupsData);
             
@@ -1542,7 +1547,7 @@ export async function POST(request: Request) {
         rationale: marker.rationale || null
       }));
 
-      const { error: policyMarkersError } = await getSupabaseAdmin()
+      const { error: policyMarkersError } = await supabase
         .from('activity_policy_markers')
         .insert(policyMarkersData);
         
@@ -1587,7 +1592,7 @@ export async function POST(request: Request) {
       
       // Insert locations
       if (locationsToInsert.length > 0) {
-        const { error: locationsError } = await getSupabaseAdmin()
+        const { error: locationsError } = await supabase
           .from('activity_locations')
           .insert(locationsToInsert);
           
@@ -1619,7 +1624,7 @@ export async function POST(request: Request) {
         notes: contact.notes || null
       }));
 
-      const { error: contactsError } = await getSupabaseAdmin()
+      const { error: contactsError } = await supabase
         .from('activity_contacts')
         .insert(contactsData);
         
@@ -1642,38 +1647,38 @@ export async function POST(request: Request) {
     console.log('[AIMS] Created Other Identifier:', newActivity.other_identifier);
     
     // Fetch created SDG mappings
-    const { data: sdgMappings } = await getSupabaseAdmin()
+    const { data: sdgMappings } = await supabase
       .from('activity_sdg_mappings')
       .select('*')
       .eq('activity_id', newActivity.id);
     
     // Fetch created transactions
-    const { data: transactions } = await getSupabaseAdmin()
+    const { data: transactions } = await supabase
       .from('transactions')
       .select('*')
       .eq('activity_id', newActivity.id)
       .order('transaction_date', { ascending: false });
     
     // Fetch created sectors
-    const { data: sectors } = await getSupabaseAdmin()
+    const { data: sectors } = await supabase
       .from('activity_sectors')
       .select('id, activity_id, sector_code, sector_name, percentage, level, category_code, category_name, type, created_at, updated_at')
       .eq('activity_id', newActivity.id);
     
     // Fetch created contacts
-    const { data: contacts } = await getSupabaseAdmin()
+    const { data: contacts } = await supabase
       .from('activity_contacts')
       .select('*')
       .eq('activity_id', newActivity.id);
     
     // Fetch created locations
-    const { data: locations } = await getSupabaseAdmin()
+    const { data: locations } = await supabase
       .from('activity_locations')
       .select('*')
       .eq('activity_id', newActivity.id);
     
     // Fetch created tags
-    const { data: activityTags } = await getSupabaseAdmin()
+    const { data: activityTags } = await supabase
       .from('activity_tags')
       .select(`
         tag_id,
@@ -1682,7 +1687,7 @@ export async function POST(request: Request) {
       .eq('activity_id', newActivity.id);
 
     // Fetch created working groups
-    const { data: activityWorkingGroups } = await getSupabaseAdmin()
+    const { data: activityWorkingGroups } = await supabase
       .from('activity_working_groups')
       .select(`
         working_group_id,
@@ -1692,7 +1697,7 @@ export async function POST(request: Request) {
       .eq('activity_id', newActivity.id);
 
     // Fetch created policy markers
-    const { data: activityPolicyMarkers } = await getSupabaseAdmin()
+    const { data: activityPolicyMarkers } = await supabase
       .from('activity_policy_markers')
       .select('*')
       .eq('activity_id', newActivity.id);
@@ -1848,6 +1853,9 @@ export async function POST(request: Request) {
 
 export async function GET(request: NextRequest) {
   try {
+    const { supabase, response: authResponse } = await requireAuth();
+    if (authResponse) return authResponse;
+
     // Debug logging
     console.log('[AIMS] GET /api/activities - Starting request');
     console.log('[AIMS] Environment check:', {
@@ -1873,9 +1881,9 @@ export async function GET(request: NextRequest) {
       );
     }
     
-    // Check if getSupabaseAdmin() is properly initialized
-    if (!getSupabaseAdmin()) {
-      console.error('[AIMS] getSupabaseAdmin() is not initialized');
+    // Check if supabase is properly initialized
+    if (!supabase) {
+      console.error('[AIMS] supabase is not initialized');
       return NextResponse.json(
         { error: 'Database connection failed to initialize. Please check your Supabase configuration.' },
         { status: 500 }
@@ -1888,7 +1896,7 @@ export async function GET(request: NextRequest) {
     const organizationIdFilter = request.nextUrl.searchParams.get('organization_id');
     
     // Build the query
-    let query = getSupabaseAdmin()
+    let query = supabase
       .from('activities')
       .select(`
         id,
@@ -1977,7 +1985,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Fetch transaction summaries for all activities (including flow_type for flow type totals)
-    const { data: transactionSummaries, error: transError } = await getSupabaseAdmin()
+    const { data: transactionSummaries, error: transError } = await supabase
       .from('transactions')
       .select('activity_id, transaction_type, value, value_usd, status, flow_type')
       .in('activity_id', activities?.map((a: any) => a.id) || [])
@@ -2113,7 +2121,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Fetch budget summaries for all activities
-    const { data: budgetSummaries, error: budgetError } = await getSupabaseAdmin()
+    const { data: budgetSummaries, error: budgetError } = await supabase
       .from('activity_budgets')
       .select('activity_id, usd_value')
       .in('activity_id', activities?.map((a: any) => a.id) || []);
@@ -2140,7 +2148,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Fetch planned disbursements summaries for all activities
-    const { data: plannedDisbursementSummaries, error: plannedDisbursementError } = await getSupabaseAdmin()
+    const { data: plannedDisbursementSummaries, error: plannedDisbursementError } = await supabase
       .from('planned_disbursements')
       .select('activity_id, usd_amount')
       .in('activity_id', activities?.map((a: any) => a.id) || []);
@@ -2216,37 +2224,37 @@ export async function GET(request: NextRequest) {
     const activityIds = activitiesWithSummaries.map((a: any) => a.id);
     
     // Fetch sectors for all activities
-    const { data: allSectors } = await getSupabaseAdmin()
+    const { data: allSectors } = await supabase
       .from('activity_sectors')
       .select('id, activity_id, sector_code, sector_name, percentage, level, category_code, category_name, type, created_at, updated_at')
       .in('activity_id', activityIds);
     
     // Fetch SDG mappings for all activities
-    const { data: allSdgMappings } = await getSupabaseAdmin()
+    const { data: allSdgMappings } = await supabase
       .from('activity_sdg_mappings')
       .select('*')
       .in('activity_id', activityIds);
     
     // Fetch contacts for all activities
-    const { data: allContacts } = await getSupabaseAdmin()
+    const { data: allContacts } = await supabase
       .from('activity_contacts')
       .select('*')
       .in('activity_id', activityIds);
     
     // Fetch locations for all activities
-    const { data: allLocations } = await getSupabaseAdmin()
+    const { data: allLocations } = await supabase
       .from('activity_locations')
       .select('*')
       .in('activity_id', activityIds);
     
     // Fetch subnational breakdowns for all activities (for locations column)
-    const { data: allSubnationalBreakdowns } = await getSupabaseAdmin()
+    const { data: allSubnationalBreakdowns } = await supabase
       .from('subnational_breakdowns')
       .select('*')
       .in('activity_id', activityIds);
     
     // Fetch tags for all activities
-    const { data: allTags } = await getSupabaseAdmin()
+    const { data: allTags } = await supabase
       .from('activity_tags')
       .select(`
         activity_id,
@@ -2494,6 +2502,9 @@ export async function GET(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   try {
+    const { supabase, response: authResponse } = await requireAuth();
+    if (authResponse) return authResponse;
+
     const body = await request.json();
     const { id, ids, user } = body;
     
@@ -2507,7 +2518,7 @@ export async function DELETE(request: NextRequest) {
       console.log(`[AIMS] [${deletionTimestamp}] Bulk deleting ${ids.length} activities:`, ids);
       
       // Fetch all activities before deletion for logging
-      const { data: activities, error: fetchError } = await getSupabaseAdmin()
+      const { data: activities, error: fetchError } = await supabase
         .from('activities')
         .select('*')
         .in('id', ids);
@@ -2532,7 +2543,7 @@ export async function DELETE(request: NextRequest) {
       });
       
       // Delete all activities (cascading will handle related records)
-      const { error: deleteError } = await getSupabaseAdmin()
+      const { error: deleteError } = await supabase
         .from('activities')
         .delete()
         .in('id', ids);
@@ -2561,7 +2572,7 @@ export async function DELETE(request: NextRequest) {
       
       // Refresh materialized view after deletion
       try {
-        await getSupabaseAdmin().rpc('refresh_activity_transaction_summaries');
+        await supabase.rpc('refresh_activity_transaction_summaries');
         console.log(`[AIMS] [${deletionTimestamp}] Refreshed activity_transaction_summaries materialized view`);
       } catch (refreshError) {
         console.warn("[AIMS] Could not refresh materialized view (function may not exist):", refreshError);
@@ -2570,7 +2581,7 @@ export async function DELETE(request: NextRequest) {
       // Post-deletion verification after 2 second delay
       setTimeout(async () => {
         try {
-          const { data: verifyActivities, error: verifyError } = await getSupabaseAdmin()
+          const { data: verifyActivities, error: verifyError } = await supabase
             .from('activities')
             .select('id, iati_identifier, title_narrative')
             .in('id', ids);
@@ -2609,7 +2620,7 @@ export async function DELETE(request: NextRequest) {
     console.log(`[AIMS] [${deletionTimestamp}] Starting deletion for activity ID:`, id);
     
     // Fetch the activity before deletion
-    const { data: activity, error: fetchError } = await getSupabaseAdmin()
+    const { data: activity, error: fetchError } = await supabase
       .from('activities')
       .select('*')
       .eq('id', id)
@@ -2630,7 +2641,7 @@ export async function DELETE(request: NextRequest) {
     });
     
     // Delete the activity (cascading will handle related records)
-    const { error: deleteError } = await getSupabaseAdmin()
+    const { error: deleteError } = await supabase
       .from('activities')
       .delete()
       .eq('id', id);
@@ -2657,7 +2668,7 @@ export async function DELETE(request: NextRequest) {
     
     // Refresh materialized view after deletion
     try {
-      await getSupabaseAdmin().rpc('refresh_activity_transaction_summaries');
+      await supabase.rpc('refresh_activity_transaction_summaries');
       console.log(`[AIMS] [${deletionTimestamp}] Refreshed activity_transaction_summaries materialized view`);
     } catch (refreshError) {
       console.warn("[AIMS] Could not refresh materialized view (function may not exist):", refreshError);
@@ -2666,7 +2677,7 @@ export async function DELETE(request: NextRequest) {
     // Post-deletion verification after 2 second delay
     setTimeout(async () => {
       try {
-        const { data: verifyActivity, error: verifyError } = await getSupabaseAdmin()
+        const { data: verifyActivity, error: verifyError } = await supabase
           .from('activities')
           .select('id, iati_identifier, title_narrative')
           .eq('id', id)

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSupabaseAdmin } from '@/lib/supabase';
+import { requireAuth } from '@/lib/auth';
 import { 
   NationalPriorityRow, 
   nationalPriorityFromRow,
@@ -15,9 +15,14 @@ interface RouteParams {
  * Get a single national priority by ID
  */
 export async function GET(request: NextRequest, { params }: RouteParams) {
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+  
   try {
     const { id } = await params;
-    const supabase = getSupabaseAdmin();
+    if (!supabase) {
+      return NextResponse.json({ success: false, error: 'Database not available' }, { status: 500 });
+    }
     
     // Get the priority
     const { data: row, error } = await supabase
@@ -84,9 +89,14 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
  * Update a national priority
  */
 export async function PUT(request: NextRequest, { params }: RouteParams) {
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+  
   try {
     const { id } = await params;
-    const supabase = getSupabaseAdmin();
+    if (!supabase) {
+      return NextResponse.json({ success: false, error: 'Database not available' }, { status: 500 });
+    }
     const body = await request.json();
     
     const { code, name, nameLocal, description, parentId, isActive, displayOrder } = body;
@@ -251,9 +261,14 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
  * Delete a national priority (and its children via CASCADE)
  */
 export async function DELETE(request: NextRequest, { params }: RouteParams) {
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+  
   try {
     const { id } = await params;
-    const supabase = getSupabaseAdmin();
+    if (!supabase) {
+      return NextResponse.json({ success: false, error: 'Database not available' }, { status: 500 });
+    }
     
     // Check if priority exists
     const { data: existing, error: existingError } = await supabase
@@ -327,7 +342,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
  * Recursively update children levels when parent changes
  */
 async function updateChildrenLevels(
-  supabase: ReturnType<typeof getSupabaseAdmin>,
+  supabase: any,
   parentId: string,
   parentLevel: number
 ): Promise<void> {

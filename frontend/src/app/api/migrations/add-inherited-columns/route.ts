@@ -1,11 +1,12 @@
 import { NextResponse } from 'next/server'
-import { getSupabaseAdmin } from '@/lib/supabase'
+import { requireAuth } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic'
 
 export async function POST() {
   try {
-    const supabase = getSupabaseAdmin()
+    const { supabase, response: authResponse } = await requireAuth();
+    if (authResponse) return authResponse;
 
     console.log('[Migration] Adding inherited flag columns...')
 

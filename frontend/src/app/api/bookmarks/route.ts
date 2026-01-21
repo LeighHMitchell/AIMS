@@ -1,17 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSupabaseAdmin } from '@/lib/supabase';
+import { requireAuth } from '@/lib/auth';
 
 // GET - Retrieve bookmarked activity IDs for the current user
 export async function GET(request: NextRequest) {
   try {
+    const { supabase, response: authResponse } = await requireAuth();
+    if (authResponse) return authResponse;
+
     const url = new URL(request.url);
     const userId = url.searchParams.get('userId');
 
     if (!userId) {
       return NextResponse.json({ error: 'User ID is required' }, { status: 400 });
     }
-
-    const supabase = getSupabaseAdmin();
     if (!supabase) {
       console.error('[Bookmarks API] Supabase admin client is null');
       return NextResponse.json({ error: 'Database connection failed' }, { status: 500 });
@@ -40,6 +41,9 @@ export async function GET(request: NextRequest) {
 // POST - Add a bookmark
 export async function POST(request: NextRequest) {
   try {
+    const { supabase, response: authResponse } = await requireAuth();
+    if (authResponse) return authResponse;
+
     const body = await request.json();
     const { userId, activityId } = body;
 
@@ -50,8 +54,6 @@ export async function POST(request: NextRequest) {
     if (!activityId) {
       return NextResponse.json({ error: 'Activity ID is required' }, { status: 400 });
     }
-
-    const supabase = getSupabaseAdmin();
     if (!supabase) {
       console.error('[Bookmarks API] Supabase admin client is null');
       return NextResponse.json({ error: 'Database connection failed' }, { status: 500 });

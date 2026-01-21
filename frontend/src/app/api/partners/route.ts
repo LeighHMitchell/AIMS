@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSupabaseAdmin } from '@/lib/supabase';
+import { requireAuth } from '@/lib/auth';
 import { ActivityLogger } from '@/lib/activity-logger';
 
 export interface Partner {
@@ -37,11 +37,18 @@ export async function OPTIONS() {
 
 // GET /api/partners
 export async function GET(request: NextRequest) {
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
+  if (!supabase) {
+    return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
+  }
+
   try {
     console.log('[AIMS] GET /api/partners (using organizations table)');
-    
+
     // Create Supabase client
-    const supabaseAdmin = getSupabaseAdmin();
+    const supabaseAdmin = supabase;
     
     // Query organizations table instead of partners
     const { data, error } = await supabaseAdmin
@@ -84,13 +91,20 @@ export async function GET(request: NextRequest) {
 
 // POST /api/partners
 export async function POST(request: NextRequest) {
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
+  if (!supabase) {
+    return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
+  }
+
   try {
     const body = await request.json();
     console.log('[AIMS] POST /api/partners (using organizations table) - Starting request');
     console.log('[AIMS] Request body:', JSON.stringify(body, null, 2));
 
     // Create Supabase client
-    const supabaseAdmin = getSupabaseAdmin();
+    const supabaseAdmin = supabase;
 
     // Prepare data for organizations table
     const organizationData = {
@@ -155,6 +169,13 @@ export async function POST(request: NextRequest) {
 
 // PUT /api/partners
 export async function PUT(request: NextRequest) {
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
+  if (!supabase) {
+    return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
+  }
+
   try {
     const body = await request.json();
     const { id, ...updates } = body;
@@ -166,7 +187,7 @@ export async function PUT(request: NextRequest) {
     }
 
     // Create Supabase client
-    const supabaseAdmin = getSupabaseAdmin();
+    const supabaseAdmin = supabase;
 
     // Map partner fields to organization fields
     const organizationUpdates = {
@@ -220,6 +241,13 @@ export async function PUT(request: NextRequest) {
 
 // DELETE /api/partners/[id]
 export async function DELETE(request: NextRequest) {
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
+  if (!supabase) {
+    return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
+  }
+
   try {
     const url = new URL(request.url);
     const id = url.pathname.split('/').pop();
@@ -231,7 +259,7 @@ export async function DELETE(request: NextRequest) {
     }
 
     // Create Supabase client
-    const supabaseAdmin = getSupabaseAdmin();
+    const supabaseAdmin = supabase;
 
     // Check if organization has users
     const { data: users, error: usersError } = await supabaseAdmin

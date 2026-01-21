@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSupabaseAdmin } from '@/lib/supabase';
+import { requireAuth } from '@/lib/auth';
 
 type MetricType = 'budgets' | 'disbursements' | 'commitments';
 
@@ -36,8 +36,10 @@ function normalizeRegion(name: string): string | null {
  * Filters out Activity Site data that may have been incorrectly entered (e.g., "Test Location").
  */
 export async function GET(request: NextRequest) {
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
   try {
-    const supabase = getSupabaseAdmin();
     
     if (!supabase) {
       return NextResponse.json(

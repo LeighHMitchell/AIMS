@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSupabaseAdmin } from '@/lib/supabase';
+import { requireAuth } from '@/lib/auth';
 import { v4 as uuidv4 } from 'uuid';
 
 export const dynamic = 'force-dynamic';
@@ -9,11 +9,12 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
   try {
     const { id } = await params;
     console.log('[Simple Upload API] Starting upload for activity:', id);
-    
-    const supabase = getSupabaseAdmin();
     if (!supabase) {
       console.error('[Simple Upload API] Failed to get Supabase admin client');
       return NextResponse.json({ error: 'Database connection failed' }, { status: 500 });

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { enhancedCurrencyConverter } from '@/lib/currency-converter-enhanced';
-import { getSupabaseAdmin } from '@/lib/supabase';
+import { requireAuth } from '@/lib/auth';
 
 /**
  * Comprehensive Currency Conversion Fix API
@@ -15,6 +15,9 @@ interface TransactionSummary {
 
 export async function GET(request: NextRequest) {
   try {
+    const { supabase, response: authResponse } = await requireAuth();
+    if (authResponse) return authResponse;
+
     const searchParams = request.nextUrl.searchParams;
     const action = searchParams.get('action') || 'status';
 
@@ -52,6 +55,9 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    const { supabase, response: authResponse } = await requireAuth();
+    if (authResponse) return authResponse;
+
     const body = await request.json();
     const { action, transactionId, transactionIds } = body;
 
@@ -90,7 +96,6 @@ export async function POST(request: NextRequest) {
 }
 
 async function getConversionStatus() {
-  const supabase = getSupabaseAdmin();
   if (!supabase) {
     return NextResponse.json({
       error: 'Database connection not available'
@@ -276,7 +281,6 @@ async function bulkConvertTransactions(transactionIds: string[]) {
 }
 
 async function fixAllFailedTransactions() {
-  const supabase = getSupabaseAdmin();
   if (!supabase) {
     return NextResponse.json({
       error: 'Database connection not available'

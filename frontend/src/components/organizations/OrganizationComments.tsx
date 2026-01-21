@@ -26,7 +26,7 @@ import {
 const ORGANIZATION_SECTIONS = [
   { value: 'general', label: 'General' },
   { value: 'branding', label: 'Branding' },
-  { value: 'contact', label: 'Contact & Social' },
+  { value: 'contact', label: 'Social & Web' },
   { value: 'aliases', label: 'Aliases' },
   { value: 'budgets', label: 'IATI Budgets' },
   { value: 'documents', label: 'IATI Documents' },

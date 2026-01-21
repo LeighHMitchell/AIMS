@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSupabaseAdmin } from '@/lib/supabase';
+import { requireAuth } from '@/lib/auth';
 import { findSimilarProjects } from '@/lib/project-matching';
 import { PROJECT_STATUS } from '@/types/project';
 
@@ -17,16 +17,14 @@ export async function OPTIONS() {
 
 // GET /api/projects - Get all projects or search for similar projects
 export async function GET(request: NextRequest) {
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
+  if (!supabase) {
+    return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
+  }
+
   try {
-    // Check if getSupabaseAdmin is properly initialized
-    if (!getSupabaseAdmin()) {
-      console.error('[AIMS] getSupabaseAdmin() is not initialized');
-      return NextResponse.json(
-        { error: 'Database connection not initialized' },
-        { status: 500 }
-      );
-    }
-    
     const searchParams = request.nextUrl.searchParams;
     const search = searchParams.get('search');
     const similarTo = searchParams.get('similarTo');
@@ -35,7 +33,7 @@ export async function GET(request: NextRequest) {
     const status = searchParams.get('status');
 
     // Build query
-    let query = getSupabaseAdmin()
+    let query = supabase
       .from('projects')
       .select('*')
       .order('created_at', { ascending: false });
@@ -118,6 +116,13 @@ export async function GET(request: NextRequest) {
 
 // POST /api/projects - Create a new project
 export async function POST(request: NextRequest) {
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
+  if (!supabase) {
+    return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
+  }
+
   try {
     const body = await request.json();
     
@@ -130,7 +135,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Check for duplicates
-    const { data: existingProjects } = await getSupabaseAdmin()
+    const { data: existingProjects } = await supabase
       .from('projects')
       .select('*');
     
@@ -183,7 +188,7 @@ export async function POST(request: NextRequest) {
       currency: body.currency || 'USD',
     };
 
-    const { data: newProject, error } = await getSupabaseAdmin()
+    const { data: newProject, error } = await supabase
       .from('projects')
       .insert([projectData])
       .select()
@@ -231,6 +236,13 @@ export async function POST(request: NextRequest) {
 
 // PATCH /api/projects/:id - Update a project
 export async function PATCH(request: NextRequest) {
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
+  if (!supabase) {
+    return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
+  }
+
   try {
     const body = await request.json();
     const { id, ...updates } = body;
@@ -256,7 +268,7 @@ export async function PATCH(request: NextRequest) {
     if (updates.budget !== undefined) updateData.budget = updates.budget;
     if (updates.currency !== undefined) updateData.currency = updates.currency;
 
-    const { data: updatedProject, error } = await getSupabaseAdmin()
+    const { data: updatedProject, error } = await supabase
       .from('projects')
       .update(updateData)
       .eq('id', id)
@@ -312,6 +324,13 @@ export async function PATCH(request: NextRequest) {
 
 // DELETE /api/projects/:id - Delete a project
 export async function DELETE(request: NextRequest) {
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
+  if (!supabase) {
+    return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
+  }
+
   try {
     const searchParams = request.nextUrl.searchParams;
     const id = searchParams.get('id');
@@ -323,7 +342,7 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
-    const { error } = await getSupabaseAdmin()
+    const { error } = await supabase
       .from('projects')
       .delete()
       .eq('id', id);

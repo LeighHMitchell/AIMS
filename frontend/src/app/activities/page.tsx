@@ -628,6 +628,20 @@ const router = useRouter();
       handleSort: optimizedData?.sorting?.handleSort || (() => {})
     },
     filters: {
+      // Multi-select array-based filters
+      activityStatuses: optimizedData?.filters?.activityStatuses || [],
+      setActivityStatuses: optimizedData?.filters?.setActivityStatuses || (() => {}),
+      submissionStatuses: optimizedData?.filters?.submissionStatuses || [],
+      setSubmissionStatuses: optimizedData?.filters?.setSubmissionStatuses || (() => {}),
+      reportedByOrgs: optimizedData?.filters?.reportedByOrgs || [],
+      setReportedByOrgs: optimizedData?.filters?.setReportedByOrgs || (() => {}),
+      aidTypes: optimizedData?.filters?.aidTypes || [],
+      setAidTypes: optimizedData?.filters?.setAidTypes || (() => {}),
+      flowTypes: optimizedData?.filters?.flowTypes || [],
+      setFlowTypes: optimizedData?.filters?.setFlowTypes || (() => {}),
+      tiedStatuses: optimizedData?.filters?.tiedStatuses || [],
+      setTiedStatuses: optimizedData?.filters?.setTiedStatuses || (() => {}),
+      // Legacy single-value getters for backward compatibility
       activityStatus: optimizedData?.filters?.activityStatus || 'all',
       setActivityStatus: optimizedData?.filters?.setActivityStatus || (() => {}),
       submissionStatus: optimizedData?.filters?.submissionStatus || 'all',
@@ -638,7 +652,6 @@ const router = useRouter();
       setAidType: optimizedData?.filters?.setAidType || (() => {}),
       flowType: optimizedData?.filters?.flowType || 'all',
       setFlowType: optimizedData?.filters?.setFlowType || (() => {}),
-
     }
   };
   
@@ -2621,7 +2634,7 @@ const router = useRouter();
                         </a>
                       </td>
                       )}
-                      
+
                       {/* Activity Status cell */}
                       {visibleColumns.includes('activityStatus') && (
                       <td className="px-4 py-2 text-sm text-foreground text-left">

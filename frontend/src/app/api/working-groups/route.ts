@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSupabaseAdmin } from '@/lib/supabase';
+import { requireAuth } from '@/lib/auth';
 
 export async function OPTIONS() {
   return new NextResponse(null, {
@@ -13,14 +13,21 @@ export async function OPTIONS() {
 }
 
 export async function GET(request: NextRequest) {
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
+  if (!supabase) {
+    return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
+  }
+
   console.log('[API] GET /api/working-groups - Starting request');
-  
+
   try {
     const searchParams = request.nextUrl.searchParams;
     const isActive = searchParams.get('active');
     const sectorCode = searchParams.get('sector');
-    
-    let query = getSupabaseAdmin()
+
+    let query = supabase
       .from('working_groups')
       .select('*')
       .order('label', { ascending: true });
@@ -73,11 +80,18 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: Request) {
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
+  if (!supabase) {
+    return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
+  }
+
   console.log('[API] POST /api/working-groups - Starting request');
-  
+
   try {
     const body = await request.json();
-    
+
     // Validate required fields
     if (!body.code || !body.label) {
       return NextResponse.json(
@@ -85,8 +99,8 @@ export async function POST(request: Request) {
         { status: 400 }
       );
     }
-    
-    const { data, error } = await getSupabaseAdmin()
+
+    const { data, error } = await supabase
       .from('working_groups')
       .insert([{
         code: body.code,

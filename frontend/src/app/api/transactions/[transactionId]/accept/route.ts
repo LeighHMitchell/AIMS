@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSupabaseAdmin } from '@/lib/supabase';
+import { requireAuth } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 
@@ -7,6 +7,13 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ transactionId: string }> }
 ) {
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
+  if (!supabase) {
+    return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
+  }
+
   try {
     const { transactionId } = await params;
     const body = await request.json();
@@ -29,7 +36,7 @@ export async function POST(
     console.log('[AIMS] POST /api/transactions/[id]/accept - Accepting transaction:', transactionId);
 
     // Get the original linked transaction
-    const { data: originalTransaction, error: fetchError } = await getSupabaseAdmin()
+    const { data: originalTransaction, error: fetchError } = await supabase
       .from('transactions')
       .select('*')
       .eq('uuid', transactionId)
@@ -44,7 +51,7 @@ export async function POST(
     }
 
     // Check if this transaction is already accepted
-    const { data: existingAccepted, error: checkError } = await getSupabaseAdmin()
+    const { data: existingAccepted, error: checkError } = await supabase
       .from('transactions')
       .select('uuid')
       .eq('linked_from_transaction_uuid', transactionId)
@@ -82,7 +89,7 @@ export async function POST(
       updated_at: new Date().toISOString()
     };
 
-    const { data: acceptedTransaction, error: insertError } = await getSupabaseAdmin()
+    const { data: acceptedTransaction, error: insertError } = await supabase
       .from('transactions')
       .insert([acceptedTransactionData])
       .select()
@@ -97,7 +104,7 @@ export async function POST(
     }
 
     // Update the original transaction to mark it as accepted
-    const { error: updateError } = await getSupabaseAdmin()
+    const { error: updateError } = await supabase
       .from('transactions')
       .update({
         acceptance_status: 'accepted',

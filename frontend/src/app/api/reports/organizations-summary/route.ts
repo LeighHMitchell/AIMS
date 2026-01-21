@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { getSupabaseAdmin } from '@/lib/supabase'
+import { requireAuth } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic'
 
@@ -24,9 +24,14 @@ const ORG_TYPE_MAP: Record<string, string> = {
 }
 
 export async function GET() {
-  try {
-    const supabase = getSupabaseAdmin()
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
 
+  if (!supabase) {
+    return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
+  }
+
+  try {
     // Fetch all organizations
     const { data: organizations, error: orgsError } = await supabase
       .from('organizations')

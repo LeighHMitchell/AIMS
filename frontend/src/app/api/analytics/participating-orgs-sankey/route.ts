@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getSupabaseAdmin } from '@/lib/supabase';
+import { requireAuth } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 
@@ -53,15 +53,15 @@ interface OrgActivityData {
 }
 
 export async function GET(request: Request) {
-  try {
-    const supabaseAdmin = getSupabaseAdmin();
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
 
-    if (!supabaseAdmin) {
-      return NextResponse.json(
-        { error: 'Database connection not initialized' },
-        { status: 500 }
-      );
-    }
+  if (!supabase) {
+    return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
+  }
+
+  try {
+    const supabaseAdmin = supabase;
 
     const { searchParams } = new URL(request.url);
     const metric = searchParams.get('metric') || 'count'; // 'count' or 'value'

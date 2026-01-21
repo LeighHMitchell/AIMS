@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSupabaseAdmin } from '@/lib/supabase';
+import { requireAuth } from '@/lib/auth';
 import {
   ActivityNationalPriorityRow,
   NationalPriorityRow,
@@ -16,10 +16,15 @@ interface RouteParams {
  * Get all national priority allocations for an activity
  */
 export async function GET(request: NextRequest, { params }: RouteParams) {
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
+  if (!supabase) {
+    return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
+  }
+
   try {
     const { id: activityId } = await params;
-    const supabase = getSupabaseAdmin();
-
     // Check if activity exists
     const { data: activity, error: activityError } = await supabase
       .from('activities')
@@ -109,9 +114,15 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
  * Add or update national priority allocation for an activity
  */
 export async function POST(request: NextRequest, { params }: RouteParams) {
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
+  if (!supabase) {
+    return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
+  }
+
   try {
     const { id: activityId } = await params;
-    const supabase = getSupabaseAdmin();
     const body = await request.json();
 
     const { nationalPriorityId, percentage, notes } = body;
@@ -248,10 +259,15 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
  * Remove a national priority allocation from an activity
  */
 export async function DELETE(request: NextRequest, { params }: RouteParams) {
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
+  if (!supabase) {
+    return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
+  }
+
   try {
     const { id: activityId } = await params;
-    const supabase = getSupabaseAdmin();
-
     // Get allocationId from query params or body
     const searchParams = request.nextUrl.searchParams;
     const allocationId = searchParams.get('allocationId');
@@ -305,9 +321,15 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
  * Bulk update all national priority allocations for an activity
  */
 export async function PUT(request: NextRequest, { params }: RouteParams) {
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
+  if (!supabase) {
+    return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
+  }
+
   try {
     const { id: activityId } = await params;
-    const supabase = getSupabaseAdmin();
     const body = await request.json();
 
     const { allocations } = body;

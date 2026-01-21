@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getSupabaseAdmin } from '@/lib/supabase'
+import { requireAuth } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic'
 
@@ -8,9 +8,14 @@ export const dynamic = 'force-dynamic'
  * Returns organizations with their funding envelope counts and summary statistics
  */
 export async function GET(request: NextRequest) {
-  try {
-    const supabase = getSupabaseAdmin()
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
 
+  if (!supabase) {
+    return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
+  }
+
+  try {
     // Query organizations that have funding envelopes
     const { data, error } = await supabase
       .from('organization_funding_envelopes')

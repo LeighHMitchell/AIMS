@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSupabaseAdmin } from '@/lib/supabase';
+import { requireAuth } from '@/lib/auth';
 import { fixedCurrencyConverter } from '@/lib/currency-converter-fixed';
 
 export const dynamic = 'force-dynamic';
@@ -22,6 +22,13 @@ function getCustomYearForDate(
 }
 
 export async function GET(request: NextRequest) {
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
+  if (!supabase) {
+    return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
+  }
+
   try {
     const searchParams = request.nextUrl.searchParams;
     
@@ -43,7 +50,7 @@ export async function GET(request: NextRequest) {
     // Find activity IDs matching the search term (for activity title search)
     let matchingActivityIds: string[] = [];
     if (search) {
-      const { data: matchingActivities } = await getSupabaseAdmin()
+      const { data: matchingActivities } = await supabase
         .from('activities')
         .select('id')
         .ilike('title_narrative', `%${search}%`);
@@ -51,7 +58,7 @@ export async function GET(request: NextRequest) {
     }
     
     // Build the query - select all fields needed for filtering and aggregation
-    let query = getSupabaseAdmin()
+    let query = supabase
       .from('transactions')
       .select('uuid, activity_id, transaction_date, transaction_type, value_usd, value, currency, value_date, flow_type, finance_type, status, provider_org_id, receiver_org_id, provider_org_name, receiver_org_name, description');
     

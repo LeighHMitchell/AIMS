@@ -1,5 +1,5 @@
 import { NextResponse, NextRequest } from 'next/server';
-import { getSupabaseAdmin } from '@/lib/supabase';
+import { requireAuth } from '@/lib/auth';
 
 // Mock user ID to database user ID mapping
 const USER_ID_MAP: Record<string, string> = {
@@ -20,13 +20,14 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
   try {
     const body = await request.json();
     const { user, commentId, replyId, reactionType } = body;
     
     console.log('[AIMS Reactions API] Toggle reaction request:', { commentId, replyId, reactionType, user: user?.name });
-    
-    const supabase = getSupabaseAdmin();
     if (!supabase) {
       return NextResponse.json({ error: 'Database connection failed' }, { status: 500 });
     }
@@ -103,14 +104,15 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
   try {
     const url = new URL(request.url);
     const commentId = url.searchParams.get('commentId');
     const replyId = url.searchParams.get('replyId');
     
     console.log('[AIMS Reactions API] Get reactions request:', { commentId, replyId });
-    
-    const supabase = getSupabaseAdmin();
     if (!supabase) {
       return NextResponse.json({ error: 'Database connection failed' }, { status: 500 });
     }

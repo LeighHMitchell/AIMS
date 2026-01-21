@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSupabaseAdmin } from '@/lib/supabase';
+import { requireAuth } from '@/lib/auth';
 
 // Force dynamic rendering to ensure environment variables are always loaded
 export const dynamic = 'force-dynamic';
@@ -7,8 +7,10 @@ export const dynamic = 'force-dynamic';
 export async function POST(request: NextRequest) {
   console.log('[AIMS] POST /api/users/reset-password - Starting request');
   
+  const { supabase, response } = await requireAuth();
+  if (response) return response;
+  
   try {
-    const supabase = getSupabaseAdmin();
     if (!supabase) {
       return NextResponse.json(
         { error: 'Supabase is not configured' },

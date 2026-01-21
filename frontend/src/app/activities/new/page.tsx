@@ -4657,17 +4657,20 @@ function NewActivityPageContent() {
     }
     
     // Auto-create draft activity when navigating to IATI Import without an existing activity
+    // No default values - all data will come from the IATI import
     if (value === 'xml-import' && !general.id) {
       try {
         const response = await fetch('/api/activities', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            title: 'Imported Activity (Draft)',
-            description: 'Activity created via IATI/XML import',
+            title: '', // No default title - will be populated from IATI import
+            description: '',
             status: '1',
             user_id: user?.id,
             created_via: 'import',
+            hierarchy: null, // No default hierarchy - will be populated from IATI import
+            activity_scope: null, // No default scope - will be populated from IATI import
           }),
         });
 
@@ -4677,16 +4680,18 @@ function NewActivityPageContent() {
         }
 
         const newActivity = await response.json();
-        
-        // Update general state with the new activity ID
-        setGeneral((prev: any) => ({ 
-          ...prev, 
-          id: newActivity.id, 
+
+        // Update general state with the new activity ID - no default values for IATI import
+        setGeneral((prev: any) => ({
+          ...prev,
+          id: newActivity.id,
           uuid: newActivity.uuid || newActivity.id,
-          title: 'Imported Activity (Draft)',
-          description: 'Activity created via IATI/XML import',
+          title: '', // No default title
+          description: '',
+          hierarchy: null, // No default hierarchy
+          activityScope: null, // No default scope
         }));
-        
+
         toast.success('Draft activity created for import', {
           description: 'You can now import data from IATI',
         });
@@ -5345,6 +5350,8 @@ function NewActivityPageContent() {
               <div className="flex-1"></div>
 
               {/* Right side: Comments + Back + Save + Save & Next Navigation Buttons */}
+              {/* Hide these buttons on IATI Link and XML Import tabs */}
+              {activeSection !== 'iati' && activeSection !== 'xml-import' && (
               <div className={`flex items-center gap-3 transition-all ${isModalOpen ? 'blur-sm pointer-events-none' : ''}`}>
                 {/* Comments Button */}
                 {general.id ? (
@@ -5440,6 +5447,7 @@ function NewActivityPageContent() {
                   </>
                 </Button>
               </div>
+              )}
             </div>
           </footer>
         </main>

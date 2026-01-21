@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSupabaseAdmin } from '@/lib/supabase';
+import { requireAuth } from '@/lib/auth';
 
 // GET /api/baselines/[id]/locations - Fetch all locations for a baseline
 export async function GET(
@@ -7,14 +7,15 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
-  const supabase = getSupabaseAdmin();
-  
-  if (!supabase) {
-    return NextResponse.json({ error: 'Database not available' }, { status: 500 });
-  }
 
   try {
-    const { id } = await params;
+    const { supabase, response: authResponse } = await requireAuth();
+    if (authResponse) return authResponse;
+
+    if (!supabase) {
+      return NextResponse.json({ error: 'Database not available' }, { status: 500 });
+    }
+
     const { data, error } = await supabase
       .from('baseline_locations')
       .select('*')
@@ -29,8 +30,8 @@ export async function GET(
     return NextResponse.json({ locations: data || [] });
   } catch (error) {
     console.error('[Baseline Locations API] Unexpected error:', error);
-    return NextResponse.json({ 
-      error: error instanceof Error ? error.message : 'Unknown error' 
+    return NextResponse.json({
+      error: error instanceof Error ? error.message : 'Unknown error'
     }, { status: 500 });
   }
 }
@@ -41,19 +42,20 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
-  const supabase = getSupabaseAdmin();
-  
-  if (!supabase) {
-    return NextResponse.json({ error: 'Database not available' }, { status: 500 });
-  }
 
   try {
-    const { id } = await params;
+    const { supabase, response: authResponse } = await requireAuth();
+    if (authResponse) return authResponse;
+
+    if (!supabase) {
+      return NextResponse.json({ error: 'Database not available' }, { status: 500 });
+    }
+
     const body = await request.json();
 
     if (!body.location_ref) {
-      return NextResponse.json({ 
-        error: 'Location reference is required' 
+      return NextResponse.json({
+        error: 'Location reference is required'
       }, { status: 400 });
     }
 
@@ -76,8 +78,8 @@ export async function POST(
     return NextResponse.json({ location: data }, { status: 201 });
   } catch (error) {
     console.error('[Baseline Locations API] Unexpected error:', error);
-    return NextResponse.json({ 
-      error: error instanceof Error ? error.message : 'Unknown error' 
+    return NextResponse.json({
+      error: error instanceof Error ? error.message : 'Unknown error'
     }, { status: 500 });
   }
 }
@@ -88,20 +90,21 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
-  const supabase = getSupabaseAdmin();
-  
-  if (!supabase) {
-    return NextResponse.json({ error: 'Database not available' }, { status: 500 });
-  }
 
   try {
-    const { id } = await params;
+    const { supabase, response: authResponse } = await requireAuth();
+    if (authResponse) return authResponse;
+
+    if (!supabase) {
+      return NextResponse.json({ error: 'Database not available' }, { status: 500 });
+    }
+
     const { searchParams } = new URL(request.url);
     const locationId = searchParams.get('locationId');
 
     if (!locationId) {
-      return NextResponse.json({ 
-        error: 'Location ID is required' 
+      return NextResponse.json({
+        error: 'Location ID is required'
       }, { status: 400 });
     }
 
@@ -119,9 +122,8 @@ export async function DELETE(
     return NextResponse.json({ success: true }, { status: 200 });
   } catch (error) {
     console.error('[Baseline Locations API] Unexpected error:', error);
-    return NextResponse.json({ 
-      error: error instanceof Error ? error.message : 'Unknown error' 
+    return NextResponse.json({
+      error: error instanceof Error ? error.message : 'Unknown error'
     }, { status: 500 });
   }
 }
-

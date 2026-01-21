@@ -1,21 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSupabaseAdmin } from '@/lib/supabase';
+import { requireAuth } from '@/lib/auth';
 
 export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string; linkId: string }> }
 ) {
-  const { linkId } = params;
-  const supabase = getSupabaseAdmin();
-
-  if (!supabase) {
-    return NextResponse.json(
-      { error: 'Database not configured' },
-      { status: 503 }
-    );
-  }
+  const { linkId } = await params;
 
   try {
+    const { supabase, response: authResponse } = await requireAuth();
+    if (authResponse) return authResponse;
+
+    if (!supabase) {
+      return NextResponse.json(
+        { error: 'Database not configured' },
+        { status: 503 }
+      );
+    }
+
     const body = await request.json();
     const { relationshipType, narrative } = body;
 
@@ -60,17 +62,19 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string; linkId: string }> }
 ) {
-  const { linkId } = params;
-  const supabase = getSupabaseAdmin();
-
-  if (!supabase) {
-    return NextResponse.json(
-      { error: 'Database not configured' },
-      { status: 503 }
-    );
-  }
+  const { linkId } = await params;
 
   try {
+    const { supabase, response: authResponse } = await requireAuth();
+    if (authResponse) return authResponse;
+
+    if (!supabase) {
+      return NextResponse.json(
+        { error: 'Database not configured' },
+        { status: 503 }
+      );
+    }
+
     const { error } = await supabase
       .from('activity_relationships')
       .delete()

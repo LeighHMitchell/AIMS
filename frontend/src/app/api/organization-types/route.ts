@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getSupabaseAdmin } from '@/lib/supabase'
+import { requireAuth } from '@/lib/auth';
 
 // Organization Type interface
 interface OrganizationType {
@@ -32,19 +32,17 @@ const IATI_ORGANIZATION_TYPES: OrganizationType[] = [
 
 export async function GET(request: NextRequest) {
   console.log('[AIMS] GET /api/organization-types - Starting request');
-  
+
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
+  if (!supabase) {
+    return NextResponse.json(IATI_ORGANIZATION_TYPES, { status: 200 });
+  }
+
   try {
-    // Check if getSupabaseAdmin() is properly initialized
-    if (!getSupabaseAdmin()) {
-      console.error('[AIMS] getSupabaseAdmin() is not initialized');
-      return NextResponse.json(
-        { error: 'Database connection not initialized' },
-        { status: 500 }
-      );
-    }
-    
     // Try to fetch from the organization_types table
-    const { data: organizationTypes, error } = await getSupabaseAdmin()
+    const { data: organizationTypes, error } = await supabase
       .from('organization_types')
       .select('*')
       .eq('is_active', true)
@@ -78,18 +76,17 @@ export async function GET(request: NextRequest) {
 // Initialize/update organization types in the database
 export async function POST(request: NextRequest) {
   console.log('[AIMS] POST /api/organization-types - Starting request to initialize data');
-  
+
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
+  if (!supabase) {
+    return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
+  }
+
   try {
-    if (!getSupabaseAdmin()) {
-      console.error('[AIMS] getSupabaseAdmin() is not initialized');
-      return NextResponse.json(
-        { error: 'Database connection not initialized' },
-        { status: 500 }
-      );
-    }
-    
     // Insert or update organization types
-    const { data, error } = await getSupabaseAdmin()
+    const { data, error } = await supabase
       .from('organization_types')
       .upsert(IATI_ORGANIZATION_TYPES, {
         onConflict: 'code',

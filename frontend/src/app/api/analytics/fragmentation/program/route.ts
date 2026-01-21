@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSupabaseAdmin } from '@/lib/supabase';
+import { requireAuth } from '@/lib/auth';
 import { MeasureType, FragmentationData, FragmentationCell, FragmentationDonor, FragmentationCategory } from '@/types/national-priorities';
 
 /**
@@ -7,8 +7,10 @@ import { MeasureType, FragmentationData, FragmentationCell, FragmentationDonor, 
  * Returns Donors × National Priorities fragmentation matrix
  */
 export async function GET(request: NextRequest) {
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
   try {
-    const supabase = getSupabaseAdmin();
     
     // Check if Supabase is properly initialized
     if (!supabase) {

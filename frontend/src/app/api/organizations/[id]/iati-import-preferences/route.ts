@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSupabaseAdmin } from '@/lib/supabase';
+import { requireAuth } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 
@@ -34,7 +34,7 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const { data: org, error } = await getSupabaseAdmin()
+    const { data: org, error } = await supabase
       .from('organizations')
       .select('iati_import_preferences')
       .eq('id', id)
@@ -59,6 +59,9 @@ export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
   try {
     const { id } = await params;
     const body = await request.json();
@@ -68,7 +71,7 @@ export async function PUT(
       return NextResponse.json({ error: 'Invalid preferences payload' }, { status: 400 });
     }
 
-    const { error } = await getSupabaseAdmin()
+    const { error } = await supabase
       .from('organizations')
       .update({ iati_import_preferences: body })
       .eq('id', id);

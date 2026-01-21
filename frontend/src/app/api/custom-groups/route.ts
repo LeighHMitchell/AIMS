@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSupabaseAdmin } from '@/lib/supabase';
+import { requireAuth } from '@/lib/auth';
 
 export async function OPTIONS() {
   return new NextResponse(null, {
@@ -14,13 +14,20 @@ export async function OPTIONS() {
 
 export async function GET(request: NextRequest) {
   console.log('[API] GET /api/custom-groups - Starting request');
-  
+
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
+  if (!supabase) {
+    return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
+  }
+
   try {
     const searchParams = request.nextUrl.searchParams;
     const includeMembers = searchParams.get('includeMembers') === 'true';
-    
+
     // Use the view that includes member count
-    const { data, error } = await getSupabaseAdmin()
+    const { data, error } = await supabase
       .from('custom_groups_with_stats')
       .select('*')
       .order('name', { ascending: true });
@@ -53,10 +60,17 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: Request) {
   console.log('[API] POST /api/custom-groups - Starting request');
-  
+
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
+  if (!supabase) {
+    return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
+  }
+
   try {
     const body = await request.json();
-    
+
     // Validate required fields
     if (!body.name) {
       return NextResponse.json(
@@ -64,9 +78,9 @@ export async function POST(request: Request) {
         { status: 400 }
       );
     }
-    
+
     // Create the custom group
-    const { data: groupData, error: groupError } = await getSupabaseAdmin()
+    const { data: groupData, error: groupError } = await supabase
       .from('custom_groups')
       .insert({
         name: body.name,
@@ -114,7 +128,7 @@ export async function POST(request: Request) {
         organization_id: orgId
       }));
       
-      const { error: membershipError } = await getSupabaseAdmin()
+      const { error: membershipError } = await supabase
         .from('custom_group_memberships')
         .insert(memberships);
       

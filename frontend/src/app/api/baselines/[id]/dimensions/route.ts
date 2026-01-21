@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSupabaseAdmin } from '@/lib/supabase';
+import { requireAuth } from '@/lib/auth';
 
 // GET /api/baselines/[id]/dimensions - Fetch all dimensions for a baseline
 export async function GET(
@@ -7,14 +7,15 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
-  const supabase = getSupabaseAdmin();
-  
-  if (!supabase) {
-    return NextResponse.json({ error: 'Database not available' }, { status: 500 });
-  }
 
   try {
-    const { id } = await params;
+    const { supabase, response: authResponse } = await requireAuth();
+    if (authResponse) return authResponse;
+
+    if (!supabase) {
+      return NextResponse.json({ error: 'Database not available' }, { status: 500 });
+    }
+
     const { data, error } = await supabase
       .from('baseline_dimensions')
       .select('*')
@@ -29,8 +30,8 @@ export async function GET(
     return NextResponse.json({ dimensions: data || [] });
   } catch (error) {
     console.error('[Baseline Dimensions API] Unexpected error:', error);
-    return NextResponse.json({ 
-      error: error instanceof Error ? error.message : 'Unknown error' 
+    return NextResponse.json({
+      error: error instanceof Error ? error.message : 'Unknown error'
     }, { status: 500 });
   }
 }
@@ -41,19 +42,20 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
-  const supabase = getSupabaseAdmin();
-  
-  if (!supabase) {
-    return NextResponse.json({ error: 'Database not available' }, { status: 500 });
-  }
 
   try {
-    const { id } = await params;
+    const { supabase, response: authResponse } = await requireAuth();
+    if (authResponse) return authResponse;
+
+    if (!supabase) {
+      return NextResponse.json({ error: 'Database not available' }, { status: 500 });
+    }
+
     const body = await request.json();
 
     if (!body.name || !body.value) {
-      return NextResponse.json({ 
-        error: 'Name and value are required' 
+      return NextResponse.json({
+        error: 'Name and value are required'
       }, { status: 400 });
     }
 
@@ -77,8 +79,8 @@ export async function POST(
     return NextResponse.json({ dimension: data }, { status: 201 });
   } catch (error) {
     console.error('[Baseline Dimensions API] Unexpected error:', error);
-    return NextResponse.json({ 
-      error: error instanceof Error ? error.message : 'Unknown error' 
+    return NextResponse.json({
+      error: error instanceof Error ? error.message : 'Unknown error'
     }, { status: 500 });
   }
 }
@@ -89,20 +91,21 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
-  const supabase = getSupabaseAdmin();
-  
-  if (!supabase) {
-    return NextResponse.json({ error: 'Database not available' }, { status: 500 });
-  }
 
   try {
-    const { id } = await params;
+    const { supabase, response: authResponse } = await requireAuth();
+    if (authResponse) return authResponse;
+
+    if (!supabase) {
+      return NextResponse.json({ error: 'Database not available' }, { status: 500 });
+    }
+
     const { searchParams } = new URL(request.url);
     const dimensionId = searchParams.get('dimensionId');
 
     if (!dimensionId) {
-      return NextResponse.json({ 
-        error: 'Dimension ID is required' 
+      return NextResponse.json({
+        error: 'Dimension ID is required'
       }, { status: 400 });
     }
 
@@ -120,9 +123,8 @@ export async function DELETE(
     return NextResponse.json({ success: true }, { status: 200 });
   } catch (error) {
     console.error('[Baseline Dimensions API] Unexpected error:', error);
-    return NextResponse.json({ 
-      error: error instanceof Error ? error.message : 'Unknown error' 
+    return NextResponse.json({
+      error: error instanceof Error ? error.message : 'Unknown error'
     }, { status: 500 });
   }
 }
-

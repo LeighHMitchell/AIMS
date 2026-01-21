@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSupabaseAdmin } from '@/lib/supabase';
+import { requireAuth } from '@/lib/auth';
 import { extractIatiMeta, IatiParseError } from '@/lib/iati/parseMeta';
 import { XMLParser } from 'fast-xml-parser';
 import { iatiAnalytics } from '@/lib/analytics';
@@ -42,6 +42,13 @@ function findValueFromKeys(data: Record<string, any>, keys: string[]): any {
 }
 
 export async function POST(request: NextRequest) {
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
+  if (!supabase) {
+    return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
+  }
+
   console.log('[Import as Reporting Org] 🚀 POST handler called');
   try {
     const { xmlContent, userId, userRole, replaceActivityIds, activityId, fields, iati_data, selectedReportingOrgId, acronyms } = await request.json();
@@ -54,7 +61,6 @@ export async function POST(request: NextRequest) {
     });
     
     // CRITICAL: Get user's org info to ensure we NEVER use it
-    const supabase = getSupabaseAdmin();
     let userOrgInfo = null;
     if (userId) {
       const { data: userData } = await supabase
@@ -243,19 +249,73 @@ export async function POST(request: NextRequest) {
           continue;
         }
 
-        // Extract activity dates
+        // Extract activity dates (all types)
         const activityDates = ensureArray(xmlActivity['activity-date'] || []);
-        const plannedStartDate = activityDates.find((d: any) => d['@_type'] === '1')?.['@_iso-date'];
-        const plannedEndDate = activityDates.find((d: any) => d['@_type'] === '3')?.['@_iso-date'];
+        const plannedStartDate = activityDates.find((d: any) => d['@_type'] === '1' || d['@_type'] === 1)?.['@_iso-date'];
+        const actualStartDate = activityDates.find((d: any) => d['@_type'] === '2' || d['@_type'] === 2)?.['@_iso-date'];
+        const plannedEndDate = activityDates.find((d: any) => d['@_type'] === '3' || d['@_type'] === 3)?.['@_iso-date'];
+        const actualEndDate = activityDates.find((d: any) => d['@_type'] === '4' || d['@_type'] === 4)?.['@_iso-date'];
 
-        // Extract default currency
-        const defaultCurrency = xmlActivity['default-currency']?.['@_code'] || 'USD';
+        // Extract default currency from activity attribute
+        const defaultCurrency = xmlActivity['@_default-currency'] || 'USD';
 
         // Extract and sanitize description HTML
         const rawDescription = extractNarrative(xmlActivity.description);
-        const sanitizedDescription = rawDescription 
-          ? sanitizeIatiDescriptionServerSafe(rawDescription) 
+        const sanitizedDescription = rawDescription
+          ? sanitizeIatiDescriptionServerSafe(rawDescription)
           : undefined;
+
+        // Extract default classifications from XML
+        const defaultAidType = extractCodeValue(xmlActivity['default-aid-type']);
+        const defaultFlowType = extractCodeValue(xmlActivity['default-flow-type']);
+        const defaultFinanceType = extractCodeValue(xmlActivity['default-finance-type']);
+        const defaultTiedStatus = extractCodeValue(xmlActivity['default-tied-status']);
+        const collaborationType = extractCodeValue(xmlActivity['collaboration-type']);
+        const activityScope = extractCodeValue(xmlActivity['activity-scope']);
+        const hierarchy = xmlActivity['@_hierarchy'] || null;
+        const humanitarian = xmlActivity['@_humanitarian'] === true || xmlActivity['@_humanitarian'] === '1' || xmlActivity['@_humanitarian'] === 1;
+
+        // Extract capital spend percentage
+        const capitalSpendEl = xmlActivity['capital-spend'];
+        const capitalSpendPercentage = capitalSpendEl?.['@_percentage'] !== undefined
+          ? parseFloat(capitalSpendEl['@_percentage'])
+          : null;
+
+        // Extract recipient countries
+        const recipientCountries = ensureArray(xmlActivity['recipient-country'] || []).map((c: any) => ({
+          code: c['@_code'],
+          percentage: c['@_percentage'] ? parseFloat(c['@_percentage']) : undefined,
+          narrative: extractNarrative(c)
+        }));
+
+        // Extract recipient regions
+        const recipientRegions = ensureArray(xmlActivity['recipient-region'] || []).map((r: any) => ({
+          code: r['@_code'],
+          vocabulary: r['@_vocabulary'] || '1',
+          vocabularyUri: r['@_vocabulary-uri'],
+          percentage: r['@_percentage'] ? parseFloat(r['@_percentage']) : undefined,
+          narrative: extractNarrative(r)
+        }));
+
+        // Extract participating organizations
+        const participatingOrgs = ensureArray(xmlActivity['participating-org'] || []).map((org: any) => ({
+          ref: org['@_ref'],
+          role: org['@_role'],
+          type: org['@_type'],
+          activityId: org['@_activity-id'],
+          narrative: extractNarrative(org),
+          name: extractNarrative(org)
+        }));
+
+        console.log(`[Import as Reporting Org] Parsed activity ${iatiIdentifier}:`, {
+          title: extractNarrative(xmlActivity.title),
+          dates: { plannedStartDate, actualStartDate, plannedEndDate, actualEndDate },
+          classifications: { defaultAidType, defaultFlowType, defaultFinanceType, defaultTiedStatus },
+          collaborationType, activityScope, hierarchy, humanitarian, capitalSpendPercentage,
+          recipientCountriesCount: recipientCountries.length,
+          recipientRegionsCount: recipientRegions.length,
+          participatingOrgsCount: participatingOrgs.length
+        });
 
         activities.push({
           iatiIdentifier,
@@ -265,8 +325,22 @@ export async function POST(request: NextRequest) {
             description: sanitizedDescription,
             activityStatus: xmlActivity['activity-status']?.['@_code'] || 'implementation',
             plannedStartDate,
+            actualStartDate,
             plannedEndDate,
-            defaultCurrency
+            actualEndDate,
+            defaultCurrency,
+            defaultAidType,
+            defaultFlowType,
+            defaultFinanceType,
+            defaultTiedStatus,
+            collaborationType,
+            activityScope,
+            hierarchy,
+            humanitarian,
+            capitalSpendPercentage,
+            recipientCountries,
+            recipientRegions,
+            participatingOrgs
           }
         });
       } catch (error) {
@@ -858,6 +932,114 @@ export async function POST(request: NextRequest) {
               activityInsert.capital_spend_percentage = parsedActivity.capitalSpendPercentage;
               console.log(`[Import as Reporting Org] Set capital_spend_percentage from parsedActivity = ${activityInsert.capital_spend_percentage}`);
             }
+            if (parsedActivity.humanitarian !== undefined && activityInsert.humanitarian === undefined) {
+              activityInsert.humanitarian = parsedActivity.humanitarian;
+              console.log(`[Import as Reporting Org] Set humanitarian from parsedActivity = ${activityInsert.humanitarian}`);
+            }
+          }
+
+          // AUTHORITATIVE: Use server-side parsed activityData to ALWAYS overwrite values
+          // This ensures XML values take precedence over any defaults or frontend-parsed data
+          // The server directly parses the raw XML, so these are the definitive values
+          if (activityData) {
+            console.log(`[Import as Reporting Org] 🔄 Applying server-parsed XML values (AUTHORITATIVE):`, {
+              title: activityData.title,
+              description: activityData.description ? `${activityData.description.substring(0, 50)}...` : null,
+              activityScope: activityData.activityScope,
+              dates: {
+                plannedStart: activityData.plannedStartDate,
+                actualStart: activityData.actualStartDate,
+                plannedEnd: activityData.plannedEndDate,
+                actualEnd: activityData.actualEndDate
+              }
+            });
+
+            // ALWAYS overwrite title with server-parsed value (don't check if already set)
+            if (activityData.title) {
+              const oldTitle = activityInsert.title_narrative;
+              activityInsert.title_narrative = activityData.title;
+              console.log(`[Import as Reporting Org] ✓ Set title from server XML: "${oldTitle}" → "${activityData.title}"`);
+            }
+
+            // ALWAYS overwrite description with server-parsed value
+            if (activityData.description) {
+              activityInsert.description_narrative = activityData.description;
+              console.log(`[Import as Reporting Org] ✓ Set description from server XML`);
+            }
+
+            // ALWAYS overwrite activity_scope with server-parsed value
+            if (activityData.activityScope) {
+              const oldScope = activityInsert.activity_scope;
+              activityInsert.activity_scope = activityData.activityScope;
+              console.log(`[Import as Reporting Org] ✓ Set activity_scope from server XML: "${oldScope}" → "${activityData.activityScope}"`);
+            }
+
+            // Overwrite dates if available from XML
+            if (activityData.plannedStartDate) {
+              activityInsert.planned_start_date = activityData.plannedStartDate;
+              console.log(`[Import as Reporting Org] ✓ Set planned_start_date from server XML = ${activityData.plannedStartDate}`);
+            }
+            if (activityData.actualStartDate) {
+              activityInsert.actual_start_date = activityData.actualStartDate;
+              console.log(`[Import as Reporting Org] ✓ Set actual_start_date from server XML = ${activityData.actualStartDate}`);
+            }
+            if (activityData.plannedEndDate) {
+              activityInsert.planned_end_date = activityData.plannedEndDate;
+              console.log(`[Import as Reporting Org] ✓ Set planned_end_date from server XML = ${activityData.plannedEndDate}`);
+            }
+            if (activityData.actualEndDate) {
+              activityInsert.actual_end_date = activityData.actualEndDate;
+              console.log(`[Import as Reporting Org] ✓ Set actual_end_date from server XML = ${activityData.actualEndDate}`);
+            }
+
+            // Overwrite currency and classifications if available from XML
+            if (activityData.defaultCurrency) {
+              activityInsert.default_currency = activityData.defaultCurrency;
+              console.log(`[Import as Reporting Org] ✓ Set default_currency from server XML = ${activityData.defaultCurrency}`);
+            }
+            if (activityData.defaultAidType) {
+              activityInsert.default_aid_type = activityData.defaultAidType;
+              console.log(`[Import as Reporting Org] ✓ Set default_aid_type from server XML = ${activityData.defaultAidType}`);
+            }
+            if (activityData.defaultFlowType) {
+              activityInsert.default_flow_type = activityData.defaultFlowType;
+              console.log(`[Import as Reporting Org] ✓ Set default_flow_type from server XML = ${activityData.defaultFlowType}`);
+            }
+            if (activityData.defaultFinanceType) {
+              activityInsert.default_finance_type = activityData.defaultFinanceType;
+              console.log(`[Import as Reporting Org] ✓ Set default_finance_type from server XML = ${activityData.defaultFinanceType}`);
+            }
+            if (activityData.defaultTiedStatus) {
+              activityInsert.default_tied_status = activityData.defaultTiedStatus;
+              console.log(`[Import as Reporting Org] ✓ Set default_tied_status from server XML = ${activityData.defaultTiedStatus}`);
+            }
+            if (activityData.collaborationType) {
+              activityInsert.collaboration_type = activityData.collaborationType;
+              console.log(`[Import as Reporting Org] ✓ Set collaboration_type from server XML = ${activityData.collaborationType}`);
+            }
+            if (activityData.hierarchy) {
+              activityInsert.hierarchy = activityData.hierarchy;
+              console.log(`[Import as Reporting Org] ✓ Set hierarchy from server XML = ${activityData.hierarchy}`);
+            }
+            if (activityData.capitalSpendPercentage !== null && activityData.capitalSpendPercentage !== undefined) {
+              activityInsert.capital_spend_percentage = activityData.capitalSpendPercentage;
+              console.log(`[Import as Reporting Org] ✓ Set capital_spend_percentage from server XML = ${activityData.capitalSpendPercentage}`);
+            }
+            if (activityData.humanitarian !== undefined) {
+              activityInsert.humanitarian = activityData.humanitarian;
+              console.log(`[Import as Reporting Org] ✓ Set humanitarian from server XML = ${activityData.humanitarian}`);
+            }
+            if (activityData.activityStatus) {
+              activityInsert.activity_status = activityData.activityStatus;
+              console.log(`[Import as Reporting Org] ✓ Set activity_status from server XML = ${activityData.activityStatus}`);
+            }
+
+            console.log(`[Import as Reporting Org] 📋 Final values after server XML override:`, {
+              title_narrative: activityInsert.title_narrative,
+              description_narrative: activityInsert.description_narrative ? `${activityInsert.description_narrative.substring(0, 50)}...` : null,
+              activity_scope: activityInsert.activity_scope,
+              activity_status: activityInsert.activity_status
+            });
           }
 
           // Ensure required fields have defaults
@@ -871,10 +1053,10 @@ export async function POST(request: NextRequest) {
             activityInsert.default_currency = 'USD';
           }
         } else {
-          // Use basic activityData (backward compatibility)
+          // Use basic activityData (backward compatibility / no fields selected)
           // Sanitize HTML in description
-          const sanitizedDesc = activityData.description 
-            ? sanitizeIatiDescriptionServerSafe(activityData.description) 
+          const sanitizedDesc = activityData.description
+            ? sanitizeIatiDescriptionServerSafe(activityData.description)
             : null;
           activityInsert = {
             ...activityInsert,
@@ -883,9 +1065,40 @@ export async function POST(request: NextRequest) {
             description_narrative: sanitizedDesc,
             activity_status: activityData.activityStatus || 'implementation',
             planned_start_date: activityData.plannedStartDate || null,
+            actual_start_date: activityData.actualStartDate || null,
             planned_end_date: activityData.plannedEndDate || null,
-            default_currency: activityData.defaultCurrency || 'USD'
+            actual_end_date: activityData.actualEndDate || null,
+            default_currency: activityData.defaultCurrency || 'USD',
+            default_aid_type: activityData.defaultAidType || null,
+            default_flow_type: activityData.defaultFlowType || null,
+            default_finance_type: activityData.defaultFinanceType || null,
+            default_tied_status: activityData.defaultTiedStatus || null,
+            collaboration_type: activityData.collaborationType || null,
+            activity_scope: activityData.activityScope || null,
+            hierarchy: activityData.hierarchy || null,
+            capital_spend_percentage: activityData.capitalSpendPercentage || null,
+            humanitarian: activityData.humanitarian || false
           };
+          console.log(`[Import as Reporting Org] Using server-side parsed data for activity ${iatiIdentifier}:`, {
+            title: activityInsert.title_narrative,
+            dates: {
+              plannedStart: activityInsert.planned_start_date,
+              actualStart: activityInsert.actual_start_date,
+              plannedEnd: activityInsert.planned_end_date,
+              actualEnd: activityInsert.actual_end_date
+            },
+            classifications: {
+              aidType: activityInsert.default_aid_type,
+              flowType: activityInsert.default_flow_type,
+              financeType: activityInsert.default_finance_type,
+              tiedStatus: activityInsert.default_tied_status
+            },
+            collaborationType: activityInsert.collaboration_type,
+            activityScope: activityInsert.activity_scope,
+            hierarchy: activityInsert.hierarchy,
+            capitalSpend: activityInsert.capital_spend_percentage,
+            humanitarian: activityInsert.humanitarian
+          });
         }
 
         console.log(`[Import as Reporting Org] Activity ${iatiIdentifier} exists check:`, existingCheck ? `Found (ID: ${existingCheck.id})` : 'Not found');
@@ -1294,8 +1507,8 @@ export async function POST(request: NextRequest) {
                 const resolvedCurrency = budget.currency || parsedActivity.defaultCurrency || 'USD';
                 return {
                   activity_id: finalActivityId,
-                  budget_type: budget.type || '1',
-                  budget_status: budget.status || '1',
+                  type: parseInt(budget.type) || 1, // SMALLINT: 1 = Original, 2 = Revised
+                  status: parseInt(budget.status) || 1, // SMALLINT: 1 = Indicative, 2 = Committed
                   period_start: budget.period?.start || null,
                   period_end: budget.period?.end || null,
                   value: budget.value, // Using 'value' as the error suggests 'amount' doesn't exist
@@ -1360,11 +1573,12 @@ export async function POST(request: NextRequest) {
                 receiver_org_ref: t.receiverOrg?.ref || null,
                 receiver_org_name: t.receiverOrg?.name || null,
                 receiver_org_activity_id: t.receiverOrg?.receiverActivityId || null,
-                aid_type: t.aidType || null,
-                finance_type: t.financeType || null,
-                tied_status: t.tiedStatus || null,
-                flow_type: t.flowType || null,
-                disbursement_channel: t.disbursementChannel || null,
+                // Extract code values from objects - aidType can be {code: "A01", vocabulary: "1"}
+                aid_type: extractCodeValue(t.aidType),
+                finance_type: extractCodeValue(t.financeType),
+                tied_status: extractCodeValue(t.tiedStatus),
+                flow_type: extractCodeValue(t.flowType),
+                disbursement_channel: extractCodeValue(t.disbursementChannel),
                 created_at: new Date().toISOString(),
                 updated_at: new Date().toISOString()
               };
@@ -1511,62 +1725,30 @@ export async function POST(request: NextRequest) {
 
         if (sectorsData && Array.isArray(sectorsData) && sectorsData.length > 0) {
           console.log(`[Import as Reporting Org] Importing ${sectorsData.length} sectors`);
-          
+
           // Clear existing sectors
           await supabase
             .from('activity_sectors')
             .delete()
             .eq('activity_id', finalActivityId);
-          
-          // Get sector codes from imported data
-          const sectorCodes = sectorsData.map((s: any) => s.code);
-          
-          // Get existing sectors from database
-          const { data: existingSectors } = await supabase
-            .from('sectors')
-            .select('id, code')
-            .in('code', sectorCodes);
-          
-          const existingSectorMap = new Map<string, string>(
-            (existingSectors || []).map((s: any) => [s.code, s.id])
-          );
-          
-          // Create missing sectors
-          const missingSectors = sectorsData.filter((s: any) => !existingSectorMap.has(s.code));
-          
-          if (missingSectors.length > 0) {
-            const { data: newSectors } = await supabase
-              .from('sectors')
-              .insert(
-                missingSectors.map((s: any) => ({
-                  code: s.code,
-                  name: s.name || `Sector ${s.code}`,
-                  category: s.code.substring(0, 3), // First 3 digits are category
-                  type: 'secondary'
-                }))
-              )
-              .select();
-            
-            // Add new sectors to map
-            (newSectors || []).forEach((s: any) => {
-              existingSectorMap.set(s.code, s.id);
-            });
-          }
-          
+
           // Insert activity-sector relationships
-          const sectorRelations = sectorsData
-            .filter((s: any) => existingSectorMap.has(s.code))
-            .map((s: any) => ({
-              activity_id: finalActivityId,
-              sector_id: existingSectorMap.get(s.code),
-              percentage: s.percentage || 0
-            }));
-          
+          // Note: activity_sectors table uses sector_code, sector_name, sector_percentage columns
+          const sectorRelations = sectorsData.map((s: any) => ({
+            activity_id: finalActivityId,
+            sector_code: s.code,
+            sector_name: s.name || `Sector ${s.code}`,
+            sector_percentage: s.percentage || 0,
+            sector_category_code: s.code?.substring(0, 3) || null,
+            sector_category_name: s.categoryName || null,
+            type: 'secondary'
+          }));
+
           if (sectorRelations.length > 0) {
             const { error: sectorsError } = await supabase
               .from('activity_sectors')
               .insert(sectorRelations);
-            
+
             if (sectorsError) {
               console.error(`[Import as Reporting Org] Error inserting sectors:`, sectorsError);
             } else {
@@ -1576,10 +1758,19 @@ export async function POST(request: NextRequest) {
         }
 
         // Handle recipient countries (JSONB field on activities table)
-        const recipientCountries = 
+        // Priority: iati_data > parsedActivity (frontend) > activityData (server XML parse)
+        const recipientCountries =
           iati_data?.recipient_countries ||
           parsedActivity?.recipientCountries ||
+          activityData?.recipientCountries ||
           [];
+
+        console.log(`[Import as Reporting Org] Recipient countries sources:`, {
+          fromIatiData: iati_data?.recipient_countries?.length || 0,
+          fromParsedActivity: parsedActivity?.recipientCountries?.length || 0,
+          fromActivityData: activityData?.recipientCountries?.length || 0,
+          finalCount: recipientCountries.length
+        });
 
         if (recipientCountries && Array.isArray(recipientCountries) && recipientCountries.length > 0) {
           console.log(`[Import as Reporting Org] Processing ${recipientCountries.length} recipient countries`);
@@ -1611,10 +1802,19 @@ export async function POST(request: NextRequest) {
         }
 
         // Handle recipient regions (JSONB field on activities table)
-        const recipientRegions = 
+        // Priority: iati_data > parsedActivity (frontend) > activityData (server XML parse)
+        const recipientRegions =
           iati_data?.recipient_regions ||
           parsedActivity?.recipientRegions ||
+          activityData?.recipientRegions ||
           [];
+
+        console.log(`[Import as Reporting Org] Recipient regions sources:`, {
+          fromIatiData: iati_data?.recipient_regions?.length || 0,
+          fromParsedActivity: parsedActivity?.recipientRegions?.length || 0,
+          fromActivityData: activityData?.recipientRegions?.length || 0,
+          finalCount: recipientRegions.length
+        });
 
         if (recipientRegions && Array.isArray(recipientRegions) && recipientRegions.length > 0) {
           console.log(`[Import as Reporting Org] Processing ${recipientRegions.length} recipient regions`);
@@ -1927,11 +2127,21 @@ export async function POST(request: NextRequest) {
         }
 
         // Handle participating organizations
-        const participatingOrgsData = 
+        // Priority: iati_data > parsedActivity (frontend) > activityData (server XML parse)
+        const participatingOrgsData =
           iati_data?.importedParticipatingOrgs ||
           iati_data?.participating_orgs ||
           parsedActivity?.participatingOrgs ||
+          activityData?.participatingOrgs ||
           [];
+
+        console.log(`[Import as Reporting Org] Participating orgs sources:`, {
+          fromIatiDataImported: iati_data?.importedParticipatingOrgs?.length || 0,
+          fromIatiDataOrgs: iati_data?.participating_orgs?.length || 0,
+          fromParsedActivity: parsedActivity?.participatingOrgs?.length || 0,
+          fromActivityData: activityData?.participatingOrgs?.length || 0,
+          finalCount: participatingOrgsData.length
+        });
 
         if (participatingOrgsData && participatingOrgsData.length > 0) {
           console.log(`[Import as Reporting Org] Importing ${participatingOrgsData.length} participating organizations`);

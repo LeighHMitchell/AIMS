@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { createServerClient } from '@supabase/ssr';
+import { cookies } from 'next/headers';
 import { getSupabaseAdmin } from '@/lib/supabase';
 
 export const dynamic = 'force-dynamic';
@@ -9,7 +10,7 @@ export async function POST(request: NextRequest) {
     // Create a regular Supabase client for authentication
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
     const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-    
+
     if (!supabaseUrl || !supabaseAnonKey) {
       console.error('[Auth Login] Missing Supabase environment variables');
       return NextResponse.json(
@@ -17,10 +18,26 @@ export async function POST(request: NextRequest) {
         { status: 503 }
       );
     }
-    
-    // Create client for authentication (uses anon key)
-    const authClient = createClient(supabaseUrl, supabaseAnonKey);
-    
+
+    // Create server client with cookie handling for authentication
+    const cookieStore = await cookies();
+    const authClient = createServerClient(supabaseUrl, supabaseAnonKey, {
+      cookies: {
+        getAll() {
+          return cookieStore.getAll();
+        },
+        setAll(cookiesToSet) {
+          try {
+            cookiesToSet.forEach(({ name, value, options }) => {
+              cookieStore.set(name, value, options);
+            });
+          } catch {
+            // Server Component context - ignore
+          }
+        },
+      },
+    });
+
     // Get admin client for database queries (uses service role key)
     const adminClient = getSupabaseAdmin();
     

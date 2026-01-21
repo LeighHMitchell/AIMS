@@ -1,10 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSupabaseAdmin } from '@/lib/supabase';
+import { requireAuth } from '@/lib/auth';
 
 export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string; tagId: string }> }
 ) {
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
+  if (!supabase) {
+    return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
+  }
+
   try {
     const { id: activityId, tagId } = await params;
 
@@ -14,9 +21,6 @@ export async function DELETE(
         { status: 400 }
       );
     }
-
-    const supabase = getSupabaseAdmin();
-
     // Remove the relationship
     const { error } = await supabase
       .from('activity_tags')

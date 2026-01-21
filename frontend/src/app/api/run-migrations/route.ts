@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSupabaseAdmin } from '@/lib/supabase';
+import { requireAuth } from '@/lib/auth';
 
 // Only allow in development
 const isDevelopment = process.env.NODE_ENV === 'development';
@@ -13,7 +13,9 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const supabase = getSupabaseAdmin();
+    const { supabase, response: authResponse } = await requireAuth();
+    if (authResponse) return authResponse;
+
     const results = [];
 
     // Create sectors table

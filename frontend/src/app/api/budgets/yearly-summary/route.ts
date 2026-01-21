@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSupabaseAdmin } from '@/lib/supabase';
+import { requireAuth } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 
@@ -21,22 +21,29 @@ function getCustomYearForDate(
 }
 
 export async function GET(request: NextRequest) {
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
+  if (!supabase) {
+    return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
+  }
+
   try {
     const searchParams = request.nextUrl.searchParams;
-    
+
     // Filters (same as budgets list API)
     const type = searchParams.get('type');
     const status = searchParams.get('status');
     const organization = searchParams.get('organization');
     const search = searchParams.get('search') || '';
-    
+
     // Custom year params
     const startMonth = searchParams.get('startMonth') ? parseInt(searchParams.get('startMonth')!) : null;
     const startDay = searchParams.get('startDay') ? parseInt(searchParams.get('startDay')!) : null;
     const useCustomYear = startMonth !== null && startDay !== null;
-    
+
     // Build the query
-    let query = getSupabaseAdmin()
+    let query = supabase
       .from('activity_budgets')
       .select('period_start, period_end, value, usd_value, currency, activity_id');
     
@@ -65,7 +72,7 @@ export async function GET(request: NextRequest) {
     let filteredBudgets = budgets || [];
     if (organization && organization !== 'all') {
       // Get activity IDs for this organization
-      const { data: activities } = await getSupabaseAdmin()
+      const { data: activities } = await supabase
         .from('activities')
         .select('id')
         .eq('partner_id', organization);
@@ -78,7 +85,7 @@ export async function GET(request: NextRequest) {
     if (search) {
       const activityIds = new Set(filteredBudgets.map(b => b.activity_id).filter(Boolean));
       if (activityIds.size > 0) {
-        const { data: activities } = await getSupabaseAdmin()
+        const { data: activities } = await supabase
           .from('activities')
           .select('id, title_narrative')
           .in('id', Array.from(activityIds))

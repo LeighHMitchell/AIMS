@@ -44,6 +44,9 @@ import {
   Table as TableIcon,
   Maximize2,
   Download,
+  ArrowUpDown,
+  ArrowUp,
+  ArrowDown,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { BarChartSkeleton } from "@/components/ui/skeleton-loader";
@@ -52,11 +55,14 @@ import { exportChartToCSV } from "@/lib/chart-export";
 import { RankedItem } from "@/types/national-priorities";
 import { CHART_COLOR_PALETTE, CHART_STRUCTURE_COLORS } from "@/lib/chart-colors";
 
-type ViewMode = "bar" | "pie" | "table";
+type ViewMode = "bar" | "pie";
 type MetricType = "budgets" | "plannedDisbursements" | "commitments" | "disbursements";
+type SortField = "name" | "value" | "percentage" | "activityCount";
+type SortDirection = "asc" | "desc";
 
 interface SubnationalAllocationsChartProps {
   refreshKey?: number;
+  organizationId?: string;
 }
 
 const METRIC_OPTIONS = [
@@ -68,32 +74,38 @@ const METRIC_OPTIONS = [
 
 function formatCurrency(value: number): string {
   if (value >= 1_000_000_000) {
-    return `$${(value / 1_000_000_000).toFixed(1)}B`;
+    return `$${Math.round(value / 1_000_000_000)}B`;
   } else if (value >= 1_000_000) {
-    return `$${(value / 1_000_000).toFixed(1)}M`;
+    return `$${Math.round(value / 1_000_000)}M`;
   } else if (value >= 1_000) {
-    return `$${(value / 1_000).toFixed(1)}K`;
+    return `$${Math.round(value / 1_000)}K`;
   }
-  return `$${value.toFixed(0)}`;
+  return `$${Math.round(value)}`;
 }
 
 function formatCurrencyFull(value: number): string {
   return `$${value.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
 }
 
-export function SubnationalAllocationsChart({ refreshKey = 0 }: SubnationalAllocationsChartProps) {
+export function SubnationalAllocationsChart({ refreshKey = 0, organizationId }: SubnationalAllocationsChartProps) {
   const [data, setData] = useState<RankedItem[]>([]);
   const [grandTotal, setGrandTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [metric, setMetric] = useState<MetricType>("disbursements");
   const [viewMode, setViewMode] = useState<ViewMode>("bar");
   const [isExpanded, setIsExpanded] = useState(false);
+  const [isTableExpanded, setIsTableExpanded] = useState(false);
+  const [sortField, setSortField] = useState<SortField>("value");
+  const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
 
   const fetchData = useCallback(async () => {
     try {
       setLoading(true);
 
       const params = new URLSearchParams({ measure: metric });
+      if (organizationId) {
+        params.set('organizationId', organizationId);
+      }
       const response = await fetch(`/api/analytics/dashboard?${params}`);
       const result = await response.json();
 
@@ -109,7 +121,7 @@ export function SubnationalAllocationsChart({ refreshKey = 0 }: SubnationalAlloc
     } finally {
       setLoading(false);
     }
-  }, [metric]);
+  }, [metric, organizationId]);
 
   useEffect(() => {
     fetchData();
@@ -120,6 +132,42 @@ export function SubnationalAllocationsChart({ refreshKey = 0 }: SubnationalAlloc
     color: item.id === "others" ? "#9CA3AF" : CHART_COLOR_PALETTE[index % CHART_COLOR_PALETTE.length],
     percentage: grandTotal > 0 ? (item.value / grandTotal) * 100 : 0,
   }));
+
+  // Sorting logic for table
+  const handleSort = (field: SortField) => {
+    if (sortField === field) {
+      setSortDirection(sortDirection === "asc" ? "desc" : "asc");
+    } else {
+      setSortField(field);
+      setSortDirection("desc");
+    }
+  };
+
+  const sortedTableData = [...chartData].sort((a, b) => {
+    let comparison = 0;
+    switch (sortField) {
+      case "name":
+        comparison = a.name.localeCompare(b.name);
+        break;
+      case "value":
+        comparison = a.value - b.value;
+        break;
+      case "percentage":
+        comparison = a.percentage - b.percentage;
+        break;
+      case "activityCount":
+        comparison = a.activityCount - b.activityCount;
+        break;
+    }
+    return sortDirection === "asc" ? comparison : -comparison;
+  });
+
+  const SortIcon = ({ field }: { field: SortField }) => {
+    if (sortField !== field) return <ArrowUpDown className="h-3 w-3 ml-1 opacity-50" />;
+    return sortDirection === "asc"
+      ? <ArrowUp className="h-3 w-3 ml-1" />
+      : <ArrowDown className="h-3 w-3 ml-1" />;
+  };
 
   const handleExport = () => {
     if (!data || data.length === 0) {
@@ -264,6 +312,42 @@ export function SubnationalAllocationsChart({ refreshKey = 0 }: SubnationalAlloc
     </ResponsiveContainer>
   );
 
+  // Custom pie label that wraps text
+  const renderPieLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, name, percent }: any) => {
+    const RADIAN = Math.PI / 180;
+    const radius = outerRadius + 25;
+    const x = cx + radius * Math.cos(-midAngle * RADIAN);
+    const y = cy + radius * Math.sin(-midAngle * RADIAN);
+    const textAnchor = x > cx ? 'start' : 'end';
+
+    // Split name into words for wrapping
+    const words = name.split(' ');
+    const percentText = `${(percent * 100).toFixed(0)}%`;
+
+    return (
+      <text
+        x={x}
+        y={y}
+        textAnchor={textAnchor}
+        dominantBaseline="central"
+        style={{ fontSize: 10, fill: '#374151' }}
+      >
+        {words.map((word: string, index: number) => (
+          <tspan
+            key={index}
+            x={x}
+            dy={index === 0 ? 0 : 12}
+          >
+            {word}
+          </tspan>
+        ))}
+        <tspan x={x} dy={12} style={{ fontWeight: 500 }}>
+          {percentText}
+        </tspan>
+      </text>
+    );
+  };
+
   const renderPieChart = (height: number | string = "100%") => (
     <ResponsiveContainer width="100%" height={height}>
       <PieChart>
@@ -271,11 +355,11 @@ export function SubnationalAllocationsChart({ refreshKey = 0 }: SubnationalAlloc
           data={chartData}
           cx="50%"
           cy="50%"
-          innerRadius={40}
-          outerRadius={75}
+          innerRadius={60}
+          outerRadius={110}
           dataKey="value"
           nameKey="name"
-          label={({ name, percent }) => `${name.length > 8 ? name.slice(0, 8) + '...' : name} ${(percent * 100).toFixed(0)}%`}
+          label={renderPieLabel}
           labelLine={false}
         >
           {chartData.map((entry, index) => (
@@ -288,18 +372,50 @@ export function SubnationalAllocationsChart({ refreshKey = 0 }: SubnationalAlloc
   );
 
   const renderTable = () => (
-    <div className="overflow-auto max-h-[400px]">
+    <div className="overflow-auto h-full">
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>State/Region</TableHead>
-            <TableHead className="text-right">Value (USD)</TableHead>
-            <TableHead className="text-right">%</TableHead>
-            <TableHead className="text-right">Activities</TableHead>
+            <TableHead>
+              <button
+                className="flex items-center hover:text-slate-900 transition-colors"
+                onClick={() => handleSort("name")}
+              >
+                State/Region
+                <SortIcon field="name" />
+              </button>
+            </TableHead>
+            <TableHead className="text-right">
+              <button
+                className="flex items-center justify-end w-full hover:text-slate-900 transition-colors"
+                onClick={() => handleSort("value")}
+              >
+                Value (USD)
+                <SortIcon field="value" />
+              </button>
+            </TableHead>
+            <TableHead className="text-right">
+              <button
+                className="flex items-center justify-end w-full hover:text-slate-900 transition-colors"
+                onClick={() => handleSort("percentage")}
+              >
+                %
+                <SortIcon field="percentage" />
+              </button>
+            </TableHead>
+            <TableHead className="text-right">
+              <button
+                className="flex items-center justify-end w-full hover:text-slate-900 transition-colors"
+                onClick={() => handleSort("activityCount")}
+              >
+                Activities
+                <SortIcon field="activityCount" />
+              </button>
+            </TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
-          {data.map((item) => (
+          {sortedTableData.map((item) => (
             <TableRow key={item.id}>
               <TableCell>
                 <div className="font-medium">{item.name}</div>
@@ -308,7 +424,7 @@ export function SubnationalAllocationsChart({ refreshKey = 0 }: SubnationalAlloc
                 {formatCurrencyFull(item.value)}
               </TableCell>
               <TableCell className="text-right">
-                {grandTotal > 0 ? ((item.value / grandTotal) * 100).toFixed(1) : 0}%
+                {item.percentage.toFixed(1)}%
               </TableCell>
               <TableCell className="text-right">
                 {item.activityCount}
@@ -324,12 +440,12 @@ export function SubnationalAllocationsChart({ refreshKey = 0 }: SubnationalAlloc
     const chartHeight = expanded ? 400 : "100%";
 
     if (loading) {
-      return <BarChartSkeleton height="280px" bars={5} showLegend={false} />;
+      return <BarChartSkeleton height="100%" bars={5} showLegend={false} />;
     }
 
     if (!data || data.length === 0) {
       return (
-        <div className="h-[280px] flex items-center justify-center text-muted-foreground">
+        <div className="flex-1 flex items-center justify-center text-muted-foreground">
           No subnational allocation data available
         </div>
       );
@@ -338,10 +454,9 @@ export function SubnationalAllocationsChart({ refreshKey = 0 }: SubnationalAlloc
     return (
       <div className="flex flex-col flex-1 min-h-0">
         {expanded && renderLegend()}
-        <div className={expanded ? "h-[400px] mb-4" : "h-[280px]"}>
+        <div className={expanded ? "h-[400px] mb-4" : "flex-1 min-h-0"}>
           {viewMode === "bar" && renderBarChart(chartHeight)}
           {viewMode === "pie" && renderPieChart(chartHeight)}
-          {viewMode === "table" && renderTable()}
         </div>
       </div>
     );
@@ -383,15 +498,6 @@ export function SubnationalAllocationsChart({ refreshKey = 0 }: SubnationalAlloc
           >
             <PieChartIcon className="h-4 w-4" />
           </Button>
-          <Button
-            variant={viewMode === "table" ? "default" : "ghost"}
-            size="sm"
-            className={cn("h-8 w-8 p-0", viewMode === "table" && "bg-primary text-primary-foreground")}
-            onClick={() => setViewMode("table")}
-            title="Table"
-          >
-            <TableIcon className="h-4 w-4" />
-          </Button>
         </div>
 
         {/* Expand button - only in compact view */}
@@ -424,43 +530,168 @@ export function SubnationalAllocationsChart({ refreshKey = 0 }: SubnationalAlloc
   );
 
   return (
-    <>
-      <Card className="bg-white border-slate-200 h-full flex flex-col">
-        <CardHeader className="pb-1 pt-4 px-4">
-          <CardTitle className="text-sm font-bold text-slate-700 uppercase tracking-wide">
-            Subnational Allocations
-          </CardTitle>
-          <p className="text-xs text-muted-foreground mt-0.5">Myanmar States & Regions</p>
+    <div className="flex flex-col h-[700px] gap-4">
+      {/* Chart Card - takes remaining space */}
+      <Card className="bg-white border-slate-200 flex-1 flex flex-col min-h-0">
+        <CardHeader className="pb-2 flex-shrink-0">
+          <div className="flex items-center justify-between">
+            <CardTitle className="flex items-center gap-2">
+              <BarChart3 className="h-5 w-5" />
+              Subnational Allocations
+            </CardTitle>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-8 w-8 p-0"
+              onClick={() => setIsExpanded(true)}
+              title="Expand"
+            >
+              <Maximize2 className="h-4 w-4" />
+            </Button>
+          </div>
         </CardHeader>
-        <CardContent className="pt-0 px-4 pb-3 flex-1 flex flex-col">
+        <CardContent className="pt-0 px-4 pb-3 flex-1 flex flex-col min-h-0">
           {renderContent(false)}
-          {renderControls(false)}
         </CardContent>
       </Card>
 
-      {/* Expanded Dialog View */}
+      {/* Table Card Below - fixed height */}
+      {!loading && data && data.length > 0 && (
+        <Card className="bg-white border-slate-200 h-[240px] flex-shrink-0 flex flex-col">
+          <CardHeader className="pb-2 flex-shrink-0">
+            <div className="flex items-center justify-between">
+              <CardTitle className="flex items-center gap-2">
+                <TableIcon className="h-5 w-5" />
+                Allocation Details
+              </CardTitle>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-8 w-8 p-0"
+                onClick={() => setIsTableExpanded(true)}
+                title="Expand"
+              >
+                <Maximize2 className="h-4 w-4" />
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent className="pt-0 px-4 pb-3 flex-1 overflow-hidden">
+            {renderTable()}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Expanded Chart Dialog View */}
       <Dialog open={isExpanded} onOpenChange={setIsExpanded}>
         <DialogContent className="max-w-4xl w-[90vw] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <div className="flex items-center justify-between">
               <div>
-                <DialogTitle className="text-2xl font-bold uppercase tracking-wide">
+                <DialogTitle className="text-2xl font-bold">
                   Subnational Allocations
                 </DialogTitle>
                 <DialogDescription className="text-base mt-1">
                   Myanmar States & Regions by {METRIC_OPTIONS.find((o) => o.value === metric)?.label.toLowerCase()}.
                 </DialogDescription>
               </div>
-              <span className="text-2xl font-bold text-slate-500">
-                {formatCurrencyFull(data.reduce((sum, d) => sum + d.value, 0))}
-              </span>
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-8 w-8 p-0"
+                onClick={handleExport}
+                title="Export CSV"
+              >
+                <Download className="h-4 w-4" />
+              </Button>
             </div>
           </DialogHeader>
 
+          {/* Filter and view controls above chart */}
+          <div className="flex items-center justify-between mt-4">
+            <div className="flex items-center border rounded-md">
+              <Button
+                variant={viewMode === "bar" ? "default" : "ghost"}
+                size="sm"
+                className={cn("h-8 w-8 p-0", viewMode === "bar" && "bg-primary text-primary-foreground")}
+                onClick={() => setViewMode("bar")}
+                title="Bar Chart"
+              >
+                <BarChart3 className="h-4 w-4" />
+              </Button>
+              <Button
+                variant={viewMode === "pie" ? "default" : "ghost"}
+                size="sm"
+                className={cn("h-8 w-8 p-0", viewMode === "pie" && "bg-primary text-primary-foreground")}
+                onClick={() => setViewMode("pie")}
+                title="Pie Chart"
+              >
+                <PieChartIcon className="h-4 w-4" />
+              </Button>
+            </div>
+            <Select value={metric} onValueChange={(v) => setMetric(v as MetricType)}>
+              <SelectTrigger className="w-[180px] h-8 text-xs">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {METRIC_OPTIONS.map((opt) => (
+                  <SelectItem key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Chart */}
           <div className="mt-4">{renderContent(true)}</div>
-          {renderControls(true)}
+
+          {/* Description below chart */}
+          <p className="text-sm text-slate-600 mt-4">
+            This chart visualizes how development assistance is distributed across Myanmar's states and regions.
+            Understanding subnational allocation patterns helps identify geographic priorities, reveals potential
+            gaps in coverage, and supports more equitable distribution of aid resources. Use the metric selector
+            to compare budgets, planned disbursements, commitments, or actual disbursements across regions.
+          </p>
         </DialogContent>
       </Dialog>
-    </>
+
+      {/* Expanded Table Dialog View */}
+      <Dialog open={isTableExpanded} onOpenChange={setIsTableExpanded}>
+        <DialogContent className="max-w-4xl w-[90vw] max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <DialogTitle className="text-2xl font-bold">
+                  Allocation Details
+                </DialogTitle>
+                <DialogDescription className="text-base mt-1">
+                  Detailed breakdown by State/Region
+                </DialogDescription>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-8 w-8 p-0"
+                onClick={handleExport}
+                title="Export CSV"
+              >
+                <Download className="h-4 w-4" />
+              </Button>
+            </div>
+          </DialogHeader>
+
+          <p className="text-sm text-slate-600 mt-2">
+            This table provides precise figures for aid allocations across Myanmar's states and regions.
+            The data shows the exact USD value, percentage share, and number of activities for each location.
+            Use this detailed breakdown to analyze funding concentration, compare regional investments,
+            and identify areas that may be underserved relative to their needs.
+          </p>
+
+          <div className="mt-4 max-h-[60vh] overflow-auto">
+            {renderTable()}
+          </div>
+        </DialogContent>
+      </Dialog>
+    </div>
   );
 }

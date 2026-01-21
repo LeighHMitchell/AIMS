@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getSupabaseAdmin } from '@/lib/supabase'
+import { requireAuth } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic'
 
@@ -10,8 +10,10 @@ export async function PUT(
   console.log('[AIMS] PUT /api/users/[id] - Starting request for user:', id)
   
   try {
+    const { supabase, response: authResponse } = await requireAuth();
+    if (authResponse) return authResponse;
+
     const { id } = await params;
-    const supabase = getSupabaseAdmin()
     if (!supabase) {
       return NextResponse.json(
         { error: 'Supabase is not configured' },
@@ -131,8 +133,10 @@ export async function DELETE(
   console.log('[AIMS] DELETE /api/users/[id] - Starting request for user:', id)
   
   try {
+    const { supabase, response: authResponse } = await requireAuth();
+    if (authResponse) return authResponse;
+
     const { id } = await params;
-    const supabase = getSupabaseAdmin()
     if (!supabase) {
       return NextResponse.json(
         { error: 'Supabase is not configured' },

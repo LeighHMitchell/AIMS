@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { verifyCronSecret } from '@/lib/auth';
 import { getSupabaseAdmin } from '@/lib/supabase';
 import { sendBatchTaskAssignedEmails } from '@/lib/email/task-emails';
 
@@ -20,8 +21,6 @@ export async function GET(request: NextRequest) {
       console.log('[Cron Dispatch] Unauthorized request');
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-
-    const supabase = getSupabaseAdmin();
     if (!supabase) {
       return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
     }

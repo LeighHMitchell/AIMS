@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSupabaseAdmin } from '@/lib/supabase';
+import { requireAuth } from '@/lib/auth';
 import { 
   NationalPriorityRow, 
   nationalPriorityFromRow,
@@ -12,8 +12,10 @@ import {
  * List all national priorities (optionally as a tree structure)
  */
 export async function GET(request: NextRequest) {
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
   try {
-    const supabase = getSupabaseAdmin();
     const searchParams = request.nextUrl.searchParams;
     
     // Query parameters
@@ -85,8 +87,10 @@ export async function GET(request: NextRequest) {
  * Create a new national priority
  */
 export async function POST(request: NextRequest) {
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
   try {
-    const supabase = getSupabaseAdmin();
     const body = await request.json();
     
     const { code, name, nameLocal, description, parentId, isActive = true } = body;

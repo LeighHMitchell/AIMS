@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getSupabaseAdmin } from "@/lib/supabase";
+import { requireAuth } from '@/lib/auth';
 import {
   SectorBudgetMappingRow,
   toSectorBudgetMapping,
@@ -14,10 +14,15 @@ interface RouteParams {
  * Get a single sector-to-budget mapping by ID
  */
 export async function GET(request: NextRequest, { params }: RouteParams) {
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
+  if (!supabase) {
+    return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
+  }
+
   try {
     const { id } = await params;
-    const supabase = getSupabaseAdmin();
-
     const { data, error } = await supabase
       .from("sector_budget_mappings")
       .select(`
@@ -70,9 +75,15 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
  * Update a sector-to-budget mapping
  */
 export async function PUT(request: NextRequest, { params }: RouteParams) {
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
+  if (!supabase) {
+    return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
+  }
+
   try {
     const { id } = await params;
-    const supabase = getSupabaseAdmin();
     const body = await request.json();
     const {
       sectorCode,
@@ -185,10 +196,15 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
  * Delete a sector-to-budget mapping
  */
 export async function DELETE(request: NextRequest, { params }: RouteParams) {
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
+  if (!supabase) {
+    return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
+  }
+
   try {
     const { id } = await params;
-    const supabase = getSupabaseAdmin();
-
     // Check if mapping exists
     const { data: existing, error: existError } = await supabase
       .from("sector_budget_mappings")

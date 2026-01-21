@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSupabaseAdmin } from '@/lib/supabase';
+import { requireAuth } from '@/lib/auth';
 
 // IATI Datastore configuration
 const IATI_API_BASE_URL = process.env.IATI_API_BASE_URL || 'https://api.iatistandard.org/datastore';
@@ -109,6 +109,9 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
   try {
     const { id: activityId } = await params;
     const body: CompareRequest = await request.json();
@@ -116,7 +119,7 @@ export async function POST(
     console.log('[IATI Compare Simple] Starting comparison for activity:', activityId);
     
     // Fetch activity from database - simplified query
-    const { data: activity, error: activityError } = await getSupabaseAdmin()
+    const { data: activity, error: activityError } = await supabase
       .from('activities')
       .select('*')
       .eq('id', activityId)
@@ -131,13 +134,13 @@ export async function POST(
     }
     
     // Fetch sectors separately
-    const { data: sectors } = await getSupabaseAdmin()
+    const { data: sectors } = await supabase
       .from('activity_sectors')
       .select('*')
       .eq('activity_id', activityId);
     
     // Fetch contributors separately
-    const { data: contributors } = await getSupabaseAdmin()
+    const { data: contributors } = await supabase
       .from('activity_contributors')
       .select(`
         *,
@@ -208,7 +211,7 @@ export async function POST(
     };
     
     // Fetch transactions for this activity
-    const { data: transactions } = await getSupabaseAdmin()
+    const { data: transactions } = await supabase
       .from('transactions')
       .select('*')
       .eq('activity_id', activityId)

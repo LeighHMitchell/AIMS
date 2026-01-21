@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSupabaseAdmin } from '@/lib/supabase';
+import { requireAuth } from '@/lib/auth';
 import { AidPredictabilityPoint } from '@/types/national-priorities';
 import { 
   splitPlannedDisbursementAcrossYears,
@@ -14,15 +14,39 @@ import { CustomYear, CustomYearRow, toCustomYear, getCustomYearLabel } from '@/t
  * Supports optional customYearId for fiscal year aggregation
  */
 export async function GET(request: NextRequest) {
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
   try {
-    const supabase = getSupabaseAdmin();
     const searchParams = request.nextUrl.searchParams;
-    
+
     const dateFrom = searchParams.get('dateFrom');
     const dateTo = searchParams.get('dateTo');
     const customYearId = searchParams.get('customYearId');
+    const organizationId = searchParams.get('organizationId');
 
-    // Fetch custom year definition if provided
+    // If organizationId provided, get activity IDs where org is reporting org
+    let orgActivityIds: string[] | null = null;
+    if (organizationId) {
+      const { data: orgActivities, error: orgError } = await supabase
+        .from('activities')
+        .select('id')
+        .eq('reporting_org_id', organizationId)
+        .eq('publication_status', 'published');
+
+      if (orgError) {
+        console.error('[Aid Predictability API] Error fetching org activities:', orgError);
+        return NextResponse.json({ success: false, error: 'Failed to fetch organization activities' }, { status: 500 });
+      }
+
+      orgActivityIds = (orgActivities || []).map(a => a.id);
+
+      if (orgActivityIds.length === 0) {
+        return NextResponse.json({ success: true, data: [] });
+      }
+    }
+
+    // Fetch custom year definition - use provided ID or fetch system default
     let customYear: CustomYear | null = null;
     if (customYearId) {
       const { data: cyData, error: cyError } = await supabase
@@ -30,31 +54,76 @@ export async function GET(request: NextRequest) {
         .select('*')
         .eq('id', customYearId)
         .single();
-      
+
       if (cyError) {
         console.error('[Aid Predictability API] Custom year fetch error:', cyError);
       } else if (cyData) {
         customYear = toCustomYear(cyData as CustomYearRow);
       }
+    } else {
+      // No customYearId provided - fetch system default
+      const { data: defaultData, error: defaultError } = await supabase
+        .from('system_settings')
+        .select('value')
+        .eq('key', 'default_custom_year_id')
+        .single();
+
+      if (!defaultError && defaultData?.value) {
+        const { data: cyData, error: cyError } = await supabase
+          .from('custom_years')
+          .select('*')
+          .eq('id', defaultData.value)
+          .single();
+
+        if (!cyError && cyData) {
+          customYear = toCustomYear(cyData as CustomYearRow);
+        }
+      }
+
+      // If still no custom year, try to get the first available one (usually Calendar Year)
+      if (!customYear) {
+        const { data: firstCy, error: firstCyError } = await supabase
+          .from('custom_years')
+          .select('*')
+          .order('name')
+          .limit(1)
+          .single();
+
+        if (!firstCyError && firstCy) {
+          customYear = toCustomYear(firstCy as CustomYearRow);
+        }
+      }
     }
 
     // Get planned disbursements by year
-    const { data: plannedData, error: plannedError } = await supabase
+    let plannedQuery = supabase
       .from('planned_disbursements')
-      .select('period_start, period_end, usd_amount, amount, currency')
+      .select('period_start, period_end, usd_amount, amount, currency, activity_id')
       .order('period_start');
+
+    if (orgActivityIds) {
+      plannedQuery = plannedQuery.in('activity_id', orgActivityIds);
+    }
+
+    const { data: plannedData, error: plannedError } = await plannedQuery;
 
     if (plannedError) {
       console.error('[Aid Predictability API] Planned disbursements error:', plannedError);
     }
 
     // Get actual disbursements by year
-    const { data: actualData, error: actualError } = await supabase
+    let actualQuery = supabase
       .from('transactions')
-      .select('transaction_date, value_usd, value, currency')
+      .select('transaction_date, value_usd, value, currency, activity_id')
       .eq('transaction_type', '3') // Disbursement
       .eq('status', 'actual')
       .order('transaction_date');
+
+    if (orgActivityIds) {
+      actualQuery = actualQuery.in('activity_id', orgActivityIds);
+    }
+
+    const { data: actualData, error: actualError } = await actualQuery;
 
     if (actualError) {
       console.error('[Aid Predictability API] Actual disbursements error:', actualError);

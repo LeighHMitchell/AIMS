@@ -1446,14 +1446,14 @@ function OrganizationsPageContent() {
     setFetchError(null)
     
     try {
-      // Use bulk statistics endpoint for much better performance
+      // Use slim organizations-list endpoint for optimal performance
       // Add timestamp for cache busting when needed (after create/update)
       const cacheBuster = bustCache ? `&_=${Date.now()}` : '';
       const [orgsResponse, summaryResponse] = await Promise.all([
-        fetch(`/api/organizations/bulk-stats?limit=5000${cacheBuster}`, {
+        fetch(`/api/organizations-list?limit=500${cacheBuster}`, {
           signal: mainFetchControllerRef.current.signal,
           headers: {
-            'Cache-Control': bustCache ? 'no-cache' : 'max-age=60', // 1 minute client cache (reduced from 5 min), no-cache when busting
+            'Cache-Control': bustCache ? 'no-cache' : 'max-age=60',
           }
         }),
         fetch(`/api/organizations/summary${bustCache ? `?_=${Date.now()}` : ''}`, {

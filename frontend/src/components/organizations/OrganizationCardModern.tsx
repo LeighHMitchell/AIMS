@@ -134,7 +134,7 @@ const OrganizationCardModern: React.FC<OrganizationCardModernProps> = ({
             <h2 className="text-lg font-bold text-white mb-1 line-clamp-2 transition-colors">
               {organization.name}
               {organization.acronym && (
-                <span className="font-medium ml-1" style={{ color: colors.paleSlate }}>({organization.acronym})</span>
+                <span className="ml-1">({organization.acronym})</span>
               )}
             </h2>
             <div className="flex items-center gap-2 text-xs" style={{ color: colors.paleSlate }}>

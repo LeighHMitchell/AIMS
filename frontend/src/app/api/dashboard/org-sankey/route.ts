@@ -1,5 +1,5 @@
 import { NextResponse, NextRequest } from 'next/server';
-import { getSupabaseAdmin } from '@/lib/supabase';
+import { requireAuth } from '@/lib/auth';
 import type { OrgSankeyData, SankeyNode, SankeyLink, SankeyTransactionFilter } from '@/types/dashboard';
 
 export const dynamic = 'force-dynamic';
@@ -19,8 +19,10 @@ const TRANSACTION_TYPE_LABELS: Record<string, string> = {
 };
 
 export async function GET(request: NextRequest) {
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
   try {
-    const supabase = getSupabaseAdmin();
     if (!supabase) {
       return NextResponse.json(
         { error: 'Database connection failed' },

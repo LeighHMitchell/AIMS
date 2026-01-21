@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSupabaseAdmin } from '@/lib/supabase';
+import { requireAuth } from '@/lib/auth';
 
 // GET /api/periods/[id]/locations - Fetch all locations for a period
 export async function GET(
@@ -7,14 +7,15 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
-  const supabase = getSupabaseAdmin();
-  
-  if (!supabase) {
-    return NextResponse.json({ error: 'Database not available' }, { status: 500 });
-  }
 
   try {
-    const { id } = await params;
+    const { supabase, response: authResponse } = await requireAuth();
+    if (authResponse) return authResponse;
+
+    if (!supabase) {
+      return NextResponse.json({ error: 'Database not available' }, { status: 500 });
+    }
+
     const { searchParams } = new URL(request.url);
     const locationType = searchParams.get('type'); // 'target' or 'actual'
 
@@ -37,8 +38,8 @@ export async function GET(
     return NextResponse.json({ locations: data || [] });
   } catch (error) {
     console.error('[Period Locations API] Unexpected error:', error);
-    return NextResponse.json({ 
-      error: error instanceof Error ? error.message : 'Unknown error' 
+    return NextResponse.json({
+      error: error instanceof Error ? error.message : 'Unknown error'
     }, { status: 500 });
   }
 }
@@ -49,25 +50,26 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
-  const supabase = getSupabaseAdmin();
-  
-  if (!supabase) {
-    return NextResponse.json({ error: 'Database not available' }, { status: 500 });
-  }
 
   try {
-    const { id } = await params;
+    const { supabase, response: authResponse } = await requireAuth();
+    if (authResponse) return authResponse;
+
+    if (!supabase) {
+      return NextResponse.json({ error: 'Database not available' }, { status: 500 });
+    }
+
     const body = await request.json();
 
     if (!body.location_ref || !body.location_type) {
-      return NextResponse.json({ 
-        error: 'Location reference and location_type are required' 
+      return NextResponse.json({
+        error: 'Location reference and location_type are required'
       }, { status: 400 });
     }
 
     if (body.location_type !== 'target' && body.location_type !== 'actual') {
-      return NextResponse.json({ 
-        error: 'Location type must be either "target" or "actual"' 
+      return NextResponse.json({
+        error: 'Location type must be either "target" or "actual"'
       }, { status: 400 });
     }
 
@@ -91,8 +93,8 @@ export async function POST(
     return NextResponse.json({ location: data }, { status: 201 });
   } catch (error) {
     console.error('[Period Locations API] Unexpected error:', error);
-    return NextResponse.json({ 
-      error: error instanceof Error ? error.message : 'Unknown error' 
+    return NextResponse.json({
+      error: error instanceof Error ? error.message : 'Unknown error'
     }, { status: 500 });
   }
 }
@@ -103,20 +105,21 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
-  const supabase = getSupabaseAdmin();
-  
-  if (!supabase) {
-    return NextResponse.json({ error: 'Database not available' }, { status: 500 });
-  }
 
   try {
-    const { id } = await params;
+    const { supabase, response: authResponse } = await requireAuth();
+    if (authResponse) return authResponse;
+
+    if (!supabase) {
+      return NextResponse.json({ error: 'Database not available' }, { status: 500 });
+    }
+
     const { searchParams } = new URL(request.url);
     const locationId = searchParams.get('locationId');
 
     if (!locationId) {
-      return NextResponse.json({ 
-        error: 'Location ID is required' 
+      return NextResponse.json({
+        error: 'Location ID is required'
       }, { status: 400 });
     }
 
@@ -134,9 +137,8 @@ export async function DELETE(
     return NextResponse.json({ success: true }, { status: 200 });
   } catch (error) {
     console.error('[Period Locations API] Unexpected error:', error);
-    return NextResponse.json({ 
-      error: error instanceof Error ? error.message : 'Unknown error' 
+    return NextResponse.json({
+      error: error instanceof Error ? error.message : 'Unknown error'
     }, { status: 500 });
   }
 }
-

@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getSupabaseAdmin } from '@/lib/supabase';
+import { requireAuth } from '@/lib/auth';
 import { ActivityLogger } from '@/lib/activity-logger';
 import { upsertActivitySectors } from '@/lib/activity-sectors-helper';
 
@@ -35,17 +35,24 @@ function cleanUUIDValue(value: any): string | null {
 }
 
 export async function POST(request: Request) {
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
+  if (!supabase) {
+    return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
+  }
+
   console.log('[Field API] ============ POST REQUEST RECEIVED ============');
   console.log('[Field API] Request URL:', request.url);
   console.log('[Field API] Request method:', request.method);
-  
+
   const startTime = Date.now();
-  
+
   // Set a timeout for the entire request
   const timeoutId = setTimeout(() => {
     console.error('[Field API] Request timeout after 28 seconds');
   }, 28000);
-  
+
   try {
 
     // Check if the request has a body
@@ -94,7 +101,7 @@ export async function POST(request: Request) {
     }
 
     // Fetch existing activity to get current values
-    const { data: existingActivity, error: fetchError } = await getSupabaseAdmin()
+    const { data: existingActivity, error: fetchError } = await supabase
       .from('activities')
       .select('*')
       .eq('id', body.activityId)
@@ -268,7 +275,7 @@ export async function POST(request: Request) {
           console.log('[Field API] Locations data:', JSON.stringify(body.value, null, 2));
           
           // Delete existing locations for this activity
-          const { error: deleteError } = await getSupabaseAdmin()
+          const { error: deleteError } = await supabase
             .from('activity_locations')
             .delete()
             .eq('activity_id', body.activityId);
@@ -353,7 +360,7 @@ export async function POST(request: Request) {
           // Insert new locations
           if (locationsToInsert.length > 0) {
             console.log('[Field API] Inserting', locationsToInsert.length, 'locations');
-            const { error: insertError } = await getSupabaseAdmin()
+            const { error: insertError } = await supabase
               .from('activity_locations')
               .insert(locationsToInsert);
               
@@ -439,7 +446,7 @@ export async function POST(request: Request) {
         try {
           // FIRST: Check what contacts exist BEFORE delete
           console.log('[Field API] 🔍 BEFORE DELETE: Checking existing contacts...');
-          const { data: beforeData, error: beforeError } = await getSupabaseAdmin()
+          const { data: beforeData, error: beforeError } = await supabase
             .from('activity_contacts')
             .select('id, first_name, last_name')
             .eq('activity_id', body.activityId);
@@ -453,7 +460,7 @@ export async function POST(request: Request) {
           
           // Delete existing contacts for this activity
           console.log('[Field API] 🗑️ DELETING all contacts for activity:', body.activityId);
-          const { data: deletedData, error: deleteError, count: deleteCount } = await getSupabaseAdmin()
+          const { data: deletedData, error: deleteError, count: deleteCount } = await supabase
             .from('activity_contacts')
             .delete({ count: 'exact' })
             .eq('activity_id', body.activityId)
@@ -562,7 +569,7 @@ export async function POST(request: Request) {
             console.log('[Field API] Activity ID:', body.activityId);
             console.log('[Field API] First contact sample:', contactsData[0]);
             
-            const { data: insertedData, error: insertError } = await getSupabaseAdmin()
+            const { data: insertedData, error: insertError } = await supabase
               .from('activity_contacts')
               .insert(contactsData)
               .select();
@@ -592,7 +599,7 @@ export async function POST(request: Request) {
             console.log('[Field API] Successfully processed', contactsData.length, 'contact(s)');
             
             // Verify the database state immediately after insert
-            const { data: verifyData, error: verifyError } = await getSupabaseAdmin()
+            const { data: verifyData, error: verifyError } = await supabase
               .from('activity_contacts')
               .select('id, first_name, last_name')
               .eq('activity_id', body.activityId);
@@ -713,7 +720,7 @@ export async function POST(request: Request) {
         
         try {
           // Delete existing policy markers for this activity
-          const { error: deleteError } = await getSupabaseAdmin()
+          const { error: deleteError } = await supabase
             .from('activity_policy_markers')
             .delete()
             .eq('activity_id', body.activityId);
@@ -738,7 +745,7 @@ export async function POST(request: Request) {
 
             console.log('[Field API] Inserting policy markers:', JSON.stringify(policyMarkersData, null, 2));
 
-            const { error: insertError } = await getSupabaseAdmin()
+            const { error: insertError } = await supabase
               .from('activity_policy_markers')
               .insert(policyMarkersData);
               
@@ -775,7 +782,7 @@ export async function POST(request: Request) {
         
         try {
           // Delete existing working groups for this activity
-          const { error: deleteError } = await getSupabaseAdmin()
+          const { error: deleteError } = await supabase
             .from('activity_working_groups')
             .delete()
             .eq('activity_id', body.activityId);
@@ -795,7 +802,7 @@ export async function POST(request: Request) {
             const codes = workingGroupsToSave.map((wg: any) => wg.code);
             console.log('[Field API] Looking up working groups with codes:', codes);
             
-            const { data: dbWorkingGroups, error: wgFetchError } = await getSupabaseAdmin()
+            const { data: dbWorkingGroups, error: wgFetchError } = await supabase
               .from('working_groups')
               .select('id, code')
               .in('code', codes);
@@ -827,7 +834,7 @@ export async function POST(request: Request) {
                   is_active: true
                 }));
 
-              const { data: newWorkingGroups, error: createError } = await getSupabaseAdmin()
+              const { data: newWorkingGroups, error: createError } = await supabase
                 .from('working_groups')
                 .insert(workingGroupsToCreate)
                 .select('id, code');
@@ -857,7 +864,7 @@ export async function POST(request: Request) {
 
               console.log('[Field API] Inserting', workingGroupsData.length, 'working group associations');
 
-              const { error: insertError } = await getSupabaseAdmin()
+              const { error: insertError } = await supabase
                 .from('activity_working_groups')
                 .insert(workingGroupsData);
                 
@@ -1017,7 +1024,7 @@ export async function POST(request: Request) {
     let updateError;
     if (body.field !== 'sectors' && body.field !== 'locations' && body.field !== 'policyMarkers' && body.field !== 'workingGroups' && body.field !== 'contacts') {
       console.log('[Field API] Updating field with data:', updateData);
-      const updateResult = await getSupabaseAdmin()
+      const updateResult = await supabase
         .from('activities')
         .update(updateData)
         .eq('id', body.activityId)
@@ -1035,7 +1042,7 @@ export async function POST(request: Request) {
 
         // Verify the update was actually committed by re-reading the record
         // Include budget_status fields for verification
-        const { data: verifyData, error: verifyError } = await getSupabaseAdmin()
+        const { data: verifyData, error: verifyError } = await supabase
           .from('activities')
           .select('id, acronym, title_narrative, budget_status, on_budget_percentage, budget_status_notes')
           .eq('id', body.activityId)
@@ -1071,7 +1078,7 @@ export async function POST(request: Request) {
         timestampUpdate.updated_by = body.user.id;
       }
       
-      const fetchResult = await getSupabaseAdmin()
+      const fetchResult = await supabase
         .from('activities')
         .update(timestampUpdate)
         .eq('id', body.activityId)
@@ -1116,7 +1123,7 @@ export async function POST(request: Request) {
     if (dateFields.includes(body.field) && oldValue !== newValue && body.user?.id) {
       try {
         const dbFieldName = dateFieldDbMap[body.field];
-        await getSupabaseAdmin()
+        await supabase
           .from('change_log')
           .insert({
             entity_type: 'activity',
@@ -1137,7 +1144,7 @@ export async function POST(request: Request) {
     let sectorsData = updatedActivity.sectors; // Default to existing value
     if (body.field === 'sectors') {
       try {
-        const { data: sectors, error: sectorsError } = await getSupabaseAdmin()
+        const { data: sectors, error: sectorsError } = await supabase
           .from('activity_sectors')
           .select('*')
           .eq('activity_id', body.activityId);
@@ -1166,7 +1173,7 @@ export async function POST(request: Request) {
     let locationsData = updatedActivity.locations; // Default to existing value
     if (body.field === 'locations') {
       try {
-        const { data: locations, error: locationsError } = await getSupabaseAdmin()
+        const { data: locations, error: locationsError } = await supabase
           .from('activity_locations')
           .select('*')
           .eq('activity_id', body.activityId);
@@ -1232,7 +1239,7 @@ export async function POST(request: Request) {
     let policyMarkersData = updatedActivity.policy_markers; // Default to existing value
     if (body.field === 'policyMarkers') {
       try {
-        const { data: policyMarkers, error: policyMarkersError } = await getSupabaseAdmin()
+        const { data: policyMarkers, error: policyMarkersError } = await supabase
           .from('activity_policy_markers')
           .select('*')
           .eq('activity_id', body.activityId);
@@ -1253,7 +1260,7 @@ export async function POST(request: Request) {
     let workingGroupsData = updatedActivity.working_groups; // Default to existing value
     if (body.field === 'workingGroups') {
       try {
-        const { data: workingGroups, error: workingGroupsError } = await getSupabaseAdmin()
+        const { data: workingGroups, error: workingGroupsError } = await supabase
           .from('activity_working_groups')
           .select(`
             working_group_id,
@@ -1286,7 +1293,7 @@ export async function POST(request: Request) {
     let contactsData = updatedActivity.contacts; // Default to existing value
     if (body.field === 'contacts') {
       try {
-        const { data: contacts, error: contactsError } = await getSupabaseAdmin()
+        const { data: contacts, error: contactsError } = await supabase
           .from('activity_contacts')
           .select('*')
           .eq('activity_id', body.activityId)

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSupabaseAdmin } from '@/lib/supabase';
+import { requireAuth } from '@/lib/auth';
 import { MeasureType, FragmentationData, FragmentationCell, FragmentationDonor, FragmentationCategory } from '@/types/national-priorities';
 
 /**
@@ -7,8 +7,10 @@ import { MeasureType, FragmentationData, FragmentationCell, FragmentationDonor, 
  * Returns Donors × Admin Level 1 Regions fragmentation matrix
  */
 export async function GET(request: NextRequest) {
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
   try {
-    const supabase = getSupabaseAdmin();
     const searchParams = request.nextUrl.searchParams;
     
     const measure = (searchParams.get('measure') || 'disbursements') as MeasureType;

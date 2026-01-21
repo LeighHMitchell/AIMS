@@ -1,13 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSupabaseAdmin } from '@/lib/supabase';
+import { requireAuth } from '@/lib/auth';
 
 // Helper function to check user permissions
-async function checkUserPermissions(userId: string, organizationId?: string) {
-  const supabaseAdmin = getSupabaseAdmin();
-  if (!supabaseAdmin) return false;
-  
+async function checkUserPermissions(supabaseClient: any, userId: string, organizationId?: string) {
+  if (!supabaseClient) return false;
+
   // Get user info
-  const { data: user, error: userError } = await supabaseAdmin
+  const { data: user, error: userError } = await supabaseClient
     .from('users')
     .select('role')
     .eq('id', userId)
@@ -22,10 +21,7 @@ async function checkUserPermissions(userId: string, organizationId?: string) {
 
   // For specific organization, check if user belongs to it
   if (organizationId) {
-    const supabaseAdmin = getSupabaseAdmin();
-    if (!supabaseAdmin) return false;
-    
-    const { data: userOrg, error: orgError } = await supabaseAdmin
+    const { data: userOrg, error: orgError } = await supabaseClient
       .from('user_organizations')
       .select('user_id')
       .eq('user_id', userId)
@@ -40,14 +36,15 @@ async function checkUserPermissions(userId: string, organizationId?: string) {
 
 // GET - Fetch strategies
 export async function GET(request: NextRequest) {
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
+  if (!supabase) {
+    return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
+  }
+
   try {
-    const supabaseAdmin = getSupabaseAdmin();
-    if (!supabaseAdmin) {
-      return NextResponse.json(
-        { error: 'Database connection not available' },
-        { status: 503 }
-      );
-    }
+    const supabaseAdmin = supabase;
     
     const { searchParams } = new URL(request.url);
     const organizationId = searchParams.get('organizationId');
@@ -73,9 +70,9 @@ export async function GET(request: NextRequest) {
       query = query.eq('public', true).eq('has_file', true);
     } else if (userId) {
       // Check permissions for non-public view
-      const hasPermission = organizationId 
-        ? await checkUserPermissions(userId, organizationId)
-        : await checkUserPermissions(userId);
+      const hasPermission = organizationId
+        ? await checkUserPermissions(supabaseAdmin, userId, organizationId)
+        : await checkUserPermissions(supabaseAdmin, userId);
 
       if (!hasPermission) {
         // If no permission, only return public strategies
@@ -107,6 +104,13 @@ export async function GET(request: NextRequest) {
 
 // POST - Create new strategy
 export async function POST(request: NextRequest) {
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
+  if (!supabase) {
+    return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
+  }
+
   try {
     const body = await request.json();
     const {
@@ -146,17 +150,17 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Get admin client
+    const supabaseAdmin = supabase;
+
     // Check permissions
-    const hasPermission = await checkUserPermissions(userId, organizationId);
+    const hasPermission = await checkUserPermissions(supabaseAdmin, userId, organizationId);
     if (!hasPermission) {
       return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
     }
 
     // Determine if strategy should be public
     const isPublic = status === 'Published' && hasFile;
-
-    // Get admin client
-    const supabaseAdmin = getSupabaseAdmin();
     if (!supabaseAdmin) {
       return NextResponse.json({ error: 'Database connection not available' }, { status: 500 });
     }
@@ -211,14 +215,15 @@ export async function POST(request: NextRequest) {
 
 // PUT - Update strategy
 export async function PUT(request: NextRequest) {
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
+  if (!supabase) {
+    return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
+  }
+
   try {
-    const supabaseAdmin = getSupabaseAdmin();
-    if (!supabaseAdmin) {
-      return NextResponse.json(
-        { error: 'Database connection not available' },
-        { status: 503 }
-      );
-    }
+    const supabaseAdmin = supabase;
     
     const body = await request.json();
     const { id, userId, ...updateData } = body;
@@ -242,7 +247,7 @@ export async function PUT(request: NextRequest) {
     }
 
     // Check permissions
-    const hasPermission = await checkUserPermissions(userId, existingStrategy.organization_id);
+    const hasPermission = await checkUserPermissions(supabaseAdmin, userId, existingStrategy.organization_id);
     if (!hasPermission) {
       return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
     }
@@ -278,14 +283,15 @@ export async function PUT(request: NextRequest) {
 
 // DELETE - Delete strategy
 export async function DELETE(request: NextRequest) {
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
+  if (!supabase) {
+    return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
+  }
+
   try {
-    const supabaseAdmin = getSupabaseAdmin();
-    if (!supabaseAdmin) {
-      return NextResponse.json(
-        { error: 'Database connection not available' },
-        { status: 503 }
-      );
-    }
+    const supabaseAdmin = supabase;
     
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');
@@ -310,7 +316,7 @@ export async function DELETE(request: NextRequest) {
     }
 
     // Check permissions
-    const hasPermission = await checkUserPermissions(userId, existingStrategy.organization_id);
+    const hasPermission = await checkUserPermissions(supabaseAdmin, userId, existingStrategy.organization_id);
     if (!hasPermission) {
       return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
     }

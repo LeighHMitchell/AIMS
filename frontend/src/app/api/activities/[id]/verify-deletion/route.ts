@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSupabaseAdmin } from '@/lib/supabase';
+import { requireAuth } from '@/lib/auth';
 import { supabaseOptimized } from '@/lib/supabase-optimized';
 
 /**
@@ -15,6 +15,9 @@ export async function GET(
   { params }: { params: { id: string } | Promise<{ id: string }> }
 ) {
   try {
+    const { supabase, response: authResponse } = await requireAuth();
+    if (authResponse) return authResponse;
+
     const resolvedParams = await Promise.resolve(params);
     const activityId = resolvedParams.id;
 
@@ -24,8 +27,6 @@ export async function GET(
         { status: 400 }
       );
     }
-
-    const supabase = getSupabaseAdmin();
     if (!supabase) {
       return NextResponse.json(
         { error: 'Database connection failed' },

@@ -79,13 +79,15 @@ interface CumulativeFinancialOverviewProps {
   }
   refreshKey?: number
   compact?: boolean
+  organizationId?: string
 }
 
 export function CumulativeFinancialOverview({
   dateRange,
   filters,
   refreshKey,
-  compact = false
+  compact = false,
+  organizationId
 }: CumulativeFinancialOverviewProps) {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -312,6 +314,31 @@ export function CumulativeFinancialOverview({
           return
         }
 
+        // If organizationId is provided, get activity IDs where org is the reporting org
+        let activityIds: string[] | null = null
+        if (organizationId) {
+          const { data: orgActivities, error: orgError } = await supabase
+            .from('activities')
+            .select('id')
+            .eq('reporting_org_id', organizationId)
+            .eq('publication_status', 'published')
+
+          if (orgError) {
+            console.error('[CumulativeFinancialOverview] Error fetching org activities:', orgError)
+            setError('Failed to fetch organization activities')
+            return
+          }
+
+          activityIds = (orgActivities || []).map(a => a.id)
+
+          if (activityIds.length === 0) {
+            // No activities for this org - show empty state
+            setRawData({ transactions: [], plannedDisbursements: [], budgets: [] })
+            setLoading(false)
+            return
+          }
+        }
+
         // Fetch ALL data without date filtering - filtering happens in the processing step
         // This allows instant switching between year ranges without refetching
         let transactionsQuery = supabase
@@ -320,6 +347,11 @@ export function CumulativeFinancialOverview({
           .eq('status', 'actual')
           .not('transaction_date', 'is', null)
           .order('transaction_date', { ascending: true })
+
+        // Filter by organization's activities if organizationId provided
+        if (activityIds) {
+          transactionsQuery = transactionsQuery.in('activity_id', activityIds)
+        }
 
         if (filters?.donor) {
           transactionsQuery = transactionsQuery.eq('provider_org_id', filters.donor)
@@ -333,21 +365,33 @@ export function CumulativeFinancialOverview({
           return
         }
 
-        const { data: plannedDisbursements, error: plannedError } = await supabase
+        let plannedQuery = supabase
           .from('planned_disbursements')
           .select('period_start, period_end, amount, usd_amount, currency, activity_id')
           .not('period_start', 'is', null)
           .order('period_start', { ascending: true })
 
+        if (activityIds) {
+          plannedQuery = plannedQuery.in('activity_id', activityIds)
+        }
+
+        const { data: plannedDisbursements, error: plannedError } = await plannedQuery
+
         if (plannedError) {
           console.error('[CumulativeFinancialOverview] Error fetching planned disbursements:', plannedError)
         }
 
-        const { data: budgets, error: budgetsError } = await supabase
+        let budgetsQuery = supabase
           .from('activity_budgets')
           .select('period_start, period_end, value, usd_value, currency, activity_id')
           .not('period_start', 'is', null)
           .order('period_start', { ascending: true })
+
+        if (activityIds) {
+          budgetsQuery = budgetsQuery.in('activity_id', activityIds)
+        }
+
+        const { data: budgets, error: budgetsError } = await budgetsQuery
 
         if (budgetsError) {
           console.error('[CumulativeFinancialOverview] Error fetching budgets:', budgetsError)
@@ -368,7 +412,7 @@ export function CumulativeFinancialOverview({
     }
 
     fetchData()
-  }, [filters, refreshKey]) // Don't depend on effectiveDateRange - fetch all data once, filter in processing
+  }, [filters, refreshKey, organizationId]) // Don't depend on effectiveDateRange - fetch all data once, filter in processing
 
   // Process raw data into chart data (runs when allocationMethod or calendarType changes without refetching)
   useEffect(() => {
@@ -979,21 +1023,25 @@ export function CumulativeFinancialOverview({
     return (
       <div className="h-full w-full">
         <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={displayData} margin={{ top: 10, right: 20, left: 20, bottom: 20 }}>
+          <LineChart data={displayData} margin={{ top: 10, right: 20, left: 20, bottom: 30 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
-            <XAxis 
-              dataKey="period" 
+            <XAxis
+              dataKey="displayDate"
               stroke="#64748B"
-              fontSize={10}
+              fontSize={11}
               tickLine={{ stroke: '#64748B' }}
+              interval={Math.max(0, Math.floor(displayData.length / 6))}
+              angle={0}
+              textAnchor="middle"
+              height={30}
             />
-            <YAxis 
+            <YAxis
               tickFormatter={(value) => {
                 if (value >= 1000000000) return `$${(value / 1000000000).toFixed(0)}b`
                 if (value >= 1000000) return `$${(value / 1000000).toFixed(0)}m`
                 if (value >= 1000) return `$${(value / 1000).toFixed(0)}k`
                 return `$${value}`
-              }} 
+              }}
               stroke="#64748B"
               fontSize={10}
             />

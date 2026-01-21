@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSupabaseAdmin } from '@/lib/supabase';
+import { requireAuth } from '@/lib/auth';
 import dacSectors from '@/data/dac-sectors.json';
 
 export const dynamic = 'force-dynamic';
@@ -34,8 +34,10 @@ function getSectorName(code: string): string {
  * Returns top sectors aggregated by DAC 3-digit category
  */
 export async function GET(request: NextRequest) {
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
   try {
-    const supabase = getSupabaseAdmin();
     
     if (!supabase) {
       return NextResponse.json(

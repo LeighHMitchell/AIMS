@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getSupabaseAdmin } from "@/lib/supabase";
+import { requireAuth } from '@/lib/auth';
 import { BudgetStatusType } from "@/types/activity-budget-status";
 
 // Budget Support aid type codes (IATI)
@@ -29,8 +29,10 @@ interface ActivityDetail {
  * Get detailed activity-level data for Aid on Budget table view
  */
 export async function GET(request: NextRequest) {
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
   try {
-    const supabase = getSupabaseAdmin();
 
     if (!supabase) {
       return NextResponse.json(

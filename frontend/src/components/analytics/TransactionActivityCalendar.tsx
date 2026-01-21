@@ -47,52 +47,114 @@ export function TransactionActivityCalendar({
         setLoading(true)
         setError(null)
 
-        // Query transactions directly for better performance and to show all transactions
-        let transactionsQuery = supabase
-          .from('transactions')
-          .select('transaction_date, transaction_type, value, provider_org_id, activity_id')
-          .eq('status', 'actual')
-          .order('transaction_date', { ascending: true })
-
-        // Apply date range filter
-        if (dateRange) {
-          transactionsQuery = transactionsQuery
-            .gte('transaction_date', dateRange.from.toISOString())
-            .lte('transaction_date', dateRange.to.toISOString())
-        }
-
-        // Apply donor filter
+        // If filtering by organization (donor), use the same logic as the transaction list:
+        // Get activities where org is reporting_org_id AND published, then get all their transactions
         if (filters?.donor) {
-          transactionsQuery = transactionsQuery.eq('provider_org_id', filters.donor)
+          // First get published activities where this org is the reporting org
+          const { data: activities, error: activitiesError } = await supabase
+            .from('activities')
+            .select('id')
+            .eq('reporting_org_id', filters.donor)
+            .eq('publication_status', 'published')
+
+          if (activitiesError) {
+            console.error('[TransactionActivityCalendar] Error fetching activities:', activitiesError)
+            setError('Failed to fetch activity data')
+            return
+          }
+
+          const activityIds = activities?.map(a => a.id) || []
+
+          if (activityIds.length === 0) {
+            setTransactions([])
+            setStats({ totalTransactions: 0, totalValue: 0, activeDays: 0, avgPerDay: 0 })
+            return
+          }
+
+          // Then get all transactions for those activities
+          let transactionsQuery = supabase
+            .from('transactions')
+            .select('transaction_date, transaction_type, value, activity_id')
+            .in('activity_id', activityIds)
+            .order('transaction_date', { ascending: true })
+
+          // Apply date range filter
+          if (dateRange) {
+            transactionsQuery = transactionsQuery
+              .gte('transaction_date', dateRange.from.toISOString())
+              .lte('transaction_date', dateRange.to.toISOString())
+          }
+
+          const { data: transactionsData, error: queryError } = await transactionsQuery
+
+          if (queryError) {
+            console.error('[TransactionActivityCalendar] Error fetching transactions:', queryError)
+            setError('Failed to fetch transaction data')
+            return
+          }
+
+          // Convert to expected format
+          const allTransactions: Transaction[] = (transactionsData || []).map((t: any) => ({
+            transaction_date: t.transaction_date,
+            transaction_type: t.transaction_type || '',
+            value: parseFloat(String(t.value || 0)),
+          }))
+
+          // Calculate stats
+          const uniqueDays = new Set(allTransactions.map(t => t.transaction_date?.split('T')[0])).size
+          const totalValue = allTransactions.reduce((sum, t) => sum + Math.abs(t.value), 0)
+
+          setStats({
+            totalTransactions: allTransactions.length,
+            totalValue,
+            activeDays: uniqueDays,
+            avgPerDay: uniqueDays > 0 ? allTransactions.length / uniqueDays : 0
+          })
+
+          setTransactions(allTransactions)
+        } else {
+          // No org filter - get all transactions (original behavior for other use cases)
+          let transactionsQuery = supabase
+            .from('transactions')
+            .select('transaction_date, transaction_type, value, activity_id')
+            .eq('status', 'actual')
+            .order('transaction_date', { ascending: true })
+
+          // Apply date range filter
+          if (dateRange) {
+            transactionsQuery = transactionsQuery
+              .gte('transaction_date', dateRange.from.toISOString())
+              .lte('transaction_date', dateRange.to.toISOString())
+          }
+
+          const { data: transactionsData, error: queryError } = await transactionsQuery
+
+          if (queryError) {
+            console.error('[TransactionActivityCalendar] Error fetching transactions:', queryError)
+            setError('Failed to fetch transaction data')
+            return
+          }
+
+          // Convert to expected format
+          const allTransactions: Transaction[] = (transactionsData || []).map((t: any) => ({
+            transaction_date: t.transaction_date,
+            transaction_type: t.transaction_type || '',
+            value: parseFloat(String(t.value || 0)),
+          }))
+
+          // Calculate stats
+          const uniqueDays = new Set(allTransactions.map(t => t.transaction_date?.split('T')[0])).size
+          const totalValue = allTransactions.reduce((sum, t) => sum + Math.abs(t.value), 0)
+
+          setStats({
+            totalTransactions: allTransactions.length,
+            totalValue,
+            activeDays: uniqueDays,
+            avgPerDay: uniqueDays > 0 ? allTransactions.length / uniqueDays : 0
+          })
+
+          setTransactions(allTransactions)
         }
-
-        const { data: transactionsData, error: queryError } = await transactionsQuery
-
-        if (queryError) {
-          console.error('[TransactionActivityCalendar] Error fetching transactions:', queryError)
-          setError('Failed to fetch transaction data')
-          return
-        }
-
-        // Convert to expected format
-        const allTransactions: Transaction[] = (transactionsData || []).map((t: any) => ({
-          transaction_date: t.transaction_date,
-          transaction_type: t.transaction_type || '',
-          value: parseFloat(String(t.value || 0)),
-        }))
-
-        // Calculate stats
-        const uniqueDays = new Set(allTransactions.map(t => t.transaction_date?.split('T')[0])).size
-        const totalValue = allTransactions.reduce((sum, t) => sum + Math.abs(t.value), 0)
-        
-        setStats({
-          totalTransactions: allTransactions.length,
-          totalValue,
-          activeDays: uniqueDays,
-          avgPerDay: uniqueDays > 0 ? allTransactions.length / uniqueDays : 0
-        })
-
-        setTransactions(allTransactions)
       } catch (err) {
         console.error('[TransactionActivityCalendar] Unexpected error:', err)
         setError('An unexpected error occurred')

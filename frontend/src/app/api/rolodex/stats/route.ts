@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSupabaseAdmin } from '@/lib/supabase';
+import { requireAuth } from '@/lib/auth';
 
 export async function GET(request: NextRequest) {
   try {
-    console.log('[AIMS Rolodex Stats] Fetching contact type statistics');
+    const { supabase, response: authResponse } = await requireAuth();
+    if (authResponse) return authResponse;
 
-    const supabase = getSupabaseAdmin();
+    console.log('[AIMS Rolodex Stats] Fetching contact type statistics');
     if (!supabase) {
       return NextResponse.json(
         { error: 'Supabase is not configured' },

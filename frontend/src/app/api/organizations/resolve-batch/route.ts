@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getSupabaseAdmin } from '@/lib/supabase'
+import { requireAuth } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic'
 
@@ -32,6 +32,13 @@ interface BatchResolveResponse {
  * Resolve multiple organization references in a single request
  */
 export async function POST(request: NextRequest): Promise<NextResponse<BatchResolveResponse>> {
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
+  if (!supabase) {
+    return NextResponse.json({ error: 'Database not configured' } as any, { status: 500 });
+  }
+
   try {
     const body: BatchResolveRequest = await request.json()
     const { organizations } = body

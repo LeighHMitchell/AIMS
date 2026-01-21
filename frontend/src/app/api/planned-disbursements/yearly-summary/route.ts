@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSupabaseAdmin } from '@/lib/supabase';
+import { requireAuth } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 
@@ -21,6 +21,13 @@ function getCustomYearForDate(
 }
 
 export async function GET(request: NextRequest) {
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
+  if (!supabase) {
+    return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
+  }
+
   try {
     const searchParams = request.nextUrl.searchParams;
     
@@ -39,7 +46,7 @@ export async function GET(request: NextRequest) {
     const organizations = organizationsParam ? organizationsParam.split(',').filter(Boolean) : [];
     
     // Build the query
-    let query = getSupabaseAdmin()
+    let query = supabase
       .from('planned_disbursements')
       .select('period_start, period_end, amount, usd_amount, currency, activity_id, provider_org_id, receiver_org_id');
     
@@ -73,7 +80,7 @@ export async function GET(request: NextRequest) {
     if (search) {
       const activityIds = new Set(filteredDisbursements.map(d => d.activity_id).filter(Boolean));
       if (activityIds.size > 0) {
-        const { data: activities } = await getSupabaseAdmin()
+        const { data: activities } = await supabase
           .from('activities')
           .select('id, title_narrative')
           .in('id', Array.from(activityIds))

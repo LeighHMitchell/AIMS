@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { verifyCronSecret } from '@/lib/auth';
 import { getSupabaseAdmin } from '@/lib/supabase';
 import { calculateNextOccurrence } from '@/lib/recurrence-utils';
 import type { TaskRecurrenceRule } from '@/types/task';
@@ -12,20 +13,15 @@ export const maxDuration = 60;
  * Runs daily at midnight
  */
 export async function GET(request: NextRequest) {
+  const authError = verifyCronSecret(request);
+  if (authError) return authError;
+  
+  const supabase = getSupabaseAdmin();
+  if (!supabase) {
+    return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
+  }
+  
   try {
-    // Verify cron secret
-    const authHeader = request.headers.get('authorization');
-    const cronSecret = process.env.CRON_SECRET;
-
-    if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
-      console.log('[Cron Recurrence] Unauthorized request');
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    const supabase = getSupabaseAdmin();
-    if (!supabase) {
-      return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
-    }
 
     const now = new Date();
     const nowISO = now.toISOString();

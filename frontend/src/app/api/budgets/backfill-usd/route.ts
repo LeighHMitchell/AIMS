@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSupabaseAdmin } from '@/lib/supabase';
+import { requireAuth } from '@/lib/auth';
 import { fixedCurrencyConverter } from '@/lib/currency-converter-fixed';
 
 /**
@@ -7,8 +7,10 @@ import { fixedCurrencyConverter } from '@/lib/currency-converter-fixed';
  * This fixes the Implementation vs Plan calculation issue
  */
 export async function POST(request: NextRequest) {
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
   try {
-    const supabase = getSupabaseAdmin();
 
     console.log('[Backfill Budgets USD] Starting backfill process');
 

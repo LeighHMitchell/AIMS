@@ -1,10 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSupabaseAdmin, getDbClient } from '@/lib/supabase';
+import { requireAuth } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 
 export async function PUT(request: NextRequest) {
   console.log('[AIMS] PUT /api/users/change-email-simple - Starting request');
+  
+  const { supabase: authSupabase, response } = await requireAuth();
+  if (response) return response;
   
   try {
     const body = await request.json();
@@ -36,10 +39,8 @@ export async function PUT(request: NextRequest) {
       );
     }
 
-    // Get database client (Supabase or local fallback)
-    const db = getDbClient();
-    
-    if (!db) {
+    // Use authenticated supabase client
+    if (!authSupabase) {
       console.error('[AIMS] No database client available');
       return NextResponse.json(
         { 
@@ -51,7 +52,7 @@ export async function PUT(request: NextRequest) {
     }
     
     // Check if the new email is already in use
-    const { data: existingUser, error: existingUserError } = await db
+    const { data: existingUser, error: existingUserError } = await authSupabase
       .from('users')
       .select('id')
       .eq('email', newEmail)
@@ -65,7 +66,7 @@ export async function PUT(request: NextRequest) {
     }
     
     // Get the current user profile to verify existence
-    const { data: userProfile, error: profileError } = await db
+    const { data: userProfile, error: profileError } = await authSupabase
       .from('users')
       .select('id, email, first_name, last_name')
       .eq('id', userId)
@@ -83,7 +84,7 @@ export async function PUT(request: NextRequest) {
     console.log('[AIMS] Changing email from', userProfile.email, 'to', newEmail, 'for user', userId);
 
     // Update the user profile in the database
-    const { data: updatedProfile, error: profileUpdateError } = await db
+    const { data: updatedProfile, error: profileUpdateError } = await authSupabase
       .from('users')
       .update({ 
         email: newEmail,
@@ -102,21 +103,6 @@ export async function PUT(request: NextRequest) {
     }
 
     console.log('[AIMS] Email updated successfully in database for user:', userId);
-    
-    // Optional: Try to update Auth if Supabase is available
-    const supabase = getSupabaseAdmin();
-    if (supabase?.auth?.admin) {
-      try {
-        await supabase.auth.admin.updateUserById(userId, {
-          email: newEmail,
-          email_confirm: true
-        });
-        console.log('[AIMS] Also updated email in Auth system');
-      } catch (authError) {
-        console.log('[AIMS] Could not update Auth (this is okay):', authError);
-        // Don't fail the request if Auth update fails
-      }
-    }
     
     return NextResponse.json({ 
       success: true, 

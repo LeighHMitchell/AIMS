@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getSupabaseAdmin } from '@/lib/supabase';
+import { requireAuth } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 
@@ -10,8 +10,11 @@ export const dynamic = 'force-dynamic';
  * organizations by matching name, IATI org ID, or alias refs.
  */
 export async function POST() {
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
   try {
-    const supabase = getSupabaseAdmin();
+
 
     console.log('[Relink Orgs] Starting transaction organization relinking...');
 

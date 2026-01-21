@@ -1,10 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSupabaseAdmin } from '@/lib/supabase';
+import { requireAuth } from '@/lib/auth';
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
   try {
     const { id } = await params;
     
@@ -16,9 +19,6 @@ export async function GET(
     }
     
     console.log('[AIMS API] GET /api/activities/[id]/countries-regions - Fetching countries/regions for activity:', id);
-    
-    const supabase = getSupabaseAdmin();
-    
     if (!supabase) {
       console.error('[AIMS API] Supabase client is null');
       return NextResponse.json(
@@ -63,6 +63,9 @@ export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
   try {
     const { id } = await params;
     const body = await request.json();
@@ -79,9 +82,6 @@ export async function PATCH(
     console.log('[AIMS API] Countries:', countries);
     console.log('[AIMS API] Regions:', regions);
     console.log('[AIMS API] Custom Geographies:', customGeographies);
-    
-    const supabase = getSupabaseAdmin();
-    
     if (!supabase) {
       console.error('[AIMS API] Supabase client is null');
       return NextResponse.json(

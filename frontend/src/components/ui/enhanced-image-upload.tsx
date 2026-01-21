@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { LoadingText } from '@/components/ui/loading-text';
+import imageCompression from 'browser-image-compression';
 
 interface EnhancedImageUploadProps {
   value: string;
@@ -74,15 +75,26 @@ export function EnhancedImageUpload({
         return;
       }
 
-      const maxSizeMB = maxSize / (1024 * 1024);
-      if (file.size > maxSize) {
-        toast.error(`Image size should be less than ${maxSizeMB}MB`);
+      // Allow larger files since we'll compress them (10MB limit)
+      const uploadLimit = 10 * 1024 * 1024;
+      if (file.size > uploadLimit) {
+        toast.error('Image size should be less than 10MB');
         return;
       }
 
       setIsProcessing(true);
 
       try {
+        // Compress the image before converting to base64
+        const compressionOptions = {
+          maxSizeMB: variant === 'banner' ? 0.3 : 0.15, // 300KB for banners, 150KB for logos
+          maxWidthOrHeight: variant === 'banner' ? 1920 : 512,
+          useWebWorker: true,
+        };
+
+        const compressedFile = await imageCompression(file, compressionOptions);
+        console.log(`${label} compressed: ${(file.size / 1024).toFixed(1)}KB → ${(compressedFile.size / 1024).toFixed(1)}KB`);
+
         const reader = new FileReader();
         reader.onloadend = () => {
           const base64String = reader.result as string;
@@ -99,7 +111,7 @@ export function EnhancedImageUpload({
           }
           toast.success(`${label} uploaded successfully`);
         };
-        reader.readAsDataURL(file);
+        reader.readAsDataURL(compressedFile);
       } catch (error) {
         console.error('Error processing image:', error);
         toast.error('Failed to process image');
@@ -107,7 +119,7 @@ export function EnhancedImageUpload({
         setIsProcessing(false);
       }
     },
-    [onChange, onPositionChange, onScaleChange, maxSize, label, canReposition, canZoom]
+    [onChange, onPositionChange, onScaleChange, label, canReposition, canZoom, variant]
   );
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
@@ -433,7 +445,7 @@ export function EnhancedImageUpload({
             <>
               <ImageIcon className="h-8 w-8 text-gray-400" />
               <p className="text-sm text-gray-600 mt-2 text-center">Drag & drop or click to upload</p>
-              <p className="text-xs text-gray-400 mt-1 text-center">Recommended: {recommendedSize}</p>
+              <p className="text-xs text-gray-400 mt-1 text-center">{recommendedSize} (auto-compressed)</p>
             </>
           )}
         </div>

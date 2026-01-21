@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSupabaseAdmin } from '@/lib/supabase';
+import { requireAuth } from '@/lib/auth';
 import { TransactionSectorValidation } from '@/types/transaction';
 
 // Validation function (reused from main route)
@@ -46,10 +46,15 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ transactionId: string; sectorLineId: string }> }
 ) {
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
+  if (!supabase) {
+    return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
+  }
+
   try {
     const { transactionId, sectorLineId } = await params;
-    const supabase = getSupabaseAdmin();
-    
     // Verify transaction exists and get details
     const { data: transaction, error: transactionError } = await supabase
       .from('transactions')
@@ -136,10 +141,15 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ transactionId: string; sectorLineId: string }> }
 ) {
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
+  if (!supabase) {
+    return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
+  }
+
   try {
     const { transactionId, sectorLineId } = await params;
-    const supabase = getSupabaseAdmin();
-    
     // Get the specific sector line
     const { data: sectorLine, error: sectorLineError } = await supabase
       .from('transaction_sector_lines')

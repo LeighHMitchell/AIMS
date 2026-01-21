@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSupabaseAdmin } from '@/lib/supabase';
+import { requireAuth } from '@/lib/auth';
 
 export async function OPTIONS() {
   const response = new NextResponse(null, { status: 200 });
@@ -13,6 +13,9 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
   try {
     const { id: orgId } = params;
     
@@ -30,17 +33,11 @@ export async function GET(
     
     console.log('[AIMS] GET /api/organizations/[id]/activities - Fetching activities for org:', orgId, 'transactionType:', transactionType);
     
-    // Check if getSupabaseAdmin() is properly initialized
-    if (!getSupabaseAdmin()) {
-      console.error('[AIMS] getSupabaseAdmin() is not initialized');
-      return NextResponse.json(
-        { error: 'Database connection not initialized' },
-        { status: 500 }
-      );
-    }
+    // Check if supabase is properly initialized
+    
     
     // First, get the organization details
-    const { data: organization, error: orgError } = await getSupabaseAdmin()
+    const { data: organization, error: orgError } = await supabase
       .from('organizations')
       .select('id, name, acronym')
       .eq('id', orgId)
@@ -56,7 +53,7 @@ export async function GET(
     console.log('[AIMS] Found organization:', organization.name, '(', organization.acronym, ')');
 
     // Get transactions where this organization is the provider (not receiver) to find activities they report/fund
-    const { data: transactions, error: transError } = await getSupabaseAdmin()
+    const { data: transactions, error: transError } = await supabase
       .from('transactions')
       .select('activity_id, provider_org_id, receiver_org_id, provider_org_name, receiver_org_name, value, value_usd, transaction_type, transaction_date')
       .or(`provider_org_id.eq.${orgId},provider_org_name.eq.${organization.name}`)
@@ -64,6 +61,16 @@ export async function GET(
 
     if (transError) {
       console.error('[AIMS] Error fetching transactions:', transError);
+    }
+
+    // Also fetch disbursement transactions (type '3') to calculate total_disbursed per activity
+    const { data: disbursementTransactions, error: disbError } = await supabase
+      .from('transactions')
+      .select('activity_id, value, value_usd, transaction_type')
+      .eq('transaction_type', '3');
+
+    if (disbError) {
+      console.error('[AIMS] Error fetching disbursement transactions:', disbError);
     }
 
     // Get unique activity IDs from transactions involving this organization
@@ -77,7 +84,7 @@ export async function GET(
     console.log('[AIMS] Found', activityIdsFromTransactions.size, 'unique activities from transactions');
 
     // Also get activities where this organization is the reporting organization
-    const { data: reportingActivities, error: reportingError } = await getSupabaseAdmin()
+    const { data: reportingActivities, error: reportingError } = await supabase
       .from('activities')
       .select('id')
       .eq('reporting_org_id', orgId)
@@ -92,13 +99,14 @@ export async function GET(
     console.log('[AIMS] Total unique activities for', organization.name, ':', allActivityIds.size);
 
     // Fetch full activity details for all related activities
-    const { data: activities, error } = allActivityIds.size > 0 ? await getSupabaseAdmin()
+    const { data: activities, error } = allActivityIds.size > 0 ? await supabase
       .from('activities')
       .select(`
         id,
         title_narrative,
         acronym,
         activity_status,
+        publication_status,
         planned_start_date,
         planned_end_date,
         actual_start_date,
@@ -108,7 +116,8 @@ export async function GET(
         updated_at,
         created_by_org_name,
         created_by_org_acronym,
-        icon
+        icon,
+        banner
       `)
       .in('id', Array.from(allActivityIds))
       .in('activity_status', ['2', '3']) // Only active statuses
@@ -183,15 +192,26 @@ export async function GET(
         financialData[year.toString()] = yearTotal;
       });
 
+      // Calculate total disbursed for this activity
+      const total_disbursed = (disbursementTransactions || [])
+        .filter((txn: any) => txn.activity_id === activity.id)
+        .reduce((sum: number, txn: any) => {
+          const value = txn.value_usd || txn.value || 0;
+          return sum + (typeof value === 'number' ? value : 0);
+        }, 0);
+
       return {
         ...activity,
+        title: activity.title_narrative, // Map for ActivityCardModern
         activity_title: activity.title_narrative, // Use the correct column name
         start_date: activity.actual_start_date || activity.planned_start_date,
         end_date: activity.actual_end_date || activity.planned_end_date,
-        activity_status_label: activity.activity_status === '2' ? 'Implementation' : 
-                             activity.activity_status === '3' ? 'Finalisation' : 
+        activity_status_label: activity.activity_status === '2' ? 'Implementation' :
+                             activity.activity_status === '3' ? 'Finalisation' :
                              activity.activity_status,
-        financialData
+        logo: activity.icon, // Map icon to logo for ActivityCardModern
+        financialData,
+        total_disbursed
       };
     });
     

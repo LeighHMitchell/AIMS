@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSupabaseAdmin } from '@/lib/supabase';
+import { requireAuth } from '@/lib/auth';
 
 // Force dynamic rendering to ensure environment variables are always loaded
 export const dynamic = 'force-dynamic';
@@ -16,6 +16,9 @@ export async function OPTIONS() {
 export async function GET(request: NextRequest) {
   console.log('[AIMS] GET /api/organizations - Starting request');
   
+  const { supabase: supabaseAdmin, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+  
   try {
     // Add caching headers to reduce repeated requests
     const headers = {
@@ -25,9 +28,8 @@ export async function GET(request: NextRequest) {
       'Access-Control-Allow-Headers': 'Content-Type, Authorization'
     };
     // Get Supabase admin client
-    const supabaseAdmin = getSupabaseAdmin();
     if (!supabaseAdmin) {
-      console.error('[AIMS] getSupabaseAdmin() is not initialized');
+      console.error('[AIMS] Supabase client is not initialized');
       return NextResponse.json(
         { error: 'Database connection not initialized' },
         { status: 500 }
@@ -82,10 +84,12 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   console.log('[AIMS] POST /api/organizations - Starting request');
   
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+  
   try {
-    // Check if getSupabaseAdmin() is properly initialized
-    if (!getSupabaseAdmin()) {
-      console.error('[AIMS] getSupabaseAdmin() is not initialized');
+    if (!supabase) {
+      console.error('[AIMS] Supabase client is not initialized');
       return NextResponse.json(
         { error: 'Database connection not initialized' },
         { status: 500 }
@@ -115,7 +119,7 @@ export async function POST(request: NextRequest) {
     };
     
     // Check if organization with same name, acronym, or IATI org ID already exists
-    let existingQuery = getSupabaseAdmin()
+    let existingQuery = supabase
       .from('organizations')
       .select('id, name, acronym, iati_org_id');
 
@@ -152,7 +156,7 @@ export async function POST(request: NextRequest) {
       }
     }
     
-    const { data, error } = await getSupabaseAdmin()
+    const { data, error } = await supabase
       .from('organizations')
       .insert([organizationData])
       .select()
@@ -185,10 +189,12 @@ export async function POST(request: NextRequest) {
 export async function PUT(request: NextRequest) {
   console.log('[AIMS] PUT /api/organizations - Starting request');
   
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+  
   try {
-    // Check if getSupabaseAdmin() is properly initialized
-    if (!getSupabaseAdmin()) {
-      console.error('[AIMS] getSupabaseAdmin() is not initialized');
+    if (!supabase) {
+      console.error('[AIMS] Supabase client is not initialized');
       return NextResponse.json(
         { error: 'Database connection not initialized' },
         { status: 500 }
@@ -274,7 +280,7 @@ export async function PUT(request: NextRequest) {
     console.log('[AIMS] Updating organization with mapped data:', updates);
     console.log('[AIMS] default_currency being saved:', updates.default_currency);
     
-    const { data, error } = await getSupabaseAdmin()
+    const { data, error } = await supabase
       .from('organizations')
       .update(updates)
       .eq('id', id)
@@ -301,10 +307,12 @@ export async function PUT(request: NextRequest) {
 export async function DELETE(request: NextRequest) {
   console.log('[AIMS] DELETE /api/organizations - Starting request');
   
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+  
   try {
-    // Check if getSupabaseAdmin() is properly initialized
-    if (!getSupabaseAdmin()) {
-      console.error('[AIMS] getSupabaseAdmin() is not initialized');
+    if (!supabase) {
+      console.error('[AIMS] Supabase client is not initialized');
       return NextResponse.json(
         { error: 'Database connection not initialized' },
         { status: 500 }
@@ -322,7 +330,6 @@ export async function DELETE(request: NextRequest) {
     }
     
     // Comprehensive check for all references
-    const supabase = getSupabaseAdmin();
     const references: string[] = [];
     
     // Check users
