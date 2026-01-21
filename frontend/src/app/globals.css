@@ -698,6 +698,14 @@ body:has([data-radix-dialog-content]) {
 .location-popup .leaflet-popup-content {
   margin: 0 !important;
   padding: 16px !important;
+  user-select: text !important;
+  -webkit-user-select: text !important;
+  cursor: auto !important;
+}
+
+.location-popup .leaflet-popup-content * {
+  user-select: text !important;
+  -webkit-user-select: text !important;
 }
 
 .location-popup .leaflet-popup-tip {
@@ -727,6 +735,14 @@ body:has([data-radix-dialog-content]) {
 .location-tooltip .leaflet-tooltip-content {
   white-space: normal !important;
   word-wrap: break-word !important;
+  user-select: text !important;
+  -webkit-user-select: text !important;
+  cursor: auto !important;
+}
+
+.location-tooltip * {
+  user-select: text !important;
+  -webkit-user-select: text !important;
 }
 
 .location-tooltip::before {

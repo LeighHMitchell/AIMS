@@ -4966,7 +4966,7 @@ function NewActivityPageContent() {
                       title={`View activity profile: ${general.title || 'Untitled Activity'}${general.acronym ? ` (${general.acronym})` : ''}`}
                     >
                       {general.title || 'Untitled Activity'}
-                      {general.acronym && <span className="text-sm text-gray-500"> ({general.acronym})</span>}
+                      {general.acronym && <span> ({general.acronym})</span>}
                     </Link>
                     <button
                       onClick={(e) => {

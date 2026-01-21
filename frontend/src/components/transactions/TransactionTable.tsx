@@ -1021,7 +1021,7 @@ export function TransactionTable({
                     >
                       <div className="flex items-start gap-1">
                         <div className="text-sm font-medium text-foreground line-clamp-2 flex-1">
-                          {transaction.activity?.title || transaction.activity?.title_narrative || 'Untitled Activity'}
+                          {transaction.activityTitle || transaction.activity?.title || transaction.activity?.title_narrative || 'Untitled Activity'}
                             <Tooltip>
                               <TooltipTrigger asChild>
                                 <Button
@@ -1030,7 +1030,7 @@ export function TransactionTable({
                                   className="h-3 w-3 p-0 ml-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200 inline-flex items-center justify-center align-text-top"
                                   onClick={(e) => {
                                     e.stopPropagation();
-                                    const activityTitle = transaction.activity?.title || transaction.activity?.title_narrative || 'Untitled Activity';
+                                    const activityTitle = transaction.activityTitle || transaction.activity?.title || transaction.activity?.title_narrative || 'Untitled Activity';
                                     copyToClipboard(activityTitle, 'title', transaction.uuid || transaction.id);
                                   }}
                                 >

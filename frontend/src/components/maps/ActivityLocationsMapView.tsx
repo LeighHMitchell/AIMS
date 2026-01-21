@@ -95,7 +95,7 @@ export default function ActivityLocationsMapView({
       center={mapCenter}
       zoom={mapZoom}
       style={{ height: '100%', width: '100%' }}
-      scrollWheelZoom={true}
+      scrollWheelZoom={false}
       minZoom={5}
       maxZoom={18}
     >

@@ -41,10 +41,14 @@ interface LocationData {
     sectors?: SectorData[]
     totalBudget?: number
     totalPlannedDisbursement?: number
+    totalCommitments?: number
+    totalDisbursed?: number
     plannedStartDate?: string
     plannedEndDate?: string
     actualStartDate?: string
     actualEndDate?: string
+    banner?: string
+    icon?: string
   } | null
 }
 
@@ -147,6 +151,26 @@ const formatBudget = (amount?: number): string => {
     minimumFractionDigits: 0,
     maximumFractionDigits: 0
   }).format(amount)
+}
+
+// Format currency in compact form like $30.5m
+const formatCompactCurrency = (amount?: number): string => {
+  if (amount === undefined || amount === null || amount === 0) return '$0'
+
+  const absAmount = Math.abs(amount)
+  const sign = amount < 0 ? '-' : ''
+
+  if (absAmount >= 1000000000) {
+    const value = absAmount / 1000000000
+    return `${sign}$${value >= 10 ? value.toFixed(0) : value.toFixed(1)}b`
+  } else if (absAmount >= 1000000) {
+    const value = absAmount / 1000000
+    return `${sign}$${value >= 10 ? value.toFixed(0) : value.toFixed(1)}m`
+  } else if (absAmount >= 1000) {
+    const value = absAmount / 1000
+    return `${sign}$${value >= 10 ? value.toFixed(0) : value.toFixed(1)}k`
+  }
+  return `${sign}$${absAmount.toFixed(0)}`
 }
 
 // Format date
@@ -292,47 +316,36 @@ const createSectorBarClean = (sectors?: SectorData[]): string => {
   return html
 }
 
-// Create compact sector breakdown bar (for popup)
+// Create compact sector breakdown bar (for popup) - no legend, hover tooltips only
 const createSectorBarCompact = (sectors?: SectorData[]): string => {
   if (!sectors || sectors.length === 0) return ''
-  
+
   const totalPercentage = sectors.reduce((sum, s) => sum + (s.percentage || 0), 0)
   const normalizedSectors = sectors.map(s => ({
     ...s,
     normalizedPercentage: totalPercentage > 0 ? ((s.percentage || 0) / totalPercentage) * 100 : 100 / sectors.length
   }))
-  
+
   let html = `<div style="margin-bottom: 16px;">
-    <h3 style="font-size: 11px; font-weight: 700; color: #111827; margin: 0 0 8px 0;">Sector Breakdown</h3>
+    <h3 style="font-size: 11px; font-weight: 700; color: #4c5568; margin: 0 0 8px 0;">Sector Breakdown</h3>
     <div style="display: flex; height: 12px; border-radius: 9999px; overflow: hidden; background: #f3f4f6;">`
-  
+
   normalizedSectors.forEach(sector => {
     const color = getSectorColor(sector.categoryCode || sector.code)
     const width = Math.max(sector.normalizedPercentage, 2)
-    html += `<div style="width: ${width}%; background-color: ${color}; height: 100%;"></div>`
-  })
-  
-  html += `</div>
-    <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px;">`
-  
-  // Show only first 2 sectors in compact mode
-  normalizedSectors.slice(0, 2).forEach(sector => {
-    const color = getSectorColor(sector.categoryCode || sector.code)
-    const displayName = (sector.name || sector.categoryName || `Sector ${sector.code}`).substring(0, 20)
+    const displayName = sector.name || sector.categoryName || `Sector ${sector.code}`
     const percentage = sector.percentage || Math.round(sector.normalizedPercentage)
-    
-    html += `<div style="display: flex; align-items: center; gap: 5px; font-size: 10px;">
-      <div style="width: 10px; height: 10px; border-radius: 2px; background-color: ${color}; flex-shrink: 0;"></div>
-      <span style="color: #374151;">${displayName}${displayName.length >= 20 ? '...' : ''} (${percentage}%)</span>
-    </div>`
+
+    html += `<div
+      style="width: ${width}%; background-color: ${color}; height: 100%; cursor: pointer; transition: opacity 0.15s;"
+      title="${displayName}: ${percentage}%"
+      onmouseover="this.style.opacity='0.7'"
+      onmouseout="this.style.opacity='1'"
+    ></div>`
   })
-  
-  if (normalizedSectors.length > 2) {
-    html += `<span style="font-size: 10px; color: #9ca3af;">+${normalizedSectors.length - 2} more</span>`
-  }
-  
+
   html += `</div></div>`
-  
+
   return html
 }
 
@@ -340,9 +353,21 @@ const createSectorBarCompact = (sectors?: SectorData[]): string => {
 // Using same color palette as popup
 const createTooltipContent = (location: LocationData): string => {
   const statusInfo = getStatusInfo(location.activity?.status)
-  
-  let html = `<div style="font-family: system-ui, -apple-system, sans-serif; width: 300px; padding: 4px;">`
-  
+
+  let html = `<div style="font-family: system-ui, -apple-system, sans-serif; width: 300px; padding: 0; user-select: text; cursor: auto;">`
+
+  // Banner Image at top
+  if (location.activity?.banner) {
+    html += `<div style="width: 100%; height: 80px; overflow: hidden; border-radius: 8px 8px 0 0; margin-bottom: 0;">
+      <img src="${location.activity.banner}" alt="" style="width: 100%; height: 100%; object-fit: cover;" />
+    </div>`
+    html += `<div style="padding: 12px 4px 4px 4px;">`
+  } else {
+    // Placeholder banner area with gradient
+    html += `<div style="width: 100%; height: 60px; background: linear-gradient(135deg, #4c5568 0%, #7b95a7 100%); border-radius: 8px 8px 0 0; margin-bottom: 0;"></div>`
+    html += `<div style="padding: 12px 4px 4px 4px;">`
+  }
+
   // Activity Title - with word wrap
   if (location.activity?.title) {
     html += `<div style="font-weight: 700; font-size: 14px; color: #4c5568; margin-bottom: 12px; line-height: 1.4; word-wrap: break-word; overflow-wrap: break-word; white-space: normal;">${location.activity.title}</div>`
@@ -369,8 +394,8 @@ const createTooltipContent = (location: LocationData): string => {
     <div style="color: #4c5568;">${statusInfo.label}</div>`
   
   html += `</div>`
-  
-  html += '</div>'
+
+  html += '</div></div>' // Close padding div and main container
   return html
 }
 
@@ -385,9 +410,19 @@ const createPopupContent = (location: LocationData): string => {
   const lat = Number(location.latitude)
   const lng = Number(location.longitude)
   const statusInfo = getStatusInfo(location.activity?.status)
-  
-  let html = `<div style="font-family: system-ui, -apple-system, sans-serif; min-width: 380px; max-width: 450px; background: #ffffff;">`
-  
+
+  let html = `<div style="font-family: system-ui, -apple-system, sans-serif; min-width: 380px; max-width: 450px; background: #ffffff; user-select: text; cursor: auto;">`
+
+  // Banner Image at top
+  if (location.activity?.banner) {
+    html += `<div style="width: 100%; height: 120px; overflow: hidden; border-radius: 8px 8px 0 0; margin: -12px -12px 16px -12px; width: calc(100% + 24px);">
+      <img src="${location.activity.banner}" alt="" style="width: 100%; height: 100%; object-fit: cover;" />
+    </div>`
+  } else {
+    // Placeholder banner area with gradient
+    html += `<div style="width: 100%; height: 80px; background: linear-gradient(135deg, #4c5568 0%, #7b95a7 100%); border-radius: 8px 8px 0 0; margin: -12px -12px 16px -12px; width: calc(100% + 24px);"></div>`
+  }
+
   // Title Section - Activity Title only (no "Activity Overview" header)
   html += `<div style="margin-bottom: 14px;">
     <h2 style="font-size: 18px; font-weight: 700; color: #4c5568; margin: 0; line-height: 1.35;">${location.activity?.title || 'Untitled Activity'}</h2>
@@ -396,50 +431,51 @@ const createPopupContent = (location: LocationData): string => {
   // Divider
   html += `<hr style="border: none; border-top: 1px solid #cfd0d5; margin: 0 0 14px 0;" />`
   
-  // Details Grid
-  html += `<div style="display: grid; grid-template-columns: 85px 1fr; gap: 8px 10px; font-size: 11px; margin-bottom: 16px;">`
-  
-  // Location Type
-  html += `<div style="color: #7b95a7; font-weight: 500;">Location Type</div>
-    <div style="color: #4c5568;">${formatSiteType(location.site_type) || location.location_type || '-'}</div>`
-  
-  // Address
-  html += `<div style="color: #7b95a7; font-weight: 500;">Address</div>
-    <div style="color: #4c5568; line-height: 1.4;">${getFullAddress(location)}</div>`
-  
+  // Organisation and Status - Two columns
+  html += `<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; font-size: 11px; margin-bottom: 12px;">`
+
   // Organisation
-  html += `<div style="color: #7b95a7; font-weight: 500;">Organisation</div>
-    <div style="color: #4c5568;">${location.activity?.organization_name || '-'}</div>`
-  
+  html += `<div>
+    <div style="color: #7b95a7; font-weight: 500; margin-bottom: 2px;">Organisation</div>
+    <div style="color: #4c5568;">${location.activity?.organization_name || '-'}</div>
+  </div>`
+
   // Status
-  html += `<div style="color: #7b95a7; font-weight: 500;">Status</div>
-    <div style="color: #4c5568;">${statusInfo.label}</div>`
-  
-  // Coordinates
-  html += `<div style="color: #7b95a7; font-weight: 500;">Coordinates</div>
-    <div style="display: flex; align-items: center;">
-      <span style="font-family: ui-monospace, monospace; font-size: 10px; color: #4c5568; background: #f1f4f8; padding: 4px 8px; border-radius: 4px;">${lat.toFixed(6)}°, ${lng.toFixed(6)}°</span>
-      <button onclick="event.stopPropagation(); event.preventDefault(); navigator.clipboard.writeText('${lat.toFixed(6)}, ${lng.toFixed(6)}'); this.innerHTML='<span style=\\'font-size:9px;color:#dc2625;\\'>Copied</span>'; setTimeout(() => this.innerHTML='<svg width=\\'12\\' height=\\'12\\' viewBox=\\'0 0 24 24\\' fill=\\'none\\' stroke=\\'currentColor\\' stroke-width=\\'2\\'><rect x=\\'9\\' y=\\'9\\' width=\\'13\\' height=\\'13\\' rx=\\'2\\'/><path d=\\'M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1\\'/></svg>', 2000);" style="margin-left: 6px; padding: 2px; background: none; border: none; cursor: pointer; color: #7b95a7; display: flex;" title="Copy">
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
-      </button>
-    </div>`
-  
-  html += `</div>`
+  html += `<div>
+    <div style="color: #7b95a7; font-weight: 500; margin-bottom: 2px;">Status</div>
+    <div style="color: #4c5568;">${statusInfo.label}</div>
+  </div>`
+
+  html += `</div>` // End two-column grid
+
+  // Address - Full width
+  html += `<div style="font-size: 11px; margin-bottom: 16px;">
+    <div style="color: #7b95a7; font-weight: 500; margin-bottom: 2px;">Address</div>
+    <div style="color: #4c5568; line-height: 1.4;">${getFullAddress(location)}</div>
+  </div>`
   
   // Sector Breakdown
   html += createSectorBarCompact(location.activity?.sectors)
   
-  // Financial Summary
+  // Financial Summary - Single column
   html += `<div style="margin-bottom: 16px;">
     <h3 style="font-size: 11px; font-weight: 700; color: #4c5568; margin: 0 0 8px 0;">Financial Summary</h3>
-    <div style="border: 1px solid #cfd0d5; border-radius: 6px; overflow: hidden; font-size: 11px;">
-      <div style="display: flex; justify-content: space-between; padding: 10px 12px; border-bottom: 1px solid #cfd0d5;">
+    <div style="display: flex; flex-direction: column; gap: 1px; background: #cfd0d5; border: 1px solid #cfd0d5; border-radius: 6px; overflow: hidden; font-size: 11px;">
+      <div style="display: flex; justify-content: space-between; padding: 8px 10px; background: #fff;">
         <span style="color: #7b95a7;">Total Budgeted</span>
-        <span style="font-weight: 700; color: #4c5568;">${formatBudget(location.activity?.totalBudget)}</span>
+        <span style="font-weight: 700; color: #4c5568;">${formatCompactCurrency(location.activity?.totalBudget)}</span>
       </div>
-      <div style="display: flex; justify-content: space-between; padding: 10px 12px; background: #f1f4f8;">
-        <span style="color: #7b95a7;">Total Planned Disbursements</span>
-        <span style="font-weight: 700; color: #4c5568;">${formatBudget(location.activity?.totalPlannedDisbursement)}</span>
+      <div style="display: flex; justify-content: space-between; padding: 8px 10px; background: #f1f4f8;">
+        <span style="color: #7b95a7;">Total Planned Disbursement</span>
+        <span style="font-weight: 700; color: #4c5568;">${formatCompactCurrency(location.activity?.totalPlannedDisbursement)}</span>
+      </div>
+      <div style="display: flex; justify-content: space-between; padding: 8px 10px; background: #fff;">
+        <span style="color: #7b95a7;">Total Committed</span>
+        <span style="font-weight: 700; color: #4c5568;">${formatCompactCurrency(location.activity?.totalCommitments)}</span>
+      </div>
+      <div style="display: flex; justify-content: space-between; padding: 8px 10px; background: #f1f4f8;">
+        <span style="color: #7b95a7;">Total Disbursed</span>
+        <span style="font-weight: 700; color: #4c5568;">${formatCompactCurrency(location.activity?.totalDisbursed)}</span>
       </div>
     </div>
   </div>`

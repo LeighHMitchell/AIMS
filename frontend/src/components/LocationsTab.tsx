@@ -12,7 +12,11 @@ import {
   RefreshCw,
   Info,
   LayoutGrid,
-  Table as TableIcon
+  Table as TableIcon,
+  MoreVertical,
+  PencilLine,
+  Trash2,
+  Copy
 } from 'lucide-react';
 import {
   Table,
@@ -35,6 +39,8 @@ import ActivityLocationsHeatmap from './maps/ActivityLocationsHeatmap';
 import {
   type LocationSchema,
 } from '@/lib/schemas/location';
+import { countries } from '@/data/countries';
+import { Menu } from 'bloom-menu';
 
 interface LocationsTabProps {
   activityId?: string;
@@ -57,7 +63,7 @@ export default function LocationsTab({
   const [error, setError] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingLocation, setEditingLocation] = useState<LocationSchema | undefined>();
-  const [viewMode, setViewMode] = useState<'cards' | 'table'>('cards');
+  const [viewMode, setViewMode] = useState<'cards' | 'table'>('table');
 
   // Get user for autosave
   const { user } = useUser();
@@ -349,46 +355,90 @@ export default function LocationsTab({
                 <TableHead>Name</TableHead>
                 <TableHead>Coordinates</TableHead>
                 <TableHead>Location</TableHead>
-                <TableHead>Description</TableHead>
-                {canEdit && <TableHead className="w-[100px]">Actions</TableHead>}
+                <TableHead>Activity Description</TableHead>
+                {canEdit && <TableHead className="w-[60px]">Actions</TableHead>}
               </TableRow>
             </TableHeader>
             <TableBody>
               {locations.map((location) => {
+                const getCountryName = (code: string | undefined) => {
+                  if (!code) return '';
+                  const country = countries.find(c => c.code.toUpperCase() === code.toUpperCase());
+                  return country?.name || code;
+                };
+
                 const formatAddress = () => {
                   const parts = [];
                   if (location.township_name) parts.push(location.township_name);
                   if (location.city) parts.push(location.city);
                   if (location.state_region_name) parts.push(location.state_region_name);
-                  if (location.country_code) parts.push(location.country_code);
+                  if (location.country_code) parts.push(getCountryName(location.country_code));
                   return parts.join(', ') || 'N/A';
                 };
-                
+
                 return (
                   <TableRow key={location.id}>
                     <TableCell className="font-medium">
                       {location.location_name || 'Unnamed Location'}
                     </TableCell>
                     <TableCell className="text-muted-foreground text-sm">
-                      {location.latitude && location.longitude 
+                      {location.latitude && location.longitude
                         ? `${Number(location.latitude).toFixed(4)}, ${Number(location.longitude).toFixed(4)}`
                         : 'N/A'}
                     </TableCell>
                     <TableCell className="text-sm">
-                      {formatAddress()}
+                      <div>{formatAddress()}</div>
+                      {location.location_description && (
+                        <div className="text-sm text-muted-foreground whitespace-normal break-words mt-1">
+                          {location.location_description}
+                        </div>
+                      )}
                     </TableCell>
-                    <TableCell className="text-sm text-muted-foreground max-w-[200px] truncate">
-                      {location.location_description || location.description || '-'}
+                    <TableCell className="text-sm text-muted-foreground max-w-[300px]">
+                      <div className="whitespace-normal break-words">
+                        {location.activity_location_description || location.description || '-'}
+                      </div>
                     </TableCell>
                     {canEdit && (
                       <TableCell>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleEditLocation(location)}
-                        >
-                          Edit
-                        </Button>
+                        <Menu.Root direction="bottom" anchor="end">
+                          <Menu.Container
+                            buttonSize={32}
+                            menuWidth={160}
+                            menuRadius={12}
+                            className="bg-white dark:bg-neutral-900 shadow-lg ring-1 ring-black/5 dark:ring-white/10 relative z-[9999]"
+                          >
+                            <Menu.Trigger>
+                              <div className="flex h-8 w-8 items-center justify-center rounded-md border border-input bg-background hover:bg-accent hover:text-accent-foreground transition-colors">
+                                <MoreVertical className="h-4 w-4" />
+                              </div>
+                            </Menu.Trigger>
+                            <Menu.Content className="p-1.5">
+                              <Menu.Item
+                                className="flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm text-neutral-700 dark:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-800 cursor-pointer transition-colors"
+                                onSelect={() => handleEditLocation(location)}
+                              >
+                                <PencilLine className="h-4 w-4" />
+                                Edit
+                              </Menu.Item>
+                              <Menu.Item
+                                className="flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm text-neutral-700 dark:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-800 cursor-pointer transition-colors"
+                                onSelect={() => handleDuplicateLocation(location)}
+                              >
+                                <Copy className="h-4 w-4" />
+                                Duplicate
+                              </Menu.Item>
+                              <div className="my-1 h-px bg-neutral-200 dark:bg-neutral-700" />
+                              <Menu.Item
+                                className="flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 cursor-pointer transition-colors"
+                                onSelect={() => location.id && handleDeleteLocation(location.id)}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                                Delete
+                              </Menu.Item>
+                            </Menu.Content>
+                          </Menu.Container>
+                        </Menu.Root>
                       </TableCell>
                     )}
                   </TableRow>

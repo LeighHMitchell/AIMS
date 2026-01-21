@@ -68,6 +68,18 @@ export function OrganizationCombobox({
   const setOpen = externalOnOpenChange || setInternalOpen
   const [search, setSearch] = React.useState("")
   const triggerRef = React.useRef<HTMLButtonElement>(null);
+  const searchInputRef = React.useRef<HTMLInputElement>(null);
+
+  // Auto-focus search input when popover opens
+  React.useEffect(() => {
+    if (open) {
+      // Small timeout to ensure the popover is rendered
+      const timeoutId = setTimeout(() => {
+        searchInputRef.current?.focus();
+      }, 0);
+      return () => clearTimeout(timeoutId);
+    }
+  }, [open]);
 
   // Find selected organization
   const selectedOrg = organizations.find(org => org.id === value)
@@ -269,6 +281,7 @@ export function OrganizationCombobox({
           <div className="flex items-center border-b px-3">
             <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
             <input
+              ref={searchInputRef}
               placeholder="Search organizations by name, acronym, or IATI ID..."
               className="flex h-10 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50"
               value={search}

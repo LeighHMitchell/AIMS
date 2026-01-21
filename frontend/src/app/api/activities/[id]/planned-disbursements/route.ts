@@ -50,8 +50,68 @@ export async function GET(
       return NextResponse.json({ error: 'Failed to fetch planned disbursements' }, { status: 500 });
     }
 
-    console.log('[PlannedDisbursementsAPI] Returning', disbursements?.length || 0, 'disbursements');
-    return NextResponse.json(disbursements || [], {
+    // Collect unique org IDs to fetch organization details
+    const orgIds = new Set<string>();
+    disbursements?.forEach(d => {
+      if (d.provider_org_id) orgIds.add(d.provider_org_id);
+      if (d.receiver_org_id) orgIds.add(d.receiver_org_id);
+    });
+
+    // Fetch organization details for enrichment (for hover cards)
+    interface OrgDetails {
+      acronym: string | null;
+      logo: string | null;
+      type: string | null;
+      country: string | null;
+      iati_org_id: string | null;
+      description: string | null;
+      website: string | null;
+    }
+    let orgMap = new Map<string, OrgDetails>();
+    if (orgIds.size > 0) {
+      const { data: orgs } = await supabase
+        .from('organizations')
+        .select('id, acronym, logo, type, country, iati_org_id, description, website')
+        .in('id', Array.from(orgIds));
+      
+      orgs?.forEach(org => {
+        orgMap.set(org.id, {
+          acronym: org.acronym,
+          logo: org.logo,
+          type: org.type,
+          country: org.country,
+          iati_org_id: org.iati_org_id,
+          description: org.description,
+          website: org.website,
+        });
+      });
+    }
+
+    // Enrich disbursements with organization details
+    const enrichedDisbursements = (disbursements || []).map(d => {
+      const providerOrg = d.provider_org_id ? orgMap.get(d.provider_org_id) : null;
+      const receiverOrg = d.receiver_org_id ? orgMap.get(d.receiver_org_id) : null;
+      return {
+        ...d,
+        provider_org_acronym: providerOrg?.acronym || null,
+        provider_org_logo: providerOrg?.logo || null,
+        provider_org_type: providerOrg?.type || null,
+        provider_org_country: providerOrg?.country || null,
+        provider_org_iati_id: providerOrg?.iati_org_id || null,
+        provider_org_description: providerOrg?.description || null,
+        provider_org_website: providerOrg?.website || null,
+        receiver_org_acronym: receiverOrg?.acronym || null,
+        receiver_org_logo: receiverOrg?.logo || null,
+        receiver_org_type: receiverOrg?.type || null,
+        receiver_org_country: receiverOrg?.country || null,
+        receiver_org_iati_id: receiverOrg?.iati_org_id || null,
+        receiver_org_description: receiverOrg?.description || null,
+        receiver_org_website: receiverOrg?.website || null,
+      };
+    });
+
+    console.log('[PlannedDisbursementsAPI] Returning', enrichedDisbursements.length, 'disbursements');
+    return NextResponse.json(enrichedDisbursements, {
       headers: {
         'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
         'Pragma': 'no-cache',

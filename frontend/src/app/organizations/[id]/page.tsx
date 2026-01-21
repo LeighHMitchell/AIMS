@@ -32,6 +32,7 @@ import {
   CalendarDays,
   Target,
   Copy,
+  Check,
   Edit,
   Mail,
   Phone,
@@ -69,7 +70,6 @@ import { ActivityPortfolioTimeline } from '@/components/organizations/ActivityPo
 import { GeographicFootprint } from '@/components/organizations/GeographicFootprint'
 import { PartnershipNetwork } from '@/components/organizations/PartnershipNetwork'
 import { OrganisationHealthCard } from '@/components/organizations/OrganisationHealthCard'
-import { CopyableIdentifier } from '@/components/organizations/CopyableIdentifier'
 import { SectorAllocationChart } from '@/components/organizations/SectorAllocationChart'
 import { OrganizationBudgetsTab } from '@/components/organizations/OrganizationBudgetsTab'
 import { OrganizationPlannedDisbursementsTab } from '@/components/organizations/OrganizationPlannedDisbursementsTab'
@@ -256,6 +256,7 @@ export default function OrganizationProfilePage() {
   const [sectorAllocations, setSectorAllocations] = useState<Array<{ code: string; name: string; percentage: number }>>([])
   const [sectorVisualizationTab, setSectorVisualizationTab] = useState<'sankey' | 'sunburst'>('sankey')
   const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false)
+  const [copiedId, setCopiedId] = useState<string | null>(null)
   const [modalityComposition, setModalityComposition] = useState<Array<{ name: string; value: number; color: string }>>([])
   const [modalityCompositionByCount, setModalityCompositionByCount] = useState<Array<{ name: string; value: number; color: string }>>([])
   const [modalityCompositionByValue, setModalityCompositionByValue] = useState<Array<{ name: string; value: number; color: string }>>([])
@@ -320,6 +321,19 @@ export default function OrganizationProfilePage() {
 
   // Global loading bar for top-of-screen progress indicator
   const { startLoading, stopLoading } = useLoadingBar()
+
+  // Copy to clipboard helper
+  const copyToClipboard = async (text: string, id: string) => {
+    try {
+      await navigator.clipboard.writeText(text)
+      setCopiedId(id)
+      toast.success('Copied to clipboard')
+      setTimeout(() => setCopiedId(null), 2000)
+    } catch (err) {
+      console.error('Failed to copy:', err)
+      toast.error('Failed to copy')
+    }
+  }
 
   // Show/hide global loading bar based on loading state
   useEffect(() => {
@@ -908,9 +922,11 @@ export default function OrganizationProfilePage() {
               const allTransactions: any[] = []
               const disbursementsByYearMap = new Map<number, { disbursements: number; expenditures: number }>()
 
-              console.log(`[OrgProfile] Fetching transactions for ${activitiesWithBudgets.length} activities`)
+              // Filter to only published activities for consistency with organization transactions API
+              const publishedActivities = activitiesWithBudgets.filter(a => a.publication_status === 'published')
+              console.log(`[OrgProfile] Fetching transactions for ${publishedActivities.length} published activities (of ${activitiesWithBudgets.length} total)`)
 
-              for (const activity of activitiesWithBudgets) {
+              for (const activity of publishedActivities) {
                 try {
                   // Exclude linked transactions to show only org's directly reported data
                   const txnResponse = await fetch(`/api/activities/${activity.id}/transactions?includeLinked=false`, {
@@ -1105,10 +1121,11 @@ export default function OrganizationProfilePage() {
     const safeTransactions = transactions || [];
     const safeActivities = activities || [];
     
-    // Calculate total portfolio value (commitments) - transaction types '1' and '2'
+    // Calculate total portfolio value (commitments) - transaction type '2' only (Outgoing Commitment)
+    // Use value_usd for proper currency conversion, with fallback for USD transactions
     const totalPortfolioValue = safeTransactions
-      .filter(txn => ['1', '2'].includes(txn.transaction_type))
-      .reduce((sum, txn) => sum + (txn.value || 0), 0)
+      .filter(txn => txn.transaction_type === '2')
+      .reduce((sum, txn) => sum + (txn.value_usd || (txn.currency === 'USD' ? txn.value : 0)), 0)
     
     // Calculate budget from activity budgets (activity_budgets table) - only for published activities
     const budgetFromActivities = safeActivities
@@ -1132,7 +1149,19 @@ export default function OrganizationProfilePage() {
       .reduce((sum, txn) => sum + (txn.value_usd || (txn.currency === 'USD' ? txn.value : 0)), 0)
 
     const totalTransactions = safeTransactions.reduce((sum, txn) => sum + (txn.value_usd || (txn.currency === 'USD' ? txn.value : 0)), 0)
-    
+
+    // Calculate commitments by year from transactions (type '2')
+    const currentYear = new Date().getFullYear()
+    const commitmentTransactions = safeTransactions.filter(txn => txn.transaction_type === '2')
+
+    const currentYearCommitments = commitmentTransactions
+      .filter(txn => txn.transaction_date && new Date(txn.transaction_date).getFullYear() === currentYear)
+      .reduce((sum, txn) => sum + (txn.value_usd || (txn.currency === 'USD' ? txn.value : 0)), 0)
+
+    const lastYearCommitments = commitmentTransactions
+      .filter(txn => txn.transaction_date && new Date(txn.transaction_date).getFullYear() < currentYear)
+      .reduce((sum, txn) => sum + (txn.value_usd || (txn.currency === 'USD' ? txn.value : 0)), 0)
+
     return {
       totalBudget,
       totalPortfolioValue,
@@ -1140,6 +1169,8 @@ export default function OrganizationProfilePage() {
       totalDisbursements,
       totalExpenditures,
       totalTransactions,
+      currentYearCommitments,
+      lastYearCommitments,
       activeActivities: safeActivities.filter(a => ['2', '3'].includes(a.activity_status)).length, // 2=Implementation, 3=Finalisation
       totalActivities: safeActivities.length
     }
@@ -1255,11 +1286,9 @@ export default function OrganizationProfilePage() {
   const yoyStats = (() => {
     const currentYear = new Date().getFullYear()
 
-    // Commitments (from budgetsByYear)
-    const currentYearCommitments = budgetsByYear.find(b => b.year === currentYear)?.amount || 0
-    const totalLastYearCommitments = budgetsByYear
-      .filter(b => b.year < currentYear)
-      .reduce((sum, b) => sum + b.amount, 0)
+    // Commitments (from transactions - type '2')
+    const currentYearCommitments = totals.currentYearCommitments || 0
+    const totalLastYearCommitments = totals.lastYearCommitments || 0
     const commitmentChange = (totals.totalPortfolioValue || 0) - totalLastYearCommitments
 
     // Disbursements (from disbursementsByYear)
@@ -1416,43 +1445,66 @@ export default function OrganizationProfilePage() {
 
                     {/* Organization Info */}
                     <div className="flex-1">
-                      <h1 className="text-3xl font-bold text-slate-900 mb-2">
+                      <h1 className="text-3xl font-bold text-slate-900 mb-3 group">
                         {organization.name}
-                        {organization.acronym && <span className="text-3xl font-bold text-slate-900"> ({organization.acronym})</span>}
+                        {organization.acronym && <span> ({organization.acronym})</span>}{' '}
+                        <button
+                          onClick={() => copyToClipboard(organization.name || '', 'orgName')}
+                          className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:text-slate-700 inline-flex items-center align-middle"
+                          title="Copy Organization Name"
+                        >
+                          {copiedId === 'orgName' ? (
+                            <Check className="w-5 h-5 text-green-600" />
+                          ) : (
+                            <Copy className="w-5 h-5 text-slate-400" />
+                          )}
+                        </button>
                       </h1>
 
-                      {/* Badges Row */}
-                      <div className="flex flex-col gap-2 mb-3 pt-3 border-t border-slate-200">
-                        <div className="flex flex-wrap items-center gap-2">
-                          {organization.iati_org_id && (
-                            <CopyableIdentifier value={organization.iati_org_id} />
-                          )}
-                          {organization.country && (
-                            <Badge variant="outline" className="border-slate-300 text-slate-700 flex items-center gap-1.5">
-                              {getCountryCode(organization.country) && (
-                                <Flag
-                                  code={getCountryCode(organization.country)!}
-                                  style={{ width: '16px', height: '12px' }}
-                                />
+                      {/* ID and Badges Row */}
+                      <div className="flex flex-wrap items-center gap-3 py-3 border-y border-slate-200">
+                        {organization.iati_org_id && (
+                          <div className="flex items-center gap-1 group">
+                            <code className="text-xs px-2 py-1 bg-slate-100 text-slate-700 rounded font-mono">
+                              {organization.iati_org_id}
+                            </code>
+                            <button
+                              onClick={() => copyToClipboard(organization.iati_org_id || '', 'iatiOrgId')}
+                              className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:text-slate-700 flex-shrink-0 p-1"
+                              title="Copy IATI Org ID"
+                            >
+                              {copiedId === 'iatiOrgId' ? (
+                                <Check className="w-3 h-3 text-green-600" />
+                              ) : (
+                                <Copy className="w-3 h-3" />
                               )}
-                              <span className="text-xs">{organization.country}</span>
-                            </Badge>
-                          )}
-                          <Badge className={getTypeColor(organization.organisation_type)}>
-                            {organization.organisation_type}
+                            </button>
+                          </div>
+                        )}
+                        {organization.country && (
+                          <Badge variant="outline" className="border-slate-300 text-slate-700 flex items-center gap-1.5">
+                            {getCountryCode(organization.country) && (
+                              <Flag
+                                code={getCountryCode(organization.country)!}
+                                style={{ width: '16px', height: '12px' }}
+                              />
+                            )}
+                            <span className="text-xs">{organization.country}</span>
                           </Badge>
-                          {organization.iati_org_id && (
-                            <Badge variant="outline" className="border-green-300 bg-green-50 text-green-700">
-                              Reporting to IATI
-                            </Badge>
-                          )}
-                          {organization.secondary_reporter !== undefined && (
-                            <Badge variant="outline" className="border-blue-300 bg-blue-50 text-blue-700">
-                              {organization.secondary_reporter ? 'Secondary reporter' : 'Primary publisher'}
-                            </Badge>
-                          )}
-                        </div>
-                        <div className="border-b border-slate-200 mt-2"></div>
+                        )}
+                        <Badge className={getTypeColor(organization.organisation_type)}>
+                          {organization.organisation_type}
+                        </Badge>
+                        {organization.iati_org_id && (
+                          <Badge variant="outline" className="border-green-300 bg-green-50 text-green-700">
+                            Reporting to IATI
+                          </Badge>
+                        )}
+                        {organization.secondary_reporter !== undefined && (
+                          <Badge variant="outline" className="border-blue-300 bg-blue-50 text-blue-700">
+                            {organization.secondary_reporter ? 'Secondary reporter' : 'Primary publisher'}
+                          </Badge>
+                        )}
                       </div>
 
                       {/* Activity Stats Bar */}
@@ -1724,7 +1776,7 @@ export default function OrganizationProfilePage() {
             <div className="flex-1 min-w-0 bg-white border border-slate-200 rounded-lg py-2 px-3">
               <p className="text-xs font-medium text-slate-600 truncate">Total Committed</p>
               <p className="text-3xl font-bold text-slate-900">
-                {formatCurrencyShort(totals.totalPortfolioValue || totals.totalBudget)}
+                {formatCurrencyShort(totals.totalPortfolioValue)}
               </p>
               <div className="text-xs text-slate-500">
                 <p className="flex items-center gap-1">
@@ -1763,7 +1815,7 @@ export default function OrganizationProfilePage() {
               <p className="text-xs font-medium text-slate-600 truncate">% Disbursed</p>
               <p className="text-3xl font-bold text-slate-900">
                 {(() => {
-                  const committed = totals.totalPortfolioValue || totals.totalBudget || 0
+                  const committed = totals.totalPortfolioValue || 0
                   const disbursed = totals.totalDisbursements || 0
                   if (committed === 0) return '0.0'
                   return ((disbursed / committed) * 100).toFixed(1)
@@ -3935,7 +3987,7 @@ export default function OrganizationProfilePage() {
 
                               <div className={`flex items-start gap-4 ${contact.isPrimary ? 'mt-6' : ''}`}>
                                 <UserAvatar
-                                  src={contact.profilePhoto}
+                                  src={contact.profilePhoto || contact.linkedUser?.avatarUrl}
                                   seed={contact.email || contact.linkedUserId || fullName}
                                   name={fullName}
                                   size={64}
@@ -4047,7 +4099,7 @@ export default function OrganizationProfilePage() {
                                   <td className="py-3 px-4">
                                     <div className="flex items-center gap-3">
                                       <UserAvatar
-                                        src={contact.profilePhoto}
+                                        src={contact.profilePhoto || contact.linkedUser?.avatarUrl}
                                         seed={contact.email || contact.linkedUserId || fullName}
                                         name={fullName}
                                         size="md"

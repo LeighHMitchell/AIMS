@@ -3,7 +3,7 @@ import { requireAuth } from '@/lib/auth';
 
 interface Activity {
   id: string;
-  title: string;
+  title_narrative: string;
   iati_identifier?: string;
   activity_status?: string;
   planned_start_date?: string;
@@ -41,7 +41,7 @@ export async function GET(request: NextRequest) {
       .from('activities')
       .select(`
         id,
-        title,
+        title_narrative,
         iati_identifier,
         activity_status,
         planned_start_date,
@@ -80,7 +80,7 @@ export async function GET(request: NextRequest) {
         .from('activities')
         .select(`
           id,
-          title,
+          title_narrative,
           iati_identifier,
           activity_status,
           planned_start_date,
@@ -114,6 +114,7 @@ export async function GET(request: NextRequest) {
     if (!missingFields) {
       const formattedActivities = activities.map((activity: Activity) => ({
         ...activity,
+        title: activity.title_narrative,
         sectors: activity.activity_sectors || [],
         iatiIdentifier: activity.iati_identifier,
         activityStatus: activity.activity_status,
@@ -183,6 +184,7 @@ export async function GET(request: NextRequest) {
         if (hasGap || showAll) {
           activitiesWithGaps.push({
             ...activity,
+            title: activity.title_narrative,
             sectors: activity.activity_sectors || [],
             iatiIdentifier: activity.iati_identifier,
             activityStatus: activity.activity_status,
@@ -219,6 +221,7 @@ export async function GET(request: NextRequest) {
       // If no IATI fields, show all activities as potentially having gaps
       activitiesWithGaps = activities.map((activity: Activity) => ({
         ...activity,
+        title: activity.title_narrative,
         sectors: [],
         iatiIdentifier: activity.iati_identifier,
         activityStatus: activity.activity_status,

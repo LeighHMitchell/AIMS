@@ -94,7 +94,7 @@ export default function DataClinicPage() {
           {/* Header */}
           <div className="mb-8">
             <div className="flex items-center gap-3 mb-2">
-              <Stethoscope className="h-8 w-8 text-primary" />
+              <Stethoscope className="h-8 w-8 text-gray-700" />
               <h1 className="text-3xl font-bold">Data Clinic</h1>
             </div>
             <p className="text-muted-foreground">

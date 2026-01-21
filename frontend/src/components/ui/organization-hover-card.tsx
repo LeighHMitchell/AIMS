@@ -56,11 +56,6 @@ export function OrganizationHoverCard({
               <p className="font-semibold text-sm text-foreground">
                 {organization.name}
               </p>
-              {organization.acronym && organization.acronym !== organization.name && (
-                <p className="text-xs text-muted-foreground">
-                  ({organization.acronym})
-                </p>
-              )}
             </div>
           </div>
 
@@ -126,6 +121,7 @@ export function OrganizationHoverCard({
     </HoverCard>
   );
 }
+
 
 
 

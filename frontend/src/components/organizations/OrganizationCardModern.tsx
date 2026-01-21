@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { Building2, MapPin, Activity, DollarSign, ExternalLink, Copy } from 'lucide-react';
 import { motion } from "framer-motion";
 import { toast } from "sonner";
@@ -70,11 +70,7 @@ const OrganizationCardModern: React.FC<OrganizationCardModernProps> = ({
   onExportExcel,
   className = ''
 }) => {
-  const router = useRouter();
-
-  const handleView = () => {
-    router.push(`/organizations/${organization.id}`);
-  };
+  const orgUrl = `/organizations/${organization.id}`;
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
@@ -86,17 +82,17 @@ const OrganizationCardModern: React.FC<OrganizationCardModernProps> = ({
   const idLabel = organization.iati_org_id ? 'IATI Org ID' : 'Org ID';
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5, type: "spring", bounce: 0.3 }}
-      whileHover={{ y: -8 }}
-      onClick={handleView}
-      className={`group relative flex w-full flex-col rounded-3xl shadow-sm hover:shadow-xl transition-shadow duration-300 cursor-pointer isolate overflow-hidden border ${className}`}
-      style={{ backgroundColor: 'white' }}
-      role="article"
-      aria-label={`Organization: ${organization.name}`}
-    >
+    <Link href={orgUrl} className="block">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, type: "spring", bounce: 0.3 }}
+        whileHover={{ y: -8 }}
+        className={`group relative flex w-full flex-col rounded-3xl shadow-sm hover:shadow-xl transition-shadow duration-300 cursor-pointer isolate overflow-hidden border ${className}`}
+        style={{ backgroundColor: 'white' }}
+        role="article"
+        aria-label={`Organization: ${organization.name}`}
+      >
       {/* Banner/Poster Section */}
       <div className="relative h-48 w-full overflow-hidden" style={{ backgroundColor: colors.blueSlate }}>
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent z-10" />
@@ -116,7 +112,6 @@ const OrganizationCardModern: React.FC<OrganizationCardModernProps> = ({
         <div className="absolute top-4 left-4 z-20" onClick={(e) => e.stopPropagation()}>
           <OrganizationCardActionMenu
             organizationId={organization.id}
-            onView={handleView}
             onEdit={onEdit ? () => onEdit(organization) : undefined}
             onExportPDF={onExportPDF ? () => onExportPDF(organization.id) : undefined}
             onExportExcel={onExportExcel ? () => onExportExcel(organization.id) : undefined}
@@ -241,6 +236,7 @@ const OrganizationCardModern: React.FC<OrganizationCardModernProps> = ({
         </div>
       </div>
     </motion.div>
+    </Link>
   );
 };
 

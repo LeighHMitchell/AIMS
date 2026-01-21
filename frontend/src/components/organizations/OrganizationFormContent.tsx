@@ -8,6 +8,7 @@ import { Textarea } from '@/components/ui/textarea'
 import {
   AlertTriangle,
   Copy,
+  Check,
   HelpCircle,
   X,
   Mail,
@@ -71,6 +72,8 @@ import {
   DialogTitle,
   DialogFooter,
 } from '@/components/ui/dialog'
+import { LabelSaveIndicator } from '@/components/ui/save-indicator'
+import { useOrganizationAutosave } from '@/hooks/use-organization-autosave'
 
 // Combine all options for validation (countries + institutional groups)
 const ALL_COUNTRY_AND_REGION_CODES = [
@@ -295,6 +298,102 @@ export function OrganizationFormContent({
   const [isMerging, setIsMerging] = useState(false)
   const [showMergeConfirm, setShowMergeConfirm] = useState(false)
   const [loadingMergePreview, setLoadingMergePreview] = useState(false)
+  const [copiedId, setCopiedId] = useState<string | null>(null)
+
+  // Get organization ID for autosave
+  const organizationId = organization?.id
+
+  // Autosave hooks for each field (only active when editing existing organization)
+  const nameAutosave = useOrganizationAutosave('name', { 
+    organizationId, 
+    debounceMs: 1000,
+    enabled: !!organizationId 
+  })
+  const acronymAutosave = useOrganizationAutosave('acronym', { 
+    organizationId, 
+    debounceMs: 1000,
+    enabled: !!organizationId 
+  })
+  const descriptionAutosave = useOrganizationAutosave('description', { 
+    organizationId, 
+    debounceMs: 2000,
+    enabled: !!organizationId 
+  })
+  const orgTypeAutosave = useOrganizationAutosave('organisation_type', { 
+    organizationId, 
+    debounceMs: 500,
+    enabled: !!organizationId,
+    showToast: true
+  })
+  const countryAutosave = useOrganizationAutosave('country', { 
+    organizationId, 
+    debounceMs: 500,
+    enabled: !!organizationId,
+    showToast: true
+  })
+  const iatiOrgIdAutosave = useOrganizationAutosave('iati_org_id', { 
+    organizationId, 
+    debounceMs: 1000,
+    enabled: !!organizationId 
+  })
+  const defaultCurrencyAutosave = useOrganizationAutosave('default_currency', { 
+    organizationId, 
+    debounceMs: 500,
+    enabled: !!organizationId,
+    showToast: true
+  })
+  const defaultLanguageAutosave = useOrganizationAutosave('default_language', { 
+    organizationId, 
+    debounceMs: 500,
+    enabled: !!organizationId,
+    showToast: true
+  })
+  const websiteAutosave = useOrganizationAutosave('website', { 
+    organizationId, 
+    debounceMs: 1500,
+    enabled: !!organizationId 
+  })
+  const emailAutosave = useOrganizationAutosave('email', { 
+    organizationId, 
+    debounceMs: 1500,
+    enabled: !!organizationId 
+  })
+  const phoneAutosave = useOrganizationAutosave('phone', { 
+    organizationId, 
+    debounceMs: 1500,
+    enabled: !!organizationId 
+  })
+  const addressAutosave = useOrganizationAutosave('address', { 
+    organizationId, 
+    debounceMs: 2000,
+    enabled: !!organizationId 
+  })
+  // Social media autosave hooks
+  const twitterAutosave = useOrganizationAutosave('twitter', { 
+    organizationId, 
+    debounceMs: 1500,
+    enabled: !!organizationId 
+  })
+  const facebookAutosave = useOrganizationAutosave('facebook', { 
+    organizationId, 
+    debounceMs: 1500,
+    enabled: !!organizationId 
+  })
+  const linkedinAutosave = useOrganizationAutosave('linkedin', { 
+    organizationId, 
+    debounceMs: 1500,
+    enabled: !!organizationId 
+  })
+  const instagramAutosave = useOrganizationAutosave('instagram', { 
+    organizationId, 
+    debounceMs: 1500,
+    enabled: !!organizationId 
+  })
+  const youtubeAutosave = useOrganizationAutosave('youtube', { 
+    organizationId, 
+    debounceMs: 1500,
+    enabled: !!organizationId 
+  })
 
   const isSaving = saving || externalSaving
 
@@ -414,6 +513,41 @@ export function OrganizationFormContent({
     if (validationErrors.length > 0) {
       setValidationErrors([])
     }
+    
+    // Trigger autosave for the changed field (only for existing organizations)
+    if (organizationId) {
+      const autosaveMap: Record<string, { triggerSave: (value: any) => void }> = {
+        name: nameAutosave,
+        acronym: acronymAutosave,
+        description: descriptionAutosave,
+        Organisation_Type_Code: orgTypeAutosave,
+        country_represented: countryAutosave,
+        iati_org_id: iatiOrgIdAutosave,
+        default_currency: defaultCurrencyAutosave,
+        default_language: defaultLanguageAutosave,
+        website: websiteAutosave,
+        email: emailAutosave,
+        phone: phoneAutosave,
+        address: addressAutosave,
+        twitter: twitterAutosave,
+        facebook: facebookAutosave,
+        linkedin: linkedinAutosave,
+        instagram: instagramAutosave,
+        youtube: youtubeAutosave,
+      }
+      
+      // Map form field names to database field names for autosave
+      const fieldMapping: Record<string, string> = {
+        Organisation_Type_Code: 'organisation_type',
+        country_represented: 'country',
+      }
+      
+      const autosave = autosaveMap[field]
+      if (autosave) {
+        // Use mapped field name for the value if needed
+        autosave.triggerSave(value)
+      }
+    }
   }
 
   const handleSave = async () => {
@@ -488,9 +622,18 @@ export function OrganizationFormContent({
     }
   }
 
-  const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text)
-    toast.success('Copied to clipboard')
+  const copyToClipboard = async (text: string, id?: string) => {
+    try {
+      await navigator.clipboard.writeText(text)
+      if (id) {
+        setCopiedId(id)
+        setTimeout(() => setCopiedId(null), 2000)
+      }
+      toast.success('Copied to clipboard')
+    } catch (err) {
+      console.error('Failed to copy:', err)
+      toast.error('Failed to copy')
+    }
   }
 
   // Auto-calculate cooperation modality
@@ -655,9 +798,13 @@ export function OrganizationFormContent({
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {/* Name (Required) */}
           <div className="space-y-2">
-            <Label htmlFor="name" className="text-sm font-medium">
+            <LabelSaveIndicator
+              isSaving={nameAutosave.state.isSaving}
+              isSaved={!!nameAutosave.state.lastSaved}
+              hasValue={!!formData.name}
+            >
               Name <span className="text-red-500">*</span>
-            </Label>
+            </LabelSaveIndicator>
             <Input
               id="name"
               value={formData.name || ''}
@@ -669,9 +816,13 @@ export function OrganizationFormContent({
 
           {/* Acronym / Short Name (Required) */}
           <div className="space-y-2">
-            <Label htmlFor="acronym" className="text-sm font-medium">
+            <LabelSaveIndicator
+              isSaving={acronymAutosave.state.isSaving}
+              isSaved={!!acronymAutosave.state.lastSaved}
+              hasValue={!!formData.acronym}
+            >
               Acronym / Short Name <span className="text-red-500">*</span>
-            </Label>
+            </LabelSaveIndicator>
             <Input
               id="acronym"
               value={formData.acronym || ''}
@@ -863,7 +1014,13 @@ export function OrganizationFormContent({
 
         {/* Description */}
         <div className="space-y-2">
-          <Label htmlFor="description" className="text-sm font-medium">Description</Label>
+          <LabelSaveIndicator
+            isSaving={descriptionAutosave.state.isSaving}
+            isSaved={!!descriptionAutosave.state.lastSaved}
+            hasValue={!!formData.description}
+          >
+            Description
+          </LabelSaveIndicator>
           <Textarea
             id="description"
             value={formData.description || ''}
@@ -880,7 +1037,13 @@ export function OrganizationFormContent({
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {/* IATI Organisation Identifier */}
           <div className="space-y-2">
-            <Label htmlFor="iati_org_id_class" className="text-sm font-medium">IATI Organisation Identifier</Label>
+            <LabelSaveIndicator
+              isSaving={iatiOrgIdAutosave.state.isSaving}
+              isSaved={!!iatiOrgIdAutosave.state.lastSaved}
+              hasValue={!!formData.iati_org_id}
+            >
+              IATI Organisation Identifier
+            </LabelSaveIndicator>
             <div className="flex gap-2">
               <div className="relative flex-1">
                 <Input
@@ -930,9 +1093,13 @@ export function OrganizationFormContent({
 
           {/* Default Currency */}
           <div className="space-y-2">
-            <Label htmlFor="default_currency" className="text-sm font-medium">
+            <LabelSaveIndicator
+              isSaving={defaultCurrencyAutosave.state.isSaving}
+              isSaved={!!defaultCurrencyAutosave.state.lastSaved}
+              hasValue={!!formData.default_currency}
+            >
               Default Currency
-            </Label>
+            </LabelSaveIndicator>
             <Select
               value={formData.default_currency || 'USD'}
               onValueChange={(value) => handleInputChange('default_currency', value)}
@@ -988,9 +1155,13 @@ export function OrganizationFormContent({
 
           {/* Default Language */}
           <div className="space-y-2">
-            <Label htmlFor="default_language" className="text-sm font-medium">
+            <LabelSaveIndicator
+              isSaving={defaultLanguageAutosave.state.isSaving}
+              isSaved={!!defaultLanguageAutosave.state.lastSaved}
+              hasValue={!!formData.default_language}
+            >
               Default Language
-            </Label>
+            </LabelSaveIndicator>
             <Select
               value={formData.default_language || 'en'}
               onValueChange={(value) => handleInputChange('default_language', value)}
@@ -1082,10 +1253,14 @@ export function OrganizationFormContent({
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="email" className="text-sm font-medium flex items-center gap-2">
-                <Mail className="h-4 w-4 text-gray-500" />
+              <LabelSaveIndicator
+                isSaving={emailAutosave.state.isSaving}
+                isSaved={!!emailAutosave.state.lastSaved}
+                hasValue={!!formData.email}
+              >
+                <Mail className="h-4 w-4 text-gray-500 mr-2" />
                 Email
-              </Label>
+              </LabelSaveIndicator>
               <Input
                 id="email"
                 type="email"
@@ -1096,10 +1271,14 @@ export function OrganizationFormContent({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="phone" className="text-sm font-medium flex items-center gap-2">
-                <Phone className="h-4 w-4 text-gray-500" />
+              <LabelSaveIndicator
+                isSaving={phoneAutosave.state.isSaving}
+                isSaved={!!phoneAutosave.state.lastSaved}
+                hasValue={!!formData.phone}
+              >
+                <Phone className="h-4 w-4 text-gray-500 mr-2" />
                 Phone
-              </Label>
+              </LabelSaveIndicator>
               <Input
                 id="phone"
                 value={formData.phone || ''}
@@ -1109,10 +1288,14 @@ export function OrganizationFormContent({
             </div>
 
             <div className="space-y-2 md:col-span-2">
-              <Label htmlFor="website" className="text-sm font-medium flex items-center gap-2">
-                <Globe className="h-4 w-4 text-gray-500" />
+              <LabelSaveIndicator
+                isSaving={websiteAutosave.state.isSaving}
+                isSaved={!!websiteAutosave.state.lastSaved}
+                hasValue={!!formData.website}
+              >
+                <Globe className="h-4 w-4 text-gray-500 mr-2" />
                 Website
-              </Label>
+              </LabelSaveIndicator>
               <Input
                 id="website"
                 type="url"
@@ -1123,10 +1306,14 @@ export function OrganizationFormContent({
             </div>
 
             <div className="space-y-2 md:col-span-2">
-              <Label htmlFor="address" className="text-sm font-medium flex items-center gap-2">
-                <MapPin className="h-4 w-4 text-gray-500" />
+              <LabelSaveIndicator
+                isSaving={addressAutosave.state.isSaving}
+                isSaved={!!addressAutosave.state.lastSaved}
+                hasValue={!!formData.address}
+              >
+                <MapPin className="h-4 w-4 text-gray-500 mr-2" />
                 Mailing Address
-              </Label>
+              </LabelSaveIndicator>
               <Textarea
                 id="address"
                 value={formData.address || ''}
@@ -1146,10 +1333,14 @@ export function OrganizationFormContent({
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="twitter" className="text-sm font-medium flex items-center gap-2">
-                <Twitter className="h-4 w-4 text-gray-500" />
+              <LabelSaveIndicator
+                isSaving={twitterAutosave.state.isSaving}
+                isSaved={!!twitterAutosave.state.lastSaved}
+                hasValue={!!formData.twitter}
+              >
+                <Twitter className="h-4 w-4 text-gray-500 mr-2" />
                 Twitter / X
-              </Label>
+              </LabelSaveIndicator>
               <Input
                 id="twitter"
                 value={formData.twitter || ''}
@@ -1159,10 +1350,14 @@ export function OrganizationFormContent({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="facebook" className="text-sm font-medium flex items-center gap-2">
-                <Facebook className="h-4 w-4 text-gray-500" />
+              <LabelSaveIndicator
+                isSaving={facebookAutosave.state.isSaving}
+                isSaved={!!facebookAutosave.state.lastSaved}
+                hasValue={!!formData.facebook}
+              >
+                <Facebook className="h-4 w-4 text-gray-500 mr-2" />
                 Facebook
-              </Label>
+              </LabelSaveIndicator>
               <Input
                 id="facebook"
                 value={formData.facebook || ''}
@@ -1172,10 +1367,14 @@ export function OrganizationFormContent({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="linkedin" className="text-sm font-medium flex items-center gap-2">
-                <Linkedin className="h-4 w-4 text-gray-500" />
+              <LabelSaveIndicator
+                isSaving={linkedinAutosave.state.isSaving}
+                isSaved={!!linkedinAutosave.state.lastSaved}
+                hasValue={!!formData.linkedin}
+              >
+                <Linkedin className="h-4 w-4 text-gray-500 mr-2" />
                 LinkedIn
-              </Label>
+              </LabelSaveIndicator>
               <Input
                 id="linkedin"
                 value={formData.linkedin || ''}
@@ -1185,10 +1384,14 @@ export function OrganizationFormContent({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="instagram" className="text-sm font-medium flex items-center gap-2">
-                <Instagram className="h-4 w-4 text-gray-500" />
+              <LabelSaveIndicator
+                isSaving={instagramAutosave.state.isSaving}
+                isSaved={!!instagramAutosave.state.lastSaved}
+                hasValue={!!formData.instagram}
+              >
+                <Instagram className="h-4 w-4 text-gray-500 mr-2" />
                 Instagram
-              </Label>
+              </LabelSaveIndicator>
               <Input
                 id="instagram"
                 value={formData.instagram || ''}
@@ -1198,10 +1401,14 @@ export function OrganizationFormContent({
             </div>
 
             <div className="space-y-2 md:col-span-2">
-              <Label htmlFor="youtube" className="text-sm font-medium flex items-center gap-2">
-                <Youtube className="h-4 w-4 text-gray-500" />
+              <LabelSaveIndicator
+                isSaving={youtubeAutosave.state.isSaving}
+                isSaved={!!youtubeAutosave.state.lastSaved}
+                hasValue={!!formData.youtube}
+              >
+                <Youtube className="h-4 w-4 text-gray-500 mr-2" />
                 YouTube
-              </Label>
+              </LabelSaveIndicator>
               <Input
                 id="youtube"
                 value={formData.youtube || ''}
@@ -1570,18 +1777,14 @@ export function OrganizationFormContent({
     return (
       <>
         <div className="flex flex-col h-full">
-          {/* Page Header */}
-          <div className="flex-shrink-0 px-6 py-4 border-b bg-white">
-            <div className="flex items-center justify-between">
-              <div>
-                <h1 className="text-xl font-semibold text-gray-900">
-                  {isCreating ? 'Add New Organization' : 'Edit Organization Profile'}
-                </h1>
-                <p className="text-sm text-muted-foreground mt-1">
-                  {isCreating ? 'Create a new organization profile' : 'Update organization information and details'}
-                </p>
-              </div>
-              {isCreating && (
+          {/* Page Header - Only shown when creating */}
+          {isCreating && (
+            <div className="flex-shrink-0 px-6 py-4 border-b bg-white">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h1 className="text-xl font-semibold text-gray-900">Add New Organization</h1>
+                  <p className="text-sm text-muted-foreground mt-1">Create a new organization profile</p>
+                </div>
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger asChild>
@@ -1600,9 +1803,9 @@ export function OrganizationFormContent({
                     </TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
-              )}
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Validation Errors */}
           {validationErrors.length > 0 && (
@@ -1612,14 +1815,14 @@ export function OrganizationFormContent({
           )}
 
           {/* Main Content */}
-          <div className="flex-1 flex flex-col min-h-0 overflow-hidden px-6 pt-4">
+          <div className="flex-1 flex flex-col min-h-0 overflow-hidden px-6 pt-4 pb-20">
             {renderTabsContent()}
           </div>
 
-          {/* Footer with Save Button */}
-          <div className="flex-shrink-0 px-6 py-1.5 border-t bg-white">
+          {/* Footer with Save Button - Fixed at bottom */}
+          <footer className="fixed bottom-0 right-0 left-64 bg-transparent py-3 px-6 z-50">
             {renderButtons()}
-          </div>
+          </footer>
         </div>
 
         {renderMergeConfirmDialog()}

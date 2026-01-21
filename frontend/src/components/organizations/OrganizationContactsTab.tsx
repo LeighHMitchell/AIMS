@@ -550,7 +550,7 @@ function ContactCard({
 
       <div className={cn("flex items-start gap-4", contact.isPrimary && "mt-6")}>
         <UserAvatar
-          src={contact.profilePhoto}
+          src={contact.profilePhoto || contact.linkedUser?.avatarUrl}
           seed={contact.email || contact.linkedUserId || fullName}
           name={fullName}
           size={64}
@@ -677,7 +677,7 @@ function ContactsTable({
                 <td className="py-3 px-4">
                   <div className="flex items-center gap-3">
                     <UserAvatar
-                      src={contact.profilePhoto}
+                      src={contact.profilePhoto || contact.linkedUser?.avatarUrl}
                       seed={contact.email || contact.linkedUserId || fullName}
                       name={fullName}
                       size="md"

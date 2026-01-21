@@ -49,6 +49,7 @@ import { BUDGET_TYPES } from '@/data/budget-type';
 import { OrganizationTypeSelect } from '@/components/forms/OrganizationTypeSelect';
 import { Checkbox } from '@/components/ui/checkbox';
 import { OrganizationLogo } from '@/components/ui/organization-logo';
+import { OrganizationHoverCard, OrganizationDisplayData } from '@/components/ui/organization-hover-card';
 
 // Granularity removed - users can now create any period length they want
 import {
@@ -128,10 +129,22 @@ interface PlannedDisbursement {
   period_end: string;
   provider_org_id?: string;
   provider_org_name?: string;
+  provider_org_acronym?: string;
   provider_org_logo?: string;
+  provider_org_type?: string;
+  provider_org_country?: string;
+  provider_org_iati_id?: string;
+  provider_org_description?: string;
+  provider_org_website?: string;
   receiver_org_id?: string;
   receiver_org_name?: string;
+  receiver_org_acronym?: string;
   receiver_org_logo?: string;
+  receiver_org_type?: string;
+  receiver_org_country?: string;
+  receiver_org_iati_id?: string;
+  receiver_org_description?: string;
+  receiver_org_website?: string;
   status?: 'original' | 'revised';
   value_date?: string;
   notes?: string;
@@ -1327,29 +1340,23 @@ export default function PlannedDisbursementsTab({
     return org.name || 'Unknown';
   };
 
-  const getOrganizationAcronym = (orgId?: string, orgName?: string) => {
+  const getOrganizationAcronym = (orgId?: string, orgName?: string, orgAcronym?: string) => {
+    // If we have an acronym from the enriched data, use it
+    if (orgAcronym) return orgAcronym;
+    
     if (!orgId && !orgName) return '-';
 
-    // Try to find organization by ID to get acronym
+    // Try to find organization by ID to get acronym or name (fallback for non-enriched data)
     if (orgId) {
       const org = organizations.find(o => o.id === orgId);
       if (org) {
-        // Prefer acronym, but fall back to generated acronym from name
-        if (org.acronym) return org.acronym;
-        if (org.name) {
-          // Generate acronym from name (first letter of each word)
-          return org.name.split(/\s+/).map(word => word[0]).join('').toUpperCase().slice(0, 6);
-        }
+        // Use acronym if available, otherwise use full name (don't generate fake acronyms)
+        return org.acronym || org.name || orgName || '-';
       }
     }
 
-    // If no org found by ID, generate acronym from orgName
-    if (orgName) {
-      // Generate acronym from name (first letter of each word, max 6 chars)
-      return orgName.split(/\s+/).map(word => word[0]).join('').toUpperCase().slice(0, 6);
-    }
-
-    return '-';
+    // Fall back to provided orgName (don't generate fake acronyms from it)
+    return orgName || '-';
   };
 
   // Enhanced modal save handler
@@ -1918,25 +1925,60 @@ export default function PlannedDisbursementsTab({
 
                           {/* Provider → Receiver */}
                           <TableCell className="py-3 px-4 max-w-[300px]">
-                            <div className="flex items-center gap-2 font-medium min-w-0">
-                              <div className="flex items-center gap-1.5 min-w-0 flex-1 max-w-[45%]">
-                                <OrganizationLogo
-                                  logo={disbursement.provider_org_logo}
-                                  name={getOrganizationAcronym(disbursement.provider_org_id, disbursement.provider_org_name)}
-                                  size="sm"
-                                />
-                                <span className="truncate">{getOrganizationAcronym(disbursement.provider_org_id, disbursement.provider_org_name)}</span>
-                              </div>
-                              <span className="text-muted-foreground flex-shrink-0">→</span>
-                              <div className="flex items-center gap-1.5 min-w-0 flex-1 max-w-[45%]">
-                                <OrganizationLogo
-                                  logo={disbursement.receiver_org_logo}
-                                  name={getOrganizationAcronym(disbursement.receiver_org_id, disbursement.receiver_org_name)}
-                                  size="sm"
-                                />
-                                <span className="truncate">{getOrganizationAcronym(disbursement.receiver_org_id, disbursement.receiver_org_name)}</span>
-                              </div>
-                            </div>
+                            {(() => {
+                              const providerDisplay = getOrganizationAcronym(disbursement.provider_org_id, disbursement.provider_org_name, disbursement.provider_org_acronym);
+                              const receiverDisplay = getOrganizationAcronym(disbursement.receiver_org_id, disbursement.receiver_org_name, disbursement.receiver_org_acronym);
+                              
+                              const provider: OrganizationDisplayData = {
+                                name: disbursement.provider_org_name || providerDisplay,
+                                acronym: disbursement.provider_org_acronym || providerDisplay,
+                                logo: disbursement.provider_org_logo || null,
+                                id: disbursement.provider_org_id || null,
+                                type: disbursement.provider_org_type || null,
+                                country: disbursement.provider_org_country || null,
+                                iati_org_id: disbursement.provider_org_iati_id || null,
+                                description: disbursement.provider_org_description || null,
+                                website: disbursement.provider_org_website || null,
+                              };
+                              
+                              const receiver: OrganizationDisplayData = {
+                                name: disbursement.receiver_org_name || receiverDisplay,
+                                acronym: disbursement.receiver_org_acronym || receiverDisplay,
+                                logo: disbursement.receiver_org_logo || null,
+                                id: disbursement.receiver_org_id || null,
+                                type: disbursement.receiver_org_type || null,
+                                country: disbursement.receiver_org_country || null,
+                                iati_org_id: disbursement.receiver_org_iati_id || null,
+                                description: disbursement.receiver_org_description || null,
+                                website: disbursement.receiver_org_website || null,
+                              };
+                              
+                              return (
+                                <div className="flex items-center gap-2 font-medium min-w-0">
+                                  <div className="flex items-center gap-1.5 min-w-0 flex-1 max-w-[45%]">
+                                    <OrganizationLogo
+                                      logo={disbursement.provider_org_logo}
+                                      name={providerDisplay}
+                                      size="sm"
+                                    />
+                                    <OrganizationHoverCard organization={provider} side="top" align="start">
+                                      <span className="truncate cursor-pointer hover:text-gray-700 transition-colors">{providerDisplay}</span>
+                                    </OrganizationHoverCard>
+                                  </div>
+                                  <span className="text-muted-foreground flex-shrink-0">→</span>
+                                  <div className="flex items-center gap-1.5 min-w-0 flex-1 max-w-[45%]">
+                                    <OrganizationLogo
+                                      logo={disbursement.receiver_org_logo}
+                                      name={receiverDisplay}
+                                      size="sm"
+                                    />
+                                    <OrganizationHoverCard organization={receiver} side="top" align="start">
+                                      <span className="truncate cursor-pointer hover:text-gray-700 transition-colors">{receiverDisplay}</span>
+                                    </OrganizationHoverCard>
+                                  </div>
+                                </div>
+                              );
+                            })()}
                           </TableCell>
 
                           {/* Amount (merged with currency) */}

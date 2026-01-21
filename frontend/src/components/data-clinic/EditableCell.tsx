@@ -19,11 +19,12 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { AlertCircle, Check, Loader2, Building2 } from "lucide-react";
+import Flag from 'react-world-flags';
+import { IATI_COUNTRIES } from '@/data/iati-countries';
 import { cn } from "@/lib/utils";
 import { 
   INSTITUTIONAL_GROUPS, 
-  isInstitutionalGroup,
-  type InstitutionalGroup 
+  isInstitutionalGroup
 } from '@/data/location-groups';
 
 // Organization Type mappings (IATI standard codes)
@@ -100,159 +101,13 @@ const getTypeLabel = (value: string): string => {
   return ORGANIZATION_TYPE_LABELS[code] || value;
 };
 
-// ISO 3166-1 alpha-2 country codes with names
-const ISO_COUNTRIES = [
-  { code: 'MM', name: 'Myanmar' },
-  { code: 'AF', name: 'Afghanistan' },
-  { code: 'AL', name: 'Albania' },
-  { code: 'DZ', name: 'Algeria' },
-  { code: 'AD', name: 'Andorra' },
-  { code: 'AO', name: 'Angola' },
-  { code: 'AG', name: 'Antigua and Barbuda' },
-  { code: 'AR', name: 'Argentina' },
-  { code: 'AM', name: 'Armenia' },
-  { code: 'AU', name: 'Australia' },
-  { code: 'AT', name: 'Austria' },
-  { code: 'AZ', name: 'Azerbaijan' },
-  { code: 'BS', name: 'Bahamas' },
-  { code: 'BH', name: 'Bahrain' },
-  { code: 'BD', name: 'Bangladesh' },
-  { code: 'BB', name: 'Barbados' },
-  { code: 'BY', name: 'Belarus' },
-  { code: 'BE', name: 'Belgium' },
-  { code: 'BZ', name: 'Belize' },
-  { code: 'BJ', name: 'Benin' },
-  { code: 'BT', name: 'Bhutan' },
-  { code: 'BO', name: 'Bolivia' },
-  { code: 'BA', name: 'Bosnia and Herzegovina' },
-  { code: 'BW', name: 'Botswana' },
-  { code: 'BR', name: 'Brazil' },
-  { code: 'BN', name: 'Brunei Darussalam' },
-  { code: 'BG', name: 'Bulgaria' },
-  { code: 'BF', name: 'Burkina Faso' },
-  { code: 'BI', name: 'Burundi' },
-  { code: 'KH', name: 'Cambodia' },
-  { code: 'CM', name: 'Cameroon' },
-  { code: 'CA', name: 'Canada' },
-  { code: 'TD', name: 'Chad' },
-  { code: 'CL', name: 'Chile' },
-  { code: 'CN', name: 'China' },
-  { code: 'CO', name: 'Colombia' },
-  { code: 'CR', name: 'Costa Rica' },
-  { code: 'HR', name: 'Croatia' },
-  { code: 'CU', name: 'Cuba' },
-  { code: 'CY', name: 'Cyprus' },
-  { code: 'CZ', name: 'Czech Republic' },
-  { code: 'DK', name: 'Denmark' },
-  { code: 'EC', name: 'Ecuador' },
-  { code: 'EG', name: 'Egypt' },
-  { code: 'SV', name: 'El Salvador' },
-  { code: 'EE', name: 'Estonia' },
-  { code: 'ET', name: 'Ethiopia' },
-  { code: 'FJ', name: 'Fiji' },
-  { code: 'FI', name: 'Finland' },
-  { code: 'FR', name: 'France' },
-  { code: 'DE', name: 'Germany' },
-  { code: 'GH', name: 'Ghana' },
-  { code: 'GR', name: 'Greece' },
-  { code: 'GT', name: 'Guatemala' },
-  { code: 'HT', name: 'Haiti' },
-  { code: 'HN', name: 'Honduras' },
-  { code: 'HU', name: 'Hungary' },
-  { code: 'IS', name: 'Iceland' },
-  { code: 'IN', name: 'India' },
-  { code: 'ID', name: 'Indonesia' },
-  { code: 'IR', name: 'Iran' },
-  { code: 'IQ', name: 'Iraq' },
-  { code: 'IE', name: 'Ireland' },
-  { code: 'IL', name: 'Israel' },
-  { code: 'IT', name: 'Italy' },
-  { code: 'JM', name: 'Jamaica' },
-  { code: 'JP', name: 'Japan' },
-  { code: 'JO', name: 'Jordan' },
-  { code: 'KZ', name: 'Kazakhstan' },
-  { code: 'KE', name: 'Kenya' },
-  { code: 'KR', name: 'Korea, Republic of' },
-  { code: 'KW', name: 'Kuwait' },
-  { code: 'LA', name: 'Laos' },
-  { code: 'LV', name: 'Latvia' },
-  { code: 'LB', name: 'Lebanon' },
-  { code: 'LR', name: 'Liberia' },
-  { code: 'LY', name: 'Libya' },
-  { code: 'LT', name: 'Lithuania' },
-  { code: 'LU', name: 'Luxembourg' },
-  { code: 'MY', name: 'Malaysia' },
-  { code: 'MV', name: 'Maldives' },
-  { code: 'ML', name: 'Mali' },
-  { code: 'MT', name: 'Malta' },
-  { code: 'MX', name: 'Mexico' },
-  { code: 'MD', name: 'Moldova' },
-  { code: 'MN', name: 'Mongolia' },
-  { code: 'ME', name: 'Montenegro' },
-  { code: 'MA', name: 'Morocco' },
-  { code: 'MZ', name: 'Mozambique' },
-  { code: 'NA', name: 'Namibia' },
-  { code: 'NP', name: 'Nepal' },
-  { code: 'NL', name: 'Netherlands' },
-  { code: 'NZ', name: 'New Zealand' },
-  { code: 'NI', name: 'Nicaragua' },
-  { code: 'NE', name: 'Niger' },
-  { code: 'NG', name: 'Nigeria' },
-  { code: 'NO', name: 'Norway' },
-  { code: 'OM', name: 'Oman' },
-  { code: 'PK', name: 'Pakistan' },
-  { code: 'PA', name: 'Panama' },
-  { code: 'PG', name: 'Papua New Guinea' },
-  { code: 'PY', name: 'Paraguay' },
-  { code: 'PE', name: 'Peru' },
-  { code: 'PH', name: 'Philippines' },
-  { code: 'PL', name: 'Poland' },
-  { code: 'PT', name: 'Portugal' },
-  { code: 'QA', name: 'Qatar' },
-  { code: 'RO', name: 'Romania' },
-  { code: 'RU', name: 'Russian Federation' },
-  { code: 'RW', name: 'Rwanda' },
-  { code: 'SA', name: 'Saudi Arabia' },
-  { code: 'SN', name: 'Senegal' },
-  { code: 'RS', name: 'Serbia' },
-  { code: 'SG', name: 'Singapore' },
-  { code: 'SK', name: 'Slovakia' },
-  { code: 'SI', name: 'Slovenia' },
-  { code: 'ZA', name: 'South Africa' },
-  { code: 'ES', name: 'Spain' },
-  { code: 'LK', name: 'Sri Lanka' },
-  { code: 'SD', name: 'Sudan' },
-  { code: 'SE', name: 'Sweden' },
-  { code: 'CH', name: 'Switzerland' },
-  { code: 'SY', name: 'Syria' },
-  { code: 'TW', name: 'Taiwan' },
-  { code: 'TZ', name: 'Tanzania' },
-  { code: 'TH', name: 'Thailand' },
-  { code: 'TL', name: 'Timor-Leste' },
-  { code: 'TG', name: 'Togo' },
-  { code: 'TT', name: 'Trinidad and Tobago' },
-  { code: 'TN', name: 'Tunisia' },
-  { code: 'TR', name: 'Turkey' },
-  { code: 'UG', name: 'Uganda' },
-  { code: 'UA', name: 'Ukraine' },
-  { code: 'AE', name: 'United Arab Emirates' },
-  { code: 'GB', name: 'United Kingdom' },
-  { code: 'US', name: 'United States' },
-  { code: 'UY', name: 'Uruguay' },
-  { code: 'VE', name: 'Venezuela' },
-  { code: 'VN', name: 'Vietnam' },
-  { code: 'YE', name: 'Yemen' },
-  { code: 'ZM', name: 'Zambia' },
-  { code: 'ZW', name: 'Zimbabwe' }
-];
-
-// REGIONAL_OPTIONS removed - now using INSTITUTIONAL_GROUPS from location-groups.ts
+// Using IATI_COUNTRIES from @/data/iati-countries and INSTITUTIONAL_GROUPS from location-groups.ts
 
 const FIELD_LABELS: Record<string, string> = {
   acronym: 'Acronym',
   iati_org_id: 'IATI Identifier',
   type: 'Organization Type',
-  country: 'Country/Region',
+  country: 'Location Represented',
   default_currency: 'Default Currency',
 };
 
@@ -277,6 +132,7 @@ export function EditableCell({
   const [localValue, setLocalValue] = useState(value || '');
   const [countrySearchTerm, setCountrySearchTerm] = useState('');
   const [isSaving, setIsSaving] = useState(false);
+  const [selectOpen, setSelectOpen] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   // Sync local value with prop (convert legacy types to IATI codes)
@@ -295,6 +151,16 @@ export function EditableCell({
       setTimeout(() => inputRef.current?.focus(), 100);
     }
   }, [isOpen]);
+
+  // Auto-open Select dropdown when popover opens for select-based fields
+  useEffect(() => {
+    if (isOpen && (field === 'country' || field === 'type' || field === 'default_currency')) {
+      // Small delay to ensure popover is rendered first
+      setTimeout(() => setSelectOpen(true), 50);
+    } else {
+      setSelectOpen(false);
+    }
+  }, [isOpen, field]);
 
   const handleSave = async (newValue: string) => {
     if (newValue === value) {
@@ -371,23 +237,32 @@ export function EditableCell({
           </div>
         );
       case 'country':
-        const countryInfo = ISO_COUNTRIES.find(c => c.name === value);
-        return (
-          <div className="flex items-center gap-2">
-            {countryInfo && (
-              <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
-                {countryInfo.code}
-              </span>
-            )}
-            <span className="text-sm">{value}</span>
-          </div>
-        );
+        const countryInfo = IATI_COUNTRIES.find(c => c.name === value);
+        if (countryInfo) {
+          return (
+            <div className="flex items-center gap-2">
+              <Flag code={countryInfo.code} className="h-4 w-6 object-cover rounded" />
+              <span className="text-sm">{value}</span>
+            </div>
+          );
+        }
+        // Check if it's an institutional group
+        if (isInstitutionalGroup(value)) {
+          return (
+            <div className="flex items-center gap-2">
+              <Building2 className="h-4 w-4 text-muted-foreground" />
+              <span className="text-sm">{value}</span>
+            </div>
+          );
+        }
+        // Fallback for legacy or unknown values
+        return <span className="text-sm">{value}</span>;
       case 'iati_org_id':
         const isValid = isValidIdentifier ? isValidIdentifier(value) : true;
         if (!isValid) {
           return (
             <div className="flex items-center gap-2">
-              <span className="text-sm text-orange-600">{value}</span>
+              <span className="text-sm font-mono text-orange-600 bg-orange-50 px-1.5 py-0.5 rounded">{value}</span>
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger>
@@ -408,7 +283,7 @@ export function EditableCell({
             </div>
           );
         }
-        return <span className="text-sm">{value}</span>;
+        return <span className="text-sm font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{value}</span>;
       default:
         return <span className="text-sm">{value}</span>;
     }
@@ -423,7 +298,12 @@ export function EditableCell({
         return (
           <div className="space-y-3">
             <Label className="text-sm font-medium">{FIELD_LABELS[field]}</Label>
-            <Select value={currentTypeCode} onValueChange={handleSelectChange}>
+            <Select 
+              value={currentTypeCode} 
+              onValueChange={handleSelectChange}
+              open={selectOpen}
+              onOpenChange={setSelectOpen}
+            >
               <SelectTrigger className="w-full">
                 <SelectValue placeholder="Select type" />
               </SelectTrigger>
@@ -442,30 +322,17 @@ export function EditableCell({
       case 'country':
         const searchLower = countrySearchTerm.toLowerCase();
         
-        // Filter institutional groups (including sub-groups)
-        const filteredInstitutionalGroups = INSTITUTIONAL_GROUPS.map(group => {
-          const groupMatches = group.name.toLowerCase().includes(searchLower) ||
-            (group.description?.toLowerCase().includes(searchLower) ?? false);
-          
-          const filteredSubGroups = group.subGroups?.filter(sub =>
-            sub.name.toLowerCase().includes(searchLower) ||
-            (sub.description?.toLowerCase().includes(searchLower) ?? false)
-          ) || [];
-          
-          // Include group if it matches or any of its sub-groups match
-          if (groupMatches || filteredSubGroups.length > 0) {
-            return {
-              ...group,
-              // If group matches, show all sub-groups; otherwise show only matching sub-groups
-              subGroups: groupMatches ? group.subGroups : filteredSubGroups
-            };
-          }
-          return null;
-        }).filter((g): g is InstitutionalGroup => g !== null);
+        // Filter institutional groups (parent groups only - not sub-groups/subsidiaries)
+        const filteredInstitutionalGroups = INSTITUTIONAL_GROUPS.filter(group =>
+          group.name.toLowerCase().includes(searchLower) ||
+          (group.description?.toLowerCase().includes(searchLower) ?? false)
+        );
         
-        const filteredCountries = ISO_COUNTRIES.filter(country =>
-          country.name.toLowerCase().includes(searchLower) ||
-          country.code.toLowerCase().includes(searchLower)
+        const filteredCountries = IATI_COUNTRIES.filter(country =>
+          !country.withdrawn && (
+            country.name.toLowerCase().includes(searchLower) ||
+            country.code.toLowerCase().includes(searchLower)
+          )
         );
 
         const hasInstitutionalResults = filteredInstitutionalGroups.length > 0;
@@ -474,22 +341,39 @@ export function EditableCell({
         return (
           <div className="space-y-3">
             <Label className="text-sm font-medium">{FIELD_LABELS[field]}</Label>
-            <Select value={localValue} onValueChange={(val) => {
-              handleSelectChange(val);
-              setCountrySearchTerm('');
-            }}>
+            <Select 
+              value={localValue} 
+              onValueChange={(val) => {
+                handleSelectChange(val);
+                setCountrySearchTerm('');
+              }}
+              open={selectOpen}
+              onOpenChange={setSelectOpen}
+            >
               <SelectTrigger className="w-full">
                 <SelectValue placeholder="Select country or institution">
                   {localValue && (
                     <div className="flex items-center gap-2">
-                      {ISO_COUNTRIES.find(c => c.name === localValue) ? (
-                        <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
-                          {ISO_COUNTRIES.find(c => c.name === localValue)?.code}
-                        </span>
-                      ) : isInstitutionalGroup(localValue) ? (
-                        <Building2 className="h-4 w-4 text-muted-foreground" />
-                      ) : null}
-                      <span>{localValue}</span>
+                      {(() => {
+                        const country = IATI_COUNTRIES.find(c => c.name === localValue);
+                        if (country) {
+                          return (
+                            <>
+                              <Flag code={country.code} className="h-4 w-6 object-cover rounded" />
+                              <span>{localValue}</span>
+                            </>
+                          );
+                        }
+                        if (isInstitutionalGroup(localValue)) {
+                          return (
+                            <>
+                              <Building2 className="h-4 w-4 text-muted-foreground" />
+                              <span>{localValue}</span>
+                            </>
+                          );
+                        }
+                        return <span>{localValue}</span>;
+                      })()}
                     </div>
                   )}
                 </SelectValue>
@@ -503,7 +387,10 @@ export function EditableCell({
                     onChange={(e) => setCountrySearchTerm(e.target.value)}
                     onClick={(e) => e.stopPropagation()}
                     onKeyDown={(e) => e.stopPropagation()}
+                    onPointerDown={(e) => e.stopPropagation()}
+                    onFocus={(e) => e.stopPropagation()}
                     className="h-8"
+                    autoFocus
                   />
                 </div>
 
@@ -514,31 +401,12 @@ export function EditableCell({
                       Institutional Groups
                     </div>
                     {filteredInstitutionalGroups.map((group) => (
-                      <div key={group.code}>
-                        {/* Parent Group */}
-                        <SelectItem value={group.name} className="font-medium">
-                          <div className="flex items-center gap-2">
-                            <Building2 className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                            <span>{group.name}</span>
-                          </div>
-                        </SelectItem>
-                        {/* Sub-Groups (indented) */}
-                        {group.subGroups?.map((subGroup) => (
-                          <SelectItem key={subGroup.code} value={subGroup.name} className="pl-8">
-                            <div className="flex items-center gap-2">
-                              <span className="text-muted-foreground">└</span>
-                              <span className="truncate max-w-[280px]">
-                                {subGroup.description || subGroup.name}
-                              </span>
-                              {subGroup.description && (
-                                <span className="text-xs text-muted-foreground">
-                                  ({subGroup.name})
-                                </span>
-                              )}
-                            </div>
-                          </SelectItem>
-                        ))}
-                      </div>
+                      <SelectItem key={group.code} value={group.name} className="font-medium">
+                        <div className="flex items-center gap-2">
+                          <Building2 className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                          <span>{group.name}</span>
+                        </div>
+                      </SelectItem>
                     ))}
                     {hasCountryResults && <div className="my-1 border-t" />}
                   </>
@@ -553,9 +421,7 @@ export function EditableCell({
                     {filteredCountries.map((country) => (
                       <SelectItem key={country.code} value={country.name}>
                         <div className="flex items-center gap-2">
-                          <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
-                            {country.code}
-                          </span>
+                          <Flag code={country.code} className="h-4 w-6 object-cover rounded" />
                           <span>{country.name}</span>
                         </div>
                       </SelectItem>
@@ -578,7 +444,12 @@ export function EditableCell({
         return (
           <div className="space-y-3">
             <Label className="text-sm font-medium">{FIELD_LABELS[field]}</Label>
-            <Select value={localValue} onValueChange={handleSelectChange}>
+            <Select 
+              value={localValue} 
+              onValueChange={handleSelectChange}
+              open={selectOpen}
+              onOpenChange={setSelectOpen}
+            >
               <SelectTrigger className="w-full">
                 <SelectValue placeholder="Select currency" />
               </SelectTrigger>

@@ -38,6 +38,8 @@ export async function GET(request: NextRequest) {
         actual_start_date,
         planned_end_date,
         actual_end_date,
+        banner,
+        icon,
         organizations (
           name
         )
@@ -78,6 +80,17 @@ export async function GET(request: NextRequest) {
       console.warn('[All Locations API] Warning: Could not fetch planned disbursements:', pdError);
     }
 
+    // Fetch transactions for commitments and disbursements
+    const { data: transactions, error: txError } = await supabase
+      .from('transactions')
+      .select('activity_id, transaction_type, value_usd')
+      .in('activity_id', activityIds)
+      .in('transaction_type', ['2', '3', '4', '11']); // Commitments (2, 11), Disbursements (3), Expenditures (4)
+
+    if (txError) {
+      console.warn('[All Locations API] Warning: Could not fetch transactions:', txError);
+    }
+
     // Create a map of activities by ID for quick lookup
     const activitiesMap = new Map();
     activities?.forEach(activity => {
@@ -112,6 +125,22 @@ export async function GET(request: NextRequest) {
     plannedDisbursements?.forEach(pd => {
       const current = pdMap.get(pd.activity_id) || 0;
       pdMap.set(pd.activity_id, current + (parseFloat(pd.usd_amount) || 0));
+    });
+
+    // Create maps for commitments and disbursements from transactions
+    const commitmentsMap = new Map<string, number>();
+    const disbursedMap = new Map<string, number>();
+    transactions?.forEach(tx => {
+      const value = parseFloat(tx.value_usd) || 0;
+      if (tx.transaction_type === '2' || tx.transaction_type === '11') {
+        // Commitments
+        const current = commitmentsMap.get(tx.activity_id) || 0;
+        commitmentsMap.set(tx.activity_id, current + value);
+      } else if (tx.transaction_type === '3' || tx.transaction_type === '4') {
+        // Disbursements and Expenditures
+        const current = disbursedMap.get(tx.activity_id) || 0;
+        disbursedMap.set(tx.activity_id, current + value);
+      }
     });
 
     // Transform the data for the map
@@ -149,10 +178,14 @@ export async function GET(request: NextRequest) {
           sectors: sectorsMap.get(location.activity_id) || [],
           totalBudget: budgetsMap.get(location.activity_id) || 0,
           totalPlannedDisbursement: pdMap.get(location.activity_id) || 0,
+          totalCommitments: commitmentsMap.get(location.activity_id) || 0,
+          totalDisbursed: disbursedMap.get(location.activity_id) || 0,
           plannedStartDate: activity.planned_start_date,
           plannedEndDate: activity.planned_end_date,
           actualStartDate: activity.actual_start_date,
-          actualEndDate: activity.actual_end_date
+          actualEndDate: activity.actual_end_date,
+          banner: activity.banner,
+          icon: activity.icon
         } : null
       };
     }) || [];

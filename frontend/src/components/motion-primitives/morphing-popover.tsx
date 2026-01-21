@@ -161,14 +161,28 @@ function MorphingPopoverContent({
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (
-        contentRef.current &&
-        !contentRef.current.contains(event.target as Node) &&
-        triggerRef.current &&
-        !triggerRef.current.contains(event.target as Node)
-      ) {
-        setIsOpen(false);
+      const target = event.target as HTMLElement;
+      
+      // Check if click is inside the popover content
+      if (contentRef.current && contentRef.current.contains(target)) {
+        return;
       }
+      
+      // Check if click is inside the trigger
+      if (triggerRef.current && triggerRef.current.contains(target)) {
+        return;
+      }
+      
+      // Check if click is inside a Radix UI portal (Select, Dialog, etc.)
+      // These render outside the DOM tree but should not close the popover
+      if (target.closest('[data-radix-popper-content-wrapper]') ||
+          target.closest('[data-radix-select-viewport]') ||
+          target.closest('[role="listbox"]') ||
+          target.closest('[data-radix-collection-item]')) {
+        return;
+      }
+      
+      setIsOpen(false);
     };
 
     const handleEscape = (event: KeyboardEvent) => {

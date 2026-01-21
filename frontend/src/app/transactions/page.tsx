@@ -315,9 +315,9 @@ export default function TransactionsPage() {
           bValue = (b.provider_org_name || b.from_org || '').toLowerCase();
           break;
         case 'activity':
-          // Use title_narrative which is the actual field from the API
-          aValue = (a.activity?.title_narrative || a.activity?.title || 'Untitled Activity').toLowerCase();
-          bValue = (b.activity?.title_narrative || b.activity?.title || 'Untitled Activity').toLowerCase();
+          // Use activityTitle which is the field from the slim API endpoint
+          aValue = (a.activityTitle || a.activity?.title_narrative || a.activity?.title || 'Untitled Activity').toLowerCase();
+          bValue = (b.activityTitle || b.activity?.title_narrative || b.activity?.title || 'Untitled Activity').toLowerCase();
           break;
         case 'finance_type':
           aValue = a.finance_type || '';
@@ -352,7 +352,7 @@ export default function TransactionsPage() {
   const exportTransactions = () => {
     const dataToExport = transactions.data.map((transaction) => ({
       "Transaction ID": transaction.id,
-      "Activity": transaction.activity?.title || transaction.activity_id,
+      "Activity": transaction.activityTitle || transaction.activity?.title || transaction.activity_id,
       "From Organization": transaction.provider_org_name || transaction.from_org || "",
       "To Organization": transaction.receiver_org_name || transaction.to_org || "",
       "Transaction Type": TRANSACTION_TYPE_LABELS[transaction.transaction_type as keyof typeof TRANSACTION_TYPE_LABELS] || transaction.transaction_type,

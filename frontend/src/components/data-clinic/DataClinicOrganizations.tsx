@@ -331,7 +331,7 @@ export function DataClinicOrganizations() {
                   <th className="p-4 text-left text-sm font-medium">Acronym</th>
                   <th className="p-4 text-left text-sm font-medium">Identifier</th>
                   <th className="p-4 text-left text-sm font-medium">Type</th>
-                  <th className="p-4 text-left text-sm font-medium">Country/Region</th>
+                  <th className="p-4 text-left text-sm font-medium">Location Represented</th>
                   <th className="p-4 text-left text-sm font-medium">Currency</th>
                 </tr>
               </thead>

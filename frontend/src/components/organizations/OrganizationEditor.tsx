@@ -281,6 +281,7 @@ export function OrganizationEditor({
         organizationCreated={organizationCreated}
         tabCompletionStatus={tabCompletionStatus}
         disabled={saving}
+        organization={organization}
       />
 
       {/* Main Content Area */}

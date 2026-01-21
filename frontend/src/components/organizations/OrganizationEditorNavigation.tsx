@@ -1,10 +1,11 @@
 "use client"
 
-import React from "react"
+import React, { useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { cn } from "@/lib/utils"
-import { Lock } from "lucide-react"
+import { Lock, Copy, Check } from "lucide-react"
 import { StableTabCompletionIndicator } from "@/utils/stable-tab-completion"
+import { toast } from "sonner"
 import {
   Tooltip,
   TooltipContent,
@@ -23,12 +24,20 @@ interface NavigationGroup {
   sections: NavigationSection[]
 }
 
+interface OrganizationData {
+  id?: string
+  name?: string
+  acronym?: string
+  iati_org_id?: string
+}
+
 interface OrganizationEditorNavigationProps {
   activeSection: string
   onSectionChange: (sectionId: string) => void
   organizationCreated?: boolean
   tabCompletionStatus?: Record<string, { isComplete: boolean; isInProgress: boolean }>
   disabled?: boolean
+  organization?: OrganizationData | null
 }
 
 export default function OrganizationEditorNavigation({
@@ -36,10 +45,24 @@ export default function OrganizationEditorNavigation({
   onSectionChange,
   organizationCreated = false,
   tabCompletionStatus = {},
-  disabled = false
+  disabled = false,
+  organization = null
 }: OrganizationEditorNavigationProps) {
   const router = useRouter()
   const searchParams = useSearchParams()
+  const [copiedId, setCopiedId] = useState<string | null>(null)
+
+  const copyToClipboard = async (text: string, id: string) => {
+    try {
+      await navigator.clipboard.writeText(text)
+      setCopiedId(id)
+      toast.success('Copied to clipboard')
+      setTimeout(() => setCopiedId(null), 2000)
+    } catch (err) {
+      console.error('Failed to copy:', err)
+      toast.error('Failed to copy')
+    }
+  }
 
   // Enhanced section change handler that updates URL
   const handleSectionChange = (sectionId: string) => {
@@ -96,6 +119,47 @@ export default function OrganizationEditorNavigation({
   return (
     <TooltipProvider>
       <nav className="w-64 bg-white border-r border-gray-200 border-b-0 p-4 space-y-6 h-full flex flex-col">
+        {/* Organization Header */}
+        {organization && organization.name && (
+          <div className="pb-4 border-b border-gray-200">
+            <h2 className="text-lg font-bold text-slate-900 group leading-tight">
+              {organization.name}
+              {organization.acronym && <span className="text-slate-600"> ({organization.acronym})</span>}{' '}
+              <button
+                onClick={() => copyToClipboard(organization.name || '', 'orgName')}
+                className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:text-slate-700 inline-flex items-center align-middle"
+                title="Copy Organization Name"
+              >
+                {copiedId === 'orgName' ? (
+                  <Check className="w-4 h-4 text-green-600" />
+                ) : (
+                  <Copy className="w-4 h-4 text-slate-400" />
+                )}
+              </button>
+            </h2>
+            <div className="flex flex-wrap items-center gap-2 mt-2">
+              {organization.iati_org_id && (
+                <div className="flex items-center gap-1 group">
+                  <code className="text-xs px-1.5 py-0.5 bg-slate-100 text-slate-700 rounded font-mono">
+                    {organization.iati_org_id}
+                  </code>
+                  <button
+                    onClick={() => copyToClipboard(organization.iati_org_id || '', 'iatiOrgId')}
+                    className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:text-slate-700 flex-shrink-0"
+                    title="Copy IATI Org ID"
+                  >
+                    {copiedId === 'iatiOrgId' ? (
+                      <Check className="w-3 h-3 text-green-600" />
+                    ) : (
+                      <Copy className="w-3 h-3 text-slate-400" />
+                    )}
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* Navigation Groups */}
         {navigationGroups.map((group, groupIndex) => (
           <div 

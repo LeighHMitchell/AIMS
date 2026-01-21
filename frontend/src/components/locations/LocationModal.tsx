@@ -1153,9 +1153,12 @@ const autoPopulateIatiFields = useCallback((params: {
       // Additional validation
       const validationErrors: Record<string, string> = {};
 
-      if (data.location_type === 'site') {
-        if (data.latitude === undefined || data.longitude === undefined || !validateCoordinates(data.latitude, data.longitude)) {
-          validationErrors.coordinates = 'Valid latitude and longitude are required for site locations';
+      // Validate coordinates if either latitude or longitude is provided
+      if (data.latitude !== undefined || data.longitude !== undefined) {
+        if (data.latitude === undefined || data.longitude === undefined) {
+          validationErrors.coordinates = 'Both latitude and longitude are required when providing coordinates';
+        } else if (!validateCoordinates(data.latitude, data.longitude)) {
+          validationErrors.coordinates = 'Invalid coordinates. Latitude must be -90 to 90, longitude must be -180 to 180';
         }
       }
 
@@ -1436,72 +1439,99 @@ const autoPopulateIatiFields = useCallback((params: {
                     />
                       </div>
 
-                  {/* Coordinates (Site only) */}
-                  {watchedLocationType === 'site' && (
-                    <div className="space-y-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="coordinates" className="flex items-center gap-2">
-                          Coordinates
-                          <HelpTextTooltip content="The geographic coordinates of the location in decimal degrees (latitude longitude). Must follow the WGS84 spatial reference standard (EPSG:4326)." />
-                        </Label>
-                        <div className="flex items-center gap-2">
-                          <Input
-                            id="coordinates"
-                            type="text"
-                            value={watchedLatitude !== undefined && watchedLongitude !== undefined 
-                              ? `${watchedLatitude.toFixed(6)} ${watchedLongitude.toFixed(6)}`
-                              : ''
-                            }
-                            onChange={(e) => {
-                              const value = e.target.value.trim();
-                              if (value) {
-                                const parts = value.split(/\s+/);
-                                if (parts.length === 2) {
-                                  const lat = parseFloat(parts[0]);
-                                  const lng = parseFloat(parts[1]);
-                                  if (!isNaN(lat) && !isNaN(lng) && validateCoordinates(lat, lng)) {
-                                    setValue('latitude', lat);
-                                    setValue('longitude', lng);
-                                    // Clear any existing coordinate errors
-                                    if (validationErrors.coordinates) {
-                                      setValidationErrors(prev => {
-                                        const { coordinates, ...rest } = prev;
-                                        return rest;
-                                      });
-                                    }
-                                  }
+                  {/* Latitude and Longitude - Always visible */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="latitude" className="flex items-center gap-2">
+                        Latitude
+                        <HelpTextTooltip content="The latitude coordinate in decimal degrees (-90 to 90). Click on the map or search for a location to auto-populate." />
+                      </Label>
+                      <div className="flex items-center gap-2">
+                        <Input
+                          id="latitude"
+                          type="number"
+                          step="any"
+                          value={watchedLatitude !== undefined ? watchedLatitude : ''}
+                          onChange={(e) => {
+                            const value = e.target.value;
+                            if (value === '') {
+                              setValue('latitude', undefined);
+                            } else {
+                              const lat = parseFloat(value);
+                              if (!isNaN(lat) && lat >= -90 && lat <= 90) {
+                                setValue('latitude', lat);
+                                if (validationErrors.coordinates) {
+                                  setValidationErrors(prev => {
+                                    const { coordinates, ...rest } = prev;
+                                    return rest;
+                                  });
                                 }
-                              } else {
-                                setValue('latitude', undefined);
-                                setValue('longitude', undefined);
                               }
-                            }}
-                            placeholder="31.616944 65.716944"
-                            className="flex-1"
-                          />
-                          {watchedLatitude !== undefined && watchedLongitude !== undefined && (
+                            }
+                          }}
+                          placeholder="e.g., 16.798196"
+                          className="flex-1"
+                        />
+                      </div>
+                      {errors.latitude && (
+                        <p className="text-sm text-red-600">{errors.latitude.message}</p>
+                      )}
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="longitude" className="flex items-center gap-2">
+                        Longitude
+                        <HelpTextTooltip content="The longitude coordinate in decimal degrees (-180 to 180). Click on the map or search for a location to auto-populate." />
+                      </Label>
+                      <div className="flex items-center gap-2">
+                        <Input
+                          id="longitude"
+                          type="number"
+                          step="any"
+                          value={watchedLongitude !== undefined ? watchedLongitude : ''}
+                          onChange={(e) => {
+                            const value = e.target.value;
+                            if (value === '') {
+                              setValue('longitude', undefined);
+                            } else {
+                              const lng = parseFloat(value);
+                              if (!isNaN(lng) && lng >= -180 && lng <= 180) {
+                                setValue('longitude', lng);
+                                if (validationErrors.coordinates) {
+                                  setValidationErrors(prev => {
+                                    const { coordinates, ...rest } = prev;
+                                    return rest;
+                                  });
+                                }
+                              }
+                            }
+                          }}
+                          placeholder="e.g., 96.149497"
+                          className="flex-1"
+                        />
+                        {watchedLatitude !== undefined && watchedLongitude !== undefined && (
                           <Button
                             type="button"
                             variant="outline"
                             size="sm"
                             onClick={() => {
-                                const coords = `${watchedLatitude.toFixed(6)} ${watchedLongitude.toFixed(6)}`;
+                              const coords = `${watchedLatitude.toFixed(6)}, ${watchedLongitude.toFixed(6)}`;
                               navigator.clipboard.writeText(coords);
                               toast.success('Coordinates copied to clipboard');
                             }}
-                              className="px-2"
+                            className="px-2"
+                            title="Copy coordinates"
                           >
-                              <Copy className="h-4 w-4" />
+                            <Copy className="h-4 w-4" />
                           </Button>
-                          )}
-                        </div>
-                        {(errors.latitude || errors.longitude) && (
-                          <p className="text-sm text-red-600">
-                            {errors.latitude?.message || errors.longitude?.message}
-                          </p>
-                      )}
+                        )}
                       </div>
+                      {errors.longitude && (
+                        <p className="text-sm text-red-600">{errors.longitude.message}</p>
+                      )}
                     </div>
+                  </div>
+                  {validationErrors.coordinates && (
+                    <p className="text-sm text-red-600">{validationErrors.coordinates}</p>
                   )}
 
                   {/* Coverage Scope (Coverage only) */}
