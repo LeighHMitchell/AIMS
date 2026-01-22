@@ -6,7 +6,6 @@ import Link from "next/link"
 import Image from "next/image"
 import { MainLayout } from "@/components/layout/main-layout"
 import { SafeHtml } from "@/components/ui/safe-html"
-import { htmlToPlainText } from "@/lib/sanitize"
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -2074,131 +2073,78 @@ export default function ActivityDetailPage() {
                       const targetGroups = activity.descriptionTargetGroups || '';
                       const other = activity.descriptionOther || '';
                       
-                      // Calculate combined length
+                      // Check if any description content exists
+                      const hasAnyContent = description || objectives || targetGroups || other;
+                      
+                      // Calculate if we need show more based on content length (rough estimate)
                       const combinedLength = description.length + objectives.length + targetGroups.length + other.length;
-                      
-                      // Calculate what to show when collapsed (1000 chars total)
-                      let remainingChars = 1000;
-                      
-                      // Description
-                      const descLength = description.length;
-                      const descShow = isDescriptionExpanded || remainingChars > 0;
-                      const descDisplay = descShow 
-                        ? (isDescriptionExpanded ? description : description.slice(0, Math.min(descLength, remainingChars)))
-                        : '';
-                      const descNeedsTruncation = !isDescriptionExpanded && descLength > remainingChars;
-                      remainingChars = Math.max(0, remainingChars - descLength);
-                      
-                      // Objectives
-                      const objLength = objectives.length;
-                      const objShow = isDescriptionExpanded || remainingChars > 0;
-                      const objDisplay = objShow 
-                        ? (isDescriptionExpanded ? objectives : objectives.slice(0, Math.min(objLength, remainingChars)))
-                        : '';
-                      const objNeedsTruncation = !isDescriptionExpanded && objLength > remainingChars;
-                      remainingChars = Math.max(0, remainingChars - objLength);
-                      
-                      // Target Groups
-                      const tgLength = targetGroups.length;
-                      const tgShow = isDescriptionExpanded || remainingChars > 0;
-                      const tgDisplay = tgShow 
-                        ? (isDescriptionExpanded ? targetGroups : targetGroups.slice(0, Math.min(tgLength, remainingChars)))
-                        : '';
-                      const tgNeedsTruncation = !isDescriptionExpanded && tgLength > remainingChars;
-                      remainingChars = Math.max(0, remainingChars - tgLength);
-                      
-                      // Other
-                      const otherLength = other.length;
-                      const otherShow = isDescriptionExpanded || remainingChars > 0;
-                      const otherDisplay = otherShow 
-                        ? (isDescriptionExpanded ? other : other.slice(0, Math.min(otherLength, remainingChars)))
-                        : '';
-                      const otherNeedsTruncation = !isDescriptionExpanded && otherLength > remainingChars;
-                      
-                      const needsShowMore = combinedLength > 1000;
+                      const needsShowMore = combinedLength > 500;
                       
                       return (
                         <>
-                          {/* General Description */}
-                          {description && (
-                            <div ref={descriptionRef} className="mt-3">
-                              {isDescriptionExpanded ? (
+                          {/* Collapsible description container */}
+                          <div 
+                            ref={descriptionRef}
+                            className={`mt-3 relative ${!isDescriptionExpanded && needsShowMore ? 'max-h-[280px] overflow-hidden' : ''}`}
+                          >
+                            {/* General Description */}
+                            {description && (
+                              <div>
                                 <SafeHtml 
                                   html={description} 
                                   level="rich"
                                   className="text-slate-600 leading-relaxed"
                                 />
-                              ) : (
-                                <p className="text-slate-600 leading-relaxed whitespace-pre-wrap">
-                                  {htmlToPlainText(descDisplay)}
-                                  {descNeedsTruncation && '...'}
-                                </p>
-                              )}
-                            </div>
-                          )}
+                              </div>
+                            )}
 
-                          {/* Objectives Section */}
-                          {objectives && objShow && (
-                            <div className="mt-4 border-t border-slate-200 pt-3">
-                              <h4 className="text-sm font-medium text-slate-700 mb-2">
-                                Objectives
-                              </h4>
-                              {isDescriptionExpanded ? (
+                            {/* Objectives Section */}
+                            {objectives && (
+                              <div className="mt-4 border-t border-slate-200 pt-3">
+                                <h4 className="text-sm font-medium text-slate-700 mb-2">
+                                  Objectives
+                                </h4>
                                 <SafeHtml 
                                   html={objectives} 
                                   level="rich"
                                   className="text-slate-600 leading-relaxed"
                                 />
-                              ) : (
-                                <p className="text-slate-600 leading-relaxed whitespace-pre-wrap">
-                                  {htmlToPlainText(objDisplay)}
-                                  {objNeedsTruncation && '...'}
-                                </p>
-                              )}
-                            </div>
-                          )}
+                              </div>
+                            )}
 
-                          {/* Target Groups Section */}
-                          {targetGroups && tgShow && (
-                            <div className="mt-4 border-t border-slate-200 pt-3">
-                              <h4 className="text-sm font-medium text-slate-700 mb-2">
-                                Target Groups
-                              </h4>
-                              {isDescriptionExpanded ? (
+                            {/* Target Groups Section */}
+                            {targetGroups && (
+                              <div className="mt-4 border-t border-slate-200 pt-3">
+                                <h4 className="text-sm font-medium text-slate-700 mb-2">
+                                  Target Groups
+                                </h4>
                                 <SafeHtml 
                                   html={targetGroups} 
                                   level="rich"
                                   className="text-slate-600 leading-relaxed"
                                 />
-                              ) : (
-                                <p className="text-slate-600 leading-relaxed whitespace-pre-wrap">
-                                  {htmlToPlainText(tgDisplay)}
-                                  {tgNeedsTruncation && '...'}
-                                </p>
-                              )}
-                            </div>
-                          )}
+                              </div>
+                            )}
 
-                          {/* Other Section */}
-                          {other && otherShow && (
-                            <div className="mt-4 border-t border-slate-200 pt-3">
-                              <h4 className="text-sm font-medium text-slate-700 mb-2">
-                                Other
-                              </h4>
-                              {isDescriptionExpanded ? (
+                            {/* Other Section */}
+                            {other && (
+                              <div className="mt-4 border-t border-slate-200 pt-3">
+                                <h4 className="text-sm font-medium text-slate-700 mb-2">
+                                  Other
+                                </h4>
                                 <SafeHtml 
                                   html={other} 
                                   level="rich"
                                   className="text-slate-600 leading-relaxed"
                                 />
-                              ) : (
-                                <p className="text-slate-600 leading-relaxed whitespace-pre-wrap">
-                                  {htmlToPlainText(otherDisplay)}
-                                  {otherNeedsTruncation && '...'}
-                                </p>
-                              )}
-                            </div>
-                          )}
+                              </div>
+                            )}
+                            
+                            {/* Fade gradient when collapsed */}
+                            {!isDescriptionExpanded && needsShowMore && (
+                              <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-white to-transparent pointer-events-none" />
+                            )}
+                          </div>
 
                           {/* Single Show More/Less button */}
                           {needsShowMore && (
