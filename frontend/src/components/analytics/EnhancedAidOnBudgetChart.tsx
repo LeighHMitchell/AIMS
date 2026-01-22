@@ -20,7 +20,7 @@ import {
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { AlertCircle, RefreshCw, TrendingUp, Wallet, PiggyBank, CircleDollarSign, HandCoins, HelpCircle, BarChart3, Table2, ChevronDown, ChevronRight, ExternalLink } from "lucide-react";
+import { AlertCircle, RefreshCw, TrendingUp, Wallet, PiggyBank, CircleDollarSign, HandCoins, HelpCircle, PieChart, Table2, ChevronDown, ChevronRight, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { HelpTextTooltip } from "@/components/ui/help-text-tooltip";
 import { TableSkeleton } from "@/components/ui/skeleton-loader";
@@ -928,7 +928,7 @@ export function EnhancedAidOnBudgetChart({ refreshKey }: EnhancedAidOnBudgetChar
                 className="rounded-r-none"
                 title="Chart View"
               >
-                <BarChart3 className="h-4 w-4" />
+                <PieChart className="h-4 w-4" />
               </Button>
               <Button
                 variant={viewMode === "table" ? "default" : "ghost"}
